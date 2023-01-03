@@ -1,0 +1,32 @@
+DEPLOYMENT INSTRUCTIONS
+
+Project files have been written to the copilot/ directory.  Any changes to these files should be committed to github.
+
+Run the following commands to bootstrap the app:
+
+# 1. init the app
+
+copilot app init --domain {{ domain }}
+
+# 2. init each service
+{% for service in services %}
+copilot svc init --name {{ service.name }}
+{%- endfor %}
+
+# 3. init each environment
+{% for env_name, _ in environments.items() %}
+copilot env init --name {{ env_name }}
+{%- endfor %}
+
+# 4. deploy each service into each environment
+{%- for service in services %}
+
+# {{ service.name }}:
+{%- for env_name, _ in environments.items() %}
+copilot svc deploy --name {{ service.name }} --env {{ env_name }}
+{%- endfor %}
+{% endfor %}
+
+Edit each copilot/{service-name}/manifest.yaml file and replace "nginx:latest" with the service's ECR registry url and redeploy.
+
+TODO: add details on how to transfer secrets
