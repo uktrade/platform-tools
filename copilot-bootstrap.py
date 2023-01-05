@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
+import re
 import sys
 
 import click
@@ -30,7 +31,17 @@ config_schema = Schema({
                     "url": str,
                 }
             },
-            "backing-services": ''
+            "backing-services": [
+                {
+                    "name": str,
+                    "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
+                    Optional("paas-description"): str,
+                    Optional("paas-instance"): str,
+                    Optional("notes"): str,
+                    Optional("bucket_name"): str,           # for external-s3 type
+                    Optional("readonly"): bool,             # for external-s3 type
+                }
+            ]
         }
     ],
 })
@@ -55,6 +66,11 @@ def _mkfile(base, path, contents):
     return f"file {path} created"
 
 
+def camel_case(s):
+  s = re.sub(r"(_|-)+", " ", s).title().replace(" ", "")
+  return ''.join([s[0].lower(), s[1:]])
+
+
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 @click.argument("output", type=click.Path(exists=True), default=".")
@@ -76,6 +92,14 @@ def main(filename, output):
     env_template = templateEnv.get_template("env-manifest.yaml")
     svc_template = templateEnv.get_template("svc-manifest.yaml")
     instructions_template = templateEnv.get_template("instructions.txt")
+
+    backing_service_templates ={
+        "opensearch": templateEnv.get_template("addons/opensearch.yaml"),
+        "postgres": templateEnv.get_template("addons/postgres.yaml"),
+        "redis": templateEnv.get_template("addons/redis.yaml"),
+        "s3": templateEnv.get_template("addons/s3.yaml"),
+        "external-s3": templateEnv.get_template("addons/external-s3.yaml"),
+    }
 
     click.echo("GENERATING COPILOT CONFIG FILES")
 
@@ -101,13 +125,22 @@ def main(filename, output):
     # create each service directory and manifest.yaml
     for service in data["services"]:
         name = service["name"]
-        click.echo(_mkdir(base_path, f"copilot/{name}"))
+        click.echo(_mkdir(base_path, f"copilot/{name}/addons/"))
         contents = svc_template.render(service)
         click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yaml", contents))
 
+        if service["backing-services"]:
+            click.echo(_mkdir(base_path, "copilot"))
+
+        for bs in service["backing-services"]:
+            bs["prefix"] = camel_case(name + "-" + bs["name"])
+
+            contents = backing_service_templates[bs["type"]].render(dict(service=bs))
+            _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yaml", contents)
+
     # generate instructions
     instructions = instructions_template.render(data)
-    click.echo("---------")
+    click.echo("---")
     click.echo(instructions)
 
 
