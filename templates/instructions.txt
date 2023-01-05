@@ -4,6 +4,13 @@ Project files have been written to the copilot/ directory.  Any changes to these
 
 Run the following commands to bootstrap the app:
 
+NOTE:
+1. you will need to export the AWS_PROFILE env var for the copilot cli tool to pick up:  export AWS_PROFILE=your-aws-profile
+2. the {{ domain }} hosted zone needs to be set up in the AWS account you are deploying into.  Speak to SRE for assistance.
+3. Production environments will need a ACM TLS cert setting up before they can be deployed.  Speak to SRE for assistance.
+
+You do not need to follow all of the instructions in sequence. For instance, you may decide to just initialise and deploy one environment, and then deploy a single service into that environment.
+
 # 1. init the app
 
 copilot app init --domain {{ domain }}
@@ -13,12 +20,22 @@ copilot app init --domain {{ domain }}
 copilot svc init --name {{ service.name }}
 {%- endfor %}
 
-# 3. init each environment
+# 3. initialise each environment
+
+When running "copilot env init" chose the following options:
+* Credential source: the correct account that the env should exist in. NOTE: envs can live in separate accounts.
+* Default environment configuration? Yes, use default.
+
 {% for env_name, _ in environments.items() %}
 copilot env init --name {{ env_name }}
 {%- endfor %}
 
-# 4. deploy each service into each environment
+# 4. deploy each environment
+{% for env_name, _ in environments.items() %}
+copilot env deploy --name {{ env_name }}
+{%- endfor %}
+
+# 5. deploy each service into each environment
 {%- for service in services %}
 
 # {{ service.name }}:
@@ -27,6 +44,6 @@ copilot svc deploy --name {{ service.name }} --env {{ env_name }}
 {%- endfor %}
 {% endfor %}
 
-Edit each copilot/{service-name}/manifest.yaml file and replace "nginx:latest" with the service's ECR registry url and redeploy.
+Edit each copilot/{service-name}/manifest.yaml file and replace the image_location with the service's ECR registry url and redeploy.
 
 TODO: add details on how to transfer secrets

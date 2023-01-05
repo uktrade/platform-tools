@@ -14,9 +14,9 @@ http:
   # You can specify a custom health check path. The default is "/".
   # healthcheck: '/'
   healthcheck:
-    {% if ipfiler %}
-
+    {%- if ipfilter %}
     {% else %}
+    {% endif -%}
     path: '/'
     port: 8080
     success_codes: '200'
@@ -25,22 +25,20 @@ http:
     interval: 35s
     timeout: 30s
     grace_period: 90s
-    {% endif %}
-
 
 {% if ipfilter %}
-sidecars:
-  ipfilter:
-    port: 8080
-    image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
-    variables:
-      PORT: 8080
-      EMAIL_NAME: 'the Department for International Trade WebOps team'
-      EMAIL: test@test.test
-      LOG_LEVEL: DEBUG
-      ORIGIN_HOSTNAME: localhost:7999
-      ORIGIN_PROTO: http
-      CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
+# sidecars:
+#   ipfilter:
+#     port: 8080
+#     image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
+#     variables:
+#       PORT: 8080
+#       EMAIL_NAME: 'the Department for International Trade WebOps team'
+#       EMAIL: test@test.test
+#       LOG_LEVEL: DEBUG
+#       ORIGIN_HOSTNAME: localhost:7999
+#       ORIGIN_PROTO: http
+#       CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
 {% endif %}
 
 # Configuration for your containers and service.
@@ -63,23 +61,31 @@ network:
 # Optional fields for more advanced use-cases.
 #
 variables:                    # Pass environment variables as key value pairs.
+  {%- if ipfilter %}
+  {% else %} # service container will listen on different port if we have an ip filter
+  {% endif -%}
   PORT: 8080
-  {% for envvar, value in env_vars %}
+  {%- for envvar, value in env_vars %}
   {{ envvar }}: {{ value }}
   {% endfor %}
 
+
+{% if secrets %}
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
   {% for secret, value in secrets %}
   {{ secret }}: {{ value }}
-  {% endfor %}
+  {% endfor -%}
+{% else %}
+# secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+{% endif %}
 
 # You can override any of the values defined above by environment.
 environments:
-  {% for env in environments %}
-  {{ env.name }}:
+  {%- for env_name, env in environments.items() %}
+  {{ env_name }}:
     http:
       alias: {{ env.url }}
-      {% if env.ipfilter %}
-      targetContainer: 'ipfilter'
-      {% endif %}
-  {% endfor %}
+      {%- if env.ipfilter %}
+      #targetContainer: 'ipfilter'    # ip filter disabled
+      {%- endif -%}
+  {%- endfor -%}

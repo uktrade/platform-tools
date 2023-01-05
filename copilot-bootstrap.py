@@ -89,16 +89,16 @@ def main(filename, output):
     data = schema.validate(conf)
     base_path = Path(output)
 
-    env_template = templateEnv.get_template("env-manifest.yaml")
-    svc_template = templateEnv.get_template("svc-manifest.yaml")
+    env_template = templateEnv.get_template("env-manifest.yml")
+    svc_template = templateEnv.get_template("svc-manifest.yml")
     instructions_template = templateEnv.get_template("instructions.txt")
 
     backing_service_templates ={
-        "opensearch": templateEnv.get_template("addons/opensearch.yaml"),
-        "postgres": templateEnv.get_template("addons/postgres.yaml"),
-        "redis": templateEnv.get_template("addons/redis.yaml"),
-        "s3": templateEnv.get_template("addons/s3.yaml"),
-        "external-s3": templateEnv.get_template("addons/external-s3.yaml"),
+        "opensearch": templateEnv.get_template("addons/opensearch.yml"),
+        "postgres": templateEnv.get_template("addons/postgres.yml"),
+        "redis": templateEnv.get_template("addons/redis.yml"),
+        "s3": templateEnv.get_template("addons/s3.yml"),
+        "external-s3": templateEnv.get_template("addons/external-s3.yml"),
     }
 
     click.echo("GENERATING COPILOT CONFIG FILES")
@@ -113,21 +113,23 @@ def main(filename, output):
     # create copilot/environments directory
     click.echo(_mkdir(base_path, "copilot/environments"))
 
-    # create each environment diretory and manifest.yaml
+    # create each environment diretory and manifest.yml
     for name, env in data["environments"].items():
         click.echo(_mkdir(base_path, f"copilot/environments/{name}"))
         contents = env_template.render({
             "name": name,
             "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""
         })
-        click.echo(_mkfile(base_path, f"copilot/environments/{name}/manifest.yaml", contents))
+        click.echo(_mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
 
-    # create each service directory and manifest.yaml
+    # create each service directory and manifest.yml
     for service in data["services"]:
+        service["ipfilter"] = any(env.get("ipfilter", False) for _, env in service["environments"].items())
         name = service["name"]
         click.echo(_mkdir(base_path, f"copilot/{name}/addons/"))
         contents = svc_template.render(service)
-        click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yaml", contents))
+
+        click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
 
         if service["backing-services"]:
             click.echo(_mkdir(base_path, "copilot"))
@@ -136,7 +138,7 @@ def main(filename, output):
             bs["prefix"] = camel_case(name + "-" + bs["name"])
 
             contents = backing_service_templates[bs["type"]].render(dict(service=bs))
-            _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yaml", contents)
+            _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
     # generate instructions
     instructions = instructions_template.render(data)

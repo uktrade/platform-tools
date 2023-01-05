@@ -12,7 +12,7 @@ Parameters:
 Resources:
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
-  OpenSearchSecurityGroup:
+  {{ service.prefix }}OpenSearchSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
@@ -26,19 +26,19 @@ Resources:
           Value: !Sub 'copilot-${App}-${Env}-${Name}-OpenSearch-SecurityGroup'
 
   # Enable ingress from other ECS services created within the environment.
-  OpenSearchIngress:
+  {{ service.prefix }}OpenSearchIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress Security Group from Fargate containers
-      GroupId: !Ref 'OpenSearchSecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}OpenSearchSecurityGroup'
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
       SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
   # The cluster itself.
-  OpenSearchDomain:
+  {{ service.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
     Properties:
       AccessPolicies:
@@ -49,8 +49,8 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/opensearch-${Env}/*'
-      DomainName: !Sub opensearch-${Env}
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ name|lower }}-opensearch/*'
+      DomainName: !Sub ${App}-${Env}-{{ name|lower }}-opensearch
       EngineVersion: 'OpenSearch_1.1'
       EBSOptions:
         EBSEnabled: true
@@ -62,19 +62,19 @@ Resources:
         InstanceType: c6g.large.search # probably overkill
       VPCOptions:
         SecurityGroupIds:
-        - !Ref OpenSearchSecurityGroup
+        - !Ref {{ service.prefix }}OpenSearchSecurityGroup
         SubnetIds:
           - !Select [0, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-${Name}-OpenSearch-Domain'
-  OpenSearchEndpointAddressParam:
+  {{ service.prefix }}OpenSearchEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/OPENSEARCH_ENDPOINT"
+      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ name|upper|replace("-", "_") }}_OPENSEARCH_ENDPOINT"
       Type: String
-      Value: !GetAtt OpenSearchDomain.DomainEndpoint
+      Value: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 Outputs:
-  OpenSearchSecurityGroup:
+  {{ service.prefix }}OpenSearchSecurityGroup:
     Description: Security group for OpenSearch
-    Value: !Ref OpenSearchSecurityGroup 
+    Value: !Ref {{ service.prefix }}OpenSearchSecurityGroup

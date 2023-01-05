@@ -12,13 +12,14 @@ type: Environment
 #     id:
 
 # Configure the load balancers in your environment, once created.
-# http:
 {% if certificate_arn %}
+http:
   public:
     certificates:
       - {{ certificate_arn }}
 #   private:
 {% else %}
+# http:
 #   public:
 #   private:
 {% endif %}
