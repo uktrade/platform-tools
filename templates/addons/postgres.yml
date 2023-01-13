@@ -66,11 +66,13 @@ Resources:
     Properties:
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
+        Name: !Sub '/${App}/${Env}/${Name}/{{ name|upper|replace("-", "_") }}_AURORA
         SecretStringTemplate: '{"username": "postgres"}'
         GenerateStringKey: "password"
         ExcludePunctuation: true
         IncludeSpace: false
         PasswordLength: 16
+
   {{ service.prefix }}DBClusterParameterGroup:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'

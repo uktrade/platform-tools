@@ -28,13 +28,17 @@ config_schema = Schema({
     "services": [
         {
             "name": str,
+            "type": lambda s: s in ("public", "backend",),
             "repo": str,
             "image_location": str,
+            "command": str,
+            Optional("notes"): str,
+            Optional("secrets_from"): str,
             "environments": {
                 str: {
-                    "ipfilter": bool,
                     "paas": str,
-                    "url": str,
+                    Optional("url"): str,
+                    Optional("ipfilter"): bool,
                 }
             },
             "backing-services": [
@@ -46,6 +50,7 @@ config_schema = Schema({
                     Optional("notes"): str,
                     Optional("bucket_name"): str,           # for external-s3 type
                     Optional("readonly"): bool,             # for external-s3 type
+                    Optional("shared"): bool,
                 }
             ],
             Optional("overlapping_secrets"): [ str ],
@@ -171,7 +176,8 @@ def get_ssm_secret_names(app, env):
         )
 
         for secret in response["Parameters"]:
-            secret_names.append(secret["Name"].split("/")[-1])
+            # secret_names.append(secret["Name"].split("/")[-1])
+            secret_names.append(secret["Name"])
 
         if "NextToken" in response:
             params["NextToken"] = response["NextToken"]
@@ -203,15 +209,19 @@ def make_config(config_file, output):
     templateEnv = get_template_env()
 
     env_template = templateEnv.get_template("env-manifest.yml")
-    svc_template = templateEnv.get_template("svc-manifest.yml")
     instructions_template = templateEnv.get_template("instructions.txt")
 
-    backing_service_templates ={
+    backing_service_templates = {
         "opensearch": templateEnv.get_template("addons/opensearch.yml"),
         "postgres": templateEnv.get_template("addons/postgres.yml"),
         "redis": templateEnv.get_template("addons/redis.yml"),
         "s3": templateEnv.get_template("addons/s3.yml"),
         "external-s3": templateEnv.get_template("addons/external-s3.yml"),
+    }
+
+    service_templates = {
+        "public": templateEnv.get_template("svc-manifest-public.yml"),
+        "backend": templateEnv.get_template("svc-manifest-backend.yml"),
     }
 
     click.echo("GENERATING COPILOT CONFIG FILES")
@@ -240,7 +250,14 @@ def make_config(config_file, output):
         service["ipfilter"] = any(env.get("ipfilter", False) for _, env in service["environments"].items())
         name = service["name"]
         click.echo(_mkdir(base_path, f"copilot/{name}/addons/"))
-        contents = svc_template.render(service)
+
+        if "secrets_from" in service:
+            # Copy secrets from the app referredd to in the "secrets_from" key
+            related_service = [s for s in config["services"] if s["name"] == service["secrets_from"]][0]
+
+            service["secrets"].update(related_service["secrets"])
+
+        contents = service_templates[service["type"]].render(service)
 
         click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
 
@@ -303,17 +320,22 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
         if svc and service["name"] != svc:
             continue
 
+        if "secrets_from" in service:
+            click.echo(f"{service_name} shares secrets with {service['secrets_from']}; skipping")
+            continue
+
         for env_name, environment in service["environments"].items():
 
             if env and env_name != env:
                 continue
 
             click.echo("-----------------")
-            click.echo(f"migrating secrets {service_name} / {env_name}")
+            click.echo(f">>> migrating secrets fro service: {service_name}; environment: {env_name}")
 
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
 
+            click.echo("Transfering secrets ...")
             for app_secret_key, ssm_secret_key in secrets.items():
                 ssm_path = SSM_PATH.format(app=config["app"], env=env_name, name=ssm_secret_key)
 
@@ -332,7 +354,7 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
 
                 if overwrite or not param_exists:
                     if not dry_run:
-                        set_ssm_param(app, env_name, ssm_path, param_value, overwrite, param_exists)
+                        set_ssm_param(config["app"], env_name, ssm_path, param_value, overwrite, param_exists)
 
                     if not param_exists:
                         existing_ssm_data[env_name].append(ssm_path)

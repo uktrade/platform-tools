@@ -1,0 +1,44 @@
+# The manifest for the "backend" service.
+# Read the full specification for the "Backend Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/backend-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: {{ name }}
+type: Backend Service
+
+# Your service does not allow any traffic.
+
+# Configuration for your containers and service.
+image:
+  location: {{ image_location }}
+
+cpu: 256       # Number of CPU units for the task.
+memory: 512    # Amount of memory in MiB used by the task.
+count: 1       # Number of tasks that should be running in your service.
+exec: true     # Enable running commands in your container.
+
+# storage:
+  # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
+
+variables:                    # Pass environment variables as key value pairs.
+  PORT: 8080                  # The bootstrap container requires a $PORT env var
+  {%- for envvar, value in env_vars %}
+  {{ envvar }}:
+  {% endfor %}
+
+
+{% if secrets %}
+secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+  {%- for secret, value in secrets.items() -%}
+  {{ secret }}: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ value }}
+  {% endfor -%}
+{% else %}
+# secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+{% endif %}
+
+# You can override any of the values defined above by environment.
+#environments:
+#  test:
+#    count: 2               # Number of tasks to run for the "test" environment.
+#    deployment:            # The deployment strategy for the "test" environment.
+#       rolling: 'recreate' # Stops existing tasks before new ones are started for faster deployments.

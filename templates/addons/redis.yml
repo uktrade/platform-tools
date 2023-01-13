@@ -9,6 +9,33 @@ Parameters:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
 
+# Mappings:
+#   {{ service.prefix }}EnvScalingConfigurationMap:
+#     EngineVersionMap:
+#       '6.2':
+#         CacheParameterGroupFamily: 'redis6.x'
+#       '6.0':
+#         CacheParameterGroupFamily: 'redis6.x'
+#       '5.0.6':
+#         CacheParameterGroupFamily: 'redis5.0'
+#       '5.0.4':
+#         CacheParameterGroupFamily: 'redis5.0'
+#       '5.0.3':
+#         CacheParameterGroupFamily: 'redis5.0'
+#       '5.0.0':
+#         CacheParameterGroupFamily: 'redis5.0'
+#       '4.0.10':
+#         CacheParameterGroupFamily: 'redis4.0'
+#       '3.2.6':
+#         CacheParameterGroupFamily: 'redis3.2'
+#     dev:
+#       "CacheNodeType": "cache.m4.large"
+#       "NumCacheNodes": 1
+#       "DBMaxCapacity": 8
+#     All:
+#       "DBMinCapacity": 0.5
+#       "DBMaxCapacity": 8
+
 Resources:
   # Subnet group to control where the Redis gets placed
   {{ service.prefix }}RedisSubnetGroup:
@@ -44,6 +71,7 @@ Resources:
       CacheNodeType: cache.m4.large
       NumCacheNodes: 1
       CacheSubnetGroupName: !Ref '{{ service.prefix }}RedisSubnetGroup'
+      TransitEncryptionEnabled: true
       VpcSecurityGroupIds:
         - !GetAtt '{{ service.prefix }}RedisSecurityGroup.GroupId'
 

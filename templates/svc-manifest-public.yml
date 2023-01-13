@@ -26,8 +26,11 @@ http:
     timeout: 30s
     grace_period: 90s
 
+sidecars:
+  envoy:
+    port: 443
+    image: aws_account_id.dkr.ecr.us-west-2.amazonaws.com/envoy-proxy-with-selfsigned-certs:v1
 {% if ipfilter %}
-# sidecars:
 #   ipfilter:
 #     port: 8080
 #     image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
@@ -43,9 +46,9 @@ http:
 
 # Configuration for your containers and service.
 image:
-  #location: public.ecr.aws/e9f6t9n0/digital-workspace:latest
+
   location: {{ image_location }}
-  # Port exposed through your container to route traffic to it.
+    # Port exposed through your container to route traffic to it.
   port: 8080
 
 cpu: 256       # Number of CPU units for the task.
@@ -66,7 +69,7 @@ variables:                    # Pass environment variables as key value pairs.
   {% endif -%}
   PORT: 8080
   {%- for envvar, value in env_vars %}
-  {{ envvar }}: 
+  {{ envvar }}:
   {% endfor %}
 
 

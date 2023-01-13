@@ -14,8 +14,7 @@ Resources:
       'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Description: !Sub
-        - Grants Read access to the S3 bucket.
+      Description: Grants Read access to the S3 bucket.
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -35,4 +34,4 @@ Resources:
 Outputs:
   {{ service.prefix }}AccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
-    Value: !Ref S3AccessPolicy
+    Value: !Ref {{ service.prefix }}S3AccessPolicy
