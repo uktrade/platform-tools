@@ -74,7 +74,7 @@ Resources:
   {{ service.prefix }}OpenSearchEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ name|upper|replace("-", "_") }}_OPENSEARCH_ENDPOINT"
+      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}_OPENSEARCH_ENDPOINT"
       Type: String
       Value: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 Outputs:

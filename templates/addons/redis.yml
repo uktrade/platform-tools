@@ -71,7 +71,7 @@ Resources:
       CacheNodeType: cache.m4.large
       NumCacheNodes: 1
       CacheSubnetGroupName: !Ref '{{ service.prefix }}RedisSubnetGroup'
-      TransitEncryptionEnabled: true
+      # TransitEncryptionEnabled: true
       VpcSecurityGroupIds:
         - !GetAtt '{{ service.prefix }}RedisSecurityGroup.GroupId'
 
@@ -79,11 +79,11 @@ Resources:
   {{ service.prefix }}RedisEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/${App}/${Env}/${Name}/{{ name|upper|replace("-", "_") }}_REDIS'   # Other services can retrieve the endpoint from this path.
+      Name: !Sub '/${App}/${Env}/{{ service.name|upper|replace("-", "_") }}'   # Other services can retrieve the endpoint from this path.
       Type: String
-      Value: !GetAtt '{{ service.prefix }}Redis.RedisEndpoint.Address'
+      Value: !GetAtt '{{ service.prefix }}.RedisEndpoint.Address'
 
 Outputs:
   {{ service.prefix }}RedisEndpoint:
     Description: The endpoint of the redis cluster
-    Value: !GetAtt '{{ service.prefix }}Redis.RedisEndpoint.Address'
+    Value: !GetAtt '{{ service.prefix }}.RedisEndpoint.Address'
