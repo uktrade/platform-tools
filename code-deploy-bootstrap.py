@@ -6,7 +6,6 @@ import json
 
 
 def check_success(task, response):
-    #breakpoint()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         print(f"{task} was a success...")
     else:
@@ -18,7 +17,8 @@ def display_aws_account():
 
     # Check if account exists, if not create
     response = client.list_account_aliases()
-    #breakpoint()
+    # Each AWS account should have an alias defined.
+
     if not response['AccountAliases']:
         account_name = input("No Account name has been defined\nPlease enter the name you wish to give to this account: ")
         if not click.confirm(f"You are about to update AWS Account name to: {account_name}\nDo you want to continue?"):
@@ -46,13 +46,14 @@ def import_pat(pat):
         authType='PERSONAL_ACCESS_TOKEN',
         shouldOverwrite=True
     )
-    #breakpoint()
+
     check_success("GITHUB PAT import", response)
 
 
 def check_github_conn(client):
     response = client.list_source_credentials()
 
+    # If there are no source code creds defined then AWS is not linked to Github
     if not response['sourceCredentialsInfos']:
         if not click.confirm(f"Github not Linked in this AWS account\nDo you want to link with a PAT?"):
             exit()
@@ -72,7 +73,7 @@ def check_github_conn(client):
 
 def check_service_role():
     client = boto3.client('iam', region_name='eu-west-2')
-    #breakpoint()
+
     try:
         response = client.get_role(
             RoleName='ci-CodeBuild-role'
@@ -104,9 +105,9 @@ def link_github(pat):
 
 
 @cli.command()
-def create_codeploy_role():
+def create_codedeploy_role():
     """
-    Builds Code build boilerplate
+    Add AWS Role needed for codedeploy
     """
 
     account_name = display_aws_account()
@@ -114,8 +115,8 @@ def create_codeploy_role():
     with open('templates/put-codebuild-role-policy.json') as f:
         policy_doc = json.load(f)
     client = boto3.client('iam', region_name='eu-west-2')
-    #breakpoint()
 
+    # A policy must be defined if not present.
     try:
         response = client.create_policy(
             PolicyName='ci-CodeBuild-policy',
@@ -135,6 +136,7 @@ def create_codeploy_role():
     with open('templates/create-codebuild-role.json') as f:
         role_doc = json.load(f)
 
+    # Now create a role if not present and attache policy
     try:
         response = client.create_role(
             RoleName = 'ci-CodeBuild-role',
@@ -143,7 +145,7 @@ def create_codeploy_role():
         check_success("Create Role", response)
     except client.exceptions.EntityAlreadyExistsException:
         print("Role exists")
-    #breakpoint()
+
     account_id = boto3.client('sts').get_caller_identity().get('Account')
     client.attach_role_policy(
         PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
@@ -163,7 +165,6 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage):
     """
     Builds Code build boilerplate
     """
-    #breakpoint()
 
     account_name = display_aws_account()
     role_arn = check_service_role()
@@ -199,6 +200,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage):
         },
     }
 
+    # Either update project or create a new project
     if update:
         response = client.update_project(
             name=name,
@@ -249,12 +251,11 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage):
                 ],
                 buildType='BUILD'
             )
-            #print("New Project created")
+
         except client.exceptions.ResourceAlreadyExistsException:
             print("Project already exist use:  ./code-deploy-bootstrap.py codedeploy --update")
             exit()
 
-    #breakpoint()
     check_success("Create Project", response)
     check_success("Create Webhook", response_webhook)
 
