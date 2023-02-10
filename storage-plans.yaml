@@ -1,0 +1,53 @@
+# storage t-shirt sizes
+
+redis:
+  micro:
+    replicas: 0
+    instance: 'cache.t4g.micro'
+
+  small:
+    replicas: 0
+    instance: 'cache.t4g.small'
+
+  small-ha:
+    replicas: 2
+    instance: 'cache.t4g.small'
+
+  medium:
+    replicas: 2
+    instance: 'cache.t4g.medium'
+
+  medium-ha:
+    replicas: 2
+    instance: 'cache.t4g.medium'
+
+opensearch:
+  small:
+    volume-size: 10
+    instances: 1
+    master: false
+    instance: c6g.large.search
+
+  small-ha:
+    volume-size: 10
+    instances: 2
+    master: false
+    instance: c6g.large.search
+
+  medium-ha:
+    volume-size: 10
+    instances: 2
+    master: false
+    instance: c6g.large.search
+
+  large-ha:
+    volume-size: 10
+    instances: 2
+    master: false
+    instance: c6g.large.search
+
+postgres: {}
+
+s3: {}
+
+external-s3: {}

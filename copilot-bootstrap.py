@@ -9,7 +9,7 @@ import boto3
 import click
 from cloudfoundry_client.client import CloudFoundryClient
 import jinja2
-from schema import Optional, Schema, SchemaError
+from schema import Optional, Schema, SchemaError, Use
 import yaml
 
 
@@ -64,6 +64,30 @@ config_schema = Schema({
     ],
 })
 
+storage_schema = Schema({
+    str: {
+         "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
+         str: {
+            Optional("plan"): str,
+            # s3
+            Optional("bucket-name"): str,
+            Optional("readonly"): bool,
+            # redis
+            Optional("engine"): str,
+            Optional("replicas"): int,
+            Optional("instance"): str,
+            # opensearch
+            Optional("volume-size"): int,
+            Optional("instances"): int,
+            Optional("master"): bool,
+            Optional("instance"): str,
+            # Aurora PG
+            Optional("min-capacity"): Use(float),
+            Optional("max-capacity"): Use(float),
+         }
+    }
+})
+
 
 def _mkdir(base, path):
 
@@ -74,14 +98,19 @@ def _mkdir(base, path):
     return f"directory {path} created"
 
 
-def _mkfile(base, path, contents):
+def _mkfile(base, path, contents, overwrite=False):
 
-    if (base / path).exists():
+    file_exists = (base / path).exists()
+
+    if file_exists and not overwrite:        
         return f"file {path} exists; doing nothing"
+
+    action = "overwritten" if overwrite else "created"
 
     with open(base / path, "w") as fd:
         fd.write(contents)
-    return f"file {path} created"
+
+    return f"file {path} {action}"
 
 
 def camel_case(s):
@@ -109,12 +138,34 @@ def get_paas_env_vars(client, paas):
     return dict(env_vars)
 
 
-def get_template_env():
+def setup_templates():
     template_path = Path(__file__).parent / Path("templates")
     templateLoader = jinja2.FileSystemLoader(searchpath=template_path)
     templateEnv = jinja2.Environment(loader=templateLoader)
 
-    return templateEnv
+    templates = {
+        "instructions": templateEnv.get_template("instructions.txt"),
+        "storage-instructions": templateEnv.get_template("storage-instructions.txt"),
+        "svc": {
+            "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
+            "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
+            "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
+            "postgres": templateEnv.get_template("svc/addons/postgres.yml"),
+            "redis": templateEnv.get_template("svc/addons/redis.yml"),
+            "s3": templateEnv.get_template("svc/addons/s3.yml"),
+            "external-s3": templateEnv.get_template("svc/addons/external-s3.yml"),
+        },
+        "env": {
+            "manifest": templateEnv.get_template("env/manifest.yml"),
+            "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
+            "postgres": templateEnv.get_template("env/addons/postgres.yml"),
+            "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
+            "s3": templateEnv.get_template("env/addons/s3.yml"),
+            "external-s3": templateEnv.get_template("env/addons/external-s3.yml"),
+        },
+    }
+
+    return templates
 
 
 def load_and_validate_config(path):
@@ -176,7 +227,6 @@ def get_ssm_secret_names(app, env):
         )
 
         for secret in response["Parameters"]:
-            # secret_names.append(secret["Name"].split("/")[-1])
             secret_names.append(secret["Name"])
 
         if "NextToken" in response:
@@ -206,23 +256,7 @@ def make_config(config_file, output):
     base_path = Path(output)
     config = load_and_validate_config(config_file)
 
-    templateEnv = get_template_env()
-
-    env_template = templateEnv.get_template("env-manifest.yml")
-    instructions_template = templateEnv.get_template("instructions.txt")
-
-    backing_service_templates = {
-        "opensearch": templateEnv.get_template("addons/opensearch.yml"),
-        "postgres": templateEnv.get_template("addons/postgres.yml"),
-        "redis": templateEnv.get_template("addons/redis.yml"),
-        "s3": templateEnv.get_template("addons/s3.yml"),
-        "external-s3": templateEnv.get_template("addons/external-s3.yml"),
-    }
-
-    service_templates = {
-        "public": templateEnv.get_template("svc-manifest-public.yml"),
-        "backend": templateEnv.get_template("svc-manifest-backend.yml"),
-    }
+    templates = setup_templates()
 
     click.echo("GENERATING COPILOT CONFIG FILES")
 
@@ -236,10 +270,10 @@ def make_config(config_file, output):
     # create copilot/environments directory
     click.echo(_mkdir(base_path, "copilot/environments"))
 
-    # create each environment diretory and manifest.yml
+    # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
         click.echo(_mkdir(base_path, f"copilot/environments/{name}"))
-        contents = env_template.render({
+        contents = templates["env"]["manifest"].render({
             "name": name,
             "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""
         })
@@ -257,22 +291,19 @@ def make_config(config_file, output):
 
             service["secrets"].update(related_service["secrets"])
 
-        contents = service_templates[service["type"]].render(service)
+        contents = templates["svc"][service["type"]].render(service)
 
         click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
-
-        if service["backing-services"]:
-            click.echo(_mkdir(base_path, "copilot"))
 
         for bs in service["backing-services"]:
             bs["prefix"] = camel_case(name + "-" + bs["name"])
 
-            contents = backing_service_templates[bs["type"]].render(dict(service=bs))
+            contents = templates["svc"][bs["type"]].render(dict(service=bs))
             _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
     # generate instructions
     config["config_file"] = config_file
-    instructions = instructions_template.render(config)
+    instructions = templates["instructions"].render(config)
     click.echo("---")
     click.echo(instructions)
 
@@ -370,15 +401,88 @@ def instructions(config_file):
     """
     Show migration instructions
     """
-    templateEnv = get_template_env()
+    templates = setup_templates()
 
     config = load_and_validate_config(config_file)
     config["config_file"] = config_file
 
-    instructions_template = templateEnv.get_template("instructions.txt")
-    instructions = instructions_template.render(config)
+    instructions = templates["instructions"].render(config)
 
     click.echo(instructions)
+
+
+@cli.command()
+@click.argument("storage-config-file", type=click.Path(exists=True))
+@click.argument("output", type=click.Path(exists=True), default=".")
+@click.option('--overwrite', is_flag=True, show_default=True, default=True, help='Overwrite existing cloudformation? Defaults to True')
+def generate_storage(storage_config_file, output, overwrite):
+    """
+    Generate storage cloudformation for each environment
+    """
+
+    with open(Path(__file__).parent / Path("storage-plans.yaml"), "r") as fd:
+        storage_plans = yaml.safe_load(fd)
+
+    templates = setup_templates()
+
+    # load and validate config 
+    with open(storage_config_file, "r") as fd:
+        conf = yaml.safe_load(fd)
+
+    # validate the file
+    schema = Schema(storage_schema)
+    config = schema.validate(conf)
+
+    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
+        click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
+
+    env_names = [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
+
+    env_config = {}
+
+    path = Path(f"copilot/environments/addons/")
+    click.echo( _mkdir(output, path))
+
+    def _lookup_plan(storage_type, env_conf):
+        plan = env_conf.pop("plan", None)
+        conf = storage_plans[storage_type][plan] if plan else {}
+        conf.update(env_conf)
+
+        return conf
+
+    services = []
+
+    for storage_name, storage_config in config.items():
+        storage_type = storage_config.pop("type")
+        initial = _lookup_plan(storage_type, storage_config.pop("default", {}))
+
+        template = templates["env"][storage_type]
+
+        for env in env_names:
+            env_config[env] = {k.replace("-", "_"): v for k, v in initial.items()}
+
+        for name, env in storage_config.items():
+            env_config[name].update(
+                _lookup_plan(storage_type, env)
+            )
+
+        service = {
+            "secret_name": storage_name.upper().replace("-", "_"),
+            "name": storage_name,
+            "environments": env_config,
+            "prefix": camel_case(storage_name),
+            "storage_type": storage_type,
+        }
+
+        contents = template.render({
+            "service": service
+        })
+
+        services.append(service)
+
+        click.echo(_mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
+
+    click.echo(templates["storage-instructions"].render(services=services))
 
 
 if __name__ == "__main__":

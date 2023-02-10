@@ -79,7 +79,7 @@ Resources:
   {{ service.prefix }}RedisEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/${App}/${Env}/{{ service.name|upper|replace("-", "_") }}'   # Other services can retrieve the endpoint from this path.
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'   # Other services can retrieve the endpoint from this path.
       Type: String
       Value: !GetAtt '{{ service.prefix }}.RedisEndpoint.Address'
 
