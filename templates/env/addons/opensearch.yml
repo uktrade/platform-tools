@@ -5,23 +5,21 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  Name:
-    Type: String
-    Description: The name of the service, job, or workflow being deployed.
+
 
 Mappings:
-  EnvScalingConfigurationMap:
+  {{ service.prefix }}EnvScalingConfigurationMap:
     # Create an entry for each environment
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       EngineVersion: '{{ config.engine }}'
       InstanceType: '{{ config.instance }}'
-      InstanceCount: '{{ config.instances }}'
-      DedicatedMaster: '{{ config.master }}'
+      InstanceCount: {{ config.instances }}
+      DedicatedMaster: {{ config.master|lower }}
       VolumeSize: {{ config.volume_size }}
     {% endfor %}
 
-  EngineVersionMap:
+  {{ service.prefix }}EngineVersionMap:
     '1.0':
       EngineVersion: 'OpenSearch_1.0'  
     '1.1':
@@ -41,13 +39,13 @@ Resources:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub 'The Security Group for ${Name} to access OpenSearch.'
+      GroupDescription: 'The Security Group for {{ service.name }} to access OpenSearch.'
       VpcId:
         'Fn::ImportValue':
           !Sub '${App}-${Env}-VpcId'
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-OpenSearch-SecurityGroup'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-SecurityGroup'
 
   # Enable ingress from other ECS services created within the environment.
   {{ service.prefix }}OpenSearchIngress:
@@ -73,25 +71,25 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ name|lower }}-opensearch/*'
-      DomainName: !Sub ${App}-${Env}-{{ name|lower }}-opensearch
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ service.name }}/*'
+      DomainName: !Sub ${App}-${Env}-{{ service.name }}
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
-        - EngineVersionMap
-        - !FindInMap [EnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - {{ service.prefix }}EngineVersionMap
+        - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
         - EngineVersion
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [EnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
         DedicatedMasterEnabled: false
-        InstanceCount: !FindInMap [EnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [EnvScalingConfigurationMap, !Ref Env, InstanceType]
-      UpdatePolicy:
-        EnableVersionUprade: true
+        InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
+      # UpdatePolicy:    cfn-lint does not like this; find out where the setting should live
+      #   EnableVersionUprade: true
       VPCOptions:
         SecurityGroupIds:
         - !Ref {{ service.prefix }}OpenSearchSecurityGroup
@@ -99,13 +97,14 @@ Resources:
           - !Select [0, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-OpenSearch-Domain'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
   {{ service.prefix }}OpenSearchEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
-      Value: !Sub "https//{url}"
+      Value: !Sub 
+        - "https//${url}"
         - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 Outputs:
   {{ service.prefix }}OpenSearchSecurityGroup:

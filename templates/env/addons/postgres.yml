@@ -5,9 +5,7 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  Name:
-    Type: String
-    Description: The name of the service, job, or workflow being deployed.
+
   # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
@@ -35,16 +33,16 @@ Resources:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub 'The Security Group for ${Name} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
+      GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
       VpcId:
         Fn::ImportValue:
           !Sub '${App}-${Env}-VpcId'
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
   {{ service.prefix }}DBClusterSecurityGroup:
     Metadata:
-      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.prefix }}'
+      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.name }}'
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
@@ -52,7 +50,7 @@ Resources:
         - ToPort: 5432
           FromPort: 5432
           IpProtocol: tcp
-          Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
+          Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
       VpcId:
         Fn::ImportValue:
@@ -64,7 +62,6 @@ Resources:
     Properties:
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
-        Name: !Sub '/${App}/${Env}/${Name}/{{ service.secret_name }}'
         SecretStringTemplate: '{"username": "postgres"}'
         GenerateStringKey: "password"
         ExcludePunctuation: true
@@ -98,9 +95,8 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref {{ service.prefix }}DBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        # Replace "All" below with "!Ref Env" to set different autoscaling limits per environment.
-        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMinCapacity]
-        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMaxCapacity]
+        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
   {{ service.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
@@ -144,10 +140,9 @@ Resources:
       Value: !Ref {{ service.prefix }}AuroraSecret 
 
 Outputs:
-  {{ service.prefix }}Secret: # injected as WEBDB_SECRET environment variable by Copilot.
+  {{ service.prefix }}Secret:
     Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
     Value: !Ref {{ service.prefix }}AuroraSecret
-    Name: {{ SECRET_NAME }}
   {{ service.prefix }}SecurityGroup:
     Description: "The security group to attach to the workload."
     Value: !Ref {{ service.prefix }}SecurityGroup
