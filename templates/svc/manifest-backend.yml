@@ -12,6 +12,7 @@ type: Backend Service
 image:
   location: {{ image_location }}
 
+command: {{ command }}
 cpu: 256       # Number of CPU units for the task.
 memory: 512    # Amount of memory in MiB used by the task.
 count: 1       # Number of tasks that should be running in your service.

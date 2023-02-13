@@ -20,7 +20,15 @@ copilot app init --domain {{ domain }}
 copilot svc init --name {{ service.name }}
 {%- endfor %}
 
-# 3. initialise each environment
+# 3. Add the WAF acl to each environment
+
+Edit the waf.yml file for each environment and replace "replace-with-waf-acl-arn" with the WAF ACL ARN.
+
+{% for env_name, _ in environments.items() %}
+copilot/{{ env_name }}/addons/waf.yml
+{%- endfor %}
+
+# 4. initialise each environment
 
 When running "copilot env init" chose the following options:
 * Credential source: the correct account that the env should exist in. [NOTE: environments can live in separate accounts.]
@@ -30,19 +38,19 @@ When running "copilot env init" chose the following options:
 copilot env init --name {{ env_name }}
 {%- endfor %}
 
-# 4. deploy each environment
+# 5. deploy each environment
 {% for env_name, _ in environments.items() %}
 copilot env deploy --name {{ env_name }}
 {%- endfor %}
 
-# 5. migrate the secrets from Gov Paas to AWS/Copilot
+# 6. migrate the secrets from Gov Paas to AWS/Copilot
 
 copilot-bootstrap.py migrate_secrets {{ config_file }}
 
 You need to be authenticated via the CF CLI for this command to work.
 Use the --dry-run flag initially to check the output
 
-# 6. deploy each service into each environment
+# 7. deploy each service into each environment
 {%- for service in services %}
 
 # {{ service.name }}:

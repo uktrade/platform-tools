@@ -1,0 +1,148 @@
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+  # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
+  {{ service.prefix }}DBName:
+    Type: String
+    Description: The name of the initial database to be created in the Aurora Serverless v2 cluster.
+    Default: main
+    # Cannot have special characters
+    # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
+Mappings:
+  {{ service.prefix }}EnvScalingConfigurationMap:
+    {% for env_name, config in service.environments.items() %}
+    {{ env_name }}:
+      DBMinCapacity: {{ config.min_capacity }}
+      DBMaxCapacity: {{ config.max_capacity }}
+    {% endfor %}
+
+Resources:
+  {{ service.prefix }}DBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
+      SubnetIds:
+        !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
+  {{ service.prefix }}SecurityGroup:
+    Metadata:
+      'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
+      VpcId:
+        Fn::ImportValue:
+          !Sub '${App}-${Env}-VpcId'
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
+  {{ service.prefix }}DBClusterSecurityGroup:
+    Metadata:
+      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.name }}'
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
+      SecurityGroupIngress:
+        - ToPort: 5432
+          FromPort: 5432
+          IpProtocol: tcp
+          Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
+          SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
+      VpcId:
+        Fn::ImportValue:
+          !Sub '${App}-${Env}-VpcId'
+  {{ service.prefix }}AuroraSecret:
+    Metadata:
+      'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub Aurora main user secret for ${AWS::StackName}
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "postgres"}'
+        GenerateStringKey: "password"
+        ExcludePunctuation: true
+        IncludeSpace: false
+        PasswordLength: 16
+
+  {{ service.prefix }}DBClusterParameterGroup:
+    Metadata:
+      'aws:copilot:description': 'A DB parameter group for engine configuration values'
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'aurora-postgresql14'
+      Parameters:
+        client_encoding: 'UTF8'
+  {{ service.prefix }}DBCluster:
+    Metadata:
+      'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 database cluster'
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      MasterUsername:
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+      MasterUserPassword:
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+      DatabaseName: !Ref {{ service.prefix }}DBName
+      Engine: 'aurora-postgresql'
+      EngineVersion: '14.4'
+      DBClusterParameterGroupName: !Ref {{ service.prefix }}DBClusterParameterGroup
+      DBSubnetGroupName: !Ref {{ service.prefix }}DBSubnetGroup
+      Port: 5432
+      VpcSecurityGroupIds:
+        - !Ref {{ service.prefix }}DBClusterSecurityGroup
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+  {{ service.prefix }}DBWriterInstance:
+    Metadata:
+      'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBClusterIdentifier: !Ref {{ service.prefix }}DBCluster
+      DBInstanceClass: db.serverless
+      Engine: 'aurora-postgresql'
+      PromotionTier: 1
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: AWS::Region
+
+  {{ service.prefix }}SecretAuroraClusterAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref {{ service.prefix }}AuroraSecret
+      TargetId: !Ref {{ service.prefix }}DBCluster
+      TargetType: AWS::RDS::DBCluster
+
+  # Enable ingress from other ECS services created within the environment.
+  {{ service.prefix }}EnvironmentIngress:
+    Metadata:
+      'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress Security Group from Fargate containers
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+
+  # Redis endpoint stored in SSM so that other `services` can retrieve the endpoint.
+  {{ service.prefix }}EndpointAddressParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.secret_name }}'   # Other services can retrieve the endpoint from this path.
+      Type: String
+      Value: !Ref {{ service.prefix }}AuroraSecret 
+
+Outputs:
+  {{ service.prefix }}Secret:
+    Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
+    Value: !Ref {{ service.prefix }}AuroraSecret
+  {{ service.prefix }}SecurityGroup:
+    Description: "The security group to attach to the workload."
+    Value: !Ref {{ service.prefix }}SecurityGroup
