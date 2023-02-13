@@ -14,7 +14,6 @@ from schema import Optional, Schema, SchemaError
 # To do
 # -----
 # Need to change this to a class to make it more cleaner
-# List certs even if not creating
 # Need to seperate Dev and Prod in this app - related to prod domain not being found if specified dev profile for the domain
 # Check user has logged into the aws accounts before scanning the accounts
 # Change script to list all the domains and certs its going to create.  Let the user select
@@ -54,7 +53,8 @@ def create_cert(client, domain_client, domain, base_domain):
     for cert in resp["CertificateSummaryList"]:
         if domain  == cert['DomainName']:
             print("Cert already exists, do not need to create")
-            return
+            #breakpoint()
+            return cert['CertificateArn']
 
     if not click.confirm(f"Creating Cert for {domain}\nDo you want to continue?"):
         exit()
