@@ -64,3 +64,12 @@ Run:
 `python code-deploy-bootstrap.py link-github --pat {PAT TOKEN}`
 `python code-deploy-bootstrap.py create-codedeploy-role`
 `python code-deploy-bootstrap.py codedeploy {--update} --name {service name} --desc {some description} --git {git url} --branch {branch} --buildspec {path/to/buildspec.yml}`
+
+
+## domain-bootstrap.py
+
+This script is used to scan the app manisfest file for defined domains for the app being built.  Using this information it will update R53 zones and create certificates in the relevant AWS accounts.
+
+Run:
+
+`python domain-bootstrap.py check-domain --path {path to copilot directory where the manifest.yml is} --domain-profile {aws profile for R53 domains} --project-profile {aws profile of app} --base-domain={top level domain name}`
