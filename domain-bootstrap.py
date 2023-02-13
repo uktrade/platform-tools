@@ -14,6 +14,7 @@ from schema import Optional, Schema, SchemaError
 # To do
 # -----
 # Need to change this to a class to make it more cleaner
+# List certs even if not creating
 # Need to seperate Dev and Prod in this app - related to prod domain not being found if specified dev profile for the domain
 # Check user has logged into the aws accounts before scanning the accounts
 # Change script to list all the domains and certs its going to create.  Let the user select
@@ -21,6 +22,7 @@ from schema import Optional, Schema, SchemaError
 # When adding records from parent to subdomain, if ok, it then should remove them from parent domain (run a test before removing)
 
 MAX_DOMAIN_DEPTH = 2
+AWS_CERT_REGION = "eu-west-2"
 
 
 def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=5, timeout=600):
@@ -30,11 +32,12 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=5, t
     elapsed_time = 0
     while status == 'PENDING_VALIDATION':
         if elapsed_time > timeout:
-            raise Exception('Timeout ({}s) reached for certificate validation'.format(timeout))
-        print("{}: Waiting {}s for validation, {}s elapsed...".format(certificate_arn, sleep_time, elapsed_time))
+            raise Exception(f'Timeout ({timeout}s) reached for certificate validation')
+        print(f"{certificate_arn}: Waiting {sleep_time}s for validation, {elapsed_time}s elapsed...")
         time.sleep(sleep_time)
         status = acm_client.describe_certificate(CertificateArn=certificate_arn)['Certificate']['Status']
         elapsed_time += sleep_time
+    print("cert validated...")
 
 
 def create_cert(client, domain_client, domain, base_domain):
@@ -276,7 +279,7 @@ def check_r53(domain_profile, project_profile, domain, base_domain):
 
     # find the hosted zone
     domain_client = domain_session.client('route53')
-    acm_client = project_session.client('acm', region_name='us-east-1')
+    acm_client = project_session.client('acm', region_name=AWS_CERT_REGION)
 
     sts_dom = domain_session.client('sts')
     alias_client = domain_session.client('iam')
