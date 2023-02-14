@@ -291,7 +291,7 @@ def make_config(config_file, output):
 
             service["secrets"].update(related_service["secrets"])
 
-        contents = templates["svc"][service["type"]].render(service)
+        contents = templates["svc"][service["type"] + "-manifest"].render(service)
 
         click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
 
