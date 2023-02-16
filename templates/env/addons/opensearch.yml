@@ -104,7 +104,7 @@ Resources:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
       Value: !Sub 
-        - "https//${url}"
+        - "https://${url}"
         - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 Outputs:
   {{ service.prefix }}OpenSearchSecurityGroup:
