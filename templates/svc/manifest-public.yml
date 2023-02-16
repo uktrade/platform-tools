@@ -13,6 +13,7 @@ http:
   path: '/'
   # You can specify a custom health check path. The default is "/".
   # healthcheck: '/'
+  target_container: nginx
   healthcheck:
     {%- if ipfilter %}
     {% else %}
@@ -27,9 +28,13 @@ http:
     grace_period: 90s
 
 sidecars:
-  envoy:
+  nginx:
     port: 443
-    image: aws_account_id.dkr.ecr.us-west-2.amazonaws.com/envoy-proxy-with-selfsigned-certs:v1
+    image: public.ecr.aws/e9f6t9n0/nginx-self-signed-cert:latest
+    variables:
+      SERVER: localhost:8080
+
+
 {% if ipfilter %}
 #   ipfilter:
 #     port: 8080
@@ -51,7 +56,6 @@ image:
     # Port exposed through your container to route traffic to it.
   port: 8080
 
-command: {{ command }}
 cpu: 256       # Number of CPU units for the task.
 memory: 1024 # Amount of memory in MiB used by the task.
 count: 1       # Number of tasks that should be running in your service.
@@ -65,7 +69,7 @@ network:
 # Optional fields for more advanced use-cases.
 #
 variables:                    # Pass environment variables as key value pairs.
-  {%- if ipfilter %}
+  {% if ipfilter %}
   {% else %} # service container will listen on different port if we have an ip filter
   {% endif -%}
   PORT: 8080
@@ -82,14 +86,3 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 {% else %}
 # secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
 {% endif %}
-
-# You can override any of the values defined above by environment.
-environments:
-  {%- for env_name, env in environments.items() %}
-  {{ env_name }}:
-    http:
-      alias: {{ env.url }}
-      {%- if env.ipfilter %}
-      #targetContainer: 'ipfilter'    # ip filter disabled
-      {%- endif -%}
-  {%- endfor -%}
