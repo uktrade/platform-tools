@@ -60,6 +60,7 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
+      Name: !Sub '${App}/${Env}/{{ service.secret_name }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "postgres"}'
@@ -130,14 +131,6 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
-
-  # Redis endpoint stored in SSM so that other `services` can retrieve the endpoint.
-  {{ service.prefix }}EndpointAddressParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.secret_name }}'   # Other services can retrieve the endpoint from this path.
-      Type: String
-      Value: !Ref {{ service.prefix }}AuroraSecret 
 
 Outputs:
   {{ service.prefix }}Secret:

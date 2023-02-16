@@ -15,7 +15,8 @@ secrets:
 {%- elif service.storage_type == "opensearch" %}
   OPENSEARCH_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- elif service.storage_type == "postgres" %}
-  DATABASE_CREDENTIALS: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
+  DATABASE_CREDENTIALS: 
+    secretsmanager: ${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/{{ service.secret_name }}
 {%- endif 
 -%}
 {%- endif %}
