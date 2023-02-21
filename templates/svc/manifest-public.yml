@@ -86,3 +86,16 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 {% else %}
 # secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
 {% endif %}
+
+
+# You can override any of the values defined above by environment.
+environments:
+  {%- for env_name, env in environments.items() %}
+  {{ env_name }}:
+    http:
+      alias: {{ env.url }}
+      {%- if env.ipfilter %}
+      #targetContainer: 'ipfilter'    # ip filter disabled
+      {%- endif -%}
+  {%- endfor -%}
+
