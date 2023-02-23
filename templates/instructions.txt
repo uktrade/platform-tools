@@ -19,13 +19,9 @@ copilot app init
 copilot svc init --name {{ service.name }}
 {%- endfor %}
 
-# 3. Add the WAF acl to each environment
+# 3. Add the WAF AC ARN for each environment
 
-Edit the waf.yml file for each environment and replace "replace-with-waf-acl-arn" with the WAF ACL ARN.
-
-{% for env_name, _ in environments.items() %}
-copilot/{{ env_name }}/addons/waf.yml
-{%- endfor %}
+Edit the waf.yml file in `copilot/environments/addons/waf.yml' and replace "replace-with-waf-acl-arn" with the WAF ACL ARN, for each environment.
 
 # 4. initialise each environment
 
