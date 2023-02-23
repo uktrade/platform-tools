@@ -80,7 +80,7 @@ variables:                    # Pass environment variables as key value pairs.
 
 {% if secrets %}
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
-  {%- for secret, value in secrets.items() -%}
+  {% for secret, value in secrets.items() -%}
   {{ secret }}: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ value }}
   {% endfor -%}
 {% else %}
