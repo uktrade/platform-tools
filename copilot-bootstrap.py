@@ -509,6 +509,8 @@ def get_service_secrets(service_name, env):
         MaxResults=10
     )
     secrets = []
+    
+    # TODO: refactor shared code with get_ssm_secret_names
     while True:
         response = client.get_parameters_by_path(
             **params
