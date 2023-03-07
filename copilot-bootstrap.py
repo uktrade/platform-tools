@@ -2,8 +2,6 @@
 
 from collections import defaultdict
 from pathlib import Path
-import json
-import os
 import re
 import sys
 
