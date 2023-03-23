@@ -7,18 +7,20 @@ import json
 import os
 import yaml
 import time
+import subprocess
 
 from schema import Optional, Schema, SchemaError
 
 
 # To do
 # -----
-# Need to change this to a class to make it more cleaner
+# Need to change this to a class to make it more cleaner (maybe)
 # Need to seperate Dev and Prod in this app - related to prod domain not being found if specified dev profile for the domain
 # Check user has logged into the aws accounts before scanning the accounts
 # Change script to list all the domains and certs its going to create.  Let the user select
 # Need to check that the manifest.yml file is correctly configured.
 # When adding records from parent to subdomain, if ok, it then should remove them from parent domain (run a test before removing)
+# When an app is deleted need to remove the R53 records
 
 MAX_DOMAIN_DEPTH = 2
 AWS_CERT_REGION = "eu-west-2"
@@ -129,7 +131,7 @@ def create_cert(client, domain_client, domain, base_domain):
 
 
 def add_records(client, records, subdom_id):
-    # breakpoint()
+    #breakpoint()
     if records['Type'] == "A":
         response = client.change_resource_record_sets(
             HostedZoneId=subdom_id,
@@ -396,6 +398,82 @@ def check_domain(update, path, domain_profile, project_profile, base_domain, des
     #breakpoint()
     for domain, cert in cert_list.items():
         print(f"Domain: {domain}\t - Cert ARN: {cert}")
+
+
+@cli.command()
+@click.option('--app', help='Application Name')
+@click.option('--domain-profile', help='aws account profile name for R53 domains account')
+@click.option('--svc', help='Service Name')
+def assign_domain(app, domain_profile, svc):
+    """
+    Updates R53 domain with copilot Load Blanacer record
+    """
+
+    result = subprocess.run(['copilot', 'svc', 'show', '-a', app, '-n', svc, '--json'], stdout=subprocess.PIPE)
+    result.stdout
+    result_str = result.stdout.decode('utf-8')
+    result_json = json.loads(result_str[:-1])
+    domain_name = result_json['routes'][0]['url']
+    vars = result_json['variables']
+
+    for var in vars:
+        if var['name'] == 'COPILOT_LB_DNS':
+            elb_name = var['value']
+
+    print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}")
+
+    DOMAIN_ACC_PROFILE = domain_profile
+    domain_session = boto3.session.Session(profile_name=DOMAIN_ACC_PROFILE)
+    domain_client = domain_session.client('route53')
+    sts_dom = domain_session.client('sts')
+
+    alias_client = domain_session.client('iam')
+    account_name = alias_client.list_account_aliases()['AccountAliases']
+    print(f"Logged in with AWS Domain account: {account_name[0]}/{sts_dom.get_caller_identity()['Account']}\nUser: {sts_dom.get_caller_identity()['UserId']}")
+
+    response = domain_client.list_hosted_zones_by_name()
+    # check if prod, feature not implemented yet.
+    LIVE = False
+    hosted_zones = {}
+    for hz in response["HostedZones"]:
+        hosted_zones[hz["Name"]] = hz
+
+    domain = domain_name[8:]
+    parts = domain.split(".")
+    for _ in range(len(parts) - 1):
+        subdom = ".".join(parts) + "."
+        print(f"searching for {subdom}... ")
+
+        if subdom in hosted_zones:
+
+            print("Found hosted zone", hosted_zones[subdom]['Name'])
+
+            hosted_zone_id = hosted_zones[subdom]["Id"]
+            hosted_zone_conf = hosted_zones[subdom]
+
+            # Does record existing
+            response = domain_client.list_resource_record_sets(
+                HostedZoneId=hosted_zone_id,
+            )
+
+            for record in response['ResourceRecordSets']:
+                if domain == record['Name'][:-1]:
+                    print(f"Record: {record['Name']} found")
+                    print("No need to add as it already exists")
+                    exit()
+
+            record = {"Name": domain, "Type": "CNAME", "TTL": 300, "ResourceRecords": [{"Value": elb_name}]}
+
+            if not click.confirm(f"Creating R53 record: {record['Name']} -> {record['ResourceRecords'][0]['Value']}\nIn Domain: {subdom}\tZone ID: {hosted_zone_id}\nDo you want to continue?"):
+                exit()
+            add_records(domain_client, record, hosted_zone_id)
+            exit()
+
+        parts.pop(0)
+
+    else:
+        print(f"No hosted zone found for {domain}")
+        return
 
 
 if __name__ == "__main__":
