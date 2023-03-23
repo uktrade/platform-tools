@@ -260,6 +260,44 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage):
     check_success("Create Webhook", response_webhook)
 
 
+def update_paramter(name, description, value):
+    client = boto3.client('ssm', region_name='eu-west-2')
+
+    response = client.put_parameter(
+        Name=name,
+        Description=description,
+        Value=value,
+        Type='SecureString',
+        Overwrite=True,
+        Tier='Standard',
+        DataType='text'
+    )
+
+
+@cli.command()
+@click.option('--workspace', help='Slack Workspace id')
+@click.option('--channel', help='Slack channel id')
+@click.option('--token', help='Slack api token')
+def slackcreds(workspace, channel, token):
+    """
+    Add Slack credentials into AWS Parameter Store
+    """
+
+    SLACK = {
+        "workspace": {"name": "/codebuild/slack_workspace_id", "description": "Slack Workspace ID", "value": workspace},
+        "channel": {"name": "/codebuild/slack_channel_id", "description": "Slack Channel ID", "value": channel},
+        "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": token}
+        }
+    #breakpoint()
+    print("Updating Parameter Store with SLACK Creds")
+    account_name = display_aws_account()
+
+    for item, value in SLACK.items():
+
+        update_paramter(value['name'], value['description'], value['value'])
+
+    print(f"AWS Account: {account_name} updated.")
+
 
 if __name__ == "__main__":
     cli()
