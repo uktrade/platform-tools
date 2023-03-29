@@ -60,6 +60,14 @@
             "Effect": "Allow",
             "Action": "iam:ListAccountAliases",
             "Resource": "*"
+        },
+        {
+            "Sid": "GetParameters",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameters"
+            ],
+            "Resource": "arn:aws:ssm:eu-west-2:*:parameter/codebuild/*"
         }
     ]
 }
