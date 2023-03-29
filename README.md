@@ -63,7 +63,9 @@ Run:
 
 `python code-deploy-bootstrap.py link-github --pat {PAT TOKEN}`
 `python code-deploy-bootstrap.py create-codedeploy-role`
-`python code-deploy-bootstrap.py codedeploy {--update} --name {service name} --desc {some description} --git {git url} --branch {branch} --buildspec {path/to/buildspec.yml}`
+`python code-deploy-bootstrap.py codedeploy {--update} {--release} --name {service name} --desc {some description} --git {git url} --branch {branch} --buildspec {path/to/buildspec.yml}`
+  * If you want to make changes add the --update switch.
+  * If you want the builds to be triggered by Release tags in Github then add the --release switch.
 
 
 ## domain-bootstrap.py
