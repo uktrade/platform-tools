@@ -105,12 +105,14 @@ def link_github(pat):
 
 
 @cli.command()
+#@click.option('--update', is_flag=True, show_default=True, default=False, help='Update role/policy')
 def create_codedeploy_role():
     """
     Add AWS Role needed for codedeploy
     """
 
     account_name = display_aws_account()
+    account_id = boto3.client('sts').get_caller_identity().get('Account')
 
     with open('templates/put-codebuild-role-policy.json') as f:
         policy_doc = json.load(f)
@@ -131,11 +133,20 @@ def create_codedeploy_role():
         )
         check_success("Create Policy", response)
     except client.exceptions.EntityAlreadyExistsException:
-        print("Policy exists")
+        if not click.confirm("Policy exists.\nDo you want to update it?"):
+            exit()
+
+        response = client.create_policy_version(
+            PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
+            PolicyDocument=json.dumps(policy_doc),
+            SetAsDefault=True
+        )
+        check_success("Update Policy", response)
+        exit()
+
 
     with open('templates/create-codebuild-role.json') as f:
         role_doc = json.load(f)
-
     # Now create a role if not present and attache policy
     try:
         response = client.create_role(
@@ -146,16 +157,17 @@ def create_codedeploy_role():
     except client.exceptions.EntityAlreadyExistsException:
         print("Role exists")
 
-    account_id = boto3.client('sts').get_caller_identity().get('Account')
+    #account_id = boto3.client('sts').get_caller_identity().get('Account')
     client.attach_role_policy(
         PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
         RoleName='ci-CodeBuild-role'
     )
+    print("Policy attached to Role")
 
 
 @cli.command()
 @click.option('--update', is_flag=True, show_default=True, default=False, help='Update config')
-@click.option('--name', help='Name of project')
+@click.option('--name', required=True, help='Name of project')
 @click.option('--desc', help='Description of project')
 @click.option('--git', help='Git url of code')
 @click.option('--branch', help='Git branch')
