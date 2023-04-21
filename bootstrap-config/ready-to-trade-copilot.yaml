@@ -1,0 +1,126 @@
+app: ready-to-trade
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-enquiry-mgmt-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-enquiry-mgmt-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-enquiry-mgmt.london.cloudapps.digital
+    - ACM-ARN-FOR-enquiry-mgmt.trade.gov.uk
+    - ACM-ARN-FOR-enquiry-mgmt.london.cloudapps.digital
+    - ACM-ARN-FOR-enquiry-mgmt.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-enquiry-mgmt-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-enquiry-mgmt-staging.london.cloudapps.digital
+  uat: {}
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/ready-to-trade-dev/enquiry-mgmt-tool-dev
+      url: enquiry-mgmt-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/ready-to-trade/enquiry-mgmt-tool
+      url: enquiry-mgmt.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging
+      url: enquiry-mgmt-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: enquiry-mgmt-tool
+  repo: git@github.com:uktrade/enquiry-mgmt-tool.git
+  secrets:
+    ACTIVITY_STREAM_ENQUIRY_DATA_OBJ: ACTIVITY_STREAM_ENQUIRY_DATA_OBJ
+    ACTIVITY_STREAM_ENQUIRY_POLL_INTERVAL_MINS: ACTIVITY_STREAM_ENQUIRY_POLL_INTERVAL_MINS
+    ACTIVITY_STREAM_ENQUIRY_SEARCH_KEY1: ACTIVITY_STREAM_ENQUIRY_SEARCH_KEY1
+    ACTIVITY_STREAM_ENQUIRY_SEARCH_KEY2: ACTIVITY_STREAM_ENQUIRY_SEARCH_KEY2
+    ACTIVITY_STREAM_ENQUIRY_SEARCH_VALUE1: ACTIVITY_STREAM_ENQUIRY_SEARCH_VALUE1
+    ACTIVITY_STREAM_ENQUIRY_SEARCH_VALUE2: ACTIVITY_STREAM_ENQUIRY_SEARCH_VALUE2
+    ACTIVITY_STREAM_INITIAL_LOAD_DATE: ACTIVITY_STREAM_INITIAL_LOAD_DATE
+    ACTIVITY_STREAM_KEY: ACTIVITY_STREAM_KEY
+    ACTIVITY_STREAM_KEY_ID: ACTIVITY_STREAM_KEY_ID
+    ACTIVITY_STREAM_SEARCH_TARGET_URL: ACTIVITY_STREAM_SEARCH_TARGET_URL
+    ACTIVITY_STREAM_SEARCH_URL: ACTIVITY_STREAM_SEARCH_URL
+    ACTIVITY_STREAM_SECOND_QUALIFICATION_SEARCH_NAME: ACTIVITY_STREAM_SECOND_QUALIFICATION_SEARCH_NAME
+    ACTIVITY_STREAM_SECOND_QUALIFICATION_SEARCH_VALUE: ACTIVITY_STREAM_SECOND_QUALIFICATION_SEARCH_VALUE
+    ADOBE_API_KEY: ADOBE_API_KEY
+    ADOBE_API_SECRET: ADOBE_API_SECRET
+    ADOBE_ORGANISATION_ID: ADOBE_ORGANISATION_ID
+    ADOBE_PRIVATE_KEY: ADOBE_PRIVATE_KEY
+    ADOBE_TECHNICAL_ACCOUNT_ID: ADOBE_TECHNICAL_ACCOUNT_ID
+    ADOBE_TENANT_ID: ADOBE_TENANT_ID
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_STAFF_SSO_SCOPE: AUTHBROKER_STAFF_SSO_SCOPE
+    AUTHBROKER_TOKEN_SESSION_KEY: AUTHBROKER_TOKEN_SESSION_KEY
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CONSENT_SERVICE_BASE_URL: CONSENT_SERVICE_BASE_URL
+    CONSENT_SERVICE_HAWK_ID: CONSENT_SERVICE_HAWK_ID
+    CONSENT_SERVICE_HAWK_KEY: CONSENT_SERVICE_HAWK_KEY
+    CSRF_COOKIE_HTTPONLY: CSRF_COOKIE_HTTPONLY
+    CSRF_COOKIE_SECURE: CSRF_COOKIE_SECURE
+    DATA_FLOW_HAWK_ID: DATA_FLOW_HAWK_ID
+    DATA_FLOW_HAWK_KEY: DATA_FLOW_HAWK_KEY
+    DATA_HUB_ADVISER_SEARCH_URL: DATA_HUB_ADVISER_SEARCH_URL
+    DATA_HUB_COMPANY_SEARCH_URL: DATA_HUB_COMPANY_SEARCH_URL
+    DATA_HUB_CONTACT_CREATE_URL: DATA_HUB_CONTACT_CREATE_URL
+    DATA_HUB_CONTACT_SEARCH_URL: DATA_HUB_CONTACT_SEARCH_URL
+    DATA_HUB_CREATE_COMPANY_PAGE_URL: DATA_HUB_CREATE_COMPANY_PAGE_URL
+    DATA_HUB_FRONTEND: DATA_HUB_FRONTEND
+    DATA_HUB_HAWK_ID: DATA_HUB_HAWK_ID
+    DATA_HUB_HAWK_KEY: DATA_HUB_HAWK_KEY
+    DATA_HUB_INVESTMENT_CREATE_URL: DATA_HUB_INVESTMENT_CREATE_URL
+    DATA_HUB_METADATA_FETCH_INTERVAL_HOURS: DATA_HUB_METADATA_FETCH_INTERVAL_HOURS
+    DATA_HUB_METADATA_URL: DATA_HUB_METADATA_URL
+    DATA_HUB_WHOAMI_URL: DATA_HUB_WHOAMI_URL
+    DEBUG: DEBUG
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    DJANGO_SENTRY_DSN: DJANGO_SENTRY_DSN
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    ENQUIRIES_PER_PAGE: ENQUIRIES_PER_PAGE
+    ENQUIRY_STATUS_SHOULD_UPDATE: ENQUIRY_STATUS_SHOULD_UPDATE
+    FEATURE_ENFORCE_STAFF_SSO_ENABLED: FEATURE_ENFORCE_STAFF_SSO_ENABLED
+    NODE_ENV: NODE_ENV
+    NON_RESPONSIVE_ENQUIRY_INITIAL_LOAD_DATE: NON_RESPONSIVE_ENQUIRY_INITIAL_LOAD_DATE
+    SECOND_QUALIFICATION_FORMS_API_KEY: SECOND_QUALIFICATION_FORMS_API_KEY
+    SECOND_QUALIFICATION_FORMS_SENDER_ID: SECOND_QUALIFICATION_FORMS_SENDER_ID
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SESSION_COOKIE_SECURE: SESSION_COOKIE_SECURE
+    SET_HSTS_HEADERS: SET_HSTS_HEADERS
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/ready-to-trade-dev/enquiry-mgmt-tool-dev
+    production:
+      paas: dit-services/ready-to-trade/enquiry-mgmt-tool
+    staging:
+      paas: dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: enquiry-mgmt-tool-celery
+  notes: service created based on Procfile entry for enquiry-mgmt-tool and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/enquiry-mgmt-tool.git
+  secrets: {}
+  secrets_from: enquiry-mgmt-tool
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/ready-to-trade-dev/enquiry-mgmt-tool-dev
+    production:
+      paas: dit-services/ready-to-trade/enquiry-mgmt-tool
+    staging:
+      paas: dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: enquiry-mgmt-tool-celerybeat
+  notes: service created based on Procfile entry for enquiry-mgmt-tool and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/enquiry-mgmt-tool.git
+  secrets: {}
+  secrets_from: enquiry-mgmt-tool
+  type: backend

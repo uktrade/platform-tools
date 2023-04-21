@@ -1,0 +1,88 @@
+app: finance
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-fft.trade.dev.uktrade.digital
+    - ACM-ARN-FOR-fft-dev.london.cloudapps.digital
+  hotfix:
+    certificate_arns:
+    - ACM-ARN-FOR-fft-hotfix.trade.dev.uktrade.digital
+    - ACM-ARN-FOR-fft-hotfix.london.cloudapps.digital
+  prod-data:
+    certificate_arns:
+    - ACM-ARN-FOR-fft-prod-data.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-fido-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-fido.trade.gov.uk
+    - ACM-ARN-FOR-fft.trade.gov.uk
+    - ACM-ARN-FOR-fft.london.cloudapps.digital
+    - ACM-ARN-FOR-fft.trade.gov.uk
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/finance-dev/fft-dev
+      url: fft-dev.london.cloudapps.digital
+    hotfix:
+      ipfilter: true
+      paas: dit-staging/finance-hotfix/fft-hotfix
+      url: fft-hotfix.london.cloudapps.digital
+    prod-data:
+      ipfilter: true
+      paas: dit-staging/finance-prod-data/fft-prod-data
+      url: fft-prod-data.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/finance/fft
+      url: fft.trade.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: fft
+  repo: git@github.com:uktrade/fft.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    ASYNC_FILE_UPLOAD: ASYNC_FILE_UPLOAD
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CAN_ELEVATE_SSO_USER_PERMISSIONS: CAN_ELEVATE_SSO_USER_PERMISSIONS
+    CLAM_AV_DOMAIN: CLAM_AV_DOMAIN
+    CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
+    CLAM_AV_URL: CLAM_AV_URL
+    CLAM_AV_USERNAME: CLAM_AV_USERNAME
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    ELASTIC_APM_ENVIRONMENT: ELASTIC_APM_ENVIRONMENT
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    GTM_CODE: GTM_CODE
+    HAWK_INCOMING_ACCESS_KEY: HAWK_INCOMING_ACCESS_KEY
+    HAWK_INCOMING_SECRET_KEY: HAWK_INCOMING_SECRET_KEY
+    PUBLIC_PATH: PUBLIC_PATH
+    RESTRICT_ADMIN: RESTRICT_ADMIN
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SENTRY_KEY: SENTRY_KEY
+    SENTRY_PROJECT: SENTRY_PROJECT
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/finance-dev/fft-dev
+    hotfix:
+      paas: dit-staging/finance-hotfix/fft-hotfix
+    prod-data:
+      paas: dit-staging/finance-prod-data/fft-prod-data
+    production:
+      paas: dit-services/finance/fft
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: fft-worker
+  notes: service created based on Procfile entry for fft and will require access to
+    the same backing services
+  repo: git@github.com:uktrade/fft.git
+  secrets: {}
+  secrets_from: fft
+  type: backend

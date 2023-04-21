@@ -1,0 +1,195 @@
+app: intranet
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-static.workspace.dev.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-s3proxy-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-digital-workspace-v2-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.dev.uktrade.digital
+  hotfix: {}
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.trade.gov.uk
+    - ACM-ARN-FOR-peoplefinder.london.cloudapps.digital
+    - ACM-ARN-FOR-people.trade.gov.uk
+    - ACM-ARN-FOR-workspace.trade.gov.uk
+    - ACM-ARN-FOR-admin.workspace.trade.gov.uk
+    - ACM-ARN-FOR-digital-workspace-v2.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.trade.gov.uk
+    - ACM-ARN-FOR-digital-workspace-v2.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-assets.workspace.trade.uat.uktrade.io
+    - ACM-ARN-FOR-static.digital-workspace-v2-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.staging.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-v2-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.staging.uktrade.digital
+  training:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy-training.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.training.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-v2-training.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.training.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/intranet-dev/digital-workspace-s3proxy-dev
+      url: digital-workspace-s3proxy-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/intranet/digital-workspace-s3proxy
+      url: static.workspace.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/intranet-staging/digital-workspace-s3proxy-staging
+      url: static.workspace.staging.uktrade.digital
+    training:
+      ipfilter: true
+      paas: dit-staging/intranet-training/digital-workspace-s3proxy-training
+      url: static.workspace.training.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-s3proxy
+  overlapping_secrets:
+  - APP_ENV
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - AWS_STORAGE_BUCKET_NAME
+  - DJANGO_SECRET_KEY
+  - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_SERVER_URL
+  repo: git@github.com:uktrade/s3proxy.git
+  secrets:
+    APP_ENV: APP_ENV
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_S3_ENDPOINT: AWS_S3_ENDPOINT
+    AWS_S3_HEALTHCHECK_KEY: AWS_S3_HEALTHCHECK_KEY
+    AWS_S3_REGION: AWS_S3_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
+    SSO_CLIENT_ID: SSO_CLIENT_ID
+    SSO_CLIENT_SECRET: SSO_CLIENT_SECRET
+    SSO_URL: SSO_URL
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/intranet-dev/digital-workspace-v2-dev
+      url: workspace.dev.uktrade.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/intranet/digital-workspace-v2
+      url: digital-workspace-v2.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/intranet-staging/digital-workspace-v2-staging
+      url: workspace.staging.uktrade.digital
+    training:
+      ipfilter: true
+      paas: dit-staging/intranet-training/digital-workspace-v2-training
+      url: workspace.training.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-v2
+  overlapping_secrets:
+  - APP_ENV
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - AWS_STORAGE_BUCKET_NAME
+  - DJANGO_SECRET_KEY
+  - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_SERVER_URL
+  repo: git@github.com:uktrade/digital-workspace-v2.git
+  secrets:
+    APP_ENV: APP_ENV
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AUTHOR_SUBSTITUTED: AUTHOR_SUBSTITUTED
+    AUTHOR_TO_BE_SUBSTITUTED: AUTHOR_TO_BE_SUBSTITUTED
+    AV_SIGNATURE_SECRET_KEY: AV_SIGNATURE_SECRET_KEY
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_REGION: AWS_REGION
+    AWS_S3_CUSTOM_DOMAIN: AWS_S3_CUSTOM_DOMAIN
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
+    CLAM_AV_DOMAIN: CLAM_AV_DOMAIN
+    CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
+    CLAM_AV_USERNAME: CLAM_AV_USERNAME
+    DJANGO_DEBUG: DJANGO_DEBUG
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_SERVER_TIMEOUT: ELASTIC_APM_SERVER_TIMEOUT
+    ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
+    GOVUK_NOTIFY_API_KEY: GOVUK_NOTIFY_API_KEY
+    GTM_AUTH: GTM_AUTH
+    GTM_CODE: GTM_CODE
+    GUNICORN_ENABLE_ASYNC_PSYCOPG2: GUNICORN_ENABLE_ASYNC_PSYCOPG2
+    HAWK_INCOMING_ACCESS_KEY: HAWK_INCOMING_ACCESS_KEY
+    HAWK_INCOMING_SECRET_KEY: HAWK_INCOMING_SECRET_KEY
+    HIDE_NEWS: HIDE_NEWS
+    IMPORT_USER_PWD: IMPORT_USER_PWD
+    LEGACY_WORDPRESS_API_CUSTOM_URL: LEGACY_WORDPRESS_API_CUSTOM_URL
+    NEW_ASSET_PATH: NEW_ASSET_PATH
+    OLD_ASSET_PATHS: OLD_ASSET_PATHS
+    ORPHAN_PAGES: ORPHAN_PAGES
+    PAGE_PROBLEM_EMAIL_TEMPLATE_ID: PAGE_PROBLEM_EMAIL_TEMPLATE_ID
+    PAGINATION_PAGE_MAX_SIZE: PAGINATION_PAGE_MAX_SIZE
+    PAGINATION_PAGE_SIZE: PAGINATION_PAGE_SIZE
+    PERM_SEC_NAME: PERM_SEC_NAME
+    PERSON_UPDATE_HAWK_ID: PERSON_UPDATE_HAWK_ID
+    PERSON_UPDATE_HAWK_KEY: PERSON_UPDATE_HAWK_KEY
+    PERSON_UPDATE_WEBHOOK_URL: PERSON_UPDATE_WEBHOOK_URL
+    PFM_AWS_ACCESS_KEY_ID: PFM_AWS_ACCESS_KEY_ID
+    PFM_AWS_SECRET_ACCESS_KEY: PFM_AWS_SECRET_ACCESS_KEY
+    PFM_AWS_STORAGE_BUCKET_NAME: PFM_AWS_STORAGE_BUCKET_NAME
+    PFM_REGION: PFM_REGION
+    PROFILE_DELETED_EMAIL_TEMPLATE_ID: PROFILE_DELETED_EMAIL_TEMPLATE_ID
+    PROFILE_DELETION_REQUEST_EMAIL: PROFILE_DELETION_REQUEST_EMAIL
+    PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID: PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
+    PROFILE_EDITED_EMAIL_TEMPLATE_ID: PROFILE_EDITED_EMAIL_TEMPLATE_ID
+    SENTRY_DSN: SENTRY_DSN
+    SKIP_LIST: SKIP_LIST
+    SUPPORT_REQUEST_EMAIL: SUPPORT_REQUEST_EMAIL
+    TWITTER_ACCESS_SECRET: TWITTER_ACCESS_SECRET
+    TWITTER_ACCESS_TOKEN: TWITTER_ACCESS_TOKEN
+    TWITTER_DEPT_USER: TWITTER_DEPT_USER
+    TWITTER_OAUTH_CONSUMER_KEY: TWITTER_OAUTH_CONSUMER_KEY
+    TWITTER_OAUTH_CONSUMER_SECRET: TWITTER_OAUTH_CONSUMER_SECRET
+    WAGTAIL_BASE_URL: WAGTAIL_BASE_URL
+    X_AUTOSCALING_MAX: X_AUTOSCALING_MAX
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/intranet-dev/digital-workspace-v2-dev
+    prod:
+      paas: dit-services/intranet/digital-workspace-v2
+    staging:
+      paas: dit-staging/intranet-staging/digital-workspace-v2-staging
+    training:
+      paas: dit-staging/intranet-training/digital-workspace-v2-training
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-v2-worker
+  notes: service created based on Procfile entry for digital-workspace-v2 and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/digital-workspace-v2.git
+  secrets: {}
+  secrets_from: digital-workspace-v2
+  type: backend

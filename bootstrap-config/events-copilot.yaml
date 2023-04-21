@@ -1,0 +1,6 @@
+app: events
+environments:
+  dev: {}
+  production: {}
+  staging: {}
+services: []

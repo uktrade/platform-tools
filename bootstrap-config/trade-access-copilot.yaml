@@ -1,0 +1,96 @@
+app: trade-access
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-dev.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-staging.london.cloudapps.digital
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-access-dev/trade-access-program-backoffice-dev
+      url: trade-access-program-backoffice-dev.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-access-staging/trade-access-program-backoffice-staging
+      url: trade-access-program-backoffice-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/trade-access-uat/trade-access-program-backoffice-uat
+      url: trade-access-program-backoffice-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-access-program-backoffice
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - APP_PATH
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - DJANGO_SETTINGS_MODULE
+  - FRONTEND_DOMAIN
+  - SECRET_KEY
+  repo: git@github.com:uktrade/trade-access-program.git
+  secrets:
+    ACTIVITY_STREAM_HAWK_ID: ACTIVITY_STREAM_HAWK_ID
+    ACTIVITY_STREAM_HAWK_SECRET: ACTIVITY_STREAM_HAWK_SECRET
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    APP_PATH: APP_PATH
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_S3_BUCKET_NAME: AWS_S3_BUCKET_NAME
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    DNB_SERVICE_TOKEN: DNB_SERVICE_TOKEN
+    DNB_SERVICE_URL: DNB_SERVICE_URL
+    FRONTEND_DOMAIN: FRONTEND_DOMAIN
+    FRONTEND_SECRET_KEY: FRONTEND_SECRET_KEY
+    NOTIFY_API_KEY: NOTIFY_API_KEY
+    SECRET_KEY: SECRET_KEY
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-access-dev/trade-access-program-frontend-dev
+      url: trade-access-program-frontend-dev.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-access-staging/trade-access-program-frontend-staging
+      url: trade-access-program-frontend-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/trade-access-uat/trade-access-program-frontend-uat
+      url: trade-access-program-frontend-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-access-program-frontend
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - APP_PATH
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - DJANGO_SETTINGS_MODULE
+  - FRONTEND_DOMAIN
+  - SECRET_KEY
+  repo: git@github.com:uktrade/trade-access-program.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    APP_PATH: APP_PATH
+    BACKOFFICE_API_URL: BACKOFFICE_API_URL
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    FRONTEND_DOMAIN: FRONTEND_DOMAIN
+    SECRET_KEY: SECRET_KEY
+  type: public
