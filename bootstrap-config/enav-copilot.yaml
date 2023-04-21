@@ -1,0 +1,6 @@
+app: enav
+environments:
+  dev: {}
+  production: {}
+  staging: {}
+services: []

@@ -1,0 +1,164 @@
+app: data-workspace-apps
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-company-matching-service-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-countries-of-interest-service-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-data-store-service-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-data-workspace-prototypes-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-company-matching.london.cloudapps.digital
+    - ACM-ARN-FOR-company-matching-service.london.cloudapps.digital
+    - ACM-ARN-FOR-countries-of-interest-service.london.cloudapps.digital
+    - ACM-ARN-FOR-countries-of-interest.london.cloudapps.digital
+    - ACM-ARN-FOR-data-store-service.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-company-matching-service-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-countries-of-interest-service-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-data-store-service-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/data-workspace-apps-dev/company-matching-service-dev
+      url: company-matching-service-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/data-workspace-apps/company-matching-service
+      url: company-matching-service.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/data-workspace-apps-staging/company-matching-service-staging
+      url: company-matching-service-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: company-matching-service
+  repo: git@github.com:uktrade/company-matching-service.git
+  secrets:
+    CMS_GUNICORN_PORT: CMS_GUNICORN_PORT
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/data-workspace-apps-dev/countries-of-interest-service-dev
+      url: countries-of-interest-service-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/data-workspace-apps/countries-of-interest-service
+      url: countries-of-interest.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/data-workspace-apps-staging/countries-of-interest-service-staging
+      url: countries-of-interest-service-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: countries-of-interest-service
+  overlapping_secrets:
+  - FLASK_ENV
+  repo: git@github.com:uktrade/countries-of-interest-service.git
+  secrets:
+    ABC_CLIENT_ID: ABC_CLIENT_ID
+    ABC_CLIENT_SECRET: ABC_CLIENT_SECRET
+    AC_HAWK_ENABLED: AC_HAWK_ENABLED
+    CMS_BASE_URL: CMS_BASE_URL
+    COUNTRIES_AND_TERRITORIES_GROUP_SLUG: COUNTRIES_AND_TERRITORIES_GROUP_SLUG
+    COUNTRIES_AND_TERRITORIES_REFERENCE_SLUG: COUNTRIES_AND_TERRITORIES_REFERENCE_SLUG
+    DATAFLOW_HAWK_CLIENT_ID: DATAFLOW_HAWK_CLIENT_ID
+    DATAFLOW_HAWK_CLIENT_KEY: DATAFLOW_HAWK_CLIENT_KEY
+    DATAHUB_COMPANIES_DATASET_ID: DATAHUB_COMPANIES_DATASET_ID
+    DATAHUB_COMPANIES_SOURCE_TABLE_ID: DATAHUB_COMPANIES_SOURCE_TABLE_ID
+    DATAHUB_COMPANY_EXPORT_COUNTRY_DATASET_ID: DATAHUB_COMPANY_EXPORT_COUNTRY_DATASET_ID
+    DATAHUB_COMPANY_EXPORT_COUNTRY_HISTORY_DATASET_ID: DATAHUB_COMPANY_EXPORT_COUNTRY_HISTORY_DATASET_ID
+    DATAHUB_COMPANY_EXPORT_COUNTRY_HISTORY_SOURCE_TABLE_ID: DATAHUB_COMPANY_EXPORT_COUNTRY_HISTORY_SOURCE_TABLE_ID
+    DATAHUB_COMPANY_EXPORT_COUNTRY_SOURCE_TABLE_ID: DATAHUB_COMPANY_EXPORT_COUNTRY_SOURCE_TABLE_ID
+    DATAHUB_CONTACTS_DATASET_ID: DATAHUB_CONTACTS_DATASET_ID
+    DATAHUB_CONTACTS_SOURCE_TABLE_ID: DATAHUB_CONTACTS_SOURCE_TABLE_ID
+    DATAHUB_EXPORT_COUNTRIES_DATASET_ID: DATAHUB_EXPORT_COUNTRIES_DATASET_ID
+    DATAHUB_EXPORT_COUNTRIES_SOURCE_TABLE_ID: DATAHUB_EXPORT_COUNTRIES_SOURCE_TABLE_ID
+    DATAHUB_EXPORT_COUNTRY_HISTORY_DATASET_ID: DATAHUB_EXPORT_COUNTRY_HISTORY_DATASET_ID
+    DATAHUB_EXPORT_COUNTRY_HISTORY_SOURCE_TABLE_ID: DATAHUB_EXPORT_COUNTRY_HISTORY_SOURCE_TABLE_ID
+    DATAHUB_FUTURE_INTEREST_COUNTRIES_DATASET_ID: DATAHUB_FUTURE_INTEREST_COUNTRIES_DATASET_ID
+    DATAHUB_FUTURE_INTEREST_COUNTRIES_SOURCE_TABLE_ID: DATAHUB_FUTURE_INTEREST_COUNTRIES_SOURCE_TABLE_ID
+    DATAHUB_INTERACTIONS_DATASET_ID: DATAHUB_INTERACTIONS_DATASET_ID
+    DATAHUB_INTERACTIONS_EXPORT_COUNTRY_DATASET_ID: DATAHUB_INTERACTIONS_EXPORT_COUNTRY_DATASET_ID
+    DATAHUB_INTERACTIONS_EXPORT_COUNTRY_SOURCE_TABLE_ID: DATAHUB_INTERACTIONS_EXPORT_COUNTRY_SOURCE_TABLE_ID
+    DATAHUB_INTERACTIONS_SOURCE_TABLE_ID: DATAHUB_INTERACTIONS_SOURCE_TABLE_ID
+    DATAHUB_OMIS_DATASET_ID: DATAHUB_OMIS_DATASET_ID
+    DATAHUB_OMIS_SOURCE_TABLE_ID: DATAHUB_OMIS_SOURCE_TABLE_ID
+    DATAWORKSPACE_BASE_URL: DATAWORKSPACE_BASE_URL
+    EXPORT_WINS_DATASET_ID: EXPORT_WINS_DATASET_ID
+    EXPORT_WINS_SOURCE_TABLE_ID: EXPORT_WINS_SOURCE_TABLE_ID
+    FLASK_ENV: FLASK_ENV
+    HAWK_CLIENT_ID: HAWK_CLIENT_ID
+    HAWK_CLIENT_KEY: HAWK_CLIENT_KEY
+    PAGINATION_SIZE: PAGINATION_SIZE
+    RUN_SCHEDULER: RUN_SCHEDULER
+    STUB_SOURCE_DATA: STUB_SOURCE_DATA
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/data-workspace-apps-dev/data-store-service-dev
+      url: data-store-service-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/data-workspace-apps/data-store-service
+      url: data-store-service.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/data-workspace-apps-staging/data-store-service-staging
+      url: data-store-service-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-store-service
+  overlapping_secrets:
+  - FLASK_ENV
+  repo: git@github.com:uktrade/data-store-service.git
+  secrets:
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    CSV_SAMPLE_INFER_LINES: CSV_SAMPLE_INFER_LINES
+    DATAFLOW_BASE_URL: DATAFLOW_BASE_URL
+    DATAFLOW_HAWK_ID: DATAFLOW_HAWK_ID
+    DATAFLOW_HAWK_KEY: DATAFLOW_HAWK_KEY
+    DSS_PAGINATION_SIZE: DSS_PAGINATION_SIZE
+    FLASK_ENV: FLASK_ENV
+    INPUTS_SOURCE_FOLDER: INPUTS_SOURCE_FOLDER
+    S3_BUCKET_URL: S3_BUCKET_URL
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/data-workspace-apps-dev/data-store-service-dev
+    prod:
+      paas: dit-services/data-workspace-apps/data-store-service
+    staging:
+      paas: dit-staging/data-workspace-apps-staging/data-store-service-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-store-service-scheduler
+  notes: service created based on Procfile entry for data-store-service and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-store-service.git
+  secrets: {}
+  secrets_from: data-store-service
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/data-workspace-apps-dev/data-workspace-prototypes-dev
+      url: data-workspace-prototypes-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-workspace-prototypes
+  repo: git@github.com:uktrade/data-workspace-prototypes.git
+  secrets:
+    NOTIFYAPIKEY: NOTIFYAPIKEY
+  type: public

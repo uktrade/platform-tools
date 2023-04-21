@@ -1,0 +1,335 @@
+app: platform
+environments:
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-clamav-mirror.london.cloudapps.digital
+    - ACM-ARN-FOR-clamav.london.cloudapps.digital
+    - ACM-ARN-FOR-company-service.london.cloudapps.digital
+    - ACM-ARN-FOR-prom-statsd.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.trade.gov.uk
+    - ACM-ARN-FOR-return-to-office.trade.gov.uk
+    - ACM-ARN-FOR-staff-sso-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-sso-new.trade.gov.uk
+    - ACM-ARN-FOR-sso.trade.gov.uk
+  production: {}
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-clamav-mirror-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-clamav-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-statsd-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-prom-statsd-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
+    - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
+    - ACM-ARN-FOR-sso.trade.uat.uktrade.io
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-company-service-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-company-service-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav
+      url: null
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav
+  repo: git@github.com:uktrade/docker-clamav.git
+  secrets:
+    MIRROR_URL: MIRROR_URL
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav-mirror
+      url: clamav-mirror.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-mirror-staging
+      url: clamav-mirror-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav-mirror
+  overlapping_secrets:
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - S3_BUCKET
+  repo: git@github.com:uktrade/clamav-s3-mirror.git
+  secrets:
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    S3_BUCKET: S3_BUCKET
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav-rest
+      url: clamav.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-rest-staging
+      url: clamav-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav-rest
+  overlapping_secrets:
+  - SENTRY_DSN
+  repo: git@github.com:uktrade/dit-clamav-rest.git
+  secrets:
+    APPLICATION_USERS: APPLICATION_USERS
+    APP_CONFIG: APP_CONFIG
+    CLAMD_HOST: CLAMD_HOST
+    MAX_CONTENT_LENGTH: MAX_CONTENT_LENGTH
+    SENTRY_DSN: SENTRY_DSN
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/external-company-service
+      url: company-service.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/external-company-service-staging
+      url: null
+    uat:
+      ipfilter: true
+      paas: dit-staging/platform-staging/external-company-service-uat
+      url: company-service-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service
+  overlapping_secrets:
+  - ALLOWED_ADMIN_IPS
+  - ALLOWED_HOSTS
+  - ALLOWED_IPS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - DEBUG
+  - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_URL
+  - IP_RESTRICT
+  - RESTRICT_ADMIN
+  - S3_BUCKET
+  - SECRET_KEY
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets:
+    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    ALLOWED_IPS: ALLOWED_IPS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    CHANGE_REQUESTS_RECIPIENTS: CHANGE_REQUESTS_RECIPIENTS
+    DEBUG: DEBUG
+    DNB_API_PASSWORD: DNB_API_PASSWORD
+    DNB_API_USERNAME: DNB_API_USERNAME
+    DNB_ARCHIVE_PROCESSED_FILES: DNB_ARCHIVE_PROCESSED_FILES
+    DNB_DELETE_PROCESSED_FILES: DNB_DELETE_PROCESSED_FILES
+    DNB_MONITORING_REGISTRATION_REFERENCE: DNB_MONITORING_REGISTRATION_REFERENCE
+    DNB_S3_MONITORING_BUCKET: DNB_S3_MONITORING_BUCKET
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_URL: ELASTIC_APM_URL
+    ENABLE_CHANGE_REQUESTS_SUBMISSION: ENABLE_CHANGE_REQUESTS_SUBMISSION
+    ENABLE_INVESTIGATION_REQUESTS_SUBMISSION: ENABLE_INVESTIGATION_REQUESTS_SUBMISSION
+    GOVUK_NOTIFICATIONS_API_KEY: GOVUK_NOTIFICATIONS_API_KEY
+    INVESTIGATION_REQUESTS_RECIPIENTS: INVESTIGATION_REQUESTS_RECIPIENTS
+    IP_RESTRICT: IP_RESTRICT
+    IP_WHITELIST_ENABLED: IP_WHITELIST_ENABLED
+    RESTRICT_ADMIN: RESTRICT_ADMIN
+    S3_BUCKET: S3_BUCKET
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/platform/external-company-service
+    staging:
+      paas: dit-staging/platform-staging/external-company-service-staging
+    uat:
+      paas: dit-staging/platform-staging/external-company-service-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service-celery_beat
+  notes: service created based on Procfile entry for external-company-service and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets: {}
+  secrets_from: external-company-service
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/platform/external-company-service
+    staging:
+      paas: dit-staging/platform-staging/external-company-service-staging
+    uat:
+      paas: dit-staging/platform-staging/external-company-service-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service-celery_worker
+  notes: service created based on Procfile entry for external-company-service and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets: {}
+  secrets_from: external-company-service
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/platform/prom-statsd-exporter
+      url: prom-statsd.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/prom-statsd-exporter-staging
+      url: prom-statsd-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: prom-statsd-exporter
+  repo: git@github.com:uktrade/prom-statsd-exporter.git
+  secrets:
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/platform/return-to-office
+      url: return-to-office.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/platform-staging/return-to-office-staging
+      url: return-to-office.staging.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: return-to-office
+  overlapping_secrets:
+  - ACTIVITY_STREAM_HAWK_ID
+  - ACTIVITY_STREAM_HAWK_SECRET
+  - ALLOWED_HOSTS
+  - ALLOWED_IPS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - ELASTIC_APM_SECRET_TOKEN
+  - IP_RESTRICT
+  - SECRET_KEY
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/return-to-office.git
+  secrets:
+    ACTIVITY_STREAM_HAWK_ID: ACTIVITY_STREAM_HAWK_ID
+    ACTIVITY_STREAM_HAWK_SECRET: ACTIVITY_STREAM_HAWK_SECRET
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    ALLOWED_IPS: ALLOWED_IPS
+    APP_ENV: APP_ENV
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    DATA_PROTECTION_EMAIL_ADDRESS: DATA_PROTECTION_EMAIL_ADDRESS
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_SERVER_TIMEOUT: ELASTIC_APM_SERVER_TIMEOUT
+    ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
+    GOVUK_NOTIFY_API_KEY: GOVUK_NOTIFY_API_KEY
+    GOVUK_NOTIFY_TEMPLATE_BOOKING_CONFIRMATION_V2: GOVUK_NOTIFY_TEMPLATE_BOOKING_CONFIRMATION_V2
+    GOVUK_NOTIFY_TEMPLATE_CANCELLATION_CONFIRMATION_V2: GOVUK_NOTIFY_TEMPLATE_CANCELLATION_CONFIRMATION_V2
+    GOVUK_NOTIFY_TEMPLATE_PRA_ASK_SCS_FOR_APPROVAL: GOVUK_NOTIFY_TEMPLATE_PRA_ASK_SCS_FOR_APPROVAL
+    GOVUK_NOTIFY_TEMPLATE_PRA_ASK_STAFF_FOR_APPROVAL: GOVUK_NOTIFY_TEMPLATE_PRA_ASK_STAFF_FOR_APPROVAL
+    GOVUK_NOTIFY_TEMPLATE_PRA_INFORM_LINE_MANAGER: GOVUK_NOTIFY_TEMPLATE_PRA_INFORM_LINE_MANAGER
+    GOVUK_NOTIFY_TEMPLATE_PRA_REJECTED_BY_LINE_MANAGER: GOVUK_NOTIFY_TEMPLATE_PRA_REJECTED_BY_LINE_MANAGER
+    HEALTH_AND_SAFETY_EMAIL_ADDRESS: HEALTH_AND_SAFETY_EMAIL_ADDRESS
+    IP_RESTRICT: IP_RESTRICT
+    OPS_EMAIL_ADDRESS: OPS_EMAIL_ADDRESS
+    PRIVACY_NOTICE: PRIVACY_NOTICE
+    RETURNING_OFFICE_GUIDANCE_LINK: RETURNING_OFFICE_GUIDANCE_LINK
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/staff-sso
+      url: sso.trade.gov.uk
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/staff-sso-staging
+      url: sso.trade.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: staff-sso
+  overlapping_secrets:
+  - ACTIVITY_STREAM_HAWK_ID
+  - ACTIVITY_STREAM_HAWK_SECRET
+  - ALLOWED_ADMIN_IPS
+  - ALLOWED_HOSTS
+  - DEBUG
+  - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_URL
+  - RESTRICT_ADMIN
+  - SECRET_KEY
+  - SENTRY_DSN
+  repo: git@github.com:uktrade/staff-sso.git
+  secrets:
+    ACTIVITY_STREAM_HAWK_ID: ACTIVITY_STREAM_HAWK_ID
+    ACTIVITY_STREAM_HAWK_SECRET: ACTIVITY_STREAM_HAWK_SECRET
+    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    ALLOWED_ADMIN_IP_RANGES: ALLOWED_ADMIN_IP_RANGES
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTH_EMAIL_TO_IPD_MAP: AUTH_EMAIL_TO_IPD_MAP
+    DEBUG: DEBUG
+    DEFAULT_EMAIL_ORDER: DEFAULT_EMAIL_ORDER
+    ELASTIC_APM_ENVIRONMENT: ELASTIC_APM_ENVIRONMENT
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_URL: ELASTIC_APM_URL
+    EMAIL_FROM: EMAIL_FROM
+    EMAIL_HOST: EMAIL_HOST
+    EMAIL_HOST_PASSWORD: EMAIL_HOST_PASSWORD
+    EMAIL_HOST_USER: EMAIL_HOST_USER
+    EMAIL_ID_DOMAIN: EMAIL_ID_DOMAIN
+    EMAIL_TOKEN_DOMAIN_WHITELIST: EMAIL_TOKEN_DOMAIN_WHITELIST
+    ENV_NAME: ENV_NAME
+    GOOGLE_ANALYTICS_CODE: GOOGLE_ANALYTICS_CODE
+    GOOGLE_TAG_CODE: GOOGLE_TAG_CODE
+    LD_LIBRARY_PATH: LD_LIBRARY_PATH
+    LOCAL_AUTH_PAGE: LOCAL_AUTH_PAGE
+    LOG_LEVEL_DJANGOSAML2IDP: LOG_LEVEL_DJANGOSAML2IDP
+    LOG_LEVEL_ROOT: LOG_LEVEL_ROOT
+    MI_GOOGLE_EMAIL_DOMAIN: MI_GOOGLE_EMAIL_DOMAIN
+    MI_GOOGLE_SERVICE_ACCOUNT_DATA: MI_GOOGLE_SERVICE_ACCOUNT_DATA
+    MI_GOOGLE_SERVICE_ACCOUNT_DELEGATED_USER: MI_GOOGLE_SERVICE_ACCOUNT_DELEGATED_USER
+    MI_GOOGLE_USER_SYNC_ACCESS_PROFILES: MI_GOOGLE_USER_SYNC_ACCESS_PROFILES
+    MI_GOOGLE_USER_SYNC_SAML_APPLICATION_SLUG: MI_GOOGLE_USER_SYNC_SAML_APPLICATION_SLUG
+    NEW_AUTH_FLOW_EMAILS: NEW_AUTH_FLOW_EMAILS
+    OIDC_RSA_PRIVATE_KEY: OIDC_RSA_PRIVATE_KEY
+    RESTRICT_ADMIN: RESTRICT_ADMIN
+    SAML2_APPSTREAM_AWS_ROLE_ARN: SAML2_APPSTREAM_AWS_ROLE_ARN
+    SAML2_QUICKSIGHT_AWS_ROLE_ARN: SAML2_QUICKSIGHT_AWS_ROLE_ARN
+    SAML_IDP_PRIVATE_KEY: SAML_IDP_PRIVATE_KEY
+    SAML_IDP_PUBLIC_CERT: SAML_IDP_PUBLIC_CERT
+    SAML_LOG_LEVEL: SAML_LOG_LEVEL
+    SAML_PRIVATE_KEY: SAML_PRIVATE_KEY
+    SAML_PUBLIC_CERT: SAML_PUBLIC_CERT
+    SAML_REDIRECT_RETURN_HOST: SAML_REDIRECT_RETURN_HOST
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SESSION_COOKIE_AGE_SECONDS: SESSION_COOKIE_AGE_SECONDS
+    TELEMETRY_URL: TELEMETRY_URL
+    XMLSEC1: XMLSEC1
+    ZENDESK_EMAIL: ZENDESK_EMAIL
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
+    ZENDESK_TOKEN: ZENDESK_TOKEN
+  type: public

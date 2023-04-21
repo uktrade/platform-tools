@@ -1,0 +1,5 @@
+app: exred
+environments:
+  dev: {}
+  staging: {}
+services: []
