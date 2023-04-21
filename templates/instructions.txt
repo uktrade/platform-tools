@@ -80,4 +80,4 @@ copilot env deploy --name {{ env_name }}
 
 Edit each copilot/{service-name}/manifest.yaml file and replace the image_location with the service's ECR registry url and redeploy.
 
-It's expected you'll need to iterate over this step a number of times whislt making changes to the secret/env vars, resource scaling, healthchecks etc. until the service is stable.
+It's expected that you'll need to iterate over this step a number of times whilst making changes to the services manifest.yml until the service is stable.
