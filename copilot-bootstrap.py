@@ -19,7 +19,6 @@ SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
 config_schema = Schema({
     "app": str,
-    "domain": str,
     "environments": {
         str: {
             Optional("certificate_arns"): [str]
@@ -31,7 +30,6 @@ config_schema = Schema({
             "type": lambda s: s in ("public", "backend",),
             "repo": str,
             "image_location": str,
-            "command": str,
             Optional("notes"): str,
             Optional("secrets_from"): str,
             "environments": {
@@ -41,7 +39,7 @@ config_schema = Schema({
                     Optional("ipfilter"): bool,
                 }
             },
-            "backing-services": [
+            Optional("backing-services"): [
                 {
                     "name": str,
                     "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
@@ -52,7 +50,7 @@ config_schema = Schema({
                     Optional("readonly"): bool,             # for external-s3 type
                     Optional("shared"): bool,
                 }
-            ],
+            ],            
             Optional("overlapping_secrets"): [ str ],
             "secrets": {
                 Optional(str): str,
@@ -295,7 +293,7 @@ def make_config(config_file, output):
 
         click.echo(_mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
 
-        for bs in service["backing-services"]:
+        for bs in service.get("backing-services", []):
             bs["prefix"] = camel_case(name + "-" + bs["name"])
 
             contents = templates["svc"][bs["type"]].render(dict(service=bs))

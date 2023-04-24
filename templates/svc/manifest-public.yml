@@ -30,23 +30,27 @@ http:
 sidecars:
   nginx:
     port: 443
-    image: public.ecr.aws/e9f6t9n0/nginx-self-signed-cert:latest
+    image: public.ecr.aws/uktrade/nginx-reverse-proxy:latest
     variables:
+      {% if ipfilter -%}
+      SERVER: localhost:8000
+      {% else -%}
       SERVER: localhost:8080
+      {% endif %}
 
 
 {% if ipfilter %}
-#   ipfilter:
-#     port: 8080
-#     image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
-#     variables:
-#       PORT: 8080
-#       EMAIL_NAME: 'the Department for International Trade WebOps team'
-#       EMAIL: test@test.test
-#       LOG_LEVEL: DEBUG
-#       ORIGIN_HOSTNAME: localhost:7999
-#       ORIGIN_PROTO: http
-#       CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
+  ipfilter:
+    port: 8000
+    image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
+    variables:
+      PORT: 8000
+      EMAIL_NAME: 'The Department for International Trade WebOps team'
+      EMAIL: test@test.test
+      LOG_LEVEL: DEBUG
+      ORIGIN_HOSTNAME: localhost:8080
+      ORIGIN_PROTO: http
+      CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
 {% endif %}
 
 # Configuration for your containers and service.
@@ -57,7 +61,7 @@ image:
   port: 8080
 
 cpu: 256       # Number of CPU units for the task.
-memory: 1024 # Amount of memory in MiB used by the task.
+memory: 512 # Amount of memory in MiB used by the task.
 count: 1       # Number of tasks that should be running in your service.
 exec: true     # Enable running commands in your container.
 network:
@@ -69,9 +73,6 @@ network:
 # Optional fields for more advanced use-cases.
 #
 variables:                    # Pass environment variables as key value pairs.
-  {% if ipfilter %}
-  {% else %} # service container will listen on different port if we have an ip filter
-  {% endif -%}
   PORT: 8080
   {%- for envvar, value in env_vars %}
   {{ envvar }}:
@@ -93,9 +94,7 @@ environments:
   {%- for env_name, env in environments.items() %}
   {{ env_name }}:
     http:
-      alias: {{ env.url }}
-      {%- if env.ipfilter %}
-      #targetContainer: 'ipfilter'    # ip filter disabled
-      {%- endif -%}
+      alias: {{ env.url }}x
   {%- endfor -%}
 
+# TODO: enable/disable ip filter on a per env basis.  For example, an service may need an the ip filter in non prod envs, but not prod.
