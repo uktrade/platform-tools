@@ -1,15 +1,16 @@
 #!/usr/bin/env python
+import json
+import os
 
 import boto3
 import click
-import json
 
 
 def check_success(task, response):
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-        print(f"{task} was a success...")
+        print(f"{task} was a success!")
     else:
-        print(f"{task} failed...")
+        print(f"{task} failed!")
 
 
 def display_aws_account():
@@ -114,7 +115,9 @@ def create_codedeploy_role():
     account_name = display_aws_account()
     account_id = boto3.client('sts').get_caller_identity().get('Account')
 
-    with open('templates/put-codebuild-role-policy.json') as f:
+    current_filepath = os.path.dirname(os.path.realpath(__file__))
+
+    with open(f"{current_filepath}/templates/put-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
     client = boto3.client('iam', region_name='eu-west-2')
 
@@ -144,8 +147,7 @@ def create_codedeploy_role():
         check_success("Update Policy", response)
         exit()
 
-
-    with open('templates/create-codebuild-role.json') as f:
+    with open(f"{current_filepath}/templates/create-codebuild-role.json") as f:
         role_doc = json.load(f)
     # Now create a role if not present and attache policy
     try:
