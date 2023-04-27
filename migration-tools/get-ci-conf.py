@@ -32,7 +32,7 @@ def import_ci_config():
 
     namespaces = defaultdict(dict)
 
-    for fl_path in path.glob("*.yaml"):
+    for fl_path in path.glob("*.y*ml"):
         with open(fl_path, "r") as raw:
             conf = yaml.safe_load(raw)
 
