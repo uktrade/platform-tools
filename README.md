@@ -9,7 +9,7 @@ Clone the repo and install the requirements.txt file in a virtualenv.
 
 ## copilot-bootstrap.py
 
-This script takes a yaml project config file and outputs the copilot config files along with a set of instructions for boottsrapping the application.
+This script takes a yaml project config file and outputs the copilot config files along with a set of instructions for bootstrapping the application.
 
 Project config yaml:
 ```
