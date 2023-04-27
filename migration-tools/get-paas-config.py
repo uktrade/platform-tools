@@ -2,10 +2,9 @@
 import os
 from collections import defaultdict
 from pathlib import Path
-import sys
 
-from cloudfoundry_client.client import CloudFoundryClient
 import yaml
+from cloudfoundry_client.client import CloudFoundryClient
 
 CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
 SOURCE_PATH = f"{CURRENT_FILEPATH}/../../ci-pipeline-config/"
@@ -47,7 +46,9 @@ def get_paas_data(client):
 
     for org in client.v2.organizations:
         for space in org.spaces():
+            print(space)
             for app in space.apps():
+                print(app)
                 env_keys = list(app['entity']['environment_json'].keys()) if app['entity']['environment_json'] else []
 
                 env_keys = [k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]]
