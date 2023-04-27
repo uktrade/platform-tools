@@ -1,7 +1,10 @@
 # Migration tools
 
-You will need to log into cf cli - the scripts pick up the access key in ~/.cf/config
+## Requirements
 
+You will need to log into [Cloud Foundry CLI](https://docs.cloudfoundry.org/cf-cli/) - the scripts pick up the access key in ~/.cf/config.json
+
+## Using the tools
 
 get-ci-conf.py - combines the ci-pipeline-config yaml files based on the namespace field: ci-conf.yaml is the outputi  
 get-paas-config.py - retrieves paas data; output is in ci-conf.yaml  

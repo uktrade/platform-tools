@@ -13,7 +13,6 @@ import yaml
 
 SOURCE_PATH = "../ci-pipeline-config/"
 
-
 def import_ci_config():
 
     def _rename(k):
