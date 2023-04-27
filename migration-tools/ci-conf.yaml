@@ -613,6 +613,29 @@ dictitems:
       name: selling-online-overseas
       namespace: directory
       scm: git@github.com:uktrade/selling-online-overseas.git
+  dso:
+    dso-exhibitions-v2:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/dso-dev/dso-dev
+      - environment: staging
+        paas-location: dit-staging/dso-staging/dso-staging
+      - environment: production
+        paas-location: dit-services/dso/dso
+      name: dso-exhibitions-v2
+      namespace: dso
+      scm: git@github.com:uktrade/dso-exhibitions-v2.git
+    ukdse-events:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/dso-dev/dso-dev
+      - environment: staging
+        paas-location: dit-staging/dso-staging/dso-staging
+      - environment: production
+        paas-location: dit-services/dso/dso
+      name: ukdse-events
+      namespace: dso
+      scm: git@github.com:uktrade/ukdse-events
   enav:
     help:
       environments:
@@ -701,6 +724,16 @@ dictitems:
       name: export-opportunities
       namespace: exopps
       scm: git@github.com:uktrade/export-opportunities.git
+  export-support-service:
+    export-support-service:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/export-support-dev/export-support-dev
+      - environment: prod
+        paas-location: dit-services/export-support/export-support-prod
+      name: export-support-service
+      namespace: export-support-service
+      scm: git@github.com:uktrade/export-support.git
   exred:
     exred:
       environments:
@@ -1205,6 +1238,18 @@ dictitems:
       name: sample-private
       namespace: shared
       scm: git@github.com:uktrade/cf-sample-app-nodejs.git
+  supply-chain-resilience:
+    update-supply-chain-information:
+      environments:
+      - environment: development
+        paas-location: dit-staging/supply-chain-resilience-dev/update-supply-chain-information-dev
+      - environment: staging
+        paas-location: dit-staging/supply-chain-resilience-staging/update-supply-chain-information-staging
+      - environment: production
+        paas-location: dit-services/supply-chain-resilience/update-supply-chain-information
+      name: update-supply-chain-information
+      namespace: supply-chain-resilience
+      scm: git@github.com:uktrade/update-supply-chain-information.git
   trade-access:
     trade-access-program-backoffice:
       environments:

@@ -4,14 +4,14 @@
     Take all the files in ci-pipeline-config and combine into one document
 '''
 
+import os
 from collections import defaultdict
 from pathlib import Path
-import sys
 
 import yaml
 
-
-SOURCE_PATH = "../ci-pipeline-config/"
+CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
+SOURCE_PATH = f"{CURRENT_FILEPATH}/../../ci-pipeline-config/"
 
 def import_ci_config():
 
@@ -46,4 +46,5 @@ def import_ci_config():
 if __name__ == "__main__":
     config = import_ci_config()
 
-    yaml.dump(config, sys.stdout)
+    with open(f"{CURRENT_FILEPATH}/ci-conf.yaml", 'w') as outfile:
+        yaml.dump(config, outfile)
