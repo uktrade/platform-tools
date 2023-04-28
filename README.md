@@ -2,10 +2,13 @@
 
 This repo contains a set of tools for transferring applications from GOV paas to copilot and boostrapping environments.
 
-
 ## Installation
 
 Clone the repo and install the requirements.txt file in a virtualenv.
+
+## Migration Tools
+
+See [Migration Tools](./migration-tools/README.md).
 
 ## copilot-bootstrap.py
 

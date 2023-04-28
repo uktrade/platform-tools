@@ -4,11 +4,11 @@
 
 ## Using the tools
 
-### get-ci-conf.py
+### get-ci-config.py
 
 Combines the ci-pipeline-config yaml files based on the namespace field and output `ci-config.yml`.
 
-    ./migration-tools/get-ci-conf.py
+    ./migration-tools/get-ci-config.py
 
 Make sure the first line in `ci-config.yml` begins with `applications`, removing any lines with reference to `python`.
 
