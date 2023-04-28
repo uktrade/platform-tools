@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-'''
+"""
     Take all the files in ci-pipeline-config and combine into one document
-'''
+"""
+
 import copy
 import os
 from collections import defaultdict
@@ -14,7 +15,6 @@ SOURCE_PATH = f"{CURRENT_FILEPATH}/full-config.yml"
 
 
 def detect_service_type(service):
-
     if "redis" in service["name"] or service["instance"][-4:] in ["-3.2", "-5.x", "-6.x"]:
         return "redis"
 
@@ -40,7 +40,6 @@ def detect_service_type(service):
 
 
 def space_to_copilot_app(app_name, ns_conf):
-
     envs = [env["environment"] for _, app in ns_conf.items() for env in app["environments"]]
 
     app_config = {
@@ -51,11 +50,11 @@ def space_to_copilot_app(app_name, ns_conf):
 
     backing_services = defaultdict(dict)
     secrets = defaultdict(list)
-    overlapping_secrets = defaultdict(list)
+
     for service, service_conf in ns_conf.items():
 
         for environment in service_conf["environments"]:
-            if hasattr(environment, 'paas') and  isinstance(environment["paas"], dict):
+            if hasattr(environment, 'paas') and isinstance(environment["paas"], dict):
                 secrets[service].extend(environment["paas"]["env_keys"])
                 for bs in environment["paas"]["services"]:
                     if bs["name"] not in backing_services[environment["environment"]]:
@@ -83,7 +82,7 @@ def space_to_copilot_app(app_name, ns_conf):
         if not processes:
             continue
 
-        web_processes = [p for p in processes if p["type"] == "web" ]
+        web_processes = [p for p in processes if p["type"] == "web"]
         if len(web_processes) != 1:
             breakpoint()
         other_proceses = [p for p in processes if p["type"] != "web"]
@@ -149,8 +148,10 @@ def space_to_copilot_app(app_name, ns_conf):
 
     return app_config
 
+
 if __name__ == "__main__":
     folder = f"{CURRENT_FILEPATH}/../bootstrap-config"
+
     for filename in os.listdir(folder):
         os.remove(f"{folder}/{filename}")
 
@@ -161,5 +162,5 @@ if __name__ == "__main__":
         print(app_name)
         app_conf = space_to_copilot_app(app_name, ns_conf)
 
-        with open(f"{CURRENT_FILEPATH}/../bootstrap-config/{app_name}-copilot.yml", "w") as fd:
+        with open(f"{folder}/{app_name}-copilot.yml", "w") as fd:
             yaml.dump(app_conf, fd)
