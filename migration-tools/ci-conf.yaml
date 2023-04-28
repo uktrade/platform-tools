@@ -1,7 +1,4 @@
-!!python/object/apply:collections.defaultdict
-args:
-- !!python/name:builtins.dict ''
-dictitems:
+applications:
   activity-stream:
     activity-stream:
       environments:
