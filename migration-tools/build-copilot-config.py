@@ -11,7 +11,7 @@ import sys
 
 import yaml
 
-SOURCE_PATH = "full-config.yaml"
+SOURCE_PATH = "full-config.yml"
 
 
 def detect_service_type(service):
