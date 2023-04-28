@@ -29,12 +29,8 @@ if __name__ == "__main__":
             for env in data["environments"]:
                 try:
                     env["paas"] = paas[env["paas-location"]]
-                    #print("{} FOUND!".format(env["paas-location"]))
                 except KeyError:
                     env["paas"] = "NO-APP-FOUND"
-                    #print("{} MISSING CONFIG!".format(env["paas-location"]))
-
-    # breakpoint()
 
     with open(f"{CURRENT_FILEPATH}/full-config.yml", 'w') as outfile:
         yaml.dump(ci, outfile)
