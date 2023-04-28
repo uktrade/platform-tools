@@ -9,7 +9,7 @@ import os
 import yaml
 
 CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
-CI_CONFIG_FILE = f"{CURRENT_FILEPATH}/ci-conf.yaml"
+CI_CONFIG_FILE = f"{CURRENT_FILEPATH}/ci-config.yml"
 PAAS_CONFIG_FILE = f"{CURRENT_FILEPATH}/paas-config.yml"
 
 
