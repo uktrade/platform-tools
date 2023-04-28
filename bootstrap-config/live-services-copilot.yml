@@ -1,7 +1,118 @@
 app: live-services
 environments:
-  dev: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-data-services-helpcentre-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-irap-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-joiners-movers-leavers-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-jml.dev.uktrade.digital
   prod: {}
-  production: {}
-  staging: {}
-services: []
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-data-services-helpcentre.london.cloudapps.digital
+    - ACM-ARN-FOR-data-services-help.trade.gov.uk
+    - ACM-ARN-FOR-jml.london.cloudapps.digital
+    - ACM-ARN-FOR-jml.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-data-services-helpcentre-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-jml.staging.uktrade.digital
+    - ACM-ARN-FOR-jml-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/data-services-helpcentre-dev/data-services-helpcentre-dev
+      url: data-services-helpcentre-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/data-services-helpcentre/data-services-helpcentre
+      url: data-services-help.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/data-services-helpcentre-dev/data-services-helpcentre-staging
+      url: data-services-helpcentre-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dataservices-helpcentre
+  repo: git@github.com:uktrade/data-hub-helpcentre.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/irap-dev/irap-dev
+      url: irap-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: irap
+  repo: git@github.com:uktrade/irap.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/jml-dev/joiners-movers-leavers-dev
+      url: jml.dev.uktrade.digital
+    production:
+      ipfilter: true
+      paas: dit-services/jml/jml
+      url: jml.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/jml-staging/jml-staging
+      url: jml-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: jml
+  repo: git@github.com:uktrade/jml.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/jml-dev/joiners-movers-leavers-dev
+    production:
+      paas: dit-services/jml/jml
+    staging:
+      paas: dit-staging/jml-staging/jml-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: jml-celery-beat
+  notes: service created based on Procfile entry for jml and will require access to
+    the same backing services
+  repo: git@github.com:uktrade/jml.git
+  secrets: {}
+  secrets_from: jml
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/jml-dev/joiners-movers-leavers-dev
+    production:
+      paas: dit-services/jml/jml
+    staging:
+      paas: dit-staging/jml-staging/jml-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: jml-beat
+  notes: service created based on Procfile entry for jml and will require access to
+    the same backing services
+  repo: git@github.com:uktrade/jml.git
+  secrets: {}
+  secrets_from: jml
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/jml-dev/joiners-movers-leavers-dev
+    production:
+      paas: dit-services/jml/jml
+    staging:
+      paas: dit-staging/jml-staging/jml-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: jml-worker
+  notes: service created based on Procfile entry for jml and will require access to
+    the same backing services
+  repo: git@github.com:uktrade/jml.git
+  secrets: {}
+  secrets_from: jml
+  type: backend

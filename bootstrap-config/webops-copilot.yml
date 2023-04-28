@@ -1,12 +1,371 @@
 app: webops
 environments:
-  dev: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-alertmanager-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-demo-celery-redis-ha.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-aws-vpn-home-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-grafana-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-process-metrics-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-prometheus-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-url-protection-checker-dev.london.cloudapps.digital
   dev-cdn: {}
   dev-non-cdn: {}
-  prod: {}
-  production: {}
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-content-request.london.cloudapps.digital
+    - ACM-ARN-FOR-content-request.trade.gov.uk
+    - ACM-ARN-FOR-dit-aws-vpn-home.london.cloudapps.digital
+    - ACM-ARN-FOR-self-service-vpn.ci.uktrade.digital
+    - ACM-ARN-FOR-readme.trade.gov.uk
+    - ACM-ARN-FOR-rtfm-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-paas-autoscaler-monitor.london.cloudapps.digital
+    - ACM-ARN-FOR-paas-logdrain-scanner.london.cloudapps.digital
+    - ACM-ARN-FOR-pingdom-link-checker.london.cloudapps.digital
+    - ACM-ARN-FOR-sla-budget-metrics.london.cloudapps.digital
+    - ACM-ARN-FOR-zenslackchat-prod.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-alertmanager.london.cloudapps.digital
+    - ACM-ARN-FOR-user-audit.london.cloudapps.digital
+    - ACM-ARN-FOR-cost-monitor.london.cloudapps.digital
+    - ACM-ARN-FOR-githubscan.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-grafana.london.cloudapps.digital
+    - ACM-ARN-FOR-grafana.ci.uktrade.digital
+    - ACM-ARN-FOR-pingdom-redirect-checker.london.cloudapps.digital
+    - ACM-ARN-FOR-process-metrics.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-prometheus.london.cloudapps.digital
+    - ACM-ARN-FOR-zpa-monitor.london.cloudapps.digital
   production-non-cdn: {}
   production_eu-west-1: {}
-  production_eu-west-2: {}
-  stage: {}
-services: []
+  production_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-console.london.cloudapps.digital
+  stage:
+    certificate_arns:
+    - ACM-ARN-FOR-zenslackchat-stage.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-alertmanager-dev
+      url: dit-alertmanager-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-alertmanager
+      url: dit-alertmanager.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: alertmanager
+  repo: git@github.com:uktrade/cf-prometheus-alertmanager.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/atlassian-account-user-audit
+      url: user-audit.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: atlassian-account-user-audit
+  repo: git@github.com:uktrade/atlassian-account-user-audit.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production_eu-west-2:
+      ipfilter: true
+      paas: dit-services/webops/console
+      url: dit-console.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: cf-console
+  repo: https://github.com/cloudfoundry-incubator/stratos.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/content-request-form
+      url: content-request.trade.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: content-request-form
+  repo: git@github.com:uktrade/content-request-form.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/cost-monitor
+      url: cost-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: cost-monitor
+  repo: git@github.com:uktrade/cost_monitor.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/demo-celery-redis-ha
+      url: demo-celery-redis-ha.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: demo-celery-redis-ha
+  repo: git@github.com:uktrade/demo-celery-redis-ha.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/webops-dev/demo-celery-redis-ha
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: demo-celery-redis-ha-worker
+  notes: service created based on Procfile entry for demo-celery-redis-ha and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/demo-celery-redis-ha.git
+  secrets: {}
+  secrets_from: demo-celery-redis-ha
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-aws-vpn-home-dev
+      url: dit-aws-vpn-home-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/dit-aws-vpn-home
+      url: self-service-vpn.ci.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dit-aws-vpn-home
+  repo: git@github.com:uktrade/dit-aws-vpn-home.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/rtfm-prod
+      url: rtfm-prod.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dit-manual
+  repo: git@github.com:uktrade/rtfm.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/gachecker
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: gachecker
+  repo: git@github.com:uktrade/gachecker.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/githubscan
+      url: githubscan.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: githubscan
+  repo: git@github.com:uktrade/githubscan.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-grafana-dev
+      url: dit-grafana-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-grafana
+      url: grafana.ci.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: grafana
+  repo: git@github.com:uktrade/cf-grafana.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/webops-dev/paas-autoscaler-monitor-dev
+      url: null
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/paas-autoscaler-monitor
+      url: paas-autoscaler-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-autoscaler-monitor
+  repo: git@github.com:uktrade/paas-autoscaler-monitor.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/webops-dev/paas-autoscaler-monitor-dev
+    prod:
+      paas: dit-services/webops/paas-autoscaler-monitor
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-autoscaler-monitor-worker
+  notes: service created based on Procfile entry for paas-autoscaler-monitor and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/paas-autoscaler-monitor.git
+  secrets: {}
+  secrets_from: paas-autoscaler-monitor
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/paas-logdrain-scanner
+      url: paas-logdrain-scanner.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-logdrain-scanner
+  repo: git@github.com:uktrade/paas-logdrain-scanner.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/pingdom-link-checker
+      url: pingdom-link-checker.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: pingdom-link-checker
+  repo: git@github.com:uktrade/pingdom-link-checker.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/pingdom-redirect-checker
+      url: pingdom-redirect-checker.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: pingdom-redirect-checker
+  repo: git@github.com:uktrade/pingdom-redirect-checker.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/process-metrics-dev
+      url: process-metrics-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/process-metrics
+      url: process-metrics.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: process-metrics
+  repo: git@github.com:uktrade/cf-process-metrics-exporter.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-prometheus-dev
+      url: dit-prometheus-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-prometheus
+      url: dit-prometheus.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: prometheus
+  repo: git@github.com:uktrade/cf-prometheus.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/quaysecurityscan
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: quaysecurityscan
+  repo: git@github.com:uktrade/quay_security_scan.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/sla-budget-metrics
+      url: sla-budget-metrics.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sla-budget-metrics
+  repo: git@github.com:uktrade/sla-budget-metrics.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/url-protection-checker-dev
+      url: url-protection-checker-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: url-protection-checker
+  repo: git@github.com:uktrade/url-protection-checker.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+      url: zenslackchat-prod.london.cloudapps.digital
+    stage:
+      ipfilter: false
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+      url: zenslackchat-stage.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+    stage:
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat-celery_beat
+  notes: service created based on Procfile entry for zenslackchat and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets: {}
+  secrets_from: zenslackchat
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+    stage:
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat-celery_worker
+  notes: service created based on Procfile entry for zenslackchat and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets: {}
+  secrets_from: zenslackchat
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/zpa-monitor
+      url: zpa-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zpa-monitor
+  repo: git@github.com:uktrade/zpa-monitor.git
+  secrets: {}
+  type: public

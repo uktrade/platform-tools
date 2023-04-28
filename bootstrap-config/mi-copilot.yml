@@ -1,6 +1,110 @@
 app: mi
 environments:
-  dev: {}
-  prod: {}
-  staging: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-exportwins-admin-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins-data-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-exportwins-admin.london.cloudapps.digital
+    - ACM-ARN-FOR-admin.exportwins.service.trade.gov.uk
+    - ACM-ARN-FOR-exportwins-data.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins-data.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins.london.cloudapps.digital
+    - ACM-ARN-FOR-www.exportwins.service.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-exportwins-admin-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins-data-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-exportwins-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/mi-dev/exportwins-admin-dev
+      url: exportwins-admin-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/mi/exportwins-admin
+      url: admin.exportwins.service.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/mi-staging/exportwins-admin-staging
+      url: exportwins-admin-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exportwins-admin
+  repo: git@github.com:uktrade/export-wins-ui.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/mi-dev/exportwins-data-dev
+      url: exportwins-data-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/mi/exportwins-data
+      url: exportwins-data.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/mi-staging/exportwins-data-staging
+      url: exportwins-data-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exportwins-data
+  repo: git@github.com:uktrade/export-wins-data.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/mi-dev/exportwins-data-dev
+    prod:
+      paas: dit-services/mi/exportwins-data
+    staging:
+      paas: dit-staging/mi-staging/exportwins-data-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exportwins-data-release
+  notes: service created based on Procfile entry for exportwins-data and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/export-wins-data.git
+  secrets: {}
+  secrets_from: exportwins-data
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/mi-dev/exportwins-data-dev
+    prod:
+      paas: dit-services/mi/exportwins-data
+    staging:
+      paas: dit-staging/mi-staging/exportwins-data-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exportwins-data-celeryworker
+  notes: service created based on Procfile entry for exportwins-data and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/export-wins-data.git
+  secrets: {}
+  secrets_from: exportwins-data
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/mi-dev/exportwins-ui-dev
+      url: exportwins-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/mi/exportwins-ui
+      url: www.exportwins.service.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/mi-staging/exportwins-ui-staging
+      url: exportwins-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exportwins-ui
+  repo: git@github.com:uktrade/export-wins-ui.git
+  secrets: {}
+  type: public

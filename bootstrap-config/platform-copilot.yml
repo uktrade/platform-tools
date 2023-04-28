@@ -1,8 +1,185 @@
 app: platform
 environments:
-  dev: {}
-  prod: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-help-desk-service-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-clamav-mirror.london.cloudapps.digital
+    - ACM-ARN-FOR-clamav.london.cloudapps.digital
+    - ACM-ARN-FOR-company-service.london.cloudapps.digital
+    - ACM-ARN-FOR-prom-statsd.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.trade.gov.uk
+    - ACM-ARN-FOR-return-to-office.trade.gov.uk
+    - ACM-ARN-FOR-staff-sso-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-sso-new.trade.gov.uk
+    - ACM-ARN-FOR-sso.trade.gov.uk
   production: {}
-  staging: {}
-  uat: {}
-services: []
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-clamav-mirror-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-clamav-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-statsd-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-prom-statsd-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
+    - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
+    - ACM-ARN-FOR-sso.trade.uat.uktrade.io
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-company-service-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-company-service-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav
+      url: null
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav
+  repo: git@github.com:uktrade/docker-clamav.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav-mirror
+      url: clamav-mirror.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-mirror-staging
+      url: clamav-mirror-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav-mirror
+  repo: git@github.com:uktrade/clamav-s3-mirror.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/clamav-rest
+      url: clamav.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/clamav-rest-staging
+      url: clamav-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: clamav-rest
+  repo: git@github.com:uktrade/dit-clamav-rest.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/external-company-service
+      url: company-service.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/external-company-service-staging
+      url: null
+    uat:
+      ipfilter: true
+      paas: dit-staging/platform-staging/external-company-service-uat
+      url: company-service-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/platform/external-company-service
+    staging:
+      paas: dit-staging/platform-staging/external-company-service-staging
+    uat:
+      paas: dit-staging/platform-staging/external-company-service-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service-celery_beat
+  notes: service created based on Procfile entry for external-company-service and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets: {}
+  secrets_from: external-company-service
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/platform/external-company-service
+    staging:
+      paas: dit-staging/platform-staging/external-company-service-staging
+    uat:
+      paas: dit-staging/platform-staging/external-company-service-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: external-company-service-celery_worker
+  notes: service created based on Procfile entry for external-company-service and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/dnb-service.git
+  secrets: {}
+  secrets_from: external-company-service
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/sre-ticketing-dev/help-desk-service-dev
+      url: help-desk-service-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: help-desk-service
+  repo: git@github.com:uktrade/help-desk-service.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/platform/prom-statsd-exporter
+      url: prom-statsd.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/prom-statsd-exporter-staging
+      url: prom-statsd-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: prom-statsd-exporter
+  repo: git@github.com:uktrade/prom-statsd-exporter.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/platform/return-to-office
+      url: return-to-office.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/platform-staging/return-to-office-staging
+      url: return-to-office.staging.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: return-to-office
+  repo: git@github.com:uktrade/return-to-office.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/platform/staff-sso
+      url: sso.trade.gov.uk
+    staging:
+      ipfilter: false
+      paas: dit-staging/platform-staging/staff-sso-staging
+      url: sso.trade.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: staff-sso
+  repo: git@github.com:uktrade/staff-sso.git
+  secrets: {}
+  type: public

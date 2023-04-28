@@ -1,7 +1,61 @@
 app: exopps
 environments:
-  continuous-deployment: {}
-  production: {}
-  staging: {}
-  uat: {}
-services: []
+  continuous-deployment:
+    certificate_arns:
+    - ACM-ARN-FOR-export-opportunities-continuous-deployment.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-export-opportunities.london.cloudapps.digital
+    - ACM-ARN-FOR-opportunities.export.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-export-opportunities-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-export-opportunities-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    continuous-deployment:
+      ipfilter: true
+      paas: dit-staging/exopps-dev/export-opportunities-continuous-deployment
+      url: great.dev.uktrade.digital
+    production:
+      ipfilter: false
+      paas: dit-services/exopps/export-opportunities
+      url: www.great.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/exopps-staging/export-opportunities-staging
+      url: great.staging.uktrade.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/exopps-uat/export-opportunities-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: export-opportunities
+  repo: git@github.com:uktrade/export-opportunities.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    continuous-deployment:
+      paas: dit-staging/exopps-dev/export-opportunities-continuous-deployment
+    production:
+      paas: dit-services/exopps/export-opportunities
+    staging:
+      paas: dit-staging/exopps-staging/export-opportunities-staging
+    uat:
+      paas: dit-staging/exopps-uat/export-opportunities-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: export-opportunities-worker
+  notes: service created based on Procfile entry for export-opportunities and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/export-opportunities.git
+  secrets: {}
+  secrets_from: export-opportunities
+  type: backend

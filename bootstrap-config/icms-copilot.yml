@@ -1,6 +1,110 @@
 app: icms
 environments:
-  dev: {}
-  production: {}
-  staging: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-icms.trade.dev.uktrade.digital
+    - ACM-ARN-FOR-icms-hmrc-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-icms-hmrc.trade.dev.uktrade.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-icms.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-icms-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-icms.trade.staging.uktrade.io
+    - ACM-ARN-FOR-icms.trade.staging.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/icms-dev/icms-dev
+      url: icms.trade.dev.uktrade.digital
+    production:
+      ipfilter: true
+      paas: dit-services/icms/icms
+      url: icms.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/icms-staging/icms-staging
+      url: icms.trade.staging.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms
+  repo: git@github.com:uktrade/icms.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/icms-dev/icms-dev
+    production:
+      paas: dit-services/icms/icms
+    staging:
+      paas: dit-staging/icms-staging/icms-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-celery_worker
+  notes: service created based on Procfile entry for icms and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/icms.git
+  secrets: {}
+  secrets_from: icms
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/icms-dev/icms-hmrc-dev
+      url: icms-hmrc.trade.dev.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-hmrc
+  repo: git@github.com:uktrade/icms-hmrc
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/icms-dev/icms-hmrc-dev
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-hmrc-worker
+  notes: service created based on Procfile entry for icms-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/icms-hmrc
+  secrets: {}
+  secrets_from: icms-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/icms-dev/icms-hmrc-dev
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-hmrc-celery_beat
+  notes: service created based on Procfile entry for icms-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/icms-hmrc
+  secrets: {}
+  secrets_from: icms-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/icms-dev/icms-hmrc-dev
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-hmrc-celery_worker
+  notes: service created based on Procfile entry for icms-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/icms-hmrc
+  secrets: {}
+  secrets_from: icms-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/icms-dev/icms-hmrc-dev
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: icms-hmrc-dbt_worker
+  notes: service created based on Procfile entry for icms-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/icms-hmrc
+  secrets: {}
+  secrets_from: icms-hmrc
+  type: backend

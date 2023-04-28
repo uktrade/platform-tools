@@ -1,9 +1,118 @@
 app: market-access
 environments:
   demo: {}
-  dev: {}
-  prod: {}
-  production: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-market-access-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-pyfe-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access.dev.uktrade.digital
+    - ACM-ARN-FOR-market-access-publicfe-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-market-access.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access.trade.gov.uk
+    - ACM-ARN-FOR-market-access-pyfe.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-publicfe.london.cloudapps.digital
+    - ACM-ARN-FOR-www.check-international-trade-barriers.service.gov.uk
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-market-access-api.london.cloudapps.digital
   staging: {}
-  uat: {}
-services: []
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-market-access-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-pyfe-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access.uat.uktrade.digital
+    - ACM-ARN-FOR-market-access-publicfe-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/market-access-dev/market-access-api-dev
+      url: market-access-api-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/market-access/market-access-api
+      url: market-access-api.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/market-access-uat/market-access-api-uat
+      url: market-access-api-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: market-access-api
+  repo: git@github.com:uktrade/market-access-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/market-access-dev/market-access-api-dev
+    production:
+      paas: dit-services/market-access/market-access-api
+    uat:
+      paas: dit-staging/market-access-uat/market-access-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: market-access-api-celeryworker
+  notes: service created based on Procfile entry for market-access-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/market-access-api.git
+  secrets: {}
+  secrets_from: market-access-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/market-access-dev/market-access-api-dev
+    production:
+      paas: dit-services/market-access/market-access-api
+    uat:
+      paas: dit-staging/market-access-uat/market-access-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: market-access-api-celerybeat
+  notes: service created based on Procfile entry for market-access-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/market-access-api.git
+  secrets: {}
+  secrets_from: market-access-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/market-access-dev/market-access-pyfe-dev
+      url: market-access.dev.uktrade.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/market-access/market-access-pyfe
+      url: market-access-pyfe.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/market-access-uat/market-access-pyfe-uat
+      url: market-access.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: market-access-fe
+  repo: git@github.com:uktrade/market-access-python-frontend.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/market-access-dev/market-access-publicfe-dev
+      url: market-access-publicfe-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/market-access/market-access-publicfe
+      url: www.check-international-trade-barriers.service.gov.uk
+    uat:
+      ipfilter: true
+      paas: dit-staging/market-access-uat/market-access-publicfe-uat
+      url: market-access-publicfe-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: market-access-public-fe
+  repo: git@github.com:uktrade/market-access-public-frontend.git
+  secrets: {}
+  type: public

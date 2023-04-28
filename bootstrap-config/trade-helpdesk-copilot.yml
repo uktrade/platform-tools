@@ -1,11 +1,139 @@
 app: trade-helpdesk
 environments:
-  cms-dev: {}
-  cms-prod: {}
-  cms-staging: {}
-  dev: {}
-  development: {}
-  prod: {}
-  production: {}
-  staging: {}
-services: []
+  cms-dev:
+    certificate_arns:
+    - ACM-ARN-FOR-helpdesk-cms-dev.london.cloudapps.digital
+  cms-prod:
+    certificate_arns:
+    - ACM-ARN-FOR-helpdesk-cms.london.cloudapps.digital
+  cms-staging:
+    certificate_arns:
+    - ACM-ARN-FOR-helpdesk-cms-staging.london.cloudapps.digital
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-contact-forms-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-helpdesk-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.dev.uktrade.io
+    - ACM-ARN-FOR-helpdesk-importer-dev.london.cloudapps.digital
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-mendel-data-development.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-contact-forms.london.cloudapps.digital
+    - ACM-ARN-FOR-contact.check-duties-customs-exporting-goods.service.gov.uk
+    - ACM-ARN-FOR-helpdesk.london.cloudapps.digital
+    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.gov.uk
+    - ACM-ARN-FOR-www.get-rules-tariffs-trade-with-uk.service.gov.uk
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-mendel-data-production.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-contact-forms-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-helpdesk-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.staging.uktrade.io
+    - ACM-ARN-FOR-helpdesk-importer-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-mendel-data-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-dev/contact-forms-dev
+      url: contact-forms-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/trade-helpdesk/contact-forms
+      url: contact.check-duties-customs-exporting-goods.service.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-staging/contact-forms-staging
+      url: contact-forms-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: contact-forms
+  repo: git@github.com:uktrade/dit-contact-forms.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    cms-dev:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-dev/helpdesk-cms-dev
+      url: helpdesk-cms-dev.london.cloudapps.digital
+    cms-prod:
+      ipfilter: true
+      paas: dit-services/trade-helpdesk/helpdesk-cms
+      url: helpdesk-cms.london.cloudapps.digital
+    cms-staging:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-staging/helpdesk-cms-staging
+      url: helpdesk-cms-staging.london.cloudapps.digital
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-dev/helpdesk-dev
+      url: helpdesk-importer-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/trade-helpdesk/helpdesk
+      url: www.get-rules-tariffs-trade-with-uk.service.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-staging/helpdesk-staging
+      url: helpdesk-importer-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: helpdesk
+  repo: git@github.com:uktrade/dit-helpdesk.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
+      url: mendel-data-development.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/trade-helpdesk/mendel-data-production
+      url: mendel-data-production.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
+      url: mendel-data-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: mendel-data
+  repo: git@github.com:uktrade/dit-mendel-data.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    development:
+      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
+    production:
+      paas: dit-services/trade-helpdesk/mendel-data-production
+    staging:
+      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: mendel-data-beat
+  notes: service created based on Procfile entry for mendel-data and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/dit-mendel-data.git
+  secrets: {}
+  secrets_from: mendel-data
+  type: backend
+- env_vars: {}
+  environments:
+    development:
+      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
+    production:
+      paas: dit-services/trade-helpdesk/mendel-data-production
+    staging:
+      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: mendel-data-celery
+  notes: service created based on Procfile entry for mendel-data and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/dit-mendel-data.git
+  secrets: {}
+  secrets_from: mendel-data
+  type: backend

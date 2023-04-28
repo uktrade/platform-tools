@@ -1,6 +1,35 @@
 app: supply-chain-resilience
 environments:
-  development: {}
-  production: {}
-  staging: {}
-services: []
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-www.update-supply-chain-information.trade.gov.uk
+    - ACM-ARN-FOR-www.update-supply-chain-information.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/supply-chain-resilience-dev/update-supply-chain-information-dev
+      url: update-supply-chain-information-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/supply-chain-resilience/update-supply-chain-information
+      url: www.update-supply-chain-information.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/supply-chain-resilience-staging/update-supply-chain-information-staging
+      url: update-supply-chain-information-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: update-supply-chain-information
+  repo: git@github.com:uktrade/update-supply-chain-information.git
+  secrets: {}
+  type: public

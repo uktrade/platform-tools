@@ -1,9 +1,274 @@
 app: lite
 environments:
-  demo: {}
-  dev: {}
-  devdata: {}
-  prod: {}
+  demo:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-demo.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-demo.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.demo.uktrade.io
+    - ACM-ARN-FOR-exporter.lite.service.demo.uktrade.digital
+    - ACM-ARN-FOR-lite-hmrc-demo.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-internal-frontend-demo.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.demo.uktrade.io
+    - ACM-ARN-FOR-internal.lite.service.demo.uktrade.digital
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.dev.uktrade.io
+    - ACM-ARN-FOR-exporter.lite.service.dev.uktrade.digital
+    - ACM-ARN-FOR-lite-hmrc-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-internal-frontend-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.dev.uktrade.io
+    - ACM-ARN-FOR-internal.lite.service.dev.uktrade.digital
+  devdata:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-devdata.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-data-flow-devdata.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-devdata.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.devdata.uktrade.digital
+    - ACM-ARN-FOR-lite-hmrc-devdata.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-internal-frontend-devdata.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.devdata.uktrade.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-data-flow.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.private-beta.uktrade.digital
+    - ACM-ARN-FOR-exporter.lite.private-beta.service.trade.gov.uk
+    - ACM-ARN-FOR-lite-internal-frontend.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.private-beta.uktrade.digital
+    - ACM-ARN-FOR-internal.lite.service.private-beta.uktrade.digital
   staging: {}
-  uat: {}
-services: []
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.uat.uktrade.io
+    - ACM-ARN-FOR-exporter.lite.service.uat.uktrade.digital
+    - ACM-ARN-FOR-lite-hmrc-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-internal-frontend-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.uat.uktrade.io
+    - ACM-ARN-FOR-internal.lite.service.uat.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    demo:
+      ipfilter: true
+      paas: dit-staging/lite-demo/lite-api-demo
+      url: lite-api-demo.london.cloudapps.digital
+    dev:
+      ipfilter: true
+      paas: dit-staging/lite-dev/lite-api-dev
+      url: lite-api-dev.london.cloudapps.digital
+    devdata:
+      ipfilter: true
+      paas: dit-staging/lite-devdata/lite-api-devdata
+      url: lite-api-devdata.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/lite/lite-api
+      url: null
+    uat:
+      ipfilter: true
+      paas: dit-staging/lite-uat/lite-api-uat
+      url: lite-api-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-api
+  repo: git@github.com:uktrade/lite-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    demo:
+      paas: dit-staging/lite-demo/lite-api-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-api-dev
+    devdata:
+      paas: dit-staging/lite-devdata/lite-api-devdata
+    prod:
+      paas: dit-services/lite/lite-api
+    uat:
+      paas: dit-staging/lite-uat/lite-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-api-worker
+  notes: service created based on Procfile entry for lite-api and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-api.git
+  secrets: {}
+  secrets_from: lite-api
+  type: backend
+- env_vars: {}
+  environments:
+    demo:
+      paas: dit-staging/lite-demo/lite-api-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-api-dev
+    devdata:
+      paas: dit-staging/lite-devdata/lite-api-devdata
+    prod:
+      paas: dit-services/lite/lite-api
+    uat:
+      paas: dit-staging/lite-uat/lite-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-api-celeryworker
+  notes: service created based on Procfile entry for lite-api and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-api.git
+  secrets: {}
+  secrets_from: lite-api
+  type: backend
+- env_vars: {}
+  environments:
+    devdata:
+      ipfilter: true
+      paas: dit-staging/lite-devdata/lite-data-flow-devdata
+      url: lite-data-flow-devdata.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/lite/lite-data-flow
+      url: lite-data-flow.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-data-flow
+  repo: git@github.com:uktrade/paas-airflow.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    devdata:
+      paas: dit-staging/lite-devdata/lite-data-flow-devdata
+    prod:
+      paas: dit-services/lite/lite-data-flow
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-data-flow-scheduler
+  notes: service created based on Procfile entry for lite-data-flow and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/paas-airflow.git
+  secrets: {}
+  secrets_from: lite-data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    devdata:
+      paas: dit-staging/lite-devdata/lite-data-flow-devdata
+    prod:
+      paas: dit-services/lite/lite-data-flow
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-data-flow-worker
+  notes: service created based on Procfile entry for lite-data-flow and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/paas-airflow.git
+  secrets: {}
+  secrets_from: lite-data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/lite-dev/lite-document-store-dev
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-document-store
+  repo: git@github.com:uktrade/lite-document-store.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    demo:
+      ipfilter: true
+      paas: dit-staging/lite-demo/lite-exporter-frontend-demo
+      url: exporter.lite.service.demo.uktrade.digital
+    dev:
+      ipfilter: true
+      paas: dit-staging/lite-dev/lite-exporter-frontend-dev
+      url: exporter.lite.service.dev.uktrade.digital
+    devdata:
+      ipfilter: true
+      paas: dit-staging/lite-devdata/lite-exporter-frontend-devdata
+      url: exporter.lite.service.devdata.uktrade.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/lite/lite-exporter-frontend
+      url: exporter.lite.private-beta.service.trade.gov.uk
+    uat:
+      ipfilter: true
+      paas: dit-staging/lite-uat/lite-exporter-frontend-uat
+      url: exporter.lite.service.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-exporter-frontend
+  repo: git@github.com:uktrade/lite-frontend.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    demo:
+      ipfilter: true
+      paas: dit-staging/lite-demo/lite-hmrc-demo
+      url: lite-hmrc-demo.london.cloudapps.digital
+    dev:
+      ipfilter: true
+      paas: dit-staging/lite-dev/lite-hmrc-dev
+      url: lite-hmrc-dev.london.cloudapps.digital
+    devdata:
+      ipfilter: true
+      paas: dit-staging/lite-devdata/lite-hmrc-devdata
+      url: lite-hmrc-devdata.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/lite/lite-hmrc
+      url: null
+    uat:
+      ipfilter: true
+      paas: dit-staging/lite-uat/lite-hmrc-uat
+      url: lite-hmrc-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-hmrc
+  repo: git@github.com:uktrade/lite-hmrc.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    demo:
+      paas: dit-staging/lite-demo/lite-hmrc-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-hmrc-dev
+    devdata:
+      paas: dit-staging/lite-devdata/lite-hmrc-devdata
+    prod:
+      paas: dit-services/lite/lite-hmrc
+    uat:
+      paas: dit-staging/lite-uat/lite-hmrc-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-hmrc-worker
+  notes: service created based on Procfile entry for lite-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-hmrc.git
+  secrets: {}
+  secrets_from: lite-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    demo:
+      ipfilter: true
+      paas: dit-staging/lite-demo/lite-internal-frontend-demo
+      url: internal.lite.service.demo.uktrade.digital
+    dev:
+      ipfilter: true
+      paas: dit-staging/lite-dev/lite-internal-frontend-dev
+      url: internal.lite.service.dev.uktrade.digital
+    devdata:
+      ipfilter: true
+      paas: dit-staging/lite-devdata/lite-internal-frontend-devdata
+      url: internal.lite.service.devdata.uktrade.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/lite/lite-internal-frontend
+      url: internal.lite.service.private-beta.uktrade.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/lite-uat/lite-internal-frontend-uat
+      url: internal.lite.service.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-internal-frontend
+  repo: git@github.com:uktrade/lite-frontend.git
+  secrets: {}
+  type: public

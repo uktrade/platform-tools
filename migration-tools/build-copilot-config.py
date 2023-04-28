@@ -55,7 +55,7 @@ def space_to_copilot_app(app_name, ns_conf):
     for service, service_conf in ns_conf.items():
 
         for environment in service_conf["environments"]:
-            if hasattr(environment, 'paas') and isinstance(environment["paas"], dict):
+            if hasattr(environment, 'paas') and  isinstance(environment["paas"], dict):
                 secrets[service].extend(environment["paas"]["env_keys"])
                 for bs in environment["paas"]["services"]:
                     if bs["name"] not in backing_services[environment["environment"]]:
@@ -76,7 +76,7 @@ def space_to_copilot_app(app_name, ns_conf):
 
         processes = None
         for env_conf in service_conf["environments"]:
-            if not hasattr(env_conf, 'paas') or env_conf["paas"] == "NO-APP-FOUND":
+            if 'paas' not in env_conf or env_conf["paas"] == "NO-APP-FOUND":
                 continue
             processes = env_conf["paas"]["processes"]
 
@@ -150,6 +150,10 @@ def space_to_copilot_app(app_name, ns_conf):
     return app_config
 
 if __name__ == "__main__":
+    folder = f"{CURRENT_FILEPATH}/../bootstrap-config"
+    for filename in os.listdir(folder):
+        os.remove(f"{folder}/{filename}")
+
     with open(SOURCE_PATH, "r") as fd:
         conf = yaml.safe_load(fd)
 

@@ -1,8 +1,99 @@
 app: intranet
 environments:
-  dev: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-static.workspace.dev.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-s3proxy-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-digital-workspace-v2-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.dev.uktrade.digital
   hotfix: {}
-  prod: {}
-  staging: {}
-  training: {}
-services: []
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.trade.gov.uk
+    - ACM-ARN-FOR-peoplefinder.london.cloudapps.digital
+    - ACM-ARN-FOR-people.trade.gov.uk
+    - ACM-ARN-FOR-workspace.trade.gov.uk
+    - ACM-ARN-FOR-admin.workspace.trade.gov.uk
+    - ACM-ARN-FOR-digital-workspace-v2.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.trade.gov.uk
+    - ACM-ARN-FOR-digital-workspace-v2.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-assets.workspace.trade.uat.uktrade.io
+    - ACM-ARN-FOR-static.digital-workspace-v2-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.staging.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-v2-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.staging.uktrade.digital
+  training:
+    certificate_arns:
+    - ACM-ARN-FOR-digital-workspace-s3proxy-training.london.cloudapps.digital
+    - ACM-ARN-FOR-static.workspace.training.uktrade.digital
+    - ACM-ARN-FOR-digital-workspace-v2-training.london.cloudapps.digital
+    - ACM-ARN-FOR-workspace.training.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/intranet-dev/digital-workspace-s3proxy-dev
+      url: digital-workspace-s3proxy-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/intranet/digital-workspace-s3proxy
+      url: static.workspace.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/intranet-staging/digital-workspace-s3proxy-staging
+      url: static.workspace.staging.uktrade.digital
+    training:
+      ipfilter: true
+      paas: dit-staging/intranet-training/digital-workspace-s3proxy-training
+      url: static.workspace.training.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-s3proxy
+  repo: git@github.com:uktrade/s3proxy.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/intranet-dev/digital-workspace-v2-dev
+      url: workspace.dev.uktrade.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/intranet/digital-workspace-v2
+      url: digital-workspace-v2.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/intranet-staging/digital-workspace-v2-staging
+      url: workspace.staging.uktrade.digital
+    training:
+      ipfilter: true
+      paas: dit-staging/intranet-training/digital-workspace-v2-training
+      url: workspace.training.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-v2
+  repo: git@github.com:uktrade/digital-workspace-v2.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/intranet-dev/digital-workspace-v2-dev
+    prod:
+      paas: dit-services/intranet/digital-workspace-v2
+    staging:
+      paas: dit-staging/intranet-staging/digital-workspace-v2-staging
+    training:
+      paas: dit-staging/intranet-training/digital-workspace-v2-training
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: digital-workspace-v2-worker
+  notes: service created based on Procfile entry for digital-workspace-v2 and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/digital-workspace-v2.git
+  secrets: {}
+  secrets_from: digital-workspace-v2
+  type: backend

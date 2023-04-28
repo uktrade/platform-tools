@@ -1,9 +1,102 @@
 app: activity-stream
 environments:
-  dev-eu-west-2: {}
+  dev-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-activity-stream-dev.london.cloudapps.digital
   production-2-eu-west-2: {}
-  production-3-eu-west-2: {}
-  production-eu-west-2: {}
-  staging-eu-west-2: {}
-  uat-eu-west-2: {}
-services: []
+  production-3-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-activity-stream-3.london.cloudapps.digital
+  production-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-activity-stream-verification-feed.london.cloudapps.digital
+  staging-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-activity-stream-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-activity-stream-kibana-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-activity-stream-elasticsearch-staging.london.cloudapps.digital
+  uat-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-activity-stream-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-activity-stream-kibana-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-activity-stream-elasticsearch-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev-eu-west-2:
+      ipfilter: true
+      paas: dit-staging/activity-stream-dev/activity-stream-dev
+      url: activity-stream-dev.london.cloudapps.digital
+    production-3-eu-west-2:
+      ipfilter: false
+      paas: dit-services/activity-stream/activity-stream-3
+      url: activity-stream-3.london.cloudapps.digital
+    staging-eu-west-2:
+      ipfilter: true
+      paas: dit-staging/activity-stream-staging/activity-stream-staging
+      url: activity-stream-staging.london.cloudapps.digital
+    uat-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-uat/activity-stream-uat
+      url: activity-stream-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: activity-stream
+  repo: git@github.com:uktrade/activity-stream.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev-eu-west-2:
+      paas: dit-staging/activity-stream-dev/activity-stream-dev
+    production-3-eu-west-2:
+      paas: dit-services/activity-stream/activity-stream-3
+    staging-eu-west-2:
+      paas: dit-staging/activity-stream-staging/activity-stream-staging
+    uat-eu-west-2:
+      paas: dit-staging/activity-stream-uat/activity-stream-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: activity-stream-worker
+  notes: service created based on Procfile entry for activity-stream and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/activity-stream.git
+  secrets: {}
+  secrets_from: activity-stream
+  type: backend
+- env_vars: {}
+  environments:
+    staging-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-staging/activity-stream-kibana-staging
+      url: activity-stream-elasticsearch-staging.london.cloudapps.digital
+    uat-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-uat/activity-stream-kibana-uat
+      url: activity-stream-elasticsearch-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: activity-stream-kibana
+  repo: git@github.com:uktrade/kibana-paas.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-dev/activity-stream-verification-feed-dev
+      url: null
+    production-eu-west-2:
+      ipfilter: false
+      paas: dit-services/activity-stream/activity-stream-verification-feed
+      url: activity-stream-verification-feed.london.cloudapps.digital
+    staging-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-staging/activity-stream-verification-feed-staging
+      url: null
+    uat-eu-west-2:
+      ipfilter: false
+      paas: dit-staging/activity-stream-uat/activity-stream-verification-feed-uat
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: activity-stream-verification-feed
+  repo: git@github.com:uktrade/activity-stream.git
+  secrets: {}
+  type: public

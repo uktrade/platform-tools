@@ -1,7 +1,247 @@
 app: datasci
 environments:
-  dev: {}
-  dev-a: {}
-  production: {}
-  staging: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-data-flow-dev.london.cloudapps.digital
+  dev-a:
+    certificate_arns:
+    - ACM-ARN-FOR-data-flow-dev-a.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-data-flow.london.cloudapps.digital
+    - ACM-ARN-FOR-dt06.london.cloudapps.digital
+    - ACM-ARN-FOR-dt07.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-data-flow-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-dt05-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-dt06-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-dt07-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/datasci-dev/data-flow-dev
+      url: data-flow-dev.london.cloudapps.digital
+    dev-a:
+      ipfilter: false
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+      url: data-flow-dev-a.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/datasci/data-flow
+      url: data-flow.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/datasci-staging/data-flow-staging
+      url: data-flow-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-flower
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-scheduler
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-worker
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-high-memory-worker
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-tensorflow-worker
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-es-ingest-worker
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    dev-a:
+      paas: dit-staging/datasci-dev/data-flow-dev-a
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-sensors-worker
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/datasci/dt04
+      url: null
+    staging:
+      ipfilter: false
+      paas: dit-staging/datasci-staging/dt04-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt04-input
+  repo: git@github.com:uktrade/dt04-input.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/datasci/dt05
+      url: null
+    staging:
+      ipfilter: true
+      paas: dit-staging/datasci-staging/dt05-staging
+      url: dt05-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt05-clean
+  repo: git@github.com:uktrade/dt05-clean.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      paas: dit-services/datasci/dt05
+    staging:
+      paas: dit-staging/datasci-staging/dt05-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt05-clean-worker
+  notes: service created based on Procfile entry for dt05-clean and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/dt05-clean.git
+  secrets: {}
+  secrets_from: dt05-clean
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/datasci/dt06
+      url: dt06.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/datasci-staging/dt06-staging
+      url: dt06-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt06-algorithm
+  repo: git@github.com:uktrade/dt06-algorithm.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/datasci-dev/dt07-dev
+      url: null
+    production:
+      ipfilter: false
+      paas: dit-services/datasci/dt07
+      url: dt07.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/datasci-staging/dt07-staging
+      url: dt07-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt07-reporting
+  repo: git@github.com:uktrade/dt07-reporting.git
+  secrets: {}
+  type: public

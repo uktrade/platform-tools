@@ -2,4 +2,27 @@ app: datasci-trid
 environments:
   production: {}
   staging: {}
-services: []
+services:
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: traderemedies-services/datasci/dt05
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt05-tra-clean
+  repo: git@github.com:uktrade/dt05-clean-tra.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      paas: traderemedies-services/datasci/dt05
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dt05-tra-clean-worker
+  notes: service created based on Procfile entry for dt05-tra-clean and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/dt05-clean-tra.git
+  secrets: {}
+  secrets_from: dt05-tra-clean
+  type: backend

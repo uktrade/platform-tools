@@ -1,6 +1,121 @@
 app: dso
 environments:
-  dev: {}
-  production: {}
-  staging: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-dso-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-dso-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-dso.london.cloudapps.digital
+    - ACM-ARN-FOR-dso.london.cloudapps.digital
+    - ACM-ARN-FOR-www.manage-delegates.trade.gov.uk
+    - ACM-ARN-FOR-dso.london.cloudapps.digital
+    - ACM-ARN-FOR-dso.london.cloudapps.digital
+    - ACM-ARN-FOR-www.manage-delegates.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-dso-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-dso-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/dso-dev/dso-dev
+      url: dso-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/dso/dso
+      url: www.manage-delegates.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/dso-staging/dso-staging
+      url: dso-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dso-exhibitions-v2
+  repo: git@github.com:uktrade/dso-exhibitions-v2.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/dso-dev/dso-dev
+    production:
+      paas: dit-services/dso/dso
+    staging:
+      paas: dit-staging/dso-staging/dso-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dso-exhibitions-v2-celery
+  notes: service created based on Procfile entry for dso-exhibitions-v2 and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/dso-exhibitions-v2.git
+  secrets: {}
+  secrets_from: dso-exhibitions-v2
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/dso-dev/dso-dev
+    production:
+      paas: dit-services/dso/dso
+    staging:
+      paas: dit-staging/dso-staging/dso-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dso-exhibitions-v2-celery-beat
+  notes: service created based on Procfile entry for dso-exhibitions-v2 and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/dso-exhibitions-v2.git
+  secrets: {}
+  secrets_from: dso-exhibitions-v2
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/dso-dev/dso-dev
+      url: dso-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/dso/dso
+      url: www.manage-delegates.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/dso-staging/dso-staging
+      url: dso-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: ukdse-events
+  repo: git@github.com:uktrade/ukdse-events
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/dso-dev/dso-dev
+    production:
+      paas: dit-services/dso/dso
+    staging:
+      paas: dit-staging/dso-staging/dso-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: ukdse-events-celery
+  notes: service created based on Procfile entry for ukdse-events and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/ukdse-events
+  secrets: {}
+  secrets_from: ukdse-events
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/dso-dev/dso-dev
+    production:
+      paas: dit-services/dso/dso
+    staging:
+      paas: dit-staging/dso-staging/dso-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: ukdse-events-celery-beat
+  notes: service created based on Procfile entry for ukdse-events and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/ukdse-events
+  secrets: {}
+  secrets_from: ukdse-events
+  type: backend

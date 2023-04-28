@@ -1,7 +1,62 @@
 app: finance
 environments:
-  dev: {}
-  hotfix: {}
-  prod-data: {}
-  production: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-fft.trade.dev.uktrade.digital
+    - ACM-ARN-FOR-fft-dev.london.cloudapps.digital
+  hotfix:
+    certificate_arns:
+    - ACM-ARN-FOR-fft-hotfix.trade.dev.uktrade.digital
+    - ACM-ARN-FOR-fft-hotfix.london.cloudapps.digital
+  prod-data:
+    certificate_arns:
+    - ACM-ARN-FOR-fft-prod-data.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-fido-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-fido.trade.gov.uk
+    - ACM-ARN-FOR-fft.trade.gov.uk
+    - ACM-ARN-FOR-fft.london.cloudapps.digital
+    - ACM-ARN-FOR-fft.trade.gov.uk
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/finance-dev/fft-dev
+      url: fft-dev.london.cloudapps.digital
+    hotfix:
+      ipfilter: true
+      paas: dit-staging/finance-hotfix/fft-hotfix
+      url: fft-hotfix.london.cloudapps.digital
+    prod-data:
+      ipfilter: true
+      paas: dit-staging/finance-prod-data/fft-prod-data
+      url: fft-prod-data.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/finance/fft
+      url: fft.trade.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: fft
+  repo: git@github.com:uktrade/fft.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/finance-dev/fft-dev
+    hotfix:
+      paas: dit-staging/finance-hotfix/fft-hotfix
+    prod-data:
+      paas: dit-staging/finance-prod-data/fft-prod-data
+    production:
+      paas: dit-services/finance/fft
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: fft-worker
+  notes: service created based on Procfile entry for fft and will require access to
+    the same backing services
+  repo: git@github.com:uktrade/fft.git
+  secrets: {}
+  secrets_from: fft
+  type: backend

@@ -1,6 +1,53 @@
 app: trade-access
 environments:
-  dev: {}
-  staging: {}
-  uat: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-dev.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-staging.london.cloudapps.digital
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-access-program-backoffice-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-access-program-frontend-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-access-dev/trade-access-program-backoffice-dev
+      url: trade-access-program-backoffice-dev.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-access-staging/trade-access-program-backoffice-staging
+      url: trade-access-program-backoffice-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/trade-access-uat/trade-access-program-backoffice-uat
+      url: trade-access-program-backoffice-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-access-program-backoffice
+  repo: git@github.com:uktrade/trade-access-program.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/trade-access-dev/trade-access-program-frontend-dev
+      url: trade-access-program-frontend-dev.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/trade-access-staging/trade-access-program-frontend-staging
+      url: trade-access-program-frontend-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/trade-access-uat/trade-access-program-frontend-uat
+      url: trade-access-program-frontend-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-access-program-frontend
+  repo: git@github.com:uktrade/trade-access-program.git
+  secrets: {}
+  type: public

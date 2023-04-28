@@ -1,6 +1,31 @@
 app: enhanced-support
 environments:
-  dev: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-enhanced-support-designer-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-enhanced-support-runner-dev.london.cloudapps.digital
   prod: {}
   staging: {}
-services: []
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/enhanced-support-dev/enhanced-support-designer-dev
+      url: enhanced-support-designer-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: enhanced-support-designer
+  repo: git@github.com:froddd/digital-form-builder.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/enhanced-support-dev/enhanced-support-runner-dev
+      url: enhanced-support-runner-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: enhanced-support-runner
+  repo: git@github.com:froddd/digital-form-builder.git
+  secrets: {}
+  type: public

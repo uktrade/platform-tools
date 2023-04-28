@@ -1,7 +1,114 @@
 app: public-apis
 environments:
-  dev: {}
-  development: {}
-  production: {}
-  staging: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.dev.uktrade.digital
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-tariffs-api-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs-api.london.cloudapps.digital
+    - ACM-ARN-FOR-tariffs.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs-api.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.api.trade.gov.uk
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.api.trade.gov.uk
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-tariffs-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta--staging.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra--staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/public-apis-dev/data-api-dev
+      url: data.api.trade.dev.uktrade.digital
+    production:
+      ipfilter: false
+      paas: dit-services/public-apis/data-api
+      url: data.api.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/public-apis-staging/data-api-staging
+      url: data.api.trade.staging.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-data-api
+  repo: git@github.com:uktrade/public-data-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/public-apis-dev/data-api-dev
+    production:
+      paas: dit-services/public-apis/data-api
+    staging:
+      paas: dit-staging/public-apis-staging/data-api-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-data-api-worker
+  notes: service created based on Procfile entry for public-data-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/public-data-api.git
+  secrets: {}
+  secrets_from: public-data-api
+  type: backend
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/public-apis-dev/tariffs-api-dev
+      url: tariffs-api-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/tariffs-api
+      url: tariffs-api.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/public-apis-staging/tariffs-api-staging
+      url: tariffs-api-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-tariffs-api
+  repo: git@github.com:uktrade/trade-tariff-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/sftp-notification--hmrc-fta
+      url: sftp-notification--hmrc-fta.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/public-apis-staging/sftp-notification--hmrc-fta--staging
+      url: sftp-notification--hmrc-fta--staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sftp-notification--hmrc-fta
+  repo: git@github.com:uktrade/s3-dropbox.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/sftp-notification--hmrc-tra
+      url: sftp-notification--hmrc-tra.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging
+      url: sftp-notification--hmrc-tra--staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sftp-notification--hmrc-tra
+  repo: git@github.com:uktrade/s3-dropbox.git
+  secrets: {}
+  type: public

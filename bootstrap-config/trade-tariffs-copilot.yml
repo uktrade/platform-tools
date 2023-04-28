@@ -1,14 +1,249 @@
 app: trade-tariffs
 environments:
-  dev: {}
-  development: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-manage-trade-tariffs-design-dev.london.cloudapps.digital
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-tamato-dev.london.cloudapps.digital
   development_eu-west-2: {}
-  production: {}
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-global-uk-tariff.london.cloudapps.digital
+    - ACM-ARN-FOR-check-future-uk-trade-tariffs.service.gov.uk
+    - ACM-ARN-FOR-www.check-future-uk-trade-tariffs.service.gov.uk
+    - ACM-ARN-FOR-www.check-future-uk-trade-tariffs.service.gov.uk
+    - ACM-ARN-FOR-www.check-future-uk-trade-tariffs.service.gov.uk
+    - ACM-ARN-FOR-manage-trade-tariffs-design.london.cloudapps.digital
+    - ACM-ARN-FOR-manage-trade-tariffs.trade.gov.uk
+    - ACM-ARN-FOR-www.manage-trade-tariffs.trade.gov.uk
+    - ACM-ARN-FOR-tamato-flower.london.cloudapps.digital
+    - ACM-ARN-FOR-tariffs-api-unfraternizing-cyclosis.london.cloudapps.digital
+    - ACM-ARN-FOR-tariffs-api-prod.london.cloudapps.digital
   production_eu-west-2: {}
   staging: {}
   staging_eu-west-2: {}
-  test: {}
-  training: {}
+  test:
+    certificate_arns:
+    - ACM-ARN-FOR-manage-trade-tariffs-design-test.london.cloudapps.digital
+    - ACM-ARN-FOR-manage-trade-tariffs.trade.test.uktrade.digital
+    - ACM-ARN-FOR-tamato-test.london.cloudapps.digital
+  training:
+    certificate_arns:
+    - ACM-ARN-FOR-tamato-training.london.cloudapps.digital
   training_eu-west-2: {}
-  uat: {}
-services: []
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-manage-trade-tariffs-design-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-tamato-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-tamato-flower-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/tariffs/global-uk-tariff
+      url: www.check-future-uk-trade-tariffs.service.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: global-uk-tariff
+  repo: git@github.com:uktrade/global-uk-tariff.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/tariffs-dev/manage-trade-tariffs-design-dev
+      url: manage-trade-tariffs-design-dev.london.cloudapps.digital
+    production:
+      ipfilter: false
+      paas: dit-services/tariffs/manage-trade-tariffs-design
+      url: manage-trade-tariffs-design.london.cloudapps.digital
+    test:
+      ipfilter: false
+      paas: dit-staging/tariffs-test/manage-trade-tariffs-design-test
+      url: manage-trade-tariffs-design-test.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/tariffs-uat/manage-trade-tariffs-design-uat
+      url: manage-trade-tariffs-design-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: manage-trade-tariffs-design
+  repo: git@github.com:uktrade/manage-trade-tariffs-design.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/tariffs-dev/tamato-dev
+      url: tamato-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/tariffs/tamato
+      url: www.manage-trade-tariffs.trade.gov.uk
+    test:
+      ipfilter: false
+      paas: dit-staging/tariffs-test/tamato-test
+      url: tamato-test.london.cloudapps.digital
+    training:
+      ipfilter: true
+      paas: dit-staging/tariffs-training/tamato-training
+      url: tamato-training.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/tariffs-uat/tamato-uat
+      url: tamato-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato
+  repo: git@github.com:uktrade/tamato.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    development:
+      paas: dit-staging/tariffs-dev/tamato-dev
+    production:
+      paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
+    training:
+      paas: dit-staging/tariffs-training/tamato-training
+    uat:
+      paas: dit-staging/tariffs-uat/tamato-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-beat
+  notes: service created based on Procfile entry for tamato and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/tamato.git
+  secrets: {}
+  secrets_from: tamato
+  type: backend
+- env_vars: {}
+  environments:
+    development:
+      paas: dit-staging/tariffs-dev/tamato-dev
+    production:
+      paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
+    training:
+      paas: dit-staging/tariffs-training/tamato-training
+    uat:
+      paas: dit-staging/tariffs-uat/tamato-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-worker
+  notes: service created based on Procfile entry for tamato and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/tamato.git
+  secrets: {}
+  secrets_from: tamato
+  type: backend
+- env_vars: {}
+  environments:
+    development:
+      paas: dit-staging/tariffs-dev/tamato-dev
+    production:
+      paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
+    training:
+      paas: dit-staging/tariffs-training/tamato-training
+    uat:
+      paas: dit-staging/tariffs-uat/tamato-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-flower
+  notes: service created based on Procfile entry for tamato and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/tamato.git
+  secrets: {}
+  secrets_from: tamato
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/tariffs/tamato-flower
+      url: tamato-flower.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/tariffs-uat/tamato-flower-uat
+      url: tamato-flower-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-flower
+  repo: git@github.com:uktrade/flower-runner.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/tariffs/tariffs-api
+      url: tariffs-api-prod.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/tariffs-uat/tariffs-api-uat
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-api
+  repo: git@github.com:uktrade/trade-tariff-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    training_eu-west-2:
+      ipfilter: false
+      paas: dit-staging/tariffs-training/tariffs-training
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-management
+  repo: git@github.com:uktrade/trade-tariff-management.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    training_eu-west-2:
+      paas: dit-staging/tariffs-training/tariffs-training
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-management-worker
+  notes: service created based on Procfile entry for trade-tariff-management and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/trade-tariff-management.git
+  secrets: {}
+  secrets_from: trade-tariff-management
+  type: backend
+- env_vars: {}
+  environments:
+    training:
+      ipfilter: false
+      paas: dit-staging/tariffs-training/tariff-reference-training
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-reference
+  repo: git@github.com:uktrade/trade-tariff-reference.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    training:
+      paas: dit-staging/tariffs-training/tariff-reference-training
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-reference-celerybeat
+  notes: service created based on Procfile entry for trade-tariff-reference and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/trade-tariff-reference.git
+  secrets: {}
+  secrets_from: trade-tariff-reference
+  type: backend
+- env_vars: {}
+  environments:
+    training:
+      paas: dit-staging/tariffs-training/tariff-reference-training
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: trade-tariff-reference-worker
+  notes: service created based on Procfile entry for trade-tariff-reference and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/trade-tariff-reference.git
+  secrets: {}
+  secrets_from: trade-tariff-reference
+  type: backend

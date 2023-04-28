@@ -2,14 +2,791 @@ app: directory
 environments:
   beta: {}
   cd-feature_eu-west-2: {}
-  dev: {}
-  dev_eu-west-2: {}
-  prod: {}
-  prod_eu-west-2: {}
-  production: {}
-  production_eu-west-2: {}
-  staging: {}
-  staging_eu-west-2: {}
-  uat: {}
-  uat_eu-west-2: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-exceptional-review-procedure-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-exceptional-review-procedure.service.dev.uktrade.io
+    - ACM-ARN-FOR-give-trade-tariff-feedback.service.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-cms-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great-cms.dev.uktrade.digital
+    - ACM-ARN-FOR-great-mvp.dev.uktrade.digital
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-international-ui-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+  dev_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-cms.trade.great.dev.uktrade.io
+    - ACM-ARN-FOR-cms.trade.great.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-companies-house-search-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-components-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-forms-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-sso-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-sso-profile-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-sso-proxy-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-ui-buyer-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-great-domestic-ui-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-invest-pir-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-admin-pir.invest.great.dev.uktrade.io
+    - ACM-ARN-FOR-admin-pir.invest.great.dev.uktrade.digital
+    - ACM-ARN-FOR-navigator-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-exceptional-review-procedure.london.cloudapps.digital
+    - ACM-ARN-FOR-give-trade-tariff-feedback.service.gov.uk
+    - ACM-ARN-FOR-great-international-ui.london.cloudapps.digital
+    - ACM-ARN-FOR-demo.export.great.gov.uk
+    - ACM-ARN-FOR-great.preprod.uktrade.io
+    - ACM-ARN-FOR-www.great.gov.uk
+  prod_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-api.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms.london.cloudapps.digital
+    - ACM-ARN-FOR-cms.trade.great.gov.uk
+    - ACM-ARN-FOR-directory-companies-house-search.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-forms-api.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-sso.london.cloudapps.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-directory-sso-profile.london.cloudapps.digital
+    - ACM-ARN-FOR-profile.great.gov.uk
+    - ACM-ARN-FOR-directory-sso-proxy.london.cloudapps.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-sso.trade.great.gov.uk
+    - ACM-ARN-FOR-directory-ui-buyer.london.cloudapps.digital
+    - ACM-ARN-FOR-find-a-buyer.export.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-directory-ui-supplier.london.cloudapps.digital
+    - ACM-ARN-FOR-trade.great.gov.uk
+    - ACM-ARN-FOR-great-domestic-ui.london.cloudapps.digital
+    - ACM-ARN-FOR-great.prod.uktrade.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-invest-pir-api.london.cloudapps.digital
+    - ACM-ARN-FOR-admin-pir.invest.great.gov.uk
+    - ACM-ARN-FOR-invest-pir-api.london.cloudapps.digital
+    - ACM-ARN-FOR-invest-ui.london.cloudapps.digital
+    - ACM-ARN-FOR-invest.great.gov.uk
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-cms-flower.london.cloudapps.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-great-cms.london.cloudapps.digital
+    - ACM-ARN-FOR-great.prod.uktrade.digital
+    - ACM-ARN-FOR-great.prod.uktrade.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-great-cms.london.cloudapps.digital
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+  production_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-navigator.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-sooadmin.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-exceptional-review-procedure-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-exceptional-review-procedure.service.staging.uktrade.io
+    - ACM-ARN-FOR-give-trade-tariff-feedback.service.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great-cms-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great-cms.staging.uktrade.digital
+    - ACM-ARN-FOR-great-mvp.staging.uktrade.digital
+    - ACM-ARN-FOR-great-magna.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great-international-ui-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.demo.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great-styles-staging.london.cloudapps.digital
+  staging_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-cms.trade.great.staging.uktrade.io
+    - ACM-ARN-FOR-cms.trade.great.staging.uktrade.digital
+    - ACM-ARN-FOR-directory-companies-house-search-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-forms-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-sso-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-directory-sso-profile-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-sso-proxy-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-directory-ui-buyer-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-directory-ui-supplier-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great-domestic-ui-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.demo.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-invest-pir-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-admin-pir.invest.great.staging.uktrade.io
+    - ACM-ARN-FOR-admin-pir.invest.great.staging.uktrade.digital
+    - ACM-ARN-FOR-navigator-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-cms-flower-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great-cms-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great-international-ui-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+  uat_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-directory-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-cms.trade.great.uat.uktrade.io
+    - ACM-ARN-FOR-cms.trade.great.uat.uktrade.digital
+    - ACM-ARN-FOR-directory-companies-house-search-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-forms-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-forms-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-sso-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-magna-beta.great.uktrade.digital
+    - ACM-ARN-FOR-directory-sso-profile-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-directory-sso-proxy-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-directory-ui-buyer-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great-domestic-ui-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-invest-pir-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-admin-pir.invest.great.uat.uktrade.io
+    - ACM-ARN-FOR-admin-pir.invest.great.uat.uktrade.digital
+    - ACM-ARN-FOR-navigator-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+services:
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-api-dev
+      url: directory-api-dev.london.cloudapps.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-api
+      url: directory-api.london.cloudapps.digital
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-api-staging
+      url: directory-api-staging.london.cloudapps.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-api-uat
+      url: directory-api-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-api
+  repo: git@github.com:uktrade/directory-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-api-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-api
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-api-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-api-celery_beat
+  notes: service created based on Procfile entry for directory-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-api.git
+  secrets: {}
+  secrets_from: directory-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-api-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-api
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-api-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-api-celery_worker
+  notes: service created based on Procfile entry for directory-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-api.git
+  secrets: {}
+  secrets_from: directory-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-cms-dev
+      url: cms.trade.great.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-cms
+      url: cms.trade.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-cms-staging
+      url: cms.trade.great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-cms-uat
+      url: cms.trade.great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-cms
+  repo: git@github.com:uktrade/directory-cms.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-cms-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-cms
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-cms-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-cms-celery_beat
+  notes: service created based on Procfile entry for directory-cms and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-cms.git
+  secrets: {}
+  secrets_from: directory-cms
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-cms-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-cms
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-cms-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-cms-celery_worker
+  notes: service created based on Procfile entry for directory-cms and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-cms.git
+  secrets: {}
+  secrets_from: directory-cms
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/directory/directory-cms-flower
+      url: directory-cms-flower.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-cms-flower-uat
+      url: directory-cms-flower-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-cms-flower
+  repo: git@github.com:uktrade/flower-runner.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-companies-house-search-dev
+      url: directory-companies-house-search-dev.london.cloudapps.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-companies-house-search
+      url: directory-companies-house-search.london.cloudapps.digital
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-companies-house-search-staging
+      url: directory-companies-house-search-staging.london.cloudapps.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-companies-house-search-uat
+      url: directory-companies-house-search-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-companies-house-search
+  repo: git@github.com:uktrade/directory-companies-house-search.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-companies-house-search-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-companies-house-search
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-companies-house-search-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-companies-house-search-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-companies-house-search-celery_beat
+  notes: service created based on Procfile entry for directory-companies-house-search
+    and will require access to the same backing services
+  repo: git@github.com:uktrade/directory-companies-house-search.git
+  secrets: {}
+  secrets_from: directory-companies-house-search
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-companies-house-search-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-companies-house-search
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-companies-house-search-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-companies-house-search-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-companies-house-search-celery_worker
+  notes: service created based on Procfile entry for directory-companies-house-search
+    and will require access to the same backing services
+  repo: git@github.com:uktrade/directory-companies-house-search.git
+  secrets: {}
+  secrets_from: directory-companies-house-search
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-components-dev
+      url: directory-components-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-components
+  repo: git@github.com:uktrade/directory-components.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-forms-api-dev
+      url: directory-forms-api-dev.london.cloudapps.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-forms-api
+      url: directory-forms-api.london.cloudapps.digital
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-forms-api-staging
+      url: directory-forms-api-staging.london.cloudapps.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-forms-api-uat
+      url: directory-forms-api-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-forms-api
+  repo: git@github.com:uktrade/directory-forms-api.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-forms-api-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-forms-api
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-forms-api-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-forms-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-forms-api-celery_worker
+  notes: service created based on Procfile entry for directory-forms-api and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/directory-forms-api.git
+  secrets: {}
+  secrets_from: directory-forms-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-sso-dev
+      url: great.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-sso
+      url: www.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-sso-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-sso-uat
+      url: magna-beta.great.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-sso
+  repo: git@github.com:uktrade/directory-sso.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-sso-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-sso
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-sso-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-sso-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-sso-celery_beat
+  notes: service created based on Procfile entry for directory-sso and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-sso.git
+  secrets: {}
+  secrets_from: directory-sso
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/directory-sso-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/directory-sso
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/directory-sso-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/directory-sso-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-sso-celery_worker
+  notes: service created based on Procfile entry for directory-sso and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/directory-sso.git
+  secrets: {}
+  secrets_from: directory-sso
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-sso-profile-dev
+      url: great-magna.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-sso-profile
+      url: profile.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-sso-profile-staging
+      url: directory-sso-profile-staging.london.cloudapps.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-sso-profile-uat
+      url: great.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-sso-profile
+  repo: git@github.com:uktrade/directory-sso-profile.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-sso-proxy-dev
+      url: great.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-sso-proxy
+      url: sso.trade.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-sso-proxy-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-sso-proxy-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-sso-proxy
+  repo: git@github.com:uktrade/directory-sso-proxy.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/directory-ui-buyer-dev
+      url: great-magna.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-ui-buyer
+      url: www.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/directory-ui-buyer-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/directory-ui-buyer-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-ui-buyer
+  repo: git@github.com:uktrade/directory-ui-buyer.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/directory-ui-supplier
+      url: trade.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: false
+      paas: dit-staging/directory-staging/directory-ui-supplier-staging
+      url: directory-ui-supplier-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: directory-ui-supplier
+  repo: git@github.com:uktrade/directory-ui-supplier.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/directory-dev/exceptional-review-procedure-dev
+      url: give-trade-tariff-feedback.service.dev.uktrade.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/directory/exceptional-review-procedure
+      url: give-trade-tariff-feedback.service.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/directory-staging/exceptional-review-procedure-staging
+      url: give-trade-tariff-feedback.service.staging.uktrade.digital
+    uat:
+      ipfilter: false
+      paas: dit-staging/directory-uat/exceptional-review-procedure-uat
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: exceptional-review-procedure
+  repo: git@github.com:uktrade/exceptional-review-procedure.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/directory-dev/great-cms-dev
+      url: great.dev.uktrade.digital
+    production:
+      ipfilter: true
+      paas: dit-services/directory/great-cms
+      url: www.great.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/directory-staging/great-cms-staging
+      url: great.staging.uktrade.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/directory-uat/great-cms-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-cms
+  repo: git@github.com:uktrade/great-cms.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/directory-dev/great-cms-dev
+    production:
+      paas: dit-services/directory/great-cms
+    staging:
+      paas: dit-staging/directory-staging/great-cms-staging
+    uat:
+      paas: dit-staging/directory-uat/great-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-cms-celery_beat
+  notes: service created based on Procfile entry for great-cms and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/great-cms.git
+  secrets: {}
+  secrets_from: great-cms
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/directory-dev/great-cms-dev
+    production:
+      paas: dit-services/directory/great-cms
+    staging:
+      paas: dit-staging/directory-staging/great-cms-staging
+    uat:
+      paas: dit-staging/directory-uat/great-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-cms-celery_worker
+  notes: service created based on Procfile entry for great-cms and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/great-cms.git
+  secrets: {}
+  secrets_from: great-cms
+  type: backend
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/great-domestic-ui-dev
+      url: great.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/great-domestic-ui
+      url: www.great.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/great-domestic-ui-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/great-domestic-ui-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-domestic-ui
+  repo: git@github.com:uktrade/great-domestic-ui.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/directory-dev/great-international-ui-dev
+      url: great-magna.dev.uktrade.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/directory/great-international-ui
+      url: www.great.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/directory-staging/great-international-ui-staging
+      url: great.staging.uktrade.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/directory-uat/great-international-ui-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-international-ui
+  repo: git@github.com:uktrade/great-international-ui.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    staging:
+      ipfilter: true
+      paas: dit-staging/directory-staging/great-styles-staging
+      url: great-styles-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-styles
+  repo: git@github.com:uktrade/great-styles.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/invest-pir-api-dev
+      url: admin-pir.invest.great.dev.uktrade.digital
+    prod_eu-west-2:
+      ipfilter: true
+      paas: dit-services/directory/invest-pir-api
+      url: invest-pir-api.london.cloudapps.digital
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/invest-pir-api-staging
+      url: admin-pir.invest.great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/invest-pir-api-uat
+      url: admin-pir.invest.great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: invest-pir-api
+  repo: https://github.com/uktrade/invest-pir-api
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      paas: dit-staging/directory-dev/invest-pir-api-dev
+    prod_eu-west-2:
+      paas: dit-services/directory/invest-pir-api
+    staging_eu-west-2:
+      paas: dit-staging/directory-staging/invest-pir-api-staging
+    uat_eu-west-2:
+      paas: dit-staging/directory-uat/invest-pir-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: invest-pir-api-worker
+  notes: service created based on Procfile entry for invest-pir-api and will require
+    access to the same backing services
+  repo: https://github.com/uktrade/invest-pir-api
+  secrets: {}
+  secrets_from: invest-pir-api
+  type: backend
+- env_vars: {}
+  environments:
+    prod_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/invest-ui
+      url: invest.great.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: invest-ui
+  repo: git@github.com:uktrade/invest-ui.git
+  secrets: {}
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/selling-online-overseas-dev
+      url: great-magna.dev.uktrade.digital
+    production_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/selling-online-overseas
+      url: sooadmin.trade.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/selling-online-overseas-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/selling-online-overseas-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: selling-online-overseas
+  repo: git@github.com:uktrade/selling-online-overseas.git
+  secrets: {}
+  type: public

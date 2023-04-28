@@ -1,5 +1,26 @@
 app: export-support-service
 environments:
-  dev: {}
-  prod: {}
-services: []
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-export-support-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-export-support-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-www.get-help-selling-goods-services-abroad.service.gov.uk
+    - ACM-ARN-FOR-www.get-help-selling-goods-services-abroad.service.gov.uk
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/export-support-dev/export-support-dev
+      url: export-support-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/export-support/export-support-prod
+      url: www.get-help-selling-goods-services-abroad.service.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: export-support-service
+  repo: git@github.com:uktrade/export-support.git
+  secrets: {}
+  type: public
