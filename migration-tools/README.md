@@ -1,7 +1,7 @@
 # Migration tools
 
-Scripts used to determine application configuration by retrieving current pipeline configurations and GOV.UK
-PaaS data, such as environments, environment variables, domains, certificates, etc.
+Scripts used to determine application configuration by retrieving current pipeline configurations and GOV.UK PaaS data,
+such as environments, environment variables, domains, certificates, etc.
 
 ## Using the tools
 
