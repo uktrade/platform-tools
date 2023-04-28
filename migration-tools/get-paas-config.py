@@ -71,7 +71,6 @@ def get_paas_data(client):
 
                 v3app = client.v3.apps.get(app["metadata"]["guid"])
 
-                commands = []
                 for process in v3app.processes():
                     proc = client.v3.processes.get(process["guid"])
                     app_data["processes"].append({
