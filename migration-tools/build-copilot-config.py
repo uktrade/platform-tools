@@ -194,5 +194,5 @@ if __name__ == "__main__":
         print(ns_conf)
         app_conf = space_to_copilot_app(app_name, ns_conf)
 
-        with open(f"{CURRENT_FILEPATH}/../bootstrap-config/{app_name}-copilot.yaml", "w") as fd:
+        with open(f"{CURRENT_FILEPATH}/../bootstrap-config/{app_name}-copilot.yml", "w") as fd:
             yaml.dump(app_conf, fd)
