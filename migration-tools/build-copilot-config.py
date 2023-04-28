@@ -185,6 +185,7 @@ if __name__ == "__main__":
         conf = yaml.safe_load(fd)
 
     for app_name, ns_conf in conf["applications"].items():
+        print(f"Application: {app_name}")
         app_conf = space_to_copilot_app(app_name, ns_conf)
 
         with open(app_name + "-copilot.yaml", "w") as fd:
