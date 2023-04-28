@@ -10,7 +10,7 @@ import yaml
 
 CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
 CI_CONFIG_FILE = f"{CURRENT_FILEPATH}/ci-conf.yaml"
-PAAS_CONFIG_FILE = f"{CURRENT_FILEPATH}/paas-conf.yml"
+PAAS_CONFIG_FILE = f"{CURRENT_FILEPATH}/paas-config.yml"
 
 
 if __name__ == "__main__":

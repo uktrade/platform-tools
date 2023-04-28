@@ -46,5 +46,5 @@ def import_ci_config():
 if __name__ == "__main__":
     config = import_ci_config()
 
-    with open(f"{CURRENT_FILEPATH}/ci-conf.yaml", 'w') as outfile:
+    with open(f"{CURRENT_FILEPATH}/ci-config.yml", 'w') as outfile:
         yaml.dump(config, outfile)

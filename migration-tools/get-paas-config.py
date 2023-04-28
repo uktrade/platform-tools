@@ -129,5 +129,5 @@ if __name__ == "__main__":
 
     paas_apps = get_paas_data(client)
 
-    with open(f"{CURRENT_FILEPATH}/paas-conf.yml", 'w') as outfile:
+    with open(f"{CURRENT_FILEPATH}/paas-config.yml", 'w') as outfile:
         yaml.dump(paas_apps, outfile)
