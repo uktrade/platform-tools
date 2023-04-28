@@ -1,7 +1,6 @@
-app: public-apis
+app: dso
 environments:
   dev: {}
-  development: {}
   production: {}
   staging: {}
 services: []

@@ -1,6 +1,5 @@
-app: public-apis
+app: supply-chain-resilience
 environments:
-  dev: {}
   development: {}
   production: {}
   staging: {}

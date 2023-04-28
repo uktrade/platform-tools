@@ -1,6 +1,5 @@
-app: mi
+app: export-support-service
 environments:
   dev: {}
   prod: {}
-  staging: {}
 services: []

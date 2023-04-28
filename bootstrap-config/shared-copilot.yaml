@@ -1,6 +1,5 @@
-app: mi
+app: shared
 environments:
   dev: {}
-  prod: {}
-  staging: {}
+  s3: {}
 services: []

@@ -1,0 +1,12 @@
+app: webops
+environments:
+  dev: {}
+  dev-cdn: {}
+  dev-non-cdn: {}
+  prod: {}
+  production: {}
+  production-non-cdn: {}
+  production_eu-west-1: {}
+  production_eu-west-2: {}
+  stage: {}
+services: []
