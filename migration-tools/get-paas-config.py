@@ -45,10 +45,11 @@ def get_paas_data(client):
     apps = {}
 
     for org in client.v2.organizations:
+        print(f"Organisation: {org['entity']['name']}")
         for space in org.spaces():
-            print(space)
+            print(f"└── Space: {space['entity']['name']}")
             for app in space.apps():
-                print(app)
+                print(f"    ├── {app['entity']['name']}")
                 env_keys = list(app['entity']['environment_json'].keys()) if app['entity']['environment_json'] else []
 
                 env_keys = [k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]]
