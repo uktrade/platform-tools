@@ -1,0 +1,61 @@
+app: export-support-service
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-export-support-dev.london.cloudapps.digital
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-export-support-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-www.get-help-selling-goods-services-abroad.service.gov.uk
+    - ACM-ARN-FOR-www.get-help-selling-goods-services-abroad.service.gov.uk
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/export-support-dev/export-support-dev
+      url: export-support-dev.london.cloudapps.digital
+    prod:
+      ipfilter: true
+      paas: dit-services/export-support/export-support-prod
+      url: www.get-help-selling-goods-services-abroad.service.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: export-support-service
+  repo: git@github.com:uktrade/export-support.git
+  secrets:
+    AB_TESTING_ENABLED: AB_TESTING_ENABLED
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    COMPANIES_HOUSE_TOKEN: COMPANIES_HOUSE_TOKEN
+    CONSENT_API_ID: CONSENT_API_ID
+    CONSENT_API_KEY: CONSENT_API_KEY
+    CONSENT_API_METHOD: CONSENT_API_METHOD
+    CONSENT_API_URL: CONSENT_API_URL
+    CSP_REPORT_URI: CSP_REPORT_URI
+    CSP_SCRIPT_SRC_ADDITIONS: CSP_SCRIPT_SRC_ADDITIONS
+    CSP_SCRIPT_SRC_ELEM_ADDITIONS: CSP_SCRIPT_SRC_ELEM_ADDITIONS
+    DEBUG: DEBUG
+    DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS: DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS
+    DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS: DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS
+    DIRECTORY_FORMS_API_API_KEY: DIRECTORY_FORMS_API_API_KEY
+    DIRECTORY_FORMS_API_BASE_URL: DIRECTORY_FORMS_API_BASE_URL
+    DIRECTORY_FORMS_API_HEALTHCHECK_URL: DIRECTORY_FORMS_API_HEALTHCHECK_URL
+    DIRECTORY_FORMS_API_SENDER_ID: DIRECTORY_FORMS_API_SENDER_ID
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_BASE_DIR: DJANGO_BASE_DIR
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    EECAN_ROLLOUT_FEATURE_FLAG: EECAN_ROLLOUT_FEATURE_FLAG
+    FORM_URL: FORM_URL
+    GA_MEASUREMENT_PROTOCOL_TRACK_EVENTS: GA_MEASUREMENT_PROTOCOL_TRACK_EVENTS
+    GA_MEASUREMENT_PROTOCOL_UA: GA_MEASUREMENT_PROTOCOL_UA
+    GTM_AUTH: GTM_AUTH
+    GTM_COOKIES_WIN: GTM_COOKIES_WIN
+    GTM_ID: GTM_ID
+    GTM_PREVIEW: GTM_PREVIEW
+    ROW_ROLLOUT_FEATURE_FLAG: ROW_ROLLOUT_FEATURE_FLAG
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    START_PAGE_URL: START_PAGE_URL
+    ZENDESK_CUSTOM_FIELD_MAPPING: ZENDESK_CUSTOM_FIELD_MAPPING
+    ZENDESK_SERVICE_NAME: ZENDESK_SERVICE_NAME
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
+  type: public

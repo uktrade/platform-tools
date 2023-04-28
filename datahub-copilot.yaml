@@ -1,0 +1,544 @@
+app: datahub
+environments:
+  demo: {}
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-datahub-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-api.datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-www.datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub-filebrowser-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-legacy.datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub-omis-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-omis.datahub.dev.uktrade.io
+  mig-test: {}
+  prod: {}
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-api.datahub.trade.gov.uk
+    - ACM-ARN-FOR-datahub-api.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub.london.cloudapps.digital
+    - ACM-ARN-FOR-www.datahub.trade.gov.uk
+    - ACM-ARN-FOR-datahub-filebrowser.london.cloudapps.digital
+    - ACM-ARN-FOR-legacy.datahub.trade.gov.uk
+    - ACM-ARN-FOR-omis.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-datahub-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-api.datahub.staging.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-www.datahub.staging.uktrade.io
+    - ACM-ARN-FOR-datahub-filebrowser-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-legacy.datahub.staging.uktrade.io
+    - ACM-ARN-FOR-datahub-omis-staging.london.cloudapps.digital
+  uat:
+    certificate_arns:
+    - ACM-ARN-FOR-datahub-api-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-api.datahub.uat.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-www.datahub.uat.uktrade.io
+    - ACM-ARN-FOR-datahub-filebrowser-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-legacy.datahub.uat.uktrade.io
+    - ACM-ARN-FOR-datahub-omis-uat.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/datahub-dev/datahub-api-dev
+      url: api.datahub.dev.uktrade.io
+    production:
+      ipfilter: true
+      paas: dit-services/datahub/datahub-api
+      url: datahub-api.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/datahub-staging/datahub-api-staging
+      url: api.datahub.staging.uktrade.io
+    uat:
+      ipfilter: true
+      paas: dit-staging/datahub-uat/datahub-api-uat
+      url: api.datahub.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api
+  overlapping_secrets:
+  - DEBUG
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets:
+    ACTIVITY_STREAM_ACCESS_KEY_ID: ACTIVITY_STREAM_ACCESS_KEY_ID
+    ACTIVITY_STREAM_INCOMING_ACCESS_KEY_ID: ACTIVITY_STREAM_INCOMING_ACCESS_KEY_ID
+    ACTIVITY_STREAM_INCOMING_IP_WHITELIST: ACTIVITY_STREAM_INCOMING_IP_WHITELIST
+    ACTIVITY_STREAM_INCOMING_SECRET_ACCESS_KEY: ACTIVITY_STREAM_INCOMING_SECRET_ACCESS_KEY
+    ACTIVITY_STREAM_IP_WHITELIST: ACTIVITY_STREAM_IP_WHITELIST
+    ACTIVITY_STREAM_OUTGOING_ACCESS_KEY_ID: ACTIVITY_STREAM_OUTGOING_ACCESS_KEY_ID
+    ACTIVITY_STREAM_OUTGOING_SECRET_ACCESS_KEY: ACTIVITY_STREAM_OUTGOING_SECRET_ACCESS_KEY
+    ACTIVITY_STREAM_OUTGOING_URL: ACTIVITY_STREAM_OUTGOING_URL
+    ACTIVITY_STREAM_SECRET_ACCESS_KEY: ACTIVITY_STREAM_SECRET_ACCESS_KEY
+    ADMIN_OAUTH2_AUTH_PATH: ADMIN_OAUTH2_AUTH_PATH
+    ADMIN_OAUTH2_BASE_URL: ADMIN_OAUTH2_BASE_URL
+    ADMIN_OAUTH2_CLIENT_ID: ADMIN_OAUTH2_CLIENT_ID
+    ADMIN_OAUTH2_CLIENT_SECRET: ADMIN_OAUTH2_CLIENT_SECRET
+    ADMIN_OAUTH2_ENABLED: ADMIN_OAUTH2_ENABLED
+    ADMIN_OAUTH2_LOGOUT_PATH: ADMIN_OAUTH2_LOGOUT_PATH
+    ADMIN_OAUTH2_TOKEN_FETCH_PATH: ADMIN_OAUTH2_TOKEN_FETCH_PATH
+    ADMIN_OAUTH2_USER_PROFILE_PATH: ADMIN_OAUTH2_USER_PROFILE_PATH
+    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    ALLOWED_ADMIN_IP_RANGES: ALLOWED_ADMIN_IP_RANGES
+    AV_SERVICE_URL: AV_SERVICE_URL
+    AV_V2_SERVICE_URL: AV_V2_SERVICE_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    CDMS_AUTH_URL: CDMS_AUTH_URL
+    COMPANY_MATCHING_HAWK_ID: COMPANY_MATCHING_HAWK_ID
+    COMPANY_MATCHING_HAWK_KEY: COMPANY_MATCHING_HAWK_KEY
+    COMPANY_MATCHING_SERVICE_BASE_URL: COMPANY_MATCHING_SERVICE_BASE_URL
+    CONSENT_SERVICE_BASE_URL: CONSENT_SERVICE_BASE_URL
+    CONSENT_SERVICE_HAWK_ID: CONSENT_SERVICE_HAWK_ID
+    CONSENT_SERVICE_HAWK_KEY: CONSENT_SERVICE_HAWK_KEY
+    CSRF_COOKIE_HTTPONLY: CSRF_COOKIE_HTTPONLY
+    CSRF_COOKIE_SECURE: CSRF_COOKIE_SECURE
+    DAILY_HIERARCHY_ROLLOUT_LIMIT: DAILY_HIERARCHY_ROLLOUT_LIMIT
+    DATAHUB_FRONTEND_BASE_URL: DATAHUB_FRONTEND_BASE_URL
+    DATAHUB_NOTIFICATION_API_KEY: DATAHUB_NOTIFICATION_API_KEY
+    DATAHUB_SECRET: DATAHUB_SECRET
+    DATAHUB_SUPPORT_EMAIL_ADDRESS: DATAHUB_SUPPORT_EMAIL_ADDRESS
+    DATA_FLOW_API_ACCESS_KEY_ID: DATA_FLOW_API_ACCESS_KEY_ID
+    DATA_FLOW_API_SECRET_ACCESS_KEY: DATA_FLOW_API_SECRET_ACCESS_KEY
+    DATA_HUB_FRONTEND_ACCESS_KEY_ID: DATA_HUB_FRONTEND_ACCESS_KEY_ID
+    DATA_HUB_FRONTEND_SECRET_ACCESS_KEY: DATA_HUB_FRONTEND_SECRET_ACCESS_KEY
+    DATA_SCIENCE_COMPANY_API_ID: DATA_SCIENCE_COMPANY_API_ID
+    DATA_SCIENCE_COMPANY_API_KEY: DATA_SCIENCE_COMPANY_API_KEY
+    DATA_SCIENCE_COMPANY_API_URL: DATA_SCIENCE_COMPANY_API_URL
+    DEBUG: DEBUG
+    DEFAULT_BUCKET: DEFAULT_BUCKET
+    DISABLE_PAAS_IP_CHECK: DISABLE_PAAS_IP_CHECK
+    DIT_EMAIL_DOMAIN_BRAYLEINO: DIT_EMAIL_DOMAIN_BRAYLEINO
+    DIT_EMAIL_DOMAIN_BUSINESSWEST: DIT_EMAIL_DOMAIN_BUSINESSWEST
+    DIT_EMAIL_DOMAIN_DIGITAL_TRADE: DIT_EMAIL_DOMAIN_DIGITAL_TRADE
+    DIT_EMAIL_DOMAIN_FCO_GOV: DIT_EMAIL_DOMAIN_FCO_GOV
+    DIT_EMAIL_DOMAIN_INVEST_TRADE: DIT_EMAIL_DOMAIN_INVEST_TRADE
+    DIT_EMAIL_DOMAIN_MOBILE_TRADE: DIT_EMAIL_DOMAIN_MOBILE_TRADE
+    DIT_EMAIL_DOMAIN_TRADE: DIT_EMAIL_DOMAIN_TRADE
+    DIT_EMAIL_DOMAIN_TRADENE: DIT_EMAIL_DOMAIN_TRADENE
+    DIT_EMAIL_DOMAIN_TRADENE_ORG: DIT_EMAIL_DOMAIN_TRADENE_ORG
+    DIT_EMAIL_DOMAIN_TRADENW_ORG: DIT_EMAIL_DOMAIN_TRADENW_ORG
+    DIT_EMAIL_DOMAIN_TRADESOUTHEAST: DIT_EMAIL_DOMAIN_TRADESOUTHEAST
+    DIT_EMAIL_DOMAIN_TRADE_LONDON: DIT_EMAIL_DOMAIN_TRADE_LONDON
+    DIT_EMAIL_DOMAIN_UK_EY: DIT_EMAIL_DOMAIN_UK_EY
+    DIT_EMAIL_INGEST_WHITELIST: DIT_EMAIL_INGEST_WHITELIST
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    DJANGO_SENTRY_DSN: DJANGO_SENTRY_DSN
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    DNB_AUTOMATIC_UPDATE_LIMIT: DNB_AUTOMATIC_UPDATE_LIMIT
+    DNB_INVESTIGATION_NOTIFICATION_API_KEY: DNB_INVESTIGATION_NOTIFICATION_API_KEY
+    DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS: DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS
+    DNB_SERVICE_BASE_URL: DNB_SERVICE_BASE_URL
+    DNB_SERVICE_TOKEN: DNB_SERVICE_TOKEN
+    ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW: ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW
+    ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS: ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS
+    ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS: ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS
+    ENABLE_CELERY_ES_SYNC_OBJECT: ENABLE_CELERY_ES_SYNC_OBJECT
+    ENABLE_DAILY_HIERARCHY_ROLLOUT: ENABLE_DAILY_HIERARCHY_ROLLOUT
+    ENABLE_DAILY_OPENSEARCH_SYNC: ENABLE_DAILY_OPENSEARCH_SYNC
+    ENABLE_EMAIL_INGESTION: ENABLE_EMAIL_INGESTION
+    ENABLE_ESTIMATED_LAND_DATE_REMINDERS: ENABLE_ESTIMATED_LAND_DATE_REMINDERS
+    ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS
+    ENABLE_INVESTMENT_NOTIFICATION: ENABLE_INVESTMENT_NOTIFICATION
+    ENABLE_MAILBOX_PROCESSING: ENABLE_MAILBOX_PROCESSING
+    ENABLE_NEW_EXPORT_INTERACTION_REMINDERS: ENABLE_NEW_EXPORT_INTERACTION_REMINDERS
+    ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
+    ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS: ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS
+    ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
+    ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS: ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS
+    ENABLE_NO_RECENT_INTERACTION_REMINDERS: ENABLE_NO_RECENT_INTERACTION_REMINDERS
+    ENABLE_SLACK_MESSAGING: ENABLE_SLACK_MESSAGING
+    ENABLE_SPI_REPORT_GENERATION: ENABLE_SPI_REPORT_GENERATION
+    ENQUIRY_MGMT_HAWK_ID: ENQUIRY_MGMT_HAWK_ID
+    ENQUIRY_MGMT_HAWK_KEY: ENQUIRY_MGMT_HAWK_KEY
+    ES_APM_ENABLED: ES_APM_ENABLED
+    ES_APM_ENVIRONMENT: ES_APM_ENVIRONMENT
+    ES_APM_SECRET_TOKEN: ES_APM_SECRET_TOKEN
+    ES_APM_SERVER_URL: ES_APM_SERVER_URL
+    ES_APM_SERVICE_NAME: ES_APM_SERVICE_NAME
+    EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
+    EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
+    EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
+    EXPORT_WINS_HAWK_ID: EXPORT_WINS_HAWK_ID
+    EXPORT_WINS_HAWK_KEY: EXPORT_WINS_HAWK_KEY
+    EXPORT_WINS_SERVICE_BASE_URL: EXPORT_WINS_SERVICE_BASE_URL
+    GOVUK_PAY_AUTH_TOKEN: GOVUK_PAY_AUTH_TOKEN
+    GOVUK_PAY_URL: GOVUK_PAY_URL
+    HAWK_RECEIVER_IP_WHITELIST: HAWK_RECEIVER_IP_WHITELIST
+    INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID: INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID
+    INVESTMENT_DOCUMENT_AWS_REGION: INVESTMENT_DOCUMENT_AWS_REGION
+    INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY: INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY
+    INVESTMENT_DOCUMENT_BUCKET: INVESTMENT_DOCUMENT_BUCKET
+    INVESTMENT_NOTIFICATION_API_KEY: INVESTMENT_NOTIFICATION_API_KEY
+    INVESTMENT_NOTIFICATION_ESTIMATED_LAND_DATE_SUMMARY_TEMPLATE_ID: INVESTMENT_NOTIFICATION_ESTIMATED_LAND_DATE_SUMMARY_TEMPLATE_ID
+    INVESTMENT_NOTIFICATION_ESTIMATED_LAND_DATE_TEMPLATE_ID: INVESTMENT_NOTIFICATION_ESTIMATED_LAND_DATE_TEMPLATE_ID
+    INVESTMENT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID: INVESTMENT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
+    MAILBOX_AWS_ACCESS_KEY_ID: MAILBOX_AWS_ACCESS_KEY_ID
+    MAILBOX_AWS_REGION: MAILBOX_AWS_REGION
+    MAILBOX_AWS_SECRET_ACCESS_KEY: MAILBOX_AWS_SECRET_ACCESS_KEY
+    MAILBOX_BUCKET: MAILBOX_BUCKET
+    MAILBOX_MEETINGS_IMAP_DOMAIN: MAILBOX_MEETINGS_IMAP_DOMAIN
+    MAILBOX_MEETINGS_PASSWORD: MAILBOX_MEETINGS_PASSWORD
+    MAILBOX_MEETINGS_USERNAME: MAILBOX_MEETINGS_USERNAME
+    MARKET_ACCESS_ACCESS_KEY_ID: MARKET_ACCESS_ACCESS_KEY_ID
+    MARKET_ACCESS_SECRET_ACCESS_KEY: MARKET_ACCESS_SECRET_ACCESS_KEY
+    OMIS_GENERIC_CONTACT_EMAIL: OMIS_GENERIC_CONTACT_EMAIL
+    OMIS_NOTIFICATION_ADMIN_EMAIL: OMIS_NOTIFICATION_ADMIN_EMAIL
+    OMIS_NOTIFICATION_API_KEY: OMIS_NOTIFICATION_API_KEY
+    OMIS_NOTIFICATION_OVERRIDE_RECIPIENT_EMAIL: OMIS_NOTIFICATION_OVERRIDE_RECIPIENT_EMAIL
+    OMIS_PUBLIC_ACCESS_KEY_ID: OMIS_PUBLIC_ACCESS_KEY_ID
+    OMIS_PUBLIC_BASE_URL: OMIS_PUBLIC_BASE_URL
+    OMIS_PUBLIC_SECRET_ACCESS_KEY: OMIS_PUBLIC_SECRET_ACCESS_KEY
+    OPENSEARCH_INDEX_PREFIX: OPENSEARCH_INDEX_PREFIX
+    PAAS_IP_WHITELIST: PAAS_IP_WHITELIST
+    REPORT_AWS_ACCESS_KEY_ID: REPORT_AWS_ACCESS_KEY_ID
+    REPORT_AWS_REGION: REPORT_AWS_REGION
+    REPORT_AWS_SECRET_ACCESS_KEY: REPORT_AWS_SECRET_ACCESS_KEY
+    REPORT_BUCKET: REPORT_BUCKET
+    RESOURCE_SERVER_AUTH_TOKEN: RESOURCE_SERVER_AUTH_TOKEN
+    RESOURCE_SERVER_INTROSPECTION_URL: RESOURCE_SERVER_INTROSPECTION_URL
+    RESTRICT_ADMIN: RESTRICT_ADMIN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SKIP_MI_DATABASE_MIGRATIONS: SKIP_MI_DATABASE_MIGRATIONS
+    SLACK_API_TOKEN: SLACK_API_TOKEN
+    SLACK_MESSAGE_CHANNEL: SLACK_MESSAGE_CHANNEL
+    SSO_ENABLED: SSO_ENABLED
+    STAFF_SSO_AUTH_TOKEN: STAFF_SSO_AUTH_TOKEN
+    STAFF_SSO_BASE_URL: STAFF_SSO_BASE_URL
+    STAFF_SSO_USER_TOKEN_CACHING_PERIOD: STAFF_SSO_USER_TOKEN_CACHING_PERIOD
+    STAFF_SSO_USE_NEW_INTROSPECTION_LOGIC: STAFF_SSO_USE_NEW_INTROSPECTION_LOGIC
+    STATSD_HOST: STATSD_HOST
+    STATSD_PORT: STATSD_PORT
+    STATSD_PREFIX: STATSD_PREFIX
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-celerybeat
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-celerylongrunning
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-celeryworker
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-background-worker
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-long-running-worker
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-short-running-worker
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datahub-dev/datahub-api-dev
+    production:
+      paas: dit-services/datahub/datahub-api
+    staging:
+      paas: dit-staging/datahub-staging/datahub-api-staging
+    uat:
+      paas: dit-staging/datahub-uat/datahub-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-cron-scheduler
+  notes: service created based on Procfile entry for datahub-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-hub-api.git
+  secrets: {}
+  secrets_from: datahub-api
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/datahub-dev/datahub-api-redis-queue-exporter-dev
+      url: datahub-api-redis-queue-exporter-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/datahub/datahub-api-redis-queue-exporter
+      url: datahub-api-redis-queue-exporter.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/datahub-staging/datahub-api-redis-queue-exporter-staging
+      url: datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/datahub-uat/datahub-api-redis-queue-exporter-uat
+      url: datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-redis-queue-exporter
+  repo: git@github.com:uktrade/prom-rq-exporter.git
+  secrets:
+    RQ_EXPORTER_LOG_LEVEL: RQ_EXPORTER_LOG_LEVEL
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/datahub-dev/datahub-dev
+      url: datahub.dev.uktrade.io
+    production:
+      ipfilter: false
+      paas: dit-services/datahub/datahub
+      url: www.datahub.trade.gov.uk
+    staging:
+      ipfilter: false
+      paas: dit-staging/datahub-staging/datahub-staging
+      url: www.datahub.staging.uktrade.io
+    uat:
+      ipfilter: false
+      paas: dit-staging/datahub-uat/datahub-uat
+      url: www.datahub.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-fe
+  overlapping_secrets:
+  - API_CLIENT_ID
+  - API_CLIENT_SECRET
+  - API_ROOT
+  - GOOGLE_TAG_MANAGER_KEY
+  - NODE_ENV
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - SESSION_SECRET
+  repo: git@github.com:uktrade/data-hub-frontend.git
+  secrets:
+    ACCOUNT_PLAN_URLS: ACCOUNT_PLAN_URLS
+    API_CLIENT_ID: API_CLIENT_ID
+    API_CLIENT_SECRET: API_CLIENT_SECRET
+    API_ROOT: API_ROOT
+    ARCHIVED_DOCUMENTS_BASE_URL: ARCHIVED_DOCUMENTS_BASE_URL
+    ASSETS_HOST: ASSETS_HOST
+    DATA_HUB_BACKEND_ACCESS_KEY_ID: DATA_HUB_BACKEND_ACCESS_KEY_ID
+    DATA_HUB_BACKEND_SECRET_ACCESS_KEY: DATA_HUB_BACKEND_SECRET_ACCESS_KEY
+    DATA_STORE_SERVICE_ACCESS_KEY_ID: DATA_STORE_SERVICE_ACCESS_KEY_ID
+    DATA_STORE_SERVICE_POSTCODE: DATA_STORE_SERVICE_POSTCODE
+    DATA_STORE_SERVICE_POSTCODE_TO_REGION_URL: DATA_STORE_SERVICE_POSTCODE_TO_REGION_URL
+    DATA_STORE_SERVICE_SECRET_ACCESS_KEY: DATA_STORE_SERVICE_SECRET_ACCESS_KEY
+    DATA_WORKSPACE_URL: DATA_WORKSPACE_URL
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_SERVER_TIMEOUT: ELASTIC_APM_SERVER_TIMEOUT
+    ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
+    ELASTIC_APM_SERVICE_NAME: ELASTIC_APM_SERVICE_NAME
+    FIND_EXPORTERS_URL: FIND_EXPORTERS_URL
+    FORCE_HTTPS: FORCE_HTTPS
+    GOOGLE_TAG_MANAGER_KEY: GOOGLE_TAG_MANAGER_KEY
+    GREAT_PROFILE_URL: GREAT_PROFILE_URL
+    HELP_CENTRE_ACCESS_KEY_ID: HELP_CENTRE_ACCESS_KEY_ID
+    HELP_CENTRE_ANNOUNCMENTS_URL: HELP_CENTRE_ANNOUNCMENTS_URL
+    HELP_CENTRE_API_FEED: HELP_CENTRE_API_FEED
+    HELP_CENTRE_FEED_API_TOKEN: HELP_CENTRE_FEED_API_TOKEN
+    HELP_CENTRE_SECRET_ACCESS_KEY: HELP_CENTRE_SECRET_ACCESS_KEY
+    HELP_CENTRE_URL: HELP_CENTRE_URL
+    LOG_LEVEL: LOG_LEVEL
+    LOG_RESPONSES: LOG_RESPONSES
+    MARKET_ACCESS_URL: MARKET_ACCESS_URL
+    NODE_ENV: NODE_ENV
+    NODE_MODULES_CACHE: NODE_MODULES_CACHE
+    NODE_OPTIONS: NODE_OPTIONS
+    NPM_CONFIG_PRODUCTION: NPM_CONFIG_PRODUCTION
+    OAUTH2_AUTH_URL: OAUTH2_AUTH_URL
+    OAUTH2_CLIENT_ID: OAUTH2_CLIENT_ID
+    OAUTH2_CLIENT_SECRET: OAUTH2_CLIENT_SECRET
+    OAUTH2_LOGOUT_URL: OAUTH2_LOGOUT_URL
+    OAUTH2_REDIRECT_URL: OAUTH2_REDIRECT_URL
+    OAUTH2_TOKEN_FETCH_URL: OAUTH2_TOKEN_FETCH_URL
+    OAUTH2_USER_PROFILE_URL: OAUTH2_USER_PROFILE_URL
+    ONE_LIST_EMAIL: ONE_LIST_EMAIL
+    POSTCODE_KEY: POSTCODE_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SESSION_SECRET: SESSION_SECRET
+    TEAM_SITE_SHARE_POINT_URL: TEAM_SITE_SHARE_POINT_URL
+    X_AUTOSCALING: X_AUTOSCALING
+    X_AUTOSCALING_MIN: X_AUTOSCALING_MIN
+    ZEN_ANNOUNCEMENT_URL: ZEN_ANNOUNCEMENT_URL
+    ZEN_BROWSER: ZEN_BROWSER
+    ZEN_EMAIL: ZEN_EMAIL
+    ZEN_IMPACT: ZEN_IMPACT
+    ZEN_SERVICE: ZEN_SERVICE
+    ZEN_TICKETS_URL: ZEN_TICKETS_URL
+    ZEN_TOKEN: ZEN_TOKEN
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/datahub-dev/datahub-filebrowser-dev
+      url: legacy.datahub.dev.uktrade.io
+    production:
+      ipfilter: false
+      paas: dit-services/datahub/datahub-filebrowser
+      url: legacy.datahub.trade.gov.uk
+    staging:
+      ipfilter: false
+      paas: dit-staging/datahub-staging/datahub-filebrowser-staging
+      url: legacy.datahub.staging.uktrade.io
+    uat:
+      ipfilter: false
+      paas: dit-staging/datahub-uat/datahub-filebrowser-uat
+      url: legacy.datahub.uat.uktrade.io
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-filebrowser
+  overlapping_secrets:
+  - DEBUG
+  repo: git@github.com:uktrade/data-hub-file-browser.git
+  secrets:
+    DEBUG: DEBUG
+    DHFB_ABC_AUTHORIZE_URL: DHFB_ABC_AUTHORIZE_URL
+    DHFB_ABC_BASE_URL: DHFB_ABC_BASE_URL
+    DHFB_ABC_CLIENT_ID: DHFB_ABC_CLIENT_ID
+    DHFB_ABC_CLIENT_SECRET: DHFB_ABC_CLIENT_SECRET
+    DHFB_ABC_LOGOUT_URL: DHFB_ABC_LOGOUT_URL
+    DHFB_ABC_TOKEN_URL: DHFB_ABC_TOKEN_URL
+    DHFB_AWS_KEY_ID: DHFB_AWS_KEY_ID
+    DHFB_AWS_SECRET: DHFB_AWS_SECRET
+    DHFB_S3_BUCKET_NAME: DHFB_S3_BUCKET_NAME
+    DHFB_SECRET_KEY: DHFB_SECRET_KEY
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/datahub-dev/datahub-omis-dev
+      url: omis.datahub.dev.uktrade.io
+    production:
+      ipfilter: false
+      paas: dit-services/datahub/datahub-omis
+      url: omis.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/datahub-staging/datahub-omis-staging
+      url: datahub-omis-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/datahub-uat/datahub-omis-uat
+      url: datahub-omis-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-omis-fe
+  overlapping_secrets:
+  - API_CLIENT_ID
+  - API_CLIENT_SECRET
+  - API_ROOT
+  - GOOGLE_TAG_MANAGER_KEY
+  - NODE_ENV
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - SESSION_SECRET
+  repo: git@github.com:uktrade/omis-frontend.git
+  secrets:
+    API_CLIENT_HAWK_ACCESS_KEY_ID: API_CLIENT_HAWK_ACCESS_KEY_ID
+    API_CLIENT_HAWK_SECRET_ACCESS_KEY: API_CLIENT_HAWK_SECRET_ACCESS_KEY
+    API_CLIENT_ID: API_CLIENT_ID
+    API_CLIENT_SCOPE: API_CLIENT_SCOPE
+    API_CLIENT_SECRET: API_CLIENT_SECRET
+    API_ROOT: API_ROOT
+    FLAG_SHOW_PAYMENT_JOURNEY: FLAG_SHOW_PAYMENT_JOURNEY
+    GOOGLE_TAG_MANAGER_KEY: GOOGLE_TAG_MANAGER_KEY
+    GOOGLE_TAG_MANAGER_SUFFIX: GOOGLE_TAG_MANAGER_SUFFIX
+    NODE_ENV: NODE_ENV
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SESSION_SECRET: SESSION_SECRET
+  type: public

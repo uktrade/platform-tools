@@ -1,0 +1,179 @@
+app: public-apis
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.dev.uktrade.digital
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-tariffs-api-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-data.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs-api.london.cloudapps.digital
+    - ACM-ARN-FOR-tariffs.api.trade.gov.uk
+    - ACM-ARN-FOR-tariffs-api.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.api.trade.gov.uk
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.api.trade.gov.uk
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.london.cloudapps.digital
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-data.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-tariffs-api-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-fta--staging.london.cloudapps.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra.api.trade.staging.uktrade.digital
+    - ACM-ARN-FOR-sftp-notification--hmrc-tra--staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/public-apis-dev/data-api-dev
+      url: data.api.trade.dev.uktrade.digital
+    production:
+      ipfilter: false
+      paas: dit-services/public-apis/data-api
+      url: data.api.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/public-apis-staging/data-api-staging
+      url: data.api.trade.staging.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-data-api
+  overlapping_secrets:
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - ENVIRONMENT
+  - SENTRY_DSN
+  repo: git@github.com:uktrade/public-data-api.git
+  secrets:
+    APM_SECRET_TOKEN: APM_SECRET_TOKEN
+    APM_SERVER_TIMEOUT: APM_SERVER_TIMEOUT
+    APM_SERVER_URL: APM_SERVER_URL
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_S3_ENDPOINT: AWS_S3_ENDPOINT
+    AWS_S3_REGION: AWS_S3_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    DOCS_BASE_URL: DOCS_BASE_URL
+    DOCS_DEPARTMENT_NAME: DOCS_DEPARTMENT_NAME
+    DOCS_GITHUB_REPO_URL: DOCS_GITHUB_REPO_URL
+    DOCS_SECURITY_EMAIL: DOCS_SECURITY_EMAIL
+    DOCS_SERVICE_NAME: DOCS_SERVICE_NAME
+    ENVIRONMENT: ENVIRONMENT
+    GA_TRACKING_ID: GA_TRACKING_ID
+    READONLY_AWS_ACCESS_KEY_ID: READONLY_AWS_ACCESS_KEY_ID
+    READONLY_AWS_SECRET_ACCESS_KEY: READONLY_AWS_SECRET_ACCESS_KEY
+    READ_AND_WRITE_AWS_ACCESS_KEY_ID: READ_AND_WRITE_AWS_ACCESS_KEY_ID
+    READ_AND_WRITE_AWS_SECRET_ACCESS_KEY: READ_AND_WRITE_AWS_SECRET_ACCESS_KEY
+    SENTRY_DSN: SENTRY_DSN
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/public-apis-dev/data-api-dev
+    production:
+      paas: dit-services/public-apis/data-api
+    staging:
+      paas: dit-staging/public-apis-staging/data-api-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-data-api-worker
+  notes: service created based on Procfile entry for public-data-api and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/public-data-api.git
+  secrets: {}
+  secrets_from: public-data-api
+  type: backend
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/public-apis-dev/tariffs-api-dev
+      url: tariffs-api-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/tariffs-api
+      url: tariffs-api.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/public-apis-staging/tariffs-api-staging
+      url: tariffs-api-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: public-tariffs-api
+  overlapping_secrets:
+  - ENVIRONMENT
+  - SENTRY_DSN
+  repo: git@github.com:uktrade/trade-tariff-api.git
+  secrets:
+    APIKEYS: APIKEYS
+    APIKEYS_UPLOAD: APIKEYS_UPLOAD
+    API_ROOT: API_ROOT
+    ELASTIC_APM_TOKEN: ELASTIC_APM_TOKEN
+    ELASTIC_APM_URL: ELASTIC_APM_URL
+    ENVIRONMENT: ENVIRONMENT
+    NUM_PROXIES: NUM_PROXIES
+    REQUIRE_AUTH_FOR_READS: REQUIRE_AUTH_FOR_READS
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    STREAM_CHUNK_SIZE: STREAM_CHUNK_SIZE
+    TARIC_FILES_FOLDER: TARIC_FILES_FOLDER
+    TARIC_FILES_INDEX: TARIC_FILES_INDEX
+    WHITELIST: WHITELIST
+    WHITELIST_UPLOAD: WHITELIST_UPLOAD
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/sftp-notification--hmrc-fta
+      url: sftp-notification--hmrc-fta.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/public-apis-staging/sftp-notification--hmrc-fta--staging
+      url: sftp-notification--hmrc-fta--staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sftp-notification--hmrc-fta
+  overlapping_secrets:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  repo: git@github.com:uktrade/s3-dropbox.git
+  secrets:
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_REGION: AWS_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    BUCKET: BUCKET
+    TOKEN: TOKEN
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/public-apis/sftp-notification--hmrc-tra
+      url: sftp-notification--hmrc-tra.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging
+      url: sftp-notification--hmrc-tra--staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sftp-notification--hmrc-tra
+  overlapping_secrets:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  repo: git@github.com:uktrade/s3-dropbox.git
+  secrets:
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_REGION: AWS_REGION
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    BUCKET: BUCKET
+    TOKEN: TOKEN
+  type: public

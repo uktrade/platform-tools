@@ -3,15 +3,14 @@
 '''
     Take all the files in ci-pipeline-config and combine into one document
 '''
-
-from collections import defaultdict
 import copy
-from pathlib import Path
-import sys
+import os
+from collections import defaultdict
 
 import yaml
 
-SOURCE_PATH = "full-config.yml"
+CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
+SOURCE_PATH = f"{CURRENT_FILEPATH}/full-config.yml"
 
 
 def detect_service_type(service):
