@@ -1,18 +1,16 @@
 #!/usr/bin/env python
-
+import os
 from collections import defaultdict
 from pathlib import Path
-import sys
 
-from cloudfoundry_client.client import CloudFoundryClient
 import yaml
+from cloudfoundry_client.client import CloudFoundryClient
 
-
-SOURCE_PATH = "../ci-pipeline-config/"
+CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
+SOURCE_PATH = f"{CURRENT_FILEPATH}/../../ci-pipeline-config/"
 
 
 def import_ci_config():
-
     def _rename(k):
         return {
             "app": "paas-location",
@@ -21,16 +19,15 @@ def import_ci_config():
         }[k]
 
     def _clean(env):
-
         return {
-                _rename(k): v for k,v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]
+            _rename(k): v for k, v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]
         }
 
     path = Path(SOURCE_PATH)
 
     namespaces = defaultdict(dict)
 
-    for fl_path in path.glob("*.yaml"):
+    for fl_path in path.glob("*.y*ml"):
         with open(fl_path, "r") as raw:
             conf = yaml.safe_load(raw)
 
@@ -48,8 +45,11 @@ def get_paas_data(client):
     apps = {}
 
     for org in client.v2.organizations:
+        print(f"Organisation: {org['entity']['name']}")
         for space in org.spaces():
+            print(f"└── Space: {space['entity']['name']}")
             for app in space.apps():
+                print(f"    ├── {app['entity']['name']}")
                 env_keys = list(app['entity']['environment_json'].keys()) if app['entity']['environment_json'] else []
 
                 env_keys = [k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]]
@@ -71,7 +71,6 @@ def get_paas_data(client):
 
                 v3app = client.v3.apps.get(app["metadata"]["guid"])
 
-                commands = []
                 for process in v3app.processes():
                     proc = client.v3.processes.get(process["guid"])
                     app_data["processes"].append({
@@ -127,9 +126,7 @@ if __name__ == "__main__":
     # you must authenticate via cli first!
     client = CloudFoundryClient.build_from_cf_config()
 
-
     paas_apps = get_paas_data(client)
-    yaml.dump(paas_apps, sys.stdout)
 
-
-    # yaml.dump(config, sys.stdout)
+    with open(f"{CURRENT_FILEPATH}/paas-config.yml", 'w') as outfile:
+        yaml.dump(paas_apps, outfile)

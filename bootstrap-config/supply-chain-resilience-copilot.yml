@@ -1,0 +1,58 @@
+app: supply-chain-resilience
+environments:
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information-dev.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-update-supply-chain-information.london.cloudapps.digital
+    - ACM-ARN-FOR-www.update-supply-chain-information.trade.gov.uk
+    - ACM-ARN-FOR-www.update-supply-chain-information.trade.gov.uk
+  staging:
+    certificate_arns:
+    - ACM-ARN-FOR-update-supply-chain-information-staging.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      paas: dit-staging/supply-chain-resilience-dev/update-supply-chain-information-dev
+      url: update-supply-chain-information-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/supply-chain-resilience/update-supply-chain-information
+      url: www.update-supply-chain-information.trade.gov.uk
+    staging:
+      ipfilter: true
+      paas: dit-staging/supply-chain-resilience-staging/update-supply-chain-information-staging
+      url: update-supply-chain-information-staging.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: update-supply-chain-information
+  repo: git@github.com:uktrade/update-supply-chain-information.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    APM_ENVIRONMENT: APM_ENVIRONMENT
+    APM_SECRET_TOKEN: APM_SECRET_TOKEN
+    APM_SERVER_TIMEOUT: APM_SERVER_TIMEOUT
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    DJANGO_DEBUG: DJANGO_DEBUG
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    FEEDBACK_GROUP_EMAIL: FEEDBACK_GROUP_EMAIL
+    GTM_AUTH_STRING: GTM_AUTH_STRING
+    HAWK_INCOMING_ACCESS_KEY: HAWK_INCOMING_ACCESS_KEY
+    HAWK_INCOMING_SECRET_KEY: HAWK_INCOMING_SECRET_KEY
+    HAWK_SECRET_ACCESS_KEY: HAWK_SECRET_ACCESS_KEY
+    HAWK_UNIQUE_ID: HAWK_UNIQUE_ID
+    NODE_ENV: NODE_ENV
+    QUICKSIGHT_COMMODITY_USES_BY_INDUSTRY_DASHBOARD_URL: QUICKSIGHT_COMMODITY_USES_BY_INDUSTRY_DASHBOARD_URL
+    QUICKSIGHT_COUNTRIES_DASHBOARD_URL: QUICKSIGHT_COUNTRIES_DASHBOARD_URL
+    QUICKSIGHT_OVERSEAS_INTELLIGENCE_DASHBOARD_URL: QUICKSIGHT_OVERSEAS_INTELLIGENCE_DASHBOARD_URL
+    QUICKSIGHT_RISK_MONITORING_DASHBOARD_URL: QUICKSIGHT_RISK_MONITORING_DASHBOARD_URL
+    QUICKSIGHT_VULNERABILITY_ANALYSIS_COUNTRIES_DASHBOARD_URL: QUICKSIGHT_VULNERABILITY_ANALYSIS_COUNTRIES_DASHBOARD_URL
+    QUICKSIGHT_VULNERABILITY_ANALYSIS_DASHBOARD_URL: QUICKSIGHT_VULNERABILITY_ANALYSIS_DASHBOARD_URL
+    QUICKSIGHT_VULNERABILITY_ANALYSIS_PRODUCTS_DASHBOARD_URL: QUICKSIGHT_VULNERABILITY_ANALYSIS_PRODUCTS_DASHBOARD_URL
+  type: public

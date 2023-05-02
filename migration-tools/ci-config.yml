@@ -14,6 +14,8 @@ applications:
         paas-location: dit-services/activity-stream/activity-stream-2
       - environment: production-3-eu-west-2
         paas-location: dit-services/activity-stream/activity-stream-3
+      name: activity-stream
+      namespace: activity-stream
       scm: git@github.com:uktrade/activity-stream.git
     activity-stream-kibana:
       environments:
@@ -25,6 +27,8 @@ applications:
         paas-location: dit-staging/activity-stream-uat/activity-stream-kibana-uat
       - environment: production-eu-west-2
         paas-location: dit-services/activity-stream/activity-stream-kibana
+      name: activity-stream-kibana
+      namespace: activity-stream
       scm: git@github.com:uktrade/kibana-paas.git
     activity-stream-verification-feed:
       environments:
@@ -36,6 +40,8 @@ applications:
         paas-location: dit-staging/activity-stream-uat/activity-stream-verification-feed-uat
       - environment: production-eu-west-2
         paas-location: dit-services/activity-stream/activity-stream-verification-feed
+      name: activity-stream-verification-feed
+      namespace: activity-stream
       scm: git@github.com:uktrade/activity-stream.git
   data-workspace-apps:
     company-matching-service:
@@ -46,6 +52,8 @@ applications:
         paas-location: dit-staging/data-workspace-apps-staging/company-matching-service-staging
       - environment: prod
         paas-location: dit-services/data-workspace-apps/company-matching-service
+      name: company-matching-service
+      namespace: data-workspace-apps
       scm: git@github.com:uktrade/company-matching-service.git
     countries-of-interest-service:
       environments:
@@ -55,6 +63,8 @@ applications:
         paas-location: dit-staging/data-workspace-apps-staging/countries-of-interest-service-staging
       - environment: prod
         paas-location: dit-services/data-workspace-apps/countries-of-interest-service
+      name: countries-of-interest-service
+      namespace: data-workspace-apps
       scm: git@github.com:uktrade/countries-of-interest-service.git
     data-explorer:
       environments:
@@ -64,6 +74,8 @@ applications:
         paas-location: dit-staging/data-workspace-apps-staging/data-explorer-staging
       - environment: prod
         paas-location: dit-services/data-workspace-apps/data-explorer
+      name: data-explorer
+      namespace: data-workspace-apps
       scm: git@github.com:uktrade/data-explorer.git
     data-store-service:
       environments:
@@ -73,44 +85,57 @@ applications:
         paas-location: dit-staging/data-workspace-apps-staging/data-store-service-staging
       - environment: prod
         paas-location: dit-services/data-workspace-apps/data-store-service
+      name: data-store-service
+      namespace: data-workspace-apps
       scm: git@github.com:uktrade/data-store-service.git
     data-workspace-prototypes:
       environments:
       - environment: dev
         paas-location: dit-staging/data-workspace-apps-dev/data-workspace-prototypes-dev
+      name: data-workspace-prototypes
+      namespace: data-workspace-apps
       scm: git@github.com:uktrade/data-workspace-prototypes.git
   datahub:
     datahub-api:
       environments:
       - environment: dev
         paas-location: dit-staging/datahub-dev/datahub-api-dev
-      - environment: dev-yellow
-        paas-location: dit-staging/datahub-dev/datahub-api-dev-yellow
       - environment: uat
         paas-location: dit-staging/datahub-uat/datahub-api-uat
-      - environment: demo
-        paas-location: dit-staging/datahub-dev/datahub-api-demo
       - environment: staging
         paas-location: dit-staging/datahub-staging/datahub-api-staging
       - environment: mig-test
         paas-location: dit-services/datahub/datahub-api-mig
       - environment: production
         paas-location: dit-services/datahub/datahub-api
+      name: datahub-api
+      namespace: datahub
       scm: git@github.com:uktrade/data-hub-api.git
+    datahub-api-redis-queue-exporter:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/datahub-dev/datahub-api-redis-queue-exporter-dev
+      - environment: staging
+        paas-location: dit-staging/datahub-staging/datahub-api-redis-queue-exporter-staging
+      - environment: uat
+        paas-location: dit-staging/datahub-uat/datahub-api-redis-queue-exporter-uat
+      - environment: production
+        paas-location: dit-services/datahub/datahub-api-redis-queue-exporter
+      name: datahub-api-redis-queue-exporter
+      namespace: datahub
+      scm: git@github.com:uktrade/prom-rq-exporter.git
     datahub-fe:
       environments:
       - environment: dev
         paas-location: dit-staging/datahub-dev/datahub-dev
-      - environment: dev-yellow
-        paas-location: dit-staging/datahub-dev/datahub-dev-yellow
       - environment: uat
         paas-location: dit-staging/datahub-uat/datahub-uat
-      - environment: demo
-        paas-location: dit-staging/datahub-dev/datahub-demo
       - environment: staging
         paas-location: dit-staging/datahub-staging/datahub-staging
       - environment: production
         paas-location: dit-services/datahub/datahub
+      name: datahub-fe
+      namespace: datahub
       scm: git@github.com:uktrade/data-hub-frontend.git
     datahub-filebrowser:
       environments:
@@ -118,28 +143,21 @@ applications:
         paas-location: dit-staging/datahub-dev/datahub-filebrowser-dev
       - environment: uat
         paas-location: dit-staging/datahub-uat/datahub-filebrowser-uat
-      - environment: demo
-        paas-location: dit-staging/datahub-dev/datahub-filebrowser-demo
       - environment: staging
         paas-location: dit-staging/datahub-staging/datahub-filebrowser-staging
       - environment: production
         paas-location: dit-services/datahub/datahub-filebrowser
+      name: datahub-filebrowser
+      namespace: datahub
       scm: git@github.com:uktrade/data-hub-file-browser.git
-    datahub-flower:
-      environments:
-      - environment: dev
-        paas-location: dit-staging/datahub-dev/datahub-flower-dev
-      - environment: staging
-        paas-location: dit-staging/datahub-staging/datahub-flower-staging
-      - environment: production
-        paas-location: dit-services/datahub/datahub-flower
-      scm: git@github.com:uktrade/flower-runner.git
     datahub-helpcentre:
       environments:
       - environment: dev
         paas-location: dit-staging/datahub-dev/datahub-helpcentre-dev
       - environment: production
         paas-location: dit-services/datahub/datahub-helpcentre
+      name: datahub-helpcentre
+      namespace: datahub
       scm: git@github.com:uktrade/data-hub-helpcentre.git
     datahub-lab-fe:
       environments:
@@ -153,6 +171,8 @@ applications:
         paas-location: dit-staging/datahub-staging/datahub-lab-staging
       - environment: production
         paas-location: dit-services/datahub/datahub-lab
+      name: datahub-lab-fe
+      namespace: datahub
       scm: git@github.com:uktrade/data-hub-lab-frontend.git
     datahub-omis-fe:
       environments:
@@ -160,17 +180,19 @@ applications:
         paas-location: dit-staging/datahub-dev/datahub-omis-dev
       - environment: uat
         paas-location: dit-staging/datahub-uat/datahub-omis-uat
-      - environment: demo
-        paas-location: dit-staging/datahub-dev/datahub-omis-demo
       - environment: staging
         paas-location: dit-staging/datahub-staging/datahub-omis-staging
       - environment: production
         paas-location: dit-services/datahub/datahub-omis
+      name: datahub-omis-fe
+      namespace: datahub
       scm: git@github.com:uktrade/omis-frontend.git
     datahub-sorry:
       environments:
       - environment: production
         paas-location: sorry.trade.gov.uk
+      name: datahub-sorry
+      namespace: datahub
       scm: git@github.com:uktrade/service-shuttering-page.git
     staff-sso:
       environments:
@@ -178,6 +200,8 @@ applications:
         paas-location: dit-services/datahub/staff-sso
       - environment: staging
         paas-location: dit-staging/staging-datahub/staff-sso-staging
+      name: staff-sso
+      namespace: datahub
       scm: git@github.com:uktrade/staff-sso.git
   datasci:
     configure-user-profile:
@@ -186,6 +210,8 @@ applications:
         paas-location: dit-staging/datasci-staging/configure-user-profile-staging
       - environment: production
         paas-location: dit-services/datasci/configure-user-profile
+      name: configure-user-profile
+      namespace: datasci
       scm: git@github.com:uktrade/configure-user-profile.git
     data-flow:
       environments:
@@ -197,6 +223,8 @@ applications:
         paas-location: dit-staging/datasci-staging/data-flow-staging
       - environment: production
         paas-location: dit-services/datasci/data-flow
+      name: data-flow
+      namespace: datasci
       scm: git@github.com:uktrade/data-flow.git
     data-flow-worker-tensorflow:
       environments:
@@ -208,6 +236,8 @@ applications:
         paas-location: dit-staging/datasci-staging/data-flow-worker-tensorflow-staging
       - environment: production
         paas-location: dit-services/datasci/data-flow-worker-tensorflow
+      name: data-flow-worker-tensorflow
+      namespace: datasci
       scm: git@github.com:uktrade/data-flow.git
     dt04-input:
       environments:
@@ -215,6 +245,8 @@ applications:
         paas-location: dit-staging/datasci-staging/dt04-staging
       - environment: production
         paas-location: dit-services/datasci/dt04
+      name: dt04-input
+      namespace: datasci
       scm: git@github.com:uktrade/dt04-input.git
     dt05-clean:
       environments:
@@ -222,6 +254,8 @@ applications:
         paas-location: dit-staging/datasci-staging/dt05-staging
       - environment: production
         paas-location: dit-services/datasci/dt05
+      name: dt05-clean
+      namespace: datasci
       scm: git@github.com:uktrade/dt05-clean.git
     dt06-algorithm:
       environments:
@@ -229,6 +263,8 @@ applications:
         paas-location: dit-staging/datasci-staging/dt06-staging
       - environment: production
         paas-location: dit-services/datasci/dt06
+      name: dt06-algorithm
+      namespace: datasci
       scm: git@github.com:uktrade/dt06-algorithm.git
     dt07-reporting:
       environments:
@@ -238,16 +274,9 @@ applications:
         paas-location: dit-staging/datasci-staging/dt07-staging
       - environment: production
         paas-location: dit-services/datasci/dt07
+      name: dt07-reporting
+      namespace: datasci
       scm: git@github.com:uktrade/dt07-reporting.git
-    find-exporters:
-      environments:
-      - environment: dev
-        paas-location: dit-staging/datasci-staging/find-exporters-dev
-      - environment: staging
-        paas-location: dit-staging/datasci-staging/find-exporters-staging
-      - environment: production
-        paas-location: dit-services/datasci/find-exporters
-      scm: git@github.com:uktrade/data-science-frontend.git
   datasci-trid:
     dt05-tra-clean:
       environments:
@@ -255,6 +284,8 @@ applications:
         paas-location: traderemedies-staging/datasci-staging/dt05-staging
       - environment: production
         paas-location: traderemedies-services/datasci/dt05
+      name: dt05-tra-clean
+      namespace: datasci-trid
       scm: git@github.com:uktrade/dt05-clean-tra.git
   directory:
     directory-api:
@@ -269,6 +300,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-api-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-api
+      name: directory-api
+      namespace: directory
       scm: git@github.com:uktrade/directory-api.git
     directory-cms:
       environments:
@@ -280,6 +313,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-cms-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-cms
+      name: directory-cms
+      namespace: directory
       scm: git@github.com:uktrade/directory-cms.git
     directory-cms-flower:
       environments:
@@ -291,6 +326,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-cms-flower-uat
       - environment: production
         paas-location: dit-services/directory/directory-cms-flower
+      name: directory-cms-flower
+      namespace: directory
       scm: git@github.com:uktrade/flower-runner.git
     directory-companies-house-search:
       environments:
@@ -302,6 +339,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-companies-house-search-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-companies-house-search
+      name: directory-companies-house-search
+      namespace: directory
       scm: git@github.com:uktrade/directory-companies-house-search.git
     directory-components:
       environments:
@@ -313,6 +352,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-components-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-components
+      name: directory-components
+      namespace: directory
       scm: git@github.com:uktrade/directory-components.git
     directory-forms-api:
       environments:
@@ -324,6 +365,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-forms-api-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-forms-api
+      name: directory-forms-api
+      namespace: directory
       scm: git@github.com:uktrade/directory-forms-api.git
     directory-sso:
       environments:
@@ -335,6 +378,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-sso-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-sso
+      name: directory-sso
+      namespace: directory
       scm: git@github.com:uktrade/directory-sso.git
     directory-sso-profile:
       environments:
@@ -346,6 +391,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-sso-profile-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-sso-profile
+      name: directory-sso-profile
+      namespace: directory
       scm: git@github.com:uktrade/directory-sso-profile.git
     directory-sso-proxy:
       environments:
@@ -357,6 +404,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-sso-proxy-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-sso-proxy
+      name: directory-sso-proxy
+      namespace: directory
       scm: git@github.com:uktrade/directory-sso-proxy.git
     directory-ui-buyer:
       environments:
@@ -368,6 +417,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-ui-buyer-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-buyer
+      name: directory-ui-buyer
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-buyer.git
     directory-ui-export-readiness:
       environments:
@@ -379,6 +430,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-ui-export-readiness-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-export-readiness
+      name: directory-ui-export-readiness
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-export-readiness.git
     directory-ui-supplier:
       environments:
@@ -390,6 +443,8 @@ applications:
         paas-location: dit-staging/directory-uat/directory-ui-supplier-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-supplier
+      name: directory-ui-supplier
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-supplier.git
     directory-ui-verification:
       environments:
@@ -405,6 +460,8 @@ applications:
         paas-location: dit-staging/directory-staging/directory-ui-verification-staging
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-verification
+      name: directory-ui-verification
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-verification.git
     directory-ui-verification-matching-service-adapter:
       environments:
@@ -420,6 +477,8 @@ applications:
         paas-location: dit-staging/directory-staging/directory-ui-verification-matching-service-adapter-staging
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-verification-matching-service-adapter
+      name: directory-ui-verification-matching-service-adapter
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-verification-matching-service-adapter.git
     directory-ui-verification-provider:
       environments:
@@ -435,6 +494,8 @@ applications:
         paas-location: dit-staging/directory-staging/directory-ui-verification-provider-staging
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/directory-ui-verification-provider
+      name: directory-ui-verification-provider
+      namespace: directory
       scm: git@github.com:uktrade/directory-ui-verification-provider.git
     exceptional-review-procedure:
       environments:
@@ -446,6 +507,8 @@ applications:
         paas-location: dit-staging/directory-uat/exceptional-review-procedure-uat
       - environment: prod
         paas-location: dit-services/directory/exceptional-review-procedure
+      name: exceptional-review-procedure
+      namespace: directory
       scm: git@github.com:uktrade/exceptional-review-procedure.git
     great-cms:
       environments:
@@ -459,6 +522,8 @@ applications:
         paas-location: dit-services/directory/great-cms
       - environment: beta
         paas-location: dit-services/directory/great-cms-beta
+      name: great-cms
+      namespace: directory
       scm: git@github.com:uktrade/great-cms.git
     great-domestic-ui:
       environments:
@@ -470,6 +535,8 @@ applications:
         paas-location: dit-staging/directory-uat/great-domestic-ui-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/great-domestic-ui
+      name: great-domestic-ui
+      namespace: directory
       scm: git@github.com:uktrade/great-domestic-ui.git
     great-international-ui:
       environments:
@@ -481,11 +548,15 @@ applications:
         paas-location: dit-staging/directory-uat/great-international-ui-uat
       - environment: prod
         paas-location: dit-services/directory/great-international-ui
+      name: great-international-ui
+      namespace: directory
       scm: git@github.com:uktrade/great-international-ui.git
     great-styles:
       environments:
       - environment: staging
         paas-location: dit-staging/directory-staging/great-styles-staging
+      name: great-styles
+      namespace: directory
       scm: git@github.com:uktrade/great-styles.git
     invest-pir-api:
       environments:
@@ -497,6 +568,8 @@ applications:
         paas-location: dit-staging/directory-uat/invest-pir-api-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/invest-pir-api
+      name: invest-pir-api
+      namespace: directory
       scm: https://github.com/uktrade/invest-pir-api
     invest-pir-ui:
       environments:
@@ -508,6 +581,8 @@ applications:
         paas-location: dit-staging/directory-uat/invest-pir-ui-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/invest-pir-ui
+      name: invest-pir-ui
+      namespace: directory
       scm: https://github.com/uktrade/invest-pir-ui
     invest-ui:
       environments:
@@ -519,18 +594,45 @@ applications:
         paas-location: dit-staging/directory-uat/invest-ui-uat
       - environment: prod_eu-west-2
         paas-location: dit-services/directory/invest-ui
+      name: invest-ui
+      namespace: directory
       scm: git@github.com:uktrade/invest-ui.git
-    navigator:
+    selling-online-overseas:
       environments:
       - environment: dev_eu-west-2
-        paas-location: dit-staging/directory-dev/navigator-dev
+        paas-location: dit-staging/directory-dev/selling-online-overseas-dev
       - environment: staging_eu-west-2
-        paas-location: dit-staging/directory-staging/navigator-staging
+        paas-location: dit-staging/directory-staging/selling-online-overseas-staging
       - environment: uat_eu-west-2
-        paas-location: dit-staging/directory-uat/navigator-uat
+        paas-location: dit-staging/directory-uat/selling-online-overseas-uat
       - environment: production_eu-west-2
-        paas-location: dit-services/directory/navigator
-      scm: git@github.com:uktrade/navigator.git
+        paas-location: dit-services/directory/selling-online-overseas
+      name: selling-online-overseas
+      namespace: directory
+      scm: git@github.com:uktrade/selling-online-overseas.git
+  dso:
+    dso-exhibitions-v2:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/dso-dev/dso-dev
+      - environment: staging
+        paas-location: dit-staging/dso-staging/dso-staging
+      - environment: production
+        paas-location: dit-services/dso/dso
+      name: dso-exhibitions-v2
+      namespace: dso
+      scm: git@github.com:uktrade/dso-exhibitions-v2.git
+    ukdse-events:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/dso-dev/dso-dev
+      - environment: staging
+        paas-location: dit-staging/dso-staging/dso-staging
+      - environment: production
+        paas-location: dit-services/dso/dso
+      name: ukdse-events
+      namespace: dso
+      scm: git@github.com:uktrade/ukdse-events
   enav:
     help:
       environments:
@@ -540,6 +642,8 @@ applications:
         paas-location: dit-staging/staging-enav/enav-help-staging
       - environment: production
         paas-location: dit-services/enav/enav-help
+      name: help
+      namespace: enav
       scm: git@github.com:uktrade/help.git
   enhanced-support:
     enhanced-support-designer:
@@ -550,6 +654,8 @@ applications:
         paas-location: dit-staging/enhanced-support-staging/enhanced-support-designer-staging
       - environment: prod
         paas-location: dit-services/enhanced-support/enhanced-support-designer
+      name: enhanced-support-designer
+      namespace: enhanced-support
       scm: git@github.com:froddd/digital-form-builder.git
     enhanced-support-runner:
       environments:
@@ -559,6 +665,8 @@ applications:
         paas-location: dit-staging/enhanced-support-staging/enhanced-support-runner-staging
       - environment: prod
         paas-location: dit-services/enhanced-support/enhanced-support-runner
+      name: enhanced-support-runner
+      namespace: enhanced-support
       scm: git@github.com:froddd/digital-form-builder.git
   events:
     events-manager:
@@ -569,12 +677,16 @@ applications:
         paas-location: dit-staging/staging-events/events-manager-staging
       - environment: production
         paas-location: dit-services/events/events-manager
+      name: events-manager
+      namespace: events
       scm: git@github.com:uktrade/events-manager.git
   exopps:
     contact-ukti:
       environments:
       - environment: production
         paas-location: dit-services/exopps/contact-ukti
+      name: contact-ukti
+      namespace: exopps
       scm: git@github.com:uktrade/contact-ukti.git
     dit-classification-matcher:
       environments:
@@ -582,6 +694,8 @@ applications:
         paas-location: dit-staging/exopps-staging/dit-classification-matcher-staging
       - environment: production
         paas-location: dit-services/exopps/dit-classification-matcher
+      name: dit-classification-matcher
+      namespace: exopps
       scm: git@github.com:uktrade/dit-classification-matcher.git
     dit-matcher:
       environments:
@@ -591,6 +705,8 @@ applications:
         paas-location: dit-staging/exopps-uat/dit-matcher-uat
       - environment: production
         paas-location: dit-services/exopps/dit-matcher
+      name: dit-matcher
+      namespace: exopps
       scm: git@github.com:uktrade/dit-matcher.git
     export-opportunities:
       environments:
@@ -602,7 +718,19 @@ applications:
         paas-location: dit-staging/exopps-uat/export-opportunities-uat
       - environment: production
         paas-location: dit-services/exopps/export-opportunities
+      name: export-opportunities
+      namespace: exopps
       scm: git@github.com:uktrade/export-opportunities.git
+  export-support-service:
+    export-support-service:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/export-support-dev/export-support-dev
+      - environment: prod
+        paas-location: dit-services/export-support/export-support-prod
+      name: export-support-service
+      namespace: export-support-service
+      scm: git@github.com:uktrade/export-support.git
   exred:
     exred:
       environments:
@@ -610,6 +738,8 @@ applications:
         paas-location: dit-staging/dev-exred/exred-dev
       - environment: staging
         paas-location: dit-staging/staging-exred/exred-staging
+      name: exred
+      namespace: exred
       scm: git@github.com:uktrade/exred.git
   finance:
     fft:
@@ -622,6 +752,8 @@ applications:
         paas-location: dit-staging/finance-prod-data/fft-prod-data
       - environment: production
         paas-location: dit-services/finance/fft
+      name: fft
+      namespace: finance
       scm: git@github.com:uktrade/fft.git
   icms:
     icms:
@@ -632,6 +764,8 @@ applications:
         paas-location: dit-staging/icms-staging/icms-staging
       - environment: production
         paas-location: dit-services/icms/icms
+      name: icms
+      namespace: icms
       scm: git@github.com:uktrade/icms.git
     icms-hmrc:
       environments:
@@ -639,6 +773,8 @@ applications:
         paas-location: dit-staging/icms-dev/icms-hmrc-dev
       - environment: staging
         paas-location: dit-staging/icms-staging/icms-hmrc-staging
+      name: icms-hmrc
+      namespace: icms
       scm: git@github.com:uktrade/icms-hmrc
   intranet:
     digital-workspace:
@@ -649,6 +785,8 @@ applications:
         paas-location: dit-staging/intranet-staging/digital-workspace-staging
       - environment: prod
         paas-location: dit-services/intranet/digital-workspace
+      name: digital-workspace
+      namespace: intranet
       scm: git@github.com:uktrade/digital-workspace.git
     digital-workspace-s3proxy:
       environments:
@@ -660,6 +798,8 @@ applications:
         paas-location: dit-staging/intranet-staging/digital-workspace-s3proxy-staging
       - environment: prod
         paas-location: dit-services/intranet/digital-workspace-s3proxy
+      name: digital-workspace-s3proxy
+      namespace: intranet
       scm: git@github.com:uktrade/s3proxy.git
     digital-workspace-v2:
       environments:
@@ -673,6 +813,8 @@ applications:
         paas-location: dit-services/intranet-hotfix/digital-workspace-v2-hotfix
       - environment: prod
         paas-location: dit-services/intranet/digital-workspace-v2
+      name: digital-workspace-v2
+      namespace: intranet
       scm: git@github.com:uktrade/digital-workspace-v2.git
     peoplefinder:
       environments:
@@ -682,6 +824,8 @@ applications:
         paas-location: dit-staging/intranet-staging/peoplefinder-staging
       - environment: prod
         paas-location: dit-services/intranet/peoplefinder
+      name: peoplefinder
+      namespace: intranet
       scm: git@github.com:uktrade/peoplefinder.git
     workspace-wp:
       environments:
@@ -691,6 +835,8 @@ applications:
         paas-location: dit-staging/intranet-staging/workspace-wordpress-staging
       - environment: prod
         paas-location: dit-services/intranet/workspace-wordpress
+      name: workspace-wp
+      namespace: intranet
       scm: git@github.com:uktrade/workspace-wp.git
   legal-basis:
     legal-basis-api:
@@ -701,6 +847,8 @@ applications:
         paas-location: dit-staging/legal-basis-staging/legal-basis-staging
       - environment: production
         paas-location: dit-services/legal-basis/legal-basis-api
+      name: legal-basis-api
+      namespace: legal-basis
       scm: git@github.com:uktrade/legal-basis-api.git
   lite:
     lite-api:
@@ -715,6 +863,8 @@ applications:
         paas-location: dit-staging/lite-uat/lite-api-uat
       - environment: prod
         paas-location: dit-services/lite/lite-api
+      name: lite-api
+      namespace: lite
       scm: git@github.com:uktrade/lite-api.git
     lite-data-flow:
       environments:
@@ -726,6 +876,8 @@ applications:
         paas-location: dit-staging/lite-demo/lite-data-flow-demo
       - environment: prod
         paas-location: dit-services/lite/lite-data-flow
+      name: lite-data-flow
+      namespace: lite
       scm: git@github.com:uktrade/paas-airflow.git
     lite-document-store:
       environments:
@@ -737,6 +889,8 @@ applications:
         paas-location: dit-staging/lite-uat/lite-document-store-uat
       - environment: prod
         paas-location: dit-services/lite/lite-document-store
+      name: lite-document-store
+      namespace: lite
       scm: git@github.com:uktrade/lite-document-store.git
     lite-exporter-frontend:
       environments:
@@ -750,6 +904,8 @@ applications:
         paas-location: dit-staging/lite-uat/lite-exporter-frontend-uat
       - environment: prod
         paas-location: dit-services/lite/lite-exporter-frontend
+      name: lite-exporter-frontend
+      namespace: lite
       scm: git@github.com:uktrade/lite-frontend.git
     lite-hmrc:
       environments:
@@ -765,6 +921,8 @@ applications:
         paas-location: dit-staging/lite-uat/lite-hmrc-uat
       - environment: prod
         paas-location: dit-services/lite/lite-hmrc
+      name: lite-hmrc
+      namespace: lite
       scm: git@github.com:uktrade/lite-hmrc.git
     lite-internal-frontend:
       environments:
@@ -778,6 +936,8 @@ applications:
         paas-location: dit-staging/lite-uat/lite-internal-frontend-uat
       - environment: prod
         paas-location: dit-services/lite/lite-internal-frontend
+      name: lite-internal-frontend
+      namespace: lite
       scm: git@github.com:uktrade/lite-frontend.git
   live-services:
     dataservices-helpcentre:
@@ -788,7 +948,20 @@ applications:
         paas-location: dit-staging/data-services-helpcentre-dev/data-services-helpcentre-staging
       - environment: production
         paas-location: dit-services/data-services-helpcentre/data-services-helpcentre
+      name: dataservices-helpcentre
+      namespace: live-services
       scm: git@github.com:uktrade/data-hub-helpcentre.git
+    irap:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/irap-dev/irap-dev
+      - environment: staging
+        paas-location: dit-staging/irap-staging/irap-staging
+      - environment: prod
+        paas-location: dit-services/irap/irap
+      name: irap
+      namespace: live-services
+      scm: git@github.com:uktrade/irap.git
     jml:
       environments:
       - environment: dev
@@ -797,6 +970,8 @@ applications:
         paas-location: dit-staging/jml-staging/jml-staging
       - environment: production
         paas-location: dit-services/jml/jml
+      name: jml
+      namespace: live-services
       scm: git@github.com:uktrade/jml.git
     resourcing-approval:
       environments:
@@ -806,6 +981,8 @@ applications:
         paas-location: dit-staging/resourcing-approval-staging/resourcing-approval-staging
       - environment: prod
         paas-location: dit-services/resourcing-approval/resourcing-approval
+      name: resourcing-approval
+      namespace: live-services
       scm: git@github.com:uktrade/resourcing-approval.git
   market-access:
     market-access-api:
@@ -820,6 +997,8 @@ applications:
         paas-location: dit-staging/market-access-staging/market-access-api-staging
       - environment: production
         paas-location: dit-services/market-access/market-access-api
+      name: market-access-api
+      namespace: market-access
       scm: git@github.com:uktrade/market-access-api.git
     market-access-fe:
       environments:
@@ -829,6 +1008,8 @@ applications:
         paas-location: dit-staging/market-access-uat/market-access-pyfe-uat
       - environment: prod
         paas-location: dit-services/market-access/market-access-pyfe
+      name: market-access-fe
+      namespace: market-access
       scm: git@github.com:uktrade/market-access-python-frontend.git
     market-access-public-fe:
       environments:
@@ -838,17 +1019,10 @@ applications:
         paas-location: dit-staging/market-access-uat/market-access-publicfe-uat
       - environment: prod
         paas-location: dit-services/market-access/market-access-publicfe
+      name: market-access-public-fe
+      namespace: market-access
       scm: git@github.com:uktrade/market-access-public-frontend.git
   mi:
-    datahub-mi:
-      environments:
-      - environment: dev
-        paas-location: dit-staging/mi-dev/datahub-mi-dev
-      - environment: staging
-        paas-location: dit-staging/mi-staging/datahub-mi-staging
-      - environment: prod
-        paas-location: dit-services/mi/datahub-mi
-      scm: git@github.com:uktrade/export-wins-ui-mi.git
     exportwins-admin:
       environments:
       - environment: dev
@@ -857,6 +1031,8 @@ applications:
         paas-location: dit-staging/mi-staging/exportwins-admin-staging
       - environment: prod
         paas-location: dit-services/mi/exportwins-admin
+      name: exportwins-admin
+      namespace: mi
       scm: git@github.com:uktrade/export-wins-ui.git
     exportwins-data:
       environments:
@@ -866,6 +1042,8 @@ applications:
         paas-location: dit-staging/mi-staging/exportwins-data-staging
       - environment: prod
         paas-location: dit-services/mi/exportwins-data
+      name: exportwins-data
+      namespace: mi
       scm: git@github.com:uktrade/export-wins-data.git
     exportwins-ui:
       environments:
@@ -875,6 +1053,8 @@ applications:
         paas-location: dit-staging/mi-staging/exportwins-ui-staging
       - environment: prod
         paas-location: dit-services/mi/exportwins-ui
+      name: exportwins-ui
+      namespace: mi
       scm: git@github.com:uktrade/export-wins-ui.git
   platform:
     clamav:
@@ -883,6 +1063,8 @@ applications:
         paas-location: dit-staging/platform-staging/clamav-staging
       - environment: prod
         paas-location: dit-services/platform/clamav
+      name: clamav
+      namespace: platform
       scm: git@github.com:uktrade/docker-clamav.git
     clamav-mirror:
       environments:
@@ -890,6 +1072,8 @@ applications:
         paas-location: dit-staging/platform-staging/clamav-mirror-staging
       - environment: prod
         paas-location: dit-services/platform/clamav-mirror
+      name: clamav-mirror
+      namespace: platform
       scm: git@github.com:uktrade/clamav-s3-mirror.git
     clamav-rest:
       environments:
@@ -897,6 +1081,8 @@ applications:
         paas-location: dit-staging/platform-staging/clamav-rest-staging
       - environment: prod
         paas-location: dit-services/platform/clamav-rest
+      name: clamav-rest
+      namespace: platform
       scm: git@github.com:uktrade/dit-clamav-rest.git
     dnb-service:
       environments:
@@ -904,6 +1090,8 @@ applications:
         paas-location: dit-services/platform/dnb-service
       - environment: staging
         paas-location: dit-staging/platform-staging/dnb-service-staging
+      name: dnb-service
+      namespace: platform
       scm: git@github.com:uktrade/dnb-service.git
     external-company-service:
       environments:
@@ -913,23 +1101,40 @@ applications:
         paas-location: dit-staging/platform-staging/external-company-service-staging
       - environment: uat
         paas-location: dit-staging/platform-staging/external-company-service-uat
+      name: external-company-service
+      namespace: platform
       scm: git@github.com:uktrade/dnb-service.git
+    help-desk-service:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/sre-ticketing-dev/help-desk-service-dev
+      - environment: prod
+        paas-location: dit-services/sre-ticketing/help-desk-service
+      name: help-desk-service
+      namespace: platform
+      scm: git@github.com:uktrade/help-desk-service.git
     jupyterhub-feedback-form:
       environments:
       - environment: staging
         paas-location: dit-staging/platform-staging/jupyterhub-feedback-form-staging
       - environment: production
         paas-location: dit-services/platform/jupyterhub-feedback-form
+      name: jupyterhub-feedback-form
+      namespace: platform
       scm: git@github.com:uktrade/jupyterhub-feedback-form.git
     kong:
       environments:
       - environment: staging
         paas-location: dit-staging/platform-staging/kong-staging
+      name: kong
+      namespace: platform
       scm: git@github.com:uktrade/docker-kong.git
     konga:
       environments:
       - environment: staging
         paas-location: dit-staging/platform-staging/konga-staging
+      name: konga
+      namespace: platform
       scm: git@github.com:uktrade/docker-konga.git
     prom-statsd-exporter:
       environments:
@@ -937,6 +1142,8 @@ applications:
         paas-location: dit-staging/platform-staging/prom-statsd-exporter-staging
       - environment: prod
         paas-location: dit-services/platform/prom-statsd-exporter
+      name: prom-statsd-exporter
+      namespace: platform
       scm: git@github.com:uktrade/prom-statsd-exporter.git
     return-to-office:
       environments:
@@ -944,6 +1151,8 @@ applications:
         paas-location: dit-staging/platform-staging/return-to-office-staging
       - environment: prod
         paas-location: dit-services/platform/return-to-office
+      name: return-to-office
+      namespace: platform
       scm: git@github.com:uktrade/return-to-office.git
     staff-sso:
       environments:
@@ -951,6 +1160,8 @@ applications:
         paas-location: dit-services/platform/staff-sso
       - environment: staging
         paas-location: dit-staging/platform-staging/staff-sso-staging
+      name: staff-sso
+      namespace: platform
       scm: git@github.com:uktrade/staff-sso.git
   public-apis:
     public-data-api:
@@ -961,6 +1172,8 @@ applications:
         paas-location: dit-staging/public-apis-staging/data-api-staging
       - environment: production
         paas-location: dit-services/public-apis/data-api
+      name: public-data-api
+      namespace: public-apis
       scm: git@github.com:uktrade/public-data-api.git
     public-tariffs-api:
       environments:
@@ -970,7 +1183,27 @@ applications:
         paas-location: dit-staging/public-apis-staging/tariffs-api-staging
       - environment: production
         paas-location: dit-services/public-apis/tariffs-api
+      name: public-tariffs-api
+      namespace: public-apis
       scm: git@github.com:uktrade/trade-tariff-api.git
+    sftp-notification--hmrc-fta:
+      environments:
+      - environment: staging
+        paas-location: dit-staging/public-apis-staging/sftp-notification--hmrc-fta--staging
+      - environment: production
+        paas-location: dit-services/public-apis/sftp-notification--hmrc-fta
+      name: sftp-notification--hmrc-fta
+      namespace: public-apis
+      scm: git@github.com:uktrade/s3-dropbox.git
+    sftp-notification--hmrc-tra:
+      environments:
+      - environment: staging
+        paas-location: dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging
+      - environment: production
+        paas-location: dit-services/public-apis/sftp-notification--hmrc-tra
+      name: sftp-notification--hmrc-tra
+      namespace: public-apis
+      scm: git@github.com:uktrade/s3-dropbox.git
   ready-to-trade:
     enquiry-mgmt-tool:
       environments:
@@ -982,7 +1215,38 @@ applications:
         paas-location: dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging
       - environment: production
         paas-location: dit-services/ready-to-trade/enquiry-mgmt-tool
+      name: enquiry-mgmt-tool
+      namespace: ready-to-trade
       scm: git@github.com:uktrade/enquiry-mgmt-tool.git
+  shared:
+    sample:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/sample-app
+      - environment: s3
+        paas-location: ci-pipeline-s3-test
+      name: sample
+      namespace: shared
+      scm: git@github.com:uktrade/cf-sample-app-nodejs.git
+    sample-private:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/sample-app-private
+      name: sample-private
+      namespace: shared
+      scm: git@github.com:uktrade/cf-sample-app-nodejs.git
+  supply-chain-resilience:
+    update-supply-chain-information:
+      environments:
+      - environment: development
+        paas-location: dit-staging/supply-chain-resilience-dev/update-supply-chain-information-dev
+      - environment: staging
+        paas-location: dit-staging/supply-chain-resilience-staging/update-supply-chain-information-staging
+      - environment: production
+        paas-location: dit-services/supply-chain-resilience/update-supply-chain-information
+      name: update-supply-chain-information
+      namespace: supply-chain-resilience
+      scm: git@github.com:uktrade/update-supply-chain-information.git
   trade-access:
     trade-access-program-backoffice:
       environments:
@@ -992,6 +1256,8 @@ applications:
         paas-location: dit-staging/trade-access-uat/trade-access-program-backoffice-uat
       - environment: staging
         paas-location: dit-staging/trade-access-staging/trade-access-program-backoffice-staging
+      name: trade-access-program-backoffice
+      namespace: trade-access
       scm: git@github.com:uktrade/trade-access-program.git
     trade-access-program-frontend:
       environments:
@@ -1001,6 +1267,8 @@ applications:
         paas-location: dit-staging/trade-access-uat/trade-access-program-frontend-uat
       - environment: staging
         paas-location: dit-staging/trade-access-staging/trade-access-program-frontend-staging
+      name: trade-access-program-frontend
+      namespace: trade-access
       scm: git@github.com:uktrade/trade-access-program.git
   trade-helpdesk:
     contact-forms:
@@ -1011,6 +1279,8 @@ applications:
         paas-location: dit-staging/trade-helpdesk-staging/contact-forms-staging
       - environment: prod
         paas-location: dit-services/trade-helpdesk/contact-forms
+      name: contact-forms
+      namespace: trade-helpdesk
       scm: git@github.com:uktrade/dit-contact-forms.git
     helpdesk:
       environments:
@@ -1026,6 +1296,8 @@ applications:
         paas-location: dit-services/trade-helpdesk/helpdesk-cms
       - environment: prod
         paas-location: dit-services/trade-helpdesk/helpdesk
+      name: helpdesk
+      namespace: trade-helpdesk
       scm: git@github.com:uktrade/dit-helpdesk.git
     mendel-data:
       environments:
@@ -1035,6 +1307,8 @@ applications:
         paas-location: dit-staging/trade-helpdesk-staging/mendel-data-staging
       - environment: production
         paas-location: dit-services/trade-helpdesk/mendel-data-production
+      name: mendel-data
+      namespace: trade-helpdesk
       scm: git@github.com:uktrade/dit-mendel-data.git
   trade-tariffs:
     global-uk-tariff:
@@ -1047,6 +1321,8 @@ applications:
         paas-location: dit-staging/tariffs-staging/global-uk-tariff-staging
       - environment: production
         paas-location: dit-services/tariffs/global-uk-tariff
+      name: global-uk-tariff
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/global-uk-tariff.git
     manage-trade-tariffs-design:
       environments:
@@ -1054,10 +1330,12 @@ applications:
         paas-location: dit-staging/tariffs-dev/manage-trade-tariffs-design-dev
       - environment: uat
         paas-location: dit-staging/tariffs-uat/manage-trade-tariffs-design-uat
-      - environment: staging
-        paas-location: dit-staging/tariffs-staging/manage-trade-tariffs-design-staging
+      - environment: test
+        paas-location: dit-staging/tariffs-test/manage-trade-tariffs-design-test
       - environment: production
         paas-location: dit-services/tariffs/manage-trade-tariffs-design
+      name: manage-trade-tariffs-design
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/manage-trade-tariffs-design.git
     tamato:
       environments:
@@ -1066,12 +1344,23 @@ applications:
       - environment: uat
         paas-location: dit-staging/tariffs-uat/tamato-uat
       - environment: test
-        paas-location: dit-staging/tariffs-staging/tamato-test
+        paas-location: dit-staging/tariffs-test/tamato-test
       - environment: training
         paas-location: dit-staging/tariffs-training/tamato-training
       - environment: production
         paas-location: dit-services/tariffs/tamato
+      name: tamato
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/tamato.git
+    tamato-flower:
+      environments:
+      - environment: uat
+        paas-location: dit-staging/tariffs-uat/tamato-flower-uat
+      - environment: production
+        paas-location: dit-services/tariffs/tamato-flower
+      name: tamato-flower
+      namespace: trade-tariffs
+      scm: git@github.com:uktrade/flower-runner.git
     trade-tariff-api:
       environments:
       - environment: development
@@ -1080,6 +1369,8 @@ applications:
         paas-location: dit-staging/tariffs-uat/tariffs-api-uat
       - environment: production
         paas-location: dit-services/tariffs/tariffs-api
+      name: trade-tariff-api
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/trade-tariff-api.git
     trade-tariff-management:
       environments:
@@ -1099,6 +1390,8 @@ applications:
         paas-location: dit-staging/tariffs-training/tariffs-training
       - environment: production_eu-west-2
         paas-location: dit-services/tariffs/tariffs
+      name: trade-tariff-management
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/trade-tariff-management.git
     trade-tariff-reference:
       environments:
@@ -1110,37 +1403,43 @@ applications:
         paas-location: dit-staging/tariffs-training/tariff-reference-training
       - environment: production
         paas-location: dit-services/tariffs/tariff-reference
+      name: trade-tariff-reference
+      namespace: trade-tariffs
       scm: git@github.com:uktrade/trade-tariff-reference.git
   traderemedies:
     trade-remedies-api:
       environments:
-      - environment: christopher-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-api-chris
-      - environment: johnny-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-api-johnny
-      - environment: staging-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-staging/trade-remedies-api-staging
+      - environment: berlin-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin
+      - environment: tokyo-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo
+      - environment: chicago-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago
       - environment: uat-eu-west-2
         paas-location: traderemedies-staging/traderemedies-uat/trade-remedies-api-uat
       - environment: hotfix-eu-west-2
         paas-location: traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix
       - environment: prod-eu-west-2
         paas-location: traderemedies-services/traderemedies/trade-remedies-api
+      name: trade-remedies-api
+      namespace: traderemedies
       scm: git@github.com:uktrade/trade-remedies-api.git
     trade-remedies-caseworker:
       environments:
-      - environment: christopher-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-chris
-      - environment: johnny-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-johnny
-      - environment: staging-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-staging/trade-remedies-caseworker-staging
+      - environment: berlin-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-berlin
+      - environment: tokyo-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-tokyo
+      - environment: chicago-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-chicago
       - environment: uat-eu-west-2
         paas-location: traderemedies-staging/traderemedies-uat/trade-remedies-caseworker-uat
       - environment: hotfix-eu-west-2
         paas-location: traderemedies-staging/traderemedies-hotfix/trade-remedies-caseworker-hotfix
       - environment: prod-eu-west-2
         paas-location: traderemedies-services/traderemedies/trade-remedies-caseworker
+      name: trade-remedies-caseworker
+      namespace: traderemedies
       scm: git@github.com:uktrade/trade-remedies-caseworker.git
     trade-remedies-ip-filter:
       environments:
@@ -1148,19 +1447,263 @@ applications:
         paas-location: traderemedies-staging/traderemedies-uat/ip-filter-uat
       - environment: production
         paas-location: traderemedies-services/traderemedies/ip-filter
+      name: trade-remedies-ip-filter
+      namespace: traderemedies
       scm: git@github.com:uktrade/dit-cf-security.git
     trade-remedies-public:
       environments:
-      - environment: christopher-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-public-chris
-      - environment: johnny-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-public-johnny
-      - environment: staging-eu-west-2
-        paas-location: traderemedies-staging/traderemedies-staging/trade-remedies-public-staging
+      - environment: berlin-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-public-berlin
+      - environment: tokyo-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-public-tokyo
+      - environment: chicago-eu-west-2
+        paas-location: traderemedies-staging/traderemedies-dev/trade-remedies-public-chicago
       - environment: uat-eu-west-2
         paas-location: traderemedies-staging/traderemedies-uat/trade-remedies-public-uat
       - environment: hotfix-eu-west-2
         paas-location: traderemedies-staging/traderemedies-hotfix/trade-remedies-public-hotfix
       - environment: prod-eu-west-2
         paas-location: traderemedies-services/traderemedies/trade-remedies-public
+      name: trade-remedies-public
+      namespace: traderemedies
       scm: git@github.com:uktrade/trade-remedies-public.git
+  webops:
+    alertmanager:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/dit-alertmanager-dev
+      - environment: production
+        paas-location: dit-services/webops/dit-alertmanager
+      name: alertmanager
+      namespace: webops
+      scm: git@github.com:uktrade/cf-prometheus-alertmanager.git
+    atlassian-account-user-audit:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/atlassian-account-user-audit
+      name: atlassian-account-user-audit
+      namespace: webops
+      scm: git@github.com:uktrade/atlassian-account-user-audit.git
+    autoscaler:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/autoscaler
+      name: autoscaler
+      namespace: webops
+      scm: git@github.com:uktrade/dit-cf-autoscaler.git
+    cert-checker:
+      environments:
+      - environment: prod
+        paas-location: dit-services/webops/cert_checker
+      name: cert-checker
+      namespace: webops
+      scm: git@github.com:uktrade/cert-checker.git
+    cf-console:
+      environments:
+      - environment: production_eu-west-1
+        paas-location: dit-services/webops/cf-console
+      - environment: production_eu-west-2
+        paas-location: dit-services/webops/console
+      name: cf-console
+      namespace: webops
+      scm: https://github.com/cloudfoundry-incubator/stratos.git
+    content-request-form:
+      environments:
+      - environment: prod
+        paas-location: dit-services/webops/content-request-form
+      name: content-request-form
+      namespace: webops
+      scm: git@github.com:uktrade/content-request-form.git
+    cost-monitor:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/cost-monitor
+      name: cost-monitor
+      namespace: webops
+      scm: git@github.com:uktrade/cost_monitor.git
+    demo-celery-redis-ha:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/demo-celery-redis-ha
+      name: demo-celery-redis-ha
+      namespace: webops
+      scm: git@github.com:uktrade/demo-celery-redis-ha.git
+    dit-aws-vpn-home:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/dit-aws-vpn-home-dev
+      - environment: prod
+        paas-location: dit-services/webops/dit-aws-vpn-home
+      name: dit-aws-vpn-home
+      namespace: webops
+      scm: git@github.com:uktrade/dit-aws-vpn-home.git
+    dit-manual:
+      environments:
+      - environment: prod
+        paas-location: dit-services/webops/rtfm-prod
+      name: dit-manual
+      namespace: webops
+      scm: git@github.com:uktrade/rtfm.git
+    feed-aggregator:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/feed-aggregator-dev/rssNews
+      - environment: prod
+        paas-location: dit-services/feed-aggregator-prod/rssNews-prod
+      name: feed-aggregator
+      namespace: webops
+      scm: git@github.com:uktrade/feed-aggregator.git
+    gachecker:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/gachecker
+      name: gachecker
+      namespace: webops
+      scm: git@github.com:uktrade/gachecker.git
+    githubscan:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/githubscan
+      name: githubscan
+      namespace: webops
+      scm: git@github.com:uktrade/githubscan.git
+    grafana:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/dit-grafana-dev
+      - environment: production
+        paas-location: dit-services/webops/dit-grafana
+      name: grafana
+      namespace: webops
+      scm: git@github.com:uktrade/cf-grafana.git
+    ip-filter:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/ip-filter-dev
+      - environment: dev-non-cdn
+        paas-location: dit-staging/webops-dev/ip-filter-dev-non-cdn
+      - environment: production
+        paas-location: dit-services/webops/ip-filter
+      - environment: production-non-cdn
+        paas-location: dit-services/webops/ip-filter-non-cdn
+      name: ip-filter
+      namespace: webops
+      scm: git@github.com:uktrade/cf-nginx-ip-filter.git
+    ip-filter-service:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/ip-filter-service-dev
+      - environment: dev-cdn
+        paas-location: dit-staging/webops-dev/ip-filter-service-cdn-dev
+      - environment: prod
+        paas-location: dit-services/webops/ip-filter-service
+      name: ip-filter-service
+      namespace: webops
+      scm: git@github.com:uktrade/dit-cf-security.git
+    paas-autoscaler-monitor:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/paas-autoscaler-monitor-dev
+      - environment: prod
+        paas-location: dit-services/webops/paas-autoscaler-monitor
+      name: paas-autoscaler-monitor
+      namespace: webops
+      scm: git@github.com:uktrade/paas-autoscaler-monitor.git
+    paas-logdrain-scanner:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/paas-logdrain-scanner-dev
+      - environment: prod
+        paas-location: dit-services/webops/paas-logdrain-scanner
+      name: paas-logdrain-scanner
+      namespace: webops
+      scm: git@github.com:uktrade/paas-logdrain-scanner.git
+    pingdom-link-checker:
+      environments:
+      - environment: prod
+        paas-location: dit-services/webops/pingdom-link-checker
+      name: pingdom-link-checker
+      namespace: webops
+      scm: git@github.com:uktrade/pingdom-link-checker.git
+    pingdom-redirect-checker:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/pingdom-redirect-checker
+      name: pingdom-redirect-checker
+      namespace: webops
+      scm: git@github.com:uktrade/pingdom-redirect-checker.git
+    process-metrics:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/process-metrics
+      - environment: dev
+        paas-location: dit-staging/webops-dev/process-metrics-dev
+      name: process-metrics
+      namespace: webops
+      scm: git@github.com:uktrade/cf-process-metrics-exporter.git
+    prometheus:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/dit-prometheus-dev
+      - environment: production
+        paas-location: dit-services/webops/dit-prometheus
+      name: prometheus
+      namespace: webops
+      scm: git@github.com:uktrade/cf-prometheus.git
+    proxy-pingdom-check:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/proxy-pingdom-check
+      name: proxy-pingdom-check
+      namespace: webops
+      scm: git@github.com:uktrade/proxy-pingdom-check.git
+    quaysecurityscan:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/quaysecurityscan
+      name: quaysecurityscan
+      namespace: webops
+      scm: git@github.com:uktrade/quay_security_scan.git
+    request-access-service:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/request-access-service-dev
+      - environment: prod
+        paas-location: dit-services/webops/request-access-service
+      name: request-access-service
+      namespace: webops
+      scm: git@github.com:uktrade/request-access-service.git
+    sla-budget-metrics:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/sla-budget-metrics-dev
+      - environment: prod
+        paas-location: dit-services/webops/sla-budget-metrics
+      name: sla-budget-metrics
+      namespace: webops
+      scm: git@github.com:uktrade/sla-budget-metrics.git
+    url-protection-checker:
+      environments:
+      - environment: dev
+        paas-location: dit-staging/webops-dev/url-protection-checker-dev
+      - environment: prod
+        paas-location: dit-services/webops/url-protection-checker
+      name: url-protection-checker
+      namespace: webops
+      scm: git@github.com:uktrade/url-protection-checker.git
+    zenslackchat:
+      environments:
+      - environment: stage
+        paas-location: dit-staging/sre-ticketing-dev/zenslackchat-stage
+      - environment: prod
+        paas-location: dit-services/sre-ticketing/zenslackchat-prod
+      name: zenslackchat
+      namespace: webops
+      scm: git@github.com:uktrade/django-zenslackchat.git
+    zpa-monitor:
+      environments:
+      - environment: production
+        paas-location: dit-services/webops/zpa-monitor
+      name: zpa-monitor
+      namespace: webops
+      scm: git@github.com:uktrade/zpa-monitor.git

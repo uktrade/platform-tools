@@ -1,14 +1,39 @@
 # Migration tools
 
-You will need to log into cf cli - the scripts pick up the access key in ~/.cf/config
+Scripts used to determine application configuration by retrieving current pipeline configurations and GOV.UK PaaS data,
+such as environments, environment variables, domains, certificates, etc.
 
+## Using the tools
 
-get-ci-conf.py - combines the ci-pipeline-config yaml files based on the namespace field: ci-conf.yaml is the outputi  
-get-paas-config.py - retrieves paas data; output is in ci-conf.yaml  
-combine-ci-paas-config.py - combines the previous two files; output: full-config.yaml  
-build-copilot-config.py - takes full-config.yaml and renders individual copilot-bootstrap input files; see ../copilot-bootstrap-config/ for output  
+### `get-ci-config.py`
 
-Output files:  
-paas-conf.yaml  
-ci-conf.yaml  
-full-config.yaml  
+Combines the `ci-pipeline-config` YAML files based on the namespace field and outputs `ci-config.yml`.
+
+    ./migration-tools/get-ci-config.py
+
+Make sure the first line in `ci-config.yml` begins with `applications`, removing any lines with reference to `python`.
+
+### `get-paas-config.py`
+
+Retrieves GOV.UK PaaS data and outputs `paas-config.yml`.
+
+* You need to have admin access etc. on all the things in all the GOV.UK PaaS organisations and spaces for this to work.
+* You will need to log into [Cloud Foundry CLI](https://docs.cloudfoundry.org/cf-cli/); the scripts pick up the access
+  key in `~/.cf/config.json`.
+
+    ./migration-tools/get-paas-config.py
+
+### `combine-ci-paas-config.py`
+
+Combines the two previous generated files and outputs `full-config.yml`.
+
+    ./migration-tools/combine-ci-paas-config.py
+
+### `build-copilot-config.py`
+
+Takes `full-config.yml` and generates individual boostrap configuration input files in the `bootstrap-config` directory.
+The format of the filenames: `<namespace>-copilot.yml`.
+
+    ./migration-tools/build-copilot-config.py
+
+See [`bootstrap-config`](../bootstrap-config/) for the output.

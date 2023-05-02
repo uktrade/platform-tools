@@ -3,12 +3,7 @@ environments:
   continuous-deployment:
     certificate_arns:
     - ACM-ARN-FOR-export-opportunities-continuous-deployment.london.cloudapps.digital
-    - ACM-ARN-FOR-opportunities.export.great.uat.uktrade.io
-    - ACM-ARN-FOR-export.great.uat.uktrade.io
-    - ACM-ARN-FOR-great.uat.uktrade.io
-    - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great.dev.uktrade.digital
-    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
   production:
     certificate_arns:
     - ACM-ARN-FOR-export-opportunities.london.cloudapps.digital
@@ -28,7 +23,7 @@ services:
     continuous-deployment:
       ipfilter: true
       paas: dit-staging/exopps-dev/export-opportunities-continuous-deployment
-      url: great-magna.dev.uktrade.digital
+      url: great.dev.uktrade.digital
     production:
       ipfilter: false
       paas: dit-services/exopps/export-opportunities
@@ -128,6 +123,7 @@ services:
     QUALITY_SCORE_THRESHOLD: QUALITY_SCORE_THRESHOLD
     RAILS_ENV: RAILS_ENV
     RAILS_SERVE_STATIC_FILES: RAILS_SERVE_STATIC_FILES
+    REDIS_URL: REDIS_URL
     SECRET_KEY_BASE: SECRET_KEY_BASE
     SELLING_ONLINE_OVERSEAS_URL: SELLING_ONLINE_OVERSEAS_URL
     SENDGRID_PASSWORD: SENDGRID_PASSWORD
@@ -166,7 +162,6 @@ services:
     mailtrap_password: mailtrap_password
     mailtrap_username: mailtrap_username
     post_user_communication_s3_bucket: post_user_communication_s3_bucket
-    redis_url: redis_url
     sidekiq_password: sidekiq_password
     sidekiq_username: sidekiq_username
     sso_endpoint_sso_append: sso_endpoint_sso_append

@@ -1,5 +1,8 @@
 app: platform
 environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-help-desk-service-dev.london.cloudapps.digital
   prod:
     certificate_arns:
     - ACM-ARN-FOR-clamav-mirror.london.cloudapps.digital
@@ -188,6 +191,34 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/sre-ticketing-dev/help-desk-service-dev
+      url: help-desk-service-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: help-desk-service
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - APP_ENV
+  - DEBUG
+  - DJANGO_SETTINGS_MODULE
+  - SECRET_KEY
+  repo: git@github.com:uktrade/help-desk-service.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    APP_ENV: APP_ENV
+    DATABASE_URL: DATABASE_URL
+    DEBUG: DEBUG
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    HALO_SUBDOMAIN: HALO_SUBDOMAIN
+    HELP_DESK_CREDS: HELP_DESK_CREDS
+    HELP_DESK_INTERFACE: HELP_DESK_INTERFACE
+    REDIS_URL: REDIS_URL
+    REQUIRE_ZENDESK: REQUIRE_ZENDESK
+    SECRET_KEY: SECRET_KEY
+  type: public
+- env_vars: {}
+  environments:
     prod:
       ipfilter: true
       paas: dit-services/platform/prom-statsd-exporter
@@ -219,9 +250,11 @@ services:
   - ACTIVITY_STREAM_HAWK_SECRET
   - ALLOWED_HOSTS
   - ALLOWED_IPS
+  - APP_ENV
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
+  - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - IP_RESTRICT
   - SECRET_KEY

@@ -1,20 +1,31 @@
 app: traderemedies
 environments:
-  christopher-eu-west-2: {}
+  berlin-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-remedies-api-berlin.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-remedies-caseworker-berlin.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-remedies-public-berlin.london.cloudapps.digital
+  chicago-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-remedies-api-chicago.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-remedies-caseworker-chicago.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-remedies-public-chicago.london.cloudapps.digital
   hotfix-eu-west-2:
     certificate_arns:
     - ACM-ARN-FOR-trade-remedies-api-hotfix.london.cloudapps.digital
     - ACM-ARN-FOR-trade-remedies-caseworker-hotfix.london.cloudapps.digital
     - ACM-ARN-FOR-trade-remedies-public-hotfix.london.cloudapps.digital
-  johnny-eu-west-2: {}
   prod-eu-west-2:
     certificate_arns:
-    - ACM-ARN-FOR-trade-remedies-api.london.cloudapps.digital
+    - ACM-ARN-FOR-www.investigations-trade-remedies.service.gov.uk
     - ACM-ARN-FOR-www.investigations-trade-remedies.service.gov.uk
     - ACM-ARN-FOR-www.investigations-trade-remedies.service.gov.uk
     - ACM-ARN-FOR-www.trade-remedies.service.gov.uk
   production: {}
-  staging-eu-west-2: {}
+  tokyo-eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-trade-remedies-caseworker-tokyo.london.cloudapps.digital
+    - ACM-ARN-FOR-trade-remedies-public-tokyo.london.cloudapps.digital
   uat: {}
   uat-eu-west-2:
     certificate_arns:
@@ -24,14 +35,26 @@ environments:
 services:
 - env_vars: {}
   environments:
+    berlin-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin
+      url: trade-remedies-api-berlin.london.cloudapps.digital
+    chicago-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago
+      url: trade-remedies-api-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix
       url: trade-remedies-api-hotfix.london.cloudapps.digital
     prod-eu-west-2:
-      ipfilter: true
+      ipfilter: false
       paas: traderemedies-services/traderemedies/trade-remedies-api
-      url: trade-remedies-api.london.cloudapps.digital
+      url: null
+    tokyo-eu-west-2:
+      ipfilter: false
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo
+      url: null
     uat-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-api-uat
@@ -114,10 +137,16 @@ services:
   type: public
 - env_vars: {}
   environments:
+    berlin-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin
+    chicago-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago
     hotfix-eu-west-2:
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix
     prod-eu-west-2:
       paas: traderemedies-services/traderemedies/trade-remedies-api
+    tokyo-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo
     uat-eu-west-2:
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -130,10 +159,16 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    berlin-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin
+    chicago-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago
     hotfix-eu-west-2:
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix
     prod-eu-west-2:
       paas: traderemedies-services/traderemedies/trade-remedies-api
+    tokyo-eu-west-2:
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo
     uat-eu-west-2:
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -146,6 +181,14 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    berlin-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-berlin
+      url: trade-remedies-caseworker-berlin.london.cloudapps.digital
+    chicago-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-chicago
+      url: trade-remedies-caseworker-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-caseworker-hotfix
@@ -154,6 +197,10 @@ services:
       ipfilter: true
       paas: traderemedies-services/traderemedies/trade-remedies-caseworker
       url: www.investigations-trade-remedies.service.gov.uk
+    tokyo-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-tokyo
+      url: trade-remedies-caseworker-tokyo.london.cloudapps.digital
     uat-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-caseworker-uat
@@ -191,6 +238,7 @@ services:
   - USE_2FA
   repo: git@github.com:uktrade/trade-remedies-caseworker.git
   secrets:
+    ADMIN_DEBUG_TOOLS_ENABLED: ADMIN_DEBUG_TOOLS_ENABLED
     ALLOWED_HOSTS: ALLOWED_HOSTS
     API_BASE_URL: API_BASE_URL
     AWS_REGION: AWS_REGION
@@ -225,11 +273,22 @@ services:
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
     SHOW_ENV_BANNER: SHOW_ENV_BANNER
+    SSO_BROKER_URL: SSO_BROKER_URL
+    SSO_CLIENT_ID: SSO_CLIENT_ID
+    SSO_CLIENT_SECRET: SSO_CLIENT_SECRET
     USE_2FA: USE_2FA
     X_CDN_SECRET: X_CDN_SECRET
   type: public
 - env_vars: {}
   environments:
+    berlin-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-berlin
+      url: trade-remedies-public-berlin.london.cloudapps.digital
+    chicago-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-chicago
+      url: trade-remedies-public-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-public-hotfix
@@ -238,6 +297,10 @@ services:
       ipfilter: false
       paas: traderemedies-services/traderemedies/trade-remedies-public
       url: www.trade-remedies.service.gov.uk
+    tokyo-eu-west-2:
+      ipfilter: true
+      paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-tokyo
+      url: trade-remedies-public-tokyo.london.cloudapps.digital
     uat-eu-west-2:
       ipfilter: true
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-public-uat

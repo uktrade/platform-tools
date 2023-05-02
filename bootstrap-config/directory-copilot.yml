@@ -12,6 +12,7 @@ environments:
     - ACM-ARN-FOR-great-cms.dev.uktrade.digital
     - ACM-ARN-FOR-great-mvp.dev.uktrade.digital
     - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-international-ui-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great.dev.uktrade.digital
@@ -43,6 +44,11 @@ environments:
     - ACM-ARN-FOR-invest-pir-api-dev.london.cloudapps.digital
     - ACM-ARN-FOR-admin-pir.invest.great.dev.uktrade.io
     - ACM-ARN-FOR-admin-pir.invest.great.dev.uktrade.digital
+    - ACM-ARN-FOR-navigator-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.io
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great-magna.dev.uktrade.digital
   prod:
     certificate_arns:
     - ACM-ARN-FOR-exceptional-review-procedure.london.cloudapps.digital
@@ -89,7 +95,13 @@ environments:
     - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-great-cms.london.cloudapps.digital
     - ACM-ARN-FOR-www.great.gov.uk
-  production_eu-west-2: {}
+    - ACM-ARN-FOR-www.great.gov.uk
+  production_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-navigator.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-sooadmin.trade.gov.uk
   staging:
     certificate_arns:
     - ACM-ARN-FOR-exceptional-review-procedure-staging.london.cloudapps.digital
@@ -100,6 +112,7 @@ environments:
     - ACM-ARN-FOR-great-cms.staging.uktrade.digital
     - ACM-ARN-FOR-great-mvp.staging.uktrade.digital
     - ACM-ARN-FOR-great-magna.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
     - ACM-ARN-FOR-great-international-ui-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great.staging.uktrade.io
     - ACM-ARN-FOR-great.demo.uktrade.io
@@ -132,11 +145,16 @@ environments:
     - ACM-ARN-FOR-invest-pir-api-staging.london.cloudapps.digital
     - ACM-ARN-FOR-admin-pir.invest.great.staging.uktrade.io
     - ACM-ARN-FOR-admin-pir.invest.great.staging.uktrade.digital
+    - ACM-ARN-FOR-navigator-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-selling-online-overseas.export.great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
   uat:
     certificate_arns:
     - ACM-ARN-FOR-directory-cms-flower-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great-cms-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great-international-ui-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.io
     - ACM-ARN-FOR-great.uat.uktrade.digital
@@ -167,6 +185,9 @@ environments:
     - ACM-ARN-FOR-invest-pir-api-uat.london.cloudapps.digital
     - ACM-ARN-FOR-admin-pir.invest.great.uat.uktrade.io
     - ACM-ARN-FOR-admin-pir.invest.great.uat.uktrade.digital
+    - ACM-ARN-FOR-navigator-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
 services:
 - env_vars: {}
   environments:
@@ -1203,6 +1224,7 @@ services:
   overlapping_secrets:
   - CORS_ORIGIN_ALLOW_ALL
   - DEBUG
+  - DISABLE_COLLECTSTATIC
   - FEATURE_TEST_API_ENABLED
   - FEATURE_URL_PREFIX_ENABLED
   - HEALTH_CHECK_TOKEN
@@ -1268,6 +1290,8 @@ services:
   - DIRECTORY_CONSTANTS_URL_INVEST
   - DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS
   - DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON
+  - DIRECTORY_SSO_API_CLIENT_API_KEY
+  - DIRECTORY_SSO_API_CLIENT_BASE_URL
   - EXPORTING_NEW
   - EXPORTING_OCCASIONAL
   - EXPORTING_REGULAR
@@ -1286,6 +1310,12 @@ services:
   - GOOGLE_TAG_MANAGER_ENV
   - GOOGLE_TAG_MANAGER_ID
   - GREAT_EXPORT_HOME
+  - GUIDANCE_BUSINESS_PLANNING
+  - GUIDANCE_CUSTOMER_INSIGHT
+  - GUIDANCE_FINANCE
+  - GUIDANCE_GETTING_PAID
+  - GUIDANCE_MARKET_RESEARCH
+  - GUIDANCE_OPERATIONS_AND_COMPLIANCE
   - HEADER_FOOTER_URLS_CONTACT_US
   - HEADER_FOOTER_URLS_EVENTS
   - HEADER_FOOTER_URLS_FAB
@@ -1308,6 +1338,10 @@ services:
   - SECRET_KEY
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
+  - SERVICES_EXOPPS
+  - SERVICES_FAB
+  - SERVICES_GET_FINANCE
+  - SERVICES_SOO
   - SESSION_COOKIE_SECURE
   - SSO_API_CLIENT_BASE_URL
   - SSO_PROFILE_URL
@@ -1646,7 +1680,7 @@ services:
     dev:
       ipfilter: true
       paas: dit-staging/directory-dev/great-cms-dev
-      url: great-magna.dev.uktrade.digital
+      url: great.dev.uktrade.digital
     production:
       ipfilter: true
       paas: dit-services/directory/great-cms
@@ -1654,11 +1688,11 @@ services:
     staging:
       ipfilter: true
       paas: dit-staging/directory-staging/great-cms-staging
-      url: great-magna.staging.uktrade.digital
+      url: great.staging.uktrade.digital
     uat:
       ipfilter: true
       paas: dit-staging/directory-uat/great-cms-uat
-      url: great-cms-uat.london.cloudapps.digital
+      url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: great-cms
   overlapping_secrets:
@@ -1676,6 +1710,7 @@ services:
   - AWS_STORAGE_BUCKET_NAME
   - AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
   - BASE_URL
+  - CELERY_BROKER_POOL_LIMIT
   - CONTACT_DIT_AGENT_EMAIL_ADDRESS
   - CONTACT_DSO_AGENT_EMAIL_ADDRESS
   - CONTACT_ECOMMERCE_EXPORT_SUPPORT_AGENT_EMAIL_ADDRESS
@@ -1705,6 +1740,8 @@ services:
   - EXPORTING_OPPORTUNITIES_SEARCH_URL
   - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
   - FEATURE_MAINTENANCE_MODE_ENABLED
+  - FEATURE_REDIS_USE_SSL
+  - FEATURE_TEST_SEARCH_API_PAGES_ENABLED
   - GET_ADDRESS_API_KEY
   - GOOGLE_TAG_MANAGER_ID
   - HEALTH_CHECK_TOKEN
@@ -1746,6 +1783,7 @@ services:
     AWS_S3_HOST: AWS_S3_HOST
     AWS_S3_REGION_NAME: AWS_S3_REGION_NAME
     AWS_S3_REGION_NAME_DATA_SCIENCE: AWS_S3_REGION_NAME_DATA_SCIENCE
+    AWS_S3_TIMEOUT: AWS_S3_TIMEOUT
     AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
     AWS_SECRET_ACCESS_KEY_DATA_SCIENCE: AWS_SECRET_ACCESS_KEY_DATA_SCIENCE
     AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
@@ -1753,6 +1791,7 @@ services:
     BASE_URL: BASE_URL
     CCCE_BASE_URL: CCCE_BASE_URL
     CCCE_COMMODITY_SEARCH_TOKEN: CCCE_COMMODITY_SEARCH_TOKEN
+    CELERY_BROKER_POOL_LIMIT: CELERY_BROKER_POOL_LIMIT
     CLAM_AV_ENABLED: CLAM_AV_ENABLED
     CLAM_AV_HOST: CLAM_AV_HOST
     CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
@@ -1787,16 +1826,23 @@ services:
     EXPORTING_OPPORTUNITIES_API_BASE_URL: EXPORTING_OPPORTUNITIES_API_BASE_URL
     EXPORTING_OPPORTUNITIES_API_SECRET: EXPORTING_OPPORTUNITIES_API_SECRET
     EXPORTING_OPPORTUNITIES_SEARCH_URL: EXPORTING_OPPORTUNITIES_SEARCH_URL
+    EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES: EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
     FEATURE_COMPARE_MARKETS_TABS: FEATURE_COMPARE_MARKETS_TABS
     FEATURE_DATA_PIPELINE_STATS: FEATURE_DATA_PIPELINE_STATS
     FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER: FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER
+    FEATURE_EXPORT_ACADEMY: FEATURE_EXPORT_ACADEMY
+    FEATURE_EXPORT_ACADEMY_RELEASE_2: FEATURE_EXPORT_ACADEMY_RELEASE_2
     FEATURE_EXPORT_PLAN_SECTIONS_DISABLED: FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
     FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST: FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
     FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE: FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
     FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED: FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
+    FEATURE_INTERNATIONAL_ONLINE_OFFER: FEATURE_INTERNATIONAL_ONLINE_OFFER
     FEATURE_MAINTENANCE_MODE_ENABLED: FEATURE_MAINTENANCE_MODE_ENABLED
     FEATURE_MARKET_GUIDES_MAP: FEATURE_MARKET_GUIDES_MAP
+    FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE: FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE
+    FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION: FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION
     FEATURE_MOCK_CLIENT_IP_ENABLED: FEATURE_MOCK_CLIENT_IP_ENABLED
+    FEATURE_REDIS_USE_SSL: FEATURE_REDIS_USE_SSL
     FEATURE_SHOW_BRAND_BANNER: FEATURE_SHOW_BRAND_BANNER
     FEATURE_SHOW_CASE_STUDY_RANKINGS: FEATURE_SHOW_CASE_STUDY_RANKINGS
     FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK: FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
@@ -1829,6 +1875,7 @@ services:
     SSO_SESSION_COOKIE: SSO_SESSION_COOKIE
     SSO_SIGNATURE_SECRET: SSO_SIGNATURE_SECRET
     STAFF_SSO_AUTHBROKER_URL: STAFF_SSO_AUTHBROKER_URL
+    TIME_ZONE: TIME_ZONE
     UKEF_CONTACT_AGENT_EMAIL_ADDRESS: UKEF_CONTACT_AGENT_EMAIL_ADDRESS
     UKEF_CONTACT_AGENT_NOTIFY_TEMPLATE_ID: UKEF_CONTACT_AGENT_NOTIFY_TEMPLATE_ID
     UKEF_CONTACT_USER_NOTIFY_TEMPLATE_ID: UKEF_CONTACT_USER_NOTIFY_TEMPLATE_ID
@@ -1842,6 +1889,42 @@ services:
     WAGTAILTRANSFER_SECRET_KEY_STAGING: WAGTAILTRANSFER_SECRET_KEY_STAGING
     WAGTAILTRANSFER_SECRET_KEY_UAT: WAGTAILTRANSFER_SECRET_KEY_UAT
   type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/directory-dev/great-cms-dev
+    production:
+      paas: dit-services/directory/great-cms
+    staging:
+      paas: dit-staging/directory-staging/great-cms-staging
+    uat:
+      paas: dit-staging/directory-uat/great-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-cms-celery_beat
+  notes: service created based on Procfile entry for great-cms and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/great-cms.git
+  secrets: {}
+  secrets_from: great-cms
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/directory-dev/great-cms-dev
+    production:
+      paas: dit-services/directory/great-cms
+    staging:
+      paas: dit-staging/directory-staging/great-cms-staging
+    uat:
+      paas: dit-staging/directory-uat/great-cms-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: great-cms-celery_worker
+  notes: service created based on Procfile entry for great-cms and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/great-cms.git
+  secrets: {}
+  secrets_from: great-cms
+  type: backend
 - env_vars: {}
   environments:
     dev_eu-west-2:
@@ -1917,6 +2000,7 @@ services:
   - SECRET_KEY
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
+  - SERVICES_EXOPPS_ACTUAL
   - SESSION_COOKIE_NAME
   - SSO_API_CLIENT_BASE_URL
   - SSO_PROFILE_URL
@@ -2418,4 +2502,151 @@ services:
     SESSION_COOKIE_SECURE: SESSION_COOKIE_SECURE
     UTM_COOKIE_DOMAIN: UTM_COOKIE_DOMAIN
     X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-dev/selling-online-overseas-dev
+      url: great-magna.dev.uktrade.digital
+    production_eu-west-2:
+      ipfilter: false
+      paas: dit-services/directory/selling-online-overseas
+      url: sooadmin.trade.gov.uk
+    staging_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-staging/selling-online-overseas-staging
+      url: great.staging.uktrade.digital
+    uat_eu-west-2:
+      ipfilter: true
+      paas: dit-staging/directory-uat/selling-online-overseas-uat
+      url: great.uat.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: selling-online-overseas
+  overlapping_secrets:
+  - ACTIVITY_STREAM_ACCESS_KEY_ID
+  - ACTIVITY_STREAM_SECRET_ACCESS_KEY
+  - ALLOWED_ADMIN_IPS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AWS_STORAGE_BUCKET_NAME
+  - CMS_SIGNATURE_SECRET
+  - CMS_URL
+  - DIRECTORY_CONSTANTS_URL_EXPORT_READINESS
+  - DIRECTORY_CONSTANTS_URL_FIND_A_BUYER
+  - DIRECTORY_CONSTANTS_URL_GREAT_DOMESTIC
+  - DIRECTORY_CONSTANTS_URL_GREAT_MAGNA
+  - DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS
+  - DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON
+  - DIRECTORY_SSO_API_CLIENT_API_KEY
+  - DIRECTORY_SSO_API_CLIENT_BASE_URL
+  - DISABLE_COLLECTSTATIC
+  - EXPORTING_NEW
+  - EXPORTING_OCCASIONAL
+  - EXPORTING_REGULAR
+  - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+  - FEATURE_EXPORT_JOURNEY_ENABLED
+  - FEATURE_HEADER_SEARCH_ENABLED
+  - FEATURE_MAINTENANCE_MODE_ENABLED
+  - FEATURE_NEW_HEADER_FOOTER_ENABLED
+  - FEATURE_SEARCH_ENGINE_INDEXING_DISABLED
+  - FEATURE_TEST_SEARCH_API_PAGES_ENABLED
+  - GREAT_EXPORT_HOME
+  - GUIDANCE_BUSINESS_PLANNING
+  - GUIDANCE_CUSTOMER_INSIGHT
+  - GUIDANCE_FINANCE
+  - GUIDANCE_GETTING_PAID
+  - GUIDANCE_MARKET_RESEARCH
+  - GUIDANCE_OPERATIONS_AND_COMPLIANCE
+  - HEADER_FOOTER_URLS_EVENTS
+  - MAGNA_HEADER
+  - PRIVACY_COOKIE_DOMAIN
+  - SECRET_KEY
+  - SENTRY_DSN
+  - SERVICES_EXOPPS
+  - SERVICES_EXOPPS_ACTUAL
+  - SERVICES_FAB
+  - SERVICES_GET_FINANCE
+  - SERVICES_SOO
+  - SSO_PROFILE_URL
+  - SSO_PROXY_LOGIN_URL
+  - SSO_PROXY_LOGOUT_URL
+  - SSO_PROXY_SIGNUP_URL
+  - SSO_SESSION_COOKIE
+  - STAFF_SSO_AUTHBROKER_URL
+  - STATIC_HOST
+  repo: git@github.com:uktrade/selling-online-overseas.git
+  secrets:
+    ' ALLOWED_ADMIN_IPS': ' ALLOWED_ADMIN_IPS'
+    ACTIVITY_STREAM_ACCESS_KEY_ID: ACTIVITY_STREAM_ACCESS_KEY_ID
+    ACTIVITY_STREAM_SECRET_ACCESS_KEY: ACTIVITY_STREAM_SECRET_ACCESS_KEY
+    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    ALLOWED_IPS: ALLOWED_IPS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AWS_KEY_ID: AWS_KEY_ID
+    AWS_SECRET_KEY: AWS_SECRET_KEY
+    AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
+    CF_APP_NAME: CF_APP_NAME
+    CF_APP_SPACE: CF_APP_SPACE
+    CF_ORG: CF_ORG
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    CMS_SIGNATURE_SECRET: CMS_SIGNATURE_SECRET
+    CMS_URL: CMS_URL
+    CSRF_COOKIE_DOMAIN: CSRF_COOKIE_DOMAIN
+    DIRECTORY_CONSTANTS_URL_EXPORT_READINESS: DIRECTORY_CONSTANTS_URL_EXPORT_READINESS
+    DIRECTORY_CONSTANTS_URL_FIND_A_BUYER: DIRECTORY_CONSTANTS_URL_FIND_A_BUYER
+    DIRECTORY_CONSTANTS_URL_GREAT_DOMESTIC: DIRECTORY_CONSTANTS_URL_GREAT_DOMESTIC
+    DIRECTORY_CONSTANTS_URL_GREAT_MAGNA: DIRECTORY_CONSTANTS_URL_GREAT_MAGNA
+    DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS: DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS
+    DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON: DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON
+    DIRECTORY_SSO_API_CLIENT_API_KEY: DIRECTORY_SSO_API_CLIENT_API_KEY
+    DIRECTORY_SSO_API_CLIENT_BASE_URL: DIRECTORY_SSO_API_CLIENT_BASE_URL
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    'ERROR_PAGE_URL:': 'ERROR_PAGE_URL:'
+    EXPORTING_NEW: EXPORTING_NEW
+    EXPORTING_OCCASIONAL: EXPORTING_OCCASIONAL
+    EXPORTING_REGULAR: EXPORTING_REGULAR
+    FEATURE_ENFORCE_STAFF_SSO_ENABLED: FEATURE_ENFORCE_STAFF_SSO_ENABLED
+    FEATURE_EXPORT_JOURNEY_ENABLED: FEATURE_EXPORT_JOURNEY_ENABLED
+    FEATURE_HEADER_SEARCH_ENABLED: FEATURE_HEADER_SEARCH_ENABLED
+    FEATURE_MAINTENANCE_MODE_ENABLED: FEATURE_MAINTENANCE_MODE_ENABLED
+    FEATURE_NEW_HEADER_FOOTER_ENABLED: FEATURE_NEW_HEADER_FOOTER_ENABLED
+    FEATURE_SEARCH_ENGINE_INDEXING_DISABLED: FEATURE_SEARCH_ENGINE_INDEXING_DISABLED
+    FEATURE_TEST_SEARCH_API_PAGES_ENABLED: FEATURE_TEST_SEARCH_API_PAGES_ENABLED
+    GA360_BUSINESS_UNIT: GA360_BUSINESS_UNIT
+    GREAT_EXPORT_HOME: GREAT_EXPORT_HOME
+    GREAT_HOME: GREAT_HOME
+    GUIDANCE_BUSINESS_PLANNING: GUIDANCE_BUSINESS_PLANNING
+    GUIDANCE_CUSTOMER_INSIGHT: GUIDANCE_CUSTOMER_INSIGHT
+    GUIDANCE_FINANCE: GUIDANCE_FINANCE
+    GUIDANCE_GETTING_PAID: GUIDANCE_GETTING_PAID
+    GUIDANCE_MARKET_RESEARCH: GUIDANCE_MARKET_RESEARCH
+    GUIDANCE_OPERATIONS_AND_COMPLIANCE: GUIDANCE_OPERATIONS_AND_COMPLIANCE
+    HEADER_FOOTER_URLS_EVENTS: HEADER_FOOTER_URLS_EVENTS
+    HELP_HOST: HELP_HOST
+    MAGNA_HEADER: MAGNA_HEADER
+    MAINTENANCE_PAGE_URL: MAINTENANCE_PAGE_URL
+    PRIVACY_COOKIE_DOMAIN: PRIVACY_COOKIE_DOMAIN
+    PROFILE_HOST: PROFILE_HOST
+    RESTRICT_ADMIN_BY_IPS: RESTRICT_ADMIN_BY_IPS
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SERVICES_EXOPPS: SERVICES_EXOPPS
+    SERVICES_EXOPPS_ACTUAL: SERVICES_EXOPPS_ACTUAL
+    SERVICES_FAB: SERVICES_FAB
+    SERVICES_GET_FINANCE: SERVICES_GET_FINANCE
+    SERVICES_SOO: SERVICES_SOO
+    SOO_HOST: SOO_HOST
+    SSO_HOST: SSO_HOST
+    SSO_PROFILE_URL: SSO_PROFILE_URL
+    SSO_PROXY_LOGIN_URL: SSO_PROXY_LOGIN_URL
+    SSO_PROXY_LOGOUT_URL: SSO_PROXY_LOGOUT_URL
+    SSO_PROXY_SIGNUP_URL: SSO_PROXY_SIGNUP_URL
+    SSO_SESSION_COOKIE: SSO_SESSION_COOKIE
+    STAFF_SSO_AUTHBROKER_URL: STAFF_SSO_AUTHBROKER_URL
+    STATIC_DOMAIN: STATIC_DOMAIN
+    STATIC_HOST: STATIC_HOST
   type: public

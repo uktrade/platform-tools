@@ -17,12 +17,17 @@ environments:
     - ACM-ARN-FOR-manage-trade-tariffs-design.london.cloudapps.digital
     - ACM-ARN-FOR-manage-trade-tariffs.trade.gov.uk
     - ACM-ARN-FOR-www.manage-trade-tariffs.trade.gov.uk
+    - ACM-ARN-FOR-tamato-flower.london.cloudapps.digital
     - ACM-ARN-FOR-tariffs-api-unfraternizing-cyclosis.london.cloudapps.digital
     - ACM-ARN-FOR-tariffs-api-prod.london.cloudapps.digital
   production_eu-west-2: {}
   staging: {}
   staging_eu-west-2: {}
-  test: {}
+  test:
+    certificate_arns:
+    - ACM-ARN-FOR-manage-trade-tariffs-design-test.london.cloudapps.digital
+    - ACM-ARN-FOR-manage-trade-tariffs.trade.test.uktrade.digital
+    - ACM-ARN-FOR-tamato-test.london.cloudapps.digital
   training:
     certificate_arns:
     - ACM-ARN-FOR-tamato-training.london.cloudapps.digital
@@ -31,6 +36,7 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-manage-trade-tariffs-design-uat.london.cloudapps.digital
     - ACM-ARN-FOR-tamato-uat.london.cloudapps.digital
+    - ACM-ARN-FOR-tamato-flower-uat.london.cloudapps.digital
 services:
 - env_vars: {}
   environments:
@@ -60,6 +66,10 @@ services:
       ipfilter: false
       paas: dit-services/tariffs/manage-trade-tariffs-design
       url: manage-trade-tariffs-design.london.cloudapps.digital
+    test:
+      ipfilter: false
+      paas: dit-staging/tariffs-test/manage-trade-tariffs-design-test
+      url: manage-trade-tariffs-design-test.london.cloudapps.digital
     uat:
       ipfilter: true
       paas: dit-staging/tariffs-uat/manage-trade-tariffs-design-uat
@@ -81,6 +91,10 @@ services:
       ipfilter: true
       paas: dit-services/tariffs/tamato
       url: www.manage-trade-tariffs.trade.gov.uk
+    test:
+      ipfilter: false
+      paas: dit-staging/tariffs-test/tamato-test
+      url: tamato-test.london.cloudapps.digital
     training:
       ipfilter: true
       paas: dit-staging/tariffs-training/tamato-training
@@ -104,18 +118,31 @@ services:
     AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
     AWS_S3_ENDPOINT_URL: AWS_S3_ENDPOINT_URL
     AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    BASE_SERVICE_URL: BASE_SERVICE_URL
     BETTER_EXCEPTIONS: BETTER_EXCEPTIONS
+    CDS_ACCEPTED_TEMPLATE_ID: CDS_ACCEPTED_TEMPLATE_ID
+    CDS_REJECTED_TEMPLATE_ID: CDS_REJECTED_TEMPLATE_ID
+    CLAM_AV_DOMAIN: CLAM_AV_DOMAIN
+    CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
+    CLAM_AV_USERNAME: CLAM_AV_USERNAME
     DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
     ELASTIC_TOKEN: ELASTIC_TOKEN
+    ENABLE_PACKAGING_NOTIFICATIONS: ENABLE_PACKAGING_NOTIFICATIONS
     ENV: ENV
     EXPORTER_DISABLE_NOTIFICATION: EXPORTER_DISABLE_NOTIFICATION
     FLOWER_AUTH_PASSWORD: FLOWER_AUTH_PASSWORD
     FLOWER_AUTH_USER: FLOWER_AUTH_USER
+    GOOGLE_ANALYTICS_APP_ID: GOOGLE_ANALYTICS_APP_ID
     GOOGLE_ANALYTICS_ID: GOOGLE_ANALYTICS_ID
+    HMRC_PACKAGING_SEED_ENVELOPE_ID: HMRC_PACKAGING_SEED_ENVELOPE_ID
+    HMRC_PACKAGING_STORAGE_BUCKET_NAME: HMRC_PACKAGING_STORAGE_BUCKET_NAME
     HMRC_STORAGE_BUCKET_NAME: HMRC_STORAGE_BUCKET_NAME
     HMRC_STORAGE_DIRECTORY: HMRC_STORAGE_DIRECTORY
     LOG_LEVEL: LOG_LEVEL
+    NOTIFICATIONS_API_KEY: NOTIFICATIONS_API_KEY
     NURSERY_CACHE_ENGINE: NURSERY_CACHE_ENGINE
+    READY_FOR_CDS_TEMPLATE_ID: READY_FOR_CDS_TEMPLATE_ID
+    S3_ENDPOINT_URL: S3_ENDPOINT_URL
     SECRET_KEY: SECRET_KEY
     SENTRY_DSN: SENTRY_DSN
     SQLITE_S3_ACCESS_KEY_ID: SQLITE_S3_ACCESS_KEY_ID
@@ -130,6 +157,8 @@ services:
       paas: dit-staging/tariffs-dev/tamato-dev
     production:
       paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
     training:
       paas: dit-staging/tariffs-training/tamato-training
     uat:
@@ -148,6 +177,8 @@ services:
       paas: dit-staging/tariffs-dev/tamato-dev
     production:
       paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
     training:
       paas: dit-staging/tariffs-training/tamato-training
     uat:
@@ -166,6 +197,8 @@ services:
       paas: dit-staging/tariffs-dev/tamato-dev
     production:
       paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
     training:
       paas: dit-staging/tariffs-training/tamato-training
     uat:
@@ -178,6 +211,22 @@ services:
   secrets: {}
   secrets_from: tamato
   type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/tariffs/tamato-flower
+      url: tamato-flower.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/tariffs-uat/tamato-flower-uat
+      url: tamato-flower-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-flower
+  repo: git@github.com:uktrade/flower-runner.git
+  secrets:
+    FLOWER_BASIC_AUTH: FLOWER_BASIC_AUTH
+  type: public
 - env_vars: {}
   environments:
     production:

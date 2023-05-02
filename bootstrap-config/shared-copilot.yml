@@ -1,0 +1,5 @@
+app: shared
+environments:
+  dev: {}
+  s3: {}
+services: []

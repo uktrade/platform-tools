@@ -161,4 +161,5 @@ services:
   repo: git@github.com:uktrade/data-workspace-prototypes.git
   secrets:
     NOTIFYAPIKEY: NOTIFYAPIKEY
+    USE_AUTH: USE_AUTH
   type: public

@@ -5,19 +5,21 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-datahub-api-dev.london.cloudapps.digital
     - ACM-ARN-FOR-api.datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-dev.london.cloudapps.digital
     - ACM-ARN-FOR-datahub-dev.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.dev.uktrade.io
+    - ACM-ARN-FOR-datahub.dev.uktrade.io
     - ACM-ARN-FOR-datahub-filebrowser-dev.london.cloudapps.digital
     - ACM-ARN-FOR-legacy.datahub.dev.uktrade.io
     - ACM-ARN-FOR-datahub-omis-dev.london.cloudapps.digital
     - ACM-ARN-FOR-omis.datahub.dev.uktrade.io
-  dev-yellow: {}
   mig-test: {}
   prod: {}
   production:
     certificate_arns:
     - ACM-ARN-FOR-api.datahub.trade.gov.uk
     - ACM-ARN-FOR-datahub-api.london.cloudapps.digital
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter.london.cloudapps.digital
     - ACM-ARN-FOR-datahub.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.trade.gov.uk
     - ACM-ARN-FOR-datahub-filebrowser.london.cloudapps.digital
@@ -27,6 +29,7 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-datahub-api-staging.london.cloudapps.digital
     - ACM-ARN-FOR-api.datahub.staging.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
     - ACM-ARN-FOR-datahub-staging.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.staging.uktrade.io
     - ACM-ARN-FOR-datahub-filebrowser-staging.london.cloudapps.digital
@@ -36,6 +39,7 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-datahub-api-uat.london.cloudapps.digital
     - ACM-ARN-FOR-api.datahub.uat.uktrade.io
+    - ACM-ARN-FOR-datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
     - ACM-ARN-FOR-datahub-uat.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.uat.uktrade.io
     - ACM-ARN-FOR-datahub-filebrowser-uat.london.cloudapps.digital
@@ -138,6 +142,8 @@ services:
     DNB_SERVICE_BASE_URL: DNB_SERVICE_BASE_URL
     DNB_SERVICE_TOKEN: DNB_SERVICE_TOKEN
     ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW: ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW
+    ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS: ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS
+    ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS: ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS
     ENABLE_CELERY_ES_SYNC_OBJECT: ENABLE_CELERY_ES_SYNC_OBJECT
     ENABLE_DAILY_HIERARCHY_ROLLOUT: ENABLE_DAILY_HIERARCHY_ROLLOUT
     ENABLE_DAILY_OPENSEARCH_SYNC: ENABLE_DAILY_OPENSEARCH_SYNC
@@ -146,6 +152,8 @@ services:
     ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS
     ENABLE_INVESTMENT_NOTIFICATION: ENABLE_INVESTMENT_NOTIFICATION
     ENABLE_MAILBOX_PROCESSING: ENABLE_MAILBOX_PROCESSING
+    ENABLE_NEW_EXPORT_INTERACTION_REMINDERS: ENABLE_NEW_EXPORT_INTERACTION_REMINDERS
+    ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
     ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS: ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS
     ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS: ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
     ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS: ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS
@@ -159,6 +167,7 @@ services:
     ES_APM_SECRET_TOKEN: ES_APM_SECRET_TOKEN
     ES_APM_SERVER_URL: ES_APM_SERVER_URL
     ES_APM_SERVICE_NAME: ES_APM_SERVICE_NAME
+    EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
     EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
     EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID: EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
     EXPORT_WINS_HAWK_ID: EXPORT_WINS_HAWK_ID
@@ -342,9 +351,33 @@ services:
 - env_vars: {}
   environments:
     dev:
+      ipfilter: true
+      paas: dit-staging/datahub-dev/datahub-api-redis-queue-exporter-dev
+      url: datahub-api-redis-queue-exporter-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/datahub/datahub-api-redis-queue-exporter
+      url: datahub-api-redis-queue-exporter.london.cloudapps.digital
+    staging:
+      ipfilter: true
+      paas: dit-staging/datahub-staging/datahub-api-redis-queue-exporter-staging
+      url: datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
+    uat:
+      ipfilter: true
+      paas: dit-staging/datahub-uat/datahub-api-redis-queue-exporter-uat
+      url: datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-api-redis-queue-exporter
+  repo: git@github.com:uktrade/prom-rq-exporter.git
+  secrets:
+    RQ_EXPORTER_LOG_LEVEL: RQ_EXPORTER_LOG_LEVEL
+  type: public
+- env_vars: {}
+  environments:
+    dev:
       ipfilter: false
       paas: dit-staging/datahub-dev/datahub-dev
-      url: www.datahub.dev.uktrade.io
+      url: datahub.dev.uktrade.io
     production:
       ipfilter: false
       paas: dit-services/datahub/datahub

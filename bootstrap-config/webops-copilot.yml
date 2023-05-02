@@ -1,0 +1,807 @@
+app: webops
+environments:
+  dev:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-alertmanager-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-demo-celery-redis-ha.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-aws-vpn-home-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-grafana-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-process-metrics-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-prometheus-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-url-protection-checker-dev.london.cloudapps.digital
+  dev-cdn: {}
+  dev-non-cdn: {}
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-content-request.london.cloudapps.digital
+    - ACM-ARN-FOR-content-request.trade.gov.uk
+    - ACM-ARN-FOR-dit-aws-vpn-home.london.cloudapps.digital
+    - ACM-ARN-FOR-self-service-vpn.ci.uktrade.digital
+    - ACM-ARN-FOR-readme.trade.gov.uk
+    - ACM-ARN-FOR-rtfm-prod.london.cloudapps.digital
+    - ACM-ARN-FOR-paas-autoscaler-monitor.london.cloudapps.digital
+    - ACM-ARN-FOR-paas-logdrain-scanner.london.cloudapps.digital
+    - ACM-ARN-FOR-pingdom-link-checker.london.cloudapps.digital
+    - ACM-ARN-FOR-sla-budget-metrics.london.cloudapps.digital
+    - ACM-ARN-FOR-zenslackchat-prod.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-alertmanager.london.cloudapps.digital
+    - ACM-ARN-FOR-user-audit.london.cloudapps.digital
+    - ACM-ARN-FOR-cost-monitor.london.cloudapps.digital
+    - ACM-ARN-FOR-githubscan.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-grafana.london.cloudapps.digital
+    - ACM-ARN-FOR-grafana.ci.uktrade.digital
+    - ACM-ARN-FOR-pingdom-redirect-checker.london.cloudapps.digital
+    - ACM-ARN-FOR-process-metrics.london.cloudapps.digital
+    - ACM-ARN-FOR-dit-prometheus.london.cloudapps.digital
+    - ACM-ARN-FOR-zpa-monitor.london.cloudapps.digital
+  production-non-cdn: {}
+  production_eu-west-1: {}
+  production_eu-west-2:
+    certificate_arns:
+    - ACM-ARN-FOR-dit-console.london.cloudapps.digital
+  stage:
+    certificate_arns:
+    - ACM-ARN-FOR-zenslackchat-stage.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-alertmanager-dev
+      url: dit-alertmanager-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-alertmanager
+      url: dit-alertmanager.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: alertmanager
+  repo: git@github.com:uktrade/cf-prometheus-alertmanager.git
+  secrets:
+    P1_SLACK_CHANNEL: P1_SLACK_CHANNEL
+    P1_SLACK_HOOK: P1_SLACK_HOOK
+    P2_SLACK_CHANNEL: P2_SLACK_CHANNEL
+    P2_SLACK_HOOK: P2_SLACK_HOOK
+    ROUTING_KEY: ROUTING_KEY
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/atlassian-account-user-audit
+      url: user-audit.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: atlassian-account-user-audit
+  repo: git@github.com:uktrade/atlassian-account-user-audit.git
+  secrets:
+    ATLASSIAN_AUTH_TOKEN: ATLASSIAN_AUTH_TOKEN
+    ATLASSIAN_ORG_NAME: ATLASSIAN_ORG_NAME
+    ATLASSIAN_URL: ATLASSIAN_URL
+    ENABLE_DEACTIVATIONS: ENABLE_DEACTIVATIONS
+  type: public
+- env_vars: {}
+  environments:
+    production_eu-west-2:
+      ipfilter: true
+      paas: dit-services/webops/console
+      url: dit-console.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: cf-console
+  overlapping_secrets:
+  - LOG_LEVEL
+  - X_AUTOSCALING
+  repo: https://github.com/cloudfoundry-incubator/stratos.git
+  secrets:
+    CF_API_FORCE_SECURE: CF_API_FORCE_SECURE
+    CF_CLIENT: CF_CLIENT
+    CF_CLIENT_SECRET: CF_CLIENT_SECRET
+    ENABLE_TECH_PREVIEW: ENABLE_TECH_PREVIEW
+    FORCE_ENDPOINT_DASHBOARD: FORCE_ENDPOINT_DASHBOARD
+    LOG_LEVEL: LOG_LEVEL
+    SESSION_STORE_SECRET: SESSION_STORE_SECRET
+    SSO_LOGIN: SSO_LOGIN
+    SSO_WHITELIST: SSO_WHITELIST
+    STRATOS_BP_DEBUG: STRATOS_BP_DEBUG
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/content-request-form
+      url: content-request.trade.gov.uk
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: content-request-form
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - SECRET_KEY
+  - SENTRY_DSN
+  - SLACK_URL
+  - ZENDESK_SUBDOMAIN
+  repo: git@github.com:uktrade/content-request-form.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    AV_PASSWORD: AV_PASSWORD
+    AV_URL: AV_URL
+    AV_USERNAME: AV_USERNAME
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    JIRA_ISSUE_URL: JIRA_ISSUE_URL
+    JIRA_PASSWORD: JIRA_PASSWORD
+    JIRA_PROJECT: JIRA_PROJECT
+    JIRA_PROJECT_ID: JIRA_PROJECT_ID
+    JIRA_URL: JIRA_URL
+    JIRA_USERNAME: JIRA_USERNAME
+    JIRA_WATCHERS: JIRA_WATCHERS
+    JIRA_WORKSPACE_PROJECT_ID: JIRA_WORKSPACE_PROJECT_ID
+    SECRET_KEY: SECRET_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SLACK_URL: SLACK_URL
+    ZENDESK_EMAIL: ZENDESK_EMAIL
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
+    ZENDESK_TOKEN: ZENDESK_TOKEN
+    ZENDESK_URL: ZENDESK_URL
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/cost-monitor
+      url: cost-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: cost-monitor
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - GECKO_TOKEN
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/cost_monitor.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    GDS_BILLING_API_URL: GDS_BILLING_API_URL
+    GDS_PAAS_API_URL: GDS_PAAS_API_URL
+    GDS_USER: GDS_USER
+    GDS_USER_PASS: GDS_USER_PASS
+    GECKO_TOKEN: GECKO_TOKEN
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/demo-celery-redis-ha
+      url: demo-celery-redis-ha.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: demo-celery-redis-ha
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/demo-celery-redis-ha.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DISABLE_ELK_CHECK: DISABLE_ELK_CHECK
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/webops-dev/demo-celery-redis-ha
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: demo-celery-redis-ha-worker
+  notes: service created based on Procfile entry for demo-celery-redis-ha and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/demo-celery-redis-ha.git
+  secrets: {}
+  secrets_from: demo-celery-redis-ha
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-aws-vpn-home-dev
+      url: dit-aws-vpn-home-dev.london.cloudapps.digital
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/dit-aws-vpn-home
+      url: self-service-vpn.ci.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dit-aws-vpn-home
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - DEBUG
+  - SECRET_KEY
+  repo: git@github.com:uktrade/dit-aws-vpn-home.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CLIENT_VPN_DOMAIN: CLIENT_VPN_DOMAIN
+    DEBUG: DEBUG
+    SECRET_KEY: SECRET_KEY
+    VPN_CLIENT_CONFIG: VPN_CLIENT_CONFIG
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/webops/rtfm-prod
+      url: rtfm-prod.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: dit-manual
+  overlapping_secrets:
+  - SECRET_KEY
+  repo: git@github.com:uktrade/rtfm.git
+  secrets:
+    ABC_BASE_URL: ABC_BASE_URL
+    ABC_CLIENT_ID: ABC_CLIENT_ID
+    ABC_CLIENT_SECRET: ABC_CLIENT_SECRET
+    RAVEN_DSN: RAVEN_DSN
+    SECRET_KEY: SECRET_KEY
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/gachecker
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: gachecker
+  overlapping_secrets:
+  - DEBUG
+  - GECKO_TOKEN
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/gachecker.git
+  secrets:
+    DEBUG: DEBUG
+    EMAIL_REPORT_TO: EMAIL_REPORT_TO
+    GECKO_TOKEN: GECKO_TOKEN
+    GECKO_WIDGET_PUSH_URL: GECKO_WIDGET_PUSH_URL
+    NOTIFY_API_KEY: NOTIFY_API_KEY
+    NOTIFY_TEMPLATE_ID: NOTIFY_TEMPLATE_ID
+    SCRAPY_DOMAINS: SCRAPY_DOMAINS
+    SCRAPY_DOMAIN_START_URLS: SCRAPY_DOMAIN_START_URLS
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/webops/githubscan
+      url: githubscan.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: githubscan
+  overlapping_secrets:
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - DISABLE_COLLECTSTATIC
+  - SLACK_CHANNEL
+  - SLACK_URL
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/githubscan.git
+  secrets:
+    ALLOWED_REPORT_ENDPOINT_HOST: ALLOWED_REPORT_ENDPOINT_HOST
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    DJANGO_ALLLOWED_HOSTS: DJANGO_ALLLOWED_HOSTS
+    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+    EMAIL_SIGNAURE: EMAIL_SIGNAURE
+    ENABLE_REPORT_ENDPOINT: ENABLE_REPORT_ENDPOINT
+    GECKO_BOARD_TOKEN: GECKO_BOARD_TOKEN
+    GITHUB_AUTH_TOKEN: GITHUB_AUTH_TOKEN
+    GITHUB_LOGIN: GITHUB_LOGIN
+    GITHUB_TEAMS_ARE_NOT_A_SSO_TARGET: GITHUB_TEAMS_ARE_NOT_A_SSO_TARGET
+    GOV_NOTIFY_API_KEY: GOV_NOTIFY_API_KEY
+    GOV_NOTIFY_DETAILED_REPORT_TEMPLATE_ID: GOV_NOTIFY_DETAILED_REPORT_TEMPLATE_ID
+    GOV_NOTIFY_SUMMARY_REPORT_TEMPLATE_ID: GOV_NOTIFY_SUMMARY_REPORT_TEMPLATE_ID
+    SLACK_AUTH_TOKEN: SLACK_AUTH_TOKEN
+    SLACK_CHANNEL: SLACK_CHANNEL
+    SLACK_URL: SLACK_URL
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-grafana-dev
+      url: dit-grafana-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-grafana
+      url: grafana.ci.uktrade.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: grafana
+  repo: git@github.com:uktrade/cf-grafana.git
+  secrets:
+    ALLOW_OAUTH_SIGNUP: ALLOW_OAUTH_SIGNUP
+    ALLOW_SIGNUP: ALLOW_SIGNUP
+    ANONYMOUS_USER_ROLE: ANONYMOUS_USER_ROLE
+    API_URL: API_URL
+    AUTH_URL: AUTH_URL
+    AUTO_ASSIGN_ORG: AUTO_ASSIGN_ORG
+    AUTO_ASSIGN_ORG_ROLE_NAME: AUTO_ASSIGN_ORG_ROLE_NAME
+    DEFAULT_THEME: DEFAULT_THEME
+    DISABLE_LOGIN_FORM: DISABLE_LOGIN_FORM
+    DISABLE_SIGNOUT_MENU: DISABLE_SIGNOUT_MENU
+    ENABLE_ANONYMOUS_ACCESS: ENABLE_ANONYMOUS_ACCESS
+    ENABLE_GENERIC_OAUTH: ENABLE_GENERIC_OAUTH
+    ENFORCE_DOMAIN: ENFORCE_DOMAIN
+    GENERIC_OAUTH_NAME: GENERIC_OAUTH_NAME
+    GRAFANA_DB_SERVICE_NAME: GRAFANA_DB_SERVICE_NAME
+    GRAFANA_DOMAIN: GRAFANA_DOMAIN
+    OAUTH_AUTO_LOGIN: OAUTH_AUTO_LOGIN
+    SSO_CLIENT_ID: SSO_CLIENT_ID
+    SSO_CLIENT_SECRET: SSO_CLIENT_SECRET
+    SSO_DOMAIN: SSO_DOMAIN
+    SSO_URL: SSO_URL
+    TOKEN_URL: TOKEN_URL
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/webops-dev/paas-autoscaler-monitor-dev
+      url: null
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/paas-autoscaler-monitor
+      url: paas-autoscaler-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-autoscaler-monitor
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - CF_DOMAIN
+  - CF_PASSWORD
+  - CF_USERNAME
+  - DEBUG
+  - ORG_GUID
+  - SECRET_KEY
+  - SLACK_CHANNEL
+  - SLACK_ENABLED
+  - SLACK_TOKEN
+  - SLACK_URL
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/paas-autoscaler-monitor.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CF_AUTOSCALE_DOMAIN: CF_AUTOSCALE_DOMAIN
+    CF_DOMAIN: CF_DOMAIN
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    CHECK_INTERVAL: CHECK_INTERVAL
+    DEBUG: DEBUG
+    MAX_COUNT: MAX_COUNT
+    MAX_THRESHOLD: MAX_THRESHOLD
+    MIN_COUNT: MIN_COUNT
+    MIN_THRESHOLD: MIN_THRESHOLD
+    ORG_GUID: ORG_GUID
+    PD_RKEY: PD_RKEY
+    SECRET_KEY: SECRET_KEY
+    SLACK_CHANNEL: SLACK_CHANNEL
+    SLACK_ENABLED: SLACK_ENABLED
+    SLACK_TOKEN: SLACK_TOKEN
+    SLACK_URL: SLACK_URL
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/webops-dev/paas-autoscaler-monitor-dev
+    prod:
+      paas: dit-services/webops/paas-autoscaler-monitor
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-autoscaler-monitor-worker
+  notes: service created based on Procfile entry for paas-autoscaler-monitor and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/paas-autoscaler-monitor.git
+  secrets: {}
+  secrets_from: paas-autoscaler-monitor
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/paas-logdrain-scanner
+      url: paas-logdrain-scanner.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: paas-logdrain-scanner
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - CF_DOMAIN
+  - CF_PASSWORD
+  - CF_USERNAME
+  - DEBUG
+  - ORG_GUID
+  - SECRET_KEY
+  - SLACK_CHANNEL
+  - SLACK_ENABLED
+  - SLACK_TOKEN
+  - SLACK_URL
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/paas-logdrain-scanner.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    BIND_ENABLED: BIND_ENABLED
+    CF_DOMAIN: CF_DOMAIN
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    DEBUG: DEBUG
+    ORG_GUID: ORG_GUID
+    SECRET_KEY: SECRET_KEY
+    SLACK_CHANNEL: SLACK_CHANNEL
+    SLACK_ENABLED: SLACK_ENABLED
+    SLACK_TOKEN: SLACK_TOKEN
+    SLACK_URL: SLACK_URL
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/pingdom-link-checker
+      url: pingdom-link-checker.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: pingdom-link-checker
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - DEBUG
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/pingdom-link-checker.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    CRAWLER_SEARCH_DEPTH: CRAWLER_SEARCH_DEPTH
+    CRAWLER_WORKER: CRAWLER_WORKER
+    DEBUG: DEBUG
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/pingdom-redirect-checker
+      url: pingdom-redirect-checker.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: pingdom-redirect-checker
+  overlapping_secrets:
+  - DEBUG
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/pingdom-redirect-checker.git
+  secrets:
+    DEBUG: DEBUG
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/process-metrics-dev
+      url: process-metrics-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/process-metrics
+      url: process-metrics.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: process-metrics
+  overlapping_secrets:
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/cf-process-metrics-exporter.git
+  secrets:
+    API_BASE: API_BASE
+    LOGIN_BASE: LOGIN_BASE
+    USERS__1__PASSWORD: USERS__1__PASSWORD
+    USERS__1__USERNAME: USERS__1__USERNAME
+    USERS__2__PASSWORD: USERS__2__PASSWORD
+    USERS__2__USERNAME: USERS__2__USERNAME
+    USERS__3__PASSWORD: USERS__3__PASSWORD
+    USERS__3__USERNAME: USERS__3__USERNAME
+    USERS__4__PASSWORD: USERS__4__PASSWORD
+    USERS__4__USERNAME: USERS__4__USERNAME
+    USERS__5__PASSWORD: USERS__5__PASSWORD
+    USERS__5__USERNAME: USERS__5__USERNAME
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/dit-prometheus-dev
+      url: dit-prometheus-dev.london.cloudapps.digital
+    production:
+      ipfilter: true
+      paas: dit-services/webops/dit-prometheus
+      url: dit-prometheus.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: prometheus
+  repo: git@github.com:uktrade/cf-prometheus.git
+  secrets:
+    PROMETHEUS_DB_SERVICE_NAME: PROMETHEUS_DB_SERVICE_NAME
+    PROMETHEUS_FLAGS: PROMETHEUS_FLAGS
+    activity_stream_2_exporter_eu_west_2_url: activity_stream_2_exporter_eu_west_2_url
+    activity_stream_3_exporter_eu_west_2_url: activity_stream_3_exporter_eu_west_2_url
+    activity_stream_exporter_eu_west_2_dev_url: activity_stream_exporter_eu_west_2_dev_url
+    activity_stream_exporter_eu_west_2_staging_url: activity_stream_exporter_eu_west_2_staging_url
+    activity_stream_exporter_eu_west_2_url: activity_stream_exporter_eu_west_2_url
+    aiven_exporter_password: aiven_exporter_password
+    aiven_exporter_url: aiven_exporter_url
+    aiven_exporter_username: aiven_exporter_username
+    autoscaler_london_exporter_url: autoscaler_london_exporter_url
+    cost_monitor_url: cost_monitor_url
+    data_hub_api_redis_queue_exporter: data_hub_api_redis_queue_exporter
+    data_hub_api_redis_queue_exporter_dev: data_hub_api_redis_queue_exporter_dev
+    data_hub_api_redis_queue_exporter_staging: data_hub_api_redis_queue_exporter_staging
+    data_hub_api_redis_queue_exporter_uat: data_hub_api_redis_queue_exporter_uat
+    data_workspace_exporter_demo_url: data_workspace_exporter_demo_url
+    data_workspace_exporter_dev_url: data_workspace_exporter_dev_url
+    data_workspace_exporter_staging_url: data_workspace_exporter_staging_url
+    data_workspace_exporter_url: data_workspace_exporter_url
+    eventlogs_exporter_url: eventlogs_exporter_url
+    paas_exporter_password: paas_exporter_password
+    paas_exporter_staging_password: paas_exporter_staging_password
+    paas_exporter_staging_url: paas_exporter_staging_url
+    paas_exporter_staging_username: paas_exporter_staging_username
+    paas_exporter_username: paas_exporter_username
+    paas_london_exporter_url: paas_london_exporter_url
+    paas_process_exporter_non_prod_url: paas_process_exporter_non_prod_url
+    paas_process_exporter_url: paas_process_exporter_url
+    promregator_password: promregator_password
+    promregator_url: promregator_url
+    promregator_username: promregator_username
+    redis_exporter_url: redis_exporter_url
+    redis_password: redis_password
+    redis_username: redis_username
+    service-level-budget-monitor_url: service-level-budget-monitor_url
+    statsd_exporter_staging_url: statsd_exporter_staging_url
+    statsd_exporter_url: statsd_exporter_url
+    target_alert_manager: target_alert_manager
+  type: public
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/quaysecurityscan
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: quaysecurityscan
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - GECKO_TOKEN
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/quay_security_scan.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    GECKO_TOKEN: GECKO_TOKEN
+    QUAY_API_BASE_URL: QUAY_API_BASE_URL
+    QUAY_APP_TOKEN: QUAY_APP_TOKEN
+    QUAY_ORG_NAME: QUAY_ORG_NAME
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: true
+      paas: dit-services/webops/sla-budget-metrics
+      url: sla-budget-metrics.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sla-budget-metrics
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - CF_DOMAIN
+  - CF_PASSWORD
+  - CF_USERNAME
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - ORG_GUID
+  - SECRET_KEY
+  repo: git@github.com:uktrade/sla-budget-metrics.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CF_DOMAIN: CF_DOMAIN
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    ORG_GUID: ORG_GUID
+    PROM_URL: PROM_URL
+    ROLLING_SLA_WINDOW_SIZE: ROLLING_SLA_WINDOW_SIZE
+    SECRET_KEY: SECRET_KEY
+    SLA_THRESHOLD: SLA_THRESHOLD
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: true
+      paas: dit-staging/webops-dev/url-protection-checker-dev
+      url: url-protection-checker-dev.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: url-protection-checker
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - CF_DOMAIN
+  - CF_PASSWORD
+  - CF_USERNAME
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - ORG_GUID
+  - SECRET_KEY
+  - SLACK_ENABLED
+  - SLACK_TOKEN
+  repo: git@github.com:uktrade/url-protection-checker.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    CF_DOMAIN: CF_DOMAIN
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    ORG_GUID: ORG_GUID
+    SECRET_KEY: SECRET_KEY
+    SLACK_ENABLED: SLACK_ENABLED
+    SLACK_TOKEN: SLACK_TOKEN
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      ipfilter: false
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+      url: zenslackchat-prod.london.cloudapps.digital
+    stage:
+      ipfilter: false
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+      url: zenslackchat-stage.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat
+  overlapping_secrets:
+  - AUTHBROKER_CLIENT_ID
+  - AUTHBROKER_CLIENT_SECRET
+  - AUTHBROKER_URL
+  - SENTRY_DSN
+  - ZENDESK_SUBDOMAIN
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets:
+    ALLOWED_BOT_IDS: ALLOWED_BOT_IDS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    DISABLE_ECS_LOG_FORMAT: DISABLE_ECS_LOG_FORMAT
+    DISABLE_MESSAGE_PROCESSING: DISABLE_MESSAGE_PROCESSING
+    PAAS_FQDN: PAAS_FQDN
+    PAGERDUTY_CLIENT_IDENTIFIER: PAGERDUTY_CLIENT_IDENTIFIER
+    PAGERDUTY_CLIENT_SECRET: PAGERDUTY_CLIENT_SECRET
+    PAGERDUTY_ESCALATION_POLICY_ID: PAGERDUTY_ESCALATION_POLICY_ID
+    PAGERDUTY_REDIRECT_URI: PAGERDUTY_REDIRECT_URI
+    SENTRY_DSN: SENTRY_DSN
+    SLACK_CLIENT_ID: SLACK_CLIENT_ID
+    SLACK_CLIENT_SECRET: SLACK_CLIENT_SECRET
+    SLACK_SIGN_SECRET: SLACK_SIGN_SECRET
+    SLACK_VERIFICATION_TOKEN: SLACK_VERIFICATION_TOKEN
+    SLACK_WORKSPACE_URI: SLACK_WORKSPACE_URI
+    SRE_SUPPORT_CHANNEL: SRE_SUPPORT_CHANNEL
+    WEBAPP_SECRET_KEY: WEBAPP_SECRET_KEY
+    ZENDESK_AGENT_EMAIL: ZENDESK_AGENT_EMAIL
+    ZENDESK_CLIENT_IDENTIFIER: ZENDESK_CLIENT_IDENTIFIER
+    ZENDESK_CLIENT_SECRET: ZENDESK_CLIENT_SECRET
+    ZENDESK_GROUP_ID: ZENDESK_GROUP_ID
+    ZENDESK_REDIRECT_URI: ZENDESK_REDIRECT_URI
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
+    ZENDESK_TICKET_URI: ZENDESK_TICKET_URI
+    ZENDESK_USER_ID: ZENDESK_USER_ID
+    ZENDESK_WEBHOOK_TOKEN: ZENDESK_WEBHOOK_TOKEN
+  type: public
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+    stage:
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat-celery_beat
+  notes: service created based on Procfile entry for zenslackchat and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets: {}
+  secrets_from: zenslackchat
+  type: backend
+- env_vars: {}
+  environments:
+    prod:
+      paas: dit-services/sre-ticketing/zenslackchat-prod
+    stage:
+      paas: dit-staging/sre-ticketing-dev/zenslackchat-stage
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zenslackchat-celery_worker
+  notes: service created based on Procfile entry for zenslackchat and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/django-zenslackchat.git
+  secrets: {}
+  secrets_from: zenslackchat
+  type: backend
+- env_vars: {}
+  environments:
+    production:
+      ipfilter: false
+      paas: dit-services/webops/zpa-monitor
+      url: zpa-monitor.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: zpa-monitor
+  overlapping_secrets:
+  - ALLOWED_HOSTS
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - DEBUG
+  - DISABLE_COLLECTSTATIC
+  - SECRET_KEY
+  - X_AUTOSCALING
+  repo: git@github.com:uktrade/zpa-monitor.git
+  secrets:
+    ALLOWED_HOSTS: ALLOWED_HOSTS
+    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
+    DEBUG: DEBUG
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+    SECRET_KEY: SECRET_KEY
+    X_AUTOSCALING: X_AUTOSCALING
+  type: public

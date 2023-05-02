@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
-'''
+"""
     Take all the files in ci-pipeline-config and combine into one document
-'''
+"""
 
-from collections import defaultdict
-from pathlib import Path
-import sys
+import os
 
 import yaml
 
-
-CI_CONFIG_FILE = "ci-conf.yaml"
-PAAS_CONFIG_FILE = "paas-conf.yaml"
+CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
+CI_CONFIG_FILE = f"{CURRENT_FILEPATH}/ci-config.yml"
+PAAS_CONFIG_FILE = f"{CURRENT_FILEPATH}/paas-config.yml"
 
 
 if __name__ == "__main__":
@@ -27,14 +25,12 @@ if __name__ == "__main__":
             continue
 
         for app, data in ci["applications"][namespace].items():
+            print(app)
             for env in data["environments"]:
                 try:
                     env["paas"] = paas[env["paas-location"]]
-                    #print("{} FOUND!".format(env["paas-location"]))
                 except KeyError:
                     env["paas"] = "NO-APP-FOUND"
-                    #print("{} MISSING CONFIG!".format(env["paas-location"]))
 
-    # breakpoint()
-
-    yaml.dump(ci, sys.stdout)
+    with open(f"{CURRENT_FILEPATH}/full-config.yml", 'w') as outfile:
+        yaml.dump(ci, outfile)

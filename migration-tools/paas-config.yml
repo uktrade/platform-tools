@@ -126,6 +126,8 @@ dit-services/activity-stream/activity-stream-3:
   - FEEDS__20__QUESTIONS_LIST_URL
   - FEEDS__20__SECRET_ACCESS_KEY
   - FEEDS__20__SEED
+  - FEEDS__20__SESSIONS_LIST_URL
+  - FEEDS__20__SESSION_REGISTRATIONS_LIST_URL
   - FEEDS__20__TYPE
   - FEEDS__20__UNIQUE_ID
   - FEEDS__21__ACCESS_KEY_ID
@@ -168,6 +170,11 @@ dit-services/activity-stream/activity-stream-3:
   - FEEDS__30__SEED
   - FEEDS__30__TYPE
   - FEEDS__30__UNIQUE_ID
+  - FEEDS__31__ACCESS_KEY_ID
+  - FEEDS__31__SECRET_ACCESS_KEY
+  - FEEDS__31__SEED
+  - FEEDS__31__TYPE
+  - FEEDS__31__UNIQUE_ID
   - INCOMING_ACCESS_KEY_PAIRS__10__DESCRIPTION
   - INCOMING_ACCESS_KEY_PAIRS__10__KEY_ID
   - INCOMING_ACCESS_KEY_PAIRS__10__PERMISSIONS__activities__1__TERMS_KEY
@@ -263,10 +270,10 @@ dit-services/activity-stream/activity-stream-3:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-redis-3
+    instance: tiny-6.x
+    name: activity-stream-redis-6
 dit-services/activity-stream/activity-stream-verification-feed:
   env_keys:
   - APP_PATH
@@ -307,9 +314,9 @@ dit-services/activity-stream/kibana-proxy:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: activity-stream-3-kibana-redis
 dit-services/data-services-helpcentre/data-services-helpcentre:
   env_keys:
@@ -354,7 +361,7 @@ dit-services/data-services-helpcentre/data-services-helpcentre:
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
-    name: data-services-helpcentre-db
+    name: data-services-helpcentre-db2
 dit-services/data-workspace-apps/company-matching-service:
   env_keys:
   - CMS_GUNICORN_PORT
@@ -373,14 +380,14 @@ dit-services/data-workspace-apps/company-matching-service:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: company-matching-service-redis
   - description: '564GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
     instance: large-ha-12
     name: company-matching-service-db-12
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: company-matching-service-redis
 dit-services/data-workspace-apps/countries-of-interest-service:
   env_keys:
   - ABC_CLIENT_ID
@@ -435,14 +442,14 @@ dit-services/data-workspace-apps/countries-of-interest-service:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: countries-of-interest-service-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: countries-of-interest-service-db-2020
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: countries-of-interest-service-redis
 dit-services/data-workspace-apps/data-store-service:
   env_keys:
   - AUTHBROKER_CLIENT_ID
@@ -476,13 +483,13 @@ dit-services/data-workspace-apps/data-store-service:
       5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
     instance: large-12-high-iops
     name: data-store-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: data-store-service-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: data-store-service-s3
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: data-store-service-redis
 dit-services/data-workspace-apps/db-sync:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -714,6 +721,8 @@ dit-services/datahub/datahub-api:
   - DNB_SERVICE_BASE_URL
   - DNB_SERVICE_TOKEN
   - ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW
+  - ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS
+  - ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS
   - ENABLE_CELERY_ES_SYNC_OBJECT
   - ENABLE_DAILY_HIERARCHY_ROLLOUT
   - ENABLE_DAILY_OPENSEARCH_SYNC
@@ -722,6 +731,8 @@ dit-services/datahub/datahub-api:
   - ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_INVESTMENT_NOTIFICATION
   - ENABLE_MAILBOX_PROCESSING
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS
@@ -735,6 +746,7 @@ dit-services/datahub/datahub-api:
   - ES_APM_SECRET_TOKEN
   - ES_APM_SERVER_URL
   - ES_APM_SERVICE_NAME
+  - EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
   - EXPORT_WINS_HAWK_ID
@@ -785,11 +797,11 @@ dit-services/datahub/datahub-api:
   - STATSD_PORT
   - STATSD_PREFIX
   processes:
-  - command: celery -A config beat -l info
+  - command: ''
     type: celerybeat
-  - command: celery -A config worker -l info -O fair --prefetch-multiplier 1 -Q long-running
+  - command: ''
     type: celerylongrunning
-  - command: celery -A config worker -l info -Q celery
+  - command: ''
     type: celeryworker
   - command: ''
     type: background-worker
@@ -900,17 +912,6 @@ dit-services/datahub/datahub-omis:
     ipfilter: false
     path: ''
   services: []
-dit-services/datasci/__conduit_dwz60rek__:
-  env_keys: []
-  processes:
-  - command: $HOME/boot.sh
-    type: web
-  routes: []
-  services:
-  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
-    instance: medium-ha-12
-    name: reporting-db
 dit-services/datasci/data-flow:
   env_keys:
   - ACTIVITY_STREAM_BASE_URL
@@ -1004,6 +1005,8 @@ dit-services/datasci/data-flow:
   - DIT_SHAREPOINT_SITE_NAME
   - DIT_SHAREPOINT_TENANT_DOMAIN
   - DIT_SHAREPOINT_TENANT_ID
+  - DNBSERVICE_BASE_URL
+  - DNBSERVICE_TOKEN
   - DNB_AUTH_TOKEN
   - DNB_BASE_URL
   - DUN_AND_BRADSTREET_AWS_ACCESS_KEY_ID
@@ -1026,6 +1029,8 @@ dit-services/datasci/data-flow:
   - ESS_HELPLINE_TRANSCRIPTS_ROLE_THEIRS
   - ESS_HELPLINE_TRANSCRIPTS_ROLE_THEIRS_EXTERNAL_ID
   - ESS_HELPLINE_USERNAME
+  - EUROSTAT_BULK_DOWNLOADS_LIST_URL
+  - EUROSTAT_BULK_DOWNLOADS_LIST_URL_STARTER
   - EVERBRIDGE_ACCOUNT_ID
   - EVERBRIDGE_BASE_URL
   - EVERBRIDGE_TOKEN
@@ -1083,7 +1088,7 @@ dit-services/datasci/data-flow:
   - GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX_SERVER_SIDE
   - GOV_UK_CONTENT_API
   - GOV_UK_SANCTIONS_FILE_NAME
-  - GOV_UK_SANCTIONS_FILE_URL
+  - GOV_UK_SANCTIONS_PUBLICATION_URL
   - GOV_UK_SEARCH_API
   - HAWK_ALGORITHM
   - HAWK_ID
@@ -1102,6 +1107,10 @@ dit-services/datasci/data-flow:
   - JIRA_ISSUES_TOKEN
   - JIRA_USERNAME
   - JIRA_USERS_TOKEN
+  - LEAVING_SERVICE_BASE_URL
+  - LEAVING_SERVICE_HAWK_ID
+  - LEAVING_SERVICE_LEAVING_REQUEST_PATH
+  - LEAVING_SERVICE_SECRET
   - LITE_BASE_URL
   - LITE_HAWK_ID
   - LITE_HAWK_SECRET
@@ -1111,8 +1120,10 @@ dit-services/datasci/data-flow:
   - MARKET_ACCESS_HAWK_ID
   - MARKET_ACCESS_HAWK_KEY
   - MATCHING_SERVICE_BASE_URL
+  - MATCHING_SERVICE_BATCH_SIZE
   - MATCHING_SERVICE_HAWK_ID
   - MATCHING_SERVICE_HAWK_KEY
+  - MATCHING_SERVICE_UPDATE
   - MENDEL_ROO_HOST
   - MENDEL_ROO_PASSWORD
   - MENDEL_ROO_PORT
@@ -1166,6 +1177,9 @@ dit-services/datasci/data-flow:
   - SLACK_TOKEN
   - SLACK_TOKEN_ID
   - SLACK_USER_URL
+  - SPIRE_AWS_ACCESS_KEY_ID
+  - SPIRE_AWS_SECRET_ACCESS_KEY
+  - SPIRE_S3_BUCKET
   - TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID
   - TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY
   - TAGS_CLASSIFIER_S3_BUCKET
@@ -1462,12 +1476,12 @@ dit-services/datasci/dt07:
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: reporting-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: reporting-redis-ha
   - description: 3 dedicated VMs, 2 CPU per VM, 15GB RAM per VM, 1050GB disk space.
     instance: large-ha-1
     name: reporting-os
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: reporting-redis-ha
 dit-services/datasci/find-exporters:
   env_keys:
   - ANALYTICS_ID
@@ -1505,7 +1519,7 @@ dit-services/datasci/find-exporters:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: find-exporters-redis-ha
 dit-services/directory/directory-api:
   env_keys:
@@ -1621,13 +1635,13 @@ dit-services/directory/directory-api:
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: directory-api-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-api-redis-ha
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-api-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: directory-api-redis-ha-6
 dit-services/directory/directory-cms:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -1698,13 +1712,13 @@ dit-services/directory/directory-cms:
     ipfilter: false
     path: ''
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-cms-redis-ha
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: directory-cms-db
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: directory-cms-redis-ha-6
 dit-services/directory/directory-cms-flower:
   env_keys:
   - EMAIL_WHITELIST
@@ -1725,8 +1739,8 @@ dit-services/directory/directory-cms-flower:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-cms-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-cms-redis-ha-6
 dit-services/directory/directory-companies-house-search:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -1762,13 +1776,13 @@ dit-services/directory/directory-companies-house-search:
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: directory-companies-house-search-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-companies-house-search-redis-ha
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-companies-house-search-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: directory-companies-house-search-redis-ha-6
 dit-services/directory/directory-forms-api:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -1825,8 +1839,8 @@ dit-services/directory/directory-forms-api:
     instance: medium-ha-12
     name: directory-forms-api-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-forms-api-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-forms-api-redis-ha-6
 dit-services/directory/directory-maint-app:
   env_keys:
   - APP_NAME
@@ -1934,8 +1948,8 @@ dit-services/directory/directory-sso:
     instance: medium-ha-12
     name: directory-sso-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-sso-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-sso-redis-ha-6
 dit-services/directory/directory-sso-profile:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -2014,8 +2028,8 @@ dit-services/directory/directory-sso-profile:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-sso-profile-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-sso-profile-redis-ha-6
 dit-services/directory/directory-sso-proxy:
   env_keys:
   - CORS_ORIGIN_ALLOW_ALL
@@ -2132,8 +2146,8 @@ dit-services/directory/directory-ui-buyer:
     path: /find-a-buyer
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-ui-buyer-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-ui-buyer-redis-ha-6
 dit-services/directory/directory-ui-supplier:
   env_keys:
   - API_CLIENT_BASE_URL
@@ -2210,8 +2224,8 @@ dit-services/directory/directory-ui-supplier:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-ui-supplier-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-ui-supplier-redis-ha-6
 dit-services/directory/exceptional-review-procedure:
   env_keys:
   - DIRECTORY_CH_SEARCH_CLIENT_API_KEY
@@ -2246,8 +2260,8 @@ dit-services/directory/exceptional-review-procedure:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: exceptional-review-procedure-redis-ha
+    instance: tiny-ha-6.x
+    name: exceptional-review-procedure-redis-ha-6
 dit-services/directory/great-cms:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -2269,6 +2283,7 @@ dit-services/directory/great-cms:
   - BASE_URL
   - CCCE_BASE_URL
   - CCCE_COMMODITY_SEARCH_TOKEN
+  - CELERY_BROKER_POOL_LIMIT
   - CLAM_AV_ENABLED
   - CLAM_AV_HOST
   - CLAM_AV_PASSWORD
@@ -2302,10 +2317,13 @@ dit-services/directory/great-cms:
   - EXPORTING_OPPORTUNITIES_SEARCH_URL
   - FEATURE_COMPARE_MARKETS_TABS
   - FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER
+  - FEATURE_EXPORT_ACADEMY
   - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
   - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
+  - FEATURE_INTERNATIONAL_ONLINE_OFFER
   - FEATURE_MAINTENANCE_MODE_ENABLED
   - FEATURE_MOCK_CLIENT_IP_ENABLED
+  - FEATURE_REDIS_USE_SSL
   - FEATURE_SHOW_BRAND_BANNER
   - FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
   - FEATURE_SHOW_MAGNA_LINKS_IN_HEADER
@@ -2335,6 +2353,7 @@ dit-services/directory/great-cms:
   - SSO_SESSION_COOKIE
   - SSO_SIGNATURE_SECRET
   - STAFF_SSO_AUTHBROKER_URL
+  - TIME_ZONE
   - UKEF_CONTACT_AGENT_EMAIL_ADDRESS
   - UKEF_FORM_SUBMIT_TRACKER_URL
   - UTM_COOKIE_DOMAIN
@@ -2342,6 +2361,10 @@ dit-services/directory/great-cms:
   - WAGTAILTRANSFER_SECRET_KEY
   - WAGTAILTRANSFER_SECRET_KEY_STAGING
   processes:
+  - command: celery -A config beat -l info -S django
+    type: celery_beat
+  - command: celery -A config worker -l DEBUG
+    type: celery_worker
   - command: python manage.py collectstatic --noinput && python manage.py migrate
       --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
     type: web
@@ -2381,10 +2404,12 @@ dit-services/directory/great-cms:
     internal: false
     ipfilter: true
     path: /django-admin
+  - domain: great.gov.uk
+    host: www
+    internal: false
+    ipfilter: false
+    path: /international/expand-your-business-in-the-uk
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-cms-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: great-cms-s3
@@ -2396,6 +2421,9 @@ dit-services/directory/great-cms:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: great-cms-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: great-cms-redis-6
 dit-services/directory/great-domestic-ui:
   env_keys:
   - ACTIVITY_STREAM_API_ACCESS_KEY
@@ -2510,8 +2538,8 @@ dit-services/directory/great-domestic-ui:
     path: /static/directory_components
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-domestic-ui-redis-ha
+    instance: tiny-ha-6.x
+    name: great-domestic-ui-redis-ha-6
 dit-services/directory/great-international-ui:
   env_keys:
   - API_CLIENT_BASE_URL
@@ -2634,8 +2662,8 @@ dit-services/directory/great-international-ui:
     path: /international
   services:
   - description: 3GB RAM, highly-available, daily backups
-    instance: small-ha-3.2
-    name: great-international-ui-redis-ha-2
+    instance: small-ha-6.x
+    name: great-international-ui-redis-ha-6
 dit-services/directory/invest-pir-api:
   env_keys:
   - ALLOWED_ADMIN_IPS
@@ -2704,8 +2732,8 @@ dit-services/directory/invest-pir-api:
     instance: medium-ha-12
     name: invest-pir-api-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: invest-pir-api-redis-ha
+    instance: tiny-ha-6.x
+    name: invest-pir-api-redis-ha-6
 dit-services/directory/invest-ui:
   env_keys:
   - CMS_SIGNATURE_SECRET
@@ -2756,8 +2784,8 @@ dit-services/directory/invest-ui:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: invest-ui-redis-ha
+    instance: tiny-ha-6.x
+    name: invest-ui-redis-ha-6
 dit-services/directory/selling-online-overseas:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -3003,6 +3031,7 @@ dit-services/exopps/export-opportunities:
   - PTU_EXEMPT_SERVICE_PROVIDERS
   - QUALITY_SCORE_THRESHOLD
   - RAILS_SERVE_STATIC_FILES
+  - REDIS_URL
   - SECRET_KEY_BASE
   - SELLING_ONLINE_OVERSEAS_URL
   - SENDGRID_USERNAME
@@ -3033,7 +3062,6 @@ dit-services/exopps/export-opportunities:
   - mailtrap_password
   - mailtrap_username
   - post_user_communication_s3_bucket
-  - redis_url
   - sidekiq_password
   - sidekiq_username
   processes:
@@ -3059,9 +3087,6 @@ dit-services/exopps/export-opportunities:
     ipfilter: false
     path: /export-opportunities
   services:
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
-    name: exopps-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: exopps-s3
@@ -3075,6 +3100,9 @@ dit-services/exopps/export-opportunities:
       Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
     instance: large-ha-12
     name: exopps-db-12
+  - description: 6.37GB RAM, highly-available, daily backups
+    instance: medium-ha-6.x
+    name: exopps-redis
 dit-services/export-support/export-support-prod:
   env_keys:
   - AB_TESTING_ENABLED
@@ -3202,18 +3230,18 @@ dit-services/finance/fft:
     path: ''
   services:
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 11. DB Instance Class: db.t3.small.'
-    instance: small-ha-11
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: fft-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: fft-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-s3-bucket
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-temp-files
+  - description: 3GB RAM, highly-available, daily backups
+    instance: small-ha-6.x
+    name: fft-redis-6
 dit-services/icms/icms:
   env_keys:
   - ALLOW_DATA_MIGRATION
@@ -3267,6 +3295,8 @@ dit-services/intranet/digital-workspace-s3proxy:
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
   - AWS_ACCESS_KEY_ID
+  - AWS_DEFAULT_REGION
+  - AWS_S3_BUCKET
   - AWS_S3_ENDPOINT
   - AWS_S3_HEALTHCHECK_KEY
   - AWS_S3_REGION
@@ -3316,6 +3346,8 @@ dit-services/intranet/digital-workspace-v2:
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_TIMEOUT
   - ELASTIC_APM_SERVER_URL
+  - FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
+  - FEEDBACK_NOTIFICATION_EMAIL_TEMPLATE_ID
   - GOVUK_NOTIFY_API_KEY
   - GTM_AUTH
   - GTM_CODE
@@ -3342,6 +3374,7 @@ dit-services/intranet/digital-workspace-v2:
   - PROFILE_DELETION_REQUEST_EMAIL
   - PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
   - PROFILE_EDITED_EMAIL_TEMPLATE_ID
+  - SENTRY_AUTH_TOKEN
   - SENTRY_DSN
   - SKIP_LIST
   - SUPPORT_REQUEST_EMAIL
@@ -3353,9 +3386,9 @@ dit-services/intranet/digital-workspace-v2:
   - WAGTAIL_BASE_URL
   - X_AUTOSCALING_MAX
   processes:
-  - command: celery -A config worker -l info
+  - command: cd src && celery -A config worker -l info
     type: worker
-  - command: python manage.py migrate --noinput && python manage.py collectstatic
+  - command: cd src && python manage.py migrate --noinput && python manage.py collectstatic
       --noinput && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
@@ -3412,11 +3445,13 @@ dit-services/jml/jml:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
+  - BUSINESS_CONTINUITY_EMAIL
   - CHANGE_EMPLOYEES_LM_LINK
   - CLU4_EMAIL
   - COMAEA_EMAIL
   - DEV_TOOLS_ENABLED
   - DIT_EXPERIENCE_SURVEY
+  - DIT_LOANS_GUIDANCE_URL
   - DIT_OFFBOARDING_EMAIL
   - DJANGO_SETTINGS_MODULE
   - FEETHAM_SECURITY_PASS_OFFICE_EMAIL
@@ -3428,11 +3463,13 @@ dit-services/jml/jml:
   - HAWK_INCOMING_ACCESS_KEY
   - HAWK_INCOMING_SECRET_KEY
   - HAWK_SECRET_KEY
+  - HEALTH_AND_SAFETY_EMAIL
   - HELP_DESK_CREDS
   - HELP_DESK_INTERFACE
   - HR_UKSBS_CORRECTION_EMAIL
   - INDEX_CURRENT_USER_MIDDLEWARE
   - IT_OPS_EMAIL
+  - JML_LEAVING_DIT_GUIDANCE_URL
   - JML_TEAM_CONTACT_EMAIL
   - JML_TEAM_EMAILS
   - LSD_HELP_DESK_LIVE
@@ -3451,6 +3488,7 @@ dit-services/jml/jml:
   - PERFORMANCE_REVIEW_URL
   - PROCESS_LEAVING_REQUEST
   - PYTHONSTARTUP
+  - RUN_DJANGO_WORKFLOWS
   - SECRET_KEY
   - SECURITY_TEAM_BUILDING_PASS_EMAIL
   - SECURITY_TEAM_ROSA_EMAIL
@@ -3473,12 +3511,17 @@ dit-services/jml/jml:
   - STAFF_SSO_ACTIVITY_STREAM_ID
   - STAFF_SSO_ACTIVITY_STREAM_SECRET
   - STAFF_SSO_ACTIVITY_STREAM_URL
+  - TEMPLATE_ID_BUSINESS_CONTINUITY_LEAVER_EMAIL
   - TEMPLATE_ID_CLU4_EMAIL
   - TEMPLATE_ID_COMAEA_EMAIL
+  - TEMPLATE_ID_FEEDBACK_NOTIFICATION_EMAIL
   - TEMPLATE_ID_FEETHAM_SECURITY_PASS_OFFICE_EMAIL
+  - TEMPLATE_ID_HEALTH_AND_SAFETY_EMAIL
   - TEMPLATE_ID_IT_OPS_ASSET_EMAIL
+  - TEMPLATE_ID_LEAVER_IN_PAY_CUT_OFF_HR_EMAIL
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_HR_REMINDER
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_LM_REMINDER
+  - TEMPLATE_ID_LEAVER_QUESTIONNAIRE_EMAIL
   - TEMPLATE_ID_LEAVER_THANK_YOU_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
@@ -3507,6 +3550,7 @@ dit-services/jml/jml:
   - TEMPLATE_ID_SRE_REMINDER_DAY_AFTER_LWD
   - TEMPLATE_ID_SRE_REMINDER_ONE_DAY_AFTER_LD
   - TEMPLATE_ID_SRE_REMINDER_TWO_DAYS_AFTER_LD_PROC
+  - TEMPLATE_ID_WORKFORCE_PLANNING_LAST_WEEK_LEAVERS_EMAIL
   - TRANSFER_TO_OGD_URL
   - UKSBS_AUTHORISATION_URL
   - UKSBS_CLIENT_ID
@@ -3517,6 +3561,7 @@ dit-services/jml/jml:
   - UKSBS_LEAVER_API_URL
   - UKSBS_POST_LEAVER_SUBMISSION
   - UKSBS_TOKEN_URL
+  - WORKFORCE_PLANNING_EMAIL
   processes:
   - command: ''
     type: celery-beat
@@ -3524,8 +3569,7 @@ dit-services/jml/jml:
     type: beat
   - command: celery -A config.celery worker -l INFO
     type: worker
-  - command: python manage.py collectstatic && python manage.py migrate && waitress-serve
-      --port=$PORT config.wsgi:application
+  - command: python manage.py collectstatic && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -3548,8 +3592,20 @@ dit-services/jml/jml:
     instance: small-ha-13
     name: postgres-jml
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: redis-jml
+    instance: tiny-ha-6.x
+    name: redis-jml-6
+dit-services/jml/jml-mp:
+  env_keys: []
+  processes:
+  - command: $HOME/boot.sh
+    type: web
+  routes:
+  - domain: london.cloudapps.digital
+    host: jml-mp
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
 dit-services/legal-basis/legal-basis-api:
   env_keys:
   - ACTIVITY_STREAM_ID
@@ -3572,6 +3628,7 @@ dit-services/legal-basis/legal-basis-api:
   - ELASTIC_APM_SECRET_TOKEN
   - MAXEMAIL_BASE_URL
   - MAXEMAIL_PASSWORD
+  - MAXEMAIL_UNSUBSCRIBE_LIST_NAME
   - MAXEMAIL_USERNAME
   - SENTRY_DSN
   processes:
@@ -3611,8 +3668,27 @@ dit-services/legal-basis/legal-basis-api:
     instance: medium-ha-12
     name: legal-basis-db
   - description: 3GB RAM, highly-available, daily backups
-    instance: small-ha-3.2
+    instance: small-ha-6.x
     name: legal-basis-redis
+dit-services/lite-spire-data/spire-db-copy:
+  env_keys: []
+  processes:
+  - command: python -m http.server 8080 -d none
+    type: web
+  routes: []
+  services: []
+dit-services/lite-spire-data/spire-db-sync:
+  env_keys: []
+  processes:
+  - command: python -m http.server 8080 -d none
+    type: web
+  routes:
+  - domain: london.cloudapps.digital
+    host: spire-db-sync
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
 dit-services/lite/lite-api:
   env_keys:
   - ALLOWED_ADMIN_EMAILS
@@ -3701,8 +3777,8 @@ dit-services/lite/lite-api:
     instance: medium-ha-1
     name: lite-opensearch
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: lite-api-redis
+    instance: tiny-ha-6.x
+    name: lite-api-redis-6
 dit-services/lite/lite-data-flow:
   env_keys:
   - AIRFLOW_VAR_LITE_HMRC_ANONYMISED_SQL
@@ -3916,6 +3992,21 @@ dit-services/lite/lite-hmrc-healthcheck-proxy:
     ipfilter: false
     path: ''
   services: []
+dit-services/lite/lite-icms-to-s3:
+  env_keys:
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - USERNAME
+  - S3_BUCKET
+  - DSN
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - PASSWORD
+  processes:
+  - command: ./start.sh
+    type: web
+  routes: []
+  services: []
 dit-services/lite/lite-internal-frontend:
   env_keys:
   - ALLOWED_HOSTS
@@ -3989,6 +4080,21 @@ dit-services/lite/lite-internal-frontend:
   - description: 6.37GB RAM, highly-available, daily backups
     instance: medium-ha-5.x
     name: lite-internal-frontend-redis
+dit-services/lite/lite-spire-to-s3:
+  env_keys:
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - DSN
+  - PASSWORD
+  - S3_BUCKET
+  - USERNAME
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  processes:
+  - command: ./start.sh
+    type: web
+  routes: []
+  services: []
 dit-services/lite/spire-db-copy:
   env_keys: []
   processes:
@@ -4093,8 +4199,9 @@ dit-services/market-access/market-access-api:
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: market-access-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
     name: market-access-redis
 dit-services/market-access/market-access-maint-app:
   env_keys:
@@ -4216,8 +4323,9 @@ dit-services/market-access/market-access-pyfe:
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: market-access-pyfe-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
     name: market-access-redis
 dit-services/mi/exportwins-admin:
   env_keys:
@@ -4481,12 +4589,12 @@ dit-services/platform/external-company-service:
     ipfilter: false
     path: ''
   services:
-  - description: '512GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 5000 Concurrent Connections. Postgres Version 10. DB Instance Class: db.m4.2xlarge.'
-    instance: large-ha-10-old
-    name: ecs-pg
+  - description: '564GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
+    instance: large-ha-12
+    name: ecs-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: ecs-redis
 dit-services/platform/maxemail-sso:
   env_keys:
@@ -4721,6 +4829,50 @@ dit-services/public-apis/data-api:
   - description: EMPTY
     instance: EMPTY
     name: public-apis-log-drain
+dit-services/public-apis/sftp-notification--hmrc-fta:
+  env_keys:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  processes:
+  - command: ./start.sh
+    type: web
+  routes:
+  - domain: api.trade.gov.uk
+    host: sftp-notification--hmrc-fta
+    internal: false
+    ipfilter: true
+    path: ''
+  - domain: london.cloudapps.digital
+    host: sftp-notification--hmrc-fta
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
+dit-services/public-apis/sftp-notification--hmrc-tra:
+  env_keys:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  processes:
+  - command: ./start.sh
+    type: web
+  routes:
+  - domain: api.trade.gov.uk
+    host: sftp-notification--hmrc-tra
+    internal: false
+    ipfilter: true
+    path: ''
+  - domain: london.cloudapps.digital
+    host: sftp-notification--hmrc-tra
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
 dit-services/public-apis/tariffs-api:
   env_keys:
   - APIKEYS
@@ -4932,6 +5084,7 @@ dit-services/supply-chain-resilience/update-supply-chain-information:
   - HAWK_SECRET_ACCESS_KEY
   - HAWK_UNIQUE_ID
   - NODE_ENV
+  - QUICKSIGHT_COMMODITY_USES_BY_INDUSTRY_DASHBOARD_URL
   - QUICKSIGHT_COUNTRIES_DASHBOARD_URL
   - QUICKSIGHT_OVERSEAS_INTELLIGENCE_DASHBOARD_URL
   - QUICKSIGHT_RISK_MONITORING_DASHBOARD_URL
@@ -5040,17 +5193,28 @@ dit-services/tariffs/tamato:
   - AWS_ACCESS_KEY_ID
   - AWS_S3_ENDPOINT_URL
   - AWS_SECRET_ACCESS_KEY
+  - BASE_SERVICE_URL
+  - CDS_ACCEPTED_TEMPLATE_ID
+  - CDS_REJECTED_TEMPLATE_ID
+  - CLAM_AV_DOMAIN
+  - CLAM_AV_PASSWORD
+  - CLAM_AV_USERNAME
   - DISABLE_COLLECTSTATIC
   - ELASTIC_TOKEN
+  - ENABLE_PACKAGING_NOTIFICATIONS
   - ENV
   - EXPORTER_DISABLE_NOTIFICATION
   - FLOWER_AUTH_PASSWORD
   - FLOWER_AUTH_USER
   - GOOGLE_ANALYTICS_ID
+  - HMRC_PACKAGING_SEED_ENVELOPE_ID
   - HMRC_STORAGE_BUCKET_NAME
   - HMRC_STORAGE_DIRECTORY
   - LOG_LEVEL
+  - NOTIFICATIONS_API_KEY
   - NURSERY_CACHE_ENGINE
+  - READY_FOR_CDS_TEMPLATE_ID
+  - S3_ENDPOINT_URL
   - SECRET_KEY
   - SENTRY_DSN
   - SQLITE_S3_ACCESS_KEY_ID
@@ -5083,13 +5247,16 @@ dit-services/tariffs/tamato:
   - description: 6.37GB RAM, highly-available, daily backups
     instance: medium-ha-5.x
     name: DJANGO_CACHE
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-5.x
-    name: CELERY_BROKER
   - description: '10TB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.4xlarge.'
     instance: xlarge-ha-12-high-iops
     name: tamato-db
+  - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
+    instance: default
+    name: hmrc-packaging
+  - description: 12.93GB RAM, highly-available, daily backups
+    instance: large-ha-5.x
+    name: CELERY_BROKER
 dit-services/tariffs/tamato-flower:
   env_keys:
   - FLOWER_BASIC_AUTH
@@ -5107,8 +5274,8 @@ dit-services/tariffs/tamato-flower:
       Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.4xlarge.'
     instance: xlarge-ha-12-high-iops
     name: tamato-db
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-5.x
+  - description: 12.93GB RAM, highly-available, daily backups
+    instance: large-ha-5.x
     name: CELERY_BROKER
 dit-services/tariffs/tariffs-api:
   env_keys:
@@ -5211,7 +5378,7 @@ dit-services/trade-helpdesk/contact-forms:
     instance: small-ha-12
     name: contact-forms-psql
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: contact-forms-redis-tiny
 dit-services/trade-helpdesk/helpdesk:
   env_keys:
@@ -5290,9 +5457,6 @@ dit-services/trade-helpdesk/helpdesk:
     ipfilter: false
     path: ''
   services:
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
-    name: helpdesk-redis
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
@@ -5300,6 +5464,9 @@ dit-services/trade-helpdesk/helpdesk:
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: helpdesk-opensearch
+  - description: 6.37GB RAM, highly-available, daily backups
+    instance: medium-ha-6.x
+    name: helpdesk-redis
 dit-services/trade-helpdesk/helpdesk-cms:
   env_keys:
   - ADMIN_ENABLED
@@ -5368,15 +5535,15 @@ dit-services/trade-helpdesk/helpdesk-cms:
       Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-ha-12
     name: helpdesk-postgres
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
-    name: helpdesk-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: trade-helpdesk-roo-data
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: helpdesk-opensearch
+  - description: 6.37GB RAM, highly-available, daily backups
+    instance: medium-ha-6.x
+    name: helpdesk-redis
 dit-services/trade-helpdesk/mendel-data-production:
   env_keys:
   - API_KEY
@@ -5431,10 +5598,6 @@ dit-services/trade-helpdesk/mendel-data-production:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: mendel-data-s3-production
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: mendel-data-redis-production
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
@@ -5443,6 +5606,10 @@ dit-services/trade-helpdesk/mendel-data-production:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: mendel-data-elasticsearch-production
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: mendel-data-redis-production
 dit-services/webops/atlassian-account-user-audit:
   env_keys:
   - ATLASSIAN_AUTH_TOKEN
@@ -5839,6 +6006,12 @@ dit-services/webops/ip-filter-service:
   - ROUTES__1__IP_RANGES__27
   - ROUTES__1__IP_RANGES__28
   - ROUTES__1__IP_RANGES__29
+  - ROUTES__1__IP_RANGES__30
+  - ROUTES__1__IP_RANGES__31
+  - ROUTES__1__IP_RANGES__32
+  - ROUTES__1__IP_RANGES__33
+  - ROUTES__1__IP_RANGES__34
+  - ROUTES__1__IP_RANGES__35
   - ROUTES__2__DESCRIPTION
   - ROUTES__2__HOSTNAME_REGEX
   - ROUTES__2__IP_DETERMINED_BY_X_FORWARDED_FOR_INDEX
@@ -5879,6 +6052,13 @@ dit-services/webops/ip-filter-service:
   - ROUTES__2__IP_RANGES__35
   - ROUTES__2__IP_RANGES__36
   - ROUTES__2__IP_RANGES__37
+  - ROUTES__2__IP_RANGES__38
+  - ROUTES__2__IP_RANGES__39
+  - ROUTES__2__IP_RANGES__40
+  - ROUTES__2__IP_RANGES__41
+  - ROUTES__2__IP_RANGES__42
+  - ROUTES__2__IP_RANGES__43
+  - ROUTES__2__IP_RANGES__44
   - ROUTES__2__SHARED_SECRET_HEADER__1__NAME
   - ROUTES__2__SHARED_SECRET_HEADER__1__VALUE
   - ROUTES__3__DESCRIPTION
@@ -5919,6 +6099,10 @@ dit-services/webops/ip-filter-service:
   - ROUTES__5__HOSTNAME_REGEX
   - ROUTES__5__IP_DETERMINED_BY_X_FORWARDED_FOR_INDEX
   - ROUTES__5__IP_RANGES__01
+  - ROUTES__6__DESCRIPTION
+  - ROUTES__6__HOSTNAME_REGEX
+  - ROUTES__6__IP_DETERMINED_BY_X_FORWARDED_FOR_INDEX
+  - ROUTES__6__IP_RANGES__01
   processes:
   - command: gunicorn main:app --worker-class gevent -b 0.0.0.0:$PORT
     type: web
@@ -6173,23 +6357,6 @@ dit-services/webops/rtfm-prod:
     ipfilter: false
     path: ''
   services: []
-dit-services/webops/service-upgrade-scanner:
-  env_keys:
-  - SLACK_URL
-  - SLACK_CHANNEL
-  - CF_DOMAIN
-  - CF_PASSWORD
-  - CF_USERNAME
-  processes:
-  - command: python web.py
-    type: web
-  routes:
-  - domain: london.cloudapps.digital
-    host: service-upgrade-scanner
-    internal: false
-    ipfilter: true
-    path: ''
-  services: []
 dit-services/webops/sla-budget-metrics:
   env_keys:
   - ALLOWED_HOSTS
@@ -6351,7 +6518,11 @@ dit-staging/activity-stream-dev/activity-stream-dev:
   - FEEDS__20__API_KEY
   - FEEDS__20__ATTENDEES_LIST_URL
   - FEEDS__20__AUTH_URL
+  - FEEDS__20__EVENT_QUESTIONS_LIST_URL
+  - FEEDS__20__QUESTIONS_LIST_URL
   - FEEDS__20__SEED
+  - FEEDS__20__SESSIONS_LIST_URL
+  - FEEDS__20__SESSION_REGISTRATIONS_LIST_URL
   - FEEDS__20__TYPE
   - FEEDS__20__UNIQUE_ID
   - FEEDS__24__ACCESS_KEY_ID
@@ -6463,8 +6634,6 @@ dit-staging/activity-stream-dev/activity-stream-dev:
     type: worker
   - command: python -m app.app_incoming
     type: web
-  - command: python -m app.app_incoming
-    type: web
   routes:
   - domain: london.cloudapps.digital
     host: activity-stream-dev
@@ -6477,13 +6646,13 @@ dit-staging/activity-stream-dev/activity-stream-dev:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-dev-redis
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: activity-stream-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: activity-stream-dev-redis
 dit-staging/activity-stream-dev/activity-stream-dummy-aventri-dev:
   env_keys: []
   processes:
@@ -6529,9 +6698,9 @@ dit-staging/activity-stream-dev/kibana-proxy-dev:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: kibana-proxy-redis
 dit-staging/activity-stream-staging/activity-stream-dummy-aventri-staging:
   env_keys: []
@@ -6568,13 +6737,13 @@ dit-staging/activity-stream-staging/activity-stream-kibana-staging:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-staging-redis
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: activity-stream-staging-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: activity-stream-staging-redis
 dit-staging/activity-stream-staging/activity-stream-staging:
   env_keys:
   - APP_PATH
@@ -6663,8 +6832,11 @@ dit-staging/activity-stream-staging/activity-stream-staging:
   - FEEDS__21__API_KEY
   - FEEDS__21__ATTENDEES_LIST_URL
   - FEEDS__21__AUTH_URL
+  - FEEDS__21__EVENT_QUESTIONS_LIST_URL
   - FEEDS__21__QUESTIONS_LIST_URL
   - FEEDS__21__SEED
+  - FEEDS__21__SESSIONS_LIST_URL
+  - FEEDS__21__SESSION_REGISTRATIONS_LIST_URL
   - FEEDS__21__TYPE
   - FEEDS__21__UNIQUE_ID
   - FEEDS__2__ACCESS_KEY_ID
@@ -6778,16 +6950,16 @@ dit-staging/activity-stream-staging/activity-stream-staging:
   - domain: london.cloudapps.digital
     host: activity-stream-staging
     internal: false
-    ipfilter: false
+    ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-staging-redis
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: activity-stream-staging-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: activity-stream-staging-redis
 dit-staging/activity-stream-staging/activity-stream-verification-feed-staging:
   env_keys:
   - APP_PATH
@@ -6825,13 +6997,13 @@ dit-staging/activity-stream-uat/activity-stream-kibana-uat:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-uat-redis
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: activity-stream-uat-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: activity-stream-uat-redis
 dit-staging/activity-stream-uat/activity-stream-uat:
   env_keys:
   - APP_PATH
@@ -6905,13 +7077,13 @@ dit-staging/activity-stream-uat/activity-stream-uat:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: activity-stream-uat-redis
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: activity-stream-uat-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: activity-stream-uat-redis
 dit-staging/activity-stream-uat/activity-stream-verification-feed-uat:
   env_keys:
   - APP_PATH
@@ -7021,9 +7193,9 @@ dit-staging/data-workspace-apps-dev/company-matching-service-dev:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: company_matching-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: company-matching-service-redis
 dit-staging/data-workspace-apps-dev/countries-of-interest-service-dev:
   env_keys:
@@ -7071,9 +7243,9 @@ dit-staging/data-workspace-apps-dev/countries-of-interest-service-dev:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: countries-of-interest-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: countries-of-interest-service-redis
 dit-staging/data-workspace-apps-dev/data-store-service-dev:
   env_keys:
@@ -7108,9 +7280,9 @@ dit-staging/data-workspace-apps-dev/data-store-service-dev:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: data-store-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: data-store-service-redis
 dit-staging/data-workspace-apps-dev/data-store-uploader:
   env_keys: []
@@ -7141,8 +7313,9 @@ dit-staging/data-workspace-apps-dev/data-workspace-apps-dev:
 dit-staging/data-workspace-apps-dev/data-workspace-prototypes-dev:
   env_keys:
   - NOTIFYAPIKEY
+  - USE_AUTH
   processes:
-  - command: node start.js
+  - command: npm start
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -7182,14 +7355,14 @@ dit-staging/data-workspace-apps-staging/company-matching-service-staging:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: company-matching-service-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: company-matching-service-db
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: company-matching-service-redis
 dit-staging/data-workspace-apps-staging/countries-of-interest-service-staging:
   env_keys:
   - ABC_CLIENT_ID
@@ -7236,9 +7409,9 @@ dit-staging/data-workspace-apps-staging/countries-of-interest-service-staging:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: countries-of-interest-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: countries-of-interest-service-redis
 dit-staging/data-workspace-apps-staging/data-store-service-staging:
   env_keys:
@@ -7272,13 +7445,13 @@ dit-staging/data-workspace-apps-staging/data-store-service-staging:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: data-store-service-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: data-store-service-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: data-store-service-s3
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: data-store-service-redis
 dit-staging/data-workspace-apps-staging/data-workspace-apps-staging:
   env_keys: []
   processes:
@@ -7465,12 +7638,16 @@ dit-staging/datahub-dev/datahub-api-dev:
   - DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS
   - DNB_SERVICE_BASE_URL
   - DNB_SERVICE_TOKEN
+  - ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS
+  - ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS
   - ENABLE_CELERY_ES_SYNC_OBJECT
   - ENABLE_DAILY_OPENSEARCH_SYNC
   - ENABLE_EMAIL_INGESTION
   - ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_INVESTMENT_NOTIFICATION
   - ENABLE_MAILBOX_PROCESSING
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS
@@ -7481,6 +7658,7 @@ dit-staging/datahub-dev/datahub-api-dev:
   - ES_APM_SECRET_TOKEN
   - ES_APM_SERVER_URL
   - ES_APM_SERVICE_NAME
+  - EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
   - EXPORT_WINS_HAWK_ID
@@ -7528,11 +7706,11 @@ dit-staging/datahub-dev/datahub-api-dev:
   - STATSD_PORT
   - STATSD_PREFIX
   processes:
-  - command: celery -A config beat -l info
+  - command: ''
     type: celerybeat
-  - command: celery -A config worker -l info -O fair --prefetch-multiplier 1 -Q long-running
+  - command: ''
     type: celerylongrunning
-  - command: celery -A config worker -l info -Q celery
+  - command: ''
     type: celeryworker
   - command: ./rq-run.sh long-running-worker.py
     type: long-running-worker
@@ -7656,7 +7834,7 @@ dit-staging/datahub-dev/datahub-dev:
     type: long-running-worker
   - command: ''
     type: short-running-worker
-  - command: npm run start
+  - command: ''
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -7666,6 +7844,11 @@ dit-staging/datahub-dev/datahub-dev:
     path: ''
   - domain: datahub.dev.uktrade.io
     host: www
+    internal: false
+    ipfilter: false
+    path: ''
+  - domain: datahub.dev.uktrade.io
+    host: ''
     internal: false
     ipfilter: false
     path: ''
@@ -7849,6 +8032,8 @@ dit-staging/datahub-staging/datahub-api-staging:
   - DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS
   - DNB_SERVICE_BASE_URL
   - DNB_SERVICE_TOKEN
+  - ENABLE_AUTOMATIC_REMINDER_ITA_USER_MIGRATIONS
+  - ENABLE_AUTOMATIC_REMINDER_POST_USER_MIGRATIONS
   - ENABLE_CELERY_ES_SYNC_OBJECT
   - ENABLE_DAILY_HIERARCHY_ROLLOUT
   - ENABLE_DAILY_OPENSEARCH_SYNC
@@ -7857,6 +8042,8 @@ dit-staging/datahub-staging/datahub-api-staging:
   - ENABLE_ESTIMATED_LAND_DATE_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_INVESTMENT_NOTIFICATION
   - ENABLE_MAILBOX_PROCESSING
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS
+  - ENABLE_NEW_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS
   - ENABLE_NO_RECENT_EXPORT_INTERACTION_REMINDERS_EMAIL_DELIVERY_STATUS
   - ENABLE_NO_RECENT_INTERACTION_EMAIL_DELIVERY_STATUS
@@ -7869,6 +8056,7 @@ dit-staging/datahub-staging/datahub-api-staging:
   - ES_APM_SECRET_TOKEN
   - ES_APM_SERVER_URL
   - ES_APM_SERVICE_NAME
+  - EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
   - EXPORT_WINS_HAWK_ID
@@ -7918,11 +8106,11 @@ dit-staging/datahub-staging/datahub-api-staging:
   - STATSD_PORT
   - STATSD_PREFIX
   processes:
-  - command: celery -A config beat -l info
+  - command: ''
     type: celerybeat
-  - command: celery -A config worker -l info -O fair --prefetch-multiplier 1 -Q long-running
+  - command: ''
     type: celerylongrunning
-  - command: celery -A config worker -l info -Q celery
+  - command: ''
     type: celeryworker
   - command: ''
     type: background-worker
@@ -8176,6 +8364,7 @@ dit-staging/datahub-uat/datahub-api-uat:
   - ES_APM_SECRET_TOKEN
   - ES_APM_SERVER_URL
   - ES_APM_SERVICE_NAME
+  - EXPORT_NOTIFICATION_NEW_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_INTERACTION_TEMPLATE_ID
   - EXPORT_NOTIFICATION_NO_RECENT_INTERACTION_TEMPLATE_ID
   - EXPORT_WINS_HAWK_ID
@@ -8220,11 +8409,11 @@ dit-staging/datahub-uat/datahub-api-uat:
   - STAFF_SSO_USER_TOKEN_CACHING_PERIOD
   - STAFF_SSO_USE_NEW_INTROSPECTION_LOGIC
   processes:
-  - command: celery -A config beat -l info
+  - command: ''
     type: celerybeat
-  - command: celery -A config worker -l info -O fair --prefetch-multiplier 1 -Q long-running
+  - command: ''
     type: celerylongrunning
-  - command: celery -A config worker -l info -Q celery
+  - command: ''
     type: celeryworker
   - command: ''
     type: background-worker
@@ -8415,6 +8604,12 @@ dit-staging/datasci-dev/data-flow-dev:
   - CONSENT_HAWK_ID
   - CONSENT_HAWK_SECRET
   - COUNTRIES_OF_INTEREST_BASE_URL
+  - DAGS_AWS_ACCESS_KEY_ID
+  - DAGS_AWS_SECRET_ACCESS_KEY
+  - DAGS_S3_BUCKET
+  - DAGS_S3_ENDPOINT
+  - DAGS_S3_PREFIX
+  - DAGS_S3_REGION
   - DAG_MANAGEMENT_SCRIPT_HAWK_ID
   - DAG_MANAGEMENT_SCRIPT_HAWK_KEY
   - DATAHUB_BASE_URL
@@ -8529,9 +8724,9 @@ dit-staging/datasci-dev/data-flow-dev:
     ipfilter: true
     path: ''
   services:
-  - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
-      Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
-    instance: small-12
+  - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
+      Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
+    instance: medium-12
     name: data-flow-db
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
@@ -8640,9 +8835,9 @@ dit-staging/datasci-dev/data-flow-dev-a:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: data-flow-db-a
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: data-flow-redis-a
 dit-staging/datasci-dev/data-workspace-datasets-search:
   env_keys: []
@@ -8829,6 +9024,10 @@ dit-staging/datasci-staging/data-flow-staging:
   - HAWK_ID
   - HAWK_KEY
   - INGEST_TASK_CONCURRENCY
+  - LEAVING_SERVICE_BASE_URL
+  - LEAVING_SERVICE_HAWK_ID
+  - LEAVING_SERVICE_LEAVING_REQUEST_PATH
+  - LEAVING_SERVICE_SECRET
   - LITE_BASE_URL
   - LITE_HAWK_ID
   - LITE_HAWK_SECRET
@@ -8894,10 +9093,6 @@ dit-staging/datasci-staging/data-flow-staging:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: data-flow-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: data-flow-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: data-flow-s3
@@ -8913,6 +9108,10 @@ dit-staging/datasci-staging/data-flow-staging:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: postgresql-proxy-db-for-jml-staging
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: data-flow-redis
 dit-staging/datasci-staging/db-sync:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -9072,13 +9271,13 @@ dit-staging/datasci-staging/dt07-fi-staging:
     ipfilter: true
     path: ''
   services:
-  - description: DEPRECATED - do not use, 568MB RAM, clustered (1 shard), single node,
-      no failover, daily backups
-    instance: tiny-clustered-3.2
-    name: reporting-fi-redis-staging
   - description: 3 dedicated VMs, 4 CPU per VM, 31GB RAM per VM, 2100GB disk space.
     instance: xlarge-ha-1
     name: reporting-os-staging
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: reporting-fi-redis-staging
 dit-staging/datasci-staging/dt07-staging:
   env_keys:
   - DISABLE_COLLECTSTATIC
@@ -9132,13 +9331,13 @@ dit-staging/datasci-staging/dt07-staging:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: reporting-db-staging
-  - description: DEPRECATED - do not use, 568MB RAM, clustered (1 shard), single node,
-      no failover, daily backups
-    instance: tiny-clustered-3.2
-    name: reporting-redis-staging
   - description: 3 dedicated VMs, 4 CPU per VM, 31GB RAM per VM, 2100GB disk space.
     instance: xlarge-ha-1
     name: reporting-os-staging
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: reporting-redis-staging
 dit-staging/datasci-staging/find-exporters-dev:
   env_keys:
   - BACKEND_KEY
@@ -9167,9 +9366,9 @@ dit-staging/datasci-staging/find-exporters-dev:
     ipfilter: true
     path: ''
   services:
-  - description: DEPRECATED - do not use, 568MB RAM, clustered (1 shard), single node,
-      no failover, daily backups
-    instance: tiny-clustered-3.2
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
     name: find-exporters-redis-dev
 dit-staging/datasci-staging/find-exporters-staging:
   env_keys:
@@ -9202,42 +9401,10 @@ dit-staging/datasci-staging/find-exporters-staging:
     ipfilter: true
     path: ''
   services:
-  - description: DEPRECATED - do not use, 568MB RAM, clustered (1 shard), single node,
-      no failover, daily backups
-    instance: tiny-clustered-3.2
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
     name: find-exporters-redis-staging
-dit-staging/datasci-staging/find-investors-staging:
-  env_keys:
-  - BACKEND_KEY
-  - BACKEND_URL
-  - BACKEND_USER
-  - LOG_LEVEL
-  - NPM_CONFIG_PRODUCTION
-  - REDIS_USE_TLS
-  - SESSION_SECRET
-  - SSO_ACCESS_TOKEN
-  - SSO_CLIENT
-  - SSO_DOMAIN
-  - SSO_PATH_AUTH
-  - SSO_PATH_INTROSPECT
-  - SSO_PATH_TOKEN
-  - SSO_PATH_USER
-  - SSO_REDIRECT_URI
-  - SSO_SECRET
-  processes:
-  - command: npm start
-    type: web
-  routes:
-  - domain: london.cloudapps.digital
-    host: find-investors-staging
-    internal: false
-    ipfilter: true
-    path: ''
-  services:
-  - description: DEPRECATED - do not use, 568MB RAM, clustered (1 shard), single node,
-      no failover, daily backups
-    instance: tiny-clustered-3.2
-    name: find-investors-redis-staging
 dit-staging/datasci-staging/flow:
   env_keys: []
   processes:
@@ -9360,10 +9527,6 @@ dit-staging/directory-dev/directory-api-dev:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-api-dev-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -9372,6 +9535,10 @@ dit-staging/directory-dev/directory-api-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-api-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-api-dev-redis-6
 dit-staging/directory-dev/directory-cms-dev:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -9437,14 +9604,14 @@ dit-staging/directory-dev/directory-cms-dev:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-cms-dev-redis
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: directory-cms-dev-db-120122
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-cms-dev-redis-6
 dit-staging/directory-dev/directory-companies-house-search-dev:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -9477,10 +9644,6 @@ dit-staging/directory-dev/directory-companies-house-search-dev:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-companies-house-search-dev-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -9489,6 +9652,10 @@ dit-staging/directory-dev/directory-companies-house-search-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-companies-house-search-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-companies-house-search-dev-redis-6
 dit-staging/directory-dev/directory-components-dev:
   env_keys:
   - HEADER_FOOTER_URLS_CONTACT_US
@@ -9572,10 +9739,10 @@ dit-staging/directory-dev/directory-forms-api-dev:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-forms-api-dev-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-forms-api-dev-redis
+    instance: tiny-6.x
+    name: directory-forms-api-dev-redis-6
 dit-staging/directory-dev/directory-maint-app-dev:
   env_keys:
   - APP_NAME
@@ -9670,14 +9837,14 @@ dit-staging/directory-dev/directory-sso-dev:
     ipfilter: true
     path: /sso/static
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-sso-dev-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-sso-dev-db
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-sso-dev-redis-6
 dit-staging/directory-dev/directory-sso-profile-dev:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -9746,10 +9913,10 @@ dit-staging/directory-dev/directory-sso-profile-dev:
     ipfilter: false
     path: /profile
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-sso-profile-dev-redis
+    instance: tiny-6.x
+    name: directory-sso-profile-dev-redis-6
 dit-staging/directory-dev/directory-sso-proxy-dev:
   env_keys:
   - DEBUG
@@ -9877,10 +10044,10 @@ dit-staging/directory-dev/directory-ui-buyer-dev:
     ipfilter: false
     path: /find-a-buyer
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-ui-buyer-dev-redis
+    instance: tiny-6.x
+    name: directory-ui-buyer-dev-redis-6
 dit-staging/directory-dev/dit-pa11y:
   env_keys:
   - WEBSERVICE_DATABASE
@@ -9939,11 +10106,7 @@ dit-staging/directory-dev/exceptional-review-procedure-dev:
     internal: false
     ipfilter: true
     path: ''
-  services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: exceptional-review-procedure-dev-redis
+  services: []
 dit-staging/directory-dev/great-cms-dev:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -9960,12 +10123,14 @@ dit-staging/directory-dev/great-cms-dev:
   - AWS_S3_HOST
   - AWS_S3_REGION_NAME
   - AWS_S3_REGION_NAME_DATA_SCIENCE
+  - AWS_S3_TIMEOUT
   - AWS_SECRET_ACCESS_KEY
   - AWS_SECRET_ACCESS_KEY_DATA_SCIENCE
   - AWS_STORAGE_BUCKET_NAME
   - AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
   - BASE_URL
   - CCCE_COMMODITY_SEARCH_TOKEN
+  - CELERY_BROKER_POOL_LIMIT
   - CLAM_AV_ENABLED
   - CLAM_AV_HOST
   - CLAM_AV_PASSWORD
@@ -10000,13 +10165,20 @@ dit-staging/directory-dev/great-cms-dev:
   - EXPORTING_OPPORTUNITIES_API_BASE_URL
   - EXPORTING_OPPORTUNITIES_API_SECRET
   - EXPORTING_OPPORTUNITIES_SEARCH_URL
+  - EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
   - FEATURE_COMPARE_MARKETS_TABS
   - FEATURE_DATA_PIPELINE_STATS
+  - FEATURE_EXPORT_ACADEMY
+  - FEATURE_EXPORT_ACADEMY_RELEASE_2
   - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
   - FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
   - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
+  - FEATURE_INTERNATIONAL_ONLINE_OFFER
   - FEATURE_MARKET_GUIDES_MAP
+  - FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE
+  - FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION
   - FEATURE_MOCK_CLIENT_IP_ENABLED
+  - FEATURE_REDIS_USE_SSL
   - FEATURE_SHOW_BRAND_BANNER
   - FEATURE_SHOW_CASE_STUDY_RANKINGS
   - FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
@@ -10038,6 +10210,7 @@ dit-staging/directory-dev/great-cms-dev:
   - SSO_SESSION_COOKIE
   - SSO_SIGNATURE_SECRET
   - STAFF_SSO_AUTHBROKER_URL
+  - TIME_ZONE
   - UKEF_CONTACT_AGENT_EMAIL_ADDRESS
   - UKEF_FORM_SUBMIT_TRACKER_URL
   - UTM_COOKIE_DOMAIN
@@ -10047,6 +10220,10 @@ dit-staging/directory-dev/great-cms-dev:
   - WAGTAILTRANSFER_SECRET_KEY_STAGING
   - WAGTAILTRANSFER_SECRET_KEY_UAT
   processes:
+  - command: celery -A config beat -l info -S django
+    type: celery_beat
+  - command: celery -A config worker -l DEBUG
+    type: celery_worker
   - command: python manage.py collectstatic --noinput && python manage.py migrate
       --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
     type: web
@@ -10076,11 +10253,12 @@ dit-staging/directory-dev/great-cms-dev:
     internal: false
     ipfilter: true
     path: ''
+  - domain: great.dev.uktrade.digital
+    host: ''
+    internal: false
+    ipfilter: true
+    path: /international/expand-your-business-in-the-uk
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: great-cms-dev-redis
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
@@ -10089,6 +10267,10 @@ dit-staging/directory-dev/great-cms-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: great-cms-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: great-cms-dev-redis-6
 dit-staging/directory-dev/great-domestic-ui-dev:
   env_keys:
   - ACTIVITY_STREAM_API_ACCESS_KEY
@@ -10209,10 +10391,10 @@ dit-staging/directory-dev/great-domestic-ui-dev:
     ipfilter: true
     path: /static/js
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: great-domestic-ui-dev-redis
+    instance: tiny-6.x
+    name: great-domestic-ui-dev-redis-6
 dit-staging/directory-dev/great-international-ui-dev:
   env_keys:
   - ATLAS_OPPORTUNITIES_MAP_POOL_ID
@@ -10313,30 +10495,16 @@ dit-staging/directory-dev/great-international-ui-dev:
     ipfilter: true
     path: /international
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: great-international-ui-dev-redis
+    instance: tiny-6.x
+    name: great-international-ui-dev-redis-6
 dit-staging/directory-dev/great-styles-staging:
   env_keys: []
   processes:
   - command: ''
     type: web
   routes: []
-  services: []
-dit-staging/directory-dev/halidu-app:
-  env_keys:
-  - DISABLE_COLLECTSTATIC
-  processes:
-  - command: python manage.py collectstatic --noinput && python manage.py migrate
-      --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
-    type: web
-  routes:
-  - domain: apps.internal
-    host: halidu-app
-    internal: true
-    ipfilter: false
-    path: ''
   services: []
 dit-staging/directory-dev/invest-pir-api-dev:
   env_keys:
@@ -10401,15 +10569,15 @@ dit-staging/directory-dev/invest-pir-api-dev:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: invest-pir-api-dev-redis
   - description: '5GB Storage, NOT BACKED UP, Dedicated Instance, Max 50 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.micro. Free for trial
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-12
     name: invest-pir-api-dev-db
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: invest-pir-api-dev-redis-6
 dit-staging/directory-dev/selling-online-overseas-dev:
   env_keys:
   - ' ALLOWED_ADMIN_IPS'
@@ -10619,13 +10787,13 @@ dit-staging/directory-staging/directory-api-staging:
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: directory-api-staging-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-api-staging-redis-ha
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-api-staging-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: directory-api-staging-redis-ha-6
 dit-staging/directory-staging/directory-cms-staging:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -10704,8 +10872,8 @@ dit-staging/directory-staging/directory-cms-staging:
     instance: small-ha-12
     name: directory-cms-staging-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-cms-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-cms-staging-redis-ha-6
 dit-staging/directory-staging/directory-companies-house-search-staging:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -10741,13 +10909,13 @@ dit-staging/directory-staging/directory-companies-house-search-staging:
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: directory-companies-house-search-staging-db
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-companies-house-search-staging-redis-ha
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-companies-house-search-staging-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: directory-companies-house-search-staging-redis-ha-6
 dit-staging/directory-staging/directory-forms-api-staging:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -10817,8 +10985,8 @@ dit-staging/directory-staging/directory-forms-api-staging:
     instance: small-ha-12
     name: directory-forms-api-staging-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-forms-api-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-forms-api-staging-redis-ha-6
 dit-staging/directory-staging/directory-sso-profile-staging:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -10881,8 +11049,8 @@ dit-staging/directory-staging/directory-sso-profile-staging:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-sso-profile-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-sso-profile-staging-redis-ha-6
 dit-staging/directory-staging/directory-sso-proxy-staging:
   env_keys:
   - CORS_ORIGIN_ALLOW_ALL
@@ -11014,8 +11182,8 @@ dit-staging/directory-staging/directory-sso-staging:
     instance: small-ha-12
     name: directory-sso-staging-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-sso-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-sso-staging-redis-ha-6
 dit-staging/directory-staging/directory-ui-buyer-staging:
   env_keys:
   - API_CLIENT_BASE_URL
@@ -11123,8 +11291,8 @@ dit-staging/directory-staging/directory-ui-buyer-staging:
     path: /find-a-buyer
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-ui-buyer-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-ui-buyer-staging-redis-ha-6
 dit-staging/directory-staging/directory-ui-supplier-staging:
   env_keys:
   - API_CLIENT_BASE_URL
@@ -11207,8 +11375,8 @@ dit-staging/directory-staging/directory-ui-supplier-staging:
     instance: default
     name: directory-ui-supplier-staging-s3-pub
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: directory-ui-supplier-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: directory-ui-supplier-staging-redis-ha-6
 dit-staging/directory-staging/exceptional-review-procedure-staging:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -11253,10 +11421,7 @@ dit-staging/directory-staging/exceptional-review-procedure-staging:
     internal: false
     ipfilter: true
     path: ''
-  services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: exceptional-review-procedure-staging-redis-ha
+  services: []
 dit-staging/directory-staging/great-cms-staging:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -11278,6 +11443,7 @@ dit-staging/directory-staging/great-cms-staging:
   - AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
   - BASE_URL
   - CCCE_COMMODITY_SEARCH_TOKEN
+  - CELERY_BROKER_POOL_LIMIT
   - CLAM_AV_ENABLED
   - CLAM_AV_HOST
   - CLAM_AV_PASSWORD
@@ -11312,11 +11478,14 @@ dit-staging/directory-staging/great-cms-staging:
   - EXPORTING_OPPORTUNITIES_API_SECRET
   - EXPORTING_OPPORTUNITIES_SEARCH_URL
   - FEATURE_COMPARE_MARKETS_TABS
+  - FEATURE_EXPORT_ACADEMY
   - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
   - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
   - FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
   - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
+  - FEATURE_INTERNATIONAL_ONLINE_OFFER
   - FEATURE_MOCK_CLIENT_IP_ENABLED
+  - FEATURE_REDIS_USE_SSL
   - FEATURE_SHOW_BRAND_BANNER
   - FEATURE_SHOW_CASE_STUDY_RANKINGS
   - FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
@@ -11346,6 +11515,7 @@ dit-staging/directory-staging/great-cms-staging:
   - SSO_SESSION_COOKIE
   - SSO_SIGNATURE_SECRET
   - STAFF_SSO_AUTHBROKER_URL
+  - TIME_ZONE
   - UKEF_CONTACT_AGENT_EMAIL_ADDRESS
   - UKEF_FORM_SUBMIT_TRACKER_URL
   - UTM_COOKIE_DOMAIN
@@ -11355,6 +11525,10 @@ dit-staging/directory-staging/great-cms-staging:
   - WAGTAILTRANSFER_SECRET_KEY_PRODUCTION
   - WAGTAILTRANSFER_SECRET_KEY_UAT
   processes:
+  - command: celery -A config beat -l info -S django
+    type: celery_beat
+  - command: celery -A config worker -l DEBUG
+    type: celery_worker
   - command: python manage.py collectstatic --noinput && python manage.py migrate
       --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
     type: web
@@ -11384,10 +11558,12 @@ dit-staging/directory-staging/great-cms-staging:
     internal: false
     ipfilter: true
     path: ''
+  - domain: great.staging.uktrade.digital
+    host: ''
+    internal: false
+    ipfilter: true
+    path: /international/expand-your-business-in-the-uk
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-cms-staging-redis-ha
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
@@ -11399,6 +11575,9 @@ dit-staging/directory-staging/great-cms-staging:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: great-cms-staging-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: great-cms-staging-redis-ha-6
 dit-staging/directory-staging/great-domestic-ui-staging:
   env_keys:
   - ACTIVITY_STREAM_API_ACCESS_KEY
@@ -11534,13 +11713,13 @@ dit-staging/directory-staging/great-domestic-ui-staging:
     ipfilter: true
     path: /feedback
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-domestic-ui-staging-redis-ha
   - description: Configurable autoscaler to dynamically manage the number of instances
       of your application.
     instance: autoscaler-free-plan
     name: directory-staging-autoscaler
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: great-domestic-ui-staging-redis-ha-6
 dit-staging/directory-staging/great-international-ui-staging:
   env_keys:
   - ATLAS_OPPORTUNITIES_MAP_POOL_ID
@@ -11655,12 +11834,12 @@ dit-staging/directory-staging/great-international-ui-staging:
     ipfilter: true
     path: /international
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-international-ui-staging-redis-ha
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: directory-ui-supplier-staging-s3-pub
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: great-international-ui-staging-redis-ha-6
 dit-staging/directory-staging/great-styles-staging:
   env_keys: []
   processes:
@@ -11739,8 +11918,8 @@ dit-staging/directory-staging/invest-pir-api-staging:
     instance: small-ha-12
     name: invest-pir-api-staging-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: invest-pir-api-staging-redis-ha
+    instance: tiny-ha-6.x
+    name: invest-pir-api-staging-redis-ha-6
 dit-staging/directory-staging/selling-online-overseas-staging:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -11937,14 +12116,14 @@ dit-staging/directory-uat/directory-api-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-api-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-api-uat-redis
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-api-uat-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-api-uat-redis-6
 dit-staging/directory-uat/directory-cms-flower-uat:
   env_keys:
   - EMAIL_WHITELIST
@@ -11964,10 +12143,10 @@ dit-staging/directory-uat/directory-cms-flower-uat:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-cms-uat-redis
+    instance: tiny-6.x
+    name: directory-cms-uat-redis-6
 dit-staging/directory-uat/directory-cms-uat:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -12053,10 +12232,10 @@ dit-staging/directory-uat/directory-cms-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-cms-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-cms-uat-redis
+    instance: tiny-6.x
+    name: directory-cms-uat-redis-6
 dit-staging/directory-uat/directory-companies-house-search-uat:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -12092,14 +12271,14 @@ dit-staging/directory-uat/directory-companies-house-search-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-companies-house-search-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-companies-house-search-uat-redis
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: directory-companies-house-search-uat-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: directory-companies-house-search-uat-redis-6
 dit-staging/directory-uat/directory-forms-api-uat:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -12174,10 +12353,10 @@ dit-staging/directory-uat/directory-forms-api-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-forms-api-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-forms-api-uat-redis
+    instance: tiny-6.x
+    name: directory-forms-api-uat-redis-6
 dit-staging/directory-uat/directory-sso-profile-uat:
   env_keys:
   - AWS_ACCESS_KEY_ID
@@ -12270,10 +12449,10 @@ dit-staging/directory-uat/directory-sso-profile-uat:
     ipfilter: true
     path: /profile
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: sso-profile-redis
+    instance: tiny-6.x
+    name: sso-profile-redis-6
 dit-staging/directory-uat/directory-sso-proxy-uat:
   env_keys:
   - CORS_ORIGIN_ALLOW_ALL
@@ -12417,10 +12596,10 @@ dit-staging/directory-uat/directory-sso-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: directory-sso-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-sso-uat-redis
+    instance: tiny-6.x
+    name: directory-sso-uat-redis-6
 dit-staging/directory-uat/directory-ui-buyer-uat:
   env_keys:
   - API_CLIENT_BASE_URL
@@ -12531,10 +12710,10 @@ dit-staging/directory-uat/directory-ui-buyer-uat:
     ipfilter: true
     path: /find-a-buyer
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: directory-ui-buyer-uat-redis
+    instance: tiny-6.x
+    name: directory-ui-buyer-uat-redis-6
 dit-staging/directory-uat/exceptional-review-procedure-uat:
   env_keys: []
   processes:
@@ -12563,6 +12742,7 @@ dit-staging/directory-uat/great-cms-uat:
   - AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
   - BASE_URL
   - CCCE_COMMODITY_SEARCH_TOKEN
+  - CELERY_BROKER_POOL_LIMIT
   - CLAM_AV_ENABLED
   - CLAM_AV_HOST
   - CLAM_AV_PASSWORD
@@ -12598,10 +12778,13 @@ dit-staging/directory-uat/great-cms-uat:
   - EXPORTING_OPPORTUNITIES_SEARCH_URL
   - FEATURE_COMPARE_MARKETS_TABS
   - FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER
+  - FEATURE_EXPORT_ACADEMY
   - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
   - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
+  - FEATURE_INTERNATIONAL_ONLINE_OFFER
   - FEATURE_MAINTENANCE_MODE_ENABLED
   - FEATURE_MOCK_CLIENT_IP_ENABLED
+  - FEATURE_REDIS_USE_SSL
   - FEATURE_SHOW_BRAND_BANNER
   - FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
   - FEATURE_SHOW_MAGNA_LINKS_IN_HEADER
@@ -12630,6 +12813,7 @@ dit-staging/directory-uat/great-cms-uat:
   - SSO_SESSION_COOKIE
   - SSO_SIGNATURE_SECRET
   - STAFF_SSO_AUTHBROKER_URL
+  - TIME_ZONE
   - UKEF_CONTACT_AGENT_EMAIL_ADDRESS
   - UKEF_CONTACT_AGENT_NOTIFY_TEMPLATE_ID
   - UKEF_CONTACT_USER_NOTIFY_TEMPLATE_ID
@@ -12641,6 +12825,10 @@ dit-staging/directory-uat/great-cms-uat:
   - WAGTAILTRANSFER_SECRET_KEY_PRODUCTION
   - WAGTAILTRANSFER_SECRET_KEY_STAGING
   processes:
+  - command: celery -A config beat -l info -S django
+    type: celery_beat
+  - command: celery -A config worker -l DEBUG
+    type: celery_worker
   - command: python manage.py collectstatic --noinput && python manage.py migrate
       --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
     type: web
@@ -12655,10 +12843,12 @@ dit-staging/directory-uat/great-cms-uat:
     internal: false
     ipfilter: false
     path: ''
+  - domain: great.uat.uktrade.digital
+    host: ''
+    internal: false
+    ipfilter: true
+    path: /international/expand-your-business-in-the-uk
   services:
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: great-cms-uat-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: great-cms-uat-s3
@@ -12670,6 +12860,9 @@ dit-staging/directory-uat/great-cms-uat:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: great-cms-uat-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: great-cms-uat-redis-6
 dit-staging/directory-uat/great-cms-uat-broken:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -12875,10 +13068,10 @@ dit-staging/directory-uat/great-domestic-ui-uat:
     ipfilter: true
     path: /static/js
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: great-domestic-ui-uat-redis
+    instance: tiny-6.x
+    name: great-domestic-ui-uat-redis-6
 dit-staging/directory-uat/great-international-ui-uat:
   env_keys:
   - ATLAS_OPPORTUNITIES_MAP_POOL_ID
@@ -12982,10 +13175,10 @@ dit-staging/directory-uat/great-international-ui-uat:
     ipfilter: true
     path: /international
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: great-international-ui-uat-redis
+    instance: tiny-6.x
+    name: great-international-ui-uat-redis-6
 dit-staging/directory-uat/invest-pir-api-uat:
   env_keys:
   - ALLOWED_ADMIN_IPS
@@ -13051,10 +13244,10 @@ dit-staging/directory-uat/invest-pir-api-uat:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: invest-pir-api-uat-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: invest-pir-api-uat-redis
+    instance: tiny-6.x
+    name: invest-pir-api-uat-redis-6
 dit-staging/directory-uat/selling-online-overseas-uat:
   env_keys:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
@@ -13360,6 +13553,7 @@ dit-staging/exopps-dev/export-opportunities-continuous-deployment:
   - PTU_EXEMPT_SERVICE_PROVIDERS
   - QUALITY_SCORE_THRESHOLD
   - RAILS_SERVE_STATIC_FILES
+  - REDIS_URL
   - SECRET_KEY_BASE
   - SELLING_ONLINE_OVERSEAS_URL
   - SENDGRID_PASSWORD
@@ -13391,7 +13585,6 @@ dit-staging/exopps-dev/export-opportunities-continuous-deployment:
   - aws_region_ptu
   - legacy_domain
   - post_user_communication_s3_bucket
-  - redis_url
   - sidekiq_password
   - sidekiq_username
   processes:
@@ -13406,44 +13599,19 @@ dit-staging/exopps-dev/export-opportunities-continuous-deployment:
     internal: false
     ipfilter: true
     path: ''
-  - domain: export.great.uat.uktrade.io
-    host: opportunities
-    internal: false
-    ipfilter: true
-    path: ''
-  - domain: export.great.uat.uktrade.io
-    host: ''
-    internal: false
-    ipfilter: true
-    path: /export-opportunities
-  - domain: great.uat.uktrade.io
-    host: ''
-    internal: false
-    ipfilter: true
-    path: /export-opportunities
-  - domain: great.dev.uktrade.io
-    host: ''
-    internal: false
-    ipfilter: true
-    path: /export-opportunities
   - domain: great.dev.uktrade.digital
     host: ''
     internal: false
     ipfilter: true
     path: /export-opportunities
-  - domain: great-magna.dev.uktrade.digital
-    host: ''
-    internal: false
-    ipfilter: true
-    path: /export-opportunities
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: exopps-redis-dev
-  - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
-    instance: medium-ha-1
-    name: exopps-es-dev
+  - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space.
+    instance: small-ha-1
+    name: exopps-os-dev
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
@@ -13451,13 +13619,6 @@ dit-staging/exopps-dev/export-opportunities-continuous-deployment:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: exopps-s3-dev
-  - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space.
-    instance: small-ha-1
-    name: exopps-os-dev
-  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-5.x
-    name: exopps-redis-5-dev
 dit-staging/exopps-staging/export-opportunities-staging:
   env_keys:
   - RAILS_ENV
@@ -13529,6 +13690,7 @@ dit-staging/exopps-staging/export-opportunities-staging:
   - PTU_EXEMPT_SERVICE_PROVIDERS
   - QUALITY_SCORE_THRESHOLD
   - RAILS_SERVE_STATIC_FILES
+  - REDIS_URL
   - SECRET_KEY_BASE
   - SELLING_ONLINE_OVERSEAS_URL
   - SENDGRID_PASSWORD
@@ -13556,7 +13718,6 @@ dit-staging/exopps-staging/export-opportunities-staging:
   - legacy_domain
   - mailer_noreply_address
   - post_user_communication_s3_bucket
-  - redis_url
   - sidekiq_password
   - sidekiq_username
   - sso_endpoint_sso_append
@@ -13578,10 +13739,6 @@ dit-staging/exopps-staging/export-opportunities-staging:
     ipfilter: true
     path: /export-opportunities
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: exopps-redis-staging
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: exopps-es-staging
@@ -13595,6 +13752,10 @@ dit-staging/exopps-staging/export-opportunities-staging:
   - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space.
     instance: small-ha-1
     name: exopps-os-staging
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: exopps-redis-staging
 dit-staging/exopps-uat/export-opportunities-uat:
   env_keys:
   - RAILS_ENV
@@ -13666,6 +13827,7 @@ dit-staging/exopps-uat/export-opportunities-uat:
   - PTU_EXEMPT_SERVICE_PROVIDERS
   - QUALITY_SCORE_THRESHOLD
   - RAILS_SERVE_STATIC_FILES
+  - REDIS_URL
   - SECRET_KEY_BASE
   - SELLING_ONLINE_OVERSEAS_URL
   - SENDGRID_PASSWORD
@@ -13693,7 +13855,6 @@ dit-staging/exopps-uat/export-opportunities-uat:
   - legacy_domain
   - mailer_noreply_address
   - post_user_communication_s3_bucket
-  - redis_url
   - sidekiq_password
   - sidekiq_username
   - sso_endpoint_sso_append
@@ -13718,10 +13879,6 @@ dit-staging/exopps-uat/export-opportunities-uat:
   - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space.
     instance: small-ha-1
     name: exopps-es-uat
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: exopps-redis-uat
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: exopps-s3-uat
@@ -13729,6 +13886,10 @@ dit-staging/exopps-uat/export-opportunities-uat:
       Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
     instance: large-ha-12
     name: exopps-db-uat-12
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: exopps-redis-uat
 dit-staging/export-support-dev/export-support-dev:
   env_keys:
   - ALLOWED_HOSTS
@@ -13826,10 +13987,6 @@ dit-staging/finance-dev/fft-dev:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: redis-fft-dev
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-dev-bucket
@@ -13839,6 +13996,10 @@ dit-staging/finance-dev/fft-dev:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-dev-temp-files
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: redis-fft-dev-6
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -13891,15 +14052,15 @@ dit-staging/finance-hotfix/fft-hotfix:
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: fft-db-hotfix
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: fft-redis-hotfix
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-s3-bucket-hotfix
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-temp-files-hotfix
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: fft-redis-hotfix-6
 dit-staging/finance-prod-data/fft-prod-data:
   env_keys:
   - ALLOWED_HOSTS
@@ -13943,15 +14104,15 @@ dit-staging/finance-prod-data/fft-prod-data:
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: fft-db-prod-data
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: fft-redis-prod-data
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-s3-bucket-prod-data
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: fft-temp-files-prod-data
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: fft-redis-prod-data-6
 dit-staging/helpdesk-spike/zammad:
   env_keys: []
   processes:
@@ -13972,9 +14133,9 @@ dit-staging/helpdesk-spike/zammad:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: zammad-es
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: zammad-redis
 dit-staging/hs-lookup-dev/dit-look-up-product-commodity-code:
   env_keys: []
@@ -14238,6 +14399,8 @@ dit-staging/icms-staging/icms-staging:
   - ELASTIC_APM_ENVIRONMENT
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_URL
+  - HAWK_AUTH_ID
+  - HAWK_AUTH_KEY
   - ICMS_ADDRESS_API_KEY
   - ICMS_ALLOWED_HOSTS
   - ICMS_CFS_HSE_EMAIL
@@ -14247,12 +14410,15 @@ dit-staging/icms-staging/icms-staging:
   - ICMS_EMAIL_REPLY_TO_ID
   - ICMS_FIREARMS_HOMEOFFICE_EMAIL
   - ICMS_GMP_BEIS_EMAIL
+  - ICMS_HMRC_DOMAIN
+  - ICMS_HMRC_UPDATE_LICENCE_ENDPOINT
   - ICMS_ILB_CONTACT_EMAIL
   - ICMS_ILB_CONTACT_PHONE
   - ICMS_ILB_GSI_CONTACT_EMAIL
   - ICMS_RECAPTCHA_PRIVATE_KEY
   - ICMS_RECAPTCHA_PUBLIC_KEY
   - ICMS_SECRET_KEY
+  - SEND_LICENCE_TO_CHIEF
   processes:
   - command: celery --app=config.celery.app worker --loglevel=info
     type: celery_worker
@@ -14292,11 +14458,11 @@ dit-staging/intranet-dev/digital-workspace-s3proxy-dev:
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
   - AWS_ACCESS_KEY_ID
+  - AWS_DEFAULT_REGION
+  - AWS_S3_BUCKET
   - AWS_S3_ENDPOINT
   - AWS_S3_HEALTHCHECK_KEY
-  - AWS_S3_REGION
   - AWS_SECRET_ACCESS_KEY
-  - AWS_STORAGE_BUCKET_NAME
   - DISABLE_COLLECTSTATIC
   - DJANGO_SECRET_KEY
   - ELASTIC_APM_SECRET_TOKEN
@@ -14376,7 +14542,11 @@ dit-staging/intranet-dev/digital-workspace-v2-dev:
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_TIMEOUT
   - ELASTIC_APM_SERVER_URL
+  - FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
+  - FEEDBACK_NOTIFICATION_EMAIL_TEMPLATE_ID
   - GOVUK_NOTIFY_API_KEY
+  - GTM_AUTH
+  - GTM_CODE
   - GUNICORN_ENABLE_ASYNC_PSYCOPG2
   - HAWK_INCOMING_ACCESS_KEY
   - HAWK_INCOMING_SECRET_KEY
@@ -14394,6 +14564,7 @@ dit-staging/intranet-dev/digital-workspace-v2-dev:
   - PROFILE_DELETION_REQUEST_EMAIL
   - PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
   - PROFILE_EDITED_EMAIL_TEMPLATE_ID
+  - SENTRY_AUTH_TOKEN
   - SENTRY_DSN
   - SUPPORT_REQUEST_EMAIL
   - TWITTER_ACCESS_SECRET
@@ -14403,9 +14574,9 @@ dit-staging/intranet-dev/digital-workspace-v2-dev:
   - TWITTER_OAUTH_CONSUMER_SECRET
   - WAGTAIL_BASE_URL
   processes:
-  - command: celery -A config worker -l info
+  - command: cd src && celery -A config worker -l info
     type: worker
-  - command: python manage.py migrate --noinput && python manage.py collectstatic
+  - command: cd src && python manage.py migrate --noinput && python manage.py collectstatic
       --noinput && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
@@ -14427,28 +14598,34 @@ dit-staging/intranet-dev/digital-workspace-v2-dev:
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
     instance: tiny-5.x
     name: redis5-digital-workspace-v2-dev
-  - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
-      Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
-    instance: small-12
-    name: pg-digital-workspace-v2-dev
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: os-digital-workspace-v2-dev
+  - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
+      Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-12
+    name: pg-digital-workspace-dev
 dit-staging/intranet-staging/digital-workspace-s3proxy-staging:
   env_keys:
   - APP_ENV
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
+  - AWS_ACCESS_KEY_ID
+  - AWS_DEFAULT_REGION
+  - AWS_S3_BUCKET
+  - AWS_S3_HEALTHCHECK_KEY
+  - AWS_SECRET_ACCESS_KEY
   - DISABLE_COLLECTSTATIC
   - DJANGO_SECRET_KEY
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_URL
+  - SSO_CLIENT_ID
+  - SSO_CLIENT_SECRET
+  - SSO_URL
   processes:
-  - command: python manage.py migrate --noinput && gunicorn config.wsgi:application
-      --config config/gunicorn.py --worker-class gevent --worker-connections 1000
-      --bind 0.0.0.0:$PORT --timeout 300 --log-file -
+  - command: python -m app
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -14506,6 +14683,8 @@ dit-staging/intranet-staging/digital-workspace-v2-staging:
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_TIMEOUT
   - ELASTIC_APM_SERVER_URL
+  - FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
+  - FEEDBACK_NOTIFICATION_EMAIL_TEMPLATE_ID
   - GOVUK_NOTIFY_API_KEY
   - GUNICORN_ENABLE_ASYNC_PSYCOPG2
   - HAWK_INCOMING_ACCESS_KEY
@@ -14527,6 +14706,7 @@ dit-staging/intranet-staging/digital-workspace-v2-staging:
   - PROFILE_DELETION_REQUEST_EMAIL
   - PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
   - PROFILE_EDITED_EMAIL_TEMPLATE_ID
+  - SENTRY_AUTH_TOKEN
   - SENTRY_DSN
   - SKIP_LIST
   - SUPPORT_REQUEST_EMAIL
@@ -14537,9 +14717,9 @@ dit-staging/intranet-staging/digital-workspace-v2-staging:
   - TWITTER_OAUTH_CONSUMER_SECRET
   - WAGTAIL_BASE_URL
   processes:
-  - command: celery -A config worker -l info
+  - command: cd src && celery -A config worker -l info
     type: worker
-  - command: python manage.py migrate --noinput && python manage.py collectstatic
+  - command: cd src && python manage.py migrate --noinput && python manage.py collectstatic
       --noinput && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
@@ -14640,6 +14820,8 @@ dit-staging/intranet-training/digital-workspace-v2-training:
   - ELASTIC_APM_SERVER_TIMEOUT
   - ELASTIC_APM_SERVER_URL
   - GOVUK_NOTIFY_API_KEY
+  - GTM_AUTH
+  - GTM_CODE
   - GUNICORN_ENABLE_ASYNC_PSYCOPG2
   - HAWK_INCOMING_ACCESS_KEY
   - HAWK_INCOMING_SECRET_KEY
@@ -14657,6 +14839,7 @@ dit-staging/intranet-training/digital-workspace-v2-training:
   - PROFILE_DELETION_REQUEST_EMAIL
   - PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
   - PROFILE_EDITED_EMAIL_TEMPLATE_ID
+  - SENTRY_AUTH_TOKEN
   - SENTRY_DSN
   - SUPPORT_REQUEST_EMAIL
   - TWITTER_ACCESS_SECRET
@@ -14706,6 +14889,9 @@ dit-staging/irap-dev/irap-dev:
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_INTROSPECTION_TOKEN
   - AUTHBROKER_URL
+  - DEV_TOOLS_DEFAULT_USER
+  - DEV_TOOLS_ENABLED
+  - DEV_TOOLS_LOGIN_URL
   - DJANGO_SETTINGS_MODULE
   - SECRET_KEY
   - SENTRY_DSN
@@ -14733,10 +14919,12 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
+  - BUSINESS_CONTINUITY_EMAIL
   - CHANGE_EMPLOYEES_LM_LINK
   - COMAEA_EMAIL
   - DEV_TOOLS_ENABLED
   - DIT_EXPERIENCE_SURVEY
+  - DIT_LOANS_GUIDANCE_URL
   - DIT_OFFBOARDING_EMAIL
   - DJANGO_SETTINGS_MODULE
   - FEETHAM_SECURITY_PASS_OFFICE_EMAIL
@@ -14747,8 +14935,10 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
   - HAWK_INCOMING_ACCESS_KEY
   - HAWK_INCOMING_SECRET_KEY
   - HAWK_SECRET_KEY
+  - HEALTH_AND_SAFETY_EMAIL
   - HELP_DESK_INTERFACE
   - HR_UKSBS_CORRECTION_EMAIL
+  - JML_LEAVING_DIT_GUIDANCE_URL
   - JML_TEAM_CONTACT_EMAIL
   - JML_TEAM_EMAILS
   - LEGACY_PEOPLE_FINDER_ES_INDEX
@@ -14786,12 +14976,17 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
   - STAFF_SSO_ACTIVITY_STREAM_SECRET
   - STAFF_SSO_ACTIVITY_STREAM_URL
   - STAFF_SSO_INTERFACE
+  - TEMPLATE_ID_BUSINESS_CONTINUITY_LEAVER_EMAIL
   - TEMPLATE_ID_CLU4_EMAIL
   - TEMPLATE_ID_COMAEA_EMAIL
+  - TEMPLATE_ID_FEEDBACK_NOTIFICATION_EMAIL
   - TEMPLATE_ID_FEETHAM_SECURITY_PASS_OFFICE_EMAIL
+  - TEMPLATE_ID_HEALTH_AND_SAFETY_EMAIL
   - TEMPLATE_ID_IT_OPS_ASSET_EMAIL
+  - TEMPLATE_ID_LEAVER_IN_PAY_CUT_OFF_HR_EMAIL
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_HR_REMINDER
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_LM_REMINDER
+  - TEMPLATE_ID_LEAVER_QUESTIONNAIRE_EMAIL
   - TEMPLATE_ID_LEAVER_THANK_YOU_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
@@ -14820,7 +15015,9 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
   - TEMPLATE_ID_SRE_REMINDER_DAY_AFTER_LWD
   - TEMPLATE_ID_SRE_REMINDER_ONE_DAY_AFTER_LD
   - TEMPLATE_ID_SRE_REMINDER_TWO_DAYS_AFTER_LD_PROC
+  - TEMPLATE_ID_WORKFORCE_PLANNING_LAST_WEEK_LEAVERS_EMAIL
   - TRANSFER_TO_OGD_URL
+  - WORKFORCE_PLANNING_EMAIL
   processes:
   - command: ''
     type: celery-beat
@@ -14828,8 +15025,7 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
     type: beat
   - command: celery -A config.celery worker -l INFO
     type: worker
-  - command: python manage.py collectstatic && python manage.py migrate && waitress-serve
-      --port=$PORT config.wsgi:application
+  - command: python manage.py collectstatic && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -14852,10 +15048,10 @@ dit-staging/jml-dev/joiners-movers-leavers-dev:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-13
     name: postgres-jml-dev
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: redis-jml-dev
+    instance: tiny-6.x
+    name: redis-jml-dev-6
 dit-staging/jml-staging/jml-staging:
   env_keys:
   - ALLOWED_HOSTS
@@ -14863,12 +15059,14 @@ dit-staging/jml-staging/jml-staging:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
+  - BUSINESS_CONTINUITY_EMAIL
   - CHANGE_EMPLOYEES_LM_LINK
   - CLU4_EMAIL
   - CLU4_EMAIL_TEMPLATE_ID
   - COMAEA_EMAIL
   - DEV_TOOLS_ENABLED
   - DIT_EXPERIENCE_SURVEY
+  - DIT_LOANS_GUIDANCE_URL
   - DIT_OFFBOARDING_EMAIL
   - DJANGO_SETTINGS_MODULE
   - FEETHAM_SECURITY_PASS_OFFICE_EMAIL
@@ -14880,9 +15078,11 @@ dit-staging/jml-staging/jml-staging:
   - HAWK_INCOMING_ACCESS_KEY
   - HAWK_INCOMING_SECRET_KEY
   - HAWK_SECRET_KEY
+  - HEALTH_AND_SAFETY_EMAIL
   - HELP_DESK_INTERFACE
   - HR_UKSBS_CORRECTION_EMAIL
   - IT_OPS_EMAIL
+  - JML_LEAVING_DIT_GUIDANCE_URL
   - JML_ONLY_SEND_EMAILS_TO_JML_TEAM
   - JML_TEAM_CONTACT_EMAIL
   - JML_TEAM_EMAILS
@@ -14896,6 +15096,8 @@ dit-staging/jml-staging/jml-staging:
   - PEOPLE_FINDER_INTERFACE
   - PEOPLE_FINDER_URL
   - PERFORMANCE_REVIEW_URL
+  - ROOT_LOG_LEVEL
+  - RUN_DJANGO_WORKFLOWS
   - SECRET_KEY
   - SECURITY_TEAM_BUILDING_PASS_EMAIL
   - SECURITY_TEAM_ROSA_EMAIL
@@ -14912,12 +15114,17 @@ dit-staging/jml-staging/jml-staging:
   - SLACK_API_TOKEN
   - SLACK_SRE_CHANNEL_ID
   - SRE_EMAIL
+  - TEMPLATE_ID_BUSINESS_CONTINUITY_LEAVER_EMAIL
   - TEMPLATE_ID_CLU4_EMAIL
   - TEMPLATE_ID_COMAEA_EMAIL
+  - TEMPLATE_ID_FEEDBACK_NOTIFICATION_EMAIL
   - TEMPLATE_ID_FEETHAM_SECURITY_PASS_OFFICE_EMAIL
+  - TEMPLATE_ID_HEALTH_AND_SAFETY_EMAIL
   - TEMPLATE_ID_IT_OPS_ASSET_EMAIL
+  - TEMPLATE_ID_LEAVER_IN_PAY_CUT_OFF_HR_EMAIL
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_HR_REMINDER
   - TEMPLATE_ID_LEAVER_NOT_IN_UKSBS_LM_REMINDER
+  - TEMPLATE_ID_LEAVER_QUESTIONNAIRE_EMAIL
   - TEMPLATE_ID_LEAVER_THANK_YOU_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
   - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
@@ -14946,7 +15153,9 @@ dit-staging/jml-staging/jml-staging:
   - TEMPLATE_ID_SRE_REMINDER_DAY_AFTER_LWD
   - TEMPLATE_ID_SRE_REMINDER_ONE_DAY_AFTER_LD
   - TEMPLATE_ID_SRE_REMINDER_TWO_DAYS_AFTER_LD_PROC
+  - TEMPLATE_ID_WORKFORCE_PLANNING_LAST_WEEK_LEAVERS_EMAIL
   - TRANSFER_TO_OGD_URL
+  - WORKFORCE_PLANNING_EMAIL
   processes:
   - command: ''
     type: celery-beat
@@ -14954,8 +15163,7 @@ dit-staging/jml-staging/jml-staging:
     type: beat
   - command: celery -A config.celery worker -l INFO
     type: worker
-  - command: python manage.py collectstatic && python manage.py migrate && waitress-serve
-      --port=$PORT config.wsgi:application
+  - command: python manage.py collectstatic && waitress-serve --port=$PORT config.wsgi:application
     type: web
   routes:
   - domain: staging.uktrade.digital
@@ -14978,10 +15186,10 @@ dit-staging/jml-staging/jml-staging:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-13
     name: postgres-jml-staging
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: redis-jml-staging
+    instance: tiny-6.x
+    name: redis-jml-staging-6
 dit-staging/legal-basis-dev/hawk-debug:
   env_keys:
   - HAWK_KEY_ID
@@ -15025,7 +15233,7 @@ dit-staging/legal-basis-dev/legal-basis-api-dev:
     type: formsapi_poller
   - command: ./manage.py poll_maxemail --forever --sleep-time 86400
     type: maxemail_poller
-  - command: ./manage.py poll_adobe_campaign --forever --sleep-time 10800
+  - command: ''
     type: adobe_poller
   - command: waitress-serve --ident='' --listen=0.0.0.0:$PORT --threads=${WEB_CONCURRENCY:-4}
       server.wsgi:application
@@ -15047,9 +15255,9 @@ dit-staging/legal-basis-dev/legal-basis-api-dev:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-12
     name: legal-basis-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: legal-basis-redis
 dit-staging/legal-basis-dev/legal-basis-staging:
   env_keys: []
@@ -15087,7 +15295,7 @@ dit-staging/legal-basis-staging/legal-basis-staging:
     type: formsapi_poller
   - command: ./manage.py poll_maxemail --forever --sleep-time 86400
     type: maxemail_poller
-  - command: ./manage.py poll_adobe_campaign --forever --sleep-time 10800
+  - command: ''
     type: adobe_poller
   - command: waitress-serve --ident='' --listen=0.0.0.0:$PORT --threads=${WEB_CONCURRENCY:-4}
       server.wsgi:application
@@ -15114,7 +15322,7 @@ dit-staging/legal-basis-staging/legal-basis-staging:
     instance: small-ha-12
     name: legal-basis-db
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: legal-basis-redis
 dit-staging/lite-demo/lite-api-demo:
   env_keys:
@@ -15140,6 +15348,10 @@ dit-staging/lite-demo/lite-api-demo:
   - ENABLE_SPIRE_SEARCH
   - ENV
   - EXPORTER_USERS
+  - FEATURE_C5_ROUTING_ENABLED
+  - FEATURE_C6_ROUTING_ENABLED
+  - FEATURE_C7_ROUTING_ENABLED
+  - FEATURE_COUNTERSIGN_ROUTING_ENABLED
   - FEATURE_EMAIL_REPORTS_ENABLED
   - FEATURE_STAFF_SSO_ENABLED
   - GA_KEY
@@ -15178,7 +15390,7 @@ dit-staging/lite-demo/lite-api-demo:
     type: worker
   - command: celery -A api.conf worker -l info
     type: celeryworker
-  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive
+  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive==1.5.9
       && python manage.py migrate && gunicorn --worker-class gevent -c api/conf/gconfig.py
       -b 0.0.0.0:$PORT api.conf.wsgi
     type: web
@@ -15206,10 +15418,10 @@ dit-staging/lite-demo/lite-api-demo:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: lite-api-opensearch-demo
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: lite-api-redis-demo
+    instance: tiny-6.x
+    name: lite-api-redis-demo-6
 dit-staging/lite-demo/lite-exporter-frontend-demo:
   env_keys:
   - ALLOWED_HOSTS
@@ -15234,6 +15446,7 @@ dit-staging/lite-demo/lite-exporter-frontend-demo:
   - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_URL
+  - FEATURE_C7_NCSC_ENABLED
   - FEATURE_FLAG_DJANGO_FORMS_REGISTRATION_ENABLED
   - FEATURE_FLAG_F680_SECURITY_CLASSIFIED_ENABLED
   - FEATURE_FLAG_GOVUK_SIGNIN_ENABLED
@@ -15386,8 +15599,11 @@ dit-staging/lite-demo/lite-internal-frontend-demo:
   - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_URL
+  - FEATURE_C6_REGIMES
+  - FEATURE_C7_NCSC_ENABLED
   - FEATURE_FLAG_PRODUCT_2_0
   - FEATURE_FLAG_REGIMES
+  - FEATURE_LU_POST_CIRC_COUNTERSIGNING
   - FEATURE_PRODUCTPEDIA_ON
   - FEATURE_SPIRE_SEARCH_ON
   - FEEDBACK_URL
@@ -15524,7 +15740,6 @@ dit-staging/lite-dev/lite-api-dev:
   - LITE_PERFORMANCE_HAWK_KEY
   - P12_CERTIFICATE
   - PERMISSIONS_FINDER_URL
-  - PIP_EXTRA_INDEX_URL
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
   - SIGNING_EMAIL
@@ -15537,7 +15752,7 @@ dit-staging/lite-dev/lite-api-dev:
     type: worker
   - command: celery -A api.conf worker -l info
     type: celeryworker
-  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive
+  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive==1.5.9
       && python manage.py migrate && gunicorn --worker-class gevent -c api/conf/gconfig.py
       -b 0.0.0.0:$PORT api.conf.wsgi
     type: web
@@ -15565,10 +15780,10 @@ dit-staging/lite-dev/lite-api-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: lite-api-opensearch-dev
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: lite-api-redis-dev
+    instance: tiny-6.x
+    name: lite-api-redis-dev-6
 dit-staging/lite-dev/lite-document-store-dev:
   env_keys:
   - DISABLE_COLLECTSTATIC
@@ -15940,7 +16155,6 @@ dit-staging/lite-devdata/lite-api-devdata:
   - LITE_PERFORMANCE_HAWK_KEY
   - P12_CERTIFICATE
   - PERMISSIONS_FINDER_URL
-  - PIP_EXTRA_INDEX_URL
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
   - SIGNING_EMAIL
@@ -15956,7 +16170,7 @@ dit-staging/lite-devdata/lite-api-devdata:
     type: worker
   - command: celery -A api.conf worker -l info
     type: celeryworker
-  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive
+  - command: CFLAGS=-I/home/vcap/deps/1/python/include/python3.7m pip3 install endesive==1.5.9
       && python manage.py migrate && gunicorn --worker-class gevent -c api/conf/gconfig.py
       -b 0.0.0.0:$PORT api.conf.wsgi
     type: web
@@ -15984,10 +16198,10 @@ dit-staging/lite-devdata/lite-api-devdata:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: lite-api-opensearch-devdata
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: lite-api-redis-devdata
+    instance: tiny-6.x
+    name: lite-api-redis-devdata-6
 dit-staging/lite-devdata/lite-data-flow-devdata:
   env_keys:
   - AIRFLOW__CORE__FERNET_KEY
@@ -16016,13 +16230,13 @@ dit-staging/lite-devdata/lite-data-flow-devdata:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: lite-data-flow-devdata-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: lite-data-flow-devdata-s3
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: lite-data-flow-devdata-redis-6
 dit-staging/lite-devdata/lite-exporter-frontend-devdata:
   env_keys:
   - ALLOWED_HOSTS
@@ -16259,7 +16473,7 @@ dit-staging/lite-devdata/lite-spire-archive-devdata:
   - WHITELISTED_PRODUCTS_ORGANISATION_IDS
   - WHITELISTED_SEARCH_ORGANISATION_IDS
   processes:
-  - command: ./manage.py runserver 0.0.0.0:$PORT
+  - command: ''
     type: web
   routes:
   - domain: london.cloudapps.digital
@@ -16288,31 +16502,6 @@ dit-staging/lite-devdata/lite-spire-archive-devdata:
       Connections. Postgres Version 12. DB Instance Class: db.m5.4xlarge.'
     instance: xlarge-12
     name: lite-spire-archive-pg-spire-s3docs-devdata
-dit-staging/lite-uat/__conduit_c3tvvcky__:
-  env_keys: []
-  processes:
-  - command: $HOME/boot.sh
-    type: web
-  routes: []
-  services:
-  - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
-      Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
-    instance: small-12
-    name: lite-api-pg-uat
-dit-staging/lite-uat/__conduit_hu9g1ciw__:
-  env_keys: []
-  processes:
-  - command: ''
-    type: web
-  routes: []
-  services: []
-dit-staging/lite-uat/__conduit_m5s4vizb__:
-  env_keys: []
-  processes:
-  - command: ''
-    type: web
-  routes: []
-  services: []
 dit-staging/lite-uat/lite-activity-stream-poc:
   env_keys: []
   processes:
@@ -16364,7 +16553,6 @@ dit-staging/lite-uat/lite-api-uat:
   - LITE_PERFORMANCE_HAWK_KEY
   - P12_CERTIFICATE
   - PERMISSIONS_FINDER_URL
-  - PIP_EXTRA_INDEX_URL
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
   - SIGNING_EMAIL
@@ -16404,10 +16592,10 @@ dit-staging/lite-uat/lite-api-uat:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: lite-api-opensearch-uat
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: lite-api-redis-uat
+    instance: tiny-6.x
+    name: lite-api-redis-uat-6
 dit-staging/lite-uat/lite-exporter-frontend-uat:
   env_keys:
   - ALLOWED_HOSTS
@@ -16737,10 +16925,6 @@ dit-staging/market-access-dev/market-access-api-dev:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: market-access-dev-redis
   - description: '5GB Storage, NOT BACKED UP, Dedicated Instance, Max 50 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.micro. Free for trial
       orgs. Costs for billable orgs.'
@@ -16749,6 +16933,10 @@ dit-staging/market-access-dev/market-access-api-dev:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: market-access-api-dev-s3
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: market-access-dev-redis
 dit-staging/market-access-dev/market-access-publicfe-dev:
   env_keys:
   - DISABLE_COLLECTSTATIC
@@ -16880,9 +17068,9 @@ dit-staging/market-access-dev/market-access-pyfe-dev:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-12
     name: market-access-pyfe-dev-db
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: market-access-dev-redis
 dit-staging/market-access-uat/market-access-api-uat:
   env_keys:
@@ -16975,14 +17163,17 @@ dit-staging/market-access-uat/market-access-api-uat:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: market-access-uat-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: postgres-testing-uat-db10
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: market-access-uat-redis
+  - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
+    instance: default
+    name: market-access-api-uat-s3
 dit-staging/market-access-uat/market-access-publicfe-uat:
   env_keys:
   - DISABLE_COLLECTSTATIC
@@ -17081,14 +17272,14 @@ dit-staging/market-access-uat/market-access-pyfe-uat:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: market-access-uat-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: postgres-testing-uat-db10
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: market-access-uat-redis
 dit-staging/mi-dev/exportwins-admin-dev:
   env_keys:
   - ALLOWED_YEARS
@@ -17140,6 +17331,7 @@ dit-staging/mi-dev/exportwins-data-dev:
   - HAWK_ACCESS_KEY_ID
   - HAWK_IP_WHITELIST
   - HAWK_SECRET_ACCESS_KEY
+  - IGNORE_USERS
   - METADATA_AWS_ACCESS_KEY_ID
   - METADATA_AWS_DEFAULT_REGION
   - METADATA_AWS_SECRET_ACCESS_KEY
@@ -17286,6 +17478,7 @@ dit-staging/mi-staging/exportwins-data-staging:
   - HAWK_ACCESS_KEY_ID
   - HAWK_IP_WHITELIST
   - HAWK_SECRET_ACCESS_KEY
+  - IGNORE_USERS
   - METADATA_AWS_ACCESS_KEY_ID
   - METADATA_AWS_DEFAULT_REGION
   - METADATA_AWS_SECRET_ACCESS_KEY
@@ -17461,14 +17654,14 @@ dit-staging/platform-staging/external-company-service-staging:
     type: web
   routes: []
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: company-service-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: company-service-uat-pg
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: company-service-redis_6
 dit-staging/platform-staging/external-company-service-uat:
   env_keys:
   - ALLOWED_ADMIN_IPS
@@ -17519,14 +17712,14 @@ dit-staging/platform-staging/external-company-service-uat:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: company-service-staging-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 500 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: company-service-staging-pg
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: company-service-staging-redis_6
 dit-staging/platform-staging/httpbin:
   env_keys: []
   processes:
@@ -17676,7 +17869,7 @@ dit-staging/platform-staging/sso-test-client2:
   - domain: london.cloudapps.digital
     host: sso-test-client2-restless-crocodile-gv
     internal: false
-    ipfilter: true
+    ipfilter: false
     path: ''
   services: []
 dit-staging/platform-staging/staff-sso-staging:
@@ -17870,6 +18063,50 @@ dit-staging/public-apis-staging/data-api-staging:
   - description: EMPTY
     instance: EMPTY
     name: public-apis-staging-log-drain
+dit-staging/public-apis-staging/sftp-notification--hmrc-fta--staging:
+  env_keys:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  processes:
+  - command: ./start.sh
+    type: web
+  routes:
+  - domain: api.trade.staging.uktrade.digital
+    host: sftp-notification--hmrc-fta
+    internal: false
+    ipfilter: false
+    path: ''
+  - domain: london.cloudapps.digital
+    host: sftp-notification--hmrc-fta--staging
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
+dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging:
+  env_keys:
+  - AWS_ACCESS_KEY_ID
+  - AWS_REGION
+  - AWS_SECRET_ACCESS_KEY
+  - BUCKET
+  - TOKEN
+  processes:
+  - command: ./start.sh
+    type: web
+  routes:
+  - domain: api.trade.staging.uktrade.digital
+    host: sftp-notification--hmrc-tra
+    internal: false
+    ipfilter: false
+    path: ''
+  - domain: london.cloudapps.digital
+    host: sftp-notification--hmrc-tra--staging
+    internal: false
+    ipfilter: false
+    path: ''
+  services: []
 dit-staging/public-apis-staging/tariffs-api-staging:
   env_keys:
   - APIKEYS
@@ -18071,6 +18308,40 @@ dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging:
   - description: 1.5GB RAM, highly-available, daily backups
     instance: tiny-ha-6.x
     name: enquiry-mgmt-staging-redis
+dit-staging/sre-ticketing-dev/help-desk-service-dev:
+  env_keys:
+  - ALLOWED_HOSTS
+  - APP_ENV
+  - DATABASE_URL
+  - DEBUG
+  - DJANGO_SETTINGS_MODULE
+  - HALO_SUBDOMAIN
+  - HELP_DESK_CREDS
+  - HELP_DESK_INTERFACE
+  - REDIS_URL
+  - REQUIRE_ZENDESK
+  - SECRET_KEY
+  processes:
+  - command: python manage.py migrate --noinput && gunicorn config.wsgi:application
+      --bind 0.0.0.0:$PORT --worker-class gevent --worker-connections 1000 --timeout
+      120 --log-file -
+    type: web
+  routes:
+  - domain: london.cloudapps.digital
+    host: help-desk-service-dev
+    internal: false
+    ipfilter: false
+    path: ''
+  services:
+  - description: '5GB Storage, NOT BACKED UP, Dedicated Instance, Max 50 Concurrent
+      Connections. Postgres Version 13. DB Instance Class: db.t3.micro. Free for trial
+      orgs. Costs for billable orgs.'
+    instance: tiny-unencrypted-13
+    name: help-desk-service-dev-db
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: help-desk-service-dev-redis
 dit-staging/sre-ticketing-dev/my-test-deployment:
   env_keys: []
   processes:
@@ -18151,6 +18422,7 @@ dit-staging/supply-chain-resilience-dev/update-supply-chain-information-dev:
   - HAWK_SECRET_ACCESS_KEY
   - HAWK_UNIQUE_ID
   - NODE_ENV
+  - QUICKSIGHT_COMMODITY_USES_BY_INDUSTRY_DASHBOARD_URL
   - QUICKSIGHT_COUNTRIES_DASHBOARD_URL
   - QUICKSIGHT_OVERSEAS_INTELLIGENCE_DASHBOARD_URL
   - QUICKSIGHT_RISK_MONITORING_DASHBOARD_URL
@@ -18191,6 +18463,7 @@ dit-staging/supply-chain-resilience-staging/update-supply-chain-information-stag
   - HAWK_SECRET_ACCESS_KEY
   - HAWK_UNIQUE_ID
   - NODE_ENV
+  - QUICKSIGHT_COMMODITY_USES_BY_INDUSTRY_DASHBOARD_URL
   - QUICKSIGHT_COUNTRIES_DASHBOARD_URL
   - QUICKSIGHT_OVERSEAS_INTELLIGENCE_DASHBOARD_URL
   - QUICKSIGHT_RISK_MONITORING_DASHBOARD_URL
@@ -18214,54 +18487,6 @@ dit-staging/supply-chain-resilience-staging/update-supply-chain-information-stag
       Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-ha-12
     name: update-supply-chain-information-staging-db
-dit-staging/tariffs-cybersec/tamato-cybersec:
-  env_keys:
-  - AUTHBROKER_CLIENT_ID
-  - AUTHBROKER_CLIENT_SECRET
-  - DISABLE_COLLECTSTATIC
-  - ELASTIC_TOKEN
-  - ENV
-  - EXPORTER_DISABLE_NOTIFICATION
-  - LOG_LEVEL
-  - NURSERY_CACHE_ENGINE
-  - SECRET_KEY
-  - SENTRY_DSN
-  - ALLOWED_HOSTS
-  processes:
-  - command: gunicorn wsgi --bind 0.0.0.0:$PORT --timeout 1000 --worker-class=gevent
-      --worker-connections=1000 --workers 9
-    type: web
-  - command: celery -A common.celery worker -O fair -l info
-    type: worker
-  - command: celery -A common.celery beat
-    type: beat
-  routes:
-  - domain: london.cloudapps.digital
-    host: tamato-cybersec
-    internal: false
-    ipfilter: true
-    path: ''
-  - domain: manage-trade-tariffs.trade.cybersec.uktrade.digital
-    host: ''
-    internal: false
-    ipfilter: false
-    path: ''
-  - domain: manage-trade-tariffs.trade.cybersec.uktrade.digital
-    host: www
-    internal: false
-    ipfilter: false
-    path: ''
-  services:
-  - description: '2.5TB Storage Storage, Dedicated Instance, Storage Encrypted, Max
-      5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
-    instance: large-12-high-iops
-    name: tamato-cybersec-db
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-5.x
-    name: CELERY_BROKER
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-5.x
-    name: DJANGO_CACHE
 dit-staging/tariffs-dev/manage-trade-tariffs-design-dev:
   env_keys:
   - PASSWORD
@@ -18283,14 +18508,25 @@ dit-staging/tariffs-dev/tamato-dev:
   - AWS_ACCESS_KEY_ID
   - AWS_S3_ENDPOINT_URL
   - AWS_SECRET_ACCESS_KEY
+  - BASE_SERVICE_URL
+  - CDS_ACCEPTED_TEMPLATE_ID
+  - CDS_REJECTED_TEMPLATE_ID
+  - CLAM_AV_DOMAIN
+  - CLAM_AV_PASSWORD
+  - CLAM_AV_USERNAME
   - DISABLE_COLLECTSTATIC
   - ELASTIC_TOKEN
+  - ENABLE_PACKAGING_NOTIFICATIONS
   - ENV
   - EXPORTER_DISABLE_NOTIFICATION
+  - HMRC_PACKAGING_SEED_ENVELOPE_ID
   - HMRC_STORAGE_BUCKET_NAME
   - HMRC_STORAGE_DIRECTORY
   - LOG_LEVEL
+  - NOTIFICATIONS_API_KEY
   - NURSERY_CACHE_ENGINE
+  - READY_FOR_CDS_TEMPLATE_ID
+  - S3_ENDPOINT_URL
   - SECRET_KEY
   - SENTRY_DSN
   - SQLITE_S3_ACCESS_KEY_ID
@@ -18349,12 +18585,23 @@ dit-staging/tariffs-test/tamato-test:
   env_keys:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
+  - BASE_SERVICE_URL
+  - CDS_ACCEPTED_TEMPLATE_ID
+  - CDS_REJECTED_TEMPLATE_ID
+  - CLAM_AV_DOMAIN
+  - CLAM_AV_PASSWORD
+  - CLAM_AV_USERNAME
   - DISABLE_COLLECTSTATIC
   - ELASTIC_TOKEN
+  - ENABLE_PACKAGING_NOTIFICATIONS
   - ENV
   - EXPORTER_DISABLE_NOTIFICATION
+  - HMRC_PACKAGING_SEED_ENVELOPE_ID
   - LOG_LEVEL
+  - NOTIFICATIONS_API_KEY
   - NURSERY_CACHE_ENGINE
+  - READY_FOR_CDS_TEMPLATE_ID
+  - S3_ENDPOINT_URL
   - SECRET_KEY
   - SENTRY_DSN
   processes:
@@ -18377,21 +18624,40 @@ dit-staging/tariffs-test/tamato-test:
     ipfilter: false
     path: ''
   services:
-  - description: '2.5TB Storage Storage, Dedicated Instance, Highly Available, Storage
-      Encrypted, Max 5000 Concurrent Connections. Postgres Version 12. DB Instance
-      Class: db.m5.2xlarge.'
-    instance: large-ha-12-high-iops
+  - description: '2.5TB Storage Storage, Dedicated Instance, Storage Encrypted, Max
+      5000 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.2xlarge.'
+    instance: large-12-high-iops
     name: tamato-test-db
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-5.x
+    name: DJANGO_CACHE
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-5.x
+    name: CELERY_BROKER
+  - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
+    instance: default
+    name: hmrc-packaging-test
 dit-staging/tariffs-training/tamato-training:
   env_keys:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
+  - BASE_SERVICE_URL
+  - CDS_ACCEPTED_TEMPLATE_ID
+  - CDS_REJECTED_TEMPLATE_ID
   - DISABLE_COLLECTSTATIC
   - ELASTIC_TOKEN
+  - ENABLE_PACKAGING_NOTIFICATIONS
   - ENV
   - EXPORTER_DISABLE_NOTIFICATION
+  - GOOGLE_ANALYTICS_APP_ID
+  - GOOGLE_ANALYTICS_ID
+  - HMRC_PACKAGING_SEED_ENVELOPE_ID
+  - HMRC_PACKAGING_STORAGE_BUCKET_NAME
   - LOG_LEVEL
+  - NOTIFICATIONS_API_KEY
   - NURSERY_CACHE_ENGINE
+  - READY_FOR_CDS_TEMPLATE_ID
+  - S3_ENDPOINT_URL
   - SECRET_KEY
   - SENTRY_DSN
   processes:
@@ -18413,6 +18679,15 @@ dit-staging/tariffs-training/tamato-training:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: tamato-training-db
+  - description: 3GB RAM, highly-available, daily backups
+    instance: small-ha-5.x
+    name: CELERY_BROKER
+  - description: 3GB RAM, highly-available, daily backups
+    instance: small-ha-5.x
+    name: DJANGO_CACHE
+  - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
+    instance: default
+    name: hmrc-packaging-training
 dit-staging/tariffs-training/tariff-reference-training:
   env_keys:
   - ALLOWED_HOSTS
@@ -18513,13 +18788,24 @@ dit-staging/tariffs-uat/tamato-uat:
   env_keys:
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
+  - BASE_SERVICE_URL
   - BETTER_EXCEPTIONS
+  - CDS_ACCEPTED_TEMPLATE_ID
+  - CDS_REJECTED_TEMPLATE_ID
+  - CLAM_AV_DOMAIN
+  - CLAM_AV_PASSWORD
+  - CLAM_AV_USERNAME
   - DISABLE_COLLECTSTATIC
   - ELASTIC_TOKEN
+  - ENABLE_PACKAGING_NOTIFICATIONS
   - ENV
   - EXPORTER_DISABLE_NOTIFICATION
+  - HMRC_PACKAGING_SEED_ENVELOPE_ID
   - LOG_LEVEL
+  - NOTIFICATIONS_API_KEY
   - NURSERY_CACHE_ENGINE
+  - READY_FOR_CDS_TEMPLATE_ID
+  - S3_ENDPOINT_URL
   - SECRET_KEY
   - SENTRY_DSN
   processes:
@@ -18549,6 +18835,9 @@ dit-staging/tariffs-uat/tamato-uat:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12-high-iops
     name: tamato-uat-db
+  - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
+    instance: default
+    name: hmrc-packaging-uat
 dit-staging/tariffs-uat/tariffs-api-uat:
   env_keys:
   - APIKEYS
@@ -18855,9 +19144,9 @@ dit-staging/trade-helpdesk-dev/contact-forms-dev:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: contact-forms-redis-dev
 dit-staging/trade-helpdesk-dev/helpdesk-cms-dev:
   env_keys:
@@ -18926,10 +19215,6 @@ dit-staging/trade-helpdesk-dev/helpdesk-cms-dev:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: helpdesk-dev-pg
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-helpdesk-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: trade-helpdesk-roo-data
@@ -18937,6 +19222,10 @@ dit-staging/trade-helpdesk-dev/helpdesk-cms-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: helpdesk-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-helpdesk-redis-dev
 dit-staging/trade-helpdesk-dev/helpdesk-dev:
   env_keys:
   - ADMIN_ENABLED
@@ -19017,10 +19306,6 @@ dit-staging/trade-helpdesk-dev/helpdesk-dev:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-helpdesk-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -19029,6 +19314,10 @@ dit-staging/trade-helpdesk-dev/helpdesk-dev:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: helpdesk-dev-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-helpdesk-redis-dev
 dit-staging/trade-helpdesk-dev/import-uk-be-dev:
   env_keys:
   - ADMIN_ENABLED
@@ -19105,10 +19394,6 @@ dit-staging/trade-helpdesk-dev/import-uk-be-dev:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-12
     name: import-uk-be-dev-db
-  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-4.x
-    name: import-uk-be-dev-redis
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
@@ -19165,10 +19450,6 @@ dit-staging/trade-helpdesk-dev/import-uk-fe-dev:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: helpdesk-dev-s3
-  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-4.x
-    name: import-uk-fe-dev-redis
 dit-staging/trade-helpdesk-dev/mendel-data-development:
   env_keys:
   - API_KEY
@@ -19224,10 +19505,6 @@ dit-staging/trade-helpdesk-dev/mendel-data-development:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: mendel-data-s3-development
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: mendel-data-redis-development
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -19239,6 +19516,10 @@ dit-staging/trade-helpdesk-dev/mendel-data-development:
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: mendel-data-roo-data
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: mendel-data-redis-development
 dit-staging/trade-helpdesk-staging/contact-forms-staging:
   env_keys:
   - ADMIN_ENABLED
@@ -19303,8 +19584,8 @@ dit-staging/trade-helpdesk-staging/contact-forms-staging:
     ipfilter: true
     path: ''
   services:
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
     name: contact-forms-redis-staging
 dit-staging/trade-helpdesk-staging/helpdesk-cms-staging:
   env_keys:
@@ -19374,15 +19655,16 @@ dit-staging/trade-helpdesk-staging/helpdesk-cms-staging:
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
     name: helpdesk-staging-pg
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
-    name: helpdesk-staging-redis
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: trade-helpdesk-roo-data
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: helpdesk-staging-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: helpdesk-staging-redis
 dit-staging/trade-helpdesk-staging/helpdesk-staging:
   env_keys:
   - ADMIN_ENABLED
@@ -19461,9 +19743,6 @@ dit-staging/trade-helpdesk-staging/helpdesk-staging:
     ipfilter: true
     path: ''
   services:
-  - description: 6.37GB RAM, highly-available, daily backups
-    instance: medium-ha-3.2
-    name: helpdesk-staging-redis
   - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max 200 Concurrent
       Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
     instance: small-12
@@ -19471,6 +19750,10 @@ dit-staging/trade-helpdesk-staging/helpdesk-staging:
   - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space.
     instance: medium-ha-1
     name: helpdesk-staging-opensearch
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: helpdesk-staging-redis
 dit-staging/trade-helpdesk-staging/mendel-data-staging:
   env_keys:
   - API_KEY
@@ -19527,10 +19810,6 @@ dit-staging/trade-helpdesk-staging/mendel-data-staging:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: mendel-data-redis-staging
   - description: A single S3 bucket. Free for trial orgs. Costs for billable orgs.
     instance: default
     name: mendel-data-s3-staging
@@ -19542,6 +19821,10 @@ dit-staging/trade-helpdesk-staging/mendel-data-staging:
       Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
     instance: medium-12
     name: mendel-data-postgres-staging-alt
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: mendel-data-redis-staging
 dit-staging/webops-dev/atlassian-access-user-audit-dev:
   env_keys: []
   processes:
@@ -19577,6 +19860,9 @@ dit-staging/webops-dev/cf-app-version-checker:
       orgs. Costs for billable orgs.'
     instance: tiny-unencrypted-13
     name: cf-app-version-checker-db
+  - description: EMPTY
+    instance: EMPTY
+    name: log-drain-fluentd-test
 dit-staging/webops-dev/demo-celery-redis-ha:
   env_keys:
   - ALLOWED_HOSTS
@@ -19599,8 +19885,8 @@ dit-staging/webops-dev/demo-celery-redis-ha:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: demo-redis-ssl-ha
+    instance: tiny-ha-6.x
+    name: demo-redis-ssl-ha-6
 dit-staging/webops-dev/dit-alertmanager-dev:
   env_keys:
   - P1_SLACK_CHANNEL
@@ -19813,8 +20099,8 @@ dit-staging/webops-dev/formbuilder-runner-dev:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: formbuilder-dev-redis
+    instance: tiny-ha-6.x
+    name: formbuilder-dev-redis-6
 dit-staging/webops-dev/ge-rq-poc:
   env_keys: []
   processes:
@@ -19829,10 +20115,10 @@ dit-staging/webops-dev/ge-rq-poc:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: ge-redis-test
+    instance: tiny-6.x
+    name: ge-redis-test-6
 dit-staging/webops-dev/ge-rq-poc-redis-queue-exporter:
   env_keys: []
   processes:
@@ -19845,10 +20131,23 @@ dit-staging/webops-dev/ge-rq-poc-redis-queue-exporter:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: ge-redis-test
+    instance: tiny-6.x
+    name: ge-redis-test-6
+dit-staging/webops-dev/ge-trs-test:
+  env_keys:
+  - DISABLE_COLLECTSTATIC
+  processes:
+  - command: python manage.py runserver 0.0.0.0:8080
+    type: web
+  routes:
+  - domain: london.cloudapps.digital
+    host: ge-trs-test
+    internal: false
+    ipfilter: true
+    path: ''
+  services: []
 dit-staging/webops-dev/git-vuln-bot:
   env_keys: []
   processes:
@@ -19988,6 +20287,8 @@ dit-staging/webops-dev/ip-filter-service-dev:
   - ROUTES__1__IP_RANGES__43
   - ROUTES__1__IP_RANGES__44
   - ROUTES__1__IP_RANGES__45
+  - ROUTES__1__IP_RANGES__46
+  - ROUTES__1__IP_RANGES__47
   - ROUTES__2__BASIC_AUTH__1__AUTHENTICATE_PATH
   - ROUTES__2__BASIC_AUTH__1__PASSWORD
   - ROUTES__2__BASIC_AUTH__1__USERNAME
@@ -20057,6 +20358,8 @@ dit-staging/webops-dev/ip-filter-service-dev:
   - ROUTES__7__IP_RANGES__36
   - ROUTES__7__IP_RANGES__37
   - ROUTES__7__IP_RANGES__38
+  - ROUTES__7__IP_RANGES__39
+  - ROUTES__7__IP_RANGES__40
   - ROUTES__7__SHARED_SECRET_HEADER__1__NAME
   - ROUTES__7__SHARED_SECRET_HEADER__1__VALUE
   - ROUTES__8__BASIC_AUTH__1__AUTHENTICATE_PATH
@@ -20765,11 +21068,6 @@ traderemedies-services/traderemedies/trade-remedies-api:
   - command: scripts/entry.sh
     type: web
   routes:
-  - domain: london.cloudapps.digital
-    host: trade-remedies-api
-    internal: false
-    ipfilter: true
-    path: ''
   - domain: apps.internal
     host: trade-remedies-api
     internal: true
@@ -20777,15 +21075,15 @@ traderemedies-services/traderemedies/trade-remedies-api:
     path: ''
   services:
   - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 500 Concurrent Connections. Postgres Version 10. DB Instance Class: db.m4.large.'
-    instance: medium-ha-10
+      Max 500 Concurrent Connections. Postgres Version 12. DB Instance Class: db.m5.large.'
+    instance: medium-ha-12
     name: traderemedies-postgres
-  - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: traderemedies-redis
   - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space.
     instance: small-ha-1
     name: trade-remedies-opensearch
+  - description: 1.5GB RAM, highly-available, daily backups
+    instance: tiny-ha-6.x
+    name: traderemedies-redis
 traderemedies-services/traderemedies/trade-remedies-caseworker:
   env_keys:
   - ALLOWED_HOSTS
@@ -20832,10 +21130,15 @@ traderemedies-services/traderemedies/trade-remedies-caseworker:
     host: www
     internal: false
     ipfilter: false
+    path: /healthcheck
+  - domain: investigations-trade-remedies.service.gov.uk
+    host: www
+    internal: false
+    ipfilter: false
     path: /health/
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: traderemedies-redis
 traderemedies-services/traderemedies/trade-remedies-public:
   env_keys:
@@ -20879,19 +21182,8 @@ traderemedies-services/traderemedies/trade-remedies-public:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
+    instance: tiny-ha-6.x
     name: traderemedies-redis
-traderemedies-staging/traderemedies-dev/__conduit_dcvhw3r2__:
-  env_keys: []
-  processes:
-  - command: $HOME/boot.sh
-    type: web
-  routes: []
-  services:
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
-    name: trade-remedies-postgres-tokyo
 traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin:
   env_keys:
   - ALLOWED_HOSTS
@@ -20961,14 +21253,14 @@ traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin:
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: trade-remedies-opensearch-berlin
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-berlin
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
+  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: trade-remedies-postgres-berlin
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-remedies-redis-berlin
 traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago:
   env_keys:
   - ALLOWED_HOSTS
@@ -21032,18 +21324,18 @@ traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-chicago
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
+  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: trade-remedies-postgres-chicago
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: trade-remedies-opensearch-chicago
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-remedies-redis-chicago
 traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo:
   env_keys:
   - ALLOWED_HOSTS
@@ -21098,29 +21390,24 @@ traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo:
   - command: scripts/entry.sh
     type: web
   routes:
-  - domain: london.cloudapps.digital
-    host: trade-remedies-api-tokyo
-    internal: false
-    ipfilter: true
-    path: ''
   - domain: apps.internal
     host: trade-remedies-api-tokyo
     internal: true
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-tokyo
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: trade-remedies-opensearch-tokyo
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
+  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: trade-remedies-postgres-tokyo
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-remedies-redis-tokyo_6
 traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-berlin:
   env_keys:
   - ALLOWED_HOSTS
@@ -21170,12 +21457,13 @@ traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-berlin:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: trade-remedies-redis-berlin
 traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-chicago:
   env_keys:
+  - ADMIN_DEBUG_TOOLS_ENABLED
   - ALLOWED_HOSTS
   - API_BASE_URL
   - BASIC_AUTH_USER
@@ -21223,12 +21511,13 @@ traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-chicago:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: trade-remedies-redis-chicago
 traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-tokyo:
   env_keys:
+  - ADMIN_DEBUG_TOOLS_ENABLED
   - ALLOWED_HOSTS
   - API_BASE_URL
   - BASIC_AUTH_USER
@@ -21276,10 +21565,10 @@ traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-tokyo:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-tokyo
+    instance: tiny-6.x
+    name: trade-remedies-redis-tokyo_6
 traderemedies-staging/traderemedies-dev/trade-remedies-public-berlin:
   env_keys:
   - ALLOWED_HOSTS
@@ -21324,9 +21613,9 @@ traderemedies-staging/traderemedies-dev/trade-remedies-public-berlin:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: trade-remedies-redis-berlin
 traderemedies-staging/traderemedies-dev/trade-remedies-public-chicago:
   env_keys:
@@ -21372,9 +21661,9 @@ traderemedies-staging/traderemedies-dev/trade-remedies-public-chicago:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
+    instance: tiny-6.x
     name: trade-remedies-redis-chicago
 traderemedies-staging/traderemedies-dev/trade-remedies-public-tokyo:
   env_keys:
@@ -21420,10 +21709,10 @@ traderemedies-staging/traderemedies-dev/trade-remedies-public-tokyo:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-tokyo
+    instance: tiny-6.x
+    name: trade-remedies-redis-tokyo_6
 traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix:
   env_keys:
   - ALLOWED_HOSTS
@@ -21489,17 +21778,17 @@ traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix:
     ipfilter: false
     path: ''
   services:
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
+  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: trade-remedies-postgres-hotfix
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: trade-remedies-elastic-hotfix
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: trade-remedies-redis-hotfix
+    instance: tiny-ha-6.x
+    name: trade-remedies-redis-hotfix_6
 traderemedies-staging/traderemedies-hotfix/trade-remedies-caseworker-hotfix:
   env_keys:
   - ALLOWED_HOSTS
@@ -21545,8 +21834,8 @@ traderemedies-staging/traderemedies-hotfix/trade-remedies-caseworker-hotfix:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: trade-remedies-redis-hotfix
+    instance: tiny-ha-6.x
+    name: trade-remedies-redis-hotfix_6
 traderemedies-staging/traderemedies-hotfix/trade-remedies-public-hotfix:
   env_keys:
   - ALLOWED_HOSTS
@@ -21592,8 +21881,8 @@ traderemedies-staging/traderemedies-hotfix/trade-remedies-public-hotfix:
     path: ''
   services:
   - description: 1.5GB RAM, highly-available, daily backups
-    instance: tiny-ha-3.2
-    name: trade-remedies-redis-hotfix
+    instance: tiny-ha-6.x
+    name: trade-remedies-redis-hotfix_6
 traderemedies-staging/traderemedies-uat/ip-filter-uat:
   env_keys:
   - EMAIL
@@ -21940,18 +22229,18 @@ traderemedies-staging/traderemedies-uat/trade-remedies-api-uat:
     ipfilter: false
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
-      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-uat
-  - description: '20GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
-      Max 200 Concurrent Connections. Postgres Version 10. DB Instance Class: db.t2.small.'
-    instance: small-ha-10
+  - description: '100GB Storage, Dedicated Instance, Highly Available, Storage Encrypted,
+      Max 200 Concurrent Connections. Postgres Version 12. DB Instance Class: db.t3.small.'
+    instance: small-ha-12
     name: trade-remedies-postgres-uat
   - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM,
       80GB disk space. Free for trial orgs. Costs for billable orgs.
     instance: tiny-1
     name: trade-remedies-opensearch-uat
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
+      created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
+    instance: tiny-6.x
+    name: trade-remedies-redis-uat_6
 traderemedies-staging/traderemedies-uat/trade-remedies-caseworker-uat:
   env_keys:
   - ALLOWED_HOSTS
@@ -21997,10 +22286,10 @@ traderemedies-staging/traderemedies-uat/trade-remedies-caseworker-uat:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-uat
+    instance: tiny-6.x
+    name: trade-remedies-redis-uat_6
 traderemedies-staging/traderemedies-uat/trade-remedies-public-uat:
   env_keys:
   - ALLOWED_HOSTS
@@ -22042,7 +22331,7 @@ traderemedies-staging/traderemedies-uat/trade-remedies-public-uat:
     ipfilter: true
     path: ''
   services:
-  - description: 568MB RAM, single node, no failover, daily backups (for instances
+  - description: 1.5GB RAM, single node, no failover, daily backups (for instances
       created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-    instance: tiny-3.2
-    name: trade-remedies-redis-uat
+    instance: tiny-6.x
+    name: trade-remedies-redis-uat_6
