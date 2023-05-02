@@ -52,9 +52,8 @@ def space_to_copilot_app(app_name, ns_conf):
     secrets = defaultdict(list)
 
     for service, service_conf in ns_conf.items():
-
         for environment in service_conf["environments"]:
-            if hasattr(environment, 'paas') and isinstance(environment["paas"], dict):
+            if "paas" in environment and isinstance(environment["paas"], dict):
                 secrets[service].extend(environment["paas"]["env_keys"])
                 for bs in environment["paas"]["services"]:
                     if bs["name"] not in backing_services[environment["environment"]]:
