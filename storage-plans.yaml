@@ -44,12 +44,12 @@ redis:
   # 12.93GB RAM, single node, no failover.
   large:
     replicas: 0
-    instance: 'cache.m6g.large'
+    instance: 'cache.m6g.xlarge'
 
   # 12.93GB RAM, highly-available
   large-ha:
     replicas: 2
-    instance: 'cache.m6g.large'
+    instance: 'cache.m6g.xlarge'
 
   # 26.04GB RAM, single node, no failover.
   x-large:
