@@ -125,7 +125,64 @@ opensearch:
     master: false
     instance: m6g.2xlarge.search    
 
-postgres: {}
+# RDS/Postgres Instances
+postgres:
+  # 5GB Storage, Postgres Version 13, DB Instance Class: db.t3.micro
+  tiny-13:
+    volumesize: 5
+    replicas: 0
+    instance: db.t3.micro
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
+  small-13:
+    volumesize: 100
+    replicas: 0
+    instance: db.t3.small
+  
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
+  small-13-ha:
+    volumesize: 100
+    replicas: 2
+    instance: db.t3.small
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  medium-13:
+    volumesize: 100
+    replicas: 0
+    instance: db.m5.large
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  medium-13-ha:
+    volumesize: 100
+    replicas: 2
+    instance: db.m5.large
+
+  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
+  large-13:
+    volumesize: 564
+    replicas: 0
+    instance: db.m5.2xlarge
+  
+  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  large-13-ha:
+    volumesize: 564
+    replicas: 2
+    instance: db.m5.2xlarge
+
+  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
+  xlarge-13:
+    volumesize: 2100
+    replicas: 0
+    instance: db.m5.4xlarge
+  
+  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
+  xlarge-13-ha:
+    volumesize: 2100
+    replicas: 2
+    instance: db.m5.4xlarge
+
+# Aurora PostGres configuration
+aurora-pg: {}
 
 s3: {}
 
