@@ -171,13 +171,13 @@ postgres:
 
   # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
   xlarge-13:
-    volumesize: 2100
+    volumesize: 2000
     replicas: 0
     instance: db.m5.4xlarge
   
   # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
   xlarge-13-ha:
-    volumesize: 2100
+    volumesize: 2000
     replicas: 2
     instance: db.m5.4xlarge
 
