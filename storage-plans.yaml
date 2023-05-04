@@ -1,52 +1,188 @@
 # storage t-shirt sizes
 
 redis:
+  # 568MB RAM, single node, no failover.
   micro:
     replicas: 0
     instance: 'cache.t4g.micro'
 
+  # 568MB RAM, highly-available.
+  micro-ha:
+    replicas: 2
+    instance: 'cache.t4g.micro'
+
+  # 1.5GB RAM, single node, no failover.
+  tiny:
+    replicas: 0
+    instance: 'cache.t4g.micro'
+
+  # 1.5GB RAM, highly-available
+  tiny-ha:
+    replicas: 2
+    instance: 'cache.t4g.micro'
+
+  # 3GB RAM, single node, no failover.
   small:
     replicas: 0
-    instance: 'cache.t4g.small'
+    instance: 'cache.t4g.medium'
 
+  # 3GB RAM, highly-available
   small-ha:
     replicas: 2
-    instance: 'cache.t4g.small'
-
-  medium:
-    replicas: 2
     instance: 'cache.t4g.medium'
 
+  # 6.37GB RAM, single node, no failover.
+  medium:
+    replicas: 0
+    instance: 'cache.m6g.large'
+
+  # 6.37GB RAM, highly-available
   medium-ha:
     replicas: 2
-    instance: 'cache.t4g.medium'
+    instance: 'cache.m6g.large'
+
+  # 12.93GB RAM, single node, no failover.
+  large:
+    replicas: 0
+    instance: 'cache.m6g.xlarge'
+
+  # 12.93GB RAM, highly-available
+  large-ha:
+    replicas: 2
+    instance: 'cache.m6g.xlarge'
+
+  # 26.04GB RAM, single node, no failover.
+  x-large:
+    replicas: 0
+    instance: 'cache.m6g.2xlarge'
+
+  # 26.04GB RAM, highly-available
+  x-large-ha:
+    replicas: 2
+    instance: 'cache.m6g.2xlarge'
 
 opensearch:
-  small:
-    volume-size: 10
+  # 1 dedicated VM, 1 CPU per VM, 4GB RAM per VM, 80GB disk space.
+  tiny:
+    volumesize: 80
     instances: 1
     master: false
-    instance: c6g.large.search
+    instance: t3.medium.search
 
+  # 1 CPU per VM, 4GB RAM per VM, 240GB disk space
+  small:
+    volumesize: 240
+    instances: 1
+    master: false
+    instance: t2.medium.search
+
+  # 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space
   small-ha:
-    volume-size: 10
-    instances: 2
+    volume-size: 240
+    instances: 3
     master: false
-    instance: c6g.large.search
+    instance: t2.medium.search
 
+  # 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space
+  medium:
+    volumesize: 525
+    instances: 1
+    master: false
+    instance: m6g.large.search
+
+  # 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space
   medium-ha:
-    volume-size: 10
-    instances: 2
+    volumesize: 525
+    instances: 3
     master: false
-    instance: c6g.large.search
+    instance: m6g.large.search
 
+  # 2 CPU per VM, 15GB RAM per VM, 1050GB disk space
+  large:
+    volumesize: 1050
+    instances: 1
+    master: false
+    instance: m6g.xlarge.search
+
+  # 3 dedicated VMs, 2 CPU per VM, 15GB RAM per VM, 1050GB disk space
   large-ha:
-    volume-size: 10
-    instances: 2
+    volumesize: 1050
+    instances: 3
     master: false
-    instance: c6g.large.search
+    instance: m6g.xlarge.search
 
-postgres: {}
+  # 4 CPU per VM, 31GB RAM per VM, 2100GB disk space
+  x-large:
+    volumesize: 2100
+    instances: 1
+    master: false
+    instance: m6g.2xlarge.search
+
+  # 3 dedicated VMs, 4 CPU per VM, 31GB RAM per VM, 2100GB disk space
+  x-large-ha:
+    volumesize: 2100
+    instances: 3
+    master: false
+    instance: m6g.2xlarge.search    
+
+# RDS/Postgres Instances
+postgres:
+  # 5GB Storage, Postgres Version 13, DB Instance Class: db.t3.micro
+  tiny-13:
+    volumesize: 5
+    replicas: 0
+    instance: db.t3.micro
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
+  small-13:
+    volumesize: 100
+    replicas: 0
+    instance: db.t3.small
+  
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
+  small-13-ha:
+    volumesize: 100
+    replicas: 2
+    instance: db.t3.small
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  medium-13:
+    volumesize: 100
+    replicas: 0
+    instance: db.m5.large
+
+  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  medium-13-ha:
+    volumesize: 100
+    replicas: 2
+    instance: db.m5.large
+
+  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
+  large-13:
+    volumesize: 564
+    replicas: 0
+    instance: db.m5.2xlarge
+  
+  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
+  large-13-ha:
+    volumesize: 564
+    replicas: 2
+    instance: db.m5.2xlarge
+
+  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
+  xlarge-13:
+    volumesize: 2000
+    replicas: 0
+    instance: db.m5.4xlarge
+  
+  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
+  xlarge-13-ha:
+    volumesize: 2000
+    replicas: 2
+    instance: db.m5.4xlarge
+
+# Aurora PostGres configuration
+aurora-pg: {}
 
 s3: {}
 
