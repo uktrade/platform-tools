@@ -163,7 +163,7 @@ postgres:
     replicas: 0
     instance: db.m5.2xlarge
   
-  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
+  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
   large-13-ha:
     volumesize: 564
     replicas: 2
