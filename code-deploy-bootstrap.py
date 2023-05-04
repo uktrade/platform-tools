@@ -145,7 +145,6 @@ def create_codedeploy_role():
             SetAsDefault=True
         )
         check_success("Update Policy", response)
-        exit()
 
     with open(f"{current_filepath}/templates/create-codebuild-role.json") as f:
         role_doc = json.load(f)
