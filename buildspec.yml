@@ -11,7 +11,7 @@ phases:
     commands:
     - echo Logging in to AWS ECR....
     - aws --version
-    - $(aws ecr get-login --no-include-email --region us-east-1)
+    - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
     - IMAGE_TAG=$(curl -s 'https://hub.docker.com/v2/repositories/paketobuildpacks/builder/tags?name=-full&page_size=1' | jq -r '.results[].name')
     - REPOSITORY_URI=public.ecr.aws/uktrade/paketobuildpacks/builder
   build:
