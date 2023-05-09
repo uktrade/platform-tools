@@ -19,7 +19,7 @@ phases:
     - echo Pull started on `date`
     - echo Pulling the Docker image...
     - docker pull paketobuildpacks/builder:$IMAGE_TAG
-    - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+    - docker tag paketobuildpacks/builder:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
     - echo Pull completed on `date`
