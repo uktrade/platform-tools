@@ -1,0 +1,33 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+        docker: 18
+    commands:
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+  pre_build:
+    commands:
+    - echo Logging in to AWS ECR....
+    - aws --version
+    - $(aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade)
+    - IMAGE_TAG=$(curl -s 'https://hub.docker.com/v2/repositories/paketobuildpacks/builder/tags?name=-full&page_size=1' | jq -r '.results[].name')
+    - REPOSITORY_URI=public.ecr.aws/uktrade/paketobuildpacks/builder
+  build:
+    commands:
+    - echo Pull started on `date`
+    - echo Pulling the Docker image...
+    - docker pull paketobuildpacks/builder:$IMAGE_TAG
+    - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+    - echo Pull completed on `date`
+    - echo Pushing to ECR
+    - docker push $REPOSITORY_URI:latest
+    - docker push $REPOSITORY_URI:$IMAGE_TAG
+    - echo Writing metadata...
+    - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > metadata.json
+artifacts:
+  files:
+    - metadata.json
