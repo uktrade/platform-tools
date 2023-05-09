@@ -20,12 +20,13 @@ phases:
     - echo Pulling the Docker image...
     - docker pull paketobuildpacks/builder:$IMAGE_TAG
     - docker tag paketobuildpacks/builder:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+    - docker tag paketobuildpacks/builder:$IMAGE_TAG $REPOSITORY_URI:latest
   post_build:
     commands:
     - echo Pull completed on `date`
     - echo Pushing to ECR
-    - docker push $REPOSITORY_URI:latest
     - docker push $REPOSITORY_URI:$IMAGE_TAG
+    - docker push $REPOSITORY_URI:latest
     - echo Writing metadata...
     - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > metadata.json
 artifacts:
