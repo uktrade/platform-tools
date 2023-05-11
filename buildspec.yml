@@ -10,18 +10,27 @@ phases:
     - echo Logging in to AWS ECR....
     - aws --version
     - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
-    - IMAGE_TAG=$(curl -s 'https://hub.docker.com/v2/repositories/paketobuildpacks/builder/tags?name=-full&page_size=1' | jq -r '.results[].name')
-    - REPOSITORY_URI=public.ecr.aws/uktrade/paketobuildpacks/builder
+    - BUILDER_IMAGE_TAG=$(curl -s 'https://hub.docker.com/v2/repositories/paketobuildpacks/builder/tags?name=-full&page_size=1' | jq -r '.results[].name')
+    - BUILDER_REPOSITORY_URI=public.ecr.aws/uktrade/paketobuildpacks/builder
+    - LIFECYCLE_REPOSITORY_URI=public.ecr.aws/uktrade/buildpacksio/lifecycle
   build:
     commands:
     - echo Pull started on `date`
-    - echo Pulling the Docker image...
-    - docker pull paketobuildpacks/builder:$IMAGE_TAG
-    - docker tag paketobuildpacks/builder:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
-    - docker tag paketobuildpacks/builder:$IMAGE_TAG $REPOSITORY_URI:latest
+    - echo Pulling the Builder Docker image...
+    - docker pull paketobuildpacks/builder:$BUILDER_IMAGE_TAG
+    - docker tag paketobuildpacks/builder:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:$BUILDER_IMAGE_TAG
+    - docker tag paketobuildpacks/builder:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:latest
+    - echo Pulling the Lifecycle Docker image...
+    - LIFECYCLE_IMAGE_TAG=$(docker inspect paketobuildpacks/builder:$BUILDER_IMAGE_TAG | jq -r '.[].Config.Labels."io.buildpacks.builder.metadata"' | jq -r '.lifecycle.version')
+    - docker pull buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG
+    - docker tag buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG $LIFECYCLE_REPOSITORY_URI:$LIFECYCLE_IMAGE_TAG
+    - docker tag buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG $LIFECYCLE_REPOSITORY_URI:latest
   post_build:
     commands:
     - echo Pull completed on `date`
-    - echo Pushing to ECR
-    - docker push $REPOSITORY_URI:$IMAGE_TAG
-    - docker push $REPOSITORY_URI:latest
+    - echo Pushing Builder image to ECR
+    - docker push $BUILDER_REPOSITORY_URI:$BUILDER_IMAGE_TAG
+    - docker push $BUILDER_REPOSITORY_URI:latest
+    - echo Pushing Lifecycle image to ECR
+    - docker push $LIFECYCLE_REPOSITORY_URI:$BUILDER_IMAGE_TAG
+    - docker push $LIFECYCLE_REPOSITORY_URI:latest
