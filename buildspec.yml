@@ -25,8 +25,3 @@ phases:
     - echo Pushing to ECR
     - docker push $REPOSITORY_URI:$IMAGE_TAG
     - docker push $REPOSITORY_URI:latest
-    - echo Writing metadata...
-    - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > metadata.json
-artifacts:
-  files:
-    - metadata.json
