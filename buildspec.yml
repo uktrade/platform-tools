@@ -37,7 +37,7 @@ phases:
     - docker push $BUILDER_REPOSITORY_URI:$BUILDER_IMAGE_TAG
     - docker push $BUILDER_REPOSITORY_URI:latest
     - echo Pushing Lifecycle image to ECR
-    - docker push $LIFECYCLE_REPOSITORY_URI:$BUILDER_IMAGE_TAG
+    - docker push $LIFECYCLE_REPOSITORY_URI:$LIFECYCLE_IMAGE_TAG
     - docker push $LIFECYCLE_REPOSITORY_URI:latest
     - echo Pushing Run image to ECR
     - docker push $RUN_REPOSITORY_URI:full-cnb
