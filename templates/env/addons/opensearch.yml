@@ -72,7 +72,7 @@ Resources:
           Action:
           - 'es:ESHttp*'
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ service.name }}/*'
-      DomainName: !Sub ${App}-${Env}-{{ service.name }}
+      DomainName: !Sub "{% if '${App}-${Env}-{{ service.name }}' | length > 28 %}{{ '${App}'[:1] }}-{{ '${Env}'[:1] }}-{{ service.name | truncate(28 - '${App}'[:1] | length - '${Env}'[:1] | length, '', False) }}{% else %}${{ '${App}-${Env}-{{ service.name }}' }}{% endif %}"
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
