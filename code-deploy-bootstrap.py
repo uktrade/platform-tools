@@ -4,6 +4,10 @@ import boto3
 import click
 import json
 
+## To do
+## Need some check to see if user has set their AWS creds correctly
+## let user use both https and ssh address for git url
+
 
 def check_success(task, response):
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
