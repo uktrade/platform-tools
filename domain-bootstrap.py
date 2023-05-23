@@ -135,6 +135,7 @@ def add_records(client, records, subdom_id, action):
         response = client.change_resource_record_sets(
             HostedZoneId=subdom_id,
             ChangeBatch={
+                'Comment': 'Record created for copilot',
                 'Changes': [{
                     'Action': action,
                     'ResourceRecordSet': {
@@ -153,6 +154,7 @@ def add_records(client, records, subdom_id, action):
         response = client.change_resource_record_sets(
             HostedZoneId=subdom_id,
             ChangeBatch={
+                'Comment': 'Record created for copilot',
                 'Changes': [{
                     'Action': action,
                     'ResourceRecordSet': {
