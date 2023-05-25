@@ -23,17 +23,21 @@ environments:
     - ACM-ARN-FOR-directory-cms-dev.london.cloudapps.digital
     - ACM-ARN-FOR-cms.trade.great.dev.uktrade.io
     - ACM-ARN-FOR-cms.trade.great.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-cms-dev.london.cloudapps.digital
     - ACM-ARN-FOR-directory-companies-house-search-dev.london.cloudapps.digital
     - ACM-ARN-FOR-directory-components-dev.london.cloudapps.digital
     - ACM-ARN-FOR-directory-forms-api-dev.london.cloudapps.digital
     - ACM-ARN-FOR-directory-sso-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-directory-sso-dev.great.dev.uktrade.digital
     - ACM-ARN-FOR-directory-sso-profile-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great-magna.dev.uktrade.digital
     - ACM-ARN-FOR-directory-sso-proxy-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-www.great.dev.uktrade.digital
     - ACM-ARN-FOR-directory-ui-buyer-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great.dev.uktrade.digital
@@ -62,8 +66,15 @@ environments:
     - ACM-ARN-FOR-directory-api.london.cloudapps.digital
     - ACM-ARN-FOR-directory-cms.london.cloudapps.digital
     - ACM-ARN-FOR-cms.trade.great.gov.uk
+    - ACM-ARN-FOR-directory-cms.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms.trade.great.gov.uk
+    - ACM-ARN-FOR-cms.trade.great.gov.uk
+    - ACM-ARN-FOR-cms.trade.great.gov.uk
+    - ACM-ARN-FOR-directory-cms.trade.great.gov.uk
     - ACM-ARN-FOR-directory-companies-house-search.london.cloudapps.digital
     - ACM-ARN-FOR-directory-forms-api.london.cloudapps.digital
+    - ACM-ARN-FOR-cms.trade.great.gov.uk
     - ACM-ARN-FOR-directory-sso.london.cloudapps.digital
     - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-directory-sso-profile.london.cloudapps.digital
@@ -71,6 +82,7 @@ environments:
     - ACM-ARN-FOR-directory-sso-proxy.london.cloudapps.digital
     - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-sso.trade.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-directory-ui-buyer.london.cloudapps.digital
     - ACM-ARN-FOR-find-a-buyer.export.great.gov.uk
     - ACM-ARN-FOR-www.great.gov.uk
@@ -124,6 +136,8 @@ environments:
     - ACM-ARN-FOR-directory-cms-staging.london.cloudapps.digital
     - ACM-ARN-FOR-cms.trade.great.staging.uktrade.io
     - ACM-ARN-FOR-cms.trade.great.staging.uktrade.digital
+    - ACM-ARN-FOR-directory-cms-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-directory-cms-staging.london.cloudapps.digital
     - ACM-ARN-FOR-directory-companies-house-search-staging.london.cloudapps.digital
     - ACM-ARN-FOR-directory-forms-api-staging.london.cloudapps.digital
     - ACM-ARN-FOR-directory-sso-staging.london.cloudapps.digital
@@ -420,15 +434,15 @@ services:
     dev_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-dev/directory-cms-dev
-      url: cms.trade.great.dev.uktrade.digital
+      url: directory-cms-dev.london.cloudapps.digital
     prod_eu-west-2:
-      ipfilter: false
+      ipfilter: true
       paas: dit-services/directory/directory-cms
-      url: cms.trade.great.gov.uk
+      url: directory-cms.trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-staging/directory-cms-staging
-      url: cms.trade.great.staging.uktrade.digital
+      url: directory-cms-staging.london.cloudapps.digital
     uat_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-uat/directory-cms-uat
@@ -438,7 +452,6 @@ services:
   overlapping_secrets:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
   - ACTIVITY_STREAM_SECRET_ACCESS_KEY
-  - ALLOWED_ADMIN_IPS
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AWS_ACCESS_KEY_ID
@@ -455,13 +468,7 @@ services:
   - FEATURE_REDIS_USE_SSL
   - FEATURE_SKIP_MIGRATE
   - HEALTH_CHECK_TOKEN
-  - IP_RESTRICTOR_ALLOWED_ADMIN_IPS
-  - IP_RESTRICTOR_RESTRICT_IPS
-  - IP_RESTRICTOR_SKIP_CHECK_ENABLED
-  - IP_RESTRICTOR_SKIP_CHECK_SECRET
-  - IP_RESTRICTOR_SKIP_CHECK_SENDER_ID
   - MIGRATE_EMAIL_USER_ON_LOGIN
-  - RESTRICT_ADMIN
   - SECRET_KEY
   - SENTRY_DSN
   - SENTRY_ENVIRONMENT
@@ -472,7 +479,6 @@ services:
   secrets:
     ACTIVITY_STREAM_ACCESS_KEY_ID: ACTIVITY_STREAM_ACCESS_KEY_ID
     ACTIVITY_STREAM_SECRET_ACCESS_KEY: ACTIVITY_STREAM_SECRET_ACCESS_KEY
-    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
     API_CACHE_EXPIRE_SECONDS: API_CACHE_EXPIRE_SECONDS
     APP_URL_EXPORT_READINESS: APP_URL_EXPORT_READINESS
     APP_URL_GREAT_INTERNATIONAL: APP_URL_GREAT_INTERNATIONAL
@@ -506,14 +512,8 @@ services:
     GOVNOTIFY_USER_APPROVED_TEMPLATE_ID: GOVNOTIFY_USER_APPROVED_TEMPLATE_ID
     GOVNOTIFY_USER_PENDING_APPROVAL_TEMPLATE_ID: GOVNOTIFY_USER_PENDING_APPROVAL_TEMPLATE_ID
     HEALTH_CHECK_TOKEN: HEALTH_CHECK_TOKEN
-    IP_RESTRICTOR_ALLOWED_ADMIN_IPS: IP_RESTRICTOR_ALLOWED_ADMIN_IPS
-    IP_RESTRICTOR_RESTRICT_IPS: IP_RESTRICTOR_RESTRICT_IPS
-    IP_RESTRICTOR_SKIP_CHECK_ENABLED: IP_RESTRICTOR_SKIP_CHECK_ENABLED
-    IP_RESTRICTOR_SKIP_CHECK_SECRET: IP_RESTRICTOR_SKIP_CHECK_SECRET
-    IP_RESTRICTOR_SKIP_CHECK_SENDER_ID: IP_RESTRICTOR_SKIP_CHECK_SENDER_ID
     MAINTENANCE_MODE_ON: MAINTENANCE_MODE_ON
     MIGRATE_EMAIL_USER_ON_LOGIN: MIGRATE_EMAIL_USER_ON_LOGIN
-    RESTRICT_ADMIN: RESTRICT_ADMIN
     SECRET_KEY: SECRET_KEY
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
@@ -688,9 +688,9 @@ services:
       paas: dit-staging/directory-dev/directory-forms-api-dev
       url: directory-forms-api-dev.london.cloudapps.digital
     prod_eu-west-2:
-      ipfilter: false
+      ipfilter: true
       paas: dit-services/directory/directory-forms-api
-      url: directory-forms-api.london.cloudapps.digital
+      url: cms.trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-staging/directory-forms-api-staging
@@ -813,7 +813,7 @@ services:
     dev_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-dev/directory-sso-dev
-      url: great.dev.uktrade.digital
+      url: directory-sso-dev.great.dev.uktrade.digital
     prod_eu-west-2:
       ipfilter: false
       paas: dit-services/directory/directory-sso
@@ -1206,11 +1206,11 @@ services:
     dev_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-dev/directory-sso-proxy-dev
-      url: great.dev.uktrade.digital
+      url: www.great.dev.uktrade.digital
     prod_eu-west-2:
       ipfilter: false
       paas: dit-services/directory/directory-sso-proxy
-      url: sso.trade.great.gov.uk
+      url: www.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
       paas: dit-staging/directory-staging/directory-sso-proxy-staging
@@ -1789,6 +1789,7 @@ services:
     AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
     AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE: AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
     BASE_URL: BASE_URL
+    BREADCRUMBS_ROOT_URL: BREADCRUMBS_ROOT_URL
     CCCE_BASE_URL: CCCE_BASE_URL
     CCCE_COMMODITY_SEARCH_TOKEN: CCCE_COMMODITY_SEARCH_TOKEN
     CELERY_BROKER_POOL_LIMIT: CELERY_BROKER_POOL_LIMIT
@@ -1881,6 +1882,7 @@ services:
     UKEF_CONTACT_USER_NOTIFY_TEMPLATE_ID: UKEF_CONTACT_USER_NOTIFY_TEMPLATE_ID
     UKEF_FORM_SUBMIT_TRACKER_URL: UKEF_FORM_SUBMIT_TRACKER_URL
     UTM_COOKIE_DOMAIN: UTM_COOKIE_DOMAIN
+    WAGTAILADMIN_BASE_URL: WAGTAILADMIN_BASE_URL
     WAGTAILTRANSFER_BASE_URL_PRODUCTION: WAGTAILTRANSFER_BASE_URL_PRODUCTION
     WAGTAILTRANSFER_BASE_URL_STAGING: WAGTAILTRANSFER_BASE_URL_STAGING
     WAGTAILTRANSFER_BASE_URL_UAT: WAGTAILTRANSFER_BASE_URL_UAT
