@@ -404,20 +404,20 @@ def check_domain(update, path, domain_profile, project_profile, base_domain, des
 @click.option('--app', help='Application Name')
 @click.option('--domain-profile', help='aws account profile name for R53 domains account')
 @click.option('--svc', help='Service Name')
-def assign_domain(app, domain_profile, svc):
+@click.option('--env', help='Environment name')
+def assign_domain(app, domain_profile, svc, env):
     """
     Updates R53 domain with copilot Load Blanacer record
     """
 
     result = subprocess.run(['copilot', 'svc', 'show', '-a', app, '-n', svc, '--json'], stdout=subprocess.PIPE)
-    result.stdout
     result_str = result.stdout.decode('utf-8')
     result_json = json.loads(result_str[:-1])
     domain_name = result_json['routes'][0]['url']
-    vars = result_json['variables']
+    variables = result_json['variables']
 
-    for var in vars:
-        if var['name'] == 'COPILOT_LB_DNS':
+    for var in variables:
+        if var['name'] == 'COPILOT_LB_DNS' and var['environment'] == env and var['container'] == svc:
             elb_name = var['value']
 
     print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}")
