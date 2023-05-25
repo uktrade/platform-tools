@@ -14,7 +14,6 @@ from schema import Optional, Schema, SchemaError
 
 # To do
 # -----
-# Need to change this to a class to make it more cleaner (maybe)
 # Need to seperate Dev and Prod in this app - related to prod domain not being found if specified dev profile for the domain
 # Check user has logged into the aws accounts before scanning the accounts
 # Change script to list all the domains and certs its going to create.  Let the user select
@@ -130,14 +129,15 @@ def create_cert(client, domain_client, domain, base_domain):
     return arn
 
 
-def add_records(client, records, subdom_id):
+def add_records(client, records, subdom_id, action):
     #breakpoint()
     if records['Type'] == "A":
         response = client.change_resource_record_sets(
             HostedZoneId=subdom_id,
             ChangeBatch={
+                'Comment': 'Record created for copilot',
                 'Changes': [{
-                    'Action': 'CREATE',
+                    'Action': action,
                     'ResourceRecordSet': {
                         'Name': records['Name'],
                         'Type': records['Type'],
@@ -154,8 +154,9 @@ def add_records(client, records, subdom_id):
         response = client.change_resource_record_sets(
             HostedZoneId=subdom_id,
             ChangeBatch={
+                'Comment': 'Record created for copilot',
                 'Changes': [{
-                    'Action': 'CREATE',
+                    'Action': action,
                     'ResourceRecordSet': {
                         'Name': records['Name'],
                         'Type': records['Type'],
@@ -172,12 +173,12 @@ def add_records(client, records, subdom_id):
 def check_for_records(client, domain, parent_id, subdom, subdom_id):
 
     records_to_add = []
-    print(parent_id)
+    #print(parent_id)
 
     response = client.list_resource_record_sets(
         HostedZoneId=parent_id,
     )
-    print(response)
+    #print(response)
     for records in response['ResourceRecordSets']:
         #print(records['name'])
         if subdom in records['Name']:
@@ -264,7 +265,7 @@ def create_hosted_zone(client, domain, start_domain, base_domain):
             }
         )
 
-        print(response)
+        #print(response)
 
 
 
@@ -404,9 +405,10 @@ def check_domain(update, path, domain_profile, project_profile, base_domain, des
 @click.option('--app', help='Application Name')
 @click.option('--domain-profile', help='aws account profile name for R53 domains account')
 @click.option('--svc', help='Service Name')
-def assign_domain(app, domain_profile, svc):
+@click.option('--env', help='Environment')
+def assign_domain(app, domain_profile, svc, env):
     """
-    Updates R53 domain with copilot Load Blanacer record
+    Check R53 domain is pointing to the correct ECS Load Blanacer
     """
 
     result = subprocess.run(['copilot', 'svc', 'show', '-a', app, '-n', svc, '--json'], stdout=subprocess.PIPE)
@@ -417,10 +419,10 @@ def assign_domain(app, domain_profile, svc):
     vars = result_json['variables']
 
     for var in vars:
-        if var['name'] == 'COPILOT_LB_DNS':
+        if var['environment'] == env and var['name'] == 'COPILOT_LB_DNS' and var['container'] == svc:
             elb_name = var['value']
-
-    print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}")
+            break
+    print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}\nChecking to see if this is in R53")
 
     DOMAIN_ACC_PROFILE = domain_profile
     domain_session = boto3.session.Session(profile_name=DOMAIN_ACC_PROFILE)
@@ -459,14 +461,20 @@ def assign_domain(app, domain_profile, svc):
             for record in response['ResourceRecordSets']:
                 if domain == record['Name'][:-1]:
                     print(f"Record: {record['Name']} found")
-                    print("No need to add as it already exists")
+                    print(f"is pointing to LB {record['ResourceRecords'][0]['Value']}")
+                    if record['ResourceRecords'][0]['Value'] != elb_name:
+                        if click.confirm(f"This doesnt match with the current LB {elb_name}, Do you wish to update the record?"):
+                            record = {"Name": domain, "Type": "CNAME", "TTL": 300, "ResourceRecords": [{"Value": elb_name}]}
+                            add_records(domain_client, record, hosted_zone_id, "UPSERT")
+                    else:
+                        print("No need to add as it already exists")
                     exit()
 
             record = {"Name": domain, "Type": "CNAME", "TTL": 300, "ResourceRecords": [{"Value": elb_name}]}
 
             if not click.confirm(f"Creating R53 record: {record['Name']} -> {record['ResourceRecords'][0]['Value']}\nIn Domain: {subdom}\tZone ID: {hosted_zone_id}\nDo you want to continue?"):
                 exit()
-            add_records(domain_client, record, hosted_zone_id)
+            add_records(domain_client, record, hosted_zone_id, "CREATE")
             exit()
 
         parts.pop(0)
