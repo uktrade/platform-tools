@@ -11,7 +11,7 @@ Combines the `ci-pipeline-config` YAML files based on the namespace field and ou
 
     ./migration-tools/get-ci-config.py
 
-Make sure the first line in `ci-config.yml` begins with `applications`, removing any lines with reference to `python`.
+Make sure the first line in `ci-config.yml` begins with `applications` instead of `dictitems`, removing any lines above that with reference to `python`.
 
 ### `get-paas-config.py`
 
