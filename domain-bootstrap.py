@@ -265,7 +265,7 @@ def create_hosted_zone(client, domain, start_domain, base_domain):
             }
         )
 
-        print(response)
+        #print(response)
 
 
 
@@ -405,7 +405,8 @@ def check_domain(update, path, domain_profile, project_profile, base_domain, des
 @click.option('--app', help='Application Name')
 @click.option('--domain-profile', help='aws account profile name for R53 domains account')
 @click.option('--svc', help='Service Name')
-def assign_domain(app, domain_profile, svc):
+@click.option('--env', help='Environment')
+def assign_domain(app, domain_profile, svc, env):
     """
     Check R53 domain is pointing to the correct ECS Load Blanacer
     """
@@ -418,8 +419,9 @@ def assign_domain(app, domain_profile, svc):
     vars = result_json['variables']
 
     for var in vars:
-        if var['name'] == 'COPILOT_LB_DNS':
+        if var['environment'] == env and var['name'] == 'COPILOT_LB_DNS':
             elb_name = var['value']
+            break
 
     print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}\nChecking to see if this is in R53")
 
