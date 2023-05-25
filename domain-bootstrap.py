@@ -419,10 +419,9 @@ def assign_domain(app, domain_profile, svc, env):
     vars = result_json['variables']
 
     for var in vars:
-        if var['environment'] == env and var['name'] == 'COPILOT_LB_DNS':
+        if var['environment'] == env and var['name'] == 'COPILOT_LB_DNS' and var['container'] == svc:
             elb_name = var['value']
             break
-
     print(f"The Domain: {domain_name} \nhas been assigned the Load Balancer: {elb_name}\nChecking to see if this is in R53")
 
     DOMAIN_ACC_PROFILE = domain_profile
