@@ -1,12 +1,19 @@
-INSTRUCTIONS
+
+>>> Instructions
 
 To provision the services in an environment run:
 
-copilot env deploy 
+copilot env deploy
 
----
+If you have added an s3 bucket, or an s3-policy, you will also need to deploy each service in each environment for that service to be able to access the s3 bucket.
+
+copilot svc deploy --name {services} --env {env}
+
+You will then be able to access the bucket directly from your service without additional authentication. 
+
+>>> Credentials
 {%- for service in services %}
-{% if service.storage_type in ["redis", "opensearch", "postgres"] %}
+{%- if service.storage_type in ["redis", "opensearch", "postgres"] %}
 Add the following to your service's manifest.yml file to access {{ service.name }}:
 
 secrets: 
@@ -17,7 +24,8 @@ secrets:
 {%- elif service.storage_type == "postgres" %}
   DATABASE_CREDENTIALS: 
     secretsmanager: ${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/{{ service.secret_name }}
-{%- endif 
--%}
+{%- endif -%}
+
 {%- endif %}
 {% endfor -%}
+

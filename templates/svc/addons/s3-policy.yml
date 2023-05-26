@@ -8,6 +8,13 @@ Parameters:
   Name:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
+Mappings:
+  {{ service.prefix }}BucketNameMap:
+    # Create an entry for each environment
+    {% for env_name, config in service.environments.items() %}
+    {{ env_name }}:
+      BucketName: '{{ config.bucket_name }}'
+    {% endfor %}    
 Resources:
   {{ service.prefix }}S3AccessPolicy:
     Metadata:
@@ -26,11 +33,15 @@ Resources:
 {% else %}
               - s3:*Object
 {% endif %}
-            Resource: "arn:aws:s3:::{{ service.bucket_name }}/*"
+            Resource: !Sub 
+              - "arn:aws:s3:::${ bucket_name }/*"
+              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
           - Sid: S3ListAction
             Effect: Allow
             Action: s3:ListBucket
-            Resource: "arn:aws:s3:::{{ service.bucket_name }}"
+            Resource: !Sub
+              - "arn:aws:s3:::${ bucket_name }"
+              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
 Outputs:
   {{ service.prefix }}AccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"

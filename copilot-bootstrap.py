@@ -16,6 +16,8 @@ import yaml
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
+BASE_DIR = Path(__file__).parent
+
 
 config_schema = Schema({
     "app": str,
@@ -64,25 +66,29 @@ config_schema = Schema({
 
 storage_schema = Schema({
     str: {
-         "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
-         str: {
-            Optional("plan"): str,
-            # s3
-            Optional("bucket-name"): str,
-            Optional("readonly"): bool,
-            # redis
-            Optional("engine"): str,
-            Optional("replicas"): int,
-            Optional("instance"): str,
-            # opensearch
-            Optional("volume-size"): int,
-            Optional("instances"): int,
-            Optional("master"): bool,
-            Optional("instance"): str,
-            # Aurora PG
-            Optional("min-capacity"): Use(float),
-            Optional("max-capacity"): Use(float),
-         }
+        "type": lambda s: s in ("s3", "s3-policy", "postgres", "redis", "opensearch",),
+        Optional("readonly"): bool,
+        Optional(str): str,        
+        Optional(str): dict,
+        Optional("services"): [str],
+        # TODO: this will be redone in jsonschema
+        # Optional("plan"): str,
+        # # s3
+        # Optional("bucket-name"): str,
+        # Optional("readonly"): bool,
+        # # redis
+        # Optional("engine"): str,
+        # Optional("replicas"): int,
+        # Optional("instance"): str,
+        # # opensearch
+        # Optional("volume-size"): int,
+        # Optional("instances"): int,
+        # Optional("master"): bool,
+        # Optional("instance"): str,
+        # # Aurora PG
+        # Optional("min-capacity"): Use(float),
+        # Optional("max-capacity"): Use(float),
+
     }
 })
 
@@ -151,7 +157,7 @@ def setup_templates():
             "postgres": templateEnv.get_template("svc/addons/postgres.yml"),
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
-            "external-s3": templateEnv.get_template("svc/addons/external-s3.yml"),
+            "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),
         },
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
@@ -159,7 +165,6 @@ def setup_templates():
             "postgres": templateEnv.get_template("env/addons/postgres.yml"),
             "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
             "s3": templateEnv.get_template("env/addons/s3.yml"),
-            "external-s3": templateEnv.get_template("env/addons/external-s3.yml"),
         },
     }
 
@@ -418,7 +423,7 @@ def generate_storage(storage_config_file, output, overwrite):
     Generate storage cloudformation for each environment
     """
 
-    with open(Path(__file__).parent / Path("storage-plans.yaml"), "r") as fd:
+    with open(BASE_DIR / Path("storage-plans.yaml"), "r") as fd:
         storage_plans = yaml.safe_load(fd)
 
     templates = setup_templates()
@@ -438,6 +443,11 @@ def generate_storage(storage_config_file, output, overwrite):
 
     env_config = {}
 
+    click.echo("\n>>> Generating cloudformation\n")
+
+    # Validation TODO: check that the environments list matches what is in the copilot/environments/ dir
+    # and check that services referenced are valid.
+
     path = Path(f"copilot/environments/addons/")
     click.echo( _mkdir(output, path))
 
@@ -447,38 +457,67 @@ def generate_storage(storage_config_file, output, overwrite):
         conf.update(env_conf)
 
         return conf
+    
+    def _normalise_keys(source: dict):
+        return {k.replace("-", "_"): v for k, v in source.items()}
 
     services = []
 
     for storage_name, storage_config in config.items():
         storage_type = storage_config.pop("type")
-        initial = _lookup_plan(storage_type, storage_config.pop("default", {}))
+        environments = storage_config.pop("environments")
 
-        template = templates["env"][storage_type]
+        initial = _lookup_plan(storage_type, environments.pop("default", {}))
 
         for env in env_names:
-            env_config[env] = {k.replace("-", "_"): v for k, v in initial.items()}
+            env_config[env] = _normalise_keys(initial)
 
-        for name, env in storage_config.items():
-            env_config[name].update(
-                _lookup_plan(storage_type, env)
+        for env_name, conf in environments.items():
+            env_config[env_name].update(
+                _lookup_plan(storage_type, _normalise_keys(conf))
             )
 
         service = {
             "secret_name": storage_name.upper().replace("-", "_"),
-            "name": storage_name,
+            "name": storage_config.get("name", None) or storage_name,
             "environments": env_config,
             "prefix": camel_case(storage_name),
             "storage_type": storage_type,
+            **storage_config,
         }
-
-        contents = template.render({
-            "service": service
-        })
 
         services.append(service)
 
-        click.echo(_mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
+        # s3-policy only applies to individual services
+        if storage_type != "s3-policy":        
+            template = templates["env"][storage_type]
+            contents = template.render({
+                "service": service
+            })
+
+            click.echo(_mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
+
+        # s3 buckets require additional service level cloudformation to grant the ECS task role access to the bucket
+        if storage_type in ["s3", "s3-policy"]:
+
+            template = templates["svc"]["s3-policy"]
+
+            for svc in storage_config.get("services", []):
+                # TODO: should we validate that the svc exists?
+                path = Path(f"copilot/{svc}/addons/")
+
+                service = {
+                    "name": storage_config.get("name", None) or storage_name,
+                    "prefix": camel_case(storage_name),
+                    "environments": env_config,
+                    **storage_config,                    
+                }
+
+                contents = template.render({
+                    "service": service
+                })
+                click.echo(_mkdir(output, path))
+                click.echo(_mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
     click.echo(templates["storage-instructions"].render(services=services))
 
