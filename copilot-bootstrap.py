@@ -260,7 +260,7 @@ def make_config(config_file, output):
 
     templates = setup_templates()
 
-    click.echo("GENERATING COPILOT CONFIG FILES")
+    click.echo(">>> Generating Copilot configuration files\n")
 
     # create copilot directory
     click.echo(_mkdir(base_path, "copilot"))
@@ -303,11 +303,9 @@ def make_config(config_file, output):
             contents = templates["svc"][bs["type"]].render(dict(service=bs))
             _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
-    # generate instructions
-    config["config_file"] = config_file
-    instructions = templates["instructions"].render(config)
-    click.echo("---")
-    click.echo(instructions)
+    # link to GitHub docs
+    click.echo("\nGitHub documentation: "
+               "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration")
 
 
 @cli.command()
