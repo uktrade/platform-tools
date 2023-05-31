@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
+import copy
+import json
 from pathlib import Path
 import re
-import sys
 
 import boto3
 import click
 from cloudfoundry_client.client import CloudFoundryClient
 import jinja2
+import jsonschema
+from jsonschema import validate as validate_json
 from schema import Optional, Schema, SchemaError, Use
 import yaml
+
 
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -52,7 +56,7 @@ config_schema = Schema({
                     Optional("readonly"): bool,             # for external-s3 type
                     Optional("shared"): bool,
                 }
-            ],            
+            ],
             Optional("overlapping_secrets"): [ str ],
             "secrets": {
                 Optional(str): str,
@@ -62,34 +66,6 @@ config_schema = Schema({
             },
         }
     ],
-})
-
-storage_schema = Schema({
-    str: {
-        "type": lambda s: s in ("s3", "s3-policy", "postgres", "postgres-rds", "redis", "opensearch",),
-        Optional("readonly"): bool,
-        Optional(str): str,        
-        Optional(str): dict,
-        Optional("services"): [str],
-        # TODO: this will be redone in jsonschema
-        # Optional("plan"): str,
-        # # s3
-        # Optional("bucket-name"): str,
-        # Optional("readonly"): bool,
-        # # redis
-        # Optional("engine"): str,
-        # Optional("replicas"): int,
-        # Optional("instance"): str,
-        # # opensearch
-        # Optional("volume-size"): int,
-        # Optional("instances"): int,
-        # Optional("master"): bool,
-        # Optional("instance"): str,
-        # # Aurora PG
-        # Optional("min-capacity"): Use(float),
-        # Optional("max-capacity"): Use(float),
-
-    }
 })
 
 
@@ -164,6 +140,7 @@ def setup_templates():
             "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
             "postgres-rds": templateEnv.get_template("env/addons/postgres-rds.yml"),
             "postgres": templateEnv.get_template("env/addons/postgres.yml"),
+            "aurora": templateEnv.get_template("env/addons/postgres.yml"),   # temporarily reusing postgres template
             "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
             "s3": templateEnv.get_template("env/addons/s3.yml"),
         },
@@ -249,7 +226,7 @@ def cli():
 @cli.command()
 @click.argument("config-file", type=click.Path(exists=True))
 @click.argument("output", type=click.Path(exists=True), default=".")
-def make_config(config_file, output):
+def make_bootstrap_config(config_file, output):
     """
     Generate copilot boilerplate code
 
@@ -413,42 +390,8 @@ def instructions(config_file):
     click.echo(instructions)
 
 
-@cli.command()
-@click.argument("storage-config-file", type=click.Path(exists=True))
-@click.argument("output", type=click.Path(exists=True), default=".")
-@click.option('--overwrite', is_flag=True, show_default=True, default=True, help='Overwrite existing cloudformation? Defaults to True')
-def generate_storage(storage_config_file, output, overwrite):
-    """
-    Generate storage cloudformation for each environment
-    """
-
-    with open(BASE_DIR / Path("storage-plans.yaml"), "r") as fd:
-        storage_plans = yaml.safe_load(fd)
-
-    templates = setup_templates()
-
-    # load and validate config 
-    with open(storage_config_file, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    # validate the file
-    schema = Schema(storage_schema)
-    config = schema.validate(conf)
-
-    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
-        click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
-
-    env_names = [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
-
-    env_config = {}
-
-    click.echo(">>> Generating CloudFormation\n")
-
-    # Validation TODO: check that the environments list matches what is in the copilot/environments/ dir
-    # and check that services referenced are valid.
-
-    path = Path(f"copilot/environments/addons/")
-    click.echo(_mkdir(output, path))
+def _validate_and_normalise_config(config_file):
+    """Load the storage.yaml file, validate it and return the normalised config dict"""
 
     def _lookup_plan(storage_type, env_conf):
         plan = env_conf.pop("plan", None)
@@ -456,30 +399,97 @@ def generate_storage(storage_config_file, output, overwrite):
         conf.update(env_conf)
 
         return conf
-    
+
     def _normalise_keys(source: dict):
         return {k.replace("-", "_"): v for k, v in source.items()}
 
-    services = []
+    with open(BASE_DIR / "storage-plans.yaml", "r") as fd:
+        storage_plans = yaml.safe_load(fd)
 
+    with open(BASE_DIR / "schemas/storage-schema.json", "r") as fd:
+        schema = json.load(fd)
+
+    # load and validate config
+    with open(config_file, "r") as fd:
+        config = yaml.safe_load(fd)
+
+    validate_json(instance=config, schema=schema)
+
+    env_names = [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
+    svc_names = [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
+
+    if not env_names:
+        click.echo(click.style(f"No environments found in ./copilot/environments; exiting", fg="red"))
+        exit(1)
+
+    if not svc_names:
+        click.echo(click.style(f"No services found in ./copilot/; exiting", fg="red"))
+        exit(1)
+
+    normalised_config = {}
+    for storage_name, storage_config in config.items():
+        storage_type = storage_config["type"]
+        normalised_config[storage_name] = copy.deepcopy(storage_config)
+
+        if "services" in normalised_config[storage_name]:
+            valid_services = [svc for svc in normalised_config[storage_name]["services"] if svc in svc_names]
+            if valid_services != normalised_config[storage_name]["services"]:
+                normalised_config[storage_name]["services"] = valid_services
+                click.echo(click.style(f"Services listed in {storage_name} do not exist in ./copilot/", fg="red"))
+
+        environments = normalised_config[storage_name].pop("environments", {})
+        default = environments.pop("default", {})
+
+        initial = _lookup_plan(storage_type, default)
+
+        normalised_environments = {}
+
+        for env in env_names:
+            normalised_environments[env] = _normalise_keys(initial)
+
+        for env_name, env_config in environments.items():
+            if env_name not in normalised_environments:
+                click.echo(click.style(f"Environment key {env_name} listed in {storage_name} does not exist in ./copilot/environments", fg="red"))
+            else:
+                normalised_environments[env_name].update(
+                    _lookup_plan(storage_type, _normalise_keys(env_config))
+                )
+
+        normalised_config[storage_name]["environments"] = normalised_environments
+
+    return normalised_config
+
+
+@cli.command()
+@click.argument("storage-config-file", type=click.Path(exists=True))
+@click.argument("output", type=click.Path(exists=True), default=".")
+@click.option('--overwrite', is_flag=True, show_default=True, default=True, help='Overwrite existing cloudformation? Defaults to True')
+def make_cloudformation(storage_config_file, output, overwrite):
+    """
+    Generate storage cloudformation for each environment
+    """
+
+    templates = setup_templates()
+
+    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
+        click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
+
+    config = _validate_and_normalise_config(storage_config_file)
+
+    click.echo("\n>>> Generating cloudformation\n")
+
+    path = Path(f"copilot/environments/addons/")
+    click.echo( _mkdir(output, path))
+
+    services = []
     for storage_name, storage_config in config.items():
         storage_type = storage_config.pop("type")
         environments = storage_config.pop("environments")
 
-        initial = _lookup_plan(storage_type, environments.pop("default", {}))
-
-        for env in env_names:
-            env_config[env] = _normalise_keys(initial)
-
-        for env_name, conf in environments.items():
-            env_config[env_name].update(
-                _lookup_plan(storage_type, _normalise_keys(conf))
-            )
-
         service = {
             "secret_name": storage_name.upper().replace("-", "_"),
             "name": storage_config.get("name", None) or storage_name,
-            "environments": env_config,
+            "environments": environments,
             "prefix": camel_case(storage_name),
             "storage_type": storage_type,
             **storage_config,
@@ -488,7 +498,7 @@ def generate_storage(storage_config_file, output, overwrite):
         services.append(service)
 
         # s3-policy only applies to individual services
-        if storage_type != "s3-policy":        
+        if storage_type != "s3-policy":
             template = templates["env"][storage_type]
             contents = template.render({
                 "service": service
@@ -502,19 +512,20 @@ def generate_storage(storage_config_file, output, overwrite):
             template = templates["svc"]["s3-policy"]
 
             for svc in storage_config.get("services", []):
-                # TODO: should we validate that the svc exists?
+
                 path = Path(f"copilot/{svc}/addons/")
 
                 service = {
                     "name": storage_config.get("name", None) or storage_name,
                     "prefix": camel_case(storage_name),
-                    "environments": env_config,
-                    **storage_config,                    
+                    "environments": environments,
+                    **storage_config,
                 }
 
                 contents = template.render({
                     "service": service
                 })
+
                 click.echo(_mkdir(output, path))
                 click.echo(_mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
@@ -531,7 +542,7 @@ def get_service_secrets(service_name, env):
 
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
-        
+
     client = boto3.client('ssm')
 
     path = SSM_BASE_PATH.format(app=service_name, env=env)
@@ -543,7 +554,7 @@ def get_service_secrets(service_name, env):
         MaxResults=10
     )
     secrets = []
-    
+
     # TODO: refactor shared code with get_ssm_secret_names
     while True:
         response = client.get_parameters_by_path(
@@ -557,9 +568,9 @@ def get_service_secrets(service_name, env):
             params["NextToken"] = response["NextToken"]
         else:
             break
-    
+
     print("\n".join(sorted(secrets)))
-   
+
 
 if __name__ == "__main__":
     cli()
