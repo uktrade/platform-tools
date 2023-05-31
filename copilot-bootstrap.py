@@ -94,12 +94,11 @@ storage_schema = Schema({
 
 
 def _mkdir(base, path):
-
     if (base / path).exists():
-        return f"directory {path} exists; doing nothing"
+        return f"Directory {path} exists; doing nothing"
 
     (base / path).mkdir(parents=True)
-    return f"directory {path} created"
+    return f"Directory {path} created"
 
 
 def _mkfile(base, path, contents, overwrite=False):
@@ -107,14 +106,14 @@ def _mkfile(base, path, contents, overwrite=False):
     file_exists = (base / path).exists()
 
     if file_exists and not overwrite:        
-        return f"file {path} exists; doing nothing"
+        return f"File {path} exists; doing nothing"
 
     action = "overwritten" if overwrite else "created"
 
     with open(base / path, "w") as fd:
         fd.write(contents)
 
-    return f"file {path} {action}"
+    return f"File {path} {action}"
 
 
 def camel_case(s):
@@ -261,7 +260,7 @@ def make_config(config_file, output):
 
     templates = setup_templates()
 
-    click.echo("GENERATING COPILOT CONFIG FILES")
+    click.echo(">>> Generating Copilot configuration files\n")
 
     # create copilot directory
     click.echo(_mkdir(base_path, "copilot"))
@@ -304,11 +303,9 @@ def make_config(config_file, output):
             contents = templates["svc"][bs["type"]].render(dict(service=bs))
             _mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
-    # generate instructions
-    config["config_file"] = config_file
-    instructions = templates["instructions"].render(config)
-    click.echo("---")
-    click.echo(instructions)
+    # link to GitHub docs
+    click.echo("\nGitHub documentation: "
+               "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration")
 
 
 @cli.command()
@@ -443,13 +440,13 @@ def generate_storage(storage_config_file, output, overwrite):
 
     env_config = {}
 
-    click.echo("\n>>> Generating cloudformation\n")
+    click.echo(">>> Generating CloudFormation\n")
 
     # Validation TODO: check that the environments list matches what is in the copilot/environments/ dir
     # and check that services referenced are valid.
 
     path = Path(f"copilot/environments/addons/")
-    click.echo( _mkdir(output, path))
+    click.echo(_mkdir(output, path))
 
     def _lookup_plan(storage_type, env_conf):
         plan = env_conf.pop("plan", None)
