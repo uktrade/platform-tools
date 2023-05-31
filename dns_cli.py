@@ -310,7 +310,7 @@ def check_aws_conn(aws_profile):
 
 def check_response(response):
     if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-        print("Uknown response error from AWS")
+        print(f"Unknown response error from AWS.\nStatus Code: {response['ResponseMetadata']['HTTPStatusCode']}")
         exit()
 
 
@@ -500,11 +500,6 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     else:
         print(f"No hosted zone found for {domain_name}")
         return
-
-
-def run_atest():
-    print("running a test")
-    return True
 
 
 if __name__ == "__main__":
