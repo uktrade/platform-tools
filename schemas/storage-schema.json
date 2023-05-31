@@ -47,24 +47,24 @@
                "if": {
                   "properties": {
                      "type": {
-                        "const": "postgres"
+                        "const": "rds-pg"
                      }
                   }
                },
                "then": {
-                  "$ref": "#/definitions/postgres"
+                  "$ref": "#/definitions/rds-pg"
                }
             },
             {
                "if": {
                   "properties": {
                      "type": {
-                        "const": "aurora"
+                        "const": "aurora-pg"
                      }
                   }
                },
                "then": {
-                  "$ref": "#/definitions/aurora"
+                  "$ref": "#/definitions/aurora-pg"
                }
             },
             {
@@ -84,8 +84,8 @@
             "type": {
                "type": "string",
                "enum": [
-                  "postgres",
-                  "aurora",
+                  "rds-pg",
+                  "aurora-pg",
                   "redis",
                   "opensearch",
                   "s3",
@@ -167,7 +167,7 @@
          },
          "additionalProperties": false
       },
-      "postgres": {
+      "rds-pg": {
          "type": "object",
          "patternProperties": {
             "type": {
@@ -177,7 +177,7 @@
                "type": "object",
                "patternProperties": {
                   "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/postgres-environment"
+                     "$ref": "#/definitions/rds-pg-environment"
                   }
                },
                "additionalProperties": false
@@ -185,7 +185,7 @@
          },
          "additionalProperties": false
       },
-      "aurora": {
+      "aurora-pg": {
          "type": "object",
          "patternProperties": {
             "type": {
@@ -195,7 +195,7 @@
                "type": "object",
                "patternProperties": {
                   "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/aurora-environment"
+                     "$ref": "#/definitions/aurora-pg-environment"
                   }
                },
                "additionalProperties": false
@@ -253,14 +253,14 @@
          },
          "additionalProperties": false
       },
-      "postgres-environment": {
+      "rds-pg-environment": {
          "type": "object",
          "properties": {
             "plan": {
-               "$ref": "#/definitions/postgres-plans"
+               "$ref": "#/definitions/rds-pg-plans"
             },
             "instance": {
-               "$ref": "#/definitions/postgres-instance-types"
+               "$ref": "#/definitions/rds-pg-instance-types"
             },
             "volume-size": {
                "type": "integer",
@@ -275,7 +275,7 @@
          },
          "additionalProperties": false
       },
-      "aurora-environment": {
+      "aurora-pg-environment": {
          "type": "object",
          "properties": {
             "min-capacity": {
@@ -364,7 +364,7 @@
             "1.0"
          ]
       },
-      "postgres-plans": {
+      "rds-pg-plans": {
          "type": "string",
          "enum": [
             "tiny-13",
@@ -378,7 +378,7 @@
             "xlarge-13-ha"
          ]
       },
-      "postgres-instance-types": {
+      "rds-pg-instance-types": {
          "type": "string",
          "enum": [
             "db.m5.2xlarge",

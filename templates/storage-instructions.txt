@@ -13,7 +13,7 @@ You will then be able to access the S3 bucket directly from your service without
 
 >>> Credentials
 {%- for service in services %}
-{% if service.storage_type in ["redis", "opensearch", "postgres", "postgres-rds"] %}
+{% if service.storage_type in ["redis", "opensearch", "aurora-g", "rds-pg"] %}
 Add the following to your service's manifest.yml file to access {{ service.name|capitalize }}:
 
 secrets: 
@@ -21,7 +21,7 @@ secrets:
   REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- elif service.storage_type == "opensearch" %}
   OPENSEARCH_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
-{%- elif service.storage_type in ["postgres", "postgres-rds"] %}
+{%- elif service.storage_type in ["aurora-pg", "rds-pg"] %}
   DATABASE_CREDENTIALS: 
     secretsmanager: ${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/{{ service.secret_name }}
 {%- endif -%}
