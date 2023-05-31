@@ -126,7 +126,7 @@ opensearch:
     instance: m6g.2xlarge.search    
 
 # RDS/Postgres Instances
-postgres:
+postgres-rds:
   # 5GB Storage, Postgres Version 13, DB Instance Class: db.t3.micro
   tiny-13:
     volumesize: 5

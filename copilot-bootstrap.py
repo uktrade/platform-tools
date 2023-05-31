@@ -42,7 +42,7 @@ config_schema = Schema({
             Optional("backing-services"): [
                 {
                     "name": str,
-                    "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
+                    "type": lambda s: s in ("s3", "external-s3", "postgres", "postgres-rds", "redis", "opensearch",),
                     Optional("paas-description"): str,
                     Optional("paas-instance"): str,
                     Optional("notes"): str,
@@ -64,7 +64,7 @@ config_schema = Schema({
 
 storage_schema = Schema({
     str: {
-         "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
+         "type": lambda s: s in ("s3", "external-s3", "postgres", "postgres-rds", "redis", "opensearch",),
          str: {
             Optional("plan"): str,
             # s3
@@ -148,6 +148,7 @@ def setup_templates():
             "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
+            "postgres-rds": templateEnv.get_template("svc/addons/postgres-rds.yml"),
             "postgres": templateEnv.get_template("svc/addons/postgres.yml"),
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
@@ -156,6 +157,7 @@ def setup_templates():
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
             "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
+            "postgres-rds": templateEnv.get_template("env/addons/postgres-rds.yml"),
             "postgres": templateEnv.get_template("env/addons/postgres.yml"),
             "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
             "s3": templateEnv.get_template("env/addons/s3.yml"),
@@ -490,7 +492,7 @@ def get_service_secrets(service_name, env):
     """
     List secret names and values for a service
     """
-    
+
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
         
