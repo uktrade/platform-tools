@@ -213,6 +213,26 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    development:
+      paas: dit-staging/tariffs-dev/tamato-dev
+    production:
+      paas: dit-services/tariffs/tamato
+    test:
+      paas: dit-staging/tariffs-test/tamato-test
+    training:
+      paas: dit-staging/tariffs-training/tamato-training
+    uat:
+      paas: dit-staging/tariffs-uat/tamato-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: tamato-rule-check-worker
+  notes: service created based on Procfile entry for tamato and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/tamato.git
+  secrets: {}
+  secrets_from: tamato
+  type: backend
+- env_vars: {}
+  environments:
     production:
       ipfilter: true
       paas: dit-services/tariffs/tamato-flower

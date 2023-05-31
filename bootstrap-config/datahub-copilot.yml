@@ -32,6 +32,7 @@ environments:
     - ACM-ARN-FOR-datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
     - ACM-ARN-FOR-datahub-staging.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.staging.uktrade.io
+    - ACM-ARN-FOR-datahub.staging.uktrade.io
     - ACM-ARN-FOR-datahub-filebrowser-staging.london.cloudapps.digital
     - ACM-ARN-FOR-legacy.datahub.staging.uktrade.io
     - ACM-ARN-FOR-datahub-omis-staging.london.cloudapps.digital
@@ -42,6 +43,7 @@ environments:
     - ACM-ARN-FOR-datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
     - ACM-ARN-FOR-datahub-uat.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.uat.uktrade.io
+    - ACM-ARN-FOR-datahub.uat.uktrade.io
     - ACM-ARN-FOR-datahub-filebrowser-uat.london.cloudapps.digital
     - ACM-ARN-FOR-legacy.datahub.uat.uktrade.io
     - ACM-ARN-FOR-datahub-omis-uat.london.cloudapps.digital
@@ -210,6 +212,7 @@ services:
     RESOURCE_SERVER_INTROSPECTION_URL: RESOURCE_SERVER_INTROSPECTION_URL
     RESTRICT_ADMIN: RESTRICT_ADMIN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SESSION_COOKIE_AGE: SESSION_COOKIE_AGE
     SKIP_MI_DATABASE_MIGRATIONS: SKIP_MI_DATABASE_MIGRATIONS
     SLACK_API_TOKEN: SLACK_API_TOKEN
     SLACK_MESSAGE_CHANNEL: SLACK_MESSAGE_CHANNEL
@@ -375,7 +378,7 @@ services:
 - env_vars: {}
   environments:
     dev:
-      ipfilter: false
+      ipfilter: true
       paas: dit-staging/datahub-dev/datahub-dev
       url: datahub.dev.uktrade.io
     production:
@@ -385,11 +388,11 @@ services:
     staging:
       ipfilter: false
       paas: dit-staging/datahub-staging/datahub-staging
-      url: www.datahub.staging.uktrade.io
+      url: datahub.staging.uktrade.io
     uat:
       ipfilter: false
       paas: dit-staging/datahub-uat/datahub-uat
-      url: www.datahub.uat.uktrade.io
+      url: datahub.uat.uktrade.io
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: datahub-fe
   overlapping_secrets:
