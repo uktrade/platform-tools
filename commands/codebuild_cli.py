@@ -93,7 +93,7 @@ def check_git_url(git):
 
 
 @click.group()
-def cli():
+def codebuild():
     pass
 
 
@@ -180,7 +180,7 @@ def create_codedeploy_role(project_profile):
     print("Policy attached to Role")
 
 
-@cli.command()
+@codebuild.command()
 @click.option('--update', is_flag=True, show_default=True, default=False, help='Update config')
 @click.option('--name', required=True, help='Name of project')
 @click.option('--desc', default="", help='Description of project')
@@ -347,4 +347,4 @@ def slackcreds(workspace, channel, token, project_profile):
 
 
 if __name__ == "__main__":
-    cli()
+    codebuild()
