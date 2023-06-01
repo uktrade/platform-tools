@@ -4,7 +4,7 @@
 
 # the name of storage item
 my-thing:
-  type: X   # options: s3, s3-policy, redis, opensearch, rds-pg, aurora-pg
+  type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
 
   environments:  # per environment configuration is defined here.
     default:   # the optional default key is used to apply a default value to all environments
@@ -78,7 +78,7 @@ my-redis:
 ##### RDS postgres example:
 
 my-rds-db:
-  type: rds-pg
+  type: rds-postgres
 
   environments:
     default:
@@ -88,7 +88,7 @@ my-rds-db:
 ##### Aurora serverless v2 example:
 
 my-aurora-db:
-  type: aurora-pg
+  type: aurora-postgres
 
   environments:
     default:
