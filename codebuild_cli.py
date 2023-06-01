@@ -54,7 +54,7 @@ def check_service_role(project_profile):
         role_arn = ""
         exit()
 
-    return (role_arn)
+    return role_arn
 
 
 def update_parameter(project_session, name, description, value):
