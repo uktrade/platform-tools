@@ -97,7 +97,7 @@ def codebuild():
     pass
 
 
-@cli.command()
+@codebuild.command()
 @click.option('--pat', help='PAT Token', required=True)
 @click.option('--project-profile', help='aws account profile name', required=True)
 def link_github(pat, project_profile):
@@ -110,7 +110,7 @@ def link_github(pat, project_profile):
     import_pat(pat, client)
 
 
-@cli.command()
+@codebuild.command()
 @click.option('--project-profile', help='aws account profile name', required=True)
 def create_codedeploy_role(project_profile):
     """
@@ -309,7 +309,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
     print(f"Codebuild project {name} created")
 
 
-@cli.command()
+@codebuild.command()
 @click.option('--workspace', help='Slack Workspace id', required=True)
 @click.option('--channel', help='Slack channel id', required=True)
 @click.option('--token', help='Slack api token', required=True)
