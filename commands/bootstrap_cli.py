@@ -104,12 +104,6 @@ def make_config(config_file, output):
     CONFIG-FILE is the path to the input yaml config file
     OUTPUT is the location of the repo root dir. Defaults to the current directory.
     """
-    """
-    Generate copilot boilerplate code
-
-    CONFIG-FILE is the path to the input yaml config file
-    OUTPUT is the location of the repo root dir. Defaults to the current directory.
-    """
 
     base_path = Path(output)
     config = load_and_validate_config(config_file)
