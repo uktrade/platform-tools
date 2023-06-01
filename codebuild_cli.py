@@ -155,7 +155,7 @@ def create_codedeploy_role(project_profile):
             print("Policy updated")
 
         except client.exceptions.LimitExceededException:
-            print("You have hit the limit of max managed policies, please delete and existing version and try again")
+            print("You have hit the limit of max managed policies, please delete an existing version and try again")
             exit()
 
     with open(f"{current_filepath}/templates/create-codebuild-role.json") as f:
