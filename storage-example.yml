@@ -22,8 +22,6 @@ my-thing:
 ##### s3 bucket example:
 
 my-s3-bucket:
-  # type: s3 will create a bucket in each environment.
-  # Services listed in the `services` key will be granted access to the bucket.
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
 
   type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
