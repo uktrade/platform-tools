@@ -301,7 +301,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
             )
 
         except client.exceptions.ResourceAlreadyExistsException:
-            print("Project already exist use the --update switch")
+            print("Project already exists, use the --update flag")
             exit()
 
     check_response(response)
