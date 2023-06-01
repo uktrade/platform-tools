@@ -57,7 +57,7 @@ def check_service_role(project_profile):
     return (role_arn)
 
 
-def update_paramter(project_session, name, description, value):
+def update_parameter(project_session, name, description, value):
     client = project_session.client('ssm', region_name=AWS_REGION)
 
     response = client.put_parameter(
