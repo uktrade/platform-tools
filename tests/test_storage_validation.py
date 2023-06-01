@@ -31,7 +31,7 @@ mys3bucket:
 """)
 
     assert expect_jsonschema_validation_error(storage) == \
-        "'not-valid' is not one of ['postgres', 'aurora', 'redis', 'opensearch', 's3', 's3-policy']"
+        "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy']"
 
 
 @pytest.mark.parametrize("storage_type", [
@@ -39,8 +39,8 @@ mys3bucket:
     "s3-policy",
     "redis",
     "opensearch",
-    "postgres",
-    "aurora",
+    "rds-postgres",
+    "aurora-postgres",
 ])
 def test_extrakeys_not_allowed(storage_type):
     storage = yaml.safe_load(f"""
@@ -56,8 +56,8 @@ mys3bucket:
     "s3-policy",
     "redis",
     "opensearch",
-    "postgres",
-    "aurora",
+    "rds-postgres",
+    "aurora-postgres",
 ])
 def test_environment_extrakeys_not_allowed(storage_type):
     storage = yaml.safe_load(f"""
@@ -131,7 +131,7 @@ def test_redis_invalid_input(storage_yaml, validation_message):
 @pytest.mark.parametrize("storage_yaml, validation_message", [
 ("""
 mypostgres:
-    type: postgres
+    type: rds-postgres
     environments:
         prod:
             instance: invalid-instance
@@ -139,7 +139,7 @@ mypostgres:
 "'invalid-instance' is not one of"),
 ("""
 mypostgres:
-    type: postgres
+    type: rds-postgres
     environments:
         prod:
             plan: invalid-plan
@@ -147,7 +147,7 @@ mypostgres:
 "'invalid-plan' is not one of"),
 ("""
 mypostgres:
-    type: postgres
+    type: rds-postgres
     environments:
         prod:
             replicas: 6
@@ -155,7 +155,7 @@ mypostgres:
 "6 is greater than the maximum of 5"),
 ("""
 mypostgres:
-    type: postgres
+    type: rds-postgres
     environments:
         prod:
             volume-size: 100001
@@ -171,7 +171,7 @@ def test_postgres_invalid_input(storage_yaml, validation_message):
 @pytest.mark.parametrize("storage_yaml, validation_message", [
 ("""
 myaurora:
-    type: aurora
+    type: aurora-postgres
     environments:
         prod:
             min-capacity: -1
@@ -179,7 +179,7 @@ myaurora:
 "-1 is less than the minimum of 0"),
 ("""
 myaurora:
-    type: aurora
+    type: aurora-postgres
     environments:
         prod:
             max-capacity: 0
@@ -304,7 +304,7 @@ myopensearch:
 def test_postgres_valid_example():
     storage = yaml.safe_load("""
 mypostgres:
-    type: postgres
+    type: rds-postgres
     environments:
         default:
             plan: medium-13-ha
@@ -321,7 +321,7 @@ mypostgres:
 def test_aurora_valid_example():
     storage = yaml.safe_load("""
 mypostgres:
-    type: aurora
+    type: aurora-postgres
     environments:
         default:
             min-capacity: 0.5
@@ -340,4 +340,4 @@ def test_schema_redis_plans_match_available_plans():
 
 
 def test_schema_postgres_plans_match_available_plans():
-    assert set(schema["definitions"]["postgres-plans"]["enum"]) == set(plans["postgres"].keys())
+    assert set(schema["definitions"]["rds-postgres-plans"]["enum"]) == set(plans["rds-postgres"].keys())
