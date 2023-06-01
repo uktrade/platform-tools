@@ -48,7 +48,7 @@ config_schema = Schema({
             Optional("backing-services"): [
                 {
                     "name": str,
-                    "type": lambda s: s in ("s3", "external-s3", "aurora-pg", "rds-pg", "redis", "opensearch",),
+                    "type": lambda s: s in ("s3", "s3-policy", "aurora-pg", "rds-pg", "redis", "opensearch",),
                     Optional("paas-description"): str,
                     Optional("paas-instance"): str,
                     Optional("notes"): str,
@@ -130,6 +130,7 @@ def setup_templates():
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
             "rds-pg": templateEnv.get_template("svc/addons/rds-pg.yml"),
+            "aurora-pg": templateEnv.get_template("env/addons/aurora-pg.yml"), 
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
             "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),
