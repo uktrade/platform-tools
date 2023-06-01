@@ -177,7 +177,7 @@ def create_codedeploy_role():
 @click.option('--git', help='Git url of code')
 @click.option('--branch', help='Git branch')
 @click.option('--buildspec', help='Location of buildspec file in repo')
-@click.option('--builderimage', default="public.ecr.aws/h0i0h2o7/uktrade/ci-image-builder", help='Builder image')
+@click.option('--builderimage', default="public.ecr.aws/uktrade/ci-image-builder", help='Builder image')
 @click.option('--release', is_flag=True, show_default=True, default=False, help='Trigger builds on release tags')
 def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release):
     """
