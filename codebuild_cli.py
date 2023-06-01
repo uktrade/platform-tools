@@ -3,7 +3,7 @@ import json
 import os
 import click
 
-from dns_cli import check_response, check_aws_conn
+from utils.aws import check_response, check_aws_conn
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
@@ -249,7 +249,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
                 logsConfig=logsConfig,
             )
         except client.exceptions.ResourceNotFoundException:
-            print("Unable to update a project that does not exist")
+            print("Unable to update a project that does not exist, drop the --update flag")
             exit()
 
         response_webhook = client.update_webhook(
