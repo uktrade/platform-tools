@@ -130,7 +130,7 @@ def setup_templates():
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
             "rds-pg": templateEnv.get_template("svc/addons/rds-pg.yml"),
-            "aurora-pg": templateEnv.get_template("env/addons/aurora-pg.yml"), 
+            "aurora-pg": templateEnv.get_template("svc/addons/aurora-pg.yml"), 
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
             "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),

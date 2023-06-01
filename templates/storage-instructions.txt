@@ -13,7 +13,7 @@ You will then be able to access the S3 bucket directly from your service without
 
 >>> Credentials
 {%- for service in services %}
-{% if service.storage_type in ["redis", "opensearch", "aurora-g", "rds-pg"] %}
+{% if service.storage_type in ["redis", "opensearch", "aurora-pg", "rds-pg"] %}
 Add the following to your service's manifest.yml file to access {{ service.name|capitalize }}:
 
 secrets: 
