@@ -33,7 +33,7 @@ my-s3-bucket:
     - "web-celery"
 
   environments:
-    # NOTE: bucket names must be unique and need to be defined for each environment
+    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
 
     production:
       bucket-name: my-bucket-prod
