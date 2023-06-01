@@ -338,7 +338,7 @@ def slackcreds(workspace, channel, token, project_profile):
             }
         }
 
-    if not click.confirm("Updating Parameter Store with SLACK Creds.\nDo you want to update it?"):
+    if not click.confirm("Updating Parameter Store with Slack credentials.\nDo you want to update it?"):
         exit()
 
     for item, value in SLACK.items():
