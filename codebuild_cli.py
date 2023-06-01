@@ -1,49 +1,15 @@
 #!/usr/bin/env python
 import json
 import os
-
-import boto3
 import click
 
-## To do
-## Need some check to see if user has set their AWS creds correctly
-## let user use both https and ssh address for git url
+from dns_cli import check_response, check_aws_conn
+
+AWS_REGION = "eu-west-2"
+DEFAULT_CI_BUILDER = "public.ecr.aws/h0i0h2o7/uktrade/ci-image-builder"
 
 
-def check_success(task, response):
-    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-        print(f"{task} was a success!")
-    else:
-        print(f"{task} failed!")
-
-
-def display_aws_account():
-    client = boto3.client('iam', region_name='eu-west-2')
-
-    # Check if account exists, if not create
-    response = client.list_account_aliases()
-    # Each AWS account should have an alias defined.
-
-    if not response['AccountAliases']:
-        account_name = input("No Account name has been defined\nPlease enter the name you wish to give to this account: ")
-        if not click.confirm(f"You are about to update AWS Account name to: {account_name}\nDo you want to continue?"):
-            exit()
-        response  = client.create_account_alias(
-            AccountAlias=account_name,
-        )
-        check_success("Create Account Alias", response)
-    else:
-        account_name=response['AccountAliases'][0]
-
-
-    if not click.confirm(f"You are about to update AWS Account: {account_name}\nDo you want to continue?"):
-        exit()
-
-    return account_name
-
-
-def import_pat(pat):
-    client = boto3.client('codebuild', region_name='eu-west-2')
+def import_pat(pat, client):
 
     response = client.import_source_credentials(
         token=pat,
@@ -51,8 +17,8 @@ def import_pat(pat):
         authType='PERSONAL_ACCESS_TOKEN',
         shouldOverwrite=True
     )
-
-    check_success("GITHUB PAT import", response)
+    check_response(response)
+    print("PAT successfully added")
 
 
 def check_github_conn(client):
@@ -60,38 +26,70 @@ def check_github_conn(client):
 
     # If there are no source code creds defined then AWS is not linked to Github
     if not response['sourceCredentialsInfos']:
-        if not click.confirm(f"Github not Linked in this AWS account\nDo you want to link with a PAT?"):
+        if not click.confirm("Github not Linked in this AWS account\nDo you want to link with a PAT?"):
             exit()
 
         pat = input(
-        '''
-        Create a bots PAT with the following scope:
-            repo:   status: Grants read/write access to public and private repository commit statuses.
-            admin:  repo_hook: Grants full control of repository hooks.
+            '''
+            Create a bots PAT with the following scope:
+                repo:   status: Grants read/write access to public and private repository commit statuses.
+                admin:  repo_hook: Grants full control of repository hooks.
 
-        Enter in the PAT here:
-        '''
-        )
+            Enter in the PAT here:
+            '''
+            )
 
-        import_pat(pat)
+        import_pat(pat, client)
 
 
-def check_service_role():
-    client = boto3.client('iam', region_name='eu-west-2')
+def check_service_role(project_profile):
+    client = project_profile.client('iam', region_name=AWS_REGION)
 
     try:
-        response = client.get_role(
-            RoleName='ci-CodeBuild-role'
-        )
-
+        response = client.get_role(RoleName='ci-CodeBuild-role')
         role_arn = response['Role']['Arn']
 
     except client.exceptions.NoSuchEntityException:
-        print ("Role for service does not exist run ./code-deploy-bootstrap.py create-codeploy-role")
+        print("Role for service does not exist run ./codebuild_cli.py create-codeploy-role")
         role_arn = ""
         exit()
 
     return (role_arn)
+
+
+def update_paramter(project_session, name, description, value):
+    client = project_session.client('ssm', region_name=AWS_REGION)
+
+    response = client.put_parameter(
+        Name=name,
+        Description=description,
+        Value=value,
+        Type='SecureString',
+        Overwrite=True,
+        Tier='Standard',
+        DataType='text'
+    )
+    check_response(response)
+
+
+def check_git_url(git):
+    # Ensure the git format is https://github.com/<org>/<repository-name>
+    git_part = git.split(":")
+
+    print(git_part)
+    if git_part[0] == "https":
+        git_url = git
+    elif git_part[0] == "git@github.com":
+        git_url = "https://github.com/" + git_part[1]
+    else:
+        print(
+            """
+            Unable to recognise git url format, make sure its either:
+            https://github.com/<org>/<repository-name>
+            git@github.com:<org>/<repository-name>
+            """)
+        exit()
+    return git_url
 
 
 @click.group()
@@ -100,30 +98,33 @@ def cli():
 
 
 @cli.command()
-@click.option('--pat', help='PAT Token')
-def link_github(pat):
+@click.option('--pat', help='PAT Token', required=True)
+@click.option('--project-profile', help='aws account profile name', required=True)
+def link_github(pat, project_profile):
     """
     Links CodeDeploy to Github via users PAT
     """
-    account_name = display_aws_account()
-    import_pat(pat)
+
+    project_session = check_aws_conn(project_profile)
+    client = project_session.client('codebuild', region_name=AWS_REGION)
+    import_pat(pat, client)
 
 
 @cli.command()
-#@click.option('--update', is_flag=True, show_default=True, default=False, help='Update role/policy')
-def create_codedeploy_role():
+@click.option('--project-profile', help='aws account profile name', required=True)
+def create_codedeploy_role(project_profile):
     """
     Add AWS Role needed for codedeploy
     """
 
-    account_name = display_aws_account()
-    account_id = boto3.client('sts').get_caller_identity().get('Account')
+    project_session = check_aws_conn(project_profile)
+    account_id = project_session.client('sts').get_caller_identity().get('Account')
 
     current_filepath = os.path.dirname(os.path.realpath(__file__))
 
     with open(f"{current_filepath}/templates/put-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
-    client = boto3.client('iam', region_name='eu-west-2')
+    client = project_session.client('iam', region_name=AWS_REGION)
 
     # A policy must be defined if not present.
     try:
@@ -138,55 +139,66 @@ def create_codedeploy_role():
                 },
             ]
         )
-        check_success("Create Policy", response)
+        check_response(response)
+        print("Policy created")
+
     except client.exceptions.EntityAlreadyExistsException:
         if not click.confirm("Policy exists.\nDo you want to update it?"):
             exit()
+        try:
+            response = client.create_policy_version(
+                PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
+                PolicyDocument=json.dumps(policy_doc),
+                SetAsDefault=True
+            )
+            check_response(response)
+            print("Policy updated")
 
-        response = client.create_policy_version(
-            PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
-            PolicyDocument=json.dumps(policy_doc),
-            SetAsDefault=True
-        )
-        check_success("Update Policy", response)
+        except client.exceptions.LimitExceededException:
+            print("You have hit the limit of max managed policies, please delete and existing version and try again")
+            exit()
 
     with open(f"{current_filepath}/templates/create-codebuild-role.json") as f:
         role_doc = json.load(f)
+
     # Now create a role if not present and attache policy
     try:
         response = client.create_role(
-            RoleName = 'ci-CodeBuild-role',
-            AssumeRolePolicyDocument = json.dumps(role_doc)
+            RoleName='ci-CodeBuild-role',
+            AssumeRolePolicyDocument=json.dumps(role_doc)
         )
-        check_success("Create Role", response)
+        check_response(response)
+        print("Role created")
     except client.exceptions.EntityAlreadyExistsException:
         print("Role exists")
 
-    #account_id = boto3.client('sts').get_caller_identity().get('Account')
-    client.attach_role_policy(
+    response = client.attach_role_policy(
         PolicyArn=f'arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy',
         RoleName='ci-CodeBuild-role'
     )
+    check_response(response)
     print("Policy attached to Role")
 
 
 @cli.command()
 @click.option('--update', is_flag=True, show_default=True, default=False, help='Update config')
 @click.option('--name', required=True, help='Name of project')
-@click.option('--desc', help='Description of project')
-@click.option('--git', help='Git url of code')
-@click.option('--branch', help='Git branch')
-@click.option('--buildspec', help='Location of buildspec file in repo')
-@click.option('--builderimage', default="public.ecr.aws/uktrade/ci-image-builder", help='Builder image')
+@click.option('--desc', default="", help='Description of project')
+@click.option('--git', required=True, help='Git url of code')
+@click.option('--branch', required=True, help='Git branch')
+@click.option('--buildspec', required=True, help='Location of buildspec file in repo')
+@click.option('--builderimage', default=DEFAULT_CI_BUILDER, help='Builder image')
+@click.option('--project-profile', required=True, help='aws account profile name')
 @click.option('--release', is_flag=True, show_default=True, default=False, help='Trigger builds on release tags')
-def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release):
+def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project_profile, release):
     """
     Builds Code build boilerplate
     """
 
-    account_name = display_aws_account()
-    role_arn = check_service_role()
-    client = boto3.client('codebuild', region_name='eu-west-2')
+    git_url = check_git_url(git)
+    project_session = check_aws_conn(project_profile)
+    role_arn = check_service_role(project_session)
+    client = project_session.client('codebuild', region_name=AWS_REGION)
     check_github_conn(client)
 
     environment = {
@@ -200,7 +212,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
 
     source = {
         'type': 'GITHUB',
-        'location': f'{git}',
+        'location': f'{git_url}',
         'buildspec': f'{buildspec}',
         'auth': {
             'type': 'OAUTH',
@@ -212,12 +224,12 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
         'type': 'NO_ARTIFACTS'
     }
 
-    logsConfig={
+    logsConfig = {
         'cloudWatchLogs': {
             'status': 'ENABLED',
         },
     }
-    #breakpoint()
+
     if release:
         pattern = '^refs/tags/.*'
     else:
@@ -225,16 +237,20 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
 
     # Either update project or create a new project
     if update:
-        response = client.update_project(
-            name=name,
-            description=desc,
-            source=source,
-            sourceVersion=branch,
-            artifacts=artifacts,
-            environment=environment,
-            serviceRole=role_arn,
-            logsConfig=logsConfig,
-        )
+        try:
+            response = client.update_project(
+                name=name,
+                description=desc,
+                source=source,
+                sourceVersion=branch,
+                artifacts=artifacts,
+                environment=environment,
+                serviceRole=role_arn,
+                logsConfig=logsConfig,
+            )
+        except client.exceptions.ResourceNotFoundException:
+            print("Unable to update a project that does not exist")
+            exit()
 
         response_webhook = client.update_webhook(
             projectName=name,
@@ -246,14 +262,14 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
                     },
                     {
                         'type': 'HEAD_REF',
-                        'pattern': pattern,
-                        #'excludeMatchedPattern': False
+                        'pattern': pattern
                     },
                 ],
             ],
             buildType='BUILD'
         )
         print("Project Updated")
+
     else:
         try:
             response = client.create_project(
@@ -277,8 +293,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
                         },
                         {
                             'type': 'HEAD_REF',
-                            'pattern': pattern,
-                            #'excludeMatchedPattern': False
+                            'pattern': pattern
                         },
                     ],
                 ],
@@ -286,50 +301,49 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, release
             )
 
         except client.exceptions.ResourceAlreadyExistsException:
-            print("Project already exist use:  ./code-deploy-bootstrap.py codedeploy --update")
+            print("Project already exist use the --update switch")
             exit()
 
-    check_success("Create Project", response)
-    check_success("Create Webhook", response_webhook)
-
-
-def update_paramter(name, description, value):
-    client = boto3.client('ssm', region_name='eu-west-2')
-
-    response = client.put_parameter(
-        Name=name,
-        Description=description,
-        Value=value,
-        Type='SecureString',
-        Overwrite=True,
-        Tier='Standard',
-        DataType='text'
-    )
+    check_response(response)
+    check_response(response_webhook)
+    print(f"Codebuild project {name} created")
 
 
 @cli.command()
-@click.option('--workspace', help='Slack Workspace id')
-@click.option('--channel', help='Slack channel id')
-@click.option('--token', help='Slack api token')
-def slackcreds(workspace, channel, token):
+@click.option('--workspace', help='Slack Workspace id', required=True)
+@click.option('--channel', help='Slack channel id', required=True)
+@click.option('--token', help='Slack api token', required=True)
+@click.option('--project-profile', help='aws account profile name', required=True)
+def slackcreds(workspace, channel, token, project_profile):
     """
     Add Slack credentials into AWS Parameter Store
     """
+    project_session = check_aws_conn(project_profile)
 
     SLACK = {
-        "workspace": {"name": "/codebuild/slack_workspace_id", "description": "Slack Workspace ID", "value": workspace},
-        "channel": {"name": "/codebuild/slack_channel_id", "description": "Slack Channel ID", "value": channel},
-        "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": token}
+        "workspace": {
+            "name": "/codebuild/slack_workspace_id",
+            "description": "Slack Workspace ID",
+            "value": workspace
+            },
+        "channel": {
+            "name": "/codebuild/slack_channel_id",
+            "description": "Slack Channel ID",
+            "value": channel
+            },
+        "token": {
+            "name": "/codebuild/slack_api_token",
+            "description": "Slack API Token",
+            "value": token
+            }
         }
-    #breakpoint()
-    print("Updating Parameter Store with SLACK Creds")
-    account_name = display_aws_account()
+
+    if not click.confirm("Updating Parameter Store with SLACK Creds.\nDo you want to update it?"):
+        exit()
 
     for item, value in SLACK.items():
-
-        update_paramter(value['name'], value['description'], value['value'])
-
-    print(f"AWS Account: {account_name} updated.")
+        update_paramter(project_session, value['name'], value['description'], value['value'])
+    print("Paramater Store updated")
 
 
 if __name__ == "__main__":
