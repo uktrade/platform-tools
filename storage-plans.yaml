@@ -126,7 +126,7 @@ opensearch:
     instance: m6g.2xlarge.search    
 
 # RDS/Postgres Instances
-rds-pg:
+rds-postgres:
   # 5GB Storage, Postgres Version 13, DB Instance Class: db.t3.micro
   tiny-13:
     volume-size: 5
@@ -182,7 +182,7 @@ rds-pg:
     instance: db.m5.4xlarge
 
 # Aurora PostGres configuration
-aurora-pg: {}
+aurora-postgres: {}
 
 s3: {}
 
