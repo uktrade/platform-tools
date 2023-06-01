@@ -278,11 +278,11 @@ def check_r53(domain_session, project_session, domain, base_domain):
 
 
 @click.group()
-def cli():
+def domain():
     pass
 
 
-@cli.command()
+@domain.command()
 @click.option('--path', help='path of copilot folder', required=True)
 @click.option('--domain-profile', help='aws account profile name for R53 domains account', required=True)
 @click.option('--project-profile', help='aws account profile name for certificates account', required=True)
@@ -327,7 +327,7 @@ def check_domain(path, domain_profile, project_profile, base_domain):
         print("No domains found, please check the manifest file")
 
 
-@cli.command()
+@domain.command()
 @click.option('--app', help='Application Name', required=True)
 @click.option('--domain-profile', help='aws account profile name for R53 domains account', required=True)
 @click.option('--project-profile', help='aws account profile name for application account', required=True)
@@ -466,4 +466,4 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
 
 
 if __name__ == "__main__":
-    cli()
+    domain()
