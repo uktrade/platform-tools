@@ -37,13 +37,13 @@ my-s3-bucket:
   environments:
     # NOTE: bucket names must be unique and need to be defined for each environment
 
-    prod:
+    production:
       bucket-name: my-bucket-prod
 
     staging:
       bucket-name: my-bucket-staging
 
-    dev:
+    development:
       bucket-name: my-bucket-dev
 
 
@@ -73,7 +73,7 @@ my-redis:
 
       plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
 
-    prod:
+    production:
       plan: medium-ha
 
 
