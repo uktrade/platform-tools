@@ -342,7 +342,7 @@ def slackcreds(workspace, channel, token, project_profile):
         exit()
 
     for item, value in SLACK.items():
-        update_paramter(project_session, value['name'], value['description'], value['value'])
+        update_parameter(project_session, value['name'], value['description'], value['value'])
     print("Paramater Store updated")
 
 
