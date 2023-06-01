@@ -6,7 +6,7 @@ import click
 from dns_cli import check_response, check_aws_conn
 
 AWS_REGION = "eu-west-2"
-DEFAULT_CI_BUILDER = "public.ecr.aws/h0i0h2o7/uktrade/ci-image-builder"
+DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
 
 
 def import_pat(pat, client):
