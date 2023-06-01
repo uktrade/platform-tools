@@ -48,7 +48,7 @@ config_schema = Schema({
             Optional("backing-services"): [
                 {
                     "name": str,
-                    "type": lambda s: s in ("s3", "external-s3", "postgres", "redis", "opensearch",),
+                    "type": lambda s: s in ("s3", "s3-policy", "aurora-postgres", "rds-postgres", "redis", "opensearch",),
                     Optional("paas-description"): str,
                     Optional("paas-instance"): str,
                     Optional("notes"): str,
@@ -129,7 +129,8 @@ def setup_templates():
             "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
-            "postgres": templateEnv.get_template("svc/addons/postgres.yml"),
+            "rds-postgres": templateEnv.get_template("svc/addons/rds-postgres.yml"),
+            "aurora-postgres": templateEnv.get_template("svc/addons/aurora-postgres.yml"), 
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
             "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),
@@ -137,8 +138,8 @@ def setup_templates():
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
             "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
-            "postgres": templateEnv.get_template("env/addons/postgres.yml"),
-            "aurora": templateEnv.get_template("env/addons/postgres.yml"),   # temporarily reusing postgres template
+            "rds-postgres": templateEnv.get_template("env/addons/rds-postgres.yml"),
+            "aurora-postgres": templateEnv.get_template("env/addons/aurora-postgres.yml"),   # temporarily reusing postgres template
             "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
             "s3": templateEnv.get_template("env/addons/s3.yml"),
         },
