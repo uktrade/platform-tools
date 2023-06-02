@@ -3,16 +3,12 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.9
+      python: 3.11
     commands:
       - echo Installing dependencies...
       - pip install -r requirements-test.txt
   
   build:
     commands:
-      - echo Running Tests
+      - echo Running tests...
       - pytest
-  
-  post_build:
-    commands:
-      - echo Tests Complete
