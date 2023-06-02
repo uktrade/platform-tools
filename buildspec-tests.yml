@@ -6,7 +6,7 @@ phases:
       python: 3.11
     commands:
       - echo Installing dependencies...
-      - pip install -r requirements-test.txt
+      - pip install -r requirements/dev.txt
   
   build:
     commands:
