@@ -15,11 +15,7 @@ SOURCE_PATH = f"{CURRENT_FILEPATH}/full-config.yml"
 
 
 def detect_service_type(service):
-    if "redis" in service["name"] or service["instance"][-4:] in [
-        "-3.2",
-        "-5.x",
-        "-6.x",
-    ]:
+    if "redis" in service["name"] or service["instance"][-4:] in ["-3.2", "-5.x", "-6.x"]:
         return "redis"
 
     if "postgres" in service["name"] or "postgres" in service["description"].lower():
@@ -37,22 +33,14 @@ def detect_service_type(service):
     if service["instance"].endswith("-1.x"):
         return "influxdb"
 
-    if (
-        "log" in service["name"]
-        or "autoscaler" in service["name"]
-        or "ip-filter" in service["name"]
-        or "autoscaler" in service["instance"]
-        or "drain" in service["name"]
-    ):
+    if "log" in service["name"] or "autoscaler" in service["name"] or "ip-filter" in service["name"] or "autoscaler" in service["instance"] or "drain" in service["name"]:
         return False
 
     return "!!UNKNOWN!!"
 
 
 def space_to_copilot_app(app_name, ns_conf):
-    envs = [
-        env["environment"] for _, app in ns_conf.items() for env in app["environments"]
-    ]
+    envs = [env["environment"] for _, app in ns_conf.items() for env in app["environments"]]
 
     app_config = {
         "app": app_name,
@@ -70,26 +58,23 @@ def space_to_copilot_app(app_name, ns_conf):
                 for bs in environment["paas"]["services"]:
                     if bs["name"] not in backing_services[environment["environment"]]:
                         backing_services[environment["environment"]][bs["name"]] = []
-                    backing_services[environment["environment"]][bs["name"]].append(
-                        service
-                    )
+                    backing_services[environment["environment"]][bs["name"]].append(service)
 
         env_keys = sorted(list(set(secrets[service])))
         secrets[service] = dict(zip(env_keys, env_keys))
 
     for service, service_conf in ns_conf.items():
+
         if "ip-filter" in service:
             continue
 
-        other_secrets = set(
-            [sx for sn, sv in secrets.items() for sx in sv if sn != service]
-        )
+        other_secrets = set([sx for sn, sv in secrets.items() for sx in sv if sn != service])
         svc_secrets = set(secrets[service].keys())
         overlapping_secrets = svc_secrets.intersection(other_secrets)
 
         processes = None
         for env_conf in service_conf["environments"]:
-            if "paas" not in env_conf or env_conf["paas"] == "NO-APP-FOUND":
+            if 'paas' not in env_conf or env_conf["paas"] == "NO-APP-FOUND":
                 continue
             processes = env_conf["paas"]["processes"]
 
@@ -116,6 +101,7 @@ def space_to_copilot_app(app_name, ns_conf):
 
         for environment in service_conf["environments"]:
             if isinstance(environment["paas"], dict):
+
                 ipfilter = False
                 url = None
                 for route in environment["paas"]["routes"]:
@@ -129,17 +115,10 @@ def space_to_copilot_app(app_name, ns_conf):
                     else:
                         url = route["domain"]
 
-                    if (
-                        "certificate_arns"
-                        in app_config["environments"][environment["environment"]]
-                    ):
-                        app_config["environments"][environment["environment"]][
-                            "certificate_arns"
-                        ].append(f"ACM-ARN-FOR-{url}")
+                    if "certificate_arns" in app_config["environments"][environment["environment"]]:
+                        app_config["environments"][environment["environment"]]["certificate_arns"].append(f"ACM-ARN-FOR-{url}")
                     else:
-                        app_config["environments"][environment["environment"]][
-                            "certificate_arns"
-                        ] = [f"ACM-ARN-FOR-{url}"]
+                        app_config["environments"][environment["environment"]]["certificate_arns"] = [f"ACM-ARN-FOR-{url}"]
 
                 svc["environments"][environment["environment"]] = {
                     "url": url,
@@ -154,9 +133,7 @@ def space_to_copilot_app(app_name, ns_conf):
             psvc["secrets_from"] = svc["name"]
             psvc["name"] += "-" + process["type"]
             psvc["type"] = "backend"
-            psvc[
-                "notes"
-            ] = f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
+            psvc["notes"] = f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
 
             if "overlapping_secrets" in psvc:
                 del psvc["overlapping_secrets"]

@@ -10,6 +10,7 @@ SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
 
 def mkdir(base, path):
+
     if (base / path).exists():
         return f"Directory {path} exists; doing nothing"
 
@@ -18,6 +19,7 @@ def mkdir(base, path):
 
 
 def mkfile(base, path, contents, overwrite=False):
+
     file_exists = (base / path).exists()
 
     if file_exists and not overwrite:
@@ -33,20 +35,26 @@ def mkfile(base, path, contents, overwrite=False):
 
 def camel_case(s):
     s = re.sub(r"(_|-)+", " ", s).title().replace(" ", "")
-    return "".join([s[0].lower(), s[1:]])
+    return ''.join([s[0].lower(), s[1:]])
 
 
 def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
-    client = boto3.client("ssm")
+    client = boto3.client('ssm')
     args = dict(
         Name=param_name,
-        Description="copied from cloudfoundry",
+        Description='copied from cloudfoundry',
         Value=param_value,
-        Type="SecureString",
+        Type='SecureString',
         Overwrite=overwrite,
         Tags=[
-            {"Key": "copilot-application", "Value": app},
-            {"Key": "copilot-environment", "Value": env},
+                {
+                    'Key': 'copilot-application',
+                    'Value': app
+                },
+                {
+                    'Key': 'copilot-environment',
+                    'Value': env
+                },
         ],
     )
 
@@ -58,7 +66,7 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
 
 
 def get_ssm_secret_names(app, env):
-    client = boto3.client("ssm")
+    client = boto3.client('ssm')
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 
@@ -72,7 +80,9 @@ def get_ssm_secret_names(app, env):
     secret_names = []
 
     while True:
-        response = client.get_parameters_by_path(**params)
+        response = client.get_parameters_by_path(
+            **params
+        )
 
         for secret in response["Parameters"]:
             secret_names.append(secret["Name"])
@@ -98,9 +108,7 @@ def setup_templates():
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
             "rds-postgres": templateEnv.get_template("svc/addons/rds-postgres.yml"),
-            "aurora-postgres": templateEnv.get_template(
-                "svc/addons/aurora-postgres.yml"
-            ),
+            "aurora-postgres": templateEnv.get_template("svc/addons/aurora-postgres.yml"),
             "redis": templateEnv.get_template("svc/addons/redis.yml"),
             "s3": templateEnv.get_template("svc/addons/s3.yml"),
             "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),
@@ -109,9 +117,7 @@ def setup_templates():
             "manifest": templateEnv.get_template("env/manifest.yml"),
             "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
             "rds-postgres": templateEnv.get_template("env/addons/rds-postgres.yml"),
-            "aurora-postgres": templateEnv.get_template(
-                "env/addons/aurora-postgres.yml"
-            ),
+            "aurora-postgres": templateEnv.get_template("env/addons/aurora-postgres.yml"),
             "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
             "s3": templateEnv.get_template("env/addons/s3.yml"),
         },

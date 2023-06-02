@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""
+'''
     Take all the files in ci-pipeline-config and combine into one document
-"""
+'''
 
 import os
 from collections import defaultdict
@@ -13,8 +13,8 @@ import yaml
 CURRENT_FILEPATH = os.path.dirname(os.path.realpath(__file__))
 SOURCE_PATH = f"{CURRENT_FILEPATH}/../../ci-pipeline-config/"
 
-
 def import_ci_config():
+
     def _rename(k):
         return {
             "app": "paas-location",
@@ -23,10 +23,9 @@ def import_ci_config():
         }[k]
 
     def _clean(env):
+
         return {
-            _rename(k): v
-            for k, v in env.items()
-            if k not in ["type", "region", "run", "secrets", "vars"]
+                _rename(k): v for k,v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]
         }
 
     path = Path(SOURCE_PATH)
@@ -47,5 +46,5 @@ def import_ci_config():
 if __name__ == "__main__":
     config = import_ci_config()
 
-    with open(f"{CURRENT_FILEPATH}/ci-config.yml", "w") as outfile:
+    with open(f"{CURRENT_FILEPATH}/ci-config.yml", 'w') as outfile:
         yaml.dump(config, outfile)
