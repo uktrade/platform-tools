@@ -11,7 +11,10 @@ DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
 
 def import_pat(pat, client):
     response = client.import_source_credentials(
-        token=pat, serverType="GITHUB", authType="PERSONAL_ACCESS_TOKEN", shouldOverwrite=True
+        token=pat,
+        serverType="GITHUB",
+        authType="PERSONAL_ACCESS_TOKEN",
+        shouldOverwrite=True,
     )
     check_response(response)
     print("PAT successfully added")
