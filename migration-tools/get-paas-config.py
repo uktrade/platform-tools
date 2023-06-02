@@ -20,7 +20,9 @@ def import_ci_config():
 
     def _clean(env):
         return {
-            _rename(k): v for k, v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]
+            _rename(k): v
+            for k, v in env.items()
+            if k not in ["type", "region", "run", "secrets", "vars"]
         }
 
     path = Path(SOURCE_PATH)
@@ -50,9 +52,15 @@ def get_paas_data(client):
             print(f"└── Space: {space['entity']['name']}")
             for app in space.apps():
                 print(f"    ├── {app['entity']['name']}")
-                env_keys = list(app['entity']['environment_json'].keys()) if app['entity']['environment_json'] else []
+                env_keys = (
+                    list(app["entity"]["environment_json"].keys())
+                    if app["entity"]["environment_json"]
+                    else []
+                )
 
-                env_keys = [k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]]
+                env_keys = [
+                    k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]
+                ]
 
                 app_data = {
                     "services": [],
@@ -64,7 +72,7 @@ def get_paas_data(client):
                 key_ = "{}/{}/{}".format(
                     org["entity"]["name"],
                     space["entity"]["name"],
-                    app["entity"]["name"]
+                    app["entity"]["name"],
                 )
 
                 # get processes
@@ -73,10 +81,12 @@ def get_paas_data(client):
 
                 for process in v3app.processes():
                     proc = client.v3.processes.get(process["guid"])
-                    app_data["processes"].append({
-                        "type": proc["type"],
-                        "command": proc["command"],
-                    })
+                    app_data["processes"].append(
+                        {
+                            "type": proc["type"],
+                            "command": proc["command"],
+                        }
+                    )
 
                 for route in app.routes():
                     domain = route.domain()
@@ -94,7 +104,6 @@ def get_paas_data(client):
                     app_data["routes"].append(route_data)
 
                 for sb in app.service_bindings():
-
                     service = sb.service_instance()
 
                     if service["entity"]["name"] in ["log-drain", "autoscaler"]:
@@ -128,5 +137,5 @@ if __name__ == "__main__":
 
     paas_apps = get_paas_data(client)
 
-    with open(f"{CURRENT_FILEPATH}/paas-config.yml", 'w') as outfile:
+    with open(f"{CURRENT_FILEPATH}/paas-config.yml", "w") as outfile:
         yaml.dump(paas_apps, outfile)
