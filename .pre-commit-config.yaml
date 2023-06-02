@@ -3,12 +3,6 @@ repos:
     rev: 22.6.0
     hooks:
       - id: black
-  - repo: https://github.com/wieczorek1990/pyproject-flake8
-    rev: 33037343b498c4770f4f4a2de3675dbc1da74598
-    hooks:
-      - id: pyproject-flake8
-        args: [ --config=pyproject.toml ]
-        additional_dependencies: [flake8==5.0.4]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
@@ -16,3 +10,11 @@ repos:
         name: Replaces line endings with the most commonly used one
       - id: detect-private-key
         name: Detects for the presence of private keys in the code
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
