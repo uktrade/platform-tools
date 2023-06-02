@@ -11,54 +11,63 @@ import yaml
 from .utils import camel_case, get_ssm_secret_names, mkdir, mkfile, set_ssm_param, SSM_PATH, setup_templates
 
 
-config_schema = Schema({
-    "app": str,
-    "environments": {
-        str: {
-            Optional("certificate_arns"): [str]
-        }
-    },
-    "services": [
-        {
-            "name": str,
-            "type": lambda s: s in ("public", "backend",),
-            "repo": str,
-            "image_location": str,
-            Optional("notes"): str,
-            Optional("secrets_from"): str,
-            "environments": {
-                str: {
-                    "paas": str,
-                    Optional("url"): str,
-                    Optional("ipfilter"): bool,
-                }
-            },
-            Optional("backing-services"): [
-                {
-                    "name": str,
-                    "type": lambda s: s in ("s3", "s3-policy", "aurora-postgres", "rds-postgres", "redis", "opensearch",),
-                    Optional("paas-description"): str,
-                    Optional("paas-instance"): str,
-                    Optional("notes"): str,
-                    Optional("bucket_name"): str,           # for external-s3 type
-                    Optional("readonly"): bool,             # for external-s3 type
-                    Optional("shared"): bool,
-                }
-            ],
-            Optional("overlapping_secrets"): [ str ],
-            "secrets": {
-                Optional(str): str,
-            },
-            "env_vars": {
-                Optional(str): str,
-            },
-        }
-    ],
-})
+config_schema = Schema(
+    {
+        "app": str,
+        "environments": {str: {Optional("certificate_arns"): [str]}},
+        "services": [
+            {
+                "name": str,
+                "type": lambda s: s
+                in (
+                    "public",
+                    "backend",
+                ),
+                "repo": str,
+                "image_location": str,
+                Optional("notes"): str,
+                Optional("secrets_from"): str,
+                "environments": {
+                    str: {
+                        "paas": str,
+                        Optional("url"): str,
+                        Optional("ipfilter"): bool,
+                    }
+                },
+                Optional("backing-services"): [
+                    {
+                        "name": str,
+                        "type": lambda s: s
+                        in (
+                            "s3",
+                            "s3-policy",
+                            "aurora-postgres",
+                            "rds-postgres",
+                            "redis",
+                            "opensearch",
+                        ),
+                        Optional("paas-description"): str,
+                        Optional("paas-instance"): str,
+                        Optional("notes"): str,
+                        Optional("bucket_name"): str,  # for external-s3 type
+                        Optional("readonly"): bool,  # for external-s3 type
+                        Optional("shared"): bool,
+                    }
+                ],
+                Optional("overlapping_secrets"): [str],
+                "secrets": {
+                    Optional(str): str,
+                },
+                "env_vars": {
+                    Optional(str): str,
+                },
+            }
+        ],
+    }
+)
 
 
 def get_paas_env_vars(client, paas):
-
     org, space, app = paas.split("/")
 
     env_vars = None
@@ -78,7 +87,6 @@ def get_paas_env_vars(client, paas):
 
 
 def load_and_validate_config(path):
-
     with open(path, "r") as fd:
         conf = yaml.safe_load(fd)
 
@@ -125,10 +133,9 @@ def make_config(config_file, output):
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
         click.echo(mkdir(base_path, f"copilot/environments/{name}"))
-        contents = templates["env"]["manifest"].render({
-            "name": name,
-            "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""
-        })
+        contents = templates["env"]["manifest"].render(
+            {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""}
+        )
         click.echo(mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
 
     # create each service directory and manifest.yml
@@ -154,16 +161,18 @@ def make_config(config_file, output):
             mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
     # link to GitHub docs
-    click.echo("\nGitHub documentation: "
-               "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration")
+    click.echo(
+        "\nGitHub documentation: "
+        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration"
+    )
 
 
 @bootstrap.command()
 @click.argument("config-file", type=click.Path(exists=True))
-@click.option('--env', help='Migrate secrets from a specific environment')
-@click.option('--svc', help='Migrate secrets from a specific service')
-@click.option('--overwrite', is_flag=True, show_default=True, default=False, help='Overwrite existing secrets?')
-@click.option('--dry-run', is_flag=True, show_default=True, default=False, help='dry run')
+@click.option("--env", help="Migrate secrets from a specific environment")
+@click.option("--svc", help="Migrate secrets from a specific service")
+@click.option("--overwrite", is_flag=True, show_default=True, default=False, help="Overwrite existing secrets?")
+@click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
 def migrate_secrets(config_file, env, svc, overwrite, dry_run):
     """
     Migrate secrets from your gov paas application to AWS/copilot
@@ -206,7 +215,6 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
             continue
 
         for env_name, environment in service["environments"].items():
-
             if env and env_name != env:
                 continue
 
@@ -227,7 +235,9 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
                 elif not env_vars[app_secret_key]:
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
-                    click.echo(f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'")
+                    click.echo(
+                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'"
+                    )
                 else:
                     param_value = env_vars[app_secret_key]
 
