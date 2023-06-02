@@ -37,6 +37,8 @@ certifi==2023.5.7
     #   requests
 cffi==1.15.1
     # via cryptography
+cfgv==3.3.1
+    # via pre-commit
 charset-normalizer==3.1.0
     # via
     #   -r requirements.txt
@@ -52,13 +54,19 @@ contextlib2==21.6.0
     #   schema
 cryptography==40.0.2
     # via moto
+distlib==0.3.6
+    # via virtualenv
 exceptiongroup==1.1.1
     # via pytest
+filelock==3.12.0
+    # via virtualenv
 frozenlist==1.3.3
     # via
     #   -r requirements.txt
     #   aiohttp
     #   aiosignal
+identify==2.5.24
+    # via pre-commit
 idna==3.4
     # via
     #   -r requirements.txt
@@ -89,18 +97,24 @@ multidict==6.0.4
     #   -r requirements.txt
     #   aiohttp
     #   yarl
+nodeenv==1.8.0
+    # via pre-commit
 oauth2-client==1.4.2
     # via
     #   -r requirements.txt
     #   cloudfoundry-client
 packaging==23.1
     # via pytest
+platformdirs==3.5.1
+    # via virtualenv
 pluggy==1.0.0
     # via pytest
 polling2==0.5.0
     # via
     #   -r requirements.txt
     #   cloudfoundry-client
+pre-commit @ git+https://github.com/uktrade/modification-pre-commit
+    # via -r requirements-test.in
 protobuf==4.23.1
     # via
     #   -r requirements.txt
@@ -122,6 +136,7 @@ pyyaml==6.0
     # via
     #   -r requirements.txt
     #   cloudfoundry-client
+    #   pre-commit
     #   responses
 requests==2.31.0
     # via
@@ -152,6 +167,8 @@ urllib3==1.26.16
     #   botocore
     #   requests
     #   responses
+virtualenv==20.23.0
+    # via pre-commit
 websocket-client==1.5.2
     # via
     #   -r requirements.txt
@@ -164,3 +181,6 @@ yarl==1.9.2
     # via
     #   -r requirements.txt
     #   aiohttp
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
