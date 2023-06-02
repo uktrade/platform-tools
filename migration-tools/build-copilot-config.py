@@ -33,7 +33,13 @@ def detect_service_type(service):
     if service["instance"].endswith("-1.x"):
         return "influxdb"
 
-    if "log" in service["name"] or "autoscaler" in service["name"] or "ip-filter" in service["name"] or "autoscaler" in service["instance"] or "drain" in service["name"]:
+    if (
+        "log" in service["name"]
+        or "autoscaler" in service["name"]
+        or "ip-filter" in service["name"]
+        or "autoscaler" in service["instance"]
+        or "drain" in service["name"]
+    ):
         return False
 
     return "!!UNKNOWN!!"
@@ -64,7 +70,6 @@ def space_to_copilot_app(app_name, ns_conf):
         secrets[service] = dict(zip(env_keys, env_keys))
 
     for service, service_conf in ns_conf.items():
-
         if "ip-filter" in service:
             continue
 
@@ -74,7 +79,7 @@ def space_to_copilot_app(app_name, ns_conf):
 
         processes = None
         for env_conf in service_conf["environments"]:
-            if 'paas' not in env_conf or env_conf["paas"] == "NO-APP-FOUND":
+            if "paas" not in env_conf or env_conf["paas"] == "NO-APP-FOUND":
                 continue
             processes = env_conf["paas"]["processes"]
 
@@ -101,7 +106,6 @@ def space_to_copilot_app(app_name, ns_conf):
 
         for environment in service_conf["environments"]:
             if isinstance(environment["paas"], dict):
-
                 ipfilter = False
                 url = None
                 for route in environment["paas"]["routes"]:
@@ -116,9 +120,13 @@ def space_to_copilot_app(app_name, ns_conf):
                         url = route["domain"]
 
                     if "certificate_arns" in app_config["environments"][environment["environment"]]:
-                        app_config["environments"][environment["environment"]]["certificate_arns"].append(f"ACM-ARN-FOR-{url}")
+                        app_config["environments"][environment["environment"]]["certificate_arns"].append(
+                            f"ACM-ARN-FOR-{url}"
+                        )
                     else:
-                        app_config["environments"][environment["environment"]]["certificate_arns"] = [f"ACM-ARN-FOR-{url}"]
+                        app_config["environments"][environment["environment"]]["certificate_arns"] = [
+                            f"ACM-ARN-FOR-{url}"
+                        ]
 
                 svc["environments"][environment["environment"]] = {
                     "url": url,
@@ -133,7 +141,9 @@ def space_to_copilot_app(app_name, ns_conf):
             psvc["secrets_from"] = svc["name"]
             psvc["name"] += "-" + process["type"]
             psvc["type"] = "backend"
-            psvc["notes"] = f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
+            psvc[
+                "notes"
+            ] = f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
 
             if "overlapping_secrets" in psvc:
                 del psvc["overlapping_secrets"]

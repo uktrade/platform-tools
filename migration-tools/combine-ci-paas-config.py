@@ -32,5 +32,5 @@ if __name__ == "__main__":
                 except KeyError:
                     env["paas"] = "NO-APP-FOUND"
 
-    with open(f"{CURRENT_FILEPATH}/full-config.yml", 'w') as outfile:
+    with open(f"{CURRENT_FILEPATH}/full-config.yml", "w") as outfile:
         yaml.dump(ci, outfile)

@@ -79,11 +79,14 @@ def _validate_and_normalise_config(config_file):
 
         for env_name, env_config in environments.items():
             if env_name not in normalised_environments:
-                click.echo(click.style(f"Environment key {env_name} listed in {storage_name} does not exist in ./copilot/environments", fg="red"))
-            else:
-                normalised_environments[env_name].update(
-                    _lookup_plan(storage_type, _normalise_keys(env_config))
+                click.echo(
+                    click.style(
+                        f"Environment key {env_name} listed in {storage_name} does not exist in ./copilot/environments",
+                        fg="red",
+                    )
                 )
+            else:
+                normalised_environments[env_name].update(_lookup_plan(storage_type, _normalise_keys(env_config)))
 
         normalised_config[storage_name]["environments"] = normalised_environments
 
@@ -93,7 +96,13 @@ def _validate_and_normalise_config(config_file):
 @copilot.command()
 @click.argument("storage-config-file", type=click.Path(exists=True))
 @click.argument("output", type=click.Path(exists=True), default=".")
-@click.option('--overwrite', is_flag=True, show_default=True, default=True, help='Overwrite existing cloudformation? Defaults to True')
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    show_default=True,
+    default=True,
+    help="Overwrite existing cloudformation? Defaults to True",
+)
 def make_cloudformation(storage_config_file, output, overwrite):
     """
     Generate storage cloudformation for each environment
@@ -130,19 +139,15 @@ def make_cloudformation(storage_config_file, output, overwrite):
         # s3-policy only applies to individual services
         if storage_type != "s3-policy":
             template = templates["env"][storage_type]
-            contents = template.render({
-                "service": service
-            })
+            contents = template.render({"service": service})
 
             click.echo(mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
         # s3 buckets require additional service level cloudformation to grant the ECS task role access to the bucket
         if storage_type in ["s3", "s3-policy"]:
-
             template = templates["svc"]["s3-policy"]
 
             for svc in storage_config.get("services", []):
-
                 path = Path(f"copilot/{svc}/addons/")
 
                 service = {
@@ -152,9 +157,7 @@ def make_cloudformation(storage_config_file, output, overwrite):
                     **storage_config,
                 }
 
-                contents = template.render({
-                    "service": service
-                })
+                contents = template.render({"service": service})
 
                 click.echo(mkdir(output, path))
                 click.echo(mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
@@ -173,23 +176,16 @@ def get_service_secrets(service_name, env):
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
 
-    client = boto3.client('ssm')
+    client = boto3.client("ssm")
 
     path = SSM_BASE_PATH.format(app=service_name, env=env)
 
-    params = dict(
-        Path=path,
-        Recursive=False,
-        WithDecryption=True,
-        MaxResults=10
-    )
+    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
     secrets = []
 
     # TODO: refactor shared code with get_ssm_secret_names
     while True:
-        response = client.get_parameters_by_path(
-            **params
-        )
+        response = client.get_parameters_by_path(**params)
 
         for secret in response["Parameters"]:
             secrets.append("{:<8}: {:<15}".format(secret["Name"], secret["Value"]))
