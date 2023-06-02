@@ -3,17 +3,18 @@ repos:
     rev: 22.6.0
     hooks:
       - id: black
+        name: Format code
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
       - id: mixed-line-ending
-        name: Replaces line endings with the most commonly used one
+        name: Replace line endings
       - id: detect-private-key
-        name: Detects for the presence of private keys in the code
+        name: Detect private keys
   - repo: local
     hooks:
       - id: pytest
-        name: pytest
+        name: Run tests
         entry: pytest
         language: system
         pass_filenames: false
