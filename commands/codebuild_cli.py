@@ -97,7 +97,7 @@ def codebuild():
 @codebuild.command()
 @click.option("--pat", help="PAT Token", required=True)
 @click.option("--project-profile", help="aws account profile name", required=True)
-def link_github(pat, project_profile):
+def link_github(pat: str, project_profile: str) -> None:
     """
     Links CodeDeploy to Github via users PAT
     """
