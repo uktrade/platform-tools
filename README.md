@@ -8,6 +8,10 @@ This repo contains a set of tools for transferring applications from GOV paas to
 
 Clone the repo, inside a virtualenv install pip-tools and run `pip-sync requirements/dev.txt` to install the test dependencies.
 
+## Testing
+
+Run `pytest` in the root directory to run all tests.
+
 ## Migration Tools
 
 See [Migration Tools](./migration-tools/README.md).
