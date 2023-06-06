@@ -66,6 +66,7 @@ def _validate_and_normalise_config(config_file):
             if valid_services != normalised_config[storage_name]["services"]:
                 normalised_config[storage_name]["services"] = valid_services
                 click.echo(click.style(f"Services listed in {storage_name} do not exist in ./copilot/", fg="red"))
+                exit()
 
         environments = normalised_config[storage_name].pop("environments", {})
         default = environments.pop("default", {})
@@ -122,6 +123,8 @@ def make_cloudformation(storage_config_file, output, overwrite):
 
     services = []
     for storage_name, storage_config in config.items():
+        print(f"storage_config: {storage_config}")
+
         storage_type = storage_config.pop("type")
         environments = storage_config.pop("environments")
 
@@ -148,7 +151,8 @@ def make_cloudformation(storage_config_file, output, overwrite):
             template = templates["svc"]["s3-policy"]
 
             for svc in storage_config.get("services", []):
-                path = Path(f"copilot/{svc}/addons/")
+                print(f"svc: {svc}")
+                service_path = Path(f"copilot/{svc}/addons/")
 
                 service = {
                     "name": storage_config.get("name", None) or storage_name,
@@ -159,8 +163,8 @@ def make_cloudformation(storage_config_file, output, overwrite):
 
                 contents = template.render({"service": service})
 
-                click.echo(mkdir(output, path))
-                click.echo(mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
+                click.echo(mkdir(output, service_path))
+                click.echo(mkfile(output, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
     click.echo(templates["storage-instructions"].render(services=services))
 
