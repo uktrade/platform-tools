@@ -123,8 +123,6 @@ def make_cloudformation(storage_config_file, output, overwrite):
 
     services = []
     for storage_name, storage_config in config.items():
-        print(f"storage_config: {storage_config}")
-
         storage_type = storage_config.pop("type")
         environments = storage_config.pop("environments")
 
@@ -151,7 +149,6 @@ def make_cloudformation(storage_config_file, output, overwrite):
             template = templates["svc"]["s3-policy"]
 
             for svc in storage_config.get("services", []):
-                print(f"svc: {svc}")
                 service_path = Path(f"copilot/{svc}/addons/")
 
                 service = {
