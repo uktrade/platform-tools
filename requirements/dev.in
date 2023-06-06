@@ -4,3 +4,4 @@ git+https://github.com/uktrade/modification-pre-commit
 
 moto
 pytest
+pyfakefs
