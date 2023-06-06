@@ -6,7 +6,7 @@ This repo contains a set of tools for transferring applications from GOV paas to
 
 ## Installation
 
-Clone the repo, inside a virtualenv install pip-tools and run `pip-sync requirements-test.txt` to install the test dependencies.
+Clone the repo, inside a virtualenv install pip-tools and run `pip-sync requirements/dev.txt` to install the test dependencies.
 
 ## Migration Tools
 
