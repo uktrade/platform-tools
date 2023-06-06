@@ -66,7 +66,7 @@ def _validate_and_normalise_config(config_file):
             if valid_services != normalised_config[storage_name]["services"]:
                 normalised_config[storage_name]["services"] = valid_services
                 click.echo(click.style(f"Services listed in {storage_name} do not exist in ./copilot/", fg="red"))
-                exit()
+                exit(1)
 
         environments = normalised_config[storage_name].pop("environments", {})
         default = environments.pop("default", {})
