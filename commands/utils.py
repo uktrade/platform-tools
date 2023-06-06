@@ -97,7 +97,6 @@ def setup_templates():
             "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "s3-policy": templateEnv.get_template("addons/svc/s3-policy.yml"),
-            "waf": templateEnv.get_template("addons/svc/waf.yml"),
         },
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
