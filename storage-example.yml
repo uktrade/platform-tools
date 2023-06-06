@@ -47,7 +47,7 @@ my-s3-bucket:
 ##### s3-policy example:
 
 my-s3-bucket-bucket-access:
-  type: s3-policy  # gives the listed services permissions to access an exisitng bucket
+  type: s3-policy  # gives the listed services permissions to access an existing bucket
 
   services:  # services that require access to the bucket.
     - "web"
