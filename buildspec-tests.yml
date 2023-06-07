@@ -6,13 +6,9 @@ phases:
       python: 3.9
     commands:
       - echo Installing dependencies...
-      - pip install -r requirements-test.txt
+      - pip install -r requirements/dev.txt
   
   build:
     commands:
-      - echo Running Tests
+      - echo Running tests...
       - pytest
-  
-  post_build:
-    commands:
-      - echo Tests Complete

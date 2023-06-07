@@ -1,22 +1,21 @@
-# example storage.yml
+# storage-example.yml
 
 ##### general structure:
 
-# the name of storage item
-my-thing:
-  type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
-
-  environments:  # per environment configuration is defined here.
-    default:   # the optional default key is used to apply a default value to all environments
-      some-setting: x
-      another-setting: y
-
-      plan: a-valid-plan  # some storage types support plans/t-shirt sizes.  These are listed in storage-plans.yaml in this repo.
-
-    production:  # you can override defauls on a per env basis
-
-      plan: some-other-plan  # Any of the keys defined in a storage plan can also be overridden
-      volume-size: 200
+# my-thing: # the name of storage item
+#   type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
+#
+#   environments:  # per environment configuration is defined here.
+#     default:   # the optional default key is used to apply a default value to all environments
+#       some-setting: x
+#       another-setting: y
+#
+#       plan: a-valid-plan  # some storage types support plans/t-shirt sizes.  These are listed in storage-plans.yaml in this repo.
+#
+#     production:  # you can override defaults on a per environment basis
+#
+#       plan: some-other-plan  # Any of the keys defined in a storage plan can also be overridden
+#       volume-size: 200
 
 
 ##### s3 bucket example:
@@ -48,7 +47,7 @@ my-s3-bucket:
 ##### s3-policy example:
 
 my-s3-bucket-bucket-access:
-  type: s3-policy  # gives the listed services permissions to access an exisitng bucket
+  type: s3-policy  # gives the listed services permissions to access an existing bucket
 
   services:  # services that require access to the bucket.
     - "web"
@@ -105,9 +104,8 @@ my-opensearch:
     default:
       plan: small
 
-      # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
+      # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
       engine: "2.3"
 
     production:
       plan: large-ha
-      volume-size: 250
