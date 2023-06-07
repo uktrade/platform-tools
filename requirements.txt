@@ -16,6 +16,8 @@ attrs==23.1.0
     #   jsonschema
 boto3==1.26.31
     # via -r requirements.in
+boto3-stubs[codebuild]==1.26.148
+    # via -r requirements.in
 botocore==1.29.31
     # via
     #   -r requirements.in
