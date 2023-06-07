@@ -14,7 +14,12 @@ image:
 
 cpu: 256       # Number of CPU units for the task.
 memory: 512    # Amount of memory in MiB used by the task.
-count: 1       # Number of tasks that should be running in your service.
+count: # See https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+  range: 2-10
+  cooldown:
+    in: 120s
+    out: 60s
+  cpu_percentage: 50
 exec: true     # Enable running commands in your container.
 
 # storage:
