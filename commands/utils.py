@@ -106,8 +106,8 @@ def setup_templates():
             "aurora-postgres": templateEnv.get_template("addons/env/aurora-postgres.yml"),
             "redis": templateEnv.get_template("addons/env/redis-cluster.yml"),
             "s3": templateEnv.get_template("addons/env/s3.yml"),
-            "waf": templateEnv.get_template("env/addons/waf.yml"),
-            "parameters": templateEnv.get_template("env/addons/addons.parameters.yml"),
+            "waf": templateEnv.get_template("addons/env/waf.yml"),
+            "parameters": templateEnv.get_template("addons/env/addons.parameters.yml"),
         },
     }
 
@@ -117,5 +117,7 @@ def setup_templates():
 def ensure_cwd_is_repo_root():
     """Exit if we're not in the root of the repo"""
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
-        click.secho("Cannot find copilot directory. Run this command in the root of the deployment repository.", bg="red")
+        click.secho(
+            "Cannot find copilot directory. Run this command in the root of the deployment repository.", bg="red"
+        )
         exit(1)
