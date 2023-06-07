@@ -96,20 +96,15 @@ def setup_templates():
         "svc": {
             "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
-            "opensearch": templateEnv.get_template("svc/addons/opensearch.yml"),
-            "rds-postgres": templateEnv.get_template("svc/addons/rds-postgres.yml"),
-            "aurora-postgres": templateEnv.get_template("svc/addons/aurora-postgres.yml"),
-            "redis": templateEnv.get_template("svc/addons/redis.yml"),
-            "s3": templateEnv.get_template("svc/addons/s3.yml"),
-            "s3-policy": templateEnv.get_template("svc/addons/s3-policy.yml"),
+            "s3-policy": templateEnv.get_template("addons/svc/s3-policy.yml"),
         },
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
-            "opensearch": templateEnv.get_template("env/addons/opensearch.yml"),
-            "rds-postgres": templateEnv.get_template("env/addons/rds-postgres.yml"),
-            "aurora-postgres": templateEnv.get_template("env/addons/aurora-postgres.yml"),
-            "redis": templateEnv.get_template("env/addons/redis-cluster.yml"),
-            "s3": templateEnv.get_template("env/addons/s3.yml"),
+            "opensearch": templateEnv.get_template("addons/env/opensearch.yml"),
+            "rds-postgres": templateEnv.get_template("addons/env/rds-postgres.yml"),
+            "aurora-postgres": templateEnv.get_template("addons/env/aurora-postgres.yml"),
+            "redis": templateEnv.get_template("addons/env/redis-cluster.yml"),
+            "s3": templateEnv.get_template("addons/env/s3.yml"),
         },
     }
 
