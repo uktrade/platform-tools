@@ -7,4 +7,3 @@ We mostly use environment addons because service addons are deleted when you del
 Exceptions to the above include:
 
 * `s3-policy.yml` which needs to be attached to the service
-* `waf.yml` which needs to be attached to the web facing service
