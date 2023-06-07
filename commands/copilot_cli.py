@@ -48,7 +48,7 @@ def _validate_and_normalise_config(config_file):
     def _normalise_keys(source: dict):
         return {k.replace("-", "_"): v for k, v in source.items()}
 
-    with open(BASE_DIR / "storage-plans.yaml", "r") as fd:
+    with open(BASE_DIR / "storage-plans.yml", "r") as fd:
         storage_plans = yaml.safe_load(fd)
 
     with open(BASE_DIR / "schemas/storage-schema.json", "r") as fd:
@@ -57,6 +57,10 @@ def _validate_and_normalise_config(config_file):
     # load and validate config
     with open(config_file, "r") as fd:
         config = yaml.safe_load(fd)
+
+    # empty file
+    if not config:
+        return {}
 
     validate_json(instance=config, schema=schema)
 
@@ -77,10 +81,19 @@ def _validate_and_normalise_config(config_file):
         normalised_config[storage_name] = copy.deepcopy(storage_config)
 
         if "services" in normalised_config[storage_name]:
-            valid_services = [svc for svc in normalised_config[storage_name]["services"] if svc in svc_names]
-            if valid_services != normalised_config[storage_name]["services"]:
-                normalised_config[storage_name]["services"] = valid_services
-                click.echo(click.style(f"Services listed in {storage_name} do not exist in ./copilot/", fg="red"))
+            if type(normalised_config[storage_name]["services"]) == str:
+                if normalised_config[storage_name]["services"] == "__all__":
+                    normalised_config[storage_name]["services"] = svc_names
+                else:
+                    click.echo(
+                        click.style(f"{storage_name}.services must be a list of service names or '__all__'", fg="red")
+                    )
+                    exit(1)
+
+            if not set(normalised_config[storage_name]["services"]).issubset(set(svc_names)):
+                click.echo(
+                    click.style(f"Services listed in {storage_name}.services do not exist in ./copilot/", fg="red")
+                )
                 exit(1)
 
         environments = normalised_config[storage_name].pop("environments", {})
@@ -88,21 +101,22 @@ def _validate_and_normalise_config(config_file):
 
         initial = _lookup_plan(storage_type, default)
 
+        if not set(environments.keys()).issubset(set(env_names)):
+            click.echo(
+                click.style(
+                    f"Environment keys listed in {storage_name} do not match ./copilot/environments",
+                    fg="red",
+                )
+            )
+            exit(1)
+
         normalised_environments = {}
 
         for env in env_names:
             normalised_environments[env] = _normalise_keys(initial)
 
         for env_name, env_config in environments.items():
-            if env_name not in normalised_environments:
-                click.echo(
-                    click.style(
-                        f"Environment key {env_name} listed in {storage_name} does not exist in ./copilot/environments",
-                        fg="red",
-                    ),
-                )
-            else:
-                normalised_environments[env_name].update(_lookup_plan(storage_type, _normalise_keys(env_config)))
+            normalised_environments[env_name].update(_lookup_plan(storage_type, _normalise_keys(env_config)))
 
         normalised_config[storage_name]["environments"] = normalised_environments
 
@@ -119,14 +133,20 @@ def _validate_and_normalise_config(config_file):
     default=True,
     help="Overwrite existing cloudformation? Defaults to True",
 )
-def make_cloudformation(storage_config_file, output, overwrite):
-    """Generate storage cloudformation for each environment."""
-
-    templates = setup_templates()
+def make_storage(storage_config_file, output, overwrite):
+    """
+    Generate storage cloudformation for each environment
+    """
 
     ensure_cwd_is_repo_root()
 
-    config = _validate_and_normalise_config(storage_config_file)
+    templates = setup_templates()
+
+    config = _validate_and_normalise_config(BASE_DIR / "default-storage.yml")
+
+    project_config = _validate_and_normalise_config(storage_config_file)
+
+    config.update(project_config)
 
     click.echo("\n>>> Generating cloudformation\n")
 
@@ -188,6 +208,59 @@ def make_cloudformation(storage_config_file, output, overwrite):
 )
 def apply_waf(overwrite):
     """Apply the WAF environment addon."""
+
+    templates = setup_templates()
+
+    ensure_cwd_is_repo_root()
+
+    env_names = list_copilot_local_environments()
+
+    if not env_names:
+        click.secho(f"Cannot add WAF CFN templates: No environments found in ./copilot/environments/", fg="red")
+        exit(1)
+
+    def _validate_arn(arn):
+        return arn and arn.startswith("arn:aws:wafv2:")
+
+    arns = {}
+
+    for name in env_names:
+        with open(f"./copilot/environments/{name}/manifest.yml", "r") as fd:
+            config = yaml.safe_load(fd)
+
+        arns[name] = config.get(WAF_ACL_ARN_KEY) if config else None
+
+    if not all(_validate_arn(arn) for arn in arns.values()):
+        click.secho(
+            f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file",
+            fg="red",
+        )
+        exit(1)
+
+    # create the addons dir if it doesn't already exist
+    path = Path("./copilot/environments/addons")
+    click.echo(mkdir(".", path))
+
+    # create the ./copilot/environments/addons/addons.parameters.yml file
+    contents = templates["env"]["parameters"].render({})
+    click.echo(mkfile(".", path / "addons.parameters.yml", contents, overwrite=overwrite))
+
+    # create the ./copilot/environments/addons/waf.yml file
+    contents = templates["env"]["waf"].render({"arns": arns})
+
+    click.echo(mkfile(".", path / "waf.yml", contents, overwrite=overwrite))
+
+
+@copilot.command()
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    show_default=True,
+    default=True,
+    help="Overwrite existing cloudformation? Defaults to True",
+)
+def apply_ip_filter_config(overwrite):
+    """Apply the WAF environment addon"""
 
     templates = setup_templates()
 

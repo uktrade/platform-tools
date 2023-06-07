@@ -8,7 +8,7 @@ from jsonschema import validate
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-with open(PROJECT_ROOT / "storage-plans.yaml") as fd:
+with open(PROJECT_ROOT / "storage-plans.yml") as fd:
     plans = yaml.safe_load(fd)
 
 with open(PROJECT_ROOT / "schemas/storage-schema.json") as fd:
