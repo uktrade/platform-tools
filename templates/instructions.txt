@@ -19,11 +19,7 @@ copilot app init
 copilot svc init --name {{ service.name }}
 {%- endfor %}
 
-# 3. Add the WAF ACL ARN for each environment
-
-Edit the waf.yml file in `copilot/environments/addons/waf.yml' and replace "replace-with-waf-acl-arn" with the WAF ACL ARN, for each environment.
-
-# 4. initialise each environment
+# 3. initialise each environment
 
 NOTE: ensure ACM certs have been created and the cert ARNs added to each env's `copilot/environments/{env}/manifest.yml' file first.
 
@@ -35,19 +31,19 @@ When running "copilot env init" chose the following options:
 copilot env init --name {{ env_name }}
 {%- endfor %}
 
-# 5. deploy each environment
+# 4. deploy each environment
 {% for env_name, _ in environments.items() %}
 copilot env deploy --name {{ env_name }}
 {%- endfor %}
 
-# 6. migrate the secrets from Gov Paas to AWS/Copilot
+# 5. migrate the secrets from Gov Paas to AWS/Copilot
 
 copilot-bootstrap.py migrate-secrets {{ config_file }}
 
 You need to be authenticated via the CF CLI for this command to work.
 Use the --dry-run flag initially to check the output
 
-# 7. deploy each service into each environment
+# 6. deploy each service into each environment
 {%- for service in services %}
 
 # {{ service.name }}:
@@ -56,11 +52,11 @@ copilot svc deploy --name {{ service.name }} --env {{ env_name }}
 {%- endfor %}
 {% endfor %}
 
-# 8. Point DNS entries to ALB urls
+# 7. Point DNS entries to ALB urls
 
 Speak to SRE.
 
-# 9. Generate the storage addons
+# 8. Generate the storage addons
 
 Create a storage.yml and add the relevant configuration.  See SRE for assistance.
 
@@ -76,7 +72,7 @@ Redeploy each environment to provision those secrets
 copilot env deploy --name {{ env_name }}
 {%- endfor %}
 
-# 10. Switch the bootstrap container to the service container
+# 9. Switch the bootstrap container to the service container
 
 Edit each copilot/{service-name}/manifest.yaml file and replace the image_location with the service's ECR registry url and redeploy.
 
