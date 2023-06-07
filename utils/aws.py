@@ -38,7 +38,7 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     click.echo(click.style(f"Logged in with AWS account: ",fg='yellow') + 
                click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg='white', bold=True))
     click.echo(click.style(f"User: ",fg='yellow' ) + 
-               click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[1]}", fg='white', bold=True))
+               click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}", fg='white', bold=True))
     
     return session
 

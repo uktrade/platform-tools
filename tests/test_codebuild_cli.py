@@ -87,6 +87,7 @@ def test_check_git_url_valid(url, expected):
     
     assert check_git_url(url) == expected
 
+
 @pytest.mark.parametrize("url", ["http://github.com/uktrade/digital-workspace", "not-a-url-tbh"])
 def test_check_git_url_invalid(url, capfd):
     """Test that check_git_url prints an error when url is invalid."""
@@ -98,10 +99,12 @@ def test_check_git_url_invalid(url, capfd):
     
     assert "Unable to recognise git url format, make sure its either:\n            https://github.com/<org>/<repository-name>\n            git@github.com:<org>/<repository-name>\n            \n" in out
 
+
 @patch("commands.codebuild_cli.import_pat")
 @mock_sts
 @mock_codebuild
 def test_link_github(import_pat, alias_session):
+    """Test that link_github calls import_pat"""
     runner = CliRunner()
     runner.invoke(link_github, ["--pat", "123", "--project-profile", "foo"])
     
