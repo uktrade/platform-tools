@@ -3,7 +3,7 @@ import boto3
 import botocore
 
 
-def check_aws_conn(aws_profile):
+def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     # Check that the aws profile exists and is set.
     click.secho("Checking AWS connection...", fg='cyan')
 
