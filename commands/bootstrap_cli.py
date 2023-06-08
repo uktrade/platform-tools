@@ -4,12 +4,18 @@ from collections import defaultdict
 from pathlib import Path
 
 import click
-from cloudfoundry_client.client import CloudFoundryClient
-from schema import Optional, Schema
 import yaml
+from cloudfoundry_client.client import CloudFoundryClient
+from schema import Optional
+from schema import Schema
 
-from .utils import camel_case, get_ssm_secret_names, mkdir, mkfile, set_ssm_param, SSM_PATH, setup_templates
-
+from .utils import SSM_PATH
+from .utils import camel_case
+from .utils import get_ssm_secret_names
+from .utils import mkdir
+from .utils import mkfile
+from .utils import set_ssm_param
+from .utils import setup_templates
 
 config_schema = Schema(
     {
@@ -32,7 +38,7 @@ config_schema = Schema(
                         "paas": str,
                         Optional("url"): str,
                         Optional("ipfilter"): bool,
-                    }
+                    },
                 },
                 Optional("backing-services"): [
                     {
@@ -52,7 +58,7 @@ config_schema = Schema(
                         Optional("bucket_name"): str,  # for external-s3 type
                         Optional("readonly"): bool,  # for external-s3 type
                         Optional("shared"): bool,
-                    }
+                    },
                 ],
                 Optional("overlapping_secrets"): [str],
                 "secrets": {
@@ -61,9 +67,9 @@ config_schema = Schema(
                 "env_vars": {
                     Optional(str): str,
                 },
-            }
+            },
         ],
-    }
+    },
 )
 
 
@@ -107,10 +113,10 @@ def bootstrap():
 @click.argument("output", type=click.Path(exists=True), default=".")
 def make_config(config_file, output):
     """
-    Generate copilot boilerplate code
+    Generate copilot boilerplate code.
 
-    CONFIG-FILE is the path to the input yaml config file
-    OUTPUT is the location of the repo root dir. Defaults to the current directory.
+    CONFIG-FILE is the path to the input yaml config file OUTPUT is the location
+    of the repo root dir. Defaults to the current directory.
     """
 
     base_path = Path(output)
@@ -124,7 +130,7 @@ def make_config(config_file, output):
     click.echo(mkdir(base_path, "copilot"))
 
     # create copilot/.workspace file
-    contents = "application: {}".format(config["app"])
+    contents = f"application: {config['app']}"
     click.echo(mkfile(base_path, "copilot/.workspace", contents))
 
     # create copilot/environments directory
@@ -134,7 +140,7 @@ def make_config(config_file, output):
     for name, env in config["environments"].items():
         click.echo(mkdir(base_path, f"copilot/environments/{name}"))
         contents = templates["env"]["manifest"].render(
-            {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""}
+            {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
         )
         click.echo(mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
 
@@ -163,7 +169,7 @@ def make_config(config_file, output):
     # link to GitHub docs
     click.echo(
         "\nGitHub documentation: "
-        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration"
+        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration",
     )
 
 
@@ -175,7 +181,7 @@ def make_config(config_file, output):
 @click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
 def migrate_secrets(config_file, env, svc, overwrite, dry_run):
     """
-    Migrate secrets from your gov paas application to AWS/copilot
+    Migrate secrets from your gov paas application to AWS/copilot.
 
     You need to be authenticated via cf cli and the AWS cli to use this commmand.
 
@@ -236,7 +242,7 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
                     click.echo(
-                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'"
+                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'",
                     )
                 else:
                     param_value = env_vars[app_secret_key]
@@ -258,9 +264,7 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
 @bootstrap.command()
 @click.argument("config-file", type=click.Path(exists=True))
 def instructions(config_file):
-    """
-    Show migration instructions
-    """
+    """Show migration instructions."""
     templates = setup_templates()
 
     config = load_and_validate_config(config_file)

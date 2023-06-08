@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-"""
-    Take all the files in ci-pipeline-config and combine into one document
-"""
+"""Take all the files in ci-pipeline-config and combine into one document."""
 
 import copy
 import os
@@ -115,17 +113,17 @@ def space_to_copilot_app(app_name, ns_conf):
                     ipfilter = ipfilter or route["ipfilter"]
 
                     if route["host"]:
-                        url = "{}.{}".format(route["host"], route["domain"])
+                        url = f"{route['host']}.{route['domain']}"
                     else:
                         url = route["domain"]
 
                     if "certificate_arns" in app_config["environments"][environment["environment"]]:
                         app_config["environments"][environment["environment"]]["certificate_arns"].append(
-                            f"ACM-ARN-FOR-{url}"
+                            f"ACM-ARN-FOR-{url}",
                         )
                     else:
                         app_config["environments"][environment["environment"]]["certificate_arns"] = [
-                            f"ACM-ARN-FOR-{url}"
+                            f"ACM-ARN-FOR-{url}",
                         ]
 
                 svc["environments"][environment["environment"]] = {

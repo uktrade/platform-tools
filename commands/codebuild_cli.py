@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 import json
 import os
-import click
 
+import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
-from utils.aws import check_response, check_aws_conn
+from utils.aws import check_aws_conn
+from utils.aws import check_response
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
+
 
 def import_pat(pat: str, client: CodeBuildClient):
     response = client.import_source_credentials(
@@ -37,7 +39,7 @@ def check_github_conn(client: CodeBuildClient):
                 admin:  repo_hook: Grants full control of repository hooks.
 
             Enter in the PAT here:
-            """
+            """,
         )
 
         import_pat(pat, client)
@@ -88,7 +90,7 @@ def check_git_url(git: str) -> str:
             Unable to recognise git url format, make sure its either:
             https://github.com/<org>/<repository-name>
             git@github.com:<org>/<repository-name>
-            """
+            """,
         )
         exit()
     return git_url
@@ -103,9 +105,7 @@ def codebuild():
 @click.option("--pat", help="PAT Token", required=True)
 @click.option("--project-profile", help="aws account profile name", required=True)
 def link_github(pat: str, project_profile: str) -> None:
-    """
-    Links CodeDeploy to Github via users PAT
-    """
+    """Links CodeDeploy to Github via users PAT."""
     project_session = check_aws_conn(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
     import_pat(pat, client)
@@ -114,9 +114,7 @@ def link_github(pat: str, project_profile: str) -> None:
 @codebuild.command()
 @click.option("--project-profile", help="aws account profile name", required=True)
 def create_codedeploy_role(project_profile: str) -> None:
-    """
-    Add AWS Role needed for codedeploy
-    """
+    """Add AWS Role needed for codedeploy."""
 
     project_session = check_aws_conn(project_profile)
     account_id = project_session.client("sts").get_caller_identity().get("Account")
@@ -168,7 +166,7 @@ def create_codedeploy_role(project_profile: str) -> None:
         print("Role exists")
 
     response = client.attach_role_policy(
-        PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy", RoleName="ci-CodeBuild-role"
+        PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy", RoleName="ci-CodeBuild-role",
     )
     check_response(response)
     print("Policy attached to Role")
@@ -185,9 +183,7 @@ def create_codedeploy_role(project_profile: str) -> None:
 @click.option("--project-profile", required=True, help="aws account profile name")
 @click.option("--release", is_flag=True, show_default=True, default=False, help="Trigger builds on release tags")
 def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project_profile, release):
-    """
-    Builds Code build boilerplate
-    """
+    """Builds Code build boilerplate."""
 
     git_url = check_git_url(git)
     project_session = check_aws_conn(project_profile)
@@ -298,9 +294,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
 @click.option("--token", help="Slack api token", required=True)
 @click.option("--project-profile", help="aws account profile name", required=True)
 def slackcreds(workspace, channel, token, project_profile):
-    """
-    Add Slack credentials into AWS Parameter Store
-    """
+    """Add Slack credentials into AWS Parameter Store."""
     project_session = check_aws_conn(project_profile)
 
     SLACK = {

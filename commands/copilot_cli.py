@@ -6,11 +6,15 @@ from pathlib import Path
 
 import boto3
 import click
-from jsonschema import validate as validate_json
 import yaml
+from jsonschema import validate as validate_json
 
-from .utils import camel_case, ensure_cwd_is_repo_root, mkdir, mkfile, SSM_BASE_PATH, setup_templates
-
+from .utils import SSM_BASE_PATH
+from .utils import camel_case
+from .utils import ensure_cwd_is_repo_root
+from .utils import mkdir
+from .utils import mkfile
+from .utils import setup_templates
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -31,7 +35,8 @@ def copilot():
 
 
 def _validate_and_normalise_config(config_file):
-    """Load the storage.yaml file, validate it and return the normalised config dict"""
+    """Load the storage.yaml file, validate it and return the normalised config
+    dict."""
 
     def _lookup_plan(storage_type, env_conf):
         plan = env_conf.pop("plan", None)
@@ -94,7 +99,7 @@ def _validate_and_normalise_config(config_file):
                     click.style(
                         f"Environment key {env_name} listed in {storage_name} does not exist in ./copilot/environments",
                         fg="red",
-                    )
+                    ),
                 )
             else:
                 normalised_environments[env_name].update(_lookup_plan(storage_type, _normalise_keys(env_config)))
@@ -115,9 +120,7 @@ def _validate_and_normalise_config(config_file):
     help="Overwrite existing cloudformation? Defaults to True",
 )
 def make_cloudformation(storage_config_file, output, overwrite):
-    """
-    Generate storage cloudformation for each environment
-    """
+    """Generate storage cloudformation for each environment."""
 
     templates = setup_templates()
 
@@ -172,7 +175,6 @@ def make_cloudformation(storage_config_file, output, overwrite):
                 click.echo(mkdir(output, service_path))
                 click.echo(mkfile(output, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
-
     click.echo(templates["storage-instructions"].render(services=services))
 
 
@@ -185,7 +187,7 @@ def make_cloudformation(storage_config_file, output, overwrite):
     help="Overwrite existing cloudformation? Defaults to True",
 )
 def apply_waf(overwrite):
-    """Apply the WAF environment addon"""
+    """Apply the WAF environment addon."""
 
     templates = setup_templates()
 
@@ -208,9 +210,11 @@ def apply_waf(overwrite):
 
         arns[name] = config.get(WAF_ACL_ARN_KEY) if config else None
 
-
     if not all(_validate_arn(arn) for arn in arns.values()):
-        click.secho(f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file", fg="red")
+        click.secho(
+            f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file",
+            fg="red",
+        )
         exit(1)
 
     # create the addons dir if it doesn't already exist
@@ -231,9 +235,7 @@ def apply_waf(overwrite):
 @click.argument("service_name", type=str)
 @click.argument("env", type=str, default="prod")
 def get_service_secrets(service_name, env):
-    """
-    List secret names and values for a service
-    """
+    """List secret names and values for a service."""
 
     ensure_cwd_is_repo_root()
 
@@ -249,7 +251,7 @@ def get_service_secrets(service_name, env):
         response = client.get_parameters_by_path(**params)
 
         for secret in response["Parameters"]:
-            secrets.append("{:<8}: {:<15}".format(secret["Name"], secret["Value"]))
+            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
 
         if "NextToken" in response:
             params["NextToken"] = response["NextToken"]
