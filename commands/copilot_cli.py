@@ -132,7 +132,6 @@ def make_cloudformation(storage_config_file, output, overwrite):
             "environments": environments,
             "prefix": camel_case(storage_name),
             "storage_type": storage_type,
-            "version": storage_config.get("version", None),
             **storage_config,
         }
 
