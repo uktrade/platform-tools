@@ -133,11 +133,17 @@ pycparser==2.21
     # via
     #   -r requirements/base.txt
     #   cffi
+pyfakefs==5.2.2
+    # via -r requirements/dev.in
 pyrsistent==0.19.3
     # via
     #   -r requirements/base.txt
     #   jsonschema
 pytest==7.3.1
+    # via
+    #   -r requirements/dev.in
+    #   pytest-env
+pytest-env==0.8.1
     # via -r requirements/dev.in
 python-dateutil==2.8.2
     # via

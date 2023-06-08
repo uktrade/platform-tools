@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-"""
-    Take all the files in ci-pipeline-config and combine into one document
-"""
+"""Take all the files in ci-pipeline-config and combine into one document."""
 
 import os
 

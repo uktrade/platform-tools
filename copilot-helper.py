@@ -3,9 +3,9 @@
 import click
 
 from commands.bootstrap_cli import bootstrap as bootstrap_commands
+from commands.codebuild_cli import codebuild as codebuild_commands
 from commands.copilot_cli import copilot as copilot_commands
 from commands.dns_cli import domain as domain_commands
-from commands.codebuild_cli import codebuild as codebuild_commands
 
 
 @click.group()
