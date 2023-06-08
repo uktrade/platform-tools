@@ -67,7 +67,7 @@ config_schema = Schema(
 )
 
 
-def get_paas_env_vars(client, paas):
+def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
     org, space, app = paas.split("/")
 
     env_vars = None
