@@ -12,4 +12,4 @@ phases:
   build:
     commands:
       - echo Running tests...
-      - pytest
+      - poetry run pytest
