@@ -6,7 +6,7 @@ phases:
       python: 3.9
     commands:
       - echo Installing dependencies...
-      - curl -sSL https://install.python-poetry.org | python3 -
+      - pip install poetry
       - poetry install
 
   build:
