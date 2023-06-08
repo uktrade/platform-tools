@@ -3,7 +3,7 @@ import boto3
 import botocore
 
 
-def check_aws_conn(aws_profile):
+def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     # Check that the aws profile exists and is set.
     click.secho("Checking AWS connection...", fg='cyan')
 
@@ -38,7 +38,7 @@ def check_aws_conn(aws_profile):
     click.echo(click.style(f"Logged in with AWS account: ",fg='yellow') + 
                click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg='white', bold=True))
     click.echo(click.style(f"User: ",fg='yellow' ) + 
-               click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[1]}", fg='white', bold=True))
+               click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}", fg='white', bold=True))
     
     return session
 
