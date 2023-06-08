@@ -34,10 +34,10 @@ def alias_session(aws_credentials):
 
 
 # Not much value in testing these while moto doesn't support `import_source_credentials`` or `list_source_credentials`
-def test_import_pat():
-    ...
-def test_check_github_conn():
-    ...
+# def test_import_pat():
+#     ...
+# def test_check_github_conn():
+#     ...
 
 
 @mock_iam
