@@ -20,7 +20,7 @@ repos:
         pass_filenames: false
         always_run: true
   - repo: https://github.com/myint/autoflake.git
-    rev: v2.0.1
+    rev: v2.1.1
     hooks:
       - id: autoflake
         args:
@@ -39,7 +39,7 @@ repos:
       - id: isort
         args: [--force-single-line-imports]
   - repo: https://github.com/myint/docformatter.git
-    rev: v1.5.1
+    rev: v1.7.2
     hooks:
       - id: docformatter
         args:
@@ -50,6 +50,6 @@ repos:
             "--pre-summary-newline",
           ]
   - repo: https://github.com/ikamensh/flynt/
-    rev: '0.77'
+    rev: '0.78'
     hooks:
       - id: flynt

@@ -26,7 +26,8 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
         click.secho("Credentials are valid.", fg="green")
     except botocore.exceptions.SSOTokenLoadError:
         click.secho(
-            f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}", fg="red",
+            f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
+            fg="red",
         )
         exit()
     except botocore.exceptions.UnauthorizedSSOTokenError:

@@ -166,7 +166,8 @@ def create_codedeploy_role(project_profile: str) -> None:
         print("Role exists")
 
     response = client.attach_role_policy(
-        PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy", RoleName="ci-CodeBuild-role",
+        PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy",
+        RoleName="ci-CodeBuild-role",
     )
     check_response(response)
     print("Policy attached to Role")
