@@ -9,10 +9,20 @@ import click
 from jsonschema import validate as validate_json
 import yaml
 
-from .utils import camel_case, mkdir, mkfile, SSM_BASE_PATH, setup_templates
+from .utils import camel_case, ensure_cwd_is_repo_root, mkdir, mkfile, SSM_BASE_PATH, setup_templates
 
 
 BASE_DIR = Path(__file__).parent.parent
+
+WAF_ACL_ARN_KEY = "waf-acl-arn"
+
+
+def list_copilot_local_environments():
+    return [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
+
+
+def list_copilot_local_services():
+    return [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
 
 
 @click.group()
@@ -45,8 +55,8 @@ def _validate_and_normalise_config(config_file):
 
     validate_json(instance=config, schema=schema)
 
-    env_names = [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
-    svc_names = [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
+    env_names = list_copilot_local_environments()
+    svc_names = list_copilot_local_services()
 
     if not env_names:
         click.echo(click.style(f"No environments found in ./copilot/environments; exiting", fg="red"))
@@ -111,8 +121,7 @@ def make_cloudformation(storage_config_file, output, overwrite):
 
     templates = setup_templates()
 
-    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
-        click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
+    ensure_cwd_is_repo_root()
 
     config = _validate_and_normalise_config(storage_config_file)
 
@@ -163,7 +172,59 @@ def make_cloudformation(storage_config_file, output, overwrite):
                 click.echo(mkdir(output, service_path))
                 click.echo(mkfile(output, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
+
     click.echo(templates["storage-instructions"].render(services=services))
+
+
+@copilot.command()
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    show_default=True,
+    default=True,
+    help="Overwrite existing cloudformation? Defaults to True",
+)
+def apply_waf(overwrite):
+    """Apply the WAF environment addon"""
+
+    templates = setup_templates()
+
+    ensure_cwd_is_repo_root()
+
+    env_names = list_copilot_local_environments()
+
+    if not env_names:
+        click.secho(f"Cannot add WAF CFN templates: No environments found in ./copilot/environments/", fg="red")
+        exit(1)
+
+    def _validate_arn(arn):
+        return arn and arn.startswith("arn:aws:wafv2:")
+
+    arns = {}
+
+    for name in env_names:
+        with open(f"./copilot/environments/{name}/manifest.yml", "r") as fd:
+            config = yaml.safe_load(fd)
+
+        arns[name] = config.get(WAF_ACL_ARN_KEY) if config else None
+
+
+    if not all(_validate_arn(arn) for arn in arns.values()):
+        click.secho(f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file", fg="red")
+        exit(1)
+
+    # create the addons dir if it doesn't already exist
+    path = Path("./copilot/environments/addons")
+    click.echo(mkdir(".", path))
+
+    # create the ./copilot/environments/addons/addons.parameters.yml file
+    contents = templates["env"]["parameters"].render({})
+    click.echo(mkfile(".", path / "addons.parameters.yml", contents, overwrite=overwrite))
+
+    # create the ./copilot/environments/addons/waf.yml file
+    contents = templates["env"]["waf"].render({"arns": arns})
+
+    click.echo(mkfile(".", path / "waf.yml", contents, overwrite=overwrite))
 
 
 @copilot.command()
@@ -174,8 +235,7 @@ def get_service_secrets(service_name, env):
     List secret names and values for a service
     """
 
-    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
-        click.echo("Cannot find copilot directory. Run this command in the root of the deployment repository.")
+    ensure_cwd_is_repo_root()
 
     client = boto3.client("ssm")
 
@@ -197,7 +257,3 @@ def get_service_secrets(service_name, env):
             break
 
     print("\n".join(sorted(secrets)))
-
-
-if __name__ == "__main__":
-    copilot()
