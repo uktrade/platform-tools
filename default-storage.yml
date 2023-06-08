@@ -8,4 +8,4 @@ ip-filter:
 
   environments:
     default:
-      bucket-name: ip-filter
+      bucket-name: ipfilter-config 

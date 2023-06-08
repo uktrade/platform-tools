@@ -223,6 +223,6 @@ invalid-entry:
             with open(path, "r") as fd:
                 s3_policy = yaml.safe_load(fd)
 
-            assert s3_policy["Mappings"]["ipFilterBucketNameMap"] == {"development": {"BucketName": "ip-filter"}}
+            assert s3_policy["Mappings"]["ipFilterBucketNameMap"] == {"development": {"BucketName": "ipfilter-config"}}
 
         assert result.exit_code == 0
