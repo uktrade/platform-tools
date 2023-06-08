@@ -15,7 +15,6 @@ Parameters:
     Default: main
     # Cannot have special characters
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
-    "service": {{ service }}
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
   {% for environment_name, config in service.environments.items() %}
