@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePath, PosixPath
 
 import click
 import yaml
@@ -16,6 +16,7 @@ from .utils import mkdir
 from .utils import mkfile
 from .utils import set_ssm_param
 from .utils import setup_templates
+
 
 config_schema = Schema(
     {
