@@ -86,13 +86,13 @@ def _validate_and_normalise_config(config_file):
                     normalised_config[storage_name]["services"] = svc_names
                 else:
                     click.echo(
-                        click.style(f"{storage_name}.services must be a list of service names or '__all__'", fg="red")
+                        click.style(f"{storage_name}.services must be a list of service names or '__all__'", fg="red"),
                     )
                     exit(1)
 
             if not set(normalised_config[storage_name]["services"]).issubset(set(svc_names)):
                 click.echo(
-                    click.style(f"Services listed in {storage_name}.services do not exist in ./copilot/", fg="red")
+                    click.style(f"Services listed in {storage_name}.services do not exist in ./copilot/", fg="red"),
                 )
                 exit(1)
 
@@ -106,7 +106,7 @@ def _validate_and_normalise_config(config_file):
                 click.style(
                     f"Environment keys listed in {storage_name} do not match ./copilot/environments",
                     fg="red",
-                )
+                ),
             )
             exit(1)
 
@@ -125,18 +125,11 @@ def _validate_and_normalise_config(config_file):
 
 @copilot.command()
 @click.argument("storage-config-file", type=click.Path(exists=True))
-@click.argument("output", type=click.Path(exists=True), default=".")
-@click.option(
-    "--overwrite",
-    is_flag=True,
-    show_default=True,
-    default=True,
-    help="Overwrite existing cloudformation? Defaults to True",
-)
-def make_storage(storage_config_file, output, overwrite):
-    """
-    Generate storage cloudformation for each environment
-    """
+def make_storage(storage_config_file):
+    """Generate storage cloudformation for each environment."""
+
+    overwrite = True
+    output_dir = Path(".").absolute()
 
     ensure_cwd_is_repo_root()
 
@@ -151,7 +144,7 @@ def make_storage(storage_config_file, output, overwrite):
     click.echo("\n>>> Generating cloudformation\n")
 
     path = Path(f"copilot/environments/addons/")
-    click.echo(mkdir(output, path))
+    click.echo(mkdir(output_dir, path))
 
     services = []
     for storage_name, storage_config in config.items():
@@ -174,7 +167,7 @@ def make_storage(storage_config_file, output, overwrite):
             template = templates["env"][storage_type]
             contents = template.render({"service": service})
 
-            click.echo(mkfile(output, path / f"{storage_name}.yml", contents, overwrite=overwrite))
+            click.echo(mkfile(output_dir, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
         # s3 buckets require additional service level cloudformation to grant the ECS task role access to the bucket
         if storage_type in ["s3", "s3-policy"]:
@@ -192,77 +185,18 @@ def make_storage(storage_config_file, output, overwrite):
 
                 contents = template.render({"service": service})
 
-                click.echo(mkdir(output, service_path))
-                click.echo(mkfile(output, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
+                click.echo(mkdir(output_dir, service_path))
+                click.echo(mkfile(output_dir, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
     click.echo(templates["storage-instructions"].render(services=services))
 
 
 @copilot.command()
-@click.option(
-    "--overwrite",
-    is_flag=True,
-    show_default=True,
-    default=True,
-    help="Overwrite existing cloudformation? Defaults to True",
-)
-def apply_waf(overwrite):
+def apply_waf():
     """Apply the WAF environment addon."""
 
     templates = setup_templates()
-
-    ensure_cwd_is_repo_root()
-
-    env_names = list_copilot_local_environments()
-
-    if not env_names:
-        click.secho(f"Cannot add WAF CFN templates: No environments found in ./copilot/environments/", fg="red")
-        exit(1)
-
-    def _validate_arn(arn):
-        return arn and arn.startswith("arn:aws:wafv2:")
-
-    arns = {}
-
-    for name in env_names:
-        with open(f"./copilot/environments/{name}/manifest.yml", "r") as fd:
-            config = yaml.safe_load(fd)
-
-        arns[name] = config.get(WAF_ACL_ARN_KEY) if config else None
-
-    if not all(_validate_arn(arn) for arn in arns.values()):
-        click.secho(
-            f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file",
-            fg="red",
-        )
-        exit(1)
-
-    # create the addons dir if it doesn't already exist
-    path = Path("./copilot/environments/addons")
-    click.echo(mkdir(".", path))
-
-    # create the ./copilot/environments/addons/addons.parameters.yml file
-    contents = templates["env"]["parameters"].render({})
-    click.echo(mkfile(".", path / "addons.parameters.yml", contents, overwrite=overwrite))
-
-    # create the ./copilot/environments/addons/waf.yml file
-    contents = templates["env"]["waf"].render({"arns": arns})
-
-    click.echo(mkfile(".", path / "waf.yml", contents, overwrite=overwrite))
-
-
-@copilot.command()
-@click.option(
-    "--overwrite",
-    is_flag=True,
-    show_default=True,
-    default=True,
-    help="Overwrite existing cloudformation? Defaults to True",
-)
-def apply_ip_filter_config(overwrite):
-    """Apply the WAF environment addon"""
-
-    templates = setup_templates()
+    overwrite = True
 
     ensure_cwd_is_repo_root()
 
