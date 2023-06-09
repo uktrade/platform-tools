@@ -95,9 +95,8 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref {{ service.prefix }}DBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        # Replace "All" below with "!Ref Env" to set different autoscaling limits per environment.
-        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMinCapacity]
-        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMaxCapacity]
+        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
   {{ service.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
