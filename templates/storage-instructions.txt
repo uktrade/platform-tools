@@ -11,18 +11,17 @@ copilot svc deploy --name {services} --env {env}
 
 You will then be able to access the S3 bucket directly from your service without additional authentication.
 
->>> Credentials
 {%- for service in services %}
 {% if service.storage_type in ["redis", "opensearch", "aurora-postgres", "rds-postgres"] %}
 Add the following to your service's manifest.yml file to access {{ service.name|capitalize }}:
 
-secrets: 
+secrets:
 {%- if service.storage_type == "redis" %}
   REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- elif service.storage_type == "opensearch" %}
   OPENSEARCH_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- elif service.storage_type in ["aurora-postgres", "rds-postgres"] %}
-  DATABASE_CREDENTIALS: 
+  DATABASE_CREDENTIALS:
     secretsmanager: ${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/{{ service.secret_name }}
 {%- endif -%}
 {%- endif %}
