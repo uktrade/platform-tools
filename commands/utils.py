@@ -1,9 +1,9 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 import boto3
+import click
 import jinja2
-
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -54,7 +54,7 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
         # Tags can't be updated when overwriting
         del args["Tags"]
 
-    response = client.put_parameter(**args)
+    client.put_parameter(**args)
 
 
 def get_ssm_secret_names(app, env):
@@ -105,7 +105,20 @@ def setup_templates():
             "aurora-postgres": templateEnv.get_template("addons/env/aurora-postgres.yml"),
             "redis": templateEnv.get_template("addons/env/redis-cluster.yml"),
             "s3": templateEnv.get_template("addons/env/s3.yml"),
+            "waf": templateEnv.get_template("addons/env/waf.yml"),
+            "parameters": templateEnv.get_template("addons/env/addons.parameters.yml"),
         },
     }
 
     return templates
+
+
+def ensure_cwd_is_repo_root():
+    """Exit if we're not in the root of the repo"""
+
+    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
+        click.secho(
+            "Cannot find copilot directory. Run this command in the root of the deployment repository.",
+            bg="red",
+        )
+        exit(1)

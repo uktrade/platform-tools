@@ -116,7 +116,7 @@
                "type": "boolean"
             },
             "services": {
-               "type": "array"
+               "type": ["array", "string"]
             },
             "environments": {
                "type": "object",

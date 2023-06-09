@@ -1,0 +1,11 @@
+# rules in this file are applied by default
+
+# Add the IP filter policy to every service
+ip-filter:
+  type: s3-policy
+  readonly: true
+  services: __all__
+
+  environments:
+    default:
+      bucket-name: ipfilter-config 

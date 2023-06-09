@@ -2,14 +2,13 @@ import json
 from pathlib import Path
 
 import jsonschema
-from jsonschema import validate
 import pytest
 import yaml
-
+from jsonschema import validate
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-with open(PROJECT_ROOT / "storage-plans.yaml") as fd:
+with open(PROJECT_ROOT / "storage-plans.yml") as fd:
     plans = yaml.safe_load(fd)
 
 with open(PROJECT_ROOT / "schemas/storage-schema.json") as fd:
@@ -29,7 +28,7 @@ def test_require_valid_type():
         """
 mys3bucket:
     type: not-valid
-"""
+""",
     )
 
     assert (
@@ -55,7 +54,7 @@ def test_extrakeys_not_allowed(storage_type):
 mys3bucket:
     type: {storage_type}
     an-extra-key: "something"
-"""
+""",
     )
 
     assert expect_jsonschema_validation_error(storage)
@@ -79,7 +78,7 @@ mystorageitem:
     environments:
         default:
             an-extra-key: "something"
-"""
+""",
     )
 
     assert (
@@ -104,7 +103,7 @@ mys3bucket:
     type: s3
 
     bucket-name: "{bucket_name}"
-"""
+""",
     )
 
     assert expect_jsonschema_validation_error(storage)
@@ -305,7 +304,7 @@ mys3bucket:
 
         dev:
             bucket-name: "bucket-name"
-"""
+""",
     )
 
 
@@ -328,7 +327,7 @@ mys3bucket:
 
         dev:
             bucket-name: "bucket-name"
-"""
+""",
     )
 
     validate(instance=storage, schema=schema)
@@ -347,7 +346,7 @@ myredis:
             engine: '6.2'
             instance: cache.m6g.large
             replicas: 2
-"""
+""",
     )
 
     validate(instance=storage, schema=schema)
@@ -365,7 +364,7 @@ myopensearch:
         prod:
             replicas: 1
             instance: m6g.2xlarge.search
-"""
+""",
     )
 
     validate(instance=storage, schema=schema)
@@ -384,7 +383,7 @@ mypostgres:
             instance: db.m5.4xlarge
             volume-size: 500
             replicas: 3
-"""
+""",
     )
 
     validate(instance=storage, schema=schema)
@@ -400,7 +399,7 @@ mypostgres:
         default:
             min-capacity: 0.5
             max-capacity: 35
-"""
+""",
     )
 
     validate(instance=storage, schema=schema)

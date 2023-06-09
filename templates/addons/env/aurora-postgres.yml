@@ -5,9 +5,6 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  Name:
-    Type: String
-    Description: The name of the service, job, or workflow being deployed.
   # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
@@ -35,13 +32,13 @@ Resources:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub 'The Security Group for ${Name} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
+      GroupDescription: !Sub 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
       VpcId:
         Fn::ImportValue:
           !Sub '${App}-${Env}-VpcId'
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
   {{ service.prefix }}DBClusterSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.prefix }}'
@@ -52,7 +49,7 @@ Resources:
         - ToPort: 5432
           FromPort: 5432
           IpProtocol: tcp
-          Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
+          Description: !Sub 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
       VpcId:
         Fn::ImportValue:
@@ -62,9 +59,9 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
-        Name: !Sub '/${App}/${Env}/${Name}/{{ service.name|upper|replace("-", "_") }}_AURORA'
         SecretStringTemplate: '{"username": "postgres"}'
         GenerateStringKey: "password"
         ExcludePunctuation: true

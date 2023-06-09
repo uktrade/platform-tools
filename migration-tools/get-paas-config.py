@@ -59,7 +59,7 @@ def get_paas_data(client):
                     "processes": [],
                 }
 
-                key_ = "{}/{}/{}".format(org["entity"]["name"], space["entity"]["name"], app["entity"]["name"])
+                key_ = f"{org['entity']['name']}/{space['entity']['name']}/{app['entity']['name']}"
 
                 # get processes
 
@@ -71,7 +71,7 @@ def get_paas_data(client):
                         {
                             "type": proc["type"],
                             "command": proc["command"],
-                        }
+                        },
                     )
 
                 for route in app.routes():
