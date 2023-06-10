@@ -74,14 +74,14 @@ opensearch:
     volume-size: 240
     instances: 1
     master: false
-    instance: t2.medium.search
+    instance: t3.medium.search
 
   # 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk space
   small-ha:
     volume-size: 240
     instances: 3
     master: false
-    instance: t2.medium.search
+    instance: t3.medium.search
 
   # 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk space
   medium:
