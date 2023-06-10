@@ -6,10 +6,8 @@ Parameters:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
 
-
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-    # Create an entry for each environment
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       EngineVersion: '{{ config.engine }}'
@@ -21,7 +19,7 @@ Mappings:
 
   {{ service.prefix }}EngineVersionMap:
     '1.0':
-      EngineVersion: 'OpenSearch_1.0'  
+      EngineVersion: 'OpenSearch_1.0'
     '1.1':
       EngineVersion: 'OpenSearch_1.1'
     '1.2':
@@ -32,6 +30,20 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Resources:
+  {{ service.prefix }}OpenSearchSecret:
+    Metadata:
+      'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
+      Description: !Sub Aurora main user secret for ${AWS::StackName}
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "opensearch"}'
+        GenerateStringKey: "password"
+        ExcludePunctuation: false
+        RequireEachIncludedType: true
+        IncludeSpace: false
+        PasswordLength: 20
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   {{ service.prefix }}OpenSearchSecurityGroup:
@@ -59,7 +71,7 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
-  # The cluster itself.
+  # The opensearch cluster
   {{ service.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
     Properties:
@@ -72,7 +84,14 @@ Resources:
           Action:
           - 'es:ESHttp*'
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ service.name }}/*'
-      DomainName: !Sub ${App}-${Env}-{{ service.name }}
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          MasterUserPassword:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
@@ -80,34 +99,33 @@ Resources:
         - {{ service.prefix }}EngineVersionMap
         - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
         - EngineVersion
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
       EBSOptions:
         EBSEnabled: true
         VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: false
+        DedicatedMasterEnabled: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
         InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
         InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
-      # UpdatePolicy:    cfn-lint does not like this; find out where the setting should live
-      #   EnableVersionUprade: true
       VPCOptions:
         SecurityGroupIds:
         - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+        # #/VPCOptions/SubnetIds/0: expected type: String, found: JSONArray
+        #SubnetIds: [!Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
         SubnetIds:
           - !Select [0, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+          # Resource handler returned message: "Invalid request provided: You must specify exactly one subnet.
+          # - !Select [1, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+      SoftwareUpdateOptions:
+        AutoSoftwareUpdateEnabled: true
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
-  {{ service.prefix }}OpenSearchEndpointAddressParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
-      Type: String
-      Value: !Sub 
-        - "https://${url}"
-        - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
-Outputs:
-  {{ service.prefix }}OpenSearchSecurityGroup:
-    Description: Security group for OpenSearch
-    Value: !Ref {{ service.prefix }}OpenSearchSecurityGroup
-
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
