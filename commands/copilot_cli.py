@@ -141,10 +141,10 @@ def make_storage(storage_config_file):
 
     config.update(project_config)
 
-    click.echo("\n>>> Generating cloudformation\n")
+    click.echo("\n>>> Generating storage cloudformation\n")
 
     path = Path(f"copilot/environments/addons/")
-    click.echo(mkdir(output_dir, path))
+    mkdir(output_dir, path)
 
     services = []
     for storage_name, storage_config in config.items():
@@ -185,7 +185,7 @@ def make_storage(storage_config_file):
 
                 contents = template.render({"service": service})
 
-                click.echo(mkdir(output_dir, service_path))
+                mkdir(output_dir, service_path)
                 click.echo(mkfile(output_dir, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
     click.echo(templates["storage-instructions"].render(services=services))
@@ -226,7 +226,7 @@ def apply_waf():
 
     # create the addons dir if it doesn't already exist
     path = Path("./copilot/environments/addons")
-    click.echo(mkdir(".", path))
+    mkdir(".", path)
 
     # create the ./copilot/environments/addons/addons.parameters.yml file
     contents = templates["env"]["parameters"].render({})
