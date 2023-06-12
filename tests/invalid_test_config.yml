@@ -1,0 +1,30 @@
+app: test-app
+environments:
+- test:
+  certificate_arns:
+  - ACM-ARN-FOR-test.landan.cloudapps.digital
+- production:
+  certificate_arns:
+  - ACM-ARN-FOR-test.landan.cloudapps.digital
+services:
+- name: test-service
+  type: public
+  repo: git@github.com:uktrade/not-a-repo.git
+  image_location: not-a-url
+  notes: lorem ipsum etc. etc.
+  secrets_from: test-service
+  environments:
+    production:
+      ipfilter: true
+      paas: dit-services/blah/test-service
+      url: test-service.trad.gav.ik
+    test:
+      ipfilter: false
+      paas: dit-staging/blah/test-service
+      url: test-service.landan.cloudapps.digital
+  overlapping_secrets:
+    OVERLAPPING_SECRET: OVERLAPPING_SECRET
+  secrets:
+    - TEST_SECRET
+  env_vars:
+    TEST_VAR: TEST_VAR

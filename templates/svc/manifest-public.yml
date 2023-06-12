@@ -79,7 +79,7 @@ network:
 #
 variables:                    # Pass environment variables as key value pairs.
   PORT: 8080
-  {%- for envvar, value in env_vars %}
+  {%- for envvar, value in env_vars.items() %}
   {{ envvar }}:
   {% endfor %}
 
