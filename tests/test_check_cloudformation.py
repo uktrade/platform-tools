@@ -28,7 +28,10 @@ class TestCheckCommand:
     def test_runs_specific_check_when_given_check(self, valid_checks_mock):
         runner = CliRunner()
 
-        something_else = ["all", "one"]
+        something_else = {
+            "all": lambda: None,
+            "one": lambda: "Check one output",
+        }
 
         valid_checks_mock.return_value = something_else
 

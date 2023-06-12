@@ -19,7 +19,7 @@ def check_cloudformation(check):
     Valid checks are: all and lint
     """
 
-    if not valid_checks().__contains__(check):
+    if not check in valid_checks():
         raise ValueError(f"Invalid value ({check}) for 'CHECK'")
 
     click.echo(f"\n>>> Running checks: {check}\n")
