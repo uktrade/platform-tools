@@ -88,6 +88,7 @@ my-rds-db:
 
 my-aurora-db:
   type: aurora-postgres
+  version: 14.4
 
   environments:
     default:

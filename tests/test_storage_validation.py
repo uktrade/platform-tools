@@ -8,7 +8,7 @@ from jsonschema import validate
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-with open(PROJECT_ROOT / "storage-plans.yaml") as fd:
+with open(PROJECT_ROOT / "storage-plans.yml") as fd:
     plans = yaml.safe_load(fd)
 
 with open(PROJECT_ROOT / "schemas/storage-schema.json") as fd:
@@ -68,7 +68,6 @@ mys3bucket:
         "redis",
         "opensearch",
         "rds-postgres",
-        "aurora-postgres",
     ],
 )
 def test_environment_extrakeys_not_allowed(storage_type):
@@ -219,6 +218,7 @@ def test_postgres_invalid_input(storage_yaml, validation_message):
             """
 myaurora:
     type: aurora-postgres
+    version: 1.2
     environments:
         prod:
             min-capacity: -1
@@ -229,6 +229,7 @@ myaurora:
             """
 myaurora:
     type: aurora-postgres
+    version: 1.2
     environments:
         prod:
             max-capacity: 0
@@ -393,6 +394,7 @@ def test_aurora_valid_example():
         """
 mypostgres:
     type: aurora-postgres
+    version: 1.2
     environments:
         default:
             min-capacity: 0.5

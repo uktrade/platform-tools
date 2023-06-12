@@ -114,7 +114,8 @@ def setup_templates():
 
 
 def ensure_cwd_is_repo_root():
-    """Exit if we're not in the root of the repo."""
+    """Exit if we're not in the root of the repo"""
+
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.secho(
             "Cannot find copilot directory. Run this command in the root of the deployment repository.",

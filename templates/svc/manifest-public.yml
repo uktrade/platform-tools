@@ -42,7 +42,7 @@ sidecars:
 {% if ipfilter %}
   ipfilter:
     port: 8000
-    image: public.ecr.aws/h0i0h2o7/uktrade/ip-filter:latest
+    image: public.ecr.aws/uktrade/ip-filter:latest
     variables:
       PORT: 8000
       EMAIL_NAME: 'The Department for International Trade WebOps team'
