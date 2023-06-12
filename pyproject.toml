@@ -32,6 +32,8 @@ jsonschema = "4.17.3"
 [tool.poetry.group.dev.dependencies]
 moto = "^4.1.11"
 pytest = "^7.3.1"
+pytest-env = "^0.8.1"
+pyfakefs = "^5.2.2"
 
 [build-system]
 requires = ["poetry-core"]
