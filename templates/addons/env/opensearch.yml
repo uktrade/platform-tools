@@ -5,11 +5,9 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-
-
+Transform: AWS::LanguageExtensions
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-    # Create an entry for each environment
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       EngineVersion: '{{ config.engine }}'
@@ -21,7 +19,7 @@ Mappings:
 
   {{ service.prefix }}EngineVersionMap:
     '1.0':
-      EngineVersion: 'OpenSearch_1.0'  
+      EngineVersion: 'OpenSearch_1.0'
     '1.1':
       EngineVersion: 'OpenSearch_1.1'
     '1.2':
@@ -31,7 +29,25 @@ Mappings:
     '2.3':
       EngineVersion: 'OpenSearch_2.3'
 
+Conditions:
+  DisableHA: !Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
+  EnableHA: !Not [Condition: DisableHA]
+
 Resources:
+  {{ service.prefix }}OpenSearchSecret:
+    Metadata:
+      'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
+      Description: !Sub Aurora main user secret for ${AWS::StackName}
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "opensearch"}'
+        GenerateStringKey: "password"
+        ExcludePunctuation: false
+        RequireEachIncludedType: true
+        IncludeSpace: false
+        PasswordLength: 20
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   {{ service.prefix }}OpenSearchSecurityGroup:
@@ -59,9 +75,11 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
-  # The cluster itself.
+
+  # Single opensearch instance
   {{ service.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
+    Condition: DisableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -72,7 +90,14 @@ Resources:
           Action:
           - 'es:ESHttp*'
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ service.name }}/*'
-      DomainName: !Sub ${App}-${Env}-{{ service.name }}
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          MasterUserPassword:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
@@ -80,6 +105,10 @@ Resources:
         - {{ service.prefix }}EngineVersionMap
         - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
         - EngineVersion
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
       EBSOptions:
         EBSEnabled: true
         VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
@@ -88,26 +117,111 @@ Resources:
         DedicatedMasterEnabled: false
         InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
         InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
-      # UpdatePolicy:    cfn-lint does not like this; find out where the setting should live
-      #   EnableVersionUprade: true
+        ZoneAwarenessEnabled: false
       VPCOptions:
         SecurityGroupIds:
         - !Ref {{ service.prefix }}OpenSearchSecurityGroup
         SubnetIds:
           - !Select [0, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+      SoftwareUpdateOptions:
+        AutoSoftwareUpdateEnabled: true
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  # An opensearch cluster
+  {{ service.prefix }}OpenSearchDomainHA:
+    Type: 'AWS::OpenSearchService::Domain'
+    Condition: EnableHA
+    Properties:
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'es:ESHttp*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${App}-${Env}-{{ service.name }}/*'
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          MasterUserPassword:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+        TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
+      EngineVersion: !FindInMap
+        - {{ service.prefix }}EngineVersionMap
+        - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - EngineVersion
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeType: gp2
+      ClusterConfig:
+        DedicatedMasterEnabled: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
+        InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
+        ZoneAwarenessEnabled: true
+        ZoneAwarenessConfig:
+          AvailabilityZoneCount: 2
+          #Fn::length always resolves to 1 despite there being subnets.
+          #Fn::Length: [ !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+      VPCOptions:
+        SecurityGroupIds:
+        - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+        SubnetIds: !Split [ ",", { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SoftwareUpdateOptions:
+        AutoSoftwareUpdateEnabled: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
   {{ service.prefix }}OpenSearchEndpointAddressParam:
     Type: AWS::SSM::Parameter
+    Condition: DisableHA
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
-      Value: !Sub 
-        - "https://${url}"
-        - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
-Outputs:
-  {{ service.prefix }}OpenSearchSecurityGroup:
-    Description: Security group for OpenSearch
-    Value: !Ref {{ service.prefix }}OpenSearchSecurityGroup
+      Value:
+        Fn::ToJsonString:
+          url: !Sub
+            - "https://${url}"
+            - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
+          username:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          password:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+
+  {{ service.prefix }}OpenSearchEndpointAddressParamHA:
+    Type: AWS::SSM::Parameter
+    Condition: EnableHA
+    Properties:
+      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
+      Type: String
+      Value:
+        Fn::ToJsonString:
+          url: !Sub
+            - "https://${url}"
+            - url: !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
+          username:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          password:
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
 
