@@ -12,7 +12,6 @@ def valid_checks():
     return {
         "all": lambda: None,
         "lint": lambda: "Check lint output",
-        "temp": lambda: "Check temp output",
     }
 
 
