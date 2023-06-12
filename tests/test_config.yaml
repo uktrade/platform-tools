@@ -12,11 +12,10 @@ services:
   repo: git@github.com:uktrade/not-a-repo.git
   image_location: not-a-url
   notes: lorem ipsum etc. etc.
-  secrets_from: test-service
   environments:
     production:
       ipfilter: true
-      paas: dit-services/blah/test-service
+      paas: dit-services/trade-space/test-service
       url: test-service.trad.gav.ik
     test:
       ipfilter: false
