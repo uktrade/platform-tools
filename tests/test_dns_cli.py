@@ -1,44 +1,10 @@
-import os
 from pathlib import Path
 from unittest.mock import patch
-
-import boto3
 from botocore.stub import Stubber
-import pytest
 from click.testing import CliRunner
-from moto import mock_acm
-from moto import mock_route53
-from moto import mock_iam
-
 from commands.dns_cli import add_records, check_for_records, create_hosted_zone, check_r53, create_cert, check_domain, assign_domain
 
-
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    moto_credentials_file_path = Path(__file__).parent.absolute() / 'dummy_aws_credentials'
-    os.environ['AWS_SHARED_CREDENTIALS_FILE'] = str(moto_credentials_file_path)
-
-
-@pytest.fixture(scope="function")
-def acm_session(aws_credentials):
-    with mock_acm():
-        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-        yield session.client("acm")
-
-
-@pytest.fixture(scope="function")
-def route53_session(aws_credentials):
-    with mock_route53():
-        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-        yield session.client("route53")
-
-
-@pytest.fixture(scope="function")
-def iam_session(aws_credentials):
-    with mock_iam():
-        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-        yield session.client("iam")
+import boto3
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -122,7 +88,6 @@ def test_add_records(route53_session):
     assert add_records(route53_session, record , response['HostedZone']['Id'],"CREATE") == "INSYNC"
 
 
-
 @patch("click.confirm")
 def test_create_hosted_zone(mock_click, route53_session):
     route53_session.create_hosted_zone(Name='1234', CallerReference='1234')
@@ -176,11 +141,8 @@ environments:
 @patch(
         "commands.dns_cli.check_response",
         return_value="{}"
-        #return_value="{'clusterArns': ['arn:aws:ecs:eu-west-2:12345:cluster/test',],}"
 )
-#@mock_sts
 def test_assign_domain(check_aws_conn, check_response):
-    #iam_session.create_account_alias(AccountAlias="foo")
 
     runner = CliRunner()
     result = runner.invoke(assign_domain, ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"])
