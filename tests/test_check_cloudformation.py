@@ -1,13 +1,22 @@
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 import commands
 from commands.check_cloudformation import check_cloudformation as check_cloudformation_command, valid_checks
 
 
-class TestCheckCommand:
-    def test_exit_if_no_check_specified(self):
+class TestCheckCloudformationCommand:
+    @pytest.fixture
+    def valid_checks_dict(self):
+        return {
+            "all": lambda: None,
+            "one": lambda: "Check one output",
+            "two": lambda: "Check two output",
+        }
+
+    def test_exit_if_no_check_specified(self, valid_checks_dict):
         runner = CliRunner()
 
         result = runner.invoke(check_cloudformation_command)
@@ -15,7 +24,7 @@ class TestCheckCommand:
         assert result.exit_code == 2
         assert result.output.__contains__("Error: Missing argument 'CHECK'")
 
-    def test_exit_if_invalid_check_specified(self):
+    def test_exit_if_invalid_check_specified(self, valid_checks_dict):
         runner = CliRunner()
 
         result = runner.invoke(check_cloudformation_command, ["does-not-exist"])
@@ -25,15 +34,10 @@ class TestCheckCommand:
         assert str(result.exception).__contains__("Invalid value (does-not-exist) for 'CHECK'")
 
     @patch("commands.check_cloudformation.valid_checks")
-    def test_runs_specific_check_when_given_check(self, valid_checks_mock):
+    def test_runs_specific_check_when_given_check(self, valid_checks_mock, valid_checks_dict):
         runner = CliRunner()
 
-        something_else = {
-            "all": lambda: None,
-            "one": lambda: "Check one output",
-        }
-
-        valid_checks_mock.return_value = something_else
+        valid_checks_mock.return_value = valid_checks_dict
 
         result = runner.invoke(check_cloudformation_command, ["one"])
 
