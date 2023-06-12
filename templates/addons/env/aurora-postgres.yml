@@ -5,9 +5,6 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  Name:
-    Type: String
-    Description: The name of the service, job, or workflow being deployed.
   # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
@@ -17,13 +14,11 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-    dev:
-      "DBMinCapacity": 0.5 # AllowedValues: from 0.5 through 128
-      "DBMaxCapacity": 8   # AllowedValues: from 0.5 through 128
-
-    All:
-      "DBMinCapacity": 0.5 # AllowedValues: from 0.5 through 128
-      "DBMaxCapacity": 8   # AllowedValues: from 0.5 through 128
+  {% for environment_name, config in service.environments.items() %}
+    {{ environment_name }}:
+      "DBMinCapacity": {{ config.min_capacity }}
+      "DBMaxCapacity": {{ config.max_capacity }}
+  {% endfor %}
 
 Resources:
   {{ service.prefix }}DBSubnetGroup:
@@ -37,13 +32,13 @@ Resources:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub 'The Security Group for ${Name} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
+      GroupDescription: !Sub 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
       VpcId:
         Fn::ImportValue:
           !Sub '${App}-${Env}-VpcId'
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
   {{ service.prefix }}DBClusterSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.prefix }}'
@@ -54,7 +49,7 @@ Resources:
         - ToPort: 5432
           FromPort: 5432
           IpProtocol: tcp
-          Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
+          Description: !Sub 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
       VpcId:
         Fn::ImportValue:
@@ -64,9 +59,9 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
-        Name: !Sub '/${App}/${Env}/${Name}/{{ service.name|upper|replace("-", "_") }}_AURORA'
         SecretStringTemplate: '{"username": "postgres"}'
         GenerateStringKey: "password"
         ExcludePunctuation: true
@@ -79,7 +74,7 @@ Resources:
     Type: 'AWS::RDS::DBClusterParameterGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'aurora-postgresql14'
+      Family: 'aurora-postgresql{{ service.version|round(0, "floor")|int }}'
       Parameters:
         client_encoding: 'UTF8'
   {{ service.prefix }}DBCluster:
@@ -93,16 +88,15 @@ Resources:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
       DatabaseName: !Ref {{ service.prefix }}DBName
       Engine: 'aurora-postgresql'
-      EngineVersion: '14.4'
+      EngineVersion: '{{ service.version }}'
       DBClusterParameterGroupName: !Ref {{ service.prefix }}DBClusterParameterGroup
       DBSubnetGroupName: !Ref {{ service.prefix }}DBSubnetGroup
       Port: 5432
       VpcSecurityGroupIds:
         - !Ref {{ service.prefix }}DBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        # Replace "All" below with "!Ref Env" to set different autoscaling limits per environment.
-        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMinCapacity]
-        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, All, DBMaxCapacity]
+        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
   {{ service.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'

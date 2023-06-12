@@ -1,0 +1,2 @@
+Parameters:
+  LBARN: !Ref PublicLoadBalancer

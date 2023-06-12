@@ -1,6 +1,8 @@
--r requirements.txt
-
-pytest
-moto
+-r base.txt
 
 git+https://github.com/uktrade/modification-pre-commit
+
+moto
+pytest
+pytest-env
+pyfakefs

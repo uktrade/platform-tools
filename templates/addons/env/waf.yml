@@ -5,11 +5,19 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-   LBARN:
-      Type: String
+  LBARN:
+    Type: String
+Mappings:
+  EnvWAFConfigurationMap:
+    # Create an entry for each environment
+    {% for env_name, waf_arn in arns.items() %}
+    {{ env_name }}:
+      WebACLArn: '{{ waf_arn }}'
+    {% endfor %}
+
 Resources:
   SampleWebACLAssociation:
     Type: 'AWS::WAFv2::WebACLAssociation'
     Properties:
-      WebACLArn: replace-with-waf-acl-arn
+      WebACLArn: !FindInMap [EnvWAFConfigurationMap, !Ref Env, WebACLArn]
       ResourceArn: !Ref LBARN

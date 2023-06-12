@@ -116,7 +116,7 @@
                "type": "boolean"
             },
             "services": {
-               "type": "array"
+               "type": ["array", "string"]
             },
             "environments": {
                "type": "object",
@@ -191,6 +191,9 @@
             "type": {
                "type": "string"
             },
+            "version": {
+               "type": "number"
+            },
             "environments": {
                "type": "object",
                "patternProperties": {
@@ -201,6 +204,9 @@
                "additionalProperties": false
             }
          },
+         "required": [
+            "version"
+         ],
          "additionalProperties": false
       },
       "s3-environment": {
