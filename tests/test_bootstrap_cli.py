@@ -59,7 +59,7 @@ def test_load_and_validate_config_valid_file():
     """Test that, given the path to a valid yaml file, load_and_validate_config
     returns the loaded yaml unmodified."""
 
-    path = Path(__file__).parent.resolve() / "test_config.yaml"
+    path = Path(__file__).parent.resolve() / "test_config.yml"
     validated = load_and_validate_config(path)
 
     with open(path, "r") as fd:
@@ -72,7 +72,7 @@ def test_load_and_validate_config_invalid_file():
     """Test that, given the path to an invalid yaml file,
     load_and_validate_config raises a SchemaError with specific field errors."""
 
-    path = Path(__file__).parent.resolve() / "invalid_test_config.yaml"
+    path = Path(__file__).parent.resolve() / "invalid_test_config.yml"
 
     with pytest.raises(SchemaError) as err:
         load_and_validate_config(path)
@@ -87,7 +87,7 @@ def test_make_config(tmp_path):
     """Test that, given a config file path and an output path, make_config
     generates the expected directories and file contents."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(make_config, [str(config_file_path), str(tmp_path)])
 
@@ -115,10 +115,10 @@ def test_migrate_secrets_env_not_in_config(client):
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "staging", "--svc", "test-service"])
-    path = str(Path(__file__).parent.resolve() / "test_config.yaml")
+    path = str(Path(__file__).parent.resolve() / "test_config.yml")
     assert f"staging is not an environment in {path}" in result.output
 
 
@@ -127,10 +127,10 @@ def test_migrate_secrets_service_not_in_config(client):
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "blah"])
-    path = str(Path(__file__).parent.resolve() / "test_config.yaml")
+    path = str(Path(__file__).parent.resolve() / "test_config.yml")
     assert f"blah is not a service in {path}" in result.output
 
 
@@ -146,7 +146,7 @@ def test_migrate_secrets_param_doesnt_exist(client, get_paas_env_vars, env_vars,
     migrate_secrets creates it."""
 
     get_paas_env_vars.return_value = env_vars
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "test-service"])
 
@@ -168,7 +168,7 @@ def test_migrate_secrets_param_already_exists(client, get_paas_env_vars):
     isn't set, migrate_secrets doesn't update it."""
 
     set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "test-service"])
 
@@ -188,7 +188,7 @@ def test_migrate_secrets_overwrite(client, get_paas_env_vars):
     set, migrate_secrets updates it."""
 
     set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(
         migrate_secrets,
@@ -211,7 +211,7 @@ def test_migrate_secrets_dry_run(client, get_paas_env_vars):
     """Test that, when dry-run flag is passed, migrate_secrets does not create a
     secret."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(
         migrate_secrets,
@@ -233,7 +233,7 @@ def test_instructions():
     """Test that, given the path to a config file, instructions generates output
     for specific services and environments."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yaml"
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
     result = runner.invoke(instructions, [str(config_file_path)])
 
