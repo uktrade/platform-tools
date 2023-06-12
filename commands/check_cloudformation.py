@@ -30,5 +30,5 @@ def check_cloudformation(check):
     click.echo(f"""\n>>> Running {check} check{"s" if check == "all" else ""}\n""")
 
     for check_name, check_method in valid_checks().items():
-        if check_name == check and check_name != "all":
+        if check in ["all", check_name] and check_name != "all":
             click.echo(f"{check_method()}\n")
