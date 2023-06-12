@@ -3,6 +3,9 @@
 import click
 
 
+from commands.cloudformation_checks.lint import lint
+
+
 @click.group()
 def copilot():
     pass
@@ -11,7 +14,7 @@ def copilot():
 def valid_checks():
     return {
         "all": lambda: None,
-        "lint": lambda: "Check lint output",
+        "lint": lint,
     }
 
 
