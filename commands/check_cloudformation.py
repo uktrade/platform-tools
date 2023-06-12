@@ -2,13 +2,18 @@
 
 import click
 
+
 @click.group()
 def copilot():
     pass
 
 
 def valid_checks():
-    return ["all", "lint"]
+    return {
+        "all": lambda: None,
+        "lint": lambda: "Check lint output",
+        "temp": lambda: "Check temp output",
+    }
 
 
 @copilot.command()
@@ -22,6 +27,8 @@ def check_cloudformation(check):
     if not check in valid_checks():
         raise ValueError(f"Invalid value ({check}) for 'CHECK'")
 
-    click.echo(f"\n>>> Running checks: {check}\n")
+    click.echo(f"""\n>>> Running {check} check{"s" if check == "all" else ""}\n""")
 
-    # Call the method
+    for check_name, check_method in valid_checks().items():
+        if check_name == check and check_name != "all":
+            click.echo(f"{check_method()}\n")
