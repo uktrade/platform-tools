@@ -1,0 +1,25 @@
+## storage.yaml
+#
+##dw-redis:
+#  type: redis
+#
+#  default:
+#    engine: '6.2'
+#    plan: small
+#
+#  prod:
+#    plan: medium-ha
+#
+#dw-postgres:
+#  type: postgres
+#
+#  default:
+#    min-capacity: 0.5 # AllowedValues: from 0.5 through 128
+#    max-capacity: 8   # AllowedValues: from 0.5 through 128
+#
+#dw-opensearch:
+#  type: opensearch
+#
+#  default:
+#    plan: large-ha
+#    engine: 2.3'
