@@ -12,25 +12,33 @@ def copilot():
 
 
 def valid_checks():
+    # If you add something here, you need to remember to update the valid check docstring in check_cloudformation()
     return {
-        "all": lambda: None,
         "lint": lint,
     }
 
 
 @copilot.command()
-@click.argument("check", type=str)
-def check_cloudformation(check):
+@click.argument("checks", nargs=-1)
+def check_cloudformation(checks):
     """Runs the specific CHECK.
 
     Valid checks are: all and lint
     """
 
-    if not check in valid_checks():
-        raise ValueError(f"Invalid value ({check}) for 'CHECK'")
+    if len(checks) == 0:
+        checks = valid_checks()
+        running_checks = "all"
+    else:
+        running_checks = ' & '.join(', '.join(checks).rsplit(', ', 1))
 
-    click.echo(f"""\n>>> Running {check} check{"s" if check == "all" else ""}\n""")
+    if not set(checks) & set(valid_checks()):
+        raise ValueError(f"""Invalid check requested in "{running_checks}" """)
+
+    check_single_or_plural = f"""check{"s" if ("all" in checks or len(checks) > 1) else ""}"""
+
+    click.echo(f"""\n>>> Running {running_checks} {check_single_or_plural}\n""")
 
     for check_name, check_method in valid_checks().items():
-        if check in ["all", check_name] and check_name != "all":
+        if (check_name in checks):
             click.echo(f"{check_method()}\n")

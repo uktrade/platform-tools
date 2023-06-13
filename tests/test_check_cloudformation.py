@@ -10,25 +10,15 @@ from commands.check_cloudformation import check_cloudformation as check_cloudfor
 @pytest.fixture
 def valid_checks_dict():
     return {
-        "all": lambda: None,
         "one": lambda: "Check one output",
         "two": lambda: "Check two output",
+        "three": lambda: "Check three output",
+        "four": lambda: "Check four output",
     }
 
 
 @patch("commands.check_cloudformation.valid_checks")
-def test_exit_if_no_check_specified(valid_checks_mock, valid_checks_dict):
-    runner = CliRunner()
-    valid_checks_mock.return_value = valid_checks_dict
-
-    result = runner.invoke(check_cloudformation_command)
-
-    assert result.exit_code == 2
-    assert "Error: Missing argument 'CHECK'" in result.output
-
-
-@patch("commands.check_cloudformation.valid_checks")
-def test_exit_if_invalid_check_specified(valid_checks_mock, valid_checks_dict):
+def test_exits_if_invalid_check_specified(valid_checks_mock, valid_checks_dict):
     runner = CliRunner()
     valid_checks_mock.return_value = valid_checks_dict
 
@@ -36,41 +26,45 @@ def test_exit_if_invalid_check_specified(valid_checks_mock, valid_checks_dict):
 
     assert result.exit_code == 1
     assert isinstance(result.exception, ValueError)
-    assert "Invalid value (does-not-exist) for 'CHECK'" in str(result.exception)
+    assert '''Invalid check requested in "does-not-exist"''' in str(result.exception)
 
 
 test_data = [
-    ("one", "Check one output"),
-    ("two", "Check two output"),
+    (["one"], "Running one check", ["Check one output"]),
+    (["two"], "Running two check", ["Check two output"]),
+    (["one", "two"], "Running one & two check", ["Check two output"]),
+    (["one", "three", "four"], "Running one, three & four checks", ["Check one output"]),
 ]
-
-
 @patch("commands.check_cloudformation.valid_checks")
-@pytest.mark.parametrize("requested_check, expected_check_output", test_data)
-def test_runs_specific_check_when_given_check(
+@pytest.mark.parametrize("requested_checks, expect_check_plan, expected_check_outputs", test_data)
+def test_runs_checks_from_arguments(
         valid_checks_mock,
         valid_checks_dict,
-        requested_check,
-        expected_check_output
+        requested_checks,
+        expect_check_plan,
+        expected_check_outputs
 ):
     runner = CliRunner()
     valid_checks_mock.return_value = valid_checks_dict
 
-    result = runner.invoke(check_cloudformation_command, [requested_check])
+    result = runner.invoke(check_cloudformation_command, requested_checks)
 
     assert result.exit_code == 0
-    assert f"Running {requested_check} check" in result.output
-    assert expected_check_output in result.output
+    assert expect_check_plan in result.output
+    for expected_check_output in expected_check_outputs:
+        assert expected_check_output in result.output
 
 
 @patch("commands.check_cloudformation.valid_checks")
-def test_runs_all_checks_when_given_all(valid_checks_mock, valid_checks_dict):
+def test_runs_all_checks_when_given_no_arguments(valid_checks_mock, valid_checks_dict):
     runner = CliRunner()
     valid_checks_mock.return_value = valid_checks_dict
 
-    result = runner.invoke(check_cloudformation_command, ["all"])
+    result = runner.invoke(check_cloudformation_command)
 
     assert result.exit_code == 0
     assert "Running all checks" in result.output
     assert "Check one output" in result.output
     assert "Check two output" in result.output
+    assert "Check three output" in result.output
+    assert "Check four output" in result.output
