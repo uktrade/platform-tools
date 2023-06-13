@@ -84,7 +84,7 @@ def check_git_url(git: str) -> str:
         git_url = "https://github.com/" + git_part[1]
     else:
         click.echo(
-            click.style("Unable to recognise git url format, make sure its either:\n", fg="red") +
+            click.style("Unable to recognise Git URL format, make sure it is either:\n", fg="red") +
             click.style("https://github.com/<org>/<repository-name>\n" +
             "git@github.com:<org>/<repository-name>", fg="white", bold=True))
         exit()
