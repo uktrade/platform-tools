@@ -5,9 +5,8 @@ import os
 import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
-
-from utils.aws import check_aws_conn
-from utils.aws import check_response
+from .utils import check_aws_conn
+from .utils import check_response
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
@@ -21,7 +20,7 @@ def import_pat(pat: str, client: CodeBuildClient):
         shouldOverwrite=True,
     )
     check_response(response)
-    print("PAT successfully added")
+    click.secho("PAT successfully added", fg="green")
 
 
 def check_github_conn(client: CodeBuildClient):
@@ -29,7 +28,7 @@ def check_github_conn(client: CodeBuildClient):
 
     # If there are no source code creds defined then AWS is not linked to Github
     if not response["sourceCredentialsInfos"]:
-        if not click.confirm("Github not Linked in this AWS account\nDo you want to link with a PAT?"):
+        if not click.confirm(click.style("Github not Linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")):
             exit()
 
         pat = input(
@@ -53,7 +52,7 @@ def check_service_role(project_session: Session) -> str:
         role_arn = response["Role"]["Arn"]
 
     except client.exceptions.NoSuchEntityException:
-        print("Role for service does not exist run ./codebuild_cli.py create-codeploy-role")
+        click.secho("Role for service does not exist run ./codebuild_cli.py create-codeploy-role", fg="cyan")
         role_arn = ""
         exit()
 
@@ -79,19 +78,15 @@ def check_git_url(git: str) -> str:
     # Ensure the git format is https://github.com/<org>/<repository-name>
     git_part = git.split(":")
 
-    print(git_part)
     if git_part[0] == "https":
         git_url = git
     elif git_part[0] == "git@github.com":
         git_url = "https://github.com/" + git_part[1]
     else:
-        print(
-            """
-            Unable to recognise git url format, make sure its either:
-            https://github.com/<org>/<repository-name>
-            git@github.com:<org>/<repository-name>
-            """,
-        )
+        click.echo(
+            click.style("Unable to recognise git url format, make sure its either:\n", fg="red") +
+            click.style("https://github.com/<org>/<repository-name>\n" +
+            "git@github.com:<org>/<repository-name>", fg="white", bold=True))
         exit()
     return git_url
 
@@ -136,10 +131,10 @@ def create_codedeploy_role(project_profile: str) -> None:
             ],
         )
         check_response(response)
-        print("Policy created")
+        click.secho("Policy created", fdg="green")
 
     except client.exceptions.EntityAlreadyExistsException:
-        if not click.confirm("Policy exists.\nDo you want to update it?"):
+        if not click.confirm(click.style("Policy exists.\nDo you want to update it?", fg="yellow")):
             exit()
         try:
             response = client.create_policy_version(
@@ -148,10 +143,10 @@ def create_codedeploy_role(project_profile: str) -> None:
                 SetAsDefault=True,
             )
             check_response(response)
-            print("Policy updated")
+            click.secho("Policy updated", fg="green")
 
         except client.exceptions.LimitExceededException:
-            print("You have hit the limit of max managed policies, please delete an existing version and try again")
+            click.secho("You have hit the limit of max managed policies, please delete an existing version and try again", fg="red")
             exit()
 
     with open(f"{current_filepath}/../templates/create-codebuild-role.json") as f:
@@ -161,16 +156,16 @@ def create_codedeploy_role(project_profile: str) -> None:
     try:
         response = client.create_role(RoleName="ci-CodeBuild-role", AssumeRolePolicyDocument=json.dumps(role_doc))
         check_response(response)
-        print("Role created")
+        click.secho("Role created", fg="green")
     except client.exceptions.EntityAlreadyExistsException:
-        print("Role exists")
+        click.secho("Role exists", fg="yellow")
 
     response = client.attach_role_policy(
         PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy",
         RoleName="ci-CodeBuild-role",
     )
     check_response(response)
-    print("Policy attached to Role")
+    click.secho("Policy attached to Role", fg="green")
 
 
 @codebuild.command()
@@ -235,7 +230,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
                 logsConfig=logsConfig,
             )
         except client.exceptions.ResourceNotFoundException:
-            print("Unable to update a project that does not exist, drop the --update flag")
+            click.secho("Unable to update a project that does not exist, drop the --update flag", fg="red")
             exit()
 
         response_webhook = client.update_webhook(
@@ -251,7 +246,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
             ],
             buildType="BUILD",
         )
-        print("Project Updated")
+        click.secho("Project Updated", fg="green")
 
     else:
         try:
@@ -281,12 +276,14 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
             )
 
         except client.exceptions.ResourceAlreadyExistsException:
-            print("Project already exists, use the --update flag")
+            click.secho("Project already exists, use the --update flag", fg="red")
             exit()
 
     check_response(response)
     check_response(response_webhook)
-    print(f"Codebuild project {name} created")
+    click.echo(click.style("Codebuild project", fg="yellow") +
+                           click.style(f"{name}",fg="white", bold=True) +
+                           click.style("created", fg="yellow"))
 
 
 @codebuild.command()
@@ -308,12 +305,13 @@ def slackcreds(workspace, channel, token, project_profile):
         "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": token},
     }
 
-    if not click.confirm("Updating Parameter Store with Slack credentials.\nDo you want to update it?"):
+    if not click.confirm(click.style(
+        "Updating Parameter Store with Slack credentials.\nDo you want to update it?", fg="yellow")):
         exit()
 
     for item, value in SLACK.items():
         update_parameter(project_session, value["name"], value["description"], value["value"])
-    print("Paramater Store updated")
+    click.secho("Paramater Store updated", fg="green")
 
 
 if __name__ == "__main__":

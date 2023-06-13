@@ -1,5 +1,4 @@
 from pathlib import Path
-#from commands.dns_cli import mock_route53, mock_acm
 
 import jsonschema
 import pytest
