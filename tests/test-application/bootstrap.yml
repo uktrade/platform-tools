@@ -1,35 +1,48 @@
 app: test-application
-domain: test-application.uktrade.digital
 environments:
-  dev: { }
+  dev:
+    certificate_arns:
+      - ACM-ARN-FOR-static.test-application.dev.uktrade.digital
+      - ACM-ARN-FOR-test-application-s3proxy-dev.london.cloudapps.digital
+      - ACM-ARN-FOR-test-application-v2-dev.london.cloudapps.digital
+      - ACM-ARN-FOR-test-application.dev.uktrade.digital
+  hotfix: {}
   prod:
     certificate_arns:
+      - ACM-ARN-FOR-test-application-s3proxy.london.cloudapps.digital
       - ACM-ARN-FOR-static.test-application.trade.gov.uk
+      - ACM-ARN-FOR-peoplefinder.london.cloudapps.digital
+      - ACM-ARN-FOR-people.trade.gov.uk
       - ACM-ARN-FOR-test-application.trade.gov.uk
-  staging: { }
-  training: { }
+      - ACM-ARN-FOR-admin.test-application.trade.gov.uk
+      - ACM-ARN-FOR-test-application-v2.london.cloudapps.digital
+      - ACM-ARN-FOR-test-application.trade.gov.uk
+      - ACM-ARN-FOR-test-application-v2.london.cloudapps.digital
+  staging:
+    certificate_arns:
+      - ACM-ARN-FOR-test-application-s3proxy-staging.london.cloudapps.digital
+      - ACM-ARN-FOR-assets.test-application.trade.uat.uktrade.io
+      - ACM-ARN-FOR-static.test-application-v2-dev.london.cloudapps.digital
+      - ACM-ARN-FOR-static.test-application.staging.uktrade.digital
+      - ACM-ARN-FOR-test-application-v2-staging.london.cloudapps.digital
+      - ACM-ARN-FOR-test-application.staging.uktrade.digital
 services:
-  - backing-services:
-      - name: test-application-s3
-        type: external-s3
-        bucket_name: test-application-s3-proxy-dev
-    command: python -m app
-    env_vars: { }
+  - env_vars: {}
     environments:
       dev:
         ipfilter: true
-        paas: dit-staging/test-application-dev/digital-workspace-s3proxy-dev
-        url: dev-static.test-application.uktrade.digital
+        paas: dit-staging/test-application-dev/test-application-s3proxy-dev
+        url: test-application-s3proxy-dev.london.cloudapps.digital
       prod:
         ipfilter: false
-        paas: dit-services/test-application/digital-workspace-s3proxy
-        url: static-workspace.trade.gov.uk
+        paas: dit-services/test-application/test-application-s3proxy
+        url: static.test-application.trade.gov.uk
       staging:
         ipfilter: true
-        paas: dit-staging/test-application-staging/digital-workspace-s3proxy-staging
-        url: staging-static.workspace.uktrade.digital
-    image_location: public.ecr.aws/h0i0h2o7/copilot-bootstrap:latest
-    name: s3proxy
+        paas: dit-staging/test-application-staging/test-application-s3proxy-staging
+        url: static.test-application.staging.uktrade.digital
+    image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+    name: test-application-s3proxy
     overlapping_secrets:
       - APP_ENV
       - AUTHBROKER_CLIENT_ID
@@ -48,6 +61,8 @@ services:
       AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
       AUTHBROKER_URL: AUTHBROKER_URL
       AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+      AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
+      AWS_S3_BUCKET: AWS_S3_BUCKET
       AWS_S3_ENDPOINT: AWS_S3_ENDPOINT
       AWS_S3_HEALTHCHECK_KEY: AWS_S3_HEALTHCHECK_KEY
       AWS_S3_REGION: AWS_S3_REGION
@@ -61,28 +76,26 @@ services:
       SSO_CLIENT_SECRET: SSO_CLIENT_SECRET
       SSO_URL: SSO_URL
     type: public
-  - backing-services:
-      - name: test-application-s3
-        type: external-s3
-        bucket_name: test-application-s3-proxy-dev
-    command: python manage.py migrate --noinput && python manage.py collectstatic --noinput
-      && waitress-serve --port=$PORT config.wsgi:application
-    env_vars: { }
+  - env_vars: {}
     environments:
       dev:
         ipfilter: true
         paas: dit-staging/test-application-dev/test-application-v2-dev
-        url: dev.test-application.uktrade.digital
+        url: test-application.dev.uktrade.digital
       prod:
         ipfilter: true
         paas: dit-services/test-application/test-application-v2
-        url: test-application.trade.gov.uk
+        url: test-application-v2.london.cloudapps.digital
       staging:
         ipfilter: true
         paas: dit-staging/test-application-staging/test-application-v2-staging
-        url: staging.test-application.uktrade.digital
-    image_location: public.ecr.aws/h0i0h2o7/copilot-bootstrap:latest
-    name: web
+        url: test-application.staging.uktrade.digital
+      training:
+        ipfilter: true
+        paas: dit-staging/test-application-training/test-application-v2-training
+        url: test-application.training.uktrade.digital
+    image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+    name: test-application-v2
     overlapping_secrets:
       - APP_ENV
       - AUTHBROKER_CLIENT_ID
@@ -94,12 +107,12 @@ services:
       - DJANGO_SECRET_KEY
       - ELASTIC_APM_SECRET_TOKEN
       - ELASTIC_APM_SERVER_URL
-    repo: git@github.com:uktrade/does-not-matter.git
+    repo: git@github.com:uktrade/test-application-v2.git
     secrets:
       APP_ENV: APP_ENV
-      AUTHBROKER_CLIENT_ID: WORKSPACE_AUTHBROKER_CLIENT_ID
-      AUTHBROKER_CLIENT_SECRET: WORKSPACE_AUTHBROKER_CLIENT_SECRET
-      AUTHBROKER_URL: WORKSPACE_AUTHBROKER_URL
+      AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+      AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+      AUTHBROKER_URL: AUTHBROKER_URL
       AUTHOR_SUBSTITUTED: AUTHOR_SUBSTITUTED
       AUTHOR_TO_BE_SUBSTITUTED: AUTHOR_TO_BE_SUBSTITUTED
       AV_SIGNATURE_SECRET_KEY: AV_SIGNATURE_SECRET_KEY
@@ -112,10 +125,12 @@ services:
       CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
       CLAM_AV_USERNAME: CLAM_AV_USERNAME
       DJANGO_DEBUG: DJANGO_DEBUG
-      DJANGO_SECRET_KEY: WORKSPACE_DJANGO_SECRET_KEY
+      DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
       ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
       ELASTIC_APM_SERVER_TIMEOUT: ELASTIC_APM_SERVER_TIMEOUT
       ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
+      FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS: FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
+      FEEDBACK_NOTIFICATION_EMAIL_TEMPLATE_ID: FEEDBACK_NOTIFICATION_EMAIL_TEMPLATE_ID
       GOVUK_NOTIFY_API_KEY: GOVUK_NOTIFY_API_KEY
       GTM_AUTH: GTM_AUTH
       GTM_CODE: GTM_CODE
@@ -143,6 +158,7 @@ services:
       PROFILE_DELETION_REQUEST_EMAIL: PROFILE_DELETION_REQUEST_EMAIL
       PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID: PROFILE_DELETION_REQUEST_EMAIL_TEMPLATE_ID
       PROFILE_EDITED_EMAIL_TEMPLATE_ID: PROFILE_EDITED_EMAIL_TEMPLATE_ID
+      SENTRY_AUTH_TOKEN: SENTRY_AUTH_TOKEN
       SENTRY_DSN: SENTRY_DSN
       SKIP_LIST: SKIP_LIST
       SUPPORT_REQUEST_EMAIL: SUPPORT_REQUEST_EMAIL
@@ -154,9 +170,7 @@ services:
       WAGTAIL_BASE_URL: WAGTAIL_BASE_URL
       X_AUTOSCALING_MAX: X_AUTOSCALING_MAX
     type: public
-  - backing-services: [ ]
-    command: celery -A config worker -l info
-    env_vars: { }
+  - env_vars: {}
     environments:
       dev:
         paas: dit-staging/test-application-dev/test-application-v2-dev
@@ -164,11 +178,11 @@ services:
         paas: dit-services/test-application/test-application-v2
       staging:
         paas: dit-staging/test-application-staging/test-application-v2-staging
-    image_location: public.ecr.aws/h0i0h2o7/copilot-bootstrap:latest
-    name: celery
+    image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+    name: test-application-v2-worker
     notes: service created based on Procfile entry for test-application-v2 and will
       require access to the same backing services
-    repo: git@github.com:uktrade/does-not-matter.git
-    secrets: { }
-    secrets_from: web
+    repo: git@github.com:uktrade/test-application-v2.git
+    secrets: {}
+    secrets_from: test-application-v2
     type: backend
