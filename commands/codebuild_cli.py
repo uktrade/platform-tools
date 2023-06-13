@@ -131,7 +131,7 @@ def create_codedeploy_role(project_profile: str) -> None:
             ],
         )
         check_response(response)
-        click.secho("Policy created", fdg="green")
+        click.secho("Policy created", fg="green")
 
     except client.exceptions.EntityAlreadyExistsException:
         if not click.confirm(click.style("Policy exists.\nDo you want to update it?", fg="yellow")):

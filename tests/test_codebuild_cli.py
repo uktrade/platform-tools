@@ -30,7 +30,7 @@ def aws_credentials():
 @pytest.fixture
 def alias_session(aws_credentials):
     with mock_iam():
-        session = boto3.session.Session()
+        session = boto3.session.Session(region_name="eu-west-2")
         session.client("iam").create_account_alias(AccountAlias="foo")
 
         yield session
@@ -53,7 +53,7 @@ def test_check_service_role_does_not_exist(capfd, aws_credentials):
         check_service_role(session)
     out, _ = capfd.readouterr()
 
-    assert "Role for service does not exist run ./codebuild_cli.py create-codeploy-role" in out
+    assert "Role for service does not exist; run ./codebuild_cli.py create-codeploy-role\n" in out
 
 
 @mock_iam
@@ -76,7 +76,7 @@ def test_update_parameter():
     """Test that update_paramater creates a parameter with expected Name and
     Value values where none exists."""
 
-    session = boto3.session.Session()
+    session = boto3.session.Session(region_name="eu-west-2")
     assert update_parameter(session, "name", "description", "value") == None
 
     response = session.client("ssm").get_parameter(Name="name")
@@ -109,9 +109,9 @@ def test_check_git_url_invalid(url, capfd):
         check_git_url(url)
 
     out, _ = capfd.readouterr()
-
+    
     assert (
-        "Unable to recognise git url format, make sure its either:\n            https://github.com/<org>/<repository-name>\n            git@github.com:<org>/<repository-name>\n            \n"
+        "Unable to recognise Git URL format, make sure it is either:\nhttps://github.com/<org>/<repository-name>\ngit@github.com:<org>/<repository-name>\n"
         in out
     )
 
@@ -132,7 +132,7 @@ def test_create_codedeploy_role_returns_200(alias_session):
     runner = CliRunner()
     result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo"])
     response = alias_session.client("iam", region_name=AWS_REGION).get_role(RoleName="ci-CodeBuild-role")[
-        "ResponseMetadata"
+       "ResponseMetadata"
     ]
     policy = alias_session.client("iam", region_name=AWS_REGION).list_attached_role_policies(
         RoleName="ci-CodeBuild-role",
