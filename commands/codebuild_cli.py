@@ -230,7 +230,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
                 logsConfig=logsConfig,
             )
         except client.exceptions.ResourceNotFoundException:
-            click.secho("Unable to update a project that does not exist, drop the --update flag", fg="red")
+            click.secho("Unable to update a project that does not exist, remove the --update flag", fg="red")
             exit()
 
         response_webhook = client.update_webhook(
