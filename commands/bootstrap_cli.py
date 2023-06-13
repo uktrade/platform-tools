@@ -127,18 +127,18 @@ def make_config(config_file, output):
     click.echo(">>> Generating Copilot configuration files\n")
 
     # create copilot directory
-    click.echo(mkdir(base_path, "copilot"))
+    mkdir(base_path, "copilot")
 
     # create copilot/.workspace file
     contents = f"application: {config['app']}"
     click.echo(mkfile(base_path, "copilot/.workspace", contents))
 
     # create copilot/environments directory
-    click.echo(mkdir(base_path, "copilot/environments"))
+    mkdir(base_path, "copilot/environments")
 
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
-        click.echo(mkdir(base_path, f"copilot/environments/{name}"))
+        mkdir(base_path, f"copilot/environments/{name}")
         contents = templates["env"]["manifest"].render(
             {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
         )
@@ -148,7 +148,7 @@ def make_config(config_file, output):
     for service in config["services"]:
         service["ipfilter"] = any(env.get("ipfilter", False) for _, env in service["environments"].items())
         name = service["name"]
-        click.echo(mkdir(base_path, f"copilot/{name}/addons/"))
+        mkdir(base_path, f"copilot/{name}/addons/")
 
         if "secrets_from" in service:
             # Copy secrets from the app referredd to in the "secrets_from" key
