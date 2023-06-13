@@ -7,7 +7,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - pip install poetry
-      - poetry install --no-root
+      - poetry install
 
   build:
     commands:
