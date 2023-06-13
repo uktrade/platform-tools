@@ -73,7 +73,7 @@ config_schema = Schema(
 )
 
 
-def get_paas_env_vars(client, paas):
+def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
     org, space, app = paas.split("/")
 
     env_vars = None
@@ -127,18 +127,18 @@ def make_config(config_file, output):
     click.echo(">>> Generating Copilot configuration files\n")
 
     # create copilot directory
-    click.echo(mkdir(base_path, "copilot"))
+    mkdir(base_path, "copilot")
 
     # create copilot/.workspace file
     contents = f"application: {config['app']}"
     click.echo(mkfile(base_path, "copilot/.workspace", contents))
 
     # create copilot/environments directory
-    click.echo(mkdir(base_path, "copilot/environments"))
+    mkdir(base_path, "copilot/environments")
 
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
-        click.echo(mkdir(base_path, f"copilot/environments/{name}"))
+        mkdir(base_path, f"copilot/environments/{name}")
         contents = templates["env"]["manifest"].render(
             {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
         )
@@ -148,7 +148,7 @@ def make_config(config_file, output):
     for service in config["services"]:
         service["ipfilter"] = any(env.get("ipfilter", False) for _, env in service["environments"].items())
         name = service["name"]
-        click.echo(mkdir(base_path, f"copilot/{name}/addons/"))
+        mkdir(base_path, f"copilot/{name}/addons/")
 
         if "secrets_from" in service:
             # Copy secrets from the app referredd to in the "secrets_from" key
@@ -198,8 +198,8 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
     if env and env not in config["environments"].keys():
         raise click.ClickException(f"{env} is not an environment in {config_file}")
 
-    if svc and svc not in config["services"].keys():
-        raise click.ClickException(f"{svc} is not a servuce in {config_file}")
+    if svc and svc not in [service["name"] for service in config["services"]]:
+        raise click.ClickException(f"{svc} is not a service in {config_file}")
 
     existing_ssm_data = defaultdict(list)
     for env_name, _ in config["environments"].items():
@@ -225,7 +225,7 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
                 continue
 
             click.echo("-----------------")
-            click.echo(f">>> migrating secrets fro service: {service_name}; environment: {env_name}")
+            click.echo(f">>> migrating secrets for service: {service_name}; environment: {env_name}")
 
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
@@ -256,9 +256,11 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
                     if not param_exists:
                         existing_ssm_data[env_name].append(ssm_path)
 
-                text = "Created" if not param_exists else "Overwritten" if overwrite else "NOT overwritten"
-
-                click.echo(f"{text} {ssm_path}")
+                if not dry_run:
+                    text = "Created" if not param_exists else "Overwritten" if overwrite else "NOT overwritten"
+                    click.echo(f"{text} {ssm_path}")
+                else:
+                    click.echo(f"{ssm_path} not created because `--dry-run` flag was included.")
 
 
 @bootstrap.command()

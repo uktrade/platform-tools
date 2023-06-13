@@ -1,8 +1,13 @@
 from pathlib import Path
+#from commands.dns_cli import mock_route53, mock_acm
 
 import jsonschema
 import pytest
 import yaml
+import os
+import boto3
+from moto import mock_acm
+from moto import mock_route53
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -21,3 +26,31 @@ def fakefs(fs):
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
 
     return fs
+
+
+@pytest.fixture(scope="function")
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    moto_credentials_file_path = Path(__file__).parent.absolute() / 'dummy_aws_credentials'
+    os.environ['AWS_SHARED_CREDENTIALS_FILE'] = str(moto_credentials_file_path)
+
+
+@pytest.fixture(scope="function")
+def acm_session(aws_credentials):
+    with mock_acm():
+        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+        yield session.client("acm")
+
+
+@pytest.fixture(scope="function")
+def route53_session(aws_credentials):
+    with mock_route53():
+        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+        yield session.client("route53")
+
+
+@pytest.fixture(scope="function")
+def iam_session(aws_credentials):
+    with mock_iam():
+        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+        yield session.client("iam")
