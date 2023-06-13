@@ -52,7 +52,7 @@ def check_service_role(project_session: Session) -> str:
         role_arn = response["Role"]["Arn"]
 
     except client.exceptions.NoSuchEntityException:
-        click.secho("Role for service does not exist run ./codebuild_cli.py create-codeploy-role", fg="cyan")
+        click.secho("Role for service does not exist; run ./codebuild_cli.py create-codeploy-role", fg="cyan")
         role_arn = ""
         exit()
 
