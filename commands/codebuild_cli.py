@@ -28,7 +28,7 @@ def check_github_conn(client: CodeBuildClient):
 
     # If there are no source code creds defined then AWS is not linked to Github
     if not response["sourceCredentialsInfos"]:
-        if not click.confirm(click.style("Github not Linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")):
+        if not click.confirm(click.style("GitHub is not linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")):
             exit()
 
         pat = input(
