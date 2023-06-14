@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies...
+      - pip install poetry
+
+  build:
+    commands:
+      - echo Running tests...
+      - poetry run tox
