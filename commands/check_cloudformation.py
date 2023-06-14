@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import subprocess
 from pathlib import Path
 
 import click
@@ -44,11 +43,11 @@ def check_cloudformation(ctx, checks):
 
     check_single_or_plural = f"""check{"s" if ("all" in checks or len(checks) > 1) else ""}"""
 
-    click.echo(f"""\n>>> Running {running_checks} {check_single_or_plural}\n""")
-
     os.chdir(f"{BASE_DIR}/tests/test-application")
     ctx.invoke(make_config, config_file="bootstrap.yml")
     ctx.invoke(make_storage, storage_config_file="storage.yml")
+
+    click.echo(f"""\n>>> Running {running_checks} {check_single_or_plural}\n""")
 
     for check_name, check_method in valid_checks().items():
         if (check_name in checks):
