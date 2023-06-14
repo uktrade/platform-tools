@@ -256,7 +256,7 @@ def test_get_secrets():
 
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["get-secrets", "myapp", "myenv"])
+    result = runner.invoke(cli, ["get-env-secrets", "myapp", "myenv"])
 
     for name, value in secrets:
         path = SSM_PATH.format(app="myapp", env="myenv", name=name)
