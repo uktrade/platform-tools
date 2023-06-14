@@ -241,7 +241,7 @@ def apply_waf():
 @copilot.command()
 @click.argument("app", type=str)
 @click.argument("env", type=str)
-def get_secrets(app, env):
+def get_env_secrets(app, env):
     """List secret names and values for an environment."""
 
     client = boto3.client("ssm")
