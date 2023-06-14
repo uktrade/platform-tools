@@ -27,13 +27,13 @@ jsonschema = "4.17.3"
 mypy-boto3-codebuild = "1.26.0.post1"
 python = "^3.9"
 schema = "0.7.5"
-tox = "^4.6.0"
 
 [tool.poetry.group.dev.dependencies]
 moto = "^4.1.11"
 pyfakefs = "^5.2.2"
 pytest = "^7.3.1"
 pytest-env = "^0.8.1"
+tox = "^4.6.0"
 
 [build-system]
 requires = ["poetry-core"]

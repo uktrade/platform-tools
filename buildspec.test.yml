@@ -4,8 +4,9 @@ phases:
   install:
     commands:
       - echo Installing dependencies...
+      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
       - pip install poetry
-      - poetry install
+      - poetry install --no-root --only dev
 
   build:
     commands:
