@@ -9,8 +9,7 @@ authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "commands" },
-    { include = "utils" }
+    { include = "commands" }
 ]
 
 [tool.poetry.scripts]
