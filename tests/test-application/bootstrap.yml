@@ -1,13 +1,12 @@
 app: test-application
 environments:
-  dev:
+  development:
     certificate_arns:
       - ACM-ARN-FOR-static.test-application.dev.uktrade.digital
       - ACM-ARN-FOR-test-application-s3proxy-dev.london.cloudapps.digital
       - ACM-ARN-FOR-test-application-v2-dev.london.cloudapps.digital
       - ACM-ARN-FOR-test-application.dev.uktrade.digital
-  hotfix: {}
-  prod:
+  production:
     certificate_arns:
       - ACM-ARN-FOR-test-application-s3proxy.london.cloudapps.digital
       - ACM-ARN-FOR-static.test-application.trade.gov.uk
@@ -42,7 +41,7 @@ services:
         paas: dit-staging/test-application-staging/test-application-s3proxy-staging
         url: static.test-application.staging.uktrade.digital
     image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-    name: test-application-s3proxy
+    name: s3proxy
     overlapping_secrets:
       - APP_ENV
       - AUTHBROKER_CLIENT_ID
@@ -78,11 +77,11 @@ services:
     type: public
   - env_vars: {}
     environments:
-      dev:
+      development:
         ipfilter: true
         paas: dit-staging/test-application-dev/test-application-v2-dev
         url: test-application.dev.uktrade.digital
-      prod:
+      production:
         ipfilter: true
         paas: dit-services/test-application/test-application-v2
         url: test-application-v2.london.cloudapps.digital
@@ -95,7 +94,7 @@ services:
         paas: dit-staging/test-application-training/test-application-v2-training
         url: test-application.training.uktrade.digital
     image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-    name: test-application-v2
+    name: web
     overlapping_secrets:
       - APP_ENV
       - AUTHBROKER_CLIENT_ID
@@ -172,17 +171,17 @@ services:
     type: public
   - env_vars: {}
     environments:
-      dev:
+      development:
         paas: dit-staging/test-application-dev/test-application-v2-dev
-      prod:
+      production:
         paas: dit-services/test-application/test-application-v2
       staging:
         paas: dit-staging/test-application-staging/test-application-v2-staging
     image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-    name: test-application-v2-worker
+    name: celery
     notes: service created based on Procfile entry for test-application-v2 and will
       require access to the same backing services
     repo: git@github.com:uktrade/test-application-v2.git
     secrets: {}
-    secrets_from: test-application-v2
+    secrets_from: web
     type: backend
