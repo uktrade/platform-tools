@@ -1,9 +1,15 @@
 #!/usr/bin/env python
+import os
+import subprocess
+from pathlib import Path
 
 import click
 
-
+from commands.bootstrap_cli import make_config
 from commands.cloudformation_checks.lint import lint
+from commands.copilot_cli import make_storage
+
+BASE_DIR = Path(__file__).parent.parent
 
 
 @click.group()
@@ -20,7 +26,8 @@ def valid_checks():
 
 @copilot.command()
 @click.argument("checks", nargs=-1)
-def check_cloudformation(checks):
+@click.pass_context
+def check_cloudformation(ctx, checks):
     """Runs the specific CHECK.
 
     Valid checks are: all and lint
@@ -38,6 +45,10 @@ def check_cloudformation(checks):
     check_single_or_plural = f"""check{"s" if ("all" in checks or len(checks) > 1) else ""}"""
 
     click.echo(f"""\n>>> Running {running_checks} {check_single_or_plural}\n""")
+
+    os.chdir(f"{BASE_DIR}/tests/test-application")
+    ctx.invoke(make_config, config_file="bootstrap.yml")
+    ctx.invoke(make_storage, storage_config_file="storage.yml")
 
     for check_name, check_method in valid_checks().items():
         if (check_name in checks):

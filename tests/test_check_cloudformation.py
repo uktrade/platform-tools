@@ -1,10 +1,15 @@
+import os
+import shutil
 from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
+from pathlib import Path
 
-import commands
-from commands.check_cloudformation import check_cloudformation as check_cloudformation_command, valid_checks
+from commands.check_cloudformation import check_cloudformation as check_cloudformation_command
+
+
+BASE_DIR = Path(__file__).parent.parent
 
 
 @pytest.fixture
@@ -68,3 +73,37 @@ def test_runs_all_checks_when_given_no_arguments(valid_checks_mock, valid_checks
     assert "Check two output" in result.output
     assert "Check three output" in result.output
     assert "Check four output" in result.output
+
+
+@patch("commands.check_cloudformation.valid_checks")
+def test_prepares_cloudformation_templates(valid_checks_mock, valid_checks_dict):
+    def path_exists(path):
+        return os.path.exists(path) == 1
+
+    runner = CliRunner()
+    valid_checks_mock.return_value = valid_checks_dict
+    copilot_directory = f"{BASE_DIR}/tests/test-application/copilot"
+    if path_exists(copilot_directory):
+        shutil.rmtree(copilot_directory)
+    assert not path_exists(copilot_directory), "copilot directory should not exist"
+
+    runner.invoke(check_cloudformation_command)
+
+    assert path_exists(copilot_directory), "copilot directory should exist"
+    expected_sub_directories = [
+        "celery",
+        "environments",
+        "environments/addons",
+        "environments/development",
+        "environments/production",
+        "environments/staging",
+        "s3proxy",
+        "web",
+        "web/addons",
+    ]
+    for expected_sub_directory in expected_sub_directories:
+        path = f"{copilot_directory}/{expected_sub_directory}"
+        assert path_exists(path), f"copilot/{expected_sub_directory} should exist"
+
+
+

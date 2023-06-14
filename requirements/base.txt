@@ -126,6 +126,8 @@ sarif-om==1.0.4
     # via cfn-lint
 schema==0.7.5
     # via -r requirements/base.in
+sh==2.0.4
+    # via -r requirements/base.in
 six==1.16.0
     # via
     #   junit-xml
