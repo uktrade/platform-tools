@@ -1,11 +1,14 @@
 from pathlib import Path
 
+import boto3
 import pytest
 import yaml
 from click.testing import CliRunner
+from moto import mock_ssm
 
 from commands.copilot_cli import WAF_ACL_ARN_KEY
 from commands.copilot_cli import copilot as cli
+from commands.utils import SSM_PATH
 
 
 class TestApplyWAFCommand:
@@ -160,8 +163,12 @@ invalid-environment:
         assert result.output == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
 
     def test_exit_if_services_key_invalid(self, fakefs):
-        """The services key can be set to a list of services, or '__all__' which denotes
-        that it should be applied to all services. Any other string value results in an error."""
+        """
+        The services key can be set to a list of services, or '__all__' which
+        denotes that it should be applied to all services.
+
+        Any other string value results in an error.
+        """
 
         fakefs.create_file(
             "storage.yml",
@@ -226,3 +233,37 @@ invalid-entry:
             assert s3_policy["Mappings"]["ipFilterBucketNameMap"] == {"development": {"BucketName": "ipfilter-config"}}
 
         assert result.exit_code == 0
+
+
+@mock_ssm
+def test_get_secrets():
+    def _put_ssm_param(client, app, env, name, value):
+        path = SSM_PATH.format(app=app, env=env, name=name)
+        client.put_parameter(Name=path, Value=value, Type="String")
+
+    ssm = boto3.client("ssm")
+
+    secrets = [
+        ["MY_SECRET", "testing"],
+        ["MY_SECRET2", "hello"],
+        ["MY_SECRET3", "world"],
+    ]
+
+    for name, value in secrets:
+        _put_ssm_param(ssm, "myapp", "myenv", name, value)
+
+    _put_ssm_param(ssm, "myapp", "anotherenv", "OTHER_ENV", "foobar")
+
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["get-secrets", "myapp", "myenv"])
+
+    for name, value in secrets:
+        path = SSM_PATH.format(app="myapp", env="myenv", name=name)
+        line = f"{path}: {value}"
+
+        assert line in result.output
+
+    assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
+
+    assert result.exit_code == 0
