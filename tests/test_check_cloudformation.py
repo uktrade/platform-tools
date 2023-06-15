@@ -89,21 +89,31 @@ def test_prepares_cloudformation_templates(valid_checks_mock, valid_checks_dict)
 
     runner.invoke(check_cloudformation_command)
 
-    assert path_exists(copilot_directory), "copilot directory should exist"
-    expected_sub_directories = [
+    assert path_exists(copilot_directory), "copilot directory should exist and include cloudformation templates"
+    expected_paths = [
         "celery",
         "environments",
         "environments/addons",
+        "environments/addons/my-aurora-db.yml",
+        "environments/addons/my-opensearch.yml",
+        "environments/addons/my-rds-db.yml",
+        "environments/addons/my-redis.yml",
+        "environments/addons/my-s3-bucket.yml",
         "environments/development",
         "environments/production",
         "environments/staging",
         "s3proxy",
+        "s3proxy/addons",
+        "s3proxy/addons/ip-filter.yml",
         "web",
         "web/addons",
+        "web/addons/ip-filter.yml",
+        "web/addons/my-s3-bucket.yml",
+        "web/addons/my-s3-bucket-bucket-access.yml",
     ]
-    for expected_sub_directory in expected_sub_directories:
-        path = f"{copilot_directory}/{expected_sub_directory}"
-        assert path_exists(path), f"copilot/{expected_sub_directory} should exist"
+    for expected_path in expected_paths:
+        path = f"{copilot_directory}/{expected_path}"
+        assert path_exists(path), f"copilot/{expected_path} should exist"
 
 
 
