@@ -22,6 +22,8 @@ This repository contains a set of tools for transferring applications/services f
 
 Run `poetry run pytest` in the root directory to run all tests.
 
+Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
+
 ## Migration
 
 See [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration/README.md).
