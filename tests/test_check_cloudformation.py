@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from pathlib import Path
 
 from commands.check_cloudformation import check_cloudformation as check_cloudformation_command
-from commands.cloudformation_checks.CheckCloudformationFailure import CheckCloudformationFailure
+from commands.exceptions.CheckCloudformationFailure import CheckCloudformationFailure
 
 BASE_DIR = Path(__file__).parent.parent
 

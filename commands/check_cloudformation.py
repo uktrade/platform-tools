@@ -1,24 +1,18 @@
 #!/usr/bin/env python
 import os
 from pathlib import Path
+from subprocess import run
 
 import click
 
 from commands.bootstrap_cli import make_config
-from commands.cloudformation_checks.CheckCloudformationFailure import CheckCloudformationFailure
-from commands.cloudformation_checks.lint import lint
+from commands.exceptions.CheckCloudformationFailure import CheckCloudformationFailure
 from commands.copilot_cli import make_storage
 
 BASE_DIR = Path(__file__).parent.parent
 
 
-@click.group()
-def copilot():
-    pass
-
-
 def valid_checks():
-    # If you add something here, you need to remember to update the valid check docstring in check_cloudformation()
     return {
         "lint": lint,
     }
@@ -28,9 +22,8 @@ def valid_checks():
 @click.argument("checks", nargs=-1)
 @click.pass_context
 def check_cloudformation(ctx, checks):
-    """Runs the specific CHECK.
-
-    Valid checks are: all and lint
+    """Runs the checks passed in the command arguments.\n
+    If no argument is passed, it will run all the checks.
     """
 
     if len(checks) == 0:
@@ -69,3 +62,24 @@ def check_cloudformation(ctx, checks):
         exit(1)
     else:
         click.secho("The CloudFormation templates passed all the checks :-)", fg="green")
+
+
+@check_cloudformation.command()
+def lint():
+    """Runs cfn-lint against the generated CloudFormation templates.
+    """
+
+    BASE_DIR = Path(__file__).parent.parent
+
+    command = ["cfn-lint", f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml"]
+
+    click.secho(f"""\nRunning {" ".join(command)}""")
+
+    result = run(command, capture_output=True)
+
+    click.secho(result.stdout.decode())
+    if result.returncode != 0:
+        click.secho(result.stderr.decode())
+
+    if result.returncode != 0:
+        raise CheckCloudformationFailure("cfn-lint failed")
