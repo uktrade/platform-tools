@@ -2,11 +2,9 @@ import os
 import shutil
 
 from click.testing import CliRunner
-from pathlib import Path
 
 from commands.check_cloudformation import check_cloudformation as check_cloudformation_command
-
-BASE_DIR = Path(__file__).parent.parent
+from tests.conftest import BASE_DIR
 
 
 def test_runs_all_checks_when_given_no_arguments():
