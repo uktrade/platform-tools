@@ -66,8 +66,7 @@ def check_cloudformation(ctx, checks):
 
 @check_cloudformation.command()
 def lint():
-    """Runs cfn-lint against the generated CloudFormation templates.
-    """
+    """Runs cfn-lint against the generated CloudFormation templates."""
 
     BASE_DIR = Path(__file__).parent.parent
 
