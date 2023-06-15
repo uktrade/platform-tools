@@ -22,3 +22,6 @@ def lint():
         output.append(result.stderr.decode())
 
     print("\n".join(output))
+
+    if result.returncode != 0:
+        raise CheckCloudformationFailure("cfn-lint failed")

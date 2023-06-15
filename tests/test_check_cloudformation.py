@@ -7,18 +7,26 @@ from click.testing import CliRunner
 from pathlib import Path
 
 from commands.check_cloudformation import check_cloudformation as check_cloudformation_command
-
+from commands.cloudformation_checks.CheckCloudformationFailure import CheckCloudformationFailure
 
 BASE_DIR = Path(__file__).parent.parent
+
+def mock_check(output, failure=None):
+    def mocked_check():
+        print(output)
+        if failure:
+            raise CheckCloudformationFailure(failure)
+
+    return mocked_check
 
 
 @pytest.fixture
 def valid_checks_dict():
     return {
-        "one": lambda: "Check one output",
-        "two": lambda: "Check two output",
-        "three": lambda: "Check three output",
-        "four": lambda: "Check four output",
+        "one": mock_check("Check one output"),
+        "two": mock_check("Check two output"),
+        "three": mock_check("Check three output"),
+        "four": mock_check("Check four output"),
     }
 
 
@@ -27,11 +35,10 @@ def test_exits_if_invalid_check_specified(valid_checks_mock, valid_checks_dict):
     runner = CliRunner()
     valid_checks_mock.return_value = valid_checks_dict
 
-    result = runner.invoke(check_cloudformation_command, ["does-not-exist"])
+    result = runner.invoke(check_cloudformation_command, ["does-not-exist", "one"])
 
     assert result.exit_code == 1
-    assert isinstance(result.exception, ValueError)
-    assert '''Invalid check requested in "does-not-exist"''' in str(result.exception)
+    assert '''Invalid check requested "does-not-exist"''' in str(result.output)
 
 
 test_data = [
@@ -58,6 +65,7 @@ def test_runs_checks_from_arguments(
     assert expect_check_plan in result.output
     for expected_check_output in expected_check_outputs:
         assert expected_check_output in result.output
+    assert "The CloudFormation templates passed all the checks" in result.output
 
 
 @patch("commands.check_cloudformation.valid_checks")
@@ -73,6 +81,7 @@ def test_runs_all_checks_when_given_no_arguments(valid_checks_mock, valid_checks
     assert "Check two output" in result.output
     assert "Check three output" in result.output
     assert "Check four output" in result.output
+    assert "The CloudFormation templates passed all the checks" in result.output
 
 
 @patch("commands.check_cloudformation.valid_checks")
@@ -115,5 +124,22 @@ def test_prepares_cloudformation_templates(valid_checks_mock, valid_checks_dict)
         path = f"{copilot_directory}/{expected_path}"
         assert path_exists(path), f"copilot/{expected_path} should exist"
 
+@patch("commands.check_cloudformation.valid_checks")
+def test_exits_with_errors_if_checks_fail(valid_checks_mock, valid_checks_dict):
+    runner = CliRunner()
+    valid_checks_dict["fail1"] = mock_check("Check fail1 output", "Failing check1 error")
+    valid_checks_dict["fail2"] = mock_check("Check fail2 output", "Failing check2 error")
+    valid_checks_mock.return_value = valid_checks_dict
 
+    result = runner.invoke(check_cloudformation_command, ["one", "fail1", "two", "fail2"], catch_exceptions=False)
+
+    assert result.exit_code == 1
+    assert "Check one output" in result.output
+    assert "Check fail1 output" in result.output
+    assert "Check two output" in result.output
+    assert "Check fail2 output" in result.output
+    assert "CheckCloudformationFailure" not in result.output
+    assert "The CloudFormation templates did not pass the following checks:" in result.output
+    assert "- Failing check1 error" in result.output
+    assert "- Failing check2 error" in result.output
 
