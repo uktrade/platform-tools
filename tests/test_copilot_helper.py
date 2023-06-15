@@ -7,9 +7,7 @@ from copilot_helper import cli
 
 class TestCopilotHelperCli:
     def test_check_version(self):
-        runner = CliRunner()
-
-        result = runner.invoke(cli, ["--version"])
+        result = CliRunner().invoke(cli, ["--version"])
 
         name, version = result.output.split()
 
