@@ -15,12 +15,14 @@ This repository contains a set of tools for transferring applications/services f
 2. Install the requirements
 
    ```
-   pip install pip-tools && pip-sync requirements/dev.txt && pre-commit install
+   pip install poetry && poetry install --with pre-commit && pre-commit install
    ```
 
 ## Testing
 
-Run `pytest` in the root directory to run all tests.
+Run `poetry run pytest` in the root directory to run all tests.
+
+Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
 
 ## Migration
 
