@@ -24,7 +24,7 @@ def valid_checks():
 def check_cloudformation(ctx, checks):
     """Runs the checks passed in the command arguments. If no argument is passed, it will run all the checks."""
 
-    if len(checks) == 0:
+    if not checks:
         checks = valid_checks()
         running_checks = "all"
     else:
@@ -36,7 +36,7 @@ def check_cloudformation(ctx, checks):
             click.echo(ctx.get_help())
             exit(1)
 
-    check_single_or_plural = f"""check{"s" if ("all" in checks or len(checks) > 1) else ""}"""
+    check_single_or_plural = f"""check{"s" if (running_checks == "all" or len(checks) > 1) else ""}"""
 
 
     click.secho(f"""\n>>> Preparing CloudFormation templates\n""", fg="yellow")
@@ -54,7 +54,7 @@ def check_cloudformation(ctx, checks):
             except CheckCloudformationFailure as error:
                 failed_checks.append(error)
 
-    if len(failed_checks) > 0:
+    if failed_checks:
         click.secho("The CloudFormation templates did not pass the following checks:", fg="red")
         for failed_check in failed_checks:
             click.secho(f"  - {failed_check}", fg="red")
