@@ -44,7 +44,7 @@ def check_cloudformation(ctx, checks):
     ctx.invoke(make_config, config_file="bootstrap.yml")
     ctx.invoke(make_storage, storage_config_file="storage.yml")
 
-    click.secho(f"""\n>>> Running {running_checks} {check_single_or_plural}\n""", fg="yellow")
+    click.secho(f"\n>>> Running {running_checks} {check_single_or_plural}\n", fg="yellow")
 
     failed_checks = []
     for check_name in checks:
