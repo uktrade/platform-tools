@@ -49,6 +49,7 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
             {"Key": "copilot-application", "Value": app},
             {"Key": "copilot-environment", "Value": env},
         ],
+        Tier='Intelligent-Tiering',
     )
 
     if overwrite and exists:
