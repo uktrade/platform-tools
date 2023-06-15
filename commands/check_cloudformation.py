@@ -18,7 +18,7 @@ def check_cloudformation(ctx):
 
     ctx.obj = {"passing_checks": [], "failing_checks": []}
 
-    click.secho(f"""\n>>> Preparing CloudFormation templates\n""", fg="yellow")
+    click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
     os.chdir(f"{BASE_DIR}/tests/test-application")
     ctx.invoke(make_config, config_file="bootstrap.yml")
     ctx.invoke(make_storage, storage_config_file="storage.yml")
