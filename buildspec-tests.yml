@@ -6,9 +6,10 @@ phases:
       python: 3.9
     commands:
       - echo Installing dependencies...
-      - pip install -r requirements/dev.txt
-  
+      - pip install poetry
+      - poetry install
+
   build:
     commands:
       - echo Running tests...
-      - pytest
+      - poetry run pytest
