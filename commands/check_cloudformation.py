@@ -72,7 +72,7 @@ def lint():
 
     command = ["cfn-lint", f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml"]
 
-    click.secho(f"""\nRunning {" ".join(command)}""")
+    click.secho(f"""\nRunning {" ".join(command)}\n""")
 
     result = run(command, capture_output=True)
 
