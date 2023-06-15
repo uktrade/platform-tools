@@ -22,9 +22,7 @@ def valid_checks():
 @click.argument("checks", nargs=-1)
 @click.pass_context
 def check_cloudformation(ctx, checks):
-    """Runs the checks passed in the command arguments.\n
-    If no argument is passed, it will run all the checks.
-    """
+    """Runs the checks passed in the command arguments. If no argument is passed, it will run all the checks."""
 
     if len(checks) == 0:
         checks = valid_checks()
@@ -35,6 +33,7 @@ def check_cloudformation(ctx, checks):
     for check in checks:
         if check not in valid_checks():
             click.secho(f"""Invalid check requested "{check}" """, fg="red")
+            click.echo(ctx.get_help())
             exit(1)
 
     check_single_or_plural = f"""check{"s" if ("all" in checks or len(checks) > 1) else ""}"""
