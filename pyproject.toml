@@ -35,6 +35,12 @@ pytest = "^7.3.1"
 pytest-env = "^0.8.1"
 tox = "^4.6.0"
 
+[tool.poetry.group.pre-commit]
+optional = true
+
+[tool.poetry.group.pre-commit.dependencies]
+pre-commit = { git = "https://github.com/uktrade/modification-pre-commit.git" }
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

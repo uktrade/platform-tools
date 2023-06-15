@@ -15,7 +15,7 @@ This repository contains a set of tools for transferring applications/services f
 2. Install the requirements
 
    ```
-   pip install poetry && poetry install && pre-commit install
+   pip install poetry && poetry install --with pre-commit && pre-commit install
    ```
 
 ## Testing
