@@ -6,8 +6,8 @@ import time
 import click
 import yaml
 
-from utils.aws import check_aws_conn
-from utils.aws import check_response
+from .utils import check_aws_conn
+from .utils import check_response
 
 # To do
 # -----
