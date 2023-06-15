@@ -9,7 +9,8 @@ authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "commands" }
+    { include = "commands" },
+    { include = "copilot_helper.py" }
 ]
 
 [tool.poetry.scripts]
