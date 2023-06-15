@@ -6,78 +6,62 @@ from subprocess import run
 import click
 
 from commands.bootstrap_cli import make_config
-from commands.exceptions.CheckCloudformationFailure import CheckCloudformationFailure
 from commands.copilot_cli import make_storage
 
 BASE_DIR = Path(__file__).parent.parent
 
 
-def valid_checks():
-    return {
-        "lint": lint,
-    }
-
-
-@click.group(invoke_without_command=True)
-@click.argument("checks", nargs=-1)
+@click.group(invoke_without_command=True, chain=True)
 @click.pass_context
-def check_cloudformation(ctx, checks):
+def check_cloudformation(ctx):
     """Runs the checks passed in the command arguments. If no argument is passed, it will run all the checks."""
 
-    if not checks:
-        checks = valid_checks()
-        running_checks = "all"
-    else:
-        running_checks = ' & '.join(', '.join(checks).rsplit(', ', 1))
-
-    for check in checks:
-        if check not in valid_checks():
-            click.secho(f"""Invalid check requested "{check}" """, fg="red")
-            click.echo(ctx.get_help())
-            exit(1)
-
-    check_single_or_plural = f"""check{"s" if (running_checks == "all" or len(checks) > 1) else ""}"""
-
+    ctx.obj = {"passing_checks": [], "failing_checks": []}
 
     click.secho(f"""\n>>> Preparing CloudFormation templates\n""", fg="yellow")
     os.chdir(f"{BASE_DIR}/tests/test-application")
     ctx.invoke(make_config, config_file="bootstrap.yml")
     ctx.invoke(make_storage, storage_config_file="storage.yml")
 
-    click.secho(f"\n>>> Running {running_checks} {check_single_or_plural}\n", fg="yellow")
-
-    failed_checks = []
-    for check_name in checks:
-        if (check_name in valid_checks().keys()):
-            try:
-                ctx.invoke(valid_checks()[check_name])
-            except CheckCloudformationFailure as error:
-                failed_checks.append(error)
-
-    if failed_checks:
-        click.secho("The CloudFormation templates did not pass the following checks:", fg="red")
-        for failed_check in failed_checks:
-            click.secho(f"  - {failed_check}", fg="red")
-        exit(1)
-    else:
-        click.secho("The CloudFormation templates passed all the checks :-)", fg="green")
+    if ctx.invoked_subcommand is None:
+        click.secho(f"\n>>> Running all checks", fg="yellow")
+        for name, command in ctx.command.commands.items():
+            ctx.invoke(command)
 
 
 @check_cloudformation.command()
-def lint():
+@click.pass_context
+def lint(ctx):
     """Runs cfn-lint against the generated CloudFormation templates."""
 
     BASE_DIR = Path(__file__).parent.parent
 
     command = ["cfn-lint", f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml"]
 
-    click.secho(f"""\nRunning {" ".join(command)}\n""")
+    click.secho(f"\n>>> Running lint check", fg="yellow")
+    click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
 
     result = run(command, capture_output=True)
 
     click.secho(result.stdout.decode())
-    if result.returncode != 0:
+    if result.returncode == 0:
+        ctx.obj["passing_checks"].append("lint")
+    else:
         click.secho(result.stderr.decode())
+        ctx.obj["failing_checks"].append("lint")
 
-    if result.returncode != 0:
-        raise CheckCloudformationFailure("cfn-lint failed")
+
+@check_cloudformation.result_callback()
+@click.pass_context
+def process_result(ctx, result):
+    if ctx.obj["passing_checks"]:
+        click.secho("\nThe CloudFormation templates passed the following checks :-)", fg="green")
+        for passing_check in ctx.obj["passing_checks"]:
+            click.secho(f"  - {passing_check}", fg="green")
+
+    if ctx.obj["failing_checks"]:
+        click.secho("\nThe CloudFormation templates failed the following checks :-(", fg="red")
+        for failing_check in ctx.obj["failing_checks"]:
+            click.secho(f"  - {failing_check}", fg="red")
+        exit(1)
+

@@ -1,2 +1,0 @@
-class CheckCloudformationFailure(Exception):
-    pass
