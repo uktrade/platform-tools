@@ -23,7 +23,7 @@ def valid_checks():
     }
 
 
-@copilot.command()
+@click.group(invoke_without_command=True)
 @click.argument("checks", nargs=-1)
 @click.pass_context
 def check_cloudformation(ctx, checks):
@@ -51,4 +51,4 @@ def check_cloudformation(ctx, checks):
 
     for check_name, check_method in valid_checks().items():
         if (check_name in checks):
-            click.echo(f"{check_method()}\n")
+            print(ctx.invoke(check_method))

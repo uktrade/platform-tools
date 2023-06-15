@@ -2,7 +2,11 @@ from pathlib import Path
 
 from subprocess import run
 
+from commands import check_cloudformation
+from commands.cloudformation_checks.CheckCloudformationFailure import CheckCloudformationFailure
 
+
+# @check_cloudformation.command()
 def lint():
     output = []
     BASE_DIR = Path(__file__).parent.parent.parent
@@ -17,4 +21,4 @@ def lint():
     if result.returncode != 0:
         output.append(result.stderr.decode())
 
-    return "\n".join(output)
+    print("\n".join(output))

@@ -1,0 +1,2 @@
+class CheckCloudformationFailure(Exception):
+    pass
