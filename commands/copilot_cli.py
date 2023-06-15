@@ -239,16 +239,14 @@ def apply_waf():
 
 
 @copilot.command()
-@click.argument("service_name", type=str)
-@click.argument("env", type=str, default="prod")
-def get_service_secrets(service_name, env):
-    """List secret names and values for a service."""
-
-    ensure_cwd_is_repo_root()
+@click.argument("app", type=str)
+@click.argument("env", type=str)
+def get_env_secrets(app, env):
+    """List secret names and values for an environment."""
 
     client = boto3.client("ssm")
 
-    path = SSM_BASE_PATH.format(app=service_name, env=env)
+    path = SSM_BASE_PATH.format(app=app, env=env)
 
     params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
     secrets = []
