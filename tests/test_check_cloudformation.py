@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
+
 from commands.check_cloudformation import \
     check_cloudformation as check_cloudformation_command
 from tests.conftest import BASE_DIR
