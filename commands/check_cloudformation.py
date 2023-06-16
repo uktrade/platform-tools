@@ -18,10 +18,7 @@ def check_cloudformation(ctx):
 
     ctx.obj = {"passing_checks": [], "failing_checks": []}
 
-    click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
-    os.chdir(f"{BASE_DIR}/tests/test-application")
-    ctx.invoke(make_config, config_file="bootstrap.yml")
-    ctx.invoke(make_storage, storage_config_file="storage.yml")
+    prepare_cloudformation_templates(ctx)
 
     if ctx.invoked_subcommand is None:
         click.secho(f"\n>>> Running all checks", fg="yellow")
@@ -64,4 +61,11 @@ def process_result(ctx, result):
         for failing_check in ctx.obj["failing_checks"]:
             click.secho(f"  - {failing_check}", fg="red")
         exit(1)
+
+
+def prepare_cloudformation_templates(ctx):
+    click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
+    os.chdir(f"{BASE_DIR}/tests/test-application")
+    ctx.invoke(make_config, config_file="bootstrap.yml")
+    ctx.invoke(make_storage, storage_config_file="storage.yml")
 
