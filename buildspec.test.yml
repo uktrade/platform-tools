@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Setting local Python versions
+      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
+      - echo Installing dependencies
+      - pip install poetry
+      - poetry install --no-root --only dev
+
+  build:
+    commands:
+      - echo Running tests
+      - poetry run tox
