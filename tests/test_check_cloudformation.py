@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
-
 from commands.check_cloudformation import \
     check_cloudformation as check_cloudformation_command
 from tests.conftest import BASE_DIR
@@ -16,14 +15,14 @@ def copilot_directory() -> Path:
     return Path(f"{BASE_DIR}/tests/test-application/copilot")
 
 
-def test_runs_all_checks_when_given_no_arguments():
+def test_runs_all_checks_when_given_no_arguments() -> None:
     result = CliRunner().invoke(check_cloudformation_command)
 
     assert ">>> Running all checks" in result.output
     assert ">>> Running lint check" in result.output
 
 
-def test_prepares_cloudformation_templates(copilot_directory):
+def test_prepares_cloudformation_templates(copilot_directory: Path) -> None:
     ensure_directory_does_not_exist(copilot_directory)
 
     CliRunner().invoke(check_cloudformation_command)
@@ -55,13 +54,13 @@ def test_prepares_cloudformation_templates(copilot_directory):
         assert path.exists(), f"copilot/{expected_path} should exist"
 
 
-def ensure_directory_does_not_exist(copilot_directory) -> None:
+def ensure_directory_does_not_exist(copilot_directory: Path) -> None:
     if copilot_directory.exists():
         rmtree(copilot_directory)
     assert not copilot_directory.exists(), "copilot directory should not exist"
 
 
-def prepare_fake_cloudformation_templates(copilot_directory, passing: str) -> None:
+def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: str) -> None:
     template = "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
     ensure_directory_does_not_exist(copilot_directory)
     addons_directory = Path(f"{BASE_DIR}/tests/test-application/copilot/environments/addons")
@@ -70,7 +69,7 @@ def prepare_fake_cloudformation_templates(copilot_directory, passing: str) -> No
 
 
 @patch("commands.check_cloudformation.prepare_cloudformation_templates")
-def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates, copilot_directory):
+def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates, copilot_directory: Path) -> None:
     patched_prepare_cloudformation_templates.return_value(None)
     prepare_fake_cloudformation_templates(copilot_directory, passing=True)
 
@@ -82,7 +81,7 @@ def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates
 
 
 @patch("commands.check_cloudformation.prepare_cloudformation_templates")
-def test_outputs_failed_results_summary(patched_prepare_cloudformation_templates, copilot_directory):
+def test_outputs_failed_results_summary(patched_prepare_cloudformation_templates, copilot_directory: Path) -> None:
     patched_prepare_cloudformation_templates.return_value(None)
     prepare_fake_cloudformation_templates(copilot_directory, passing=False)
 

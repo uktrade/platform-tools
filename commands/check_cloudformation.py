@@ -5,7 +5,6 @@ from shutil import rmtree
 from subprocess import run
 
 import click
-
 from commands.bootstrap_cli import make_config
 from commands.copilot_cli import make_storage
 
@@ -14,7 +13,7 @@ BASE_DIR = Path(__file__).parent.parent
 
 @click.group(invoke_without_command=True, chain=True)
 @click.pass_context
-def check_cloudformation(ctx):
+def check_cloudformation(ctx: click.Context) -> None:
     """
     Runs the checks passed in the command arguments.
 
@@ -33,7 +32,7 @@ def check_cloudformation(ctx):
 
 @check_cloudformation.command()
 @click.pass_context
-def lint(ctx):
+def lint(ctx: click.Context) -> None:
     """Runs cfn-lint against the generated CloudFormation templates."""
 
     BASE_DIR = Path(__file__).parent.parent
@@ -55,7 +54,7 @@ def lint(ctx):
 
 @check_cloudformation.result_callback()
 @click.pass_context
-def process_result(ctx, result):
+def process_result(ctx: click.Context, result) -> None:
     if ctx.obj["passing_checks"]:
         click.secho("\nThe CloudFormation templates passed the following checks :-)", fg="green")
         for passing_check in ctx.obj["passing_checks"]:
@@ -68,7 +67,7 @@ def process_result(ctx, result):
         exit(1)
 
 
-def prepare_cloudformation_templates(ctx):
+def prepare_cloudformation_templates(ctx: click.Context) -> None:
     click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
     os.chdir(f"{BASE_DIR}/tests/test-application")
     copilot_directory = Path("./copilot")
