@@ -1,11 +1,19 @@
-import os
-import shutil
 from pathlib import Path
+from shutil import copyfile
+from shutil import rmtree
+from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
-from commands.check_cloudformation import check_cloudformation as check_cloudformation_command
+from commands.check_cloudformation import \
+    check_cloudformation as check_cloudformation_command
 from tests.conftest import BASE_DIR
+
+
+@pytest.fixture
+def copilot_directory() -> Path:
+    return Path(f"{BASE_DIR}/tests/test-application/copilot")
 
 
 def test_runs_all_checks_when_given_no_arguments():
@@ -15,11 +23,8 @@ def test_runs_all_checks_when_given_no_arguments():
     assert ">>> Running lint check" in result.output
 
 
-def test_prepares_cloudformation_templates():
-    copilot_directory = Path(f"{BASE_DIR}/tests/test-application/copilot")
-    if copilot_directory.exists():
-        shutil.rmtree(copilot_directory)
-    assert not copilot_directory.exists(), "copilot directory should not exist"
+def test_prepares_cloudformation_templates(copilot_directory):
+    ensure_directory_does_not_exist(copilot_directory)
 
     CliRunner().invoke(check_cloudformation_command)
 
@@ -48,3 +53,41 @@ def test_prepares_cloudformation_templates():
     for expected_path in expected_paths:
         path = Path(f"{copilot_directory}/{expected_path}")
         assert path.exists(), f"copilot/{expected_path} should exist"
+
+
+def ensure_directory_does_not_exist(copilot_directory) -> None:
+    if copilot_directory.exists():
+        rmtree(copilot_directory)
+    assert not copilot_directory.exists(), "copilot directory should not exist"
+
+
+def prepare_fake_cloudformation_templates(copilot_directory, passing: str) -> None:
+    template = "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
+    ensure_directory_does_not_exist(copilot_directory)
+    addons_directory = Path(f"{BASE_DIR}/tests/test-application/copilot/environments/addons")
+    addons_directory.mkdir(parents=True, exist_ok=True)
+    copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
+
+
+@patch("commands.check_cloudformation.prepare_cloudformation_templates")
+def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates, copilot_directory):
+    patched_prepare_cloudformation_templates.return_value(None)
+    prepare_fake_cloudformation_templates(copilot_directory, passing=True)
+
+    result = CliRunner().invoke(check_cloudformation_command)
+
+    assert (
+        "The CloudFormation templates passed the following checks :-)\n  - lint" in result.output
+    ), "The passed checks summary was not outputted"
+
+
+@patch("commands.check_cloudformation.prepare_cloudformation_templates")
+def test_outputs_failed_results_summary(patched_prepare_cloudformation_templates, copilot_directory):
+    patched_prepare_cloudformation_templates.return_value(None)
+    prepare_fake_cloudformation_templates(copilot_directory, passing=False)
+
+    result = CliRunner().invoke(check_cloudformation_command)
+
+    assert (
+        "The CloudFormation templates failed the following checks :-(\n  - lint" in result.output
+    ), "The failed checks summary was not outputted"

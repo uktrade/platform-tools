@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 from pathlib import Path
+from shutil import rmtree
 from subprocess import run
 
 import click
@@ -14,7 +15,11 @@ BASE_DIR = Path(__file__).parent.parent
 @click.group(invoke_without_command=True, chain=True)
 @click.pass_context
 def check_cloudformation(ctx):
-    """Runs the checks passed in the command arguments. If no argument is passed, it will run all the checks."""
+    """
+    Runs the checks passed in the command arguments.
+
+    If no argument is passed, it will run all the checks.
+    """
 
     ctx.obj = {"passing_checks": [], "failing_checks": []}
 
@@ -66,6 +71,8 @@ def process_result(ctx, result):
 def prepare_cloudformation_templates(ctx):
     click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
     os.chdir(f"{BASE_DIR}/tests/test-application")
+    copilot_directory = Path("./copilot")
+    if copilot_directory.exists():
+        rmtree(copilot_directory)
     ctx.invoke(make_config, config_file="bootstrap.yml")
     ctx.invoke(make_storage, storage_config_file="storage.yml")
-
