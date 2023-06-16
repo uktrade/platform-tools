@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -15,17 +16,14 @@ def test_runs_all_checks_when_given_no_arguments():
 
 
 def test_prepares_cloudformation_templates():
-    def path_exists(path):
-        return os.path.exists(path) == 1
-
-    copilot_directory = f"{BASE_DIR}/tests/test-application/copilot"
-    if path_exists(copilot_directory):
+    copilot_directory = Path(f"{BASE_DIR}/tests/test-application/copilot")
+    if copilot_directory.exists():
         shutil.rmtree(copilot_directory)
-    assert not path_exists(copilot_directory), "copilot directory should not exist"
+    assert not copilot_directory.exists(), "copilot directory should not exist"
 
     CliRunner().invoke(check_cloudformation_command)
 
-    assert path_exists(copilot_directory), "copilot directory should exist and include cloudformation templates"
+    assert copilot_directory.exists(), "copilot directory should exist and include cloudformation templates"
     expected_paths = [
         "celery",
         "environments",
@@ -48,5 +46,5 @@ def test_prepares_cloudformation_templates():
         "web/addons/my-s3-bucket-bucket-access.yml",
     ]
     for expected_path in expected_paths:
-        path = f"{copilot_directory}/{expected_path}"
-        assert path_exists(path), f"copilot/{expected_path} should exist"
+        path = Path(f"{copilot_directory}/{expected_path}")
+        assert path.exists(), f"copilot/{expected_path} should exist"
