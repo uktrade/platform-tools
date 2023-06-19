@@ -44,15 +44,19 @@ def check_github_conn(client: CodeBuildClient):
         import_pat(pat, client)
 
 
-def check_service_role(project_session: Session) -> str:
+def check_service_role(role_name, project_session: Session) -> str:
     client = project_session.client("iam", region_name=AWS_REGION)
 
     try:
-        response = client.get_role(RoleName="ci-CodeBuild-role")
+        response = client.get_role(RoleName=role_name)
         role_arn = response["Role"]["Arn"]
 
     except client.exceptions.NoSuchEntityException:
-        click.secho("Role for service does not exist; run ./codebuild_cli.py create-codeploy-role", fg="cyan")
+        click.echo(
+            click.style("Service Role", fg="yellow") +
+            click.style(f" {role_name} ", fg="white", bold=True) +
+            click.style("does not exist; run: ", fg="yellow") +
+            click.style("copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>", fg="cyan"))
         role_arn = ""
         exit()
 
@@ -108,7 +112,8 @@ def link_github(pat: str, project_profile: str) -> None:
 
 @codebuild.command()
 @click.option("--project-profile", help="aws account profile name", required=True)
-def create_codedeploy_role(project_profile: str) -> None:
+@click.option("--type", type=click.Choice(["ci", "custom"]), help="type of project <ci/custom>", default="ci")
+def create_codedeploy_role(project_profile: str, type) -> None:
     """Add AWS Role needed for codedeploy."""
 
     project_session = check_aws_conn(project_profile)
@@ -116,14 +121,14 @@ def create_codedeploy_role(project_profile: str) -> None:
 
     current_filepath = os.path.dirname(os.path.realpath(__file__))
 
-    with open(f"{current_filepath}/../templates/put-codebuild-role-policy.json") as f:
+    with open(f"{current_filepath}/../templates/{type}-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
     client = project_session.client("iam", region_name=AWS_REGION)
 
     # A policy must be defined if not present.
     try:
         response = client.create_policy(
-            PolicyName="ci-CodeBuild-policy",
+            PolicyName=f"{type}-CodeBuild-policy",
             PolicyDocument=json.dumps(policy_doc),
             Description="Custom Policy for codebuild",
             Tags=[
@@ -138,7 +143,7 @@ def create_codedeploy_role(project_profile: str) -> None:
             exit()
         try:
             response = client.create_policy_version(
-                PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy",
+                PolicyArn=f"arn:aws:iam::{account_id}:policy/{type}-CodeBuild-policy",
                 PolicyDocument=json.dumps(policy_doc),
                 SetAsDefault=True,
             )
@@ -152,17 +157,17 @@ def create_codedeploy_role(project_profile: str) -> None:
     with open(f"{current_filepath}/../templates/create-codebuild-role.json") as f:
         role_doc = json.load(f)
 
-    # Now create a role if not present and attache policy
+    # Now create a role if not present and attach policy
     try:
-        response = client.create_role(RoleName="ci-CodeBuild-role", AssumeRolePolicyDocument=json.dumps(role_doc))
+        response = client.create_role(RoleName=f"{type}-CodeBuild-role", AssumeRolePolicyDocument=json.dumps(role_doc))
         check_response(response)
         click.secho("Role created", fg="green")
     except client.exceptions.EntityAlreadyExistsException:
         click.secho("Role exists", fg="yellow")
 
     response = client.attach_role_policy(
-        PolicyArn=f"arn:aws:iam::{account_id}:policy/ci-CodeBuild-policy",
-        RoleName="ci-CodeBuild-role",
+        PolicyArn=f"arn:aws:iam::{account_id}:policy/{type}-CodeBuild-policy",
+        RoleName=f"{type}-CodeBuild-role",
     )
     check_response(response)
     click.secho("Policy attached to Role", fg="green")
@@ -183,7 +188,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
 
     git_url = check_git_url(git)
     project_session = check_aws_conn(project_profile)
-    role_arn = check_service_role(project_session)
+    role_arn = check_service_role("ci-CodeBuild-role", project_session)
     client = project_session.client("codebuild", region_name=AWS_REGION)
     check_github_conn(client)
 
@@ -246,7 +251,6 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
             ],
             buildType="BUILD",
         )
-        click.secho("Project Updated", fg="green")
 
     else:
         try:
@@ -282,8 +286,138 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
     check_response(response)
     check_response(response_webhook)
     click.echo(click.style("Codebuild project", fg="yellow") +
-                           click.style(f"{name}",fg="white", bold=True) +
-                           click.style("created", fg="yellow"))
+                click.style(f"{name}",fg="white", bold=True) +
+                click.style("updated", fg="yellow"))
+
+
+@codebuild.command()
+@click.option("--update", is_flag=True, show_default=True, default=False, help="Update config")
+@click.option("--name", required=True, help="Name of project")
+@click.option("--desc", default="", help="Description of project")
+@click.option("--git", required=True, help="Git url of code")
+@click.option("--branch", required=True, help="Git branch")
+@click.option("--buildspec", required=True, help="Location of buildspec file in repo")
+@click.option("--builderimage", default="aws/codebuild/amazonlinux2-x86_64-standard:3.0", help="Builder image")
+@click.option("--project-profile", required=True, help="aws account profile name")
+def buildproject(update, name, desc, git, branch, buildspec, builderimage, project_profile):
+    """Builds Code build for ad hoc projects."""
+
+    git_url = check_git_url(git)
+    project_session = check_aws_conn(project_profile)
+    role_arn = check_service_role("custom-CodeBuild-role", project_session)
+    client = project_session.client("codebuild", region_name=AWS_REGION)
+    if git:
+        check_github_conn(client)
+
+    environment = {
+        "type": "LINUX_CONTAINER",
+        "image": f"{builderimage}",
+        "computeType": "BUILD_GENERAL1_SMALL",
+        "environmentVariables": [],
+        "privilegedMode": True,
+        "imagePullCredentialsType": "CODEBUILD",
+    }
+
+    source = {
+        "type": "GITHUB",
+        "location": f"{git_url}",
+        "buildspec": f"{buildspec}",
+        "auth": {"type": "OAUTH", "resource": "AWS::CodeBuild::SourceCredential"},
+    }
+
+    artifacts = {"type": "NO_ARTIFACTS"}
+
+    logsConfig = {
+        "cloudWatchLogs": {
+            "status": "ENABLED",
+        },
+    }
+
+    # Either update project or create a new project
+    if update:
+        try:
+            response = client.update_project(
+                name=name,
+                description=desc,
+                source=source,
+                sourceVersion=branch,
+                artifacts=artifacts,
+                environment=environment,
+                serviceRole=role_arn,
+                logsConfig=logsConfig,
+            )
+        except client.exceptions.ResourceNotFoundException:
+            click.secho("Unable to update a project that does not exist, remove the --update flag", fg="red")
+            exit()
+
+        response_webhook = client.update_webhook(
+            projectName=name,
+            filterGroups=[
+                [
+                    {
+                        "type": "EVENT",
+                        "pattern": "PUSH",
+                    },
+                    {"type": "HEAD_REF", "pattern": f"^refs/heads/{branch}"},
+                ],
+            ],
+            buildType="BUILD",
+        )
+
+    else:
+        try:
+            response = client.create_project(
+                name=name,
+                description=desc,
+                source=source,
+                sourceVersion=branch,
+                artifacts=artifacts,
+                environment=environment,
+                serviceRole=role_arn,
+                logsConfig=logsConfig,
+            )
+
+            response_webhook = client.create_webhook(
+                projectName=name,
+                filterGroups=[
+                    [
+                        {
+                            "type": "EVENT",
+                            "pattern": "PUSH",
+                        },
+                        {"type": "HEAD_REF", "pattern": f"^refs/heads/{branch}"},
+                    ],
+                ],
+                buildType="BUILD",
+            )
+
+        except client.exceptions.ResourceAlreadyExistsException:
+            click.secho("Project already exists, use the --update flag", fg="red")
+            exit()
+
+    check_response(response)
+    check_response(response_webhook)
+    click.echo(click.style("Codebuild project ", fg="yellow") +
+               click.style(f"{name} ", fg="white", bold=True) +
+               click.style("updated", fg="yellow"))
+
+
+@codebuild.command()
+@click.option("--name", required=True, help="Name of project")
+@click.option("--project-profile", required=True, help="aws account profile name")
+def deleteproject(name, project_profile):
+    """Dlete Code build projects."""
+
+    project_session = check_aws_conn(project_profile)
+    client = project_session.client("codebuild", region_name=AWS_REGION)
+
+    if not click.confirm(click.style("Are you sure you want to delete the project ", fg="yellow") +
+                         click.style(f"{name}", fg="white", bold=True)):
+        exit()
+
+    response = client.delete_project(name=name)
+    check_response(response)
+    click.secho("Project deleted", fg="green")
 
 
 @codebuild.command()
