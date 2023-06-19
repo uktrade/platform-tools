@@ -1,8 +1,8 @@
-from pathlib import Path
 from unittest.mock import patch
 from botocore.stub import Stubber
 from click.testing import CliRunner
-from commands.dns_cli import add_records, check_for_records, create_hosted_zone, check_r53, create_cert, check_domain, assign_domain
+from commands.dns_cli import add_records, check_for_records, create_hosted_zone, \
+    check_r53, create_cert, check_domain, assign_domain
 
 import boto3
 
@@ -11,10 +11,11 @@ import boto3
 def test_wait_for_certificate_validation():
     ...
 
- 
+
 def test_check_for_records(route53_session):
-    response =  route53_session.create_hosted_zone(Name='1234', CallerReference='1234')  
-    assert check_for_records(route53_session, response['HostedZone']['Id'], "test.1234", response['HostedZone']['Id']) == True
+    response = route53_session.create_hosted_zone(Name='1234', CallerReference='1234')  
+    assert check_for_records(
+        route53_session, response['HostedZone']['Id'], "test.1234", response['HostedZone']['Id']) == True
 
 
 @patch(
@@ -54,7 +55,7 @@ def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, r
 
 
 def test_add_records(route53_session):
-    response =  route53_session.create_hosted_zone(Name='1234', CallerReference='1234')
+    response = route53_session.create_hosted_zone(Name='1234', CallerReference='1234')
 
     route53_session.change_resource_record_sets(
         HostedZoneId=response['HostedZone']['Id'],
@@ -107,10 +108,7 @@ def test_check_r53(create_cert, route53_session):
     assert check_r53(session, session, "test.test.1234", "test.1234") == "arn:1234"
 
 
-
-@patch(
-        "commands.dns_cli.check_aws_conn",
-)
+@patch("commands.dns_cli.check_aws_conn",)
 @patch(
     "commands.dns_cli.check_r53",
     return_value="arn:1234",
@@ -135,9 +133,7 @@ environments:
     assert result.output.startswith("Checking file: /manifest.yml\nDomains listed in manifest file") == True
 
 
-@patch(
-        "commands.dns_cli.check_aws_conn",
-)
+@patch("commands.dns_cli.check_aws_conn",)
 @patch(
         "commands.dns_cli.check_response",
         return_value="{}"

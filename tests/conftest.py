@@ -48,8 +48,8 @@ def route53_session(aws_credentials):
         yield session.client("route53")
 
 
-@pytest.fixture(scope="function")
-def iam_session(aws_credentials):
-    with mock_iam():
-        session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-        yield session.client("iam")
+# @pytest.fixture(scope="function")
+# def iam_session(aws_credentials):
+#     with mock_iam():
+#         session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+#         yield session.client("iam")
