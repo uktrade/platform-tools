@@ -8,6 +8,7 @@ import yaml
 
 from .utils import check_aws_conn
 from .utils import check_response
+from .utils import ensure_cwd_is_repo_root
 
 # To do
 # -----
@@ -377,6 +378,8 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     domain_session = check_aws_conn(domain_profile)
     project_session = check_aws_conn(project_profile)
 
+    ensure_cwd_is_repo_root()
+
     # Find the Load Balancer name.
     proj_client = project_session.client("ecs")
 
@@ -409,7 +412,6 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
         service_app = service_name_items[0]
         service_env = service_name_items[1]
         service_service = service_name_items[2]
-
         if service_app == app and service_env == env and service_service == svc:
             no_items = False
             break
@@ -444,26 +446,20 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     elb_name = response["LoadBalancers"][0]["DNSName"]
 
     # Find the domain name
-    response = elb_client.describe_listeners(LoadBalancerArn=[elb_arn][0])
-    check_response(response)
-    for listener in response["Listeners"]:
-        if listener["Protocol"] == "HTTPS":
-            acm_client = project_session.client("acm")
-            response = acm_client.describe_certificate(
-                CertificateArn=elb_client.describe_listener_certificates(ListenerArn=listener["ListenerArn"])[
-                    "Certificates"
-                ][0]["CertificateArn"],
-            )
-            check_response(response)
-            domain_name = response["Certificate"]["DomainName"]
+    with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
+        conf = yaml.safe_load(fd)
+        if "environments" in conf:
+            for domain in conf["environments"].items():
+                if domain[0] == env:
+                    domain_name = domain[1]["http"]["alias"]
 
-    click.echo(
-        click.style("The Domain: ", fg="yellow")
-        + click.style(f"{domain_name}\n", fg="white", bold=True)
-        + click.style("has been assigned the Load Balancer: ", fg="yellow")
-        + click.style(f"{elb_name}\n", fg="white", bold=True)
-        + click.style("Checking to see if this is in R53", fg="yellow"),
-    )
+        click.echo(
+            click.style("The Domain: ", fg="yellow")
+            + click.style(f"{domain_name}\n", fg="white", bold=True)
+            + click.style("has been assigned the Load Balancer: ", fg="yellow")
+            + click.style(f"{elb_name}\n", fg="white", bold=True)
+            + click.style("Checking to see if this is in R53", fg="yellow"),
+        )
 
     domain_client = domain_session.client("route53")
     response = domain_client.list_hosted_zones_by_name()
