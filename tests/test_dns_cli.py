@@ -12,6 +12,7 @@ def test_wait_for_certificate_validation():
     ...
 
 
+
 def test_check_for_records(route53_session):
     response = route53_session.create_hosted_zone(Name='1234', CallerReference='1234')  
     assert check_for_records(
