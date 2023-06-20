@@ -317,8 +317,8 @@ def buildproject(update, name, desc, git, branch, buildspec, builderimage, proje
 @codebuild.command()
 @click.option("--name", required=True, help="Name of project")
 @click.option("--project-profile", required=True, help="aws account profile name")
-def deleteproject(name, project_profile):
-    """Dlete Code build projects."""
+def delete_project(name, project_profile):
+    """Delete CodeBuild projects."""
 
     project_session = check_aws_conn(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
