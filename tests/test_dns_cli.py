@@ -1,8 +1,8 @@
-from pathlib import Path
 from unittest.mock import patch
 from botocore.stub import Stubber
 from click.testing import CliRunner
-from commands.dns_cli import add_records, check_for_records, create_hosted_zone, check_r53, create_cert, check_domain, assign_domain
+from commands.dns_cli import add_records, check_for_records, create_hosted_zone, \
+    check_r53, create_cert, check_domain, assign_domain
 
 import boto3
 
@@ -11,10 +11,11 @@ import boto3
 def test_wait_for_certificate_validation():
     ...
 
- 
+
 def test_check_for_records(route53_session):
-    response =  route53_session.create_hosted_zone(Name='1234', CallerReference='1234')  
-    assert check_for_records(route53_session, response['HostedZone']['Id'], "test.1234", response['HostedZone']['Id']) == True
+    response = route53_session.create_hosted_zone(Name='1234', CallerReference='1234')  
+    assert check_for_records(
+        route53_session, response['HostedZone']['Id'], "test.1234", response['HostedZone']['Id']) == True
 
 
 @patch(
@@ -49,12 +50,12 @@ def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, r
     stubber.add_response('describe_certificate', response_desc, expected_params)
     with stubber:
         acm_session.describe_certificate(CertificateArn='arn:1234567890123456789')
-  
+
     assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:") == True
 
 
 def test_add_records(route53_session):
-    response =  route53_session.create_hosted_zone(Name='1234', CallerReference='1234')
+    response = route53_session.create_hosted_zone(Name='1234', CallerReference='1234')
 
     route53_session.change_resource_record_sets(
         HostedZoneId=response['HostedZone']['Id'],
@@ -84,7 +85,7 @@ def test_add_records(route53_session):
                 "TTL": 300,
                 "ResourceRecords": [{"Value": "recod.stuff"}],
             }
-    
+
     assert add_records(route53_session, record , response['HostedZone']['Id'],"CREATE") == "INSYNC"
 
 
@@ -107,10 +108,7 @@ def test_check_r53(create_cert, route53_session):
     assert check_r53(session, session, "test.test.1234", "test.1234") == "arn:1234"
 
 
-
-@patch(
-        "commands.dns_cli.check_aws_conn",
-)
+@patch("commands.dns_cli.check_aws_conn",)
 @patch(
     "commands.dns_cli.check_r53",
     return_value="arn:1234",
@@ -129,20 +127,19 @@ environments:
       alias: v2.app.staging.test.12345
 """,
         )
-    
+
     runner = CliRunner()
     result = runner.invoke(check_domain, ["--path", "/", "--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"])
     assert result.output.startswith("Checking file: /manifest.yml\nDomains listed in manifest file") == True
 
 
-@patch(
-        "commands.dns_cli.check_aws_conn",
-)
+@patch("commands.dns_cli.check_aws_conn",)
 @patch(
         "commands.dns_cli.check_response",
         return_value="{}"
 )
-def test_assign_domain(check_aws_conn, check_response):
+@patch("commands.dns_cli.ensure_cwd_is_repo_root",)
+def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
 
     runner = CliRunner()
     result = runner.invoke(assign_domain, ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"])
