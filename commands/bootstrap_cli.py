@@ -9,13 +9,14 @@ from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
 from schema import Schema
 
-from .utils import SSM_PATH
-from .utils import camel_case
-from .utils import get_ssm_secret_names
-from .utils import mkdir
-from .utils import mkfile
-from .utils import set_ssm_param
-from .utils import setup_templates
+from commands.utils import SSM_PATH
+from commands.utils import camel_case
+from commands.utils import check_aws_conn
+from commands.utils import get_ssm_secret_names
+from commands.utils import mkdir
+from commands.utils import mkfile
+from commands.utils import set_ssm_param
+from commands.utils import setup_templates
 
 config_schema = Schema(
     {
@@ -175,11 +176,12 @@ def make_config(config_file, output):
 
 @bootstrap.command()
 @click.argument("config-file", type=click.Path(exists=True))
+@click.option("--project-profile", required=True, help="aws account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option("--overwrite", is_flag=True, show_default=True, default=False, help="Overwrite existing secrets?")
 @click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
-def migrate_secrets(config_file, env, svc, overwrite, dry_run):
+def migrate_secrets(config_file, project_profile, env, svc, overwrite, dry_run):
     """
     Migrate secrets from your gov paas application to AWS/copilot.
 
@@ -190,6 +192,7 @@ def migrate_secrets(config_file, env, svc, overwrite, dry_run):
     AWS_PROFILE=myaccount copilot-bootstrap.py ...
     """
 
+    check_aws_conn(project_profile)
     # TODO: optional SSM or secret manager
 
     cf_client = CloudFoundryClient.build_from_cf_config()

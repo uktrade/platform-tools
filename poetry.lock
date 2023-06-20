@@ -576,13 +576,13 @@ crt = ["awscrt (==0.15.3)"]
 
 [[package]]
 name = "botocore-stubs"
-version = "1.29.154"
+version = "1.29.156"
 description = "Type annotations and code completion for botocore"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "botocore_stubs-1.29.154-py3-none-any.whl", hash = "sha256:b7d7d2f6770a8e523cae407dcd794eb9c5c8fd20e3bd1fc0bad34b627b4e7029"},
-    {file = "botocore_stubs-1.29.154.tar.gz", hash = "sha256:fda3596e11db3b57d9f1df90994fc1d0e2f97122a18335c47a96b28d26cd6f0c"},
+    {file = "botocore_stubs-1.29.156-py3-none-any.whl", hash = "sha256:f8be2c2a2fe08728afb0296ca2a7e1d4965da7653aac94f393cbbdc012b955d4"},
+    {file = "botocore_stubs-1.29.156.tar.gz", hash = "sha256:7ebfdca6035bf1637983ceceaba0470ed668459642e9d888946b55a87e3b5157"},
 ]
 
 [package.dependencies]
@@ -831,18 +831,18 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "cloudfoundry-client"
-version = "1.34.1"
+version = "1.35.0"
 description = "A client library for CloudFoundry"
 optional = false
 python-versions = "*"
 files = [
-    {file = "cloudfoundry-client-1.34.1.tar.gz", hash = "sha256:4f45744536508e6b0e4984cce350788ef742fa62d59bf6526e0e5fa0c2bd4080"},
-    {file = "cloudfoundry_client-1.34.1-py3-none-any.whl", hash = "sha256:b38ad67cc4b6fa9bf08f4b33d8b0f6cda321b0fc93113d3fc3e5e32e74e7366c"},
+    {file = "cloudfoundry-client-1.35.0.tar.gz", hash = "sha256:8fd65921f9e7afb8479d6128e021f02920c377cd74cdaa901de0d7f4b0709dcf"},
+    {file = "cloudfoundry_client-1.35.0-py3-none-any.whl", hash = "sha256:9267dbc0b34a6eb8a796db882466c4989bdcbe5419f50635f68ff8f841378a7d"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.0"
-oauth2-client = "1.4.0"
+oauth2-client = "1.4.2"
 polling2 = "0.5.0"
 protobuf = ">=3.20.0,<5.0.0dev"
 PyYAML = "6.0"
@@ -1117,13 +1117,12 @@ pbr = "*"
 
 [[package]]
 name = "jsonpatch"
-version = "1.32"
+version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
-    {file = "jsonpatch-1.32-py2.py3-none-any.whl", hash = "sha256:26ac385719ac9f54df8a2f0827bb8253aa3ea8ab7b3368457bcdb8c14595a397"},
-    {file = "jsonpatch-1.32.tar.gz", hash = "sha256:b6ddfe6c3db30d81a96aaeceb6baf916094ffa23d7dd5fa2c13e13f8b6e600c2"},
+    {file = "jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade"},
 ]
 
 [package.dependencies]
@@ -1147,13 +1146,12 @@ testing-libs = ["simplejson", "ujson"]
 
 [[package]]
 name = "jsonpointer"
-version = "2.3"
+version = "2.4"
 description = "Identify specific nodes in a JSON document (RFC 6901)"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
-    {file = "jsonpointer-2.3-py2.py3-none-any.whl", hash = "sha256:51801e558539b4e9cd268638c078c6c5746c9ac96bc38152d443400e4f3793e9"},
-    {file = "jsonpointer-2.3.tar.gz", hash = "sha256:97cba51526c829282218feb99dab1b1e6bdf8efd1c43dc9d57be093c0d69c99a"},
+    {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
 ]
 
 [[package]]
@@ -1442,13 +1440,13 @@ setuptools = "*"
 
 [[package]]
 name = "oauth2-client"
-version = "1.4.0"
+version = "1.4.2"
 description = "A client library for OAuth2"
 optional = false
 python-versions = "*"
 files = [
-    {file = "oauth2-client-1.4.0.tar.gz", hash = "sha256:5c8aa66eb25710780170b97880358b5dec7d0d2cb9b386c8010a42b03dd940e8"},
-    {file = "oauth2_client-1.4.0-py3-none-any.whl", hash = "sha256:72a53542a735f16965e8ec6dcaf7254cbab2bf4a04fa8864ae040b187298853c"},
+    {file = "oauth2-client-1.4.2.tar.gz", hash = "sha256:5381900448ff1ae762eb7c65c501002eac46bb5ca2f49477fdfeaf9e9969f284"},
+    {file = "oauth2_client-1.4.2-py3-none-any.whl", hash = "sha256:7b938ba8166128a3c4c15ad23ca0c95a2468f8e8b6069d019ebc73360c15c7ca"},
 ]
 
 [package.dependencies]
@@ -1478,13 +1476,13 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "3.5.3"
+version = "3.6.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.5.3-py3-none-any.whl", hash = "sha256:0ade98a4895e87dc51d47151f7d2ec290365a585151d97b4d8d6312ed6132fed"},
-    {file = "platformdirs-3.5.3.tar.gz", hash = "sha256:e48fabd87db8f3a7df7150a4a5ea22c546ee8bc39bc2473244730d4b56d2cc4e"},
+    {file = "platformdirs-3.6.0-py3-none-any.whl", hash = "sha256:ffa199e3fbab8365778c4a10e1fbf1b9cd50707de826eb304b50e57ec0cc8d38"},
+    {file = "platformdirs-3.6.0.tar.gz", hash = "sha256:57e28820ca8094678b807ff529196506d7a21e17156cb1cddb3e74cebce54640"},
 ]
 
 [package.extras]
@@ -1518,9 +1516,9 @@ files = [
 ]
 
 [[package]]
-name = "pre-commit"
+name = "pre_commit"
 version = "3.2.2"
-description = "A framework for managing and maintaining multi-language pre-commit hooks."
+description = ""
 optional = false
 python-versions = ">=3.8"
 files = []
@@ -1978,13 +1976,13 @@ contextlib2 = ">=0.5.5"
 
 [[package]]
 name = "setuptools"
-version = "67.8.0"
+version = "68.0.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "setuptools-67.8.0-py3-none-any.whl", hash = "sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f"},
-    {file = "setuptools-67.8.0.tar.gz", hash = "sha256:62642358adc77ffa87233bc4d2354c4b2682d214048f500964dbe760ccedf102"},
+    {file = "setuptools-68.0.0-py3-none-any.whl", hash = "sha256:11e52c67415a381d10d6b462ced9cfb97066179f0e871399e006c4ab101fc85f"},
+    {file = "setuptools-68.0.0.tar.gz", hash = "sha256:baf1fdb41c6da4cd2eae722e135500da913332ab3f2f5c7d33af9b492acb5235"},
 ]
 
 [package.extras]
@@ -2030,13 +2028,13 @@ files = [
 
 [[package]]
 name = "tox"
-version = "4.6.1"
+version = "4.6.3"
 description = "tox is a generic virtualenv management and test command line tool"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tox-4.6.1-py3-none-any.whl", hash = "sha256:b45c4927bd1b3d91d532fbae9d7ffb676ff2b4d2ae26ef93b41b3189d1eff860"},
-    {file = "tox-4.6.1.tar.gz", hash = "sha256:bf71ff8ee08499d4a3db6b73e35ef8d0e4346a3bea84517245b1e4a09b9f0774"},
+    {file = "tox-4.6.3-py3-none-any.whl", hash = "sha256:2946a0bb38924c3a9f9575c7fb4ca1f4c11a7c69c61592f176778892155cb50c"},
+    {file = "tox-4.6.3.tar.gz", hash = "sha256:9e2c5091a117d03b583c57c4c40aecd068099c17d40520e7b165e85c19334534"},
 ]
 
 [package.dependencies]
@@ -2047,13 +2045,13 @@ filelock = ">=3.12.2"
 packaging = ">=23.1"
 platformdirs = ">=3.5.3"
 pluggy = ">=1"
-pyproject-api = ">=1.5.1"
+pyproject-api = ">=1.5.2"
 tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
-virtualenv = ">=20.23"
+virtualenv = ">=20.23.1"
 
 [package.extras]
-docs = ["furo (>=2023.5.20)", "sphinx (>=7.0.1)", "sphinx-argparse-cli (>=1.11)", "sphinx-autodoc-typehints (>=1.23,!=1.23.4)", "sphinx-copybutton (>=0.5.2)", "sphinx-inline-tabs (>=2023.4.21)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=23.6)"]
-testing = ["build[virtualenv] (>=0.10)", "covdefaults (>=2.3)", "detect-test-pollution (>=1.1.1)", "devpi-process (>=0.3)", "diff-cover (>=7.6)", "distlib (>=0.3.6)", "flaky (>=3.7)", "hatch-vcs (>=0.3)", "hatchling (>=1.17.1)", "psutil (>=5.9.5)", "pytest (>=7.3.2)", "pytest-cov (>=4.1)", "pytest-mock (>=3.10)", "pytest-xdist (>=3.3.1)", "re-assert (>=1.1)", "time-machine (>=2.9)", "wheel (>=0.40)"]
+docs = ["furo (>=2023.5.20)", "sphinx (>=7.0.1)", "sphinx-argparse-cli (>=1.11.1)", "sphinx-autodoc-typehints (>=1.23.2,!=1.23.4)", "sphinx-copybutton (>=0.5.2)", "sphinx-inline-tabs (>=2023.4.21)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=23.6)"]
+testing = ["build[virtualenv] (>=0.10)", "covdefaults (>=2.3)", "detect-test-pollution (>=1.1.1)", "devpi-process (>=0.3.1)", "diff-cover (>=7.6)", "distlib (>=0.3.6)", "flaky (>=3.7)", "hatch-vcs (>=0.3)", "hatchling (>=1.17.1)", "psutil (>=5.9.5)", "pytest (>=7.3.2)", "pytest-cov (>=4.1)", "pytest-mock (>=3.11.1)", "pytest-xdist (>=3.3.1)", "re-assert (>=1.1)", "time-machine (>=2.10)", "wheel (>=0.40)"]
 
 [[package]]
 name = "types-awscrt"
@@ -2120,23 +2118,23 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.23.0"
+version = "20.23.1"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "virtualenv-20.23.0-py3-none-any.whl", hash = "sha256:6abec7670e5802a528357fdc75b26b9f57d5d92f29c5462ba0fbe45feacc685e"},
-    {file = "virtualenv-20.23.0.tar.gz", hash = "sha256:a85caa554ced0c0afbd0d638e7e2d7b5f92d23478d05d17a76daeac8f279f924"},
+    {file = "virtualenv-20.23.1-py3-none-any.whl", hash = "sha256:34da10f14fea9be20e0fd7f04aba9732f84e593dac291b757ce42e3368a39419"},
+    {file = "virtualenv-20.23.1.tar.gz", hash = "sha256:8ff19a38c1021c742148edc4f81cb43d7f8c6816d2ede2ab72af5b84c749ade1"},
 ]
 
 [package.dependencies]
 distlib = ">=0.3.6,<1"
-filelock = ">=3.11,<4"
-platformdirs = ">=3.2,<4"
+filelock = ">=3.12,<4"
+platformdirs = ">=3.5.1,<4"
 
 [package.extras]
-docs = ["furo (>=2023.3.27)", "proselint (>=0.13)", "sphinx (>=6.1.3)", "sphinx-argparse (>=0.4)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=22.12)"]
-test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.3.1)", "pytest-env (>=0.8.1)", "pytest-freezegun (>=0.4.2)", "pytest-mock (>=3.10)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=67.7.1)", "time-machine (>=2.9)"]
+docs = ["furo (>=2023.5.20)", "proselint (>=0.13)", "sphinx (>=7.0.1)", "sphinx-argparse (>=0.4)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=23.6)"]
+test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.3.1)", "pytest-env (>=0.8.1)", "pytest-freezer (>=0.4.6)", "pytest-mock (>=3.10)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=67.8)", "time-machine (>=2.9)"]
 
 [[package]]
 name = "websocket-client"
@@ -2272,4 +2270,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "75d202a30ddc84b9ecbb5edc8434d9b3ec2fd22d0e8f5f4a0236f3c896c4324f"
+content-hash = "f69cac1cd363ee622f46e1a73b5c317d3cce51ea13d690bcb4d8fc178706a051"

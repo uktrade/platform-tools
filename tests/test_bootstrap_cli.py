@@ -8,6 +8,7 @@ import yaml
 from click.testing import CliRunner
 from cloudfoundry_client.common_objects import JsonObject
 from moto import mock_ssm
+from moto import mock_sts
 from schema import SchemaError
 
 from commands.bootstrap_cli import get_paas_env_vars
@@ -110,26 +111,34 @@ def test_make_config(tmp_path):
         assert service.read() == bootstrap_strings.SERVICE_MANIFEST
 
 
+@mock_sts
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_env_not_in_config(client):
+def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credentials):
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
 
     config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
-    result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "staging", "--svc", "test-service"])
+    result = runner.invoke(
+        migrate_secrets,
+        [str(config_file_path), "--project-profile", "foo", "--env", "staging", "--svc", "test-service"],
+    )
     path = str(Path(__file__).parent.resolve() / "test_config.yml")
     assert f"staging is not an environment in {path}" in result.output
 
 
+@mock_sts
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_service_not_in_config(client):
+def test_migrate_secrets_service_not_in_config(client, alias_session, aws_credentials):
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
 
     config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
-    result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "blah"])
+    result = runner.invoke(
+        migrate_secrets,
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "blah"],
+    )
     path = str(Path(__file__).parent.resolve() / "test_config.yml")
     assert f"blah is not a service in {path}" in result.output
 
@@ -139,16 +148,27 @@ def test_migrate_secrets_service_not_in_config(client):
     [({}, "NOT FOUND"), ({"TEST_SECRET": None}, "EMPTY"), ({"TEST_SECRET": "TEST_SECRET"}, "TEST_SECRET")],
 )
 @mock_ssm
+@mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars")
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_param_doesnt_exist(client, get_paas_env_vars, env_vars, param_value):
+def test_migrate_secrets_param_doesnt_exist(
+    client,
+    get_paas_env_vars,
+    env_vars,
+    param_value,
+    alias_session,
+    aws_credentials,
+):
     """Test that, where a secret doesn't already exist in aws ssm,
     migrate_secrets creates it."""
 
     get_paas_env_vars.return_value = env_vars
     config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
-    result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "test-service"])
+    result = runner.invoke(
+        migrate_secrets,
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+    )
 
     assert ">>> migrating secrets for service: test-service; environment: test" in result.output
     assert "Created" in result.output
@@ -161,16 +181,20 @@ def test_migrate_secrets_param_doesnt_exist(client, get_paas_env_vars, env_vars,
 
 
 @mock_ssm
+@mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_param_already_exists(client, get_paas_env_vars):
+def test_migrate_secrets_param_already_exists(client, get_paas_env_vars, alias_session, aws_credentials):
     """Test that, where a secret already exists in aws ssm and overwrite flag
     isn't set, migrate_secrets doesn't update it."""
 
     set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
     config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
     runner = CliRunner()
-    result = runner.invoke(migrate_secrets, [str(config_file_path), "--env", "test", "--svc", "test-service"])
+    result = runner.invoke(
+        migrate_secrets,
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+    )
 
     assert "NOT overwritten" in result.output
 
@@ -181,9 +205,10 @@ def test_migrate_secrets_param_already_exists(client, get_paas_env_vars):
 
 
 @mock_ssm
+@mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_overwrite(client, get_paas_env_vars):
+def test_migrate_secrets_overwrite(client, get_paas_env_vars, alias_session, aws_credentials):
     """Test that, where a secret already exists in aws ssm and overwrite flag is
     set, migrate_secrets updates it."""
 
@@ -192,7 +217,7 @@ def test_migrate_secrets_overwrite(client, get_paas_env_vars):
     runner = CliRunner()
     result = runner.invoke(
         migrate_secrets,
-        [str(config_file_path), "--env", "test", "--svc", "test-service", "--overwrite"],
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "test-service", "--overwrite"],
     )
 
     assert "Overwritten" in result.output
@@ -205,9 +230,10 @@ def test_migrate_secrets_overwrite(client, get_paas_env_vars):
 
 
 @mock_ssm
+@mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_dry_run(client, get_paas_env_vars):
+def test_migrate_secrets_dry_run(client, get_paas_env_vars, alias_session, aws_credentials):
     """Test that, when dry-run flag is passed, migrate_secrets does not create a
     secret."""
 
@@ -215,7 +241,7 @@ def test_migrate_secrets_dry_run(client, get_paas_env_vars):
     runner = CliRunner()
     result = runner.invoke(
         migrate_secrets,
-        [str(config_file_path), "--env", "test", "--svc", "test-service", "--dry-run"],
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "test-service", "--dry-run"],
     )
 
     assert (
