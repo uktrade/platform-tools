@@ -99,14 +99,7 @@ Resources:
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.secret_name }}'   # Other services can retrieve the endpoint from this path.
       Type: String
-      Value: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
-
-Outputs:
-
-  {{ service.prefix }}EndPointAddress:
-    Description: 'The DNS address of the primary read-write cache node.'
-    Value: !Sub
-      - 'rediss://${url}:${port}'
-      - url: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
-        port: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
-
+      Value: !Sub
+        - 'rediss://${url}:${port}'
+        - url: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
+          port: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
