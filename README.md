@@ -2,7 +2,7 @@
 
 ![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoicUFCMXNSZVVUdnJuLzNHMDJlUVg4UVErbFkwT1NKa0NubUNudm9STk5makxZYUdtK0xiSmgxWXUzWUttTTdPbnprdTFVY2FJUzZXbHIyQTVkYmJtaVNJPSIsIml2UGFyYW1ldGVyU3BlYyI6IkxYaUFJczFoQitodytUTHAiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 
-This repository contains a set of tools for transferring applications/services from [GOV.UK PaaS](https://www.cloud.service.gov.uk) to DBT PaaS which augments [AWS Copilot](https://aws.github.io/copilot-cli/) to improve the developer and SRE experience.
+This repository contains a set of tools for transferring applications/services from [GOV.UK PaaS](https://www.cloud.service.gov.uk) to Department for Business and Trade (DBT) PaaS which augments [AWS Copilot](https://aws.github.io/copilot-cli/) to improve the developer and SRE experience.
 
 ## Getting started
 
