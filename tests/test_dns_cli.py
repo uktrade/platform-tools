@@ -144,7 +144,3 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
     result = runner.invoke(assign_domain, ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"])
     assert result.output.startswith("There are no clusters matching") == True
-
-
-def test_stuff(acm_session):
-    print("nothing")
