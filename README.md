@@ -55,7 +55,15 @@ poetry version patch
 
 More options for the `version` command can be found in the [Poetry documentation](https://python-poetry.org/docs/cli/#version). For example, for a minor version bump: `poetry version minor`.
 
+Build the Python package.
+
+```
+poetry build
+```
+
 Publish the Python package.
+
+_Note: Make sure your Pull Request (PR) is approved and contains the version upgrade in `pyproject.toml` before publishing the package._
 
 ```
 poetry publish
