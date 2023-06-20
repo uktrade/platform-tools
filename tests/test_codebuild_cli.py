@@ -50,10 +50,11 @@ def test_check_service_role_does_not_exist(capfd, aws_credentials):
 
     session = boto3.session.Session(profile_name="foo")
     with pytest.raises(SystemExit):
-        check_service_role(session)
+        check_service_role("test_role", session)
     out, _ = capfd.readouterr()
 
-    assert "Role for service does not exist; run ./codebuild_cli.py create-codeploy-role\n" in out
+    assert ("Service Role test_role does not exist; "
+            "run: copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>\n") in out
 
 
 @mock_iam
@@ -68,7 +69,7 @@ def test_check_service_role_returns_role_arn():
         AssumeRolePolicyDocument="123",
     )
 
-    assert check_service_role(session) == "arn:aws:iam::123456789012:role/ci-CodeBuild-role"
+    assert check_service_role("ci-CodeBuild-role", session) == "arn:aws:iam::123456789012:role/ci-CodeBuild-role"
 
 
 @mock_ssm
@@ -109,9 +110,10 @@ def test_check_git_url_invalid(url, capfd):
         check_git_url(url)
 
     out, _ = capfd.readouterr()
-    
+
     assert (
-        "Unable to recognise Git URL format, make sure it is either:\nhttps://github.com/<org>/<repository-name>\ngit@github.com:<org>/<repository-name>\n"
+        "Unable to recognise Git URL format, "
+        "make sure it is either:\nhttps://github.com/<org>/<repository-name>\ngit@github.com:<org>/<repository-name>\n"
         in out
     )
 
@@ -148,7 +150,7 @@ def test_create_codedeploy_role_returns_200(alias_session):
 @mock_sts
 def test_create_codedeploy_role_policy_already_exists(alias_session):
     current_filepath = os.path.dirname(os.path.realpath(__file__))
-    with open(f"{current_filepath}/../templates/put-codebuild-role-policy.json") as f:
+    with open(f"{current_filepath}/../templates/ci-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
     alias_session.client("iam", region_name=AWS_REGION).create_policy(
         PolicyName="ci-CodeBuild-policy",
@@ -179,7 +181,7 @@ def test_create_codedeploy_role_policy_already_exists(alias_session):
 def test_create_codedeploy_role_limit_exceeded_exception(alias_session):
     runner = CliRunner()
     for i in range(6):
-        result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo"], input="y")
+        result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo", "--type", "ci"], input="y")
 
     assert (
         "You have hit the limit of max managed policies, please delete an existing version and try again"

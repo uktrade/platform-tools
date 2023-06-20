@@ -177,10 +177,10 @@ def add_records(client, records, subdom_id, action):
 
     check_response(response)
     click.echo(
-        click.style(f"{records['Name']}, Type: {records['Type']}", fg="white", bold=True)
-        + click.style("Added.", fg="magenta"),
-    )
-    return response["ChangeInfo"]["Status"]
+        click.style(f"{records['Name']}, Type: {records['Type']}", fg="white", bold=True) +
+        click.style("Added.", fg="magenta")
+        )
+    return response['ChangeInfo']['Status']
 
 
 def check_for_records(client, parent_id, subdom, subdom_id):
@@ -285,9 +285,8 @@ def check_r53(domain_session, project_session, domain, base_domain):
 
     if base_domain not in hosted_zones:
         click.secho(
-            f"The base domain: {base_domain} does not exist in your AWS domain account {response['HostedZones']}",
-            fg="red",
-        )
+            f"The base domain: {base_domain} does not exist in your AWS domain account \
+                {response['HostedZones']}", fg='red')
         exit()
 
     base_len = len(base_domain.split(".")) - 1
