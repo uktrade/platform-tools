@@ -36,6 +36,35 @@ Run `docker build -f Dockerfile.test -t alpine/python .` to build the image.
 
 For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
 
+## Publishing
+
+To publish the Python package `dbt-copilot-tools`, you will need an API token.
+
+1. Acquire credentials from [Passman for PyPi](https://passman.ci.uktrade.digital/secret/244eb2ad-245d-47d9-9f6a-95ee30810944/).
+   - Request access from the SRE team.
+2. Log in to [PyPi](https://pypi.org) with the above credentials. The MFA token will also be in Passman.
+3. Navigate to [Account settings](https://pypi.org/manage/account/).
+4. Create an API token and copy the token.
+5. Run `poetry config pypi-token.pypi <token>` to add the token to your Poetry configuration.
+
+Update the version, as the same version cannot be published to PyPi.
+
+```
+poetry version patch
+```
+
+More options for the `version` command can be found in the [Poetry documentation](https://python-poetry.org/docs/cli/#version). For example, for a minor version bump: `poetry version minor`.
+
+Publish the Python package.
+
+```
+poetry publish
+```
+
+Check the [PyPi Release history](https://pypi.org/project/dbt-copilot-tools/#history) to make sure the package has been updated.
+
+For an optional manual check, install the package locally and test everything works as expected.
+
 ## Migration
 
 See [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration/README.md).
