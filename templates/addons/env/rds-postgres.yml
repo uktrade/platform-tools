@@ -19,10 +19,10 @@ Mappings:
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
       MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
-      AllocatedStorage: {{ config.volumesize }}
+      AllocatedStorage: {{ config.volume_size }}
 
     {% endfor %}
-  
+
 Resources:
   # Subnet group to control where the DB gets placed
   DBSubnetGroup:
@@ -68,9 +68,9 @@ Resources:
       BackupRetentionPeriod: 7
       EnablePerformanceInsights : true
       DBName: !Ref {{ service.prefix }}DBName
-      MasterUsername: 
+      MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:username{% raw %}}}{% endraw %}" ]]
-      MasterUserPassword: 
+      MasterUserPassword:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:password{% raw %}}}{% endraw %}" ]]
       DBSubnetGroupName: !Ref 'DBSubnetGroup'
       VPCSecurityGroups:
