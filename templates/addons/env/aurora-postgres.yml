@@ -30,8 +30,8 @@ Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
   {% for environment_name, config in service.environments.items() %}
     {{ environment_name }}:
-      "DBMinCapacity": {{ config.min_capacity }}
-      "DBMaxCapacity": {{ config.max_capacity }}
+      DBMinCapacity: {{ config.min_capacity }}
+      DBMaxCapacity: {{ config.max_capacity }}
   {% endfor %}
 
 Resources:
