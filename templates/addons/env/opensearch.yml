@@ -52,7 +52,6 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "opensearch"}'
@@ -203,35 +202,32 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
+  # An intermediate SSM parameter just to store the URL. This is required because attempting use a larger nested Fn::If / Fn::ToJsonString / !Sub / !GetAtt structure
+  # leads to unhelpful "ResourceNotReady: failed waiting for successful resource state: Nested change set " error.
   {{ service.prefix }}OpenSearchEndpointAddressParam:
     Type: AWS::SSM::Parameter
-    Condition: DisableHA
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
-      Value:
-        Fn::ToJsonString:
-          url: !Sub
-            - "https://${url}"
-            - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
-          username:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
-          password:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+      Value: !If
+        - EnableHA
+        - !Sub
+          - "https://${url}"
+          - url: !GetAtt dwOpensearchOpenSearchDomainHA.DomainEndpoint
+        - !Sub
+          - "https://${url}"
+          - url: !GetAtt dwOpensearchOpenSearchDomain.DomainEndpoint
 
-  {{ service.prefix }}OpenSearchEndpointAddressParamHA:
+  # The config param containing a json object
+  {{ service.prefix }}OpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
-    Condition: EnableHA
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
       Value:
         Fn::ToJsonString:
-          url: !Sub
-            - "https://${url}"
-            - url: !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
+          url:
+            !Join [ "",  [ '{% raw %}{{resolve:ssm:{% endraw %}', !Ref {{ service.prefix }}OpenSearchEndpointAddressParam, "{% raw %}}}{% endraw %}" ]]
           username:
             !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           password:
             !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
-
