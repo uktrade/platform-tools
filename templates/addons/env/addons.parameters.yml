@@ -1,2 +1,6 @@
 Parameters:
+  EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
   LBARN: !Ref PublicLoadBalancer
+  PrivateSubnet1: !Ref PrivateSubnet1
+  PrivateSubnet2: !Ref PrivateSubnet2
+  VPCID: !Ref VPC
