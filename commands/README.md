@@ -48,3 +48,5 @@ Commands:
   make-config      Generate copilot boilerplate code.
   migrate-secrets  Migrate secrets from your gov paas application to...
 ```
+
+See the [Commands Reference](./COMMANDS.md) for a list of all available subcommands.
