@@ -212,10 +212,10 @@ Resources:
         - EnableHA
         - !Sub
           - "https://${url}"
-          - url: !GetAtt dwOpensearchOpenSearchDomainHA.DomainEndpoint
+          - url: !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
         - !Sub
           - "https://${url}"
-          - url: !GetAtt dwOpensearchOpenSearchDomain.DomainEndpoint
+          - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 
   # The config param containing a json object
   {{ service.prefix }}OpenSearchEndpointConfigParam:
