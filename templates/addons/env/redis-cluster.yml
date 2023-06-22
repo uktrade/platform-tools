@@ -1,11 +1,11 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
@@ -35,10 +35,8 @@ Mappings:
     '3.2.6':
       CacheParameterGroupFamily: 'redis3.2'
 
-
 Conditions:
   HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, NumReplicas], 0]]
-
 
 Resources:
 

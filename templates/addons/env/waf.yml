@@ -1,12 +1,16 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
+
+  # Other parameters...
   LBARN:
     Type: String
+
 Mappings:
   EnvWAFConfigurationMap:
     # Create an entry for each environment

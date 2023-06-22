@@ -1,17 +1,21 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
+
+  # Other parameters...
+  # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
     Description: The name of the initial database to be created in the Aurora Serverless v2 cluster.
     Default: main
     # Cannot have special characters
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
+
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
   {% for environment_name, config in service.environments.items() %}

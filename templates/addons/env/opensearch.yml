@@ -1,11 +1,14 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
+
 Transform: AWS::LanguageExtensions
+
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
     {% for env_name, config in service.environments.items() %}
