@@ -8,9 +8,9 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
   # Parameters from the parent stack brought in via addons.parameters.yml...
-  EnvironmentSecurityGroup:
+  {% if shared %}EnvironmentSecurityGroup:
     Type: String
-  PrivateSubnet1:
+  {% endif %}PrivateSubnet1:
     Type: String
   PrivateSubnet2:
     Type: String
