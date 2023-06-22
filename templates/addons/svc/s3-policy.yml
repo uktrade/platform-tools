@@ -5,6 +5,7 @@ Metadata:
         - W2001 # Parameter not used
 
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
@@ -14,6 +15,7 @@ Parameters:
   Name:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
+
 Mappings:
   {{ service.prefix }}BucketNameMap:
     # Create an entry for each environment
@@ -21,6 +23,7 @@ Mappings:
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
     {% endfor %}
+
 Resources:
   {{ service.prefix }}S3AccessPolicy:
     Metadata:

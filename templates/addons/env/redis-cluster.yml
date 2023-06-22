@@ -1,4 +1,5 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
@@ -6,6 +7,15 @@ Parameters:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
 
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+  VPCID:
+    Type: String
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
@@ -35,10 +45,8 @@ Mappings:
     '3.2.6':
       CacheParameterGroupFamily: 'redis3.2'
 
-
 Conditions:
   HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, NumReplicas], 0]]
-
 
 Resources:
 
@@ -56,20 +64,18 @@ Resources:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
 
   {{ service.prefix }}SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
-      VpcId:
-        'Fn::ImportValue':
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 6379
         ToPort: 6379
-        SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+        SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
   {{ service.prefix }}ReplicationGroup:
     Type: 'AWS::ElastiCache::ReplicationGroup'

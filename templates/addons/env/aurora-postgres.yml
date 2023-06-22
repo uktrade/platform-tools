@@ -1,23 +1,37 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
+
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  {% if shared %}EnvironmentSecurityGroup:
+    Type: String
+  {% endif %}PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+  VPCID:
+    Type: String
+
+  # Other parameters...
+  # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
     Description: The name of the initial database to be created in the Aurora Serverless v2 cluster.
     Default: main
     # Cannot have special characters
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
+
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
   {% for environment_name, config in service.environments.items() %}
     {{ environment_name }}:
-      "DBMinCapacity": {{ config.min_capacity }}
-      "DBMaxCapacity": {{ config.max_capacity }}
+      DBMinCapacity: {{ config.min_capacity }}
+      DBMaxCapacity: {{ config.max_capacity }}
   {% endfor %}
 
 Resources:
@@ -25,17 +39,14 @@ Resources:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
-      SubnetIds:
-        !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
   {{ service.prefix }}SecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
-      VpcId:
-        Fn::ImportValue:
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
@@ -51,9 +62,7 @@ Resources:
           IpProtocol: tcp
           Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
-      VpcId:
-        Fn::ImportValue:
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
   {{ service.prefix }}AuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
@@ -130,7 +139,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 {% endif %}
 
 Outputs:
