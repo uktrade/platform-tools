@@ -10,6 +10,8 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  VPCID:
+    Type: String
 
   # Other parameters...
   # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
@@ -41,9 +43,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
-      VpcId:
-        Fn::ImportValue:
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
@@ -59,9 +59,7 @@ Resources:
           IpProtocol: tcp
           Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
-      VpcId:
-        Fn::ImportValue:
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
   {{ service.prefix }}AuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'

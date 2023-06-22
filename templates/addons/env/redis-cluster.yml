@@ -10,6 +10,8 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  VPCID:
+    Type: String
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
@@ -64,9 +66,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
-      VpcId:
-        'Fn::ImportValue':
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 6379

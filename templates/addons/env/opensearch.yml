@@ -10,6 +10,8 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  VPCID:
+    Type: String
 
 Transform: AWS::LanguageExtensions
 
@@ -63,9 +65,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access OpenSearch.'
-      VpcId:
-        'Fn::ImportValue':
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-SecurityGroup'
