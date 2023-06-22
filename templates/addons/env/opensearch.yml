@@ -7,6 +7,10 @@ Parameters:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
 
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+
 Transform: AWS::LanguageExtensions
 
 Mappings:
@@ -77,7 +81,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
   # Single opensearch instance
   {{ service.prefix }}OpenSearchDomain:

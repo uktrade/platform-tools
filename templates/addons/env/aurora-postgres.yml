@@ -7,6 +7,10 @@ Parameters:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
 
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+
   # Other parameters...
   # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
@@ -134,7 +138,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 {% endif %}
 
 Outputs:
