@@ -119,7 +119,7 @@ def get_cmd_metadata(
 def create_docs(base_command, output):
     """Create Markdown documentation from Click command metadata."""
 
-    table_of_contents = ["# Commands\n"]
+    table_of_contents = ["# Commands Reference\n"]
     markdown_docs = []
 
     for meta in get_cmd_metadata(base_command):

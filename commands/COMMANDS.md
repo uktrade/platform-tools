@@ -1,4 +1,4 @@
-# Commands
+# Commands Reference
 
 - [copilot-helper](#copilot-helper)
 - [copilot-helper bootstrap](#copilot-helper-bootstrap)
