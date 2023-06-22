@@ -10,6 +10,10 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
   VPCID:
     Type: String
 
@@ -60,7 +64,7 @@ Resources:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
 
   {{ service.prefix }}SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

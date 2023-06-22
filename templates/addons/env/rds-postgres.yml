@@ -10,6 +10,10 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
   VPCID:
     Type: String
 
@@ -38,7 +42,7 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
-      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
   {{ service.prefix }}SecurityGroup:

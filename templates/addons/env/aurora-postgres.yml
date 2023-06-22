@@ -10,6 +10,10 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
   VPCID:
     Type: String
 
@@ -35,8 +39,7 @@ Resources:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
-      SubnetIds:
-        !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
   {{ service.prefix }}SecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
