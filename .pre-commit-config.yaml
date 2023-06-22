@@ -49,3 +49,11 @@ repos:
     rev: '0.78'
     hooks:
       - id: flynt
+  - repo: local
+    hooks:
+      - id: docs
+        name: Generate command docs
+        entry: ./utils/create_command_docs.py --module=copilot_helper --cmd=copilot_helper --output=./commands.md
+        language: system
+        pass_filenames: false
+        always_run: true
