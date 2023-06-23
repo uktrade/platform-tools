@@ -1,11 +1,24 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
+
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnet1:
+    Type: String
+  PrivateSubnet2:
+    Type: String
+  VPCID:
+    Type: String
+
 Transform: AWS::LanguageExtensions
+
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
     {% for env_name, config in service.environments.items() %}
@@ -56,9 +69,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access OpenSearch.'
-      VpcId:
-        'Fn::ImportValue':
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VPCID
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-SecurityGroup'
@@ -74,7 +85,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
   # Single opensearch instance
   {{ service.prefix }}OpenSearchDomain:
@@ -121,8 +132,7 @@ Resources:
       VPCOptions:
         SecurityGroupIds:
         - !Ref {{ service.prefix }}OpenSearchSecurityGroup
-        SubnetIds:
-          - !Select [0, !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+        SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       Tags:
@@ -178,11 +188,11 @@ Resources:
         ZoneAwarenessConfig:
           AvailabilityZoneCount: 2
           #Fn::length always resolves to 1 despite there being subnets.
-          #Fn::Length: [ !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ] ]
+          #Fn::Length: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
       VPCOptions:
         SecurityGroupIds:
         - !Ref {{ service.prefix }}OpenSearchSecurityGroup
-        SubnetIds: !Split [ ",", { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+        SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       Tags:
