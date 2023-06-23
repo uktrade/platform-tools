@@ -39,7 +39,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert result.exit_code != 0
         assert "Error: Missing option '--output' / '-o'." in output
 
-    def test_check_valid_module_option(self):
+    def test_check_invalid_module_option(self):
         result = self.runner.invoke(docs, ["--module", "foo", "--cmd", "bar", "--output", "baz"])
 
         output = result.output
