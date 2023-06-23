@@ -127,7 +127,6 @@ Resources:
       TargetId: !Ref {{ service.prefix }}DBCluster
       TargetType: AWS::RDS::DBCluster
 
-{% if shared %}
   # Enable ingress from other ECS services created within the environment.
   {{ service.prefix }}EnvironmentIngress:
     Metadata:
@@ -140,7 +139,6 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
-{% endif %}
 
 Outputs:
   {{ service.prefix }}Secret: # injected as WEBDB_SECRET environment variable by Copilot.
