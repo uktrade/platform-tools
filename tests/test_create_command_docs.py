@@ -58,6 +58,8 @@ class TestCreateCommandDocsCli(TestCase):
     def test_create_command_docs(self):
         output_path = f"{BASE_DIR}/tests/fixtures/docs.md"
 
+        assert os.path.exists(output_path) is False
+
         result = self.runner.invoke(
             docs,
             [
