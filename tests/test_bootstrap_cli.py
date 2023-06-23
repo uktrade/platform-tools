@@ -255,6 +255,17 @@ def test_migrate_secrets_dry_run(client, get_paas_env_vars, alias_session, aws_c
         client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
 
 
+def test_migrate_secrets_profile_not_configured():
+    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
+    runner = CliRunner()
+    result = runner.invoke(
+        migrate_secrets,
+        [str(config_file_path), "--project-profile", "foo", "--env", "test", "--svc", "test-service", "--dry-run"],
+    )
+
+    assert "AWS profile not configured, please ensure they are set." in result.output
+
+
 def test_instructions():
     """Test that, given the path to a config file, instructions generates output
     for specific services and environments."""

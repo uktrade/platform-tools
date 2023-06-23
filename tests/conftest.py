@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import boto3
@@ -29,10 +28,10 @@ def fakefs(fs):
 
 
 @pytest.fixture(scope="function")
-def aws_credentials():
+def aws_credentials(monkeypatch):
     """Mocked AWS Credentials for moto."""
     moto_credentials_file_path = Path(__file__).parent.absolute() / "dummy_aws_credentials"
-    os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(moto_credentials_file_path)
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(moto_credentials_file_path))
 
 
 @pytest.fixture(scope="function")
