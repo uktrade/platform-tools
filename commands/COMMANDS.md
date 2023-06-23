@@ -172,6 +172,8 @@ Usage: copilot-helper bootstrap migrate-secrets
 ## Options
 
 - `config-file <path>`
+- `--project-profile <text>`
+  -  aws account profile name
 - `--env <text>`
   -  Migrate secrets from a specific environment
 - `--svc <text>`
@@ -204,13 +206,17 @@ Usage: copilot-helper bootstrap migrate-secrets
   AWS_PROFILE=myaccount copilot-bootstrap.py ...
 
 Options:
-  --env TEXT   Migrate secrets from a specific
-               environment
-  --svc TEXT   Migrate secrets from a specific
-               service
-  --overwrite  Overwrite existing secrets?
-  --dry-run    dry run
-  --help       Show this message and exit.
+  --project-profile TEXT  aws account profile name
+                          [required]
+  --env TEXT              Migrate secrets from a
+                          specific environment
+  --svc TEXT              Migrate secrets from a
+                          specific service
+  --overwrite             Overwrite existing
+                          secrets?
+  --dry-run               dry run
+  --help                  Show this message and
+                          exit.
 ```
 
 # copilot-helper bootstrap instructions
