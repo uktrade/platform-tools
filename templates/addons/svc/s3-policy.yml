@@ -1,3 +1,9 @@
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001 # Parameter not used
+
 Parameters:
   App:
     Type: String
@@ -14,7 +20,7 @@ Mappings:
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
-    {% endfor %}    
+    {% endfor %}
 Resources:
   {{ service.prefix }}S3AccessPolicy:
     Metadata:
@@ -33,7 +39,7 @@ Resources:
 {% else %}
               - s3:*Object
 {% endif %}
-            Resource: !Sub 
+            Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }/*"
               - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
           - Sid: S3ListAction
