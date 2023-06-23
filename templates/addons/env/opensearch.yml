@@ -207,7 +207,7 @@ Resources:
     Properties:
       Type: String
       Value: !If
-        - EnableHA
+        - {{ service.prefix }}EnableHA
         - !Sub
           - "https://${url}"
           - url: !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
