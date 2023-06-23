@@ -47,7 +47,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert result.exit_code != 0
         assert "Could not find module: foo. Error: No module named 'foo'" in output
 
-    def test_check_valid_cmd_option(self):
+    def test_check_invalid_cmd_option(self):
         result = self.runner.invoke(docs, ["--module", "copilot_helper", "--cmd", "bar", "--output", "baz"])
 
         output = result.output
