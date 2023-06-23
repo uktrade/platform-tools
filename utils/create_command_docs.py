@@ -28,12 +28,6 @@ TEMPLATE = """
 {options}
 
 {commands}
-
-## CLI Help
-
-```
-{help}
-```
 """
 
 
@@ -144,7 +138,6 @@ def create_docs(base_command, output):
                 + "\n".join([f"- [`{cmd_name}` ↪]({opt.get('link')})" for cmd_name, opt in meta.subcommands.items()])
                 if meta.subcommands
                 else "No commands.",
-                help=meta.help,
             ),
         )
 

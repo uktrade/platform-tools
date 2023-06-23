@@ -49,23 +49,6 @@ Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
 
-## CLI Help
-
-```
-Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --version  Show the version and exit.
-  --help     Show this message and exit.
-
-Commands:
-  bootstrap
-  check-cloudformation  Runs the checks...
-  codebuild
-  copilot
-  domain
-```
-
 # copilot-helper bootstrap
 
 [↩ Parent](#copilot-helper)
@@ -89,21 +72,6 @@ Usage: copilot-helper bootstrap
 - [`instructions` ↪](#copilot-helper-bootstrap-instructions)
 - [`make-config` ↪](#copilot-helper-bootstrap-make-config)
 - [`migrate-secrets` ↪](#copilot-helper-bootstrap-migrate-secrets)
-
-## CLI Help
-
-```
-Usage: copilot-helper bootstrap 
-           [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  instructions     Show migration instructions.
-  make-config      Generate copilot...
-  migrate-secrets  Migrate secrets from your...
-```
 
 # copilot-helper bootstrap make-config
 
@@ -131,22 +99,6 @@ Usage: copilot-helper bootstrap make-config
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper bootstrap make-config 
-           [OPTIONS] CONFIG_FILE [OUTPUT]
-
-  Generate copilot boilerplate code.
-
-  CONFIG-FILE is the path to the input yaml config
-  file OUTPUT is the location of the repo root
-  dir. Defaults to the current directory.
-
-Options:
-  --help  Show this message and exit.
-```
 
 # copilot-helper bootstrap migrate-secrets
 
@@ -187,38 +139,6 @@ Usage: copilot-helper bootstrap migrate-secrets
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper bootstrap migrate-secrets 
-           [OPTIONS] CONFIG_FILE
-
-  Migrate secrets from your gov paas application
-  to AWS/copilot.
-
-  You need to be authenticated via cf cli and the
-  AWS cli to use this commmand.
-
-  If you're using AWS profiles, use the
-  AWS_PROFILE env var to indicate the which
-  profile to use, e.g.:
-
-  AWS_PROFILE=myaccount copilot-bootstrap.py ...
-
-Options:
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --env TEXT              Migrate secrets from a
-                          specific environment
-  --svc TEXT              Migrate secrets from a
-                          specific service
-  --overwrite             Overwrite existing
-                          secrets?
-  --dry-run               dry run
-  --help                  Show this message and
-                          exit.
-```
-
 # copilot-helper bootstrap instructions
 
 [↩ Parent](#copilot-helper-bootstrap)
@@ -239,18 +159,6 @@ Usage: copilot-helper bootstrap instructions
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper bootstrap instructions 
-           [OPTIONS] CONFIG_FILE
-
-  Show migration instructions.
-
-Options:
-  --help  Show this message and exit.
-```
 
 # copilot-helper check-cloudformation
 
@@ -279,25 +187,6 @@ Usage: copilot-helper check-cloudformation
 
 - [`lint` ↪](#copilot-helper-check-cloudformation-lint)
 
-## CLI Help
-
-```
-Usage: copilot-helper check-cloudformation 
-           [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-           [ARGS]...]...
-
-  Runs the checks passed in the command arguments.
-
-  If no argument is passed, it will run all the
-  checks.
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  lint  Runs cfn-lint against the generated...
-```
-
 # copilot-helper check-cloudformation lint
 
 [↩ Parent](#copilot-helper-check-cloudformation)
@@ -317,19 +206,6 @@ Usage: copilot-helper check-cloudformation lint
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper check-cloudformation lint 
-           [OPTIONS]
-
-  Runs cfn-lint against the generated
-  CloudFormation templates.
-
-Options:
-  --help  Show this message and exit.
-```
 
 # copilot-helper copilot
 
@@ -355,21 +231,6 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND
 - [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
 - [`make-storage` ↪](#copilot-helper-copilot-make-storage)
 
-## CLI Help
-
-```
-Usage: copilot-helper copilot [OPTIONS] COMMAND
-                              [ARGS]...
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  apply-waf        Apply the WAF environment...
-  get-env-secrets  List secret names and...
-  make-storage     Generate storage...
-```
-
 # copilot-helper copilot make-storage
 
 [↩ Parent](#copilot-helper-copilot)
@@ -391,19 +252,6 @@ Usage: copilot-helper copilot make-storage
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper copilot make-storage 
-           [OPTIONS] STORAGE_CONFIG_FILE
-
-  Generate storage cloudformation for each
-  environment.
-
-Options:
-  --help  Show this message and exit.
-```
-
 # copilot-helper copilot apply-waf
 
 [↩ Parent](#copilot-helper-copilot)
@@ -423,18 +271,6 @@ Usage: copilot-helper copilot apply-waf
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper copilot apply-waf 
-           [OPTIONS]
-
-  Apply the WAF environment addon.
-
-Options:
-  --help  Show this message and exit.
-```
 
 # copilot-helper copilot get-env-secrets
 
@@ -457,18 +293,6 @@ Usage: copilot-helper copilot get-env-secrets
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper copilot get-env-secrets 
-           [OPTIONS] APP ENV
-
-  List secret names and values for an environment.
-
-Options:
-  --help  Show this message and exit.
-```
 
 # copilot-helper codebuild
 
@@ -497,24 +321,6 @@ Usage: copilot-helper codebuild
 - [`link-github` ↪](#copilot-helper-codebuild-link-github)
 - [`slackcreds` ↪](#copilot-helper-codebuild-slackcreds)
 
-## CLI Help
-
-```
-Usage: copilot-helper codebuild 
-           [OPTIONS] COMMAND [ARGS]...
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  buildproject            Builds Code build...
-  codedeploy              Builds Code build...
-  create-codedeploy-role  Add AWS Role needed...
-  delete-project          Delete CodeBuild...
-  link-github             Links CodeDeploy to...
-  slackcreds              Add Slack...
-```
-
 # copilot-helper codebuild link-github
 
 [↩ Parent](#copilot-helper-codebuild)
@@ -539,22 +345,6 @@ Usage: copilot-helper codebuild link-github
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper codebuild link-github 
-           [OPTIONS]
-
-  Links CodeDeploy to Github via users PAT.
-
-Options:
-  --pat TEXT              PAT Token  [required]
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --help                  Show this message and
-                          exit.
-```
-
 # copilot-helper codebuild create-codedeploy-role
 
 [↩ Parent](#copilot-helper-codebuild)
@@ -578,23 +368,6 @@ Usage: copilot-helper codebuild create-codedeploy-role
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper codebuild create-codedeploy-role 
-           [OPTIONS]
-
-  Add AWS Role needed for codedeploy.
-
-Options:
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --type [ci|custom]      type of project
-                          <ci/custom>
-  --help                  Show this message and
-                          exit.
-```
 
 # copilot-helper codebuild codedeploy
 
@@ -634,33 +407,6 @@ Usage: copilot-helper codebuild codedeploy
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper codebuild codedeploy 
-           [OPTIONS]
-
-  Builds Code build boilerplate.
-
-Options:
-  --update                Update config
-  --name TEXT             Name of project
-                          [required]
-  --desc TEXT             Description of project
-  --git TEXT              Git url of code
-                          [required]
-  --branch TEXT           Git branch  [required]
-  --buildspec TEXT        Location of buildspec
-                          file in repo  [required]
-  --builderimage TEXT     Builder image
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --release               Trigger builds on
-                          release tags
-  --help                  Show this message and
-                          exit.
-```
-
 # copilot-helper codebuild buildproject
 
 [↩ Parent](#copilot-helper-codebuild)
@@ -697,31 +443,6 @@ Usage: copilot-helper codebuild buildproject
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper codebuild buildproject 
-           [OPTIONS]
-
-  Builds Code build for ad hoc projects.
-
-Options:
-  --update                Update config
-  --name TEXT             Name of project
-                          [required]
-  --desc TEXT             Description of project
-  --git TEXT              Git url of code
-                          [required]
-  --branch TEXT           Git branch  [required]
-  --buildspec TEXT        Location of buildspec
-                          file in repo  [required]
-  --builderimage TEXT     Builder image
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --help                  Show this message and
-                          exit.
-```
-
 # copilot-helper codebuild delete-project
 
 [↩ Parent](#copilot-helper-codebuild)
@@ -745,23 +466,6 @@ Usage: copilot-helper codebuild delete-project
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper codebuild delete-project 
-           [OPTIONS]
-
-  Delete CodeBuild projects.
-
-Options:
-  --name TEXT             Name of project
-                          [required]
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --help                  Show this message and
-                          exit.
-```
 
 # copilot-helper codebuild slackcreds
 
@@ -791,27 +495,6 @@ Usage: copilot-helper codebuild slackcreds
 
 No commands.
 
-## CLI Help
-
-```
-Usage: copilot-helper codebuild slackcreds 
-           [OPTIONS]
-
-  Add Slack credentials into AWS Parameter Store.
-
-Options:
-  --workspace TEXT        Slack Workspace id
-                          [required]
-  --channel TEXT          Slack channel id
-                          [required]
-  --token TEXT            Slack api token
-                          [required]
-  --project-profile TEXT  aws account profile name
-                          [required]
-  --help                  Show this message and
-                          exit.
-```
-
 # copilot-helper domain
 
 [↩ Parent](#copilot-helper)
@@ -834,20 +517,6 @@ Usage: copilot-helper domain [OPTIONS] COMMAND
 
 - [`assign-domain` ↪](#copilot-helper-domain-assign-domain)
 - [`check-domain` ↪](#copilot-helper-domain-check-domain)
-
-## CLI Help
-
-```
-Usage: copilot-helper domain [OPTIONS] COMMAND
-                             [ARGS]...
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  assign-domain  Check R53 domain is pointing...
-  check-domain   Scans to see if Domain exists.
-```
 
 # copilot-helper domain check-domain
 
@@ -876,28 +545,6 @@ Usage: copilot-helper domain check-domain
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper domain check-domain 
-           [OPTIONS]
-
-  Scans to see if Domain exists.
-
-Options:
-  --path TEXT             path of copilot folder
-                          [required]
-  --domain-profile TEXT   aws account profile name
-                          for R53 domains account
-                          [required]
-  --project-profile TEXT  aws account profile name
-                          for certificates account
-                          [required]
-  --base-domain TEXT      root domain  [required]
-  --help                  Show this message and
-                          exit.
-```
 
 # copilot-helper domain assign-domain
 
@@ -928,27 +575,3 @@ Usage: copilot-helper domain assign-domain
   -  Show this message and exit.
 
 No commands.
-
-## CLI Help
-
-```
-Usage: copilot-helper domain assign-domain 
-           [OPTIONS]
-
-  Check R53 domain is pointing to the correct ECS
-  Load Blanacer.
-
-Options:
-  --app TEXT              Application Name
-                          [required]
-  --domain-profile TEXT   aws account profile name
-                          for R53 domains account
-                          [required]
-  --project-profile TEXT  aws account profile name
-                          for application account
-                          [required]
-  --svc TEXT              Service Name  [required]
-  --env TEXT              Environment  [required]
-  --help                  Show this message and
-                          exit.
-```
