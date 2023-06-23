@@ -16,7 +16,7 @@ class TestCreateCommandDocsCli(TestCase):
         os.remove(f"{BASE_DIR}/tests/fixtures/docs.md")
 
     def test_check_required_module_option(self):
-        result = self.runner.invoke(docs)
+        result = self.runner.invoke(docs, ["--cmd", "bar", "--output", "baz"])
 
         output = result.output
 
@@ -24,7 +24,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Error: Missing option '--module' / '-m'." in output
 
     def test_check_required_cmd_option(self):
-        result = self.runner.invoke(docs, ["--module", "foo"])
+        result = self.runner.invoke(docs, ["--module", "foo", "--output", "baz"])
 
         output = result.output
 
