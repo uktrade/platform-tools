@@ -10,11 +10,9 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
-  PrivateSubnet1:
+  PrivateSubnets:
     Type: String
-  PrivateSubnet2:
-    Type: String
-  VPCID:
+  VpcId:
     Type: String
 
 Transform: AWS::LanguageExtensions
@@ -43,8 +41,8 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  DisableHA: !Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
-  EnableHA: !Not [Condition: DisableHA]
+  {{ service.prefix }}DisableHA: !Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
+  {{ service.prefix }}EnableHA: !Not [Condition: {{ service.prefix }}DisableHA]
 
 Resources:
   {{ service.prefix }}OpenSearchSecret:
@@ -68,7 +66,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access OpenSearch.'
-      VpcId: !Ref VPCID
+      VpcId: !Ref VpcId
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-SecurityGroup'
@@ -89,7 +87,7 @@ Resources:
   # Single opensearch instance
   {{ service.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: DisableHA
+    Condition: {{ service.prefix }}DisableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -130,8 +128,9 @@ Resources:
         ZoneAwarenessEnabled: false
       VPCOptions:
         SecurityGroupIds:
-        - !Ref {{ service.prefix }}OpenSearchSecurityGroup
-        SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+          - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+        SubnetIds:
+          - !Select [0, !Split [ ',', !Ref PrivateSubnets ] ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       Tags:
@@ -145,7 +144,7 @@ Resources:
   # An opensearch cluster
   {{ service.prefix }}OpenSearchDomainHA:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: EnableHA
+    Condition: {{ service.prefix }}EnableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -187,11 +186,10 @@ Resources:
         ZoneAwarenessConfig:
           AvailabilityZoneCount: 2
           #Fn::length always resolves to 1 despite there being subnets.
-          #Fn::Length: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
       VPCOptions:
         SecurityGroupIds:
-        - !Ref {{ service.prefix }}OpenSearchSecurityGroup
-        SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+          - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+        SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       Tags:

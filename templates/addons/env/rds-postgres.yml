@@ -10,11 +10,9 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
-  PrivateSubnet1:
+  PrivateSubnets:
     Type: String
-  PrivateSubnet2:
-    Type: String
-  VPCID:
+  VpcId:
     Type: String
 
   # Other parameters...
@@ -51,7 +49,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: "DB Security Group"
-      VpcId: !Ref VPCID
+      VpcId: !Ref VpcId
   # Enable ingress from other ECS services created within the environment.
   DBIngress:
     Metadata:
@@ -108,11 +106,3 @@ Resources:
       SecretId: !Ref {{ service.prefix }}RDSSecret
       TargetId: !Ref {{ service.prefix }}DBInstance
       TargetType: AWS::RDS::DBInstance
-
-Outputs:
-  {{ service.prefix }}Secret:
-    Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
-    Value: !Ref {{ service.prefix }}RDSSecret
-  {{ service.prefix }}SecurityGroup:
-    Description: "The security group to attach to the workload."
-    Value: !Ref {{ service.prefix }}SecurityGroup
