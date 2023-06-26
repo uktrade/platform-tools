@@ -34,6 +34,8 @@ No description.
 Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 ```
 
+No arguments.
+
 ## Options
 
 - `--version <boolean>` _Defaults to False._
@@ -61,6 +63,8 @@ No description.
 Usage: copilot-helper bootstrap 
            [OPTIONS] COMMAND [ARGS]...
 ```
+
+No arguments.
 
 ## Options
 
@@ -91,10 +95,13 @@ Usage: copilot-helper bootstrap make-config
            [OPTIONS] CONFIG_FILE [OUTPUT]
 ```
 
-## Options
+## Arguments
 
 - `config-file <path>`
-- `output <path>` _Defaults to .._
+- `output <path>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   -  Show this message and exit.
 
@@ -121,9 +128,12 @@ Usage: copilot-helper bootstrap migrate-secrets
            [OPTIONS] CONFIG_FILE
 ```
 
-## Options
+## Arguments
 
 - `config-file <path>`
+
+## Options
+
 - `--project-profile <text>`
   -  aws account profile name
 - `--env <text>`
@@ -152,9 +162,12 @@ Usage: copilot-helper bootstrap instructions
            [OPTIONS] CONFIG_FILE
 ```
 
-## Options
+## Arguments
 
 - `config-file <path>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   -  Show this message and exit.
 
@@ -178,6 +191,8 @@ Usage: copilot-helper check-cloudformation
            [ARGS]...]...
 ```
 
+No arguments.
+
 ## Options
 
 - `--help <boolean>` _Defaults to False._
@@ -200,6 +215,8 @@ Usage: copilot-helper check-cloudformation lint
            [OPTIONS]
 ```
 
+No arguments.
+
 ## Options
 
 - `--help <boolean>` _Defaults to False._
@@ -219,6 +236,8 @@ No description.
 Usage: copilot-helper copilot [OPTIONS] COMMAND
                               [ARGS]...
 ```
+
+No arguments.
 
 ## Options
 
@@ -244,9 +263,12 @@ Usage: copilot-helper copilot make-storage
            [OPTIONS] STORAGE_CONFIG_FILE
 ```
 
-## Options
+## Arguments
 
 - `storage-config-file <path>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   -  Show this message and exit.
 
@@ -264,6 +286,8 @@ Apply the WAF environment addon.
 Usage: copilot-helper copilot apply-waf 
            [OPTIONS]
 ```
+
+No arguments.
 
 ## Options
 
@@ -285,10 +309,13 @@ Usage: copilot-helper copilot get-env-secrets
            [OPTIONS] APP ENV
 ```
 
-## Options
+## Arguments
 
 - `app <text>`
 - `env <text>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   -  Show this message and exit.
 
@@ -306,6 +333,8 @@ No description.
 Usage: copilot-helper codebuild 
            [OPTIONS] COMMAND [ARGS]...
 ```
+
+No arguments.
 
 ## Options
 
@@ -334,6 +363,8 @@ Usage: copilot-helper codebuild link-github
            [OPTIONS]
 ```
 
+No arguments.
+
 ## Options
 
 - `--pat <text>`
@@ -358,6 +389,8 @@ Usage: copilot-helper codebuild create-codedeploy-role
            [OPTIONS]
 ```
 
+No arguments.
+
 ## Options
 
 - `--project-profile <text>`
@@ -381,6 +414,8 @@ Builds Code build boilerplate.
 Usage: copilot-helper codebuild codedeploy 
            [OPTIONS]
 ```
+
+No arguments.
 
 ## Options
 
@@ -420,6 +455,8 @@ Usage: copilot-helper codebuild buildproject
            [OPTIONS]
 ```
 
+No arguments.
+
 ## Options
 
 - `--update <boolean>` _Defaults to False._
@@ -456,6 +493,8 @@ Usage: copilot-helper codebuild delete-project
            [OPTIONS]
 ```
 
+No arguments.
+
 ## Options
 
 - `--name <text>`
@@ -479,6 +518,8 @@ Add Slack credentials into AWS Parameter Store.
 Usage: copilot-helper codebuild slackcreds 
            [OPTIONS]
 ```
+
+No arguments.
 
 ## Options
 
@@ -508,6 +549,8 @@ Usage: copilot-helper domain [OPTIONS] COMMAND
                              [ARGS]...
 ```
 
+No arguments.
+
 ## Options
 
 - `--help <boolean>` _Defaults to False._
@@ -530,6 +573,8 @@ Scans to see if Domain exists.
 Usage: copilot-helper domain check-domain 
            [OPTIONS]
 ```
+
+No arguments.
 
 ## Options
 
@@ -558,6 +603,8 @@ Check R53 domain is pointing to the correct ECS Load Blanacer.
 Usage: copilot-helper domain assign-domain 
            [OPTIONS]
 ```
+
+No arguments.
 
 ## Options
 
