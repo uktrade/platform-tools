@@ -23,6 +23,8 @@ TEMPLATE = """
 {usage}
 ```
 
+{arguments}
+
 ## Options
 
 {options}
@@ -34,25 +36,27 @@ TEMPLATE = """
 class Parameter(NamedTuple):
     """Command parameter definition."""
 
-    name: str
-    type_name: str
     default: Any
-    usage: str
+    name: str
+    param_type_name: str
     required: bool
-    prompt: Optional[str] = None
+    type_name: str
+    usage: str
     help: Optional[str] = None
+    prompt: Optional[str] = None
 
 
 class CommandMetadata(NamedTuple):
     """Command metadata definition."""
 
-    name: str
-    help: str
-    usage: str
-    parent_reference: str
-    params: List[Parameter]
-    subcommands: Optional[Any]
+    arguments: List[Parameter]
     description: Optional[str]
+    help: str
+    name: str
+    options: List[Parameter]
+    parent_reference: str
+    subcommands: Optional[Any]
+    usage: str
 
 
 def get_cmd_metadata(
@@ -85,25 +89,27 @@ def get_cmd_metadata(
 
     params = [
         Parameter(
-            name=param.name or "",
-            type_name=param.type.name,
             default=param.default,
-            usage="\n".join(param.opts),
-            required=param.required,
-            prompt=param.prompt if isinstance(param, click.core.Option) else None,
             help=param.help if isinstance(param, click.core.Option) else None,
+            name=param.name or "",
+            param_type_name=param.param_type_name,
+            prompt=param.prompt if isinstance(param, click.core.Option) else None,
+            required=param.required,
+            type_name=param.type.name,
+            usage="\n".join(param.opts),
         )
         for param in cmd.get_params(context)
     ]
 
     yield CommandMetadata(
-        name=command_name,
-        help=cmd.get_help(context),
-        usage=cmd.get_usage(context),
+        arguments=[param for param in params if param.param_type_name == "argument"],
         description=cmd.help,
+        help=cmd.get_help(context),
+        name=command_name,
+        options=[param for param in params if param.param_type_name == "option"],
         parent_reference=parent_reference,
-        params=params,
         subcommands=subcommands,
+        usage=cmd.get_usage(context),
     )
 
     for sub in subcommands_names.values():
@@ -125,13 +131,17 @@ def create_docs(base_command, output):
                 parent=f"[↩ Parent]({meta.parent_reference})" if meta.parent_reference else "Base command.",
                 description=meta.description if meta.description else "No description.",
                 usage=meta.usage,
+                arguments="## Arguments\n\n"
+                + "\n".join([f"- `{argument.usage} <{argument.type_name}>`" for argument in meta.arguments])
+                if meta.arguments
+                else "No arguments.",
                 options="\n".join(
                     [
-                        f"- `{param.usage} <{param.type_name}>`"
-                        f"{' _Defaults to ' + str(param.default) + '._' if param.default is not None else ''}"
-                        f"{chr(10) if param.help is not None else ''}"
-                        f"{'  -  ' + param.help if param.help is not None else ''}"
-                        for param in meta.params
+                        f"- `{option.usage} <{option.type_name}>`"
+                        f"{' _Defaults to ' + str(option.default) + '._' if option.default is not None else ''}"
+                        f"{chr(10) if option.help is not None else ''}"
+                        f"{'  -  ' + option.help if option.help is not None else ''}"
+                        for option in meta.options
                     ],
                 ),
                 commands="## Commands\n\n"
