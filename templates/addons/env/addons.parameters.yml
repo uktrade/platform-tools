@@ -4,7 +4,5 @@
 # To be fixed under "DBTP-295 Only add the required parameters to addons.parameters.yml"
 Parameters:
   EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
-  LBARN: !Ref PublicLoadBalancer
-  PrivateSubnet1: !Ref PrivateSubnet1
-  PrivateSubnet2: !Ref PrivateSubnet2
-  VPCID: !Ref VPC
+  PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]
+  VpcId: !Ref VPC

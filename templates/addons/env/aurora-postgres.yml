@@ -8,13 +8,11 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
   # Parameters from the parent stack brought in via addons.parameters.yml...
-  {% if shared %}EnvironmentSecurityGroup:
+  EnvironmentSecurityGroup:
     Type: String
-  {% endif %}PrivateSubnet1:
+  PrivateSubnets:
     Type: String
-  PrivateSubnet2:
-    Type: String
-  VPCID:
+  VpcId:
     Type: String
 
   # Other parameters...
@@ -39,14 +37,14 @@ Resources:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
-      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
   {{ service.prefix }}SecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
-      VpcId: !Ref VPCID
+      VpcId: !Ref VpcId
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
@@ -62,7 +60,7 @@ Resources:
           IpProtocol: tcp
           Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
-      VpcId: !Ref VPCID
+      VpcId: !Ref VpcId
   {{ service.prefix }}AuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
@@ -127,7 +125,6 @@ Resources:
       TargetId: !Ref {{ service.prefix }}DBCluster
       TargetType: AWS::RDS::DBCluster
 
-{% if shared %}
   # Enable ingress from other ECS services created within the environment.
   {{ service.prefix }}EnvironmentIngress:
     Metadata:
@@ -140,12 +137,3 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
-{% endif %}
-
-Outputs:
-  {{ service.prefix }}Secret: # injected as WEBDB_SECRET environment variable by Copilot.
-    Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
-    Value: !Ref {{ service.prefix }}AuroraSecret
-  {{ service.prefix }}SecurityGroup:
-    Description: "The security group to attach to the workload."
-    Value: !Ref {{ service.prefix }}SecurityGroup
