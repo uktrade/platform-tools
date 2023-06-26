@@ -15,8 +15,6 @@ Parameters:
   VpcId:
     Type: String
 
-Transform: AWS::LanguageExtensions
-
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
     {% for env_name, config in service.environments.items() %}
@@ -208,12 +206,8 @@ Resources:
       Type: String
       Value: !If
         - {{ service.prefix }}EnableHA
-        - !Sub
-          - "https://${url}"
-          - url: !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
-        - !Sub
-          - "https://${url}"
-          - url: !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
+        - !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
+        - !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
 
   # The config param containing a json object
   {{ service.prefix }}OpenSearchEndpointConfigParam:
@@ -221,11 +215,8 @@ Resources:
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
       Type: String
-      Value:
-        Fn::ToJsonString:
-          url:
-            !Join [ "",  [ '{% raw %}{{resolve:ssm:{% endraw %}', !Ref {{ service.prefix }}OpenSearchEndpointAddressParam, "{% raw %}}}{% endraw %}" ]]
-          username:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
-          password:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+      Value: !Sub
+        - "https://${username}:${password}@${url}"
+        - url: !Join [ "",  [ '{% raw %}{{resolve:ssm:{% endraw %}', !Ref {{ service.prefix }}OpenSearchEndpointAddressParam, "{% raw %}}}{% endraw %}" ]]
+          username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
