@@ -67,4 +67,3 @@ Outputs:
   {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."
     Value: !Ref {{ service.prefix }}Bucket
-
