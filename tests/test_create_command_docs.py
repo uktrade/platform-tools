@@ -13,8 +13,8 @@ class TestCreateCommandDocsCli(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        os.remove(f"{BASE_DIR}/tests/docs/docs.md")
-        os.remove(f"{BASE_DIR}/tests/docs/example.md")
+        os.remove(f"{BASE_DIR}/tests/test-docs/test-docs.md")
+        os.remove(f"{BASE_DIR}/tests/test-docs/example.md")
 
     def test_check_required_module_option(self):
         result = self.runner.invoke(docs, ["--cmd", "bar", "--output", "baz"])
@@ -57,7 +57,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Error: Could not find command bar in copilot_helper module" in output
 
     def test_create_command_docs(self):
-        output_path = f"{BASE_DIR}/tests/docs/docs.md"
+        output_path = f"{BASE_DIR}/tests/test-docs/test-docs.md"
 
         assert os.path.exists(output_path) is False
 
@@ -79,8 +79,8 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Markdown docs have been successfully saved to " + output_path in output
 
     def test_create_command_docs_template_output(self):
-        output_path = f"{BASE_DIR}/tests/docs/example.md"
-        expected_output_path = f"{BASE_DIR}/tests/docs/expected_output.md"
+        output_path = f"{BASE_DIR}/tests/test-docs/example.md"
+        expected_output_path = f"{BASE_DIR}/tests/test-docs/expected_output.md"
 
         assert os.path.exists(output_path) is False
 
@@ -88,7 +88,7 @@ class TestCreateCommandDocsCli(TestCase):
             docs,
             [
                 "--module",
-                "tests.docs.example",
+                "tests.test-docs.example",
                 "--cmd",
                 "cli",
                 "--output",
