@@ -198,18 +198,6 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  # An intermediate SSM parameter just to store the URL. This is required because attempting use a larger nested Fn::If / Fn::ToJsonString / !Sub / !GetAtt structure
-  # leads to unhelpful "ResourceNotReady: failed waiting for successful resource state: Nested change set " error.
-  {{ service.prefix }}OpenSearchEndpointAddressParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Value: !If
-        - {{ service.prefix }}EnableHA
-        - !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
-        - !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
-
-  # The config param containing a json object
   {{ service.prefix }}OpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
     Properties:
@@ -217,6 +205,9 @@ Resources:
       Type: String
       Value: !Sub
         - "https://${username}:${password}@${url}"
-        - url: !Join [ "",  [ '{% raw %}{{resolve:ssm:{% endraw %}', !Ref {{ service.prefix }}OpenSearchEndpointAddressParam, "{% raw %}}}{% endraw %}" ]]
+        - url: !If
+            - {{ service.prefix }}EnableHA
+            - !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
+            - !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
           username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]

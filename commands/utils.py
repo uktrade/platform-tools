@@ -49,7 +49,7 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
             {"Key": "copilot-application", "Value": app},
             {"Key": "copilot-environment", "Value": env},
         ],
-        Tier='Intelligent-Tiering',
+        Tier="Intelligent-Tiering",
     )
 
     if overwrite and exists:
@@ -90,7 +90,7 @@ def get_ssm_secret_names(app, env):
 def setup_templates():
     template_path = Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.FileSystemLoader(searchpath=template_path)
-    templateEnv = jinja2.Environment(loader=templateLoader)
+    templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
 
     templates = {
         "instructions": templateEnv.get_template("instructions.txt"),
@@ -116,7 +116,7 @@ def setup_templates():
 
 
 def ensure_cwd_is_repo_root():
-    """Exit if we're not in the root of the repo"""
+    """Exit if we're not in the root of the repo."""
 
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.secho(
