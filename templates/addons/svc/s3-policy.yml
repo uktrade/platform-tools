@@ -1,4 +1,11 @@
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001 # Parameter not used
+
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
@@ -8,13 +15,15 @@ Parameters:
   Name:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
+
 Mappings:
   {{ service.prefix }}BucketNameMap:
     # Create an entry for each environment
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
-    {% endfor %}    
+    {% endfor %}
+
 Resources:
   {{ service.prefix }}S3AccessPolicy:
     Metadata:
@@ -33,7 +42,7 @@ Resources:
 {% else %}
               - s3:*Object
 {% endif %}
-            Resource: !Sub 
+            Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }/*"
               - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
           - Sid: S3ListAction

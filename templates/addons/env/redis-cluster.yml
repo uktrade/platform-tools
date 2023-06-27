@@ -1,4 +1,5 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
@@ -6,6 +7,13 @@ Parameters:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
 
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnets:
+    Type: String
+  VpcId:
+    Type: String
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
@@ -35,10 +43,8 @@ Mappings:
     '3.2.6':
       CacheParameterGroupFamily: 'redis3.2'
 
-
 Conditions:
-  HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, NumReplicas], 0]]
-
+  {{ service.prefix }}HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, NumReplicas], 0]]
 
 Resources:
 
@@ -56,28 +62,26 @@ Resources:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
 
   {{ service.prefix }}SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
-      VpcId:
-        'Fn::ImportValue':
-          !Sub '${App}-${Env}-VpcId'
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 6379
         ToPort: 6379
-        SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+        SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
   {{ service.prefix }}ReplicationGroup:
     Type: 'AWS::ElastiCache::ReplicationGroup'
     Properties:
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
-      AutomaticFailoverEnabled: !If [HasAutomaticFailoverEnabled, true, false]
-      MultiAZEnabled: !If [HasAutomaticFailoverEnabled, true, false]
+      AutomaticFailoverEnabled: !If [{{ service.prefix }}HasAutomaticFailoverEnabled, true, false]
+      MultiAZEnabled: !If [{{ service.prefix }}HasAutomaticFailoverEnabled, true, false]
       CacheNodeType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, CacheNodeType]
       CacheParameterGroupName: !Ref {{ service.prefix }}CacheParameterGroup
       CacheSubnetGroupName: !Ref {{ service.prefix }}CacheSubnetGroupName
@@ -99,14 +103,7 @@ Resources:
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.secret_name }}'   # Other services can retrieve the endpoint from this path.
       Type: String
-      Value: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
-
-Outputs:
-
-  {{ service.prefix }}EndPointAddress:
-    Description: 'The DNS address of the primary read-write cache node.'
-    Value: !Sub
-      - 'rediss://${url}:${port}'
-      - url: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
-        port: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
-
+      Value: !Sub
+        - 'rediss://${url}:${port}'
+        - url: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
+          port: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
