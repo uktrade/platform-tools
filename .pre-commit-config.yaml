@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: check-cloudformation
         name: Check generated CloudFormation templates
-        entry: ./copilot_helper.py check-cloudformation
+        entry: poetry run ./copilot_helper.py check-cloudformation
         language: system
         pass_filenames: false
         always_run: true
