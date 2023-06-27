@@ -5,22 +5,16 @@
 
 # cli
 
-Base command.
-
-No description.
-
 ## Usage
 
 ```
 Usage: cli [OPTIONS] COMMAND [ARGS]...
 ```
 
-No arguments.
-
 ## Options
 
 - `--help <boolean>` _Defaults to False._
-  -  Show this message and exit.
+  - Show this message and exit.
 
 ## Commands
 
@@ -29,8 +23,6 @@ No arguments.
 # cli hello
 
 [↩ Parent](#cli)
-
-No description.
 
 ## Usage
 
@@ -45,8 +37,6 @@ Usage: cli hello [OPTIONS] NAME
 ## Options
 
 - `--count <integer>` _Defaults to 1._
-  -  number of greetings
+  - number of greetings
 - `--help <boolean>` _Defaults to False._
-  -  Show this message and exit.
-
-No commands.
+  - Show this message and exit.

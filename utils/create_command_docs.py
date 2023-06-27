@@ -10,27 +10,7 @@ from typing import Optional
 
 import click
 
-TEMPLATE = """
-# {command_name}
-
-{parent}
-
-{description}
-
-## Usage
-
-```
-{usage}
-```
-
-{arguments}
-
-## Options
-
-{options}
-
-{commands}
-"""
+from commands.utils import setup_templates
 
 
 class Parameter(NamedTuple):
@@ -119,43 +99,14 @@ def get_cmd_metadata(
 def create_docs(base_command, output):
     """Create Markdown documentation from Click command metadata."""
 
-    table_of_contents = ["# Commands Reference\n"]
-    markdown_docs = []
+    templates = setup_templates()
+    content = dict(
+        toc=[command.name for command in get_cmd_metadata(base_command)],
+        metadata=get_cmd_metadata(base_command),
+    )
 
-    for meta in get_cmd_metadata(base_command):
-        table_of_contents.append(f"- [{meta.name}](#{meta.name.replace(' ', '-').lower()})")
-
-        markdown_docs.append(
-            TEMPLATE.format(
-                command_name=meta.name,
-                parent=f"[↩ Parent]({meta.parent_reference})" if meta.parent_reference else "Base command.",
-                description=meta.description if meta.description else "No description.",
-                usage=meta.usage,
-                arguments="## Arguments\n\n"
-                + "\n".join([f"- `{argument.usage} <{argument.type_name}>`" for argument in meta.arguments])
-                if meta.arguments
-                else "No arguments.",
-                options="\n".join(
-                    [
-                        f"- `{option.usage} <{option.type_name}>`"
-                        f"{' _Defaults to ' + str(option.default) + '._' if option.default is not None else ''}"
-                        f"{chr(10) if option.help is not None else ''}"
-                        f"{'  -  ' + option.help if option.help is not None else ''}"
-                        for option in meta.options
-                    ],
-                ),
-                commands="## Commands\n\n"
-                + "\n".join([f"- [`{cmd_name}` ↪]({opt.get('link')})" for cmd_name, opt in meta.subcommands.items()])
-                if meta.subcommands
-                else "No commands.",
-            ),
-        )
-
-        with open(output, "w") as md_file:
-            md_file.write("\n".join(table_of_contents) + "\n")
-
-            for markdown_doc in markdown_docs:
-                md_file.write(markdown_doc)
+    with open(output, "w") as md_file:
+        md_file.write(templates["docs"].render(content))
 
 
 @click.command()

@@ -1,0 +1,54 @@
+# Commands Reference
+
+{% for command in toc -%}
+- [{{ command }}](#{{ command.lower() | replace(" ", "-") }})
+{% endfor %}
+
+{%- for meta in metadata +%}
+{% if meta.name -%}
+# {{ meta.name }}
+{% endif -%}
+
+{% if meta.parent_reference +%}
+[↩ Parent]({{ meta.parent_reference }})
+{% endif %}
+
+{%- if meta.description +%}
+    {{ meta.description.strip() }}
+{% endif -%}
+
+{% if meta.usage +%}
+## Usage
+
+```
+{{ meta.usage }}
+```
+{% endif -%}
+
+{% if meta.arguments +%}
+## Arguments
+
+{% for argument in meta.arguments -%}
+    - `{{ argument.usage }} <{{ argument.type_name }}>`
+{% endfor -%}
+{% endif %}
+
+{%- if meta.options +%}
+## Options
+
+{% for option in meta.options -%}
+    - `{{ option.usage }} <{{ option.type_name }}>`
+    {%- if option.default is not none %} _Defaults to {{ option.default }}._ {%- endif %}
+{% if option.help %}  - {{ option.help }} {%- endif %}
+{% endfor -%}
+{% endif %}
+
+{%- if meta.subcommands +%}
+## Commands
+
+{% for cmd_name, opt in meta.subcommands.items() -%}
+    - [`{{ cmd_name }}` ↪]({{ opt.get('link') }})
+{% endfor -%}
+{% endif %}
+
+{%- endfor -%}
