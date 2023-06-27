@@ -10,6 +10,7 @@ from commands.check_cloudformation import \
 from commands.codebuild_cli import codebuild as codebuild_commands
 from commands.copilot_cli import copilot as copilot_commands
 from commands.dns_cli import domain as domain_commands
+from commands.waf_cli import waf as waf_commands
 
 
 @click.group()
@@ -26,6 +27,7 @@ cli.add_command(check_cloudformation_command)
 cli.add_command(copilot_commands)
 cli.add_command(codebuild_commands)
 cli.add_command(domain_commands)
+cli.add_command(waf_commands)
 
 if __name__ == "__main__":
     cli()
