@@ -21,6 +21,9 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper waf](#copilot-helper-waf)
+- [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
+- [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
 
 # copilot-helper
 
@@ -44,6 +47,7 @@ Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 - [`codebuild` ↪](#copilot-helper-codebuild)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
+- [`waf` ↪](#copilot-helper-waf)
 
 # copilot-helper bootstrap
 
@@ -540,5 +544,80 @@ Usage: copilot-helper domain assign-domain
   - Service Name
 - `--env <text>`
   - Environment
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper waf
+
+[↩ Parent](#copilot-helper)
+
+## Usage
+
+```
+Usage: copilot-helper waf [OPTIONS] COMMAND
+                          [ARGS]...
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`attach-waf` ↪](#copilot-helper-waf-attach-waf)
+- [`custom-waf` ↪](#copilot-helper-waf-custom-waf)
+
+# copilot-helper waf attach-waf
+
+[↩ Parent](#copilot-helper-waf)
+
+    Attach default WAF rule to ECS Load Blanacer.
+
+## Usage
+
+```
+Usage: copilot-helper waf attach-waf 
+           [OPTIONS]
+```
+
+## Options
+
+- `--app <text>`
+  - Application Name
+- `--project-profile <text>`
+  - aws account profile name for application account
+- `--svc <text>`
+  - Service Name
+- `--env <text>`
+  - Environment
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper waf custom-waf
+
+[↩ Parent](#copilot-helper-waf)
+
+    Attach custom WAF to ECS Load Blanacer.
+
+## Usage
+
+```
+Usage: copilot-helper waf custom-waf 
+           [OPTIONS]
+```
+
+## Options
+
+- `--app <text>`
+  - Application Name
+- `--project-profile <text>`
+  - aws account profile name for application account
+- `--svc <text>`
+  - Service Name
+- `--env <text>`
+  - Environment
+- `--waf-path <text>`
+  - path to waf.yml file
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
