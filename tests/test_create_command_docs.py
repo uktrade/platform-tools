@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from unittest import TestCase
 
 from click.testing import CliRunner
@@ -13,8 +13,8 @@ class TestCreateCommandDocsCli(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        os.remove(f"{BASE_DIR}/tests/test-docs/test-docs.md")
-        os.remove(f"{BASE_DIR}/tests/test-docs/example.md")
+        Path(f"{BASE_DIR}/tests/test-docs/test-docs.md").unlink()
+        Path(f"{BASE_DIR}/tests/test-docs/example.md").unlink()
 
     def test_check_required_module_option(self):
         result = self.runner.invoke(docs, ["--cmd", "bar", "--output", "baz"])
@@ -59,7 +59,7 @@ class TestCreateCommandDocsCli(TestCase):
     def test_create_command_docs(self):
         output_path = f"{BASE_DIR}/tests/test-docs/test-docs.md"
 
-        assert os.path.exists(output_path) is False
+        assert not Path(output_path).is_file()
 
         result = self.runner.invoke(
             docs,
@@ -82,7 +82,7 @@ class TestCreateCommandDocsCli(TestCase):
         output_path = f"{BASE_DIR}/tests/test-docs/example.md"
         expected_output_path = f"{BASE_DIR}/tests/test-docs/expected_output.md"
 
-        assert os.path.exists(output_path) is False
+        assert not Path(output_path).is_file()
 
         self.runner.invoke(
             docs,
