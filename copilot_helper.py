@@ -18,16 +18,16 @@ from commands.waf_cli import waf as waf_commands
     version=version("dbt-copilot-tools"),
     message=f"dbt-copilot-tools %(version)s",
 )
-def cli():
+def copilot_helper():
     pass
 
 
-cli.add_command(bootstrap_commands)
-cli.add_command(check_cloudformation_command)
-cli.add_command(copilot_commands)
-cli.add_command(codebuild_commands)
-cli.add_command(domain_commands)
-cli.add_command(waf_commands)
+copilot_helper.add_command(bootstrap_commands)
+copilot_helper.add_command(check_cloudformation_command)
+copilot_helper.add_command(copilot_commands)
+copilot_helper.add_command(codebuild_commands)
+copilot_helper.add_command(domain_commands)
+copilot_helper.add_command(waf_commands)
 
 if __name__ == "__main__":
-    cli()
+    copilot_helper()
