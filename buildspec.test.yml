@@ -7,7 +7,7 @@ phases:
       - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
       - echo Installing dependencies
       - pip install poetry
-      - poetry install --no-root --only dev
+      - poetry install --no-root
 
   build:
     commands:
