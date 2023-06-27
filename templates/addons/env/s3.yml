@@ -1,4 +1,5 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
@@ -8,6 +9,7 @@ Parameters:
   Name:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
+
 Mappings:
   {{ service.prefix }}BucketNameMap:
     # Create an entry for each environment
@@ -35,15 +37,16 @@ Resources:
         - Key: Copilot-application
           Value: !Ref App
         - Key: Copilot-environment
-          Value: !Ref Env 
+          Value: !Ref Env
         - Key: Copilot-name
-          Value: !Ref Name 
+          Value: !Ref Name
 
   {{ service.prefix }}BucketPolicy:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       PolicyDocument:
         Version: '2012-10-17'
@@ -64,4 +67,3 @@ Outputs:
   {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."
     Value: !Ref {{ service.prefix }}Bucket
-

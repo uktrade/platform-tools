@@ -1,11 +1,22 @@
 Parameters:
+  # Copilot required Parameters...
   App:
     Type: String
     Description: Your application's name.
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-    # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
+
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnets:
+    Type: String
+  VpcId:
+    Type: String
+
+  # Other parameters...
+  # Customize your RDS Postgres cluster by setting the default value of the following parameters.
   {{ service.prefix }}DBName:
     Type: String
     Description: The name of the initial database to be created.
@@ -19,17 +30,17 @@ Mappings:
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
       MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
-      AllocatedStorage: {{ config.volumesize }}
+      AllocatedStorage: {{ config.volume_size }}
 
     {% endfor %}
-  
+
 Resources:
   # Subnet group to control where the DB gets placed
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
-      SubnetIds: !Split [ ',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' } ]
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
   {{ service.prefix }}SecurityGroup:
@@ -38,7 +49,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: "DB Security Group"
-      VpcId: { 'Fn::ImportValue': !Sub '${App}-${Env}-VpcId' }
+      VpcId: !Ref VpcId
   # Enable ingress from other ECS services created within the environment.
   DBIngress:
     Metadata:
@@ -50,7 +61,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      SourceSecurityGroupId: { 'Fn::ImportValue': !Sub '${App}-${Env}-EnvironmentSecurityGroup' }
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
   # The cluster itself.
   {{ service.prefix }}DBInstance:
     Metadata:
@@ -68,9 +79,9 @@ Resources:
       BackupRetentionPeriod: 7
       EnablePerformanceInsights : true
       DBName: !Ref {{ service.prefix }}DBName
-      MasterUsername: 
+      MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:username{% raw %}}}{% endraw %}" ]]
-      MasterUserPassword: 
+      MasterUserPassword:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:password{% raw %}}}{% endraw %}" ]]
       DBSubnetGroupName: !Ref 'DBSubnetGroup'
       VPCSecurityGroups:
@@ -95,11 +106,3 @@ Resources:
       SecretId: !Ref {{ service.prefix }}RDSSecret
       TargetId: !Ref {{ service.prefix }}DBInstance
       TargetType: AWS::RDS::DBInstance
-
-Outputs:
-  {{ service.prefix }}Secret:
-    Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
-    Value: !Ref {{ service.prefix }}RDSSecret
-  {{ service.prefix }}SecurityGroup:
-    Description: "The security group to attach to the workload."
-    Value: !Ref {{ service.prefix }}SecurityGroup
