@@ -1,0 +1,92 @@
+##### s3 bucket example:
+
+my-s3-bucket:
+  # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
+
+  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
+
+  readonly: true  # services are granted read only access to the bucket
+
+  services:  # services that require access to the bucket.
+    - "web"
+    - "celery"
+
+  environments:
+    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
+
+    production:
+      bucket-name: my-bucket-prod
+
+    staging:
+      bucket-name: my-bucket-staging
+
+    development:
+      bucket-name: my-bucket-dev
+
+
+##### s3-policy example:
+
+my-s3-bucket-bucket-access:
+  type: s3-policy  # gives the listed services permissions to access an existing bucket
+
+  services:  # services that require access to the bucket.
+    - "web"
+    - "celery"
+
+  environments:
+    default:
+      bucket-name: my-bucket
+
+
+##### Redis example:
+
+my-redis:
+  type: redis
+
+  environments:
+    default:
+      engine: '6.2'
+      # availble engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
+
+      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
+
+    production:
+      plan: medium-ha
+
+
+##### RDS postgres example:
+
+my-rds-db:
+  type: rds-postgres
+
+  environments:
+    default:
+      plan: small-13-ha
+
+
+##### Aurora serverless v2 example:
+
+my-aurora-db:
+  type: aurora-postgres
+  version: 14.4
+
+  environments:
+    default:
+      min-capacity: 0.5 # AllowedValues: from 0.5 through 128
+      max-capacity: 8   # AllowedValues: from 0.5 through 128
+
+
+##### Opensearch example:
+
+my-opensearch:
+  type: opensearch
+
+  environments:
+    default:
+      plan: small
+
+      # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
+      engine: "2.3"
+
+    production:
+      plan: large-ha

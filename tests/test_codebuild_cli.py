@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 import boto3
@@ -19,23 +18,6 @@ from commands.codebuild_cli import link_github
 from commands.codebuild_cli import slackcreds
 from commands.codebuild_cli import update_parameter
 
-
-@pytest.fixture
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    moto_credentials_file_path = Path(__file__).parent.absolute() / "dummy_aws_credentials"
-    os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(moto_credentials_file_path)
-
-
-@pytest.fixture
-def alias_session(aws_credentials):
-    with mock_iam():
-        session = boto3.session.Session(region_name="eu-west-2")
-        session.client("iam").create_account_alias(AccountAlias="foo")
-
-        yield session
-
-
 # Not much value in testing these while moto doesn't support `import_source_credentials`` or `list_source_credentials`
 # def test_import_pat():
 #     ...
@@ -53,8 +35,10 @@ def test_check_service_role_does_not_exist(capfd, aws_credentials):
         check_service_role("test_role", session)
     out, _ = capfd.readouterr()
 
-    assert ("Service Role test_role does not exist; "
-            "run: copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>\n") in out
+    assert (
+        "Service Role test_role does not exist; "
+        "run: copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>\n"
+    ) in out
 
 
 @mock_iam
@@ -134,7 +118,7 @@ def test_create_codedeploy_role_returns_200(alias_session):
     runner = CliRunner()
     result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo"])
     response = alias_session.client("iam", region_name=AWS_REGION).get_role(RoleName="ci-CodeBuild-role")[
-       "ResponseMetadata"
+        "ResponseMetadata"
     ]
     policy = alias_session.client("iam", region_name=AWS_REGION).list_attached_role_policies(
         RoleName="ci-CodeBuild-role",
