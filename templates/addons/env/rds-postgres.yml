@@ -40,7 +40,7 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
-      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
   {{ service.prefix }}SecurityGroup:

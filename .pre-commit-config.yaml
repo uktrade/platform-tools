@@ -19,6 +19,14 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+  - repo: local
+    hooks:
+      - id: check-cloudformation
+        name: Check generated CloudFormation templates
+        entry: poetry run ./copilot_helper.py check-cloudformation
+        language: system
+        pass_filenames: false
+        always_run: true
   - repo: https://github.com/myint/autoflake.git
     rev: v2.1.1
     hooks:

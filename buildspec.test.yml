@@ -7,9 +7,11 @@ phases:
       - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
       - echo Installing dependencies
       - pip install poetry
-      - poetry install --no-root --only dev
+      - poetry install
 
   build:
     commands:
+      - echo Running check-cloudformation
+      - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
