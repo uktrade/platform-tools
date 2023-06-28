@@ -15,7 +15,7 @@ class TestMakeStorageCommand:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert (
@@ -30,7 +30,7 @@ class TestMakeStorageCommand:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert result.output == "No services found in ./copilot/; exiting\n"
@@ -56,7 +56,7 @@ invalid-entry:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert result.output == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
@@ -79,7 +79,7 @@ invalid-environment:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert result.output == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
@@ -110,7 +110,7 @@ invalid-entry:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
@@ -122,7 +122,7 @@ invalid-entry:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         assert result.exit_code == 1
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
@@ -143,7 +143,7 @@ invalid-entry:
 
         runner = CliRunner()
 
-        result = runner.invoke(cli, ["make-storage", "storage.yml"])
+        result = runner.invoke(cli, ["make-storage"])
 
         for service in services:
             path = Path(f"copilot/{service}/addons/ip-filter.yml")
