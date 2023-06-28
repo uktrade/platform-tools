@@ -110,18 +110,17 @@ def bootstrap():
 
 
 @bootstrap.command()
-@click.argument("config-file", type=click.Path(exists=True))
 @click.argument("output", type=click.Path(exists=True), default=".")
-def make_config(config_file, output):
+def make_config(output):
     """
     Generate copilot boilerplate code.
 
-    CONFIG-FILE is the path to the input yaml config file OUTPUT is the location
-    of the repo root dir. Defaults to the current directory.
+    OUTPUT is the location of the repo root dir. Defaults to the current
+    directory.
     """
 
     base_path = Path(output)
-    config = load_and_validate_config(config_file)
+    config = load_and_validate_config("bootstrap.yml")
 
     templates = setup_templates()
 
