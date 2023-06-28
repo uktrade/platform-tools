@@ -209,17 +209,13 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-copilot)
 
-    Generate storage cloudformation for each environment.
+    Generate storage CloudFormation for each environment.
 
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-storage [OPTIONS] STORAGE_CONFIG_FILE
+Usage: copilot-helper copilot make-storage [OPTIONS]
 ```
-
-## Arguments
-
-- `storage-config-file <path>`
 
 ## Options
 

@@ -75,4 +75,4 @@ def prepare_cloudformation_templates(ctx: click.Context) -> None:
     if copilot_directory.exists():
         rmtree(copilot_directory)
     ctx.invoke(make_config)
-    ctx.invoke(make_storage, storage_config_file="storage.yml")
+    ctx.invoke(make_storage)
