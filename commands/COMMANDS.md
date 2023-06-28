@@ -73,20 +73,13 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-bootstrap)
 
-    Generate copilot boilerplate code.
-
-    OUTPUT is the location of the repo root dir. Defaults to the current
-    directory.
+    Generate Copilot boilerplate code.
 
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config [OPTIONS] [OUTPUT]
+Usage: copilot-helper bootstrap make-config [OPTIONS]
 ```
-
-## Arguments
-
-- `output <path>`
 
 ## Options
 
