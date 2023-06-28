@@ -532,7 +532,7 @@ Usage: copilot-helper waf [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-waf)
 
-    Attach default WAF rule to ECS Load Blanacer.
+    Attach default WAF rule to ECS Load Balancer.
 
 ## Usage
 
@@ -557,7 +557,7 @@ Usage: copilot-helper waf attach-waf [OPTIONS]
 
 [↩ Parent](#copilot-helper-waf)
 
-    Attach custom WAF to ECS Load Blanacer.
+    Attach custom WAF to ECS Load Balancer.
 
 ## Usage
 
