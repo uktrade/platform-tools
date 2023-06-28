@@ -110,6 +110,7 @@ def setup_templates():
             "waf": templateEnv.get_template("addons/env/waf.yml"),
             "parameters": templateEnv.get_template("addons/env/addons.parameters.yml"),
         },
+        "docs": templateEnv.get_template("COMMANDS.md.jinja"),
     }
 
     return templates
