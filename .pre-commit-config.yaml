@@ -1,4 +1,12 @@
 repos:
+  - repo: local
+    hooks:
+      - id: stash-all-files
+        name: Stash all files including untracked files
+        entry: git stash --keep-index --include-untracked
+        language: system
+        pass_filenames: false
+        always_run: true
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
@@ -11,14 +19,6 @@ repos:
         name: Replace line endings
       - id: detect-private-key
         name: Detect private keys
-  - repo: local
-    hooks:
-      - id: pytest
-        name: Run tests
-        entry: poetry run pytest
-        language: system
-        pass_filenames: false
-        always_run: true
   - repo: local
     hooks:
       - id: check-cloudformation
@@ -62,6 +62,30 @@ repos:
       - id: docs
         name: Generate command docs
         entry: poetry run ./utils/create_command_docs.py --module=copilot_helper --cmd=copilot_helper --output=./commands/COMMANDS.md
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: check-tracked-files
+        name: Check tracked file changes
+        entry: git diff --name-status --exit-code
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run tests
+        entry: poetry run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: local
+    hooks:
+      - id: pop-stashed-files
+        name: Remove stash state and apply on current working tree state
+        entry: git stash pop
         language: system
         pass_filenames: false
         always_run: true
