@@ -9,7 +9,6 @@
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-storage](#copilot-helper-copilot-make-storage)
-- [copilot-helper copilot apply-waf](#copilot-helper-copilot-apply-waf)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
 - [copilot-helper codebuild link-github](#copilot-helper-codebuild-link-github)
@@ -56,8 +55,7 @@ Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap 
-           [OPTIONS] COMMAND [ARGS]...
+Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 ```
 
 ## Options
@@ -83,8 +81,7 @@ Usage: copilot-helper bootstrap
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config 
-           [OPTIONS] CONFIG_FILE [OUTPUT]
+Usage: copilot-helper bootstrap make-config [OPTIONS] CONFIG_FILE [OUTPUT]
 ```
 
 ## Arguments
@@ -112,8 +109,7 @@ Usage: copilot-helper bootstrap make-config
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap migrate-secrets 
-           [OPTIONS] CONFIG_FILE
+Usage: copilot-helper bootstrap migrate-secrets [OPTIONS] CONFIG_FILE
 ```
 
 ## Arguments
@@ -144,8 +140,7 @@ Usage: copilot-helper bootstrap migrate-secrets
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap instructions 
-           [OPTIONS] CONFIG_FILE
+Usage: copilot-helper bootstrap instructions [OPTIONS] CONFIG_FILE
 ```
 
 ## Arguments
@@ -168,9 +163,8 @@ Usage: copilot-helper bootstrap instructions
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation 
-           [OPTIONS] COMMAND1 [ARGS]... [COMMAND2
-           [ARGS]...]...
+Usage: copilot-helper check-cloudformation [OPTIONS] COMMAND1 [ARGS]...
+                                           [COMMAND2 [ARGS]...]...
 ```
 
 ## Options
@@ -191,8 +185,7 @@ Usage: copilot-helper check-cloudformation
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation lint 
-           [OPTIONS]
+Usage: copilot-helper check-cloudformation lint [OPTIONS]
 ```
 
 ## Options
@@ -207,8 +200,7 @@ Usage: copilot-helper check-cloudformation lint
 ## Usage
 
 ```
-Usage: copilot-helper copilot [OPTIONS] COMMAND
-                              [ARGS]...
+Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 ```
 
 ## Options
@@ -218,7 +210,6 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND
 
 ## Commands
 
-- [`apply-waf` ↪](#copilot-helper-copilot-apply-waf)
 - [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
 - [`make-storage` ↪](#copilot-helper-copilot-make-storage)
 
@@ -231,31 +222,12 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-storage 
-           [OPTIONS] STORAGE_CONFIG_FILE
+Usage: copilot-helper copilot make-storage [OPTIONS] STORAGE_CONFIG_FILE
 ```
 
 ## Arguments
 
 - `storage-config-file <path>`
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper copilot apply-waf
-
-[↩ Parent](#copilot-helper-copilot)
-
-    Apply the WAF environment addon.
-
-## Usage
-
-```
-Usage: copilot-helper copilot apply-waf 
-           [OPTIONS]
-```
 
 ## Options
 
@@ -271,8 +243,7 @@ Usage: copilot-helper copilot apply-waf
 ## Usage
 
 ```
-Usage: copilot-helper copilot get-env-secrets 
-           [OPTIONS] APP ENV
+Usage: copilot-helper copilot get-env-secrets [OPTIONS] APP ENV
 ```
 
 ## Arguments
@@ -292,8 +263,7 @@ Usage: copilot-helper copilot get-env-secrets
 ## Usage
 
 ```
-Usage: copilot-helper codebuild 
-           [OPTIONS] COMMAND [ARGS]...
+Usage: copilot-helper codebuild [OPTIONS] COMMAND [ARGS]...
 ```
 
 ## Options
@@ -319,8 +289,7 @@ Usage: copilot-helper codebuild
 ## Usage
 
 ```
-Usage: copilot-helper codebuild link-github 
-           [OPTIONS]
+Usage: copilot-helper codebuild link-github [OPTIONS]
 ```
 
 ## Options
@@ -341,8 +310,7 @@ Usage: copilot-helper codebuild link-github
 ## Usage
 
 ```
-Usage: copilot-helper codebuild create-codedeploy-role 
-           [OPTIONS]
+Usage: copilot-helper codebuild create-codedeploy-role [OPTIONS]
 ```
 
 ## Options
@@ -363,8 +331,7 @@ Usage: copilot-helper codebuild create-codedeploy-role
 ## Usage
 
 ```
-Usage: copilot-helper codebuild codedeploy 
-           [OPTIONS]
+Usage: copilot-helper codebuild codedeploy [OPTIONS]
 ```
 
 ## Options
@@ -399,8 +366,7 @@ Usage: copilot-helper codebuild codedeploy
 ## Usage
 
 ```
-Usage: copilot-helper codebuild buildproject 
-           [OPTIONS]
+Usage: copilot-helper codebuild buildproject [OPTIONS]
 ```
 
 ## Options
@@ -433,8 +399,7 @@ Usage: copilot-helper codebuild buildproject
 ## Usage
 
 ```
-Usage: copilot-helper codebuild delete-project 
-           [OPTIONS]
+Usage: copilot-helper codebuild delete-project [OPTIONS]
 ```
 
 ## Options
@@ -455,8 +420,7 @@ Usage: copilot-helper codebuild delete-project
 ## Usage
 
 ```
-Usage: copilot-helper codebuild slackcreds 
-           [OPTIONS]
+Usage: copilot-helper codebuild slackcreds [OPTIONS]
 ```
 
 ## Options
@@ -479,8 +443,7 @@ Usage: copilot-helper codebuild slackcreds
 ## Usage
 
 ```
-Usage: copilot-helper domain [OPTIONS] COMMAND
-                             [ARGS]...
+Usage: copilot-helper domain [OPTIONS] COMMAND [ARGS]...
 ```
 
 ## Options
@@ -502,8 +465,7 @@ Usage: copilot-helper domain [OPTIONS] COMMAND
 ## Usage
 
 ```
-Usage: copilot-helper domain check-domain 
-           [OPTIONS]
+Usage: copilot-helper domain check-domain [OPTIONS]
 ```
 
 ## Options
@@ -528,8 +490,7 @@ Usage: copilot-helper domain check-domain
 ## Usage
 
 ```
-Usage: copilot-helper domain assign-domain 
-           [OPTIONS]
+Usage: copilot-helper domain assign-domain [OPTIONS]
 ```
 
 ## Options
@@ -554,8 +515,7 @@ Usage: copilot-helper domain assign-domain
 ## Usage
 
 ```
-Usage: copilot-helper waf [OPTIONS] COMMAND
-                          [ARGS]...
+Usage: copilot-helper waf [OPTIONS] COMMAND [ARGS]...
 ```
 
 ## Options
@@ -577,8 +537,7 @@ Usage: copilot-helper waf [OPTIONS] COMMAND
 ## Usage
 
 ```
-Usage: copilot-helper waf attach-waf 
-           [OPTIONS]
+Usage: copilot-helper waf attach-waf [OPTIONS]
 ```
 
 ## Options
@@ -603,8 +562,7 @@ Usage: copilot-helper waf attach-waf
 ## Usage
 
 ```
-Usage: copilot-helper waf custom-waf 
-           [OPTIONS]
+Usage: copilot-helper waf custom-waf [OPTIONS]
 ```
 
 ## Options

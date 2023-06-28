@@ -192,53 +192,6 @@ def make_storage(storage_config_file):
 
 
 @copilot.command()
-def apply_waf():
-    """Apply the WAF environment addon."""
-
-    templates = setup_templates()
-    overwrite = True
-
-    ensure_cwd_is_repo_root()
-
-    env_names = list_copilot_local_environments()
-
-    if not env_names:
-        click.secho(f"Cannot add WAF CFN templates: No environments found in ./copilot/environments/", fg="red")
-        exit(1)
-
-    def _validate_arn(arn):
-        return arn and arn.startswith("arn:aws:wafv2:")
-
-    arns = {}
-
-    for name in env_names:
-        with open(f"./copilot/environments/{name}/manifest.yml", "r") as fd:
-            config = yaml.safe_load(fd)
-
-        arns[name] = config.get(WAF_ACL_ARN_KEY) if config else None
-
-    if not all(_validate_arn(arn) for arn in arns.values()):
-        click.secho(
-            f"Cannot add WAF CFN templates: Set a valid `{WAF_ACL_ARN_KEY}` in each ./copilot/environments/*/manifest.yml file",
-            fg="red",
-        )
-        exit(1)
-
-    # create the addons dir if it doesn't already exist
-    path = Path("./copilot/environments/addons")
-    mkdir(".", path)
-
-    # create the ./copilot/environments/addons/addons.parameters.yml file
-    contents = templates["env"]["parameters"].render({})
-    click.echo(mkfile(".", path / "addons.parameters.yml", contents, overwrite=overwrite))
-
-    # create the ./copilot/environments/addons/waf.yml file
-    contents = templates["env"]["waf"].render({"arns": arns})
-
-    click.echo(mkfile(".", path / "waf.yml", contents, overwrite=overwrite))
-
-
-@copilot.command()
 @click.argument("app", type=str)
 @click.argument("env", type=str)
 def get_env_secrets(app, env):

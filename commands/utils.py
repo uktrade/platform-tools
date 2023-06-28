@@ -107,7 +107,6 @@ def setup_templates():
             "aurora-postgres": templateEnv.get_template("addons/env/aurora-postgres.yml"),
             "redis": templateEnv.get_template("addons/env/redis-cluster.yml"),
             "s3": templateEnv.get_template("addons/env/s3.yml"),
-            "waf": templateEnv.get_template("addons/env/waf.yml"),
             "parameters": templateEnv.get_template("addons/env/addons.parameters.yml"),
         },
         "docs": templateEnv.get_template("COMMANDS.md.jinja"),
