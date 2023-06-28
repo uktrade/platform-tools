@@ -1,3 +1,5 @@
+import os
+import shutil
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -18,6 +20,7 @@ from commands.bootstrap_cli import make_config
 from commands.bootstrap_cli import migrate_secrets
 from commands.utils import set_ssm_param
 from tests import bootstrap_strings
+from tests.conftest import BASE_DIR
 
 
 class MockEntity(JsonObject):
@@ -85,17 +88,20 @@ def test_load_and_validate_config_invalid_file():
 
 
 def test_make_config(tmp_path):
-    """Test that, given a config file path and an output path, make_config
-    generates the expected directories and file contents."""
+    """Test that make_config generates the expected directories and file
+    contents."""
 
-    config_file_path = Path(__file__).parent.resolve() / "test_config.yml"
-    runner = CliRunner()
-    result = runner.invoke(make_config, [str(config_file_path), str(tmp_path)])
+    shutil.copy(f"{BASE_DIR}/tests/test_config.yml", f"{tmp_path}/bootstrap.yml")
+    os.mkdir(f"{tmp_path}/copilot")
+    os.chdir(tmp_path)
+
+    result = CliRunner().invoke(make_config)
 
     assert (
         "GitHub documentation: https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration"
         in result.output
     )
+
     assert (tmp_path / "copilot").exists()
 
     with open(str(tmp_path / "copilot/.workspace")) as workspace:

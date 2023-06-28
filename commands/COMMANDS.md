@@ -75,18 +75,17 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 
     Generate copilot boilerplate code.
 
-    CONFIG-FILE is the path to the input yaml config file OUTPUT is the location
-    of the repo root dir. Defaults to the current directory.
+    OUTPUT is the location of the repo root dir. Defaults to the current
+    directory.
 
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config [OPTIONS] CONFIG_FILE [OUTPUT]
+Usage: copilot-helper bootstrap make-config [OPTIONS] [OUTPUT]
 ```
 
 ## Arguments
 
-- `config-file <path>`
 - `output <path>`
 
 ## Options
