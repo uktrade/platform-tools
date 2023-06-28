@@ -41,7 +41,7 @@ def waf():
 @click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
 def attach_waf(app, project_profile, svc, env):
-    """Attach default WAF rule to ECS Load Blanacer."""
+    """Attach default WAF rule to ECS Load Balancer."""
 
     project_session = check_aws_conn(project_profile)
     waf_arn = check_waf(project_session)
@@ -75,7 +75,7 @@ def attach_waf(app, project_profile, svc, env):
 @click.option("--env", help="Environment", required=True)
 @click.option("--waf-path", help="path to waf.yml file", required=True)
 def custom_waf(app, project_profile, svc, env, waf_path):
-    """Attach custom WAF to ECS Load Blanacer."""
+    """Attach custom WAF to ECS Load Balancer."""
 
     project_session = check_aws_conn(project_profile)
     ensure_cwd_is_repo_root()
