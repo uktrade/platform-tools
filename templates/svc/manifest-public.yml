@@ -1,4 +1,4 @@
-# The manifest for the "web" service.
+# The manifest for the "{{ name }}" service.
 # Read the full specification for the "Load Balanced Web Service" type at:
 #  https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/
 
@@ -102,4 +102,4 @@ environments:
       alias: {{ env.url }}x
   {%- endfor -%}
 
-# TODO: enable/disable ip filter on a per env basis.  For example, an service may need an the ip filter in non prod envs, but not prod.
+# TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.
