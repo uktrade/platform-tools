@@ -458,8 +458,6 @@ Usage: copilot-helper domain check-domain [OPTIONS]
 
 ## Options
 
-- `--path <text>`
-  - path of copilot folder
 - `--domain-profile <text>`
   - aws account profile name for R53 domains account
 - `--project-profile <text>`
