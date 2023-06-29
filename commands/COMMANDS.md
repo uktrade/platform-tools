@@ -101,12 +101,8 @@ Usage: copilot-helper bootstrap make-config [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap migrate-secrets [OPTIONS] CONFIG_FILE
+Usage: copilot-helper bootstrap migrate-secrets [OPTIONS]
 ```
-
-## Arguments
-
-- `config-file <path>`
 
 ## Options
 
@@ -132,12 +128,8 @@ Usage: copilot-helper bootstrap migrate-secrets [OPTIONS] CONFIG_FILE
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap instructions [OPTIONS] CONFIG_FILE
+Usage: copilot-helper bootstrap instructions [OPTIONS]
 ```
-
-## Arguments
-
-- `config-file <path>`
 
 ## Options
 
