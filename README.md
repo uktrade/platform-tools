@@ -2,9 +2,15 @@
 
 ![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoicUFCMXNSZVVUdnJuLzNHMDJlUVg4UVErbFkwT1NKa0NubUNudm9STk5makxZYUdtK0xiSmgxWXUzWUttTTdPbnprdTFVY2FJUzZXbHIyQTVkYmJtaVNJPSIsIml2UGFyYW1ldGVyU3BlYyI6IkxYaUFJczFoQitodytUTHAiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 
-This repository contains a set of tools for transferring applications/services from [GOV.UK PaaS](https://www.cloud.service.gov.uk) to Department for Business and Trade (DBT) PaaS which augments [AWS Copilot](https://aws.github.io/copilot-cli/) to improve the developer and SRE experience.
+## Using the dbt-copilot-tools package
 
-## Getting started
+See [the package documentation](https://github.com/uktrade/copilot-tools/blob/main/commands/README.md) for detail on what the package is and how to use it.
+
+If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration/README.md) will also be relevant for you.
+
+## Contributing to the dbt-copilot-tools package
+
+### Getting started
 
 1. Clone the repository:
 
@@ -18,13 +24,13 @@ This repository contains a set of tools for transferring applications/services f
    pip install poetry && poetry install --with pre-commit && pre-commit install
    ```
 
-## Testing
+### Testing
 
 Run `poetry run pytest` in the root directory to run all tests.
 
 Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
 
-### [`Dockerfile.test`](Dockerfile.test)
+#### [`Dockerfile.test`](Dockerfile.test)
 
 This `Dockerfile` is used to create a Docker image that supports multiple versions of Python runtimes via [`pyenv`](https://github.com/pyenv/pyenv). The `tox` configuration file determines the Python versions to be tested against.
 
@@ -36,7 +42,7 @@ Run `docker build -f Dockerfile.test -t alpine/python .` to build the image.
 
 For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
 
-## Publishing
+### Publishing
 
 To publish the Python package `dbt-copilot-tools`, you will need an API token.
 
@@ -72,7 +78,3 @@ poetry publish
 Check the [PyPi Release history](https://pypi.org/project/dbt-copilot-tools/#history) to make sure the package has been updated.
 
 For an optional manual check, install the package locally and test everything works as expected.
-
-## Migration
-
-See [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration/README.md).
