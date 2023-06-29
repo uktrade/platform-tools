@@ -110,16 +110,10 @@ def bootstrap():
 
 
 @bootstrap.command()
-@click.argument("output", type=click.Path(exists=True), default=".")
-def make_config(output):
-    """
-    Generate copilot boilerplate code.
+def make_config():
+    """Generate Copilot boilerplate code."""
 
-    OUTPUT is the location of the repo root dir. Defaults to the current
-    directory.
-    """
-
-    base_path = Path(output)
+    base_path = Path(".")
     config = load_and_validate_config("bootstrap.yml")
 
     templates = setup_templates()
