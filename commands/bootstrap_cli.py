@@ -145,7 +145,7 @@ def make_config():
         mkdir(base_path, f"copilot/{name}/addons/")
 
         if "secrets_from" in service:
-            # Copy secrets from the app referredd to in the "secrets_from" key
+            # Copy secrets from the app referred to in the "secrets_from" key
             related_service = [s for s in config["services"] if s["name"] == service["secrets_from"]][0]
 
             service["secrets"].update(related_service["secrets"])
