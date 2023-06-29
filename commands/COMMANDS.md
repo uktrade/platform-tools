@@ -73,20 +73,13 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-bootstrap)
 
-    Generate copilot boilerplate code.
-
-    OUTPUT is the location of the repo root dir. Defaults to the current
-    directory.
+    Generate Copilot boilerplate code.
 
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config [OPTIONS] [OUTPUT]
+Usage: copilot-helper bootstrap make-config [OPTIONS]
 ```
-
-## Arguments
-
-- `output <path>`
 
 ## Options
 
@@ -216,17 +209,13 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-copilot)
 
-    Generate storage cloudformation for each environment.
+    Generate storage CloudFormation for each environment.
 
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-storage [OPTIONS] STORAGE_CONFIG_FILE
+Usage: copilot-helper copilot make-storage [OPTIONS]
 ```
-
-## Arguments
-
-- `storage-config-file <path>`
 
 ## Options
 
