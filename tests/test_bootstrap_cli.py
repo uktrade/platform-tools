@@ -91,8 +91,7 @@ def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
 
-    shutil.copy(f"{BASE_DIR}/tests/test_config.yml", f"{tmp_path}/bootstrap.yml")
-    os.chdir(tmp_path)
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     result = CliRunner().invoke(make_config)
