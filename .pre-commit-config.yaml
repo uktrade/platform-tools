@@ -1,12 +1,4 @@
 repos:
-  - repo: local
-    hooks:
-      - id: stash-all-files
-        name: Stash all files including untracked files
-        entry: git stash --keep-index --include-untracked
-        language: system
-        pass_filenames: false
-        always_run: true
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
