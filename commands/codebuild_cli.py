@@ -5,6 +5,7 @@ import os
 import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
+
 from .utils import check_aws_conn
 from .utils import check_response
 
@@ -28,8 +29,9 @@ def check_github_conn(client: CodeBuildClient):
 
     # If there are no source code creds defined then AWS is not linked to Github
     if not response["sourceCredentialsInfos"]:
-        if not click.confirm(click.style(
-                "GitHub is not linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")):
+        if not click.confirm(
+            click.style("GitHub is not linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")
+        ):
             exit()
 
         pat = input(
@@ -54,10 +56,11 @@ def check_service_role(role_name, project_session: Session) -> str:
 
     except client.exceptions.NoSuchEntityException:
         click.echo(
-            click.style("Service Role", fg="yellow") +
-            click.style(f" {role_name} ", fg="white", bold=True) +
-            click.style("does not exist; run: ", fg="yellow") +
-            click.style("copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>", fg="cyan"))
+            click.style("Service Role", fg="yellow")
+            + click.style(f" {role_name} ", fg="white", bold=True)
+            + click.style("does not exist; run: ", fg="yellow")
+            + click.style("copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>", fg="cyan")
+        )
         role_arn = ""
         exit()
 
@@ -89,15 +92,18 @@ def check_git_url(git: str) -> str:
         git_url = "https://github.com/" + git_part[1]
     else:
         click.echo(
-            click.style("Unable to recognise Git URL format, make sure it is either:\n", fg="red") +
-            click.style("https://github.com/<org>/<repository-name>\n" +
-            "git@github.com:<org>/<repository-name>", fg="white", bold=True))
+            click.style("Unable to recognise Git URL format, make sure it is either:\n", fg="red")
+            + click.style(
+                "https://github.com/<org>/<repository-name>\n" + "git@github.com:<org>/<repository-name>",
+                fg="white",
+                bold=True,
+            )
+        )
         exit()
     return git_url
 
 
 def modify_project(project_session, update, name, desc, git, branch, buildspec, builderimage, release, role_type):
-
     git_url = check_git_url(git)
     role_arn = check_service_role("ci-CodeBuild-role", project_session)
     client = project_session.client("codebuild", region_name=AWS_REGION)
@@ -196,9 +202,11 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
 
     check_response(response)
     check_response(response_webhook)
-    click.echo(click.style("Codebuild project ", fg="yellow") +
-                click.style(f"{name} ",fg="white", bold=True) +
-                click.style("updated", fg="yellow"))
+    click.echo(
+        click.style("Codebuild project ", fg="yellow")
+        + click.style(f"{name} ", fg="white", bold=True)
+        + click.style("updated", fg="yellow")
+    )
 
 
 @click.group()
@@ -258,8 +266,9 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 
         except client.exceptions.LimitExceededException:
             click.secho(
-                "You have hit the limit of max managed policies, "
-                "please delete an existing version and try again", fg="red")
+                "You have hit the limit of max managed policies, " "please delete an existing version and try again",
+                fg="red",
+            )
             exit()
 
     with open(f"{current_filepath}/../templates/create-codebuild-role.json") as f:
@@ -323,8 +332,10 @@ def delete_project(name, project_profile):
     project_session = check_aws_conn(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
 
-    if not click.confirm(click.style("Are you sure you want to delete the project ", fg="yellow") +
-                         click.style(f"{name}", fg="white", bold=True)):
+    if not click.confirm(
+        click.style("Are you sure you want to delete the project ", fg="yellow")
+        + click.style(f"{name}", fg="white", bold=True)
+    ):
         exit()
 
     response = client.delete_project(name=name)
@@ -351,8 +362,9 @@ def slackcreds(workspace, channel, token, project_profile):
         "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": token},
     }
 
-    if not click.confirm(click.style(
-            "Updating Parameter Store with Slack credentials.\nDo you want to update it?", fg="yellow")):
+    if not click.confirm(
+        click.style("Updating Parameter Store with Slack credentials.\nDo you want to update it?", fg="yellow")
+    ):
         exit()
 
     for item, value in SLACK.items():

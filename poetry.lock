@@ -1534,13 +1534,15 @@ files = [
 ]
 
 [[package]]
-name = "pre_commit"
-version = "3.2.2"
-description = ""
+name = "pre-commit"
+version = "3.3.3"
+description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.8"
-files = []
-develop = false
+files = [
+    {file = "pre_commit-3.3.3-py2.py3-none-any.whl", hash = "sha256:10badb65d6a38caff29703362271d7dca483d01da88f9d7e05d0b97171c136cb"},
+    {file = "pre_commit-3.3.3.tar.gz", hash = "sha256:a2256f489cd913d575c145132ae196fe335da32d91a8294b7afe6622335dd023"},
+]
 
 [package.dependencies]
 cfgv = ">=2.0.0"
@@ -1548,12 +1550,6 @@ identify = ">=1.0.0"
 nodeenv = ">=0.11.1"
 pyyaml = ">=5.1"
 virtualenv = ">=20.10.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/uktrade/modification-pre-commit.git"
-reference = "HEAD"
-resolved_reference = "8e29ed4e9bf12ede76d1998a3ed83114e5734dc9"
 
 [[package]]
 name = "protobuf"
@@ -2288,4 +2284,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4822491006ac36797a0e49867da91bfb52c20db6add1abc6a5506c42f4582d50"
+content-hash = "771c89a0c38831355ac19915e38cae186432eafe4aa761ed8df1b1c41796933b"
