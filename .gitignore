@@ -3,14 +3,8 @@
 venv/
 
 *.pyc
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 _py_cache__/
-=======
-=======
->>>>>>> Stashed changes
 __py_cache__/
->>>>>>> Stashed changes
 .git/
 
 src/
