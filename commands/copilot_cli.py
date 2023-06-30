@@ -124,9 +124,8 @@ def _validate_and_normalise_config(config_file):
 
 
 @copilot.command()
-@click.argument("storage-config-file", type=click.Path(exists=True))
-def make_storage(storage_config_file):
-    """Generate storage cloudformation for each environment."""
+def make_storage():
+    """Generate storage CloudFormation for each environment."""
 
     overwrite = True
     output_dir = Path(".").absolute()
@@ -137,7 +136,7 @@ def make_storage(storage_config_file):
 
     config = _validate_and_normalise_config(BASE_DIR / "default-storage.yml")
 
-    project_config = _validate_and_normalise_config(storage_config_file)
+    project_config = _validate_and_normalise_config("storage.yml")
 
     config.update(project_config)
 

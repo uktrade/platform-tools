@@ -1,4 +1,4 @@
-# The manifest for the "dev" environment.
+# The manifest for the "{{ name }}" environment.
 # Read the full specification for the "Environment" type at:
 #  https://aws.github.io/copilot-cli/docs/manifest/environment/
 

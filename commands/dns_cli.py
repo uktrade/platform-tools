@@ -405,12 +405,13 @@ def domain():
 
 
 @domain.command()
-@click.option("--path", help="path of copilot folder", required=True)
 @click.option("--domain-profile", help="aws account profile name for R53 domains account", required=True)
 @click.option("--project-profile", help="aws account profile name for certificates account", required=True)
 @click.option("--base-domain", help="root domain", required=True)
-def check_domain(path, domain_profile, project_profile, base_domain):
+def check_domain(domain_profile, project_profile, base_domain):
     """Scans to see if Domain exists."""
+
+    path = "copilot"
 
     domain_session = check_aws_conn(domain_profile)
     project_session = check_aws_conn(project_profile)

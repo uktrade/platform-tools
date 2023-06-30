@@ -110,16 +110,10 @@ def bootstrap():
 
 
 @bootstrap.command()
-@click.argument("output", type=click.Path(exists=True), default=".")
-def make_config(output):
-    """
-    Generate copilot boilerplate code.
+def make_config():
+    """Generate Copilot boilerplate code."""
 
-    OUTPUT is the location of the repo root dir. Defaults to the current
-    directory.
-    """
-
-    base_path = Path(output)
+    base_path = Path(".")
     config = load_and_validate_config("bootstrap.yml")
 
     templates = setup_templates()
@@ -151,7 +145,7 @@ def make_config(output):
         mkdir(base_path, f"copilot/{name}/addons/")
 
         if "secrets_from" in service:
-            # Copy secrets from the app referredd to in the "secrets_from" key
+            # Copy secrets from the app referred to in the "secrets_from" key
             related_service = [s for s in config["services"] if s["name"] == service["secrets_from"]][0]
 
             service["secrets"].update(related_service["secrets"])
@@ -174,13 +168,12 @@ def make_config(output):
 
 
 @bootstrap.command()
-@click.argument("config-file", type=click.Path(exists=True))
 @click.option("--project-profile", required=True, help="aws account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option("--overwrite", is_flag=True, show_default=True, default=False, help="Overwrite existing secrets?")
 @click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
-def migrate_secrets(config_file, project_profile, env, svc, overwrite, dry_run):
+def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     """
     Migrate secrets from your gov paas application to AWS/copilot.
 
@@ -195,6 +188,7 @@ def migrate_secrets(config_file, project_profile, env, svc, overwrite, dry_run):
     # TODO: optional SSM or secret manager
 
     cf_client = CloudFoundryClient.build_from_cf_config()
+    config_file = "bootstrap.yml"
     config = load_and_validate_config(config_file)
 
     if env and env not in config["environments"].keys():
@@ -266,11 +260,11 @@ def migrate_secrets(config_file, project_profile, env, svc, overwrite, dry_run):
 
 
 @bootstrap.command()
-@click.argument("config-file", type=click.Path(exists=True))
-def instructions(config_file):
+def instructions():
     """Show migration instructions."""
     templates = setup_templates()
 
+    config_file = "bootstrap.yml"
     config = load_and_validate_config(config_file)
     config["config_file"] = config_file
 

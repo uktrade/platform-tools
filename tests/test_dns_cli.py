@@ -127,7 +127,7 @@ def test_check_r53(create_cert, route53_session):
 )
 def test_check_domain(check_aws_conn, check_r53, fakefs):
     fakefs.create_file(
-        "manifest.yml",
+        "copilot/manifest.yml",
         contents="""
 environments:
   dev:
@@ -142,10 +142,9 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        check_domain,
-        ["--path", "/", "--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"],
+        check_domain, ["--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"]
     )
-    assert result.output.startswith("Checking file: /manifest.yml\nDomains listed in manifest file") == True
+    assert result.output.startswith("Checking file: copilot/manifest.yml\nDomains listed in manifest file") == True
 
 
 @patch(
