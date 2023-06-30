@@ -1,0 +1,38 @@
+Description: This will create a web ACL that is in addition to the default rules
+
+Resources:
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: test-waf
+      Scope: REGIONAL
+      Description: copilot tools generated AWS V2 WAF with custom configuration
+      DefaultAction:
+        Block: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: TestWAF
+      Tags:
+        - Key: "Environment"
+          Value: "Dev"
+        - Key: "GeneratedBy"
+          Value: "CoPilot"
+      Rules:
+        - Name: AWS-CRS
+          Priority: 0
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: CRS-metric
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+
+Outputs:
+  WAFWebACL:
+    Description: ARN of WebACL
+    Value: !GetAtt WebACL.Arn
