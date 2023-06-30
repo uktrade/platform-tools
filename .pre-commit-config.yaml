@@ -75,14 +75,6 @@ repos:
         always_run: true
   - repo: local
     hooks:
-      - id: pytest
-        name: Run tests
-        entry: poetry run pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-  - repo: local
-    hooks:
       - id: pop-stashed-files
         name: Remove stash state and apply on current working tree state
         entry: git stash pop
