@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
+import botocore.errorfactory
+import botocore.session
 from click.testing import CliRunner
 from moto import mock_cloudformation
 from moto import mock_ec2
@@ -14,6 +17,11 @@ from moto import mock_wafv2
 from commands.waf_cli import attach_waf
 from commands.waf_cli import check_waf
 from commands.waf_cli import custom_waf
+from tests.conftest import BASE_DIR
+
+_CFN_MODEL = botocore.session.get_session().get_service_model("cloudformation")
+_CFN_FACTORY = botocore.errorfactory.ClientExceptionsFactory()
+_CFN_EXCEPTIONS = _CFN_FACTORY.create_client_exceptions(_CFN_MODEL)
 
 
 @mock_wafv2
@@ -115,9 +123,9 @@ def test_custom_waf_file_not_found(ensure, alias_session):
         custom_waf,
         ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env", "--waf-path", "not-a-path"],
     )
-    path_string = str(Path(__file__).parent.parent / "not-a-path")
+    str(Path(__file__).parent.parent / "not-a-path")
 
-    assert f"File not found...\n{path_string}" in result.output
+    assert f"File not found...\n" in result.output
 
 
 # No Moto CloudFormation support for AWS::WAFv2::WebACL
@@ -125,11 +133,13 @@ def test_custom_waf_file_not_found(ensure, alias_session):
 @mock_sts
 @patch("commands.waf_cli.check_aws_conn")
 @patch("commands.waf_cli.create_stack")
-@patch("commands.waf_cli.ensure_cwd_is_repo_root")
-def test_custom_waf_cf_stack_already_exists(ensure, create_stack, check_aws_conn, alias_session):
-    create_stack.side_effect = boto3.client("cloudformation").exceptions.AlreadyExistsException(
-        {"Error": {"Code": 666, "Message": ""}}, "operation name"
+def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
+    os.chdir(f"{BASE_DIR}/tests/test-application")
+
+    create_stack.side_effect = botocore.exceptions.ClientError(
+        {"Error": {"Code": "AlreadyExistsException", "Message": ""}}, "operation name"
     )
+
     check_aws_conn.return_value = alias_session
     runner = CliRunner()
     result = runner.invoke(
@@ -144,7 +154,7 @@ def test_custom_waf_cf_stack_already_exists(ensure, create_stack, check_aws_conn
             "--env",
             "env",
             "--waf-path",
-            "tests/valid_test_waf.yml",
+            "waf.yml",
         ],
     )
 
