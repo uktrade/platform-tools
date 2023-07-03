@@ -108,7 +108,8 @@ def test_attach_waf(alias_session):
 
 
 @mock_sts
-def test_custom_waf_file_not_found(alias_session):
+@patch("commands.waf_cli.ensure_cwd_is_repo_root")
+def test_custom_waf_file_not_found(ensure, alias_session):
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -124,7 +125,8 @@ def test_custom_waf_file_not_found(alias_session):
 @mock_sts
 @patch("commands.waf_cli.check_aws_conn")
 @patch("commands.waf_cli.create_stack")
-def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
+@patch("commands.waf_cli.ensure_cwd_is_repo_root")
+def test_custom_waf_cf_stack_already_exists(ensure, create_stack, check_aws_conn, alias_session):
     create_stack.side_effect = boto3.client("cloudformation").exceptions.AlreadyExistsException(
         {"Error": {"Code": 666, "Message": ""}}, "operation name"
     )
