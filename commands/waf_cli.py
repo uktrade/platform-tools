@@ -7,7 +7,6 @@ import boto3
 import cfn_flip.yaml_dumper
 import click
 import yaml
-from botocore.exceptions import ClientError
 from cfn_tools import load_yaml
 
 from commands.dns_cli import lb_domain
@@ -113,13 +112,12 @@ def custom_waf(app, project_profile, svc, env, waf_path):
 
     try:
         cs_response = create_stack()
-    except ClientError as e:
-        if e.response["Error"]["Code"] is "AlreadyExistsException":
-            click.echo(
-                click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")
-                + click.style(f"{app}-{svc}-{env}-CustomWAFStack", fg="red"),
-            )
-            exit()
+    except cf_client.exceptions.AlreadyExistsException:
+        click.echo(
+            click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")
+            + click.style(f"{app}-{svc}-{env}-CustomWAFStack", fg="red"),
+        )
+        exit()
 
     check_response(cs_response)
 
