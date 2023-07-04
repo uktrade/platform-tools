@@ -1,8 +1,13 @@
+from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
+import pytest
 from botocore.stub import Stubber
 from click.testing import CliRunner
+from moto import mock_ec2
+from moto import mock_ecs
+from moto import mock_elbv2
 
 from commands.dns_cli import add_records
 from commands.dns_cli import assign_domain
@@ -11,6 +16,7 @@ from commands.dns_cli import check_for_records
 from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
+from commands.dns_cli import lb_domain
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -155,3 +161,61 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
         ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"],
     )
     assert result.output.startswith("There are no clusters matching") == True
+
+
+@mock_ecs
+def test_lb_domain_no_clusters(capfd):
+    with pytest.raises(SystemExit):
+        lb_domain(boto3.Session(), "app", "svc", "env")
+
+    out, _ = capfd.readouterr()
+
+    assert out == "There are no clusters matching app in this aws account\n"
+
+
+@mock_ecs
+def test_lb_domain_no_services(capfd):
+    boto3.Session().client("ecs").create_cluster(clusterName="app-env-svc")
+    with pytest.raises(SystemExit):
+        lb_domain(boto3.Session(), "app", "svc", "env")
+
+    out, _ = capfd.readouterr()
+
+    assert out == "There are no services matching svc in this aws account\n"
+
+
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+def test_lb_domain(tmp_path):
+    session = boto3.Session()
+    vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    subnet_id = session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
+    elbv2_client = session.client("elbv2")
+    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
+    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
+    elbv2_client.create_listener(
+        LoadBalancerArn=lb_arn, DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}]
+    )
+    ecs_client = session.client("ecs")
+    ecs_client.create_cluster(clusterName="app-env-svc")
+    ecs_client.create_service(
+        cluster="app-env-svc",
+        serviceName="app-env-svc",
+        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
+    )
+    open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')
+    with patch("commands.dns_cli.open", open_mock):
+        domain_name, response = lb_domain(boto3.Session(), "app", "svc", "env")
+
+    open_mock.assert_called_once_with("./copilot/svc/manifest.yml", "r")
+
+    assert domain_name == "blah"
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    lb_response = response["LoadBalancers"][0]
+
+    assert lb_response["LoadBalancerArn"] == lb_arn
+    assert lb_response["LoadBalancerName"] == "foo"
+    assert lb_response["VpcId"] == vpc_id
+    assert lb_response["AvailabilityZones"][0]["SubnetId"] == subnet_id

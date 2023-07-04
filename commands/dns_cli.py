@@ -2,9 +2,11 @@
 
 import os
 import time
+from typing import Tuple
 
 import click
 import yaml
+from boto3 import Session
 
 from .utils import check_aws_conn
 from .utils import check_response
@@ -319,7 +321,7 @@ def check_r53(domain_session, project_session, domain, base_domain):
     return cert_arn
 
 
-def lb_domain(project_session, app, svc, env):
+def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[str, dict]:
     proj_client = project_session.client("ecs")
 
     response = proj_client.list_clusters()
@@ -337,7 +339,7 @@ def lb_domain(project_session, app, svc, env):
     if no_items:
         click.echo(
             click.style("There are no clusters matching ", fg="red")
-            + click.style(f"{app}", fg="white", bold=True)
+            + click.style(f"{app} ", fg="white", bold=True)
             + click.style("in this aws account", fg="red"),
         )
         exit()
@@ -390,6 +392,8 @@ def lb_domain(project_session, app, svc, env):
             for domain in conf["environments"].items():
                 if domain[0] == env:
                     domain_name = domain[1]["http"]["alias"]
+
+        # What happens if domain_name isn't set? Should we raise an error? Return default ? Or None?
 
     return domain_name, response
 

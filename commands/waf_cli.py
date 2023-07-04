@@ -3,6 +3,8 @@ import time
 import uuid
 from pathlib import Path
 
+import boto3
+import botocore  # noqa
 import cfn_flip.yaml_dumper
 import click
 import yaml
@@ -18,7 +20,7 @@ from .utils import ensure_cwd_is_repo_root
 WAF_DEFAULT_NAME = "default"
 
 
-def check_waf(project_session):
+def check_waf(project_session: boto3.Session) -> str:
     click.secho("Checking WAF exists", fg="cyan")
     client = project_session.client("wafv2")
 
@@ -68,6 +70,20 @@ def attach_waf(app, project_profile, svc, env):
     )
 
 
+def create_stack(cf_client, app, svc, env, raw):
+    return cf_client.create_stack(
+        StackName=f"{app}-{svc}-{env}-CustomWAFStack",
+        TemplateBody=raw,
+        TimeoutInMinutes=5,
+        OnFailure="DELETE",
+        Tags=[
+            {"Key": "Name", "Value": "copilot tools custom waf"},
+        ],
+        ClientRequestToken=uuid.uuid4().hex,
+        EnableTerminationProtection=False,
+    )
+
+
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
 @click.option("--project-profile", help="aws account profile name for application account", required=True)
@@ -96,17 +112,7 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     cf_client = project_session.client("cloudformation")
 
     try:
-        cs_response = cf_client.create_stack(
-            StackName=f"{app}-{svc}-{env}-CustomWAFStack",
-            TemplateBody=raw,
-            TimeoutInMinutes=5,
-            OnFailure="DELETE",
-            Tags=[
-                {"Key": "Name", "Value": "copilot tools custom waf"},
-            ],
-            ClientRequestToken=uuid.uuid4().hex,
-            EnableTerminationProtection=False,
-        )
+        cs_response = create_stack()
     except cf_client.exceptions.AlreadyExistsException:
         click.echo(
             click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")
