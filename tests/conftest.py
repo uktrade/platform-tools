@@ -9,6 +9,7 @@ from moto import mock_iam
 from moto import mock_route53
 
 BASE_DIR = Path(__file__).parent.parent
+TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
 
 
 # tell yaml to ignore CFN ! function prefixes

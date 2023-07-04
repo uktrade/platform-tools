@@ -14,7 +14,7 @@ from moto import mock_wafv2
 from commands.waf_cli import attach_waf
 from commands.waf_cli import check_waf
 from commands.waf_cli import custom_waf
-from tests.conftest import BASE_DIR
+from tests.conftest import TEST_APP_DIR
 
 
 @mock_wafv2
@@ -110,15 +110,16 @@ def test_attach_waf(alias_session):
 
 @mock_sts
 def test_custom_waf_file_not_found(alias_session):
-    os.chdir(f"{BASE_DIR}/tests/test-application")
+    os.chdir(TEST_APP_DIR)
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
         ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env", "--waf-path", "not-a-path"],
     )
-    path_string = f"{BASE_DIR}/tests/test-application/not-a-path"
+    path_string = f"{TEST_APP_DIR}/not-a-path"
 
     assert f"File not found...\n{path_string}" in result.output
+    assert result.exit_code == 0
 
 
 # No Moto CloudFormation support for AWS::WAFv2::WebACL
@@ -127,7 +128,7 @@ def test_custom_waf_file_not_found(alias_session):
 @patch("commands.waf_cli.check_aws_conn")
 @patch("commands.waf_cli.create_stack")
 def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
-    os.chdir(f"{BASE_DIR}/tests/test-application")
+    os.chdir(TEST_APP_DIR)
     check_aws_conn.return_value = alias_session
     create_stack.side_effect = alias_session.client("cloudformation").exceptions.AlreadyExistsException(
         {"Error": {"Code": 666, "Message": ""}}, "operation name"
@@ -150,6 +151,7 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
     )
 
     assert "CloudFormation Stack already exists" in result.output
+    assert result.exit_code == 0
 
 
 @mock_cloudformation
@@ -162,7 +164,7 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
 @patch("commands.waf_cli.check_aws_conn")
 def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_stacks, alias_session):
     check_aws_conn.return_value = alias_session
-    os.chdir(f"{BASE_DIR}/tests/test-application")
+    os.chdir(TEST_APP_DIR)
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -182,6 +184,7 @@ def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_st
 
     describe_stacks.assert_called_once_with("DescribeStacks", {"StackName": "abc"})
     assert "Failed to create CloudFormation stack, see AWS webconsole for details" in result.output
+    assert result.exit_code == 0
 
 
 @mock_cloudformation
@@ -201,7 +204,7 @@ def test_custom_waf(check_aws_conn, create_stack, lb_domain, alias_session):
     response = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])
     lb_domain.return_value = ("domain-name", response)
     dns_name = response["LoadBalancers"][0]["DNSName"]
-    os.chdir(f"{BASE_DIR}/tests/test-application")
+    os.chdir(TEST_APP_DIR)
     runner = CliRunner()
 
     # patching here, to avoid inadvertently mocking the moto test setup calls above, expecting two different boto methods to be called
@@ -232,3 +235,4 @@ def test_custom_waf(check_aws_conn, create_stack, lb_domain, alias_session):
     api_call.assert_any_call("DescribeStacks", {"StackName": "abc"})
     api_call.assert_called_with("AssociateWebACL", {"WebACLArn": "somekinda-waf:arn", "ResourceArn": lb_arn})
     assert f"Custom WAF is now associated with {dns_name}" in result.output
+    assert result.exit_code == 0

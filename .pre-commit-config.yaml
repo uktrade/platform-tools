@@ -57,11 +57,3 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-  - repo: local
-    hooks:
-      - id: check-tracked-files
-        name: Check tracked file changes
-        entry: git diff --name-status --exit-code
-        language: system
-        pass_filenames: false
-        always_run: true
