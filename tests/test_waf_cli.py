@@ -152,9 +152,83 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
     assert "CloudFormation Stack already exists" in result.output
 
 
-def test_custom_waf_delete_in_progress():
-    pass
+@mock_cloudformation
+@mock_sts
+@patch(
+    "commands.waf_cli.botocore.client.BaseClient._make_api_call",
+    return_value={"Stacks": [{"StackStatus": "DELETE_IN_PROGRESS"}]},
+)
+@patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
+@patch("commands.waf_cli.check_aws_conn")
+def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_stacks, alias_session):
+    check_aws_conn.return_value = alias_session
+    os.chdir(f"{BASE_DIR}/tests/test-application")
+    runner = CliRunner()
+    result = runner.invoke(
+        custom_waf,
+        [
+            "--app",
+            "app",
+            "--project-profile",
+            "foo",
+            "--svc",
+            "svc",
+            "--env",
+            "env",
+            "--waf-path",
+            "waf.yml",
+        ],
+    )
+
+    describe_stacks.assert_called_once_with("DescribeStacks", {"StackName": "abc"})
+    assert "Failed to create CloudFormation stack, see AWS webconsole for details" in result.output
 
 
-def test_custom_waf():
-    pass
+@mock_cloudformation
+@mock_ec2
+@mock_elbv2
+@mock_sts
+@mock_wafv2
+@patch("commands.waf_cli.lb_domain")
+@patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
+@patch("commands.waf_cli.check_aws_conn")
+def test_custom_waf(check_aws_conn, create_stack, lb_domain, alias_session):
+    check_aws_conn.return_value = alias_session
+    vpc_id = alias_session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
+    elbv2_client = alias_session.client("elbv2")
+    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
+    response = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])
+    lb_domain.return_value = ("domain-name", response)
+    dns_name = response["LoadBalancers"][0]["DNSName"]
+    os.chdir(f"{BASE_DIR}/tests/test-application")
+    runner = CliRunner()
+
+    # patching here, to avoid inadvertently mocking the moto test setup calls above, expecting two different boto methods to be called
+    with patch(
+        "commands.waf_cli.botocore.client.BaseClient._make_api_call",
+        side_effect=[
+            {"Stacks": [{"StackStatus": "CREATE_COMPLETE", "Outputs": [{"OutputValue": "somekinda-waf:arn"}]}]},
+            {"ResponseMetadata": {"HTTPStatusCode": 200}},
+        ],
+    ) as api_call:
+        result = runner.invoke(
+            custom_waf,
+            [
+                "--app",
+                "app",
+                "--project-profile",
+                "foo",
+                "--svc",
+                "svc",
+                "--env",
+                "env",
+                "--waf-path",
+                "waf.yml",
+            ],
+        )
+
+    assert f"WAF created: somekinda-waf:arn" in result.output
+    api_call.assert_any_call("DescribeStacks", {"StackName": "abc"})
+    api_call.assert_called_with("AssociateWebACL", {"WebACLArn": "somekinda-waf:arn", "ResourceArn": lb_arn})
+    assert f"Custom WAF is now associated with {dns_name}" in result.output
