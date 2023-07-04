@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 
 import boto3
+import botocore  # noqa
 import cfn_flip.yaml_dumper
 import click
 import yaml

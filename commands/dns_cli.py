@@ -367,7 +367,6 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
 
     elb_client = project_session.client("elbv2")
 
-    # elb_client.describe_target_groups(TargetGroupArns=[proj_client.describe_services(cluster=cluster_name,services=[service_name,],)["services"][0]["loadBalancers"][0]["targetGroupArn"],],)["TargetGroups"][0]["LoadBalancerArns"][0]
     elb_arn = elb_client.describe_target_groups(
         TargetGroupArns=[
             proj_client.describe_services(
