@@ -31,6 +31,15 @@ def check_cloudformation(ctx: click.Context) -> None:
             ctx.invoke(command)
 
 
+def get_lint_result(path: str):
+    command = ["cfn-lint", path]
+
+    click.secho(f"\n>>> Running lint check", fg="yellow")
+    click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
+
+    return run(command, capture_output=True)
+
+
 @check_cloudformation.command()
 @click.pass_context
 def lint(ctx: click.Context) -> None:
@@ -38,12 +47,7 @@ def lint(ctx: click.Context) -> None:
 
     BASE_DIR = Path(__file__).parent.parent
 
-    command = ["cfn-lint", f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml"]
-
-    click.secho(f"\n>>> Running lint check", fg="yellow")
-    click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
-
-    result = run(command, capture_output=True)
+    result = get_lint_result(f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml")
 
     click.secho(result.stdout.decode())
     if result.returncode == 0:
