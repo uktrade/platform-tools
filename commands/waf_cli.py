@@ -10,6 +10,7 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
+from commands.check_cloudformation import get_lint_result
 from commands.dns_cli import lb_domain
 
 from .utils import check_aws_conn
@@ -103,7 +104,12 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     except FileNotFoundError:
         click.secho(f"File not found...\n{path}", fg="red")
         exit()
+
     # The YAML data_dict needs verification, need to create a function to lint/check YAML formatting.
+    result = get_lint_result(str(path))
+    if result.returncode != 0:
+        click.secho(f"File failed lint check.\n{str(path)}", fg="red")
+        exit()
 
     # dumper is used to resolve the shorthand in YAML file, eg !GetAtt
     dumper = cfn_flip.yaml_dumper.get_dumper(clean_up=True, long_form=False)

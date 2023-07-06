@@ -122,6 +122,32 @@ def test_custom_waf_file_not_found(alias_session):
     assert result.exit_code == 0
 
 
+@mock_cloudformation
+@mock_sts
+def test_custom_waf_invalid_yml(alias_session):
+    os.chdir(TEST_APP_DIR)
+    runner = CliRunner()
+    result = runner.invoke(
+        custom_waf,
+        [
+            "--app",
+            "app",
+            "--project-profile",
+            "foo",
+            "--svc",
+            "svc",
+            "--env",
+            "env",
+            "--waf-path",
+            "copilot/environments/addons/invalid_cloudformation_template.yml",
+        ],
+    )
+    path_string = str(TEST_APP_DIR / "copilot" / "environments" / "addons" / "invalid_cloudformation_template.yml")
+
+    assert result.exit_code == 0
+    assert f"File failed lint check.\n{path_string}" in result.output
+
+
 # No Moto CloudFormation support for AWS::WAFv2::WebACL
 @mock_cloudformation
 @mock_sts
