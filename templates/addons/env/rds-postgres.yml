@@ -31,6 +31,8 @@ Mappings:
       DBInstanceClass: '{{ config.instance }}'
       MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
       AllocatedStorage: {{ config.volume_size }}
+      MaxAllocatedStorage: {{ config.volume_size * 1.26 }}
+      StorageType: {% if env_name == "prod" %} io1 {% else %} gp3 {% endif %}
 
     {% endfor %}
 
@@ -68,16 +70,17 @@ Resources:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
     Properties:
+      AutoMinorVersionUpgrade: true
+      EnablePerformanceInsights: true
       Engine: postgres
       EngineVersion: '13.4'
       DBInstanceClass: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
       AllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
-      StorageType: standard
+      MaxAllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
+      StorageType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
       AllowMajorVersionUpgrade: false
-      AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 7
-      EnablePerformanceInsights : true
       DBName: !Ref {{ service.prefix }}DBName
       MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:username{% raw %}}}{% endraw %}" ]]

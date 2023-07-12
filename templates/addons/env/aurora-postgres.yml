@@ -30,6 +30,7 @@ Mappings:
     {{ environment_name }}:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
+      MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
   {% endfor %}
 
 Resources:
@@ -89,6 +90,7 @@ Resources:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 database cluster'
     Type: 'AWS::RDS::DBCluster'
     Properties:
+      AutoMinorVersionUpgrade: true
       MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
@@ -104,6 +106,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+      StorageEncrypted: true
   {{ service.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
@@ -111,7 +114,9 @@ Resources:
     Properties:
       DBClusterIdentifier: !Ref {{ service.prefix }}DBCluster
       DBInstanceClass: db.serverless
+      EnablePerformanceInsights: true
       Engine: 'aurora-postgresql'
+      MultiAZ: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
       PromotionTier: 1
       AvailabilityZone: !Select
         - 0
