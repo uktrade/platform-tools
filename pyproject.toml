@@ -14,7 +14,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-copilot-helper = "copilot_helper:cli"
+copilot-helper = "copilot_helper:copilot_helper"
 
 [tool.poetry.dependencies]
 Jinja2 = "3.1.2"
