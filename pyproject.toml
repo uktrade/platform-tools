@@ -17,6 +17,7 @@ packages = [
 copilot-helper = "copilot_helper:copilot_helper"
 
 [tool.poetry.dependencies]
+Cpython = "<3.0.0"
 Jinja2 = "3.1.2"
 PyYAML = "6.0.1"
 boto3 = "^1.26.31"
