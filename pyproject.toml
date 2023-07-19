@@ -3,7 +3,7 @@ line-length = 119
 
 [tool.poetry]
 name = "dbt-copilot-tools"
-version = "0.1.5"
+version = "0.1.6"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
@@ -14,7 +14,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-copilot-helper = "copilot_helper:cli"
+copilot-helper = "copilot_helper:copilot_helper"
 
 [tool.poetry.dependencies]
 Jinja2 = "3.1.2"
