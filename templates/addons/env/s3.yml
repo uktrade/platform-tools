@@ -6,9 +6,6 @@ Parameters:
   Env:
     Type: String
     Description: The environment name your service, job, or workflow is being deployed to.
-  Name:
-    Type: String
-    Description: The name of the service, job, or workflow being deployed.
 
 Mappings:
   {{ service.prefix }}BucketNameMap:
@@ -19,6 +16,51 @@ Mappings:
     {% endfor %}
 
 Resources:
+  {{ service.prefix }}LoggingBucket:
+    Metadata:
+      'aws:copilot:description': 'An Amazon S3 bucket to store logs from {{ service.prefix }}Bucket'
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [-, [!FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName], logs]]
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+      Tags:
+        - Key: Copilot-application
+          Value: !Ref App
+        - Key: Copilot-environment
+          Value: !Ref Env
+
+  {{ service.prefix }}LoggingBucketPolicy:
+    Metadata:
+      'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3ServerAccessLogsPolicy
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action: 's3:PutObject'
+            Resource:
+              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}/*
+              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}
+            Condition:
+              ArnLike:
+                'aws:SourceArn': !Sub ${ {{ service.prefix }}Bucket.Arn}
+              StringEquals:
+                'aws:SourceAccount': !Sub ${AWS::AccountId}
+      Bucket: !Ref {{ service.prefix }}LoggingBucket
+
   {{ service.prefix }}Bucket:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
@@ -30,16 +72,20 @@ Resources:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !Join [-, [!FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName], logs]]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
         - Key: Copilot-application
           Value: !Ref App
         - Key: Copilot-environment
           Value: !Ref Env
-        - Key: Copilot-name
-          Value: !Ref Name
 
   {{ service.prefix }}BucketPolicy:
     Metadata:
