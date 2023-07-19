@@ -235,7 +235,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 
     current_filepath = os.path.dirname(os.path.realpath(__file__))
 
-    with open(f"{current_filepath}/../templates/{type}-codebuild-role-policy.json") as f:
+    with open(f"{current_filepath}/templates/{type}-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
     client = project_session.client("iam", region_name=AWS_REGION)
 
@@ -271,7 +271,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
             )
             exit()
 
-    with open(f"{current_filepath}/../templates/create-codebuild-role.json") as f:
+    with open(f"{current_filepath}/templates/create-codebuild-role.json") as f:
         role_doc = json.load(f)
 
     # Now create a role if not present and attach policy
