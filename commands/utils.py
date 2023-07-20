@@ -88,8 +88,8 @@ def get_ssm_secret_names(app, env):
 
 
 def setup_templates():
-    template_path = Path(__file__).parent.parent / Path("templates")
-    templateLoader = jinja2.FileSystemLoader(searchpath=template_path)
+    Path(__file__).parent.parent / Path("templates")
+    templateLoader = jinja2.PackageLoader("commands")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
 
     templates = {
