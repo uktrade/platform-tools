@@ -1,0 +1,77 @@
+DEPLOYMENT INSTRUCTIONS
+
+Project files have been written to the copilot/ directory.  Any changes to these files should be committed to github.
+
+Run the following commands to bootstrap the app:
+
+NOTES:
+1. you will need to export the AWS_PROFILE env var for the copilot cli tool to pick up:  export AWS_PROFILE=your-aws-profile
+2. Environments will need an ACM TLS certs setting up before they can be deployed.  Speak to SRE for assistance.
+
+You do not need to follow all of the instructions in sequence. For instance, you may decide to just initialise and deploy one environment, and then deploy a single service into that environment.
+
+# 1. init the app
+
+copilot app init
+
+# 2. init each service
+
+copilot svc init --name test-service
+
+# 3. initialise each environment
+
+NOTE: ensure ACM certs have been created and the cert ARNs added to each env's `copilot/environments/{env}/manifest.yml' file first.
+
+When running "copilot env init" chose the following options:
+* Credential source: the correct account that the env should exist in. [NOTE: environments can live in separate accounts.]
+* Default environment configuration? Yes, use default.
+
+
+copilot env init --name test
+copilot env init --name production
+
+# 4. deploy each environment
+
+copilot env deploy --name test
+copilot env deploy --name production
+
+# 5. migrate the secrets from Gov Paas to AWS/Copilot
+
+copilot-bootstrap.py migrate-secrets bootstrap.yml
+
+You need to be authenticated via the CF CLI for this command to work.
+Use the --dry-run flag initially to check the output
+
+# 6. deploy each service into each environment
+
+# test-service:
+copilot svc deploy --name test-service --env test
+copilot svc deploy --name test-service --env production
+
+
+# 7. Point DNS entries to ALB urls
+
+Speak to SRE.
+
+# 8. Generate the storage addons
+
+Create a storage.yml and add the relevant configuration.  See SRE for assistance.
+
+Generate environment level storage addons
+
+copilot-bootstrap generate-storage storage.yaml
+
+Add required secrets to each service's manifest.yml.
+
+Redeploy each environment to provision those secrets
+
+
+copilot env deploy --name test
+copilot env deploy --name production
+
+# 9. Switch the bootstrap container to the service container
+
+Edit each copilot/{service-name}/manifest.yaml file and replace the image_location with the service's ECR registry url and redeploy.
+
+It's expected that you'll need to iterate over this step a number of times whilst making changes to the services manifest.yml until the service is stable.
+
