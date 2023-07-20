@@ -13,6 +13,7 @@ Mappings:
     {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
+      LoggingBucketName: '{{ config.bucket_name }}-logs'
     {% endfor %}
 
 Resources:
@@ -21,7 +22,7 @@ Resources:
       'aws:copilot:description': 'An Amazon S3 bucket to store logs from {{ service.prefix }}Bucket'
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join [-, [!FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName], logs]]
+      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
@@ -75,7 +76,7 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
       LoggingConfiguration:
-        DestinationBucketName: !Join [-, [!FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName], logs]]
+        DestinationBucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
