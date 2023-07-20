@@ -16,7 +16,7 @@ from .utils import mkdir
 from .utils import mkfile
 from .utils import setup_templates
 
-BASE_DIR = Path(__file__).parent.parent
+PACKAGE_DIR = Path(__file__).resolve().parent
 
 WAF_ACL_ARN_KEY = "waf-acl-arn"
 
@@ -48,10 +48,10 @@ def _validate_and_normalise_config(config_file):
     def _normalise_keys(source: dict):
         return {k.replace("-", "_"): v for k, v in source.items()}
 
-    with open(Path(__file__).resolve().parent / "storage-plans.yml", "r") as fd:
+    with open(PACKAGE_DIR / "storage-plans.yml", "r") as fd:
         storage_plans = yaml.safe_load(fd)
 
-    with open(Path(__file__).resolve().parent / "schemas/storage-schema.json", "r") as fd:
+    with open(PACKAGE_DIR / "schemas/storage-schema.json", "r") as fd:
         schema = json.load(fd)
 
     # load and validate config
@@ -134,7 +134,7 @@ def make_storage():
 
     templates = setup_templates()
 
-    config = _validate_and_normalise_config(Path(__file__).resolve().parent / "default-storage.yml")
+    config = _validate_and_normalise_config(PACKAGE_DIR / "default-storage.yml")
 
     project_config = _validate_and_normalise_config("storage.yml")
 
