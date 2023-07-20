@@ -115,6 +115,48 @@ invalid-entry:
         assert result.exit_code == 1
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
+    def test_env_addons_parameters_file_is_written_with_redis_storage_type(self, fakefs):
+        fakefs.create_file(
+            "storage.yml",
+            contents="""
+redis:
+  type: redis
+  environments:
+    default:
+      engine: '6.2'
+      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
+""",
+        )
+        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        result = CliRunner().invoke(cli, ["make-storage"])
+
+        assert result.exit_code == 0
+        assert "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+
+    def test_env_addons_parameters_file_is_not_written_with_s3_storage_type(self, fakefs):
+        fakefs.create_file(
+            "storage.yml",
+            contents="""
+my-s3-bucket:
+  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
+  readonly: true  # services are granted read only access to the bucket
+  services:  # services that require access to the bucket.
+    - "web"
+  environments:
+    development:
+      bucket-name: my-bucket-dev
+""",
+        )
+        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        result = CliRunner().invoke(cli, ["make-storage"])
+
+        assert result.exit_code == 0
+        assert "File copilot/environments/addons/addons.parameters.yml" not in result.output
+
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
