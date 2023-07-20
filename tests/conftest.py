@@ -20,9 +20,9 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "commands/templates")
-    fs.add_real_directory(BASE_DIR / "schemas")
-    fs.add_real_file(BASE_DIR / "storage-plans.yml")
-    fs.add_real_file(BASE_DIR / "default-storage.yml")
+    fs.add_real_directory(BASE_DIR / "commands/schemas")
+    fs.add_real_file(BASE_DIR / "commands/storage-plans.yml")
+    fs.add_real_file(BASE_DIR / "commands/default-storage.yml")
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
 
     return fs
