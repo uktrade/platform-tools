@@ -22,8 +22,8 @@ count: # See https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#cou
   cpu_percentage: 50
 exec: true     # Enable running commands in your container.
 
-# storage:
-  # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
+storage:
+  readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
 variables:                    # Pass environment variables as key value pairs.
   PORT: 8080                  # The bootstrap container requires a $PORT env var

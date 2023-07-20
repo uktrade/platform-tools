@@ -31,7 +31,7 @@ Mappings:
       DBInstanceClass: '{{ config.instance }}'
       MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
       AllocatedStorage: {{ config.volume_size }}
-      MaxAllocatedStorage: {{ config.volume_size * 1.26 }}
+      MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" %} io1 {% else %} gp3 {% endif %}
 
     {% endfor %}
@@ -73,7 +73,7 @@ Resources:
       AutoMinorVersionUpgrade: true
       EnablePerformanceInsights: true
       Engine: postgres
-      EngineVersion: '13.4'
+      EngineVersion: '13'
       DBInstanceClass: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
       AllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
