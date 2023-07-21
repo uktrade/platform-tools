@@ -1,12 +1,60 @@
 from pathlib import Path
 
 import boto3
+import pytest
 import yaml
 from click.testing import CliRunner
 from moto import mock_ssm
 
 from commands.copilot_cli import copilot as cli
 from commands.utils import SSM_PATH
+
+REDIS_STORAGE_CONTENTS = """
+redis:
+  type: redis
+  environments:
+    default:
+      engine: '6.2'
+      plan: small
+"""
+
+RDS_POSTGRES_STORAGE_CONTENTS = """
+rds:
+  type: rds-postgres
+  environments:
+    default:
+      plan: small-13-ha
+"""
+
+AURORA_POSTGRES_STORAGE_CONTENTS = """
+aurora:
+  type: aurora-postgres
+  version: 14.4
+  environments:
+    default:
+      min-capacity: 0.5
+      max-capacity: 8
+"""
+
+OPENSEARCH_STORAGE_CONTENTS = """
+opensearch:
+  type: opensearch
+  environments:
+    default:
+      plan: small
+      engine: "2.3"
+"""
+
+S3_STORAGE_CONTENTS = """
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket-name: my-bucket-dev
+"""
 
 
 class TestMakeStorageCommand:
@@ -115,17 +163,22 @@ invalid-entry:
         assert result.exit_code == 1
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
-    def test_env_addons_parameters_file_is_written_with_redis_storage_type(self, fakefs):
+    @pytest.mark.parametrize(
+        "storage_file_contents, storage_type",
+        [
+            (REDIS_STORAGE_CONTENTS, "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
+            (S3_STORAGE_CONTENTS, "s3"),
+        ],
+    )
+    def test_env_addons_parameters_file_with_different_storage_types(
+        self, fakefs, storage_file_contents, storage_type
+    ):
         fakefs.create_file(
             "storage.yml",
-            contents="""
-redis:
-  type: redis
-  environments:
-    default:
-      engine: '6.2'
-      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
-""",
+            contents=storage_file_contents,
         )
         fakefs.create_file("copilot/web/manifest.yml")
         fakefs.create_file("copilot/environments/development/manifest.yml")
@@ -133,29 +186,10 @@ redis:
         result = CliRunner().invoke(cli, ["make-storage"])
 
         assert result.exit_code == 0
-        assert "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
-
-    def test_env_addons_parameters_file_is_not_written_with_s3_storage_type(self, fakefs):
-        fakefs.create_file(
-            "storage.yml",
-            contents="""
-my-s3-bucket:
-  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-  readonly: true  # services are granted read only access to the bucket
-  services:  # services that require access to the bucket.
-    - "web"
-  environments:
-    development:
-      bucket-name: my-bucket-dev
-""",
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
-
-        result = CliRunner().invoke(cli, ["make-storage"])
-
-        assert result.exit_code == 0
-        assert "File copilot/environments/addons/addons.parameters.yml" not in result.output
+        if storage_type == "s3":
+            assert "File copilot/environments/addons/addons.parameters.yml" not in result.output
+        else:
+            assert "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
