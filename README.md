@@ -6,7 +6,7 @@
 
 See [the package documentation](https://github.com/uktrade/copilot-tools/blob/main/commands/README.md) for detail on what the package is and how to use it.
 
-If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration/README.md) will also be relevant for you.
+If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration/README.md) will also be relevant for you.
 
 ## Contributing to the dbt-copilot-tools package
 
