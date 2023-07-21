@@ -9,4 +9,4 @@ def test_check_aws_conn_profile_not_configured(capsys):
 
     captured = capsys.readouterr()
 
-    assert "AWS profile not configured, please ensure they are set." in captured.out
+    assert """AWS profile "foo" is not configured.""" in captured.out
