@@ -32,7 +32,13 @@ def check_cloudformation(ctx: click.Context) -> None:
 
 
 def get_lint_result(path: str):
-    command = ["cfn-lint", path]
+    command = [
+        "cfn-lint",
+        path,
+        "--ignore-templates",
+        # addons.parameters.yml is not a CloudFormation template file
+        f"{BASE_DIR}/tests/test-application/copilot/**/addons/addons.parameters.yml",
+    ]
 
     click.secho(f"\n>>> Running lint check", fg="yellow")
     click.secho(f"""    {" ".join(command)}\n""", fg="yellow")

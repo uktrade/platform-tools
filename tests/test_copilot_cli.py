@@ -1,12 +1,60 @@
 from pathlib import Path
 
 import boto3
+import pytest
 import yaml
 from click.testing import CliRunner
 from moto import mock_ssm
 
 from commands.copilot_cli import copilot as cli
 from commands.utils import SSM_PATH
+
+REDIS_STORAGE_CONTENTS = """
+redis:
+  type: redis
+  environments:
+    default:
+      engine: '6.2'
+      plan: small
+"""
+
+RDS_POSTGRES_STORAGE_CONTENTS = """
+rds:
+  type: rds-postgres
+  environments:
+    default:
+      plan: small-13-ha
+"""
+
+AURORA_POSTGRES_STORAGE_CONTENTS = """
+aurora:
+  type: aurora-postgres
+  version: 14.4
+  environments:
+    default:
+      min-capacity: 0.5
+      max-capacity: 8
+"""
+
+OPENSEARCH_STORAGE_CONTENTS = """
+opensearch:
+  type: opensearch
+  environments:
+    default:
+      plan: small
+      engine: "2.3"
+"""
+
+S3_STORAGE_CONTENTS = """
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket-name: my-bucket-dev
+"""
 
 
 class TestMakeStorageCommand:
@@ -114,6 +162,38 @@ invalid-entry:
 
         assert result.exit_code == 1
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
+
+    @pytest.mark.parametrize(
+        "storage_file_contents, storage_type",
+        [
+            (REDIS_STORAGE_CONTENTS, "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
+            (S3_STORAGE_CONTENTS, "s3"),
+        ],
+    )
+    def test_env_addons_parameters_file_with_different_storage_types(
+        self, fakefs, storage_file_contents, storage_type
+    ):
+        fakefs.create_file(
+            "storage.yml",
+            contents=storage_file_contents,
+        )
+        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        result = CliRunner().invoke(cli, ["make-storage"])
+
+        assert result.exit_code == 0
+        if storage_type == "s3":
+            assert (
+                "File copilot/environments/addons/addons.parameters.yml" not in result.output
+            ), f"addons.parameters.yml should not be included for {storage_type}"
+        else:
+            assert (
+                "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+            ), f"addons.parameters.yml should be included for {storage_type}"
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
