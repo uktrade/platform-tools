@@ -14,3 +14,14 @@ class TestCopilotHelperCli:
         assert result.exit_code == 0
         assert name == "dbt-copilot-tools"
         assert (re.compile(r"^\d+(\.\d+){2,}$")).match(version)
+
+    def test_sub_commands(self):
+        assert list(copilot_helper.commands.keys()) == [
+            "bootstrap",
+            "check-cloudformation",
+            "codebuild",
+            "conduit",
+            "copilot",
+            "domain",
+            "waf",
+        ]
