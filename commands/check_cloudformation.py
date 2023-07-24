@@ -36,6 +36,7 @@ def get_lint_result(path: str):
         "cfn-lint",
         path,
         "--ignore-templates",
+        # addons.parameters.yml is not a CloudFormation template file
         f"{BASE_DIR}/tests/test-application/copilot/**/addons/addons.parameters.yml",
     ]
 

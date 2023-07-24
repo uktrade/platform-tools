@@ -187,9 +187,13 @@ invalid-entry:
 
         assert result.exit_code == 0
         if storage_type == "s3":
-            assert "File copilot/environments/addons/addons.parameters.yml" not in result.output
+            assert (
+                "File copilot/environments/addons/addons.parameters.yml" not in result.output
+            ), f"addons.parameters.yml should not be included for {storage_type}"
         else:
-            assert "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+            assert (
+                "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+            ), f"addons.parameters.yml should be included for {storage_type}"
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
