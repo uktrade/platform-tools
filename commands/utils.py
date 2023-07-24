@@ -133,7 +133,7 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     try:
         session = boto3.session.Session(profile_name=aws_profile)
     except botocore.exceptions.ProfileNotFound:
-        click.secho("AWS profile not configured, please ensure they are set.", fg="red")
+        click.secho(f"""AWS profile "{aws_profile}" is not configured.""", fg="red")
         exit()
     except botocore.errorfactory.UnauthorizedException:
         click.secho(

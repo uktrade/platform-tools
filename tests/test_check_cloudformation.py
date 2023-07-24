@@ -6,8 +6,9 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from commands.check_cloudformation import \
-    check_cloudformation as check_cloudformation_command
+from commands.check_cloudformation import (
+    check_cloudformation as check_cloudformation_command,
+)
 from tests.conftest import BASE_DIR
 
 
@@ -33,6 +34,7 @@ def test_prepares_cloudformation_templates(copilot_directory: Path) -> None:
         "celery",
         "environments",
         "environments/addons",
+        "environments/addons/addons.parameters.yml",
         "environments/addons/my-aurora-db.yml",
         "environments/addons/my-opensearch.yml",
         "environments/addons/my-rds-db.yml",

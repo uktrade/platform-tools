@@ -269,7 +269,7 @@ def test_migrate_secrets_profile_not_configured(tmp_path):
         ["--project-profile", "foo", "--env", "test", "--svc", "test-service", "--dry-run"],
     )
 
-    assert "AWS profile not configured, please ensure they are set." in result.output
+    assert """AWS profile "foo" is not configured.""" in result.output
 
 
 def test_instructions(tmp_path):
