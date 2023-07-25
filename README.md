@@ -46,13 +46,10 @@ For Platform developers, the `push` commands can be found in [AWS ECR](https://e
 
 To publish the Python package `dbt-copilot-tools`, you will need an API token.
 
-1. Acquire credentials from [Passman for PyPi](https://passman.ci.uktrade.digital/secret/244eb2ad-245d-47d9-9f6a-95ee30810944/).
+1. Acquire API token from [Passman](https://passman.ci.uktrade.digital/secret/cc82a3f7-ddfa-4312-ab56-1ff8528dadc8/).
    - Request access from the SRE team.
-2. Log in to [PyPi](https://pypi.org) with the above credentials. The MFA token will also be in Passman.
-3. Navigate to [Account settings](https://pypi.org/manage/account/).
-4. Get API token from [Passman](https://passman.ci.uktrade.digital/secret/cc82a3f7-ddfa-4312-ab56-1ff8528dadc8/).
-- _Note: You will need access to the `platform` group in Passman._
-5. Run `poetry config pypi-token.pypi <token>` to add the token to your Poetry configuration.
+   - _Note: You will need access to the `platform` group in Passman._
+2. Run `poetry config pypi-token.pypi <token>` to add the token to your Poetry configuration.
 
 Update the version, as the same version cannot be published to PyPi.
 
