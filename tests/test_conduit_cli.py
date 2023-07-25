@@ -122,8 +122,7 @@ def test_tunnel_no_cluster_resource(alias_session):
     """Test that tunnel command prints an exit code when a cluster with app and
     env tags is not found."""
 
-    runner = CliRunner()
-    result = runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
+    result = CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     assert result.exit_code == 0
     assert "No cluster resource found with tag filter values dbt-app and staging" in result.output
@@ -132,10 +131,9 @@ def test_tunnel_no_cluster_resource(alias_session):
 @mock_sts
 def test_tunnel_profile_not_configured():
     """Test that tunnel calls check_aws_conn and outputs expected error when AWS
-    profile variable isn't set."""
+    profile variable isn't configured."""
 
-    runner = CliRunner()
-    result = runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
+    result = CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     assert 'AWS profile "foo" is not configured.' in result.output
 
@@ -153,8 +151,8 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, moc
     secret_arn = boto3.client("secretsmanager").create_secret(
         Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
     )["ARN"]
-    runner = CliRunner()
-    runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
+
+    CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     create_task.assert_called_once_with("dbt-app", "staging", secret_arn)
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
@@ -172,8 +170,8 @@ def test_tunnel_task_already_running(create_task, exec_into_task, is_task_runnin
     and does not create a new one."""
 
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    runner = CliRunner()
-    runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
+
+    CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     assert not create_task.called
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
