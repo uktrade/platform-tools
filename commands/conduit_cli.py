@@ -8,7 +8,7 @@ import click
 from commands.utils import check_aws_conn
 
 
-def get_cluster_arn(app, env):
+def get_cluster_arn(app: str, env: str) -> str:
     client = boto3.client("resourcegroupstaggingapi")
 
     response = client.get_resources(
@@ -22,27 +22,28 @@ def get_cluster_arn(app, env):
     return response["ResourceTagMappingList"][0]["ResourceARN"]
 
 
-def create_task(app, env, secret_arn):
+def create_task(app: str, env: str, secret_arn: str) -> None:
     command = f"copilot task run -n dbtunnel --dockerfile Dockerfile --secrets DB_SECRET={secret_arn} --app {app} --env {env}"
     subprocess.call(command, shell=True)
 
 
-def get_postgres_secret_arn(app, env):
+def get_postgres_secret_arn(app: str, env: str) -> str:
     secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
 
     return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)["ARN"]
 
 
-def is_task_running(cluster_arn):
+def is_task_running(cluster_arn: str) -> bool:
     tasks = boto3.client("ecs").list_tasks(cluster=cluster_arn, desiredStatus="RUNNING", family="copilot-dbtunnel")
 
     try:
-        return tasks["taskArns"]
+        if tasks["taskArns"]:
+            return True
     except ValueError:
         return False
 
 
-def exec_into_task(app, env, cluster_arn):
+def exec_into_task(app: str, env: str, cluster_arn: str) -> None:
     # There is a delay between a task's being created and its health status changing from PROVISIONING to RUNNING,
     # so we need to wait before running the exec command or timeout if taking too long.
     timeout = time.time() + 60
@@ -68,7 +69,7 @@ def conduit():
 @click.option("--project-profile", required=True, help="aws account profile name")
 @click.option("--app", help="aws app name", required=True)
 @click.option("--env", help="aws environment name", required=True)
-def tunnel(project_profile, app, env):
+def tunnel(project_profile: str, app: str, env: str) -> None:
     check_aws_conn(project_profile)
 
     try:

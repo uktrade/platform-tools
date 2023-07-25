@@ -22,6 +22,9 @@ from commands.conduit_cli import tunnel
 @mock_ecs
 @mock_resourcegroupstaggingapi
 def test_get_cluster_arn(alias_session):
+    """Test that, given app and environment strings, get_cluster_arn returns the
+    arn of a cluster tagged with these strings."""
+
     arn = boto3.client("ecs").create_cluster(
         tags=[
             {"key": "copilot-application", "value": "dbt-app"},
@@ -35,6 +38,9 @@ def test_get_cluster_arn(alias_session):
 
 @patch("subprocess.call")
 def test_create_task(subprocess_call):
+    """Test that create_task runs the `copilot task run` command with expected
+    --app and --env flags."""
+
     create_task("dbt-app", "staging", "arn::blah")
 
     subprocess_call.assert_called_once_with(
@@ -45,6 +51,9 @@ def test_create_task(subprocess_call):
 
 @mock_secretsmanager
 def test_get_postgres_secret_arn():
+    """Test that, given app and environment strings, get_postgres_secret_arn
+    returns the app's secret arn string."""
+
     arn = boto3.client("secretsmanager").create_secret(
         Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
     )["ARN"]
@@ -55,6 +64,9 @@ def test_get_postgres_secret_arn():
 @mock_ec2
 @mock_ecs
 def test_is_task_running():
+    """Test that, given a cluster arn string, is_task_running returns False
+    until an ecs task is running on an ec2 instance in that cluster."""
+
     ecs_client = boto3.client("ecs")
     arn = ecs_client.create_cluster(
         tags=[
@@ -89,6 +101,9 @@ def test_is_task_running():
 @patch("os.system")
 @patch("commands.conduit_cli.is_task_running", return_value=True)
 def test_exec_into_task(is_task_running, system):
+    """Test that exec_into_task runs the `copilot task exec` command with
+    expected --app and --env flags."""
+
     exec_into_task("dbt-app", "staging", "arn:random")
 
     system.assert_called_once_with("copilot task exec --app dbt-app --env staging")
@@ -108,6 +123,9 @@ def test_exec_into_task_timeout(capsys):
 @mock_resourcegroupstaggingapi
 @mock_sts
 def test_tunnel_no_cluster_resource(alias_session):
+    """Test that tunnel command prints an exit code when a cluster with app and
+    env tags is not found."""
+
     runner = CliRunner()
     result = runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
@@ -117,6 +135,9 @@ def test_tunnel_no_cluster_resource(alias_session):
 
 @mock_sts
 def test_tunnel_profile_not_configured():
+    """Test that tunnel calls check_aws_conn and outputs expected error when AWS
+    profile variable isn't set."""
+
     runner = CliRunner()
     result = runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
@@ -130,6 +151,9 @@ def test_tunnel_profile_not_configured():
 @patch("commands.conduit_cli.exec_into_task")
 @patch("commands.conduit_cli.create_task")
 def test_tunnel_task_not_running(create_task, exec_into_task, alias_session):
+    """Test that, when a task is not already running, command creates and execs
+    into a task."""
+
     cluster_arn = boto3.client("ecs").create_cluster(
         tags=[
             {"key": "copilot-application", "value": "dbt-app"},
@@ -156,6 +180,9 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session):
 @patch("commands.conduit_cli.exec_into_task")
 @patch("commands.conduit_cli.create_task")
 def test_tunnel_task_already_running(create_task, exec_into_task, is_task_running, alias_session):
+    """Test that, when a task is already running, command execs into this task
+    and does not create a new one."""
+
     cluster_arn = boto3.client("ecs").create_cluster(
         tags=[
             {"key": "copilot-application", "value": "dbt-app"},
