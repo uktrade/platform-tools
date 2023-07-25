@@ -7,9 +7,6 @@
 - [copilot-helper bootstrap instructions](#copilot-helper-bootstrap-instructions)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
-- [copilot-helper copilot](#copilot-helper-copilot)
-- [copilot-helper copilot make-storage](#copilot-helper-copilot-make-storage)
-- [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
 - [copilot-helper codebuild link-github](#copilot-helper-codebuild-link-github)
 - [copilot-helper codebuild create-codedeploy-role](#copilot-helper-codebuild-create-codedeploy-role)
@@ -17,6 +14,11 @@
 - [copilot-helper codebuild buildproject](#copilot-helper-codebuild-buildproject)
 - [copilot-helper codebuild delete-project](#copilot-helper-codebuild-delete-project)
 - [copilot-helper codebuild slackcreds](#copilot-helper-codebuild-slackcreds)
+- [copilot-helper conduit](#copilot-helper-conduit)
+- [copilot-helper conduit tunnel](#copilot-helper-conduit-tunnel)
+- [copilot-helper copilot](#copilot-helper-copilot)
+- [copilot-helper copilot make-storage](#copilot-helper-copilot-make-storage)
+- [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
@@ -44,6 +46,7 @@ Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
 - [`codebuild` ↪](#copilot-helper-codebuild)
+- [`conduit` ↪](#copilot-helper-conduit)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
 - [`waf` ↪](#copilot-helper-waf)
@@ -171,65 +174,6 @@ Usage: copilot-helper check-cloudformation [OPTIONS] COMMAND1 [ARGS]...
 ```
 Usage: copilot-helper check-cloudformation lint [OPTIONS]
 ```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper copilot
-
-[↩ Parent](#copilot-helper)
-
-## Usage
-
-```
-Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
-- [`make-storage` ↪](#copilot-helper-copilot-make-storage)
-
-# copilot-helper copilot make-storage
-
-[↩ Parent](#copilot-helper-copilot)
-
-    Generate storage CloudFormation for each environment.
-
-## Usage
-
-```
-Usage: copilot-helper copilot make-storage [OPTIONS]
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper copilot get-env-secrets
-
-[↩ Parent](#copilot-helper-copilot)
-
-    List secret names and values for an environment.
-
-## Usage
-
-```
-Usage: copilot-helper copilot get-env-secrets [OPTIONS] APP ENV
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
 
 ## Options
 
@@ -413,6 +357,105 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
   - Slack api token
 - `--project-profile <text>`
   - aws account profile name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper conduit
+
+[↩ Parent](#copilot-helper)
+
+## Usage
+
+```
+Usage: copilot-helper conduit [OPTIONS] COMMAND [ARGS]...
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`tunnel` ↪](#copilot-helper-conduit-tunnel)
+
+# copilot-helper conduit tunnel
+
+[↩ Parent](#copilot-helper-conduit)
+
+## Usage
+
+```
+Usage: copilot-helper conduit tunnel [OPTIONS]
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name
+- `--app <text>`
+  - AWS application name
+- `--env <text>`
+  - AWS environment name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper copilot
+
+[↩ Parent](#copilot-helper)
+
+## Usage
+
+```
+Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
+- [`make-storage` ↪](#copilot-helper-copilot-make-storage)
+
+# copilot-helper copilot make-storage
+
+[↩ Parent](#copilot-helper-copilot)
+
+    Generate storage CloudFormation for each environment.
+
+## Usage
+
+```
+Usage: copilot-helper copilot make-storage [OPTIONS]
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper copilot get-env-secrets
+
+[↩ Parent](#copilot-helper-copilot)
+
+    List secret names and values for an environment.
+
+## Usage
+
+```
+Usage: copilot-helper copilot get-env-secrets [OPTIONS] APP ENV
+```
+
+## Arguments
+
+- `app <text>`
+- `env <text>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

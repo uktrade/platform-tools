@@ -5,6 +5,7 @@ import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
+from moto import mock_ecs
 from moto import mock_iam
 from moto import mock_route53
 
@@ -57,3 +58,15 @@ def alias_session(aws_credentials):
         session.client("iam").create_account_alias(AccountAlias="foo")
 
         yield session
+
+
+@pytest.fixture(scope="function")
+def mocked_cluster():
+    with mock_ecs():
+        yield boto3.client("ecs").create_cluster(
+            tags=[
+                {"key": "copilot-application", "value": "dbt-app"},
+                {"key": "copilot-environment", "value": "staging"},
+                {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
+            ]
+        )
