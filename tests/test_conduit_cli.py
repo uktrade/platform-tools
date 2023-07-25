@@ -131,7 +131,7 @@ def test_tunnel_no_cluster_resource(alias_session):
 @mock_sts
 def test_tunnel_profile_not_configured():
     """Test that tunnel calls check_aws_conn and outputs expected error when AWS
-    profile variable isn't configured."""
+    profile isn't configured."""
 
     result = CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
