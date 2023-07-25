@@ -66,9 +66,9 @@ def conduit():
 
 
 @conduit.command()
-@click.option("--project-profile", required=True, help="aws account profile name")
-@click.option("--app", help="aws app name", required=True)
-@click.option("--env", help="aws environment name", required=True)
+@click.option("--project-profile", required=True, help="AWS account profile name")
+@click.option("--app", help="AWS application name", required=True)
+@click.option("--env", help="AWS environment name", required=True)
 def tunnel(project_profile: str, app: str, env: str) -> None:
     check_aws_conn(project_profile)
 

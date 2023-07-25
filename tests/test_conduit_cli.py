@@ -19,21 +19,14 @@ from commands.conduit_cli import is_task_running
 from commands.conduit_cli import tunnel
 
 
-@mock_ecs
 @mock_resourcegroupstaggingapi
-def test_get_cluster_arn(alias_session):
+def test_get_cluster_arn(alias_session, mocked_cluster):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
 
-    arn = boto3.client("ecs").create_cluster(
-        tags=[
-            {"key": "copilot-application", "value": "dbt-app"},
-            {"key": "copilot-environment", "value": "staging"},
-            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-        ]
-    )["cluster"]["clusterArn"]
+    expected_arn = mocked_cluster["cluster"]["clusterArn"]
 
-    assert get_cluster_arn("dbt-app", "staging") == arn
+    assert get_cluster_arn("dbt-app", "staging") == expected_arn
 
 
 @patch("subprocess.call")
@@ -54,48 +47,51 @@ def test_get_postgres_secret_arn():
     """Test that, given app and environment strings, get_postgres_secret_arn
     returns the app's secret arn string."""
 
-    arn = boto3.client("secretsmanager").create_secret(
+    mocked_secret = boto3.client("secretsmanager").create_secret(
         Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
-    )["ARN"]
+    )
+    expected_arn = mocked_secret["ARN"]
 
-    assert get_postgres_secret_arn("dbt-app", "staging") == arn
+    assert get_postgres_secret_arn("dbt-app", "staging") == expected_arn
+
+
+def test_is_task_running_when_task_is_not_running(mocked_cluster):
+    """Given an ECS Cluster ARN string, is_task_running should return False when
+    the task is not running."""
+
+    assert not is_task_running(mocked_cluster["cluster"]["clusterArn"])
 
 
 @mock_ec2
-@mock_ecs
-def test_is_task_running():
-    """Test that, given a cluster arn string, is_task_running returns False
-    until an ecs task is running on an ec2 instance in that cluster."""
+def test_is_task_running(mocked_cluster):
+    """Given an ECS Cluster ARN string, is_task_running should return True when
+    the task is running."""
 
-    ecs_client = boto3.client("ecs")
-    arn = ecs_client.create_cluster(
-        tags=[
-            {"key": "copilot-application", "value": "dbt-app"},
-            {"key": "copilot-environment", "value": "staging"},
-            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-        ]
-    )["cluster"]["clusterArn"]
-
-    assert not is_task_running(arn)
-
-    client = boto3.client("ec2")
-    images = client.describe_images(Owners=["amazon"])["Images"]
-    client.run_instances(ImageId=images[0]["ImageId"], MinCount=1, MaxCount=1)
-    instances = boto3.client("ec2").describe_instances()
-    instance_id = instances["Reservations"][0]["Instances"][0]["InstanceId"]
-    ec2 = boto3.resource("ec2")
-    instance = ec2.Instance(instance_id)
-    instance_id_document = json.dumps(ec2_utils.generate_instance_identity_document(instance))
-    ecs_client.register_container_instance(cluster=arn, instanceIdentityDocument=instance_id_document)
-    definition_arn = ecs_client.register_task_definition(
+    # Create mocked ECS Cluster
+    mocked_ecs_client = boto3.client("ecs")
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+    # Create mocked EC2 instance
+    mocked_ec2_client = boto3.client("ec2")
+    mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
+    mocked_ec2_client.run_instances(ImageId=mocked_ec2_images[0]["ImageId"], MinCount=1, MaxCount=1)
+    mocked_ec2_instances = boto3.client("ec2").describe_instances()
+    mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
+    mocked_ec2 = boto3.resource("ec2")
+    mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
+    mocked_instance_id_document = json.dumps(ec2_utils.generate_instance_identity_document(mocked_ec2_instance))
+    # Attach mocked EC2 instance to the mocked ECS Cluster
+    mocked_ecs_client.register_container_instance(
+        cluster=mocked_cluster_arn, instanceIdentityDocument=mocked_instance_id_document
+    )
+    mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
         family="copilot-dbtunnel",
         containerDefinitions=[
             {"name": "test_container", "image": "test_image", "cpu": 100, "memory": 500, "essential": True}
         ],
     )["taskDefinition"]["taskDefinitionArn"]
-    ecs_client.run_task(cluster=arn, taskDefinition=definition_arn)
+    mocked_ecs_client.run_task(cluster=mocked_cluster_arn, taskDefinition=mocked_task_definition_arn)
 
-    assert is_task_running(arn)
+    assert is_task_running(mocked_cluster_arn)
 
 
 @patch("os.system")
@@ -144,23 +140,16 @@ def test_tunnel_profile_not_configured():
     assert 'AWS profile "foo" is not configured.' in result.output
 
 
-@mock_ecs
 @mock_resourcegroupstaggingapi
 @mock_secretsmanager
 @mock_sts
 @patch("commands.conduit_cli.exec_into_task")
 @patch("commands.conduit_cli.create_task")
-def test_tunnel_task_not_running(create_task, exec_into_task, alias_session):
+def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, mocked_cluster):
     """Test that, when a task is not already running, command creates and execs
     into a task."""
 
-    cluster_arn = boto3.client("ecs").create_cluster(
-        tags=[
-            {"key": "copilot-application", "value": "dbt-app"},
-            {"key": "copilot-environment", "value": "staging"},
-            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-        ]
-    )["cluster"]["clusterArn"]
+    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     secret_arn = boto3.client("secretsmanager").create_secret(
         Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
     )["ARN"]
@@ -172,24 +161,17 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session):
 
 
 # patching is_task_running because it's tested separately above and requires a lot of moto legwork.
-@mock_ecs
 @mock_resourcegroupstaggingapi
 @mock_secretsmanager
 @mock_sts
 @patch("commands.conduit_cli.is_task_running", return_value=True)
 @patch("commands.conduit_cli.exec_into_task")
 @patch("commands.conduit_cli.create_task")
-def test_tunnel_task_already_running(create_task, exec_into_task, is_task_running, alias_session):
+def test_tunnel_task_already_running(create_task, exec_into_task, is_task_running, alias_session, mocked_cluster):
     """Test that, when a task is already running, command execs into this task
     and does not create a new one."""
 
-    cluster_arn = boto3.client("ecs").create_cluster(
-        tags=[
-            {"key": "copilot-application", "value": "dbt-app"},
-            {"key": "copilot-environment", "value": "staging"},
-            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-        ]
-    )["cluster"]["clusterArn"]
+    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     runner = CliRunner()
     runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 

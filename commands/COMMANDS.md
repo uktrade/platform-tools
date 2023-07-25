@@ -392,11 +392,11 @@ Usage: copilot-helper conduit tunnel [OPTIONS]
 ## Options
 
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--app <text>`
-  - aws app name
+  - AWS application name
 - `--env <text>`
-  - aws environment name
+  - AWS environment name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
