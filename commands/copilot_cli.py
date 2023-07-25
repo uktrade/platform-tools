@@ -161,6 +161,11 @@ def make_storage():
 
         services.append(service)
 
+        if storage_type not in ["s3", "s3-policy"]:
+            contents = templates["env"]["parameters"].render({})
+
+            click.echo(mkfile(output_dir, path / "addons.parameters.yml", contents, overwrite=overwrite))
+
         # s3-policy only applies to individual services
         if storage_type != "s3-policy":
             template = templates["env"][storage_type]
