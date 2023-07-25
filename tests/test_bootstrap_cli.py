@@ -19,8 +19,8 @@ from commands.bootstrap_cli import load_and_validate_config
 from commands.bootstrap_cli import make_config
 from commands.bootstrap_cli import migrate_secrets
 from commands.utils import set_ssm_param
-from tests import bootstrap_strings
 from tests.conftest import BASE_DIR
+from tests.conftest import FIXTURES_DIR
 
 
 class MockEntity(JsonObject):
@@ -91,6 +91,10 @@ def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
 
+    test_environment_manifest = Path(FIXTURES_DIR, "test_environment_manifest.yml").resolve().read_bytes()
+    production_environment_manifest = Path(FIXTURES_DIR, "production_environment_manifest.yml").read_bytes()
+    test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_bytes()
+
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
@@ -106,14 +110,14 @@ def test_make_config(tmp_path):
     with open(str(tmp_path / "copilot/.workspace")) as workspace:
         assert workspace.read() == "application: test-app"
 
-    with open(str(tmp_path / "copilot/environments/test/manifest.yml")) as test:
-        assert test.read() == bootstrap_strings.TEST_ENVIRONMENT_MANIFEST
+    with open(str(tmp_path / "copilot/environments/test/manifest.yml"), "rb") as test:
+        assert test.read() == test_environment_manifest
 
-    with open(str(tmp_path / "copilot/environments/production/manifest.yml")) as production:
-        assert production.read() == bootstrap_strings.PRODUCTION_ENVIRONMENT_MANIFEST
+    with open(str(tmp_path / "copilot/environments/production/manifest.yml"), "rb") as production:
+        assert production.read() == production_environment_manifest
 
-    with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
-        assert service.read() == bootstrap_strings.TEST_SERVICE_MANIFEST
+    with open(str(tmp_path / "copilot/test-service/manifest.yml"), "rb") as service:
+        assert service.read() == test_service_manifest
 
 
 @mock_sts
@@ -276,11 +280,13 @@ def test_instructions(tmp_path):
     """Test that, given the path to a config file, instructions generates output
     for specific services and environments."""
 
+    instructions_txt = Path(FIXTURES_DIR, "instructions.txt").read_text()
+
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
 
     result = CliRunner().invoke(instructions)
 
-    assert result.output == bootstrap_strings.INSTRUCTIONS
+    assert result.output == instructions_txt
 
 
 def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
