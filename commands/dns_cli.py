@@ -321,6 +321,13 @@ def check_r53(domain_session, project_session, domain, base_domain):
     return cert_arn
 
 
+# TODO: This method is not unit tested becuase it should only be used from within lb_domain, can it be a private method
+def separate_hyphenated_application_environment_and_service(hyphenated_string):
+    # The application name may be hyphenated, so we start splitting at the second from last occurrence of a hyphen
+    return hyphenated_string.rsplit("-", 2)
+
+
+# Todo: Maybe rename method to something which describes its function?
 def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[str, dict]:
     proj_client = project_session.client("ecs")
 
@@ -329,7 +336,7 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
     no_items = True
     for cluster_arn in response["clusterArns"]:
         cluster_name = cluster_arn.split("/")[1]
-        cluster_name_items = cluster_name.split("-")
+        cluster_name_items = separate_hyphenated_application_environment_and_service(cluster_name)
         cluster_app = cluster_name_items[0]
         cluster_env = cluster_name_items[1]
         if cluster_app == app and cluster_env == env:
@@ -349,7 +356,7 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
     no_items = True
     for service_arn in response["serviceArns"]:
         service_name = service_arn.split("/")[2]
-        service_name_items = service_name.split("-")
+        service_name_items = separate_hyphenated_application_environment_and_service(service_name)
         service_app = service_name_items[0]
         service_env = service_name_items[1]
         service_service = service_name_items[2]

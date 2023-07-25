@@ -188,25 +188,33 @@ def test_lb_domain_no_services(capfd):
 @mock_ec2
 @mock_ecs
 def test_lb_domain(tmp_path):
+    application_name = "hyphenated-application-name"
+    cluster_name = f"{application_name}-env-svc"
     session = boto3.Session()
-    vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
-    subnet_id = session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
-    elbv2_client = session.client("elbv2")
-    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
-    elbv2_client.create_listener(
-        LoadBalancerArn=lb_arn, DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}]
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
+        "SubnetId"
+    ]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(Name="foo", Subnets=[mocked_subnet_id])[
+        "LoadBalancers"
+    ][0]["LoadBalancerArn"]
+    target_group_arn = mocked_elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
+    mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
-    ecs_client = session.client("ecs")
-    ecs_client.create_cluster(clusterName="app-env-svc")
-    ecs_client.create_service(
-        cluster="app-env-svc",
-        serviceName="app-env-svc",
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=f"{application_name}-env-svc",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
+    # Todo: Is there a more informative name for open_mock?
     open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, response = lb_domain(boto3.Session(), "app", "svc", "env")
+        domain_name, response = lb_domain(boto3.Session(), application_name, "svc", "env")
 
     open_mock.assert_called_once_with("./copilot/svc/manifest.yml", "r")
 
@@ -215,7 +223,7 @@ def test_lb_domain(tmp_path):
 
     lb_response = response["LoadBalancers"][0]
 
-    assert lb_response["LoadBalancerArn"] == lb_arn
+    assert lb_response["LoadBalancerArn"] == mocked_load_balancer_arn
     assert lb_response["LoadBalancerName"] == "foo"
-    assert lb_response["VpcId"] == vpc_id
-    assert lb_response["AvailabilityZones"][0]["SubnetId"] == subnet_id
+    assert lb_response["VpcId"] == mocked_vpc_id
+    assert lb_response["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
