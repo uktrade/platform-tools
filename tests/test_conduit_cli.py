@@ -120,7 +120,7 @@ def test_tunnel_profile_not_configured():
     runner = CliRunner()
     result = runner.invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    assert "AWS profile not configured, please ensure they are set." in result.output
+    assert 'AWS profile "foo" is not configured.' in result.output
 
 
 @mock_ecs
