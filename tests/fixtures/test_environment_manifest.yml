@@ -1,9 +1,9 @@
-# The manifest for the "{{ name }}" environment.
+# The manifest for the "test" environment.
 # Read the full specification for the "Environment" type at:
 #  https://aws.github.io/copilot-cli/docs/manifest/environment/
 
 # Your environment name will be used in naming your resources like VPC, cluster, etc.
-name: {{ name }}
+name: test
 type: Environment
 
 # Import your own VPC and subnets or configure how they should be created.
@@ -31,17 +31,13 @@ network:
           az: 'eu-west-2c'
 
 # Configure the load balancers in your environment, once created.
-{% if certificate_arn %}
+
 http:
   public:
     certificates:
-      - {{ certificate_arn }}
+      - ACM-ARN-FOR-test.landan.cloudapps.digital
 #   private:
-{% else %}
-# http:
-#   public:
-#   private:
-{% endif %}
+
 
 # Configure observability for your environment resources.
 observability:

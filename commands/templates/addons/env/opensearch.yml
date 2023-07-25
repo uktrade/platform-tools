@@ -182,7 +182,7 @@ Resources:
         InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: true
         ZoneAwarenessConfig:
-          AvailabilityZoneCount: 2
+          AvailabilityZoneCount: 3
           #Fn::length always resolves to 1 despite there being subnets.
       VPCOptions:
         SecurityGroupIds:
