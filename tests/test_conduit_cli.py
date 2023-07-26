@@ -37,7 +37,7 @@ def test_create_task(subprocess_call):
     create_task("dbt-app", "staging", "arn::blah")
 
     subprocess_call.assert_called_once_with(
-        "copilot task run -n dbtunnel --dockerfile Dockerfile --secrets DB_SECRET=arn::blah --app dbt-app --env staging",
+        "copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET=arn::blah --app dbt-app --env staging",
         shell=True,
     )
 
