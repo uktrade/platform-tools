@@ -1,3 +1,4 @@
+import json
 from unittest.mock import mock_open
 from unittest.mock import patch
 
@@ -61,7 +62,7 @@ def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, r
     with stubber:
         acm_session.describe_certificate(CertificateArn="arn:1234567890123456789")
 
-    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:") == True
+    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
 
 
 def test_add_records(route53_session):
@@ -103,7 +104,7 @@ def test_add_records(route53_session):
 def test_create_hosted_zone(mock_click, route53_session):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
-    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1) == True
+    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
 
 
 # Listcertificates is not implementaed in moto acm. Neeed to patch it
@@ -144,7 +145,7 @@ environments:
     result = runner.invoke(
         check_domain, ["--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"]
     )
-    assert result.output.startswith("Checking file: copilot/manifest.yml\nDomains listed in manifest file") == True
+    assert result.output.startswith("Checking file: copilot/manifest.yml\nDomains listed in manifest file")
 
 
 @patch(
@@ -160,28 +161,28 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
         assign_domain,
         ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"],
     )
-    assert result.output.startswith("There are no clusters matching") == True
+    assert result.output.startswith("There are no clusters matching")
 
 
 @mock_ecs
 def test_lb_domain_no_clusters(capfd):
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "app", "svc", "env")
+        lb_domain(boto3.Session(), "application-name", "servicename", "environmentname")
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no clusters matching app in this aws account\n"
+    assert out == "There are no clusters matching application-name in this aws account\n"
 
 
 @mock_ecs
 def test_lb_domain_no_services(capfd):
-    boto3.Session().client("ecs").create_cluster(clusterName="app-env-svc")
+    boto3.Session().client("ecs").create_cluster(clusterName="application-name-environmentname-servicename")
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "app", "svc", "env")
+        lb_domain(boto3.Session(), "application-name", "servicename", "environmentname")
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no services matching svc in this aws account\n"
+    assert out == "There are no services matching servicename in this aws account\n"
 
 
 @mock_elbv2
@@ -189,7 +190,9 @@ def test_lb_domain_no_services(capfd):
 @mock_ecs
 def test_lb_domain(tmp_path):
     application_name = "hyphenated-application-name"
-    cluster_name = f"{application_name}-env-svc"
+    environment_name = "alphanumericenvironmentname123"
+    service_name = "alphanumericservicename123"
+    cluster_name = f"{application_name}-{environment_name}-{service_name}"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
@@ -208,15 +211,16 @@ def test_lb_domain(tmp_path):
     mocked_ecs_client.create_cluster(clusterName=cluster_name)
     mocked_ecs_client.create_service(
         cluster=cluster_name,
-        serviceName=f"{application_name}-env-svc",
+        serviceName=f"{application_name}-{environment_name}-{service_name}",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
+    read_data = {"environments": {environment_name: {"http": {"alias": "blah"}}}}
     # Todo: Is there a more informative name for open_mock?
-    open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')
+    open_mock = mock_open(read_data=json.dumps(read_data))
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, response = lb_domain(boto3.Session(), application_name, "svc", "env")
+        domain_name, response = lb_domain(boto3.Session(), application_name, service_name, environment_name)
 
-    open_mock.assert_called_once_with("./copilot/svc/manifest.yml", "r")
+    open_mock.assert_called_once_with(f"./copilot/{service_name}/manifest.yml", "r")
 
     assert domain_name == "blah"
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200

@@ -355,12 +355,11 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
     check_response(response)
     no_items = True
     for service_arn in response["serviceArns"]:
-        service_name = service_arn.split("/")[2]
-        service_name_items = separate_hyphenated_application_environment_and_service(service_name)
-        service_app = service_name_items[0]
-        service_env = service_name_items[1]
-        service_service = service_name_items[2]
-        if service_app == app and service_env == env and service_service == svc:
+        fully_qualified_service_name = service_arn.split("/")[2]
+        service_app, service_env, service_name = separate_hyphenated_application_environment_and_service(
+            fully_qualified_service_name
+        )
+        if service_app == app and service_env == env and service_name == svc:
             no_items = False
             break
 
@@ -379,13 +378,11 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
             proj_client.describe_services(
                 cluster=cluster_name,
                 services=[
-                    service_name,
+                    fully_qualified_service_name,
                 ],
-            )[
-                "services"
-            ][0][
-                "loadBalancers"
-            ][0]["targetGroupArn"],
+            )["services"][
+                0
+            ]["loadBalancers"][0]["targetGroupArn"],
         ],
     )["TargetGroups"][0]["LoadBalancerArns"][0]
 
