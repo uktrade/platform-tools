@@ -81,7 +81,12 @@ def tunnel(project_profile: str, app: str, env: str) -> None:
         exit()
 
     if not is_task_running(cluster_arn):
-        secret_arn = get_postgres_secret_arn(app, env)
+        try:
+            secret_arn = get_postgres_secret_arn(app, env)
+        except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
+            click.secho(f"No secret found matching application {app} and environment {env}.")
+            exit()
+
         create_task(app, env, secret_arn)
 
     exec_into_task(app, env, cluster_arn)

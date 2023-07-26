@@ -175,3 +175,13 @@ def test_tunnel_task_already_running(create_task, exec_into_task, is_task_runnin
 
     assert not create_task.called
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
+
+
+@mock_resourcegroupstaggingapi
+@mock_secretsmanager
+@mock_sts
+@patch("commands.conduit_cli.is_task_running", return_value=False)
+def test_tunnel_secret_not_found(is_task_running, alias_session, mocked_cluster):
+    result = CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
+
+    assert "No secret found matching application dbt-app and environment staging." in result.output
