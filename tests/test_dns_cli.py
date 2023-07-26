@@ -17,7 +17,7 @@ from commands.dns_cli import check_for_records
 from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
-from commands.dns_cli import get_elastic_load_balancer_domain_and_configuration
+from commands.dns_cli import get_load_balancer_domain_and_configuration
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -165,14 +165,14 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
 
 
 @mock_ecs
-def test_elastic_load_balancer_domain_and_configuration_no_clusters(
+def test_get_load_balancer_domain_and_configuration_no_clusters(
     capfd,
     hyphenated_application_name,
     alphanumeric_environment_name,
     alphanumeric_service_name,
 ):
     with pytest.raises(SystemExit):
-        get_elastic_load_balancer_domain_and_configuration(
+        get_load_balancer_domain_and_configuration(
             boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
         )
 
@@ -182,27 +182,29 @@ def test_elastic_load_balancer_domain_and_configuration_no_clusters(
 
 
 @mock_ecs
-def test_elastic_load_balancer_domain_and_configuration_no_services(
+def test_get_load_balancer_domain_and_configuration_no_services(
     capfd,
     hyphenated_application_name,
     alphanumeric_environment_name,
     alphanumeric_service_name,
 ):
-    boto3.Session().client("ecs").create_cluster(clusterName="application-name-environmentname-servicename")
+    boto3.Session().client("ecs").create_cluster(
+        clusterName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}"
+    )
     with pytest.raises(SystemExit):
-        get_elastic_load_balancer_domain_and_configuration(
-            boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
+        get_load_balancer_domain_and_configuration(
+            boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
         )
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no services matching servicename in this aws account\n"
+    assert out == f"There are no services matching {alphanumeric_service_name} in this aws account\n"
 
 
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_get_elastic_load_balancer_domain_and_configuration(
+def test_get_load_balancer_domain_and_configuration(
     tmp_path,
     hyphenated_application_name,
     alphanumeric_environment_name,
@@ -236,13 +238,13 @@ def test_get_elastic_load_balancer_domain_and_configuration(
     open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
 
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, elastic_load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
+        domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
             boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
         )
 
     open_mock.assert_called_once_with(f"./copilot/{alphanumeric_service_name}/manifest.yml", "r")
     assert domain_name == "somedomain.tld"
-    assert elastic_load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
-    assert elastic_load_balancer_configuration["LoadBalancerName"] == "foo"
-    assert elastic_load_balancer_configuration["VpcId"] == mocked_vpc_id
-    assert elastic_load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
+    assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
+    assert load_balancer_configuration["LoadBalancerName"] == "foo"
+    assert load_balancer_configuration["VpcId"] == mocked_vpc_id
+    assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id

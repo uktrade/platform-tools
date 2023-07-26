@@ -321,7 +321,7 @@ def check_r53(domain_session, project_session, domain, base_domain):
     return cert_arn
 
 
-def get_elastic_load_balancer_domain_and_configuration(
+def get_load_balancer_domain_and_configuration(
     project_session: Session, app: str, svc: str, env: str
 ) -> Tuple[str, dict]:
     def separate_hyphenated_application_environment_and_service(hyphenated_string):
@@ -466,10 +466,10 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
 
     # Find the Load Balancer name.
-    domain_name, load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
+    domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
         project_session, app, svc, env
     )
-    elb_name = elastic_load_balancer_configuration["DNSName"]
+    elb_name = load_balancer_configuration["DNSName"]
 
     click.echo(
         click.style("The Domain: ", fg="yellow")

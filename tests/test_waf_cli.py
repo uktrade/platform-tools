@@ -218,7 +218,7 @@ def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_st
 @mock_elbv2
 @mock_sts
 @mock_wafv2
-@patch("commands.waf_cli.get_elastic_load_balancer_domain_and_configuration")
+@patch("commands.waf_cli.get_load_balancer_domain_and_configuration")
 @patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
 @patch("commands.waf_cli.check_aws_conn")
 def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session):
@@ -227,14 +227,12 @@ def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_doma
     subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
     elbv2_client = alias_session.client("elbv2")
     lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
-    elastic_load_balancer_configuration = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])[
-        "LoadBalancers"
-    ][0]
+    load_balancer_configuration = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])["LoadBalancers"][0]
     get_elastic_load_balancer_domain_and_configuration.return_value = (
         "domain-name",
-        elastic_load_balancer_configuration,
+        load_balancer_configuration,
     )
-    dns_name = elastic_load_balancer_configuration["DNSName"]
+    dns_name = load_balancer_configuration["DNSName"]
     os.chdir(TEST_APP_DIR)
     runner = CliRunner()
 
