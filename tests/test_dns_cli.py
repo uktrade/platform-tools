@@ -230,9 +230,10 @@ def test_get_elastic_load_balancer_domain_and_configuration(
         serviceName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
-    read_data = {"environments": {alphanumeric_environment_name: {"http": {"alias": "somedomain.tld"}}}}
-    # Todo: Is there a more informative name for open_mock?
-    open_mock = mock_open(read_data=json.dumps(read_data))
+    mocked_service_manifest_contents = {
+        "environments": {alphanumeric_environment_name: {"http": {"alias": "somedomain.tld"}}}
+    }
+    open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
 
     with patch("commands.dns_cli.open", open_mock):
         domain_name, elastic_load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
