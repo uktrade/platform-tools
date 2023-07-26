@@ -18,6 +18,9 @@ from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
 from commands.dns_cli import get_load_balancer_domain_and_configuration
+from tests.conftest import ALPHANUMERIC_ENVIRONMENT_NAME
+from tests.conftest import ALPHANUMERIC_SERVICE_NAME
+from tests.conftest import HYPHENATED_APPLICATION_NAME
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -165,52 +168,37 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
 
 
 @mock_ecs
-def test_get_load_balancer_domain_and_configuration_no_clusters(
-    capfd,
-    hyphenated_application_name,
-    alphanumeric_environment_name,
-    alphanumeric_service_name,
-):
+def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration(
-            boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_ENVIRONMENT_NAME, ALPHANUMERIC_SERVICE_NAME
         )
 
     out, _ = capfd.readouterr()
 
-    assert out == f"There are no clusters matching {hyphenated_application_name} in this aws account\n"
+    assert out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this aws account\n"
 
 
 @mock_ecs
-def test_get_load_balancer_domain_and_configuration_no_services(
-    capfd,
-    hyphenated_application_name,
-    alphanumeric_environment_name,
-    alphanumeric_service_name,
-):
+def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     boto3.Session().client("ecs").create_cluster(
-        clusterName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}"
+        clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}"
     )
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration(
-            boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_SERVICE_NAME, ALPHANUMERIC_ENVIRONMENT_NAME
         )
 
     out, _ = capfd.readouterr()
 
-    assert out == f"There are no services matching {alphanumeric_service_name} in this aws account\n"
+    assert out == f"There are no services matching {ALPHANUMERIC_SERVICE_NAME} in this aws account\n"
 
 
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_get_load_balancer_domain_and_configuration(
-    tmp_path,
-    hyphenated_application_name,
-    alphanumeric_environment_name,
-    alphanumeric_service_name,
-):
-    cluster_name = f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}"
+def test_get_load_balancer_domain_and_configuration(tmp_path):
+    cluster_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
@@ -229,20 +217,20 @@ def test_get_load_balancer_domain_and_configuration(
     mocked_ecs_client.create_cluster(clusterName=cluster_name)
     mocked_ecs_client.create_service(
         cluster=cluster_name,
-        serviceName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}",
+        serviceName=cluster_name,
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
     mocked_service_manifest_contents = {
-        "environments": {alphanumeric_environment_name: {"http": {"alias": "somedomain.tld"}}}
+        "environments": {ALPHANUMERIC_ENVIRONMENT_NAME: {"http": {"alias": "somedomain.tld"}}}
     }
     open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
 
     with patch("commands.dns_cli.open", open_mock):
         domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-            boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_SERVICE_NAME, ALPHANUMERIC_ENVIRONMENT_NAME
         )
 
-    open_mock.assert_called_once_with(f"./copilot/{alphanumeric_service_name}/manifest.yml", "r")
+    open_mock.assert_called_once_with(f"./copilot/{ALPHANUMERIC_SERVICE_NAME}/manifest.yml", "r")
     assert domain_name == "somedomain.tld"
     assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
     assert load_balancer_configuration["LoadBalancerName"] == "foo"

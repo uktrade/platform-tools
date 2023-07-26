@@ -13,24 +13,13 @@ BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
 FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
 
+HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
+ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
+ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
+
 
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)
-
-
-@pytest.fixture
-def hyphenated_application_name() -> str:
-    return "hyphenated-application-name"
-
-
-@pytest.fixture
-def alphanumeric_environment_name() -> str:
-    return "alphanumericenvironmentname123"
-
-
-@pytest.fixture
-def alphanumeric_service_name() -> str:
-    return "alphanumericservicename123"
 
 
 @pytest.fixture
