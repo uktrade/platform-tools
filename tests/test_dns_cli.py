@@ -165,7 +165,7 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
 
 
 @mock_ecs
-def test_lb_domain_no_clusters(
+def test_elastic_load_balancer_domain_and_configuration_no_clusters(
     capfd,
     hyphenated_application_name,
     alphanumeric_environment_name,
@@ -182,7 +182,7 @@ def test_lb_domain_no_clusters(
 
 
 @mock_ecs
-def test_lb_domain_no_services(
+def test_elastic_load_balancer_domain_and_configuration_no_services(
     capfd,
     hyphenated_application_name,
     alphanumeric_environment_name,
@@ -191,7 +191,7 @@ def test_lb_domain_no_services(
     boto3.Session().client("ecs").create_cluster(clusterName="application-name-environmentname-servicename")
     with pytest.raises(SystemExit):
         get_elastic_load_balancer_domain_and_configuration(
-            boto3.Session(), "application-name", "servicename", "environmentname"
+            boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
         )
 
     out, _ = capfd.readouterr()

@@ -321,7 +321,6 @@ def check_r53(domain_session, project_session, domain, base_domain):
     return cert_arn
 
 
-# Todo: Maybe rename method to something which describes its function?
 def get_elastic_load_balancer_domain_and_configuration(
     project_session: Session, app: str, svc: str, env: str
 ) -> Tuple[str, dict]:
