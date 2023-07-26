@@ -322,7 +322,9 @@ def check_r53(domain_session, project_session, domain, base_domain):
 
 
 # Todo: Maybe rename method to something which describes its function?
-def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[str, dict]:
+def get_elastic_load_balancer_domain_and_configuration(
+    project_session: Session, app: str, svc: str, env: str
+) -> Tuple[str, dict]:
     def separate_hyphenated_application_environment_and_service(hyphenated_string):
         # The application name may be hyphenated, so we start splitting at the second from last occurrence of a hyphen
         return hyphenated_string.rsplit("-", 2)
@@ -397,7 +399,7 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
 
         # What happens if domain_name isn't set? Should we raise an error? Return default ? Or None?
 
-    return domain_name, response
+    return domain_name, response["LoadBalancers"][0]
 
 
 @click.group()
@@ -465,8 +467,10 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
 
     # Find the Load Balancer name.
-    domain_name, response = lb_domain(project_session, app, svc, env)
-    elb_name = response["LoadBalancers"][0]["DNSName"]
+    domain_name, load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
+        project_session, app, svc, env
+    )
+    elb_name = elastic_load_balancer_configuration["DNSName"]
 
     click.echo(
         click.style("The Domain: ", fg="yellow")

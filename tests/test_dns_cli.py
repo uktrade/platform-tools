@@ -17,7 +17,7 @@ from commands.dns_cli import check_for_records
 from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
-from commands.dns_cli import lb_domain
+from commands.dns_cli import get_elastic_load_balancer_domain_and_configuration
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -172,7 +172,7 @@ def test_lb_domain_no_clusters(
     alphanumeric_service_name,
 ):
     with pytest.raises(SystemExit):
-        lb_domain(
+        get_elastic_load_balancer_domain_and_configuration(
             boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
         )
 
@@ -190,7 +190,9 @@ def test_lb_domain_no_services(
 ):
     boto3.Session().client("ecs").create_cluster(clusterName="application-name-environmentname-servicename")
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "application-name", "servicename", "environmentname")
+        get_elastic_load_balancer_domain_and_configuration(
+            boto3.Session(), "application-name", "servicename", "environmentname"
+        )
 
     out, _ = capfd.readouterr()
 
@@ -200,7 +202,7 @@ def test_lb_domain_no_services(
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_lb_domain(
+def test_get_elastic_load_balancer_domain_and_configuration(
     tmp_path,
     hyphenated_application_name,
     alphanumeric_environment_name,
@@ -228,22 +230,18 @@ def test_lb_domain(
         serviceName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
-    read_data = {"environments": {alphanumeric_environment_name: {"http": {"alias": "blah"}}}}
+    read_data = {"environments": {alphanumeric_environment_name: {"http": {"alias": "somedomain.tld"}}}}
     # Todo: Is there a more informative name for open_mock?
     open_mock = mock_open(read_data=json.dumps(read_data))
+
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, response = lb_domain(
+        domain_name, elastic_load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
             boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
         )
 
     open_mock.assert_called_once_with(f"./copilot/{alphanumeric_service_name}/manifest.yml", "r")
-
-    assert domain_name == "blah"
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-    lb_response = response["LoadBalancers"][0]
-
-    assert lb_response["LoadBalancerArn"] == mocked_load_balancer_arn
-    assert lb_response["LoadBalancerName"] == "foo"
-    assert lb_response["VpcId"] == mocked_vpc_id
-    assert lb_response["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
+    assert domain_name == "somedomain.tld"
+    assert elastic_load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
+    assert elastic_load_balancer_configuration["LoadBalancerName"] == "foo"
+    assert elastic_load_balancer_configuration["VpcId"] == mocked_vpc_id
+    assert elastic_load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id

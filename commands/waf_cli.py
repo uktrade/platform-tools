@@ -11,7 +11,7 @@ import yaml
 from cfn_tools import load_yaml
 
 from commands.check_cloudformation import get_lint_result
-from commands.dns_cli import lb_domain
+from commands.dns_cli import get_elastic_load_balancer_domain_and_configuration
 
 from .utils import check_aws_conn
 from .utils import check_response
@@ -55,10 +55,12 @@ def attach_waf(app, project_profile, svc, env):
         )
         exit()
 
-    domain_name, response = lb_domain(project_session, app, svc, env)
+    domain_name, elastic_load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
+        project_session, app, svc, env
+    )
 
-    elb_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
-    elb_name = response["LoadBalancers"][0]["DNSName"]
+    elb_arn = elastic_load_balancer_configuration["LoadBalancerArn"]
+    elb_name = elastic_load_balancer_configuration["DNSName"]
     waf_client = project_session.client("wafv2")
 
     response = waf_client.associate_web_acl(WebACLArn=waf_arn, ResourceArn=elb_arn)
@@ -141,9 +143,11 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     waf_arn = response["Stacks"][0]["Outputs"][0]["OutputValue"]
     click.echo(click.style("WAF created: ", fg="yellow") + click.style(f"{waf_arn}", fg="white", bold=True))
 
-    domain_name, response = lb_domain(project_session, app, svc, env)
-    elb_arn = response["LoadBalancers"][0]["LoadBalancerArn"]
-    elb_name = response["LoadBalancers"][0]["DNSName"]
+    domain_name, elastic_load_balancer_configuration = get_elastic_load_balancer_domain_and_configuration(
+        project_session, app, svc, env
+    )
+    elb_arn = elastic_load_balancer_configuration["LoadBalancerArn"]
+    elb_name = elastic_load_balancer_configuration["DNSName"]
     waf_client = project_session.client("wafv2")
 
     # It takes a few seconds for the WAF to be available to use.
