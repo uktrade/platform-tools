@@ -19,6 +19,21 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 
 
 @pytest.fixture
+def hyphenated_application_name() -> str:
+    return "hyphenated-application-name"
+
+
+@pytest.fixture
+def alphanumeric_environment_name() -> str:
+    return "alphanumericenvironmentname123"
+
+
+@pytest.fixture
+def alphanumeric_service_name() -> str:
+    return "alphanumericservicename123"
+
+
+@pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "commands/templates")

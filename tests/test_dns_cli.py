@@ -165,17 +165,29 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
 
 
 @mock_ecs
-def test_lb_domain_no_clusters(capfd):
+def test_lb_domain_no_clusters(
+    capfd,
+    hyphenated_application_name,
+    alphanumeric_environment_name,
+    alphanumeric_service_name,
+):
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "application-name", "servicename", "environmentname")
+        lb_domain(
+            boto3.Session(), hyphenated_application_name, alphanumeric_environment_name, alphanumeric_service_name
+        )
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no clusters matching application-name in this aws account\n"
+    assert out == f"There are no clusters matching {hyphenated_application_name} in this aws account\n"
 
 
 @mock_ecs
-def test_lb_domain_no_services(capfd):
+def test_lb_domain_no_services(
+    capfd,
+    hyphenated_application_name,
+    alphanumeric_environment_name,
+    alphanumeric_service_name,
+):
     boto3.Session().client("ecs").create_cluster(clusterName="application-name-environmentname-servicename")
     with pytest.raises(SystemExit):
         lb_domain(boto3.Session(), "application-name", "servicename", "environmentname")
@@ -188,11 +200,13 @@ def test_lb_domain_no_services(capfd):
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_lb_domain(tmp_path):
-    application_name = "hyphenated-application-name"
-    environment_name = "alphanumericenvironmentname123"
-    service_name = "alphanumericservicename123"
-    cluster_name = f"{application_name}-{environment_name}-{service_name}"
+def test_lb_domain(
+    tmp_path,
+    hyphenated_application_name,
+    alphanumeric_environment_name,
+    alphanumeric_service_name,
+):
+    cluster_name = f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
@@ -211,16 +225,18 @@ def test_lb_domain(tmp_path):
     mocked_ecs_client.create_cluster(clusterName=cluster_name)
     mocked_ecs_client.create_service(
         cluster=cluster_name,
-        serviceName=f"{application_name}-{environment_name}-{service_name}",
+        serviceName=f"{hyphenated_application_name}-{alphanumeric_environment_name}-{alphanumeric_service_name}",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
-    read_data = {"environments": {environment_name: {"http": {"alias": "blah"}}}}
+    read_data = {"environments": {alphanumeric_environment_name: {"http": {"alias": "blah"}}}}
     # Todo: Is there a more informative name for open_mock?
     open_mock = mock_open(read_data=json.dumps(read_data))
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, response = lb_domain(boto3.Session(), application_name, service_name, environment_name)
+        domain_name, response = lb_domain(
+            boto3.Session(), hyphenated_application_name, alphanumeric_service_name, alphanumeric_environment_name
+        )
 
-    open_mock.assert_called_once_with(f"./copilot/{service_name}/manifest.yml", "r")
+    open_mock.assert_called_once_with(f"./copilot/{alphanumeric_service_name}/manifest.yml", "r")
 
     assert domain_name == "blah"
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
