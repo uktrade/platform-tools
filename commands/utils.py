@@ -37,11 +37,11 @@ def camel_case(s):
     return "".join([s[0].lower(), s[1:]])
 
 
-def set_ssm_param(app, env, param_name, param_value, overwrite, exists):
+def set_ssm_param(app, env, param_name, param_value, overwrite, exists, description="copied from cloudfoundry"):
     client = boto3.client("ssm")
     args = dict(
         Name=param_name,
-        Description="copied from cloudfoundry",
+        Description=description,
         Value=param_value,
         Type="SecureString",
         Overwrite=overwrite,
@@ -85,6 +85,37 @@ def get_ssm_secret_names(app, env):
             break
 
     return sorted(secret_names)
+
+
+def get_ssm_secrets(app, env):
+    """Return secrets from AWS Parameter Store as a list of tuples with the
+    secret name and secret value."""
+
+    client = boto3.client("ssm")
+
+    path = SSM_BASE_PATH.format(app=app, env=env)
+
+    params = dict(
+        Path=path,
+        Recursive=False,
+        WithDecryption=True,
+        MaxResults=10,
+    )
+
+    secrets = []
+
+    while True:
+        response = client.get_parameters_by_path(**params)
+
+        for secret in response["Parameters"]:
+            secrets.append((secret["Name"], secret["Value"]))
+
+        if "NextToken" in response:
+            params["NextToken"] = response["NextToken"]
+        else:
+            break
+
+    return sorted(secrets)
 
 
 def setup_templates():
