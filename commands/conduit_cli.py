@@ -7,7 +7,7 @@ import click
 
 from commands.utils import check_aws_conn
 
-DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
+CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
 
 def get_cluster_arn(app: str, env: str) -> str:
@@ -25,7 +25,7 @@ def get_cluster_arn(app: str, env: str) -> str:
 
 
 def create_task(app: str, env: str, secret_arn: str) -> None:
-    command = f"copilot task run -n dbtunnel --image {DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --app {app} --env {env}"
+    command = f"copilot task run -n dbtunnel --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --app {app} --env {env}"
     subprocess.call(command, shell=True)
 
 
