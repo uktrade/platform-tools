@@ -1,2 +1,1 @@
 FROM public.ecr.aws/docker/library/postgres:latest
-ENTRYPOINT ["tail", "-f", "/dev/null"]
