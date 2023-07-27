@@ -324,9 +324,15 @@ def check_r53(domain_session, project_session, domain, base_domain):
 def get_load_balancer_domain_and_configuration(
     project_session: Session, app: str, svc: str, env: str
 ) -> Tuple[str, dict]:
-    def separate_hyphenated_application_environment_and_service(hyphenated_string):
-        # The application name may be hyphenated, so we start splitting at the second from last occurrence of a hyphen
-        return hyphenated_string.rsplit("-", 2)
+    def separate_hyphenated_application_environment_and_service(
+        hyphenated_string, number_of_items_of_interest, number_of_trailing_items
+    ):
+        # The application name may be hyphenated, so we start splitting
+        # at the hyphen after the first item of interest and return the
+        # items of interest only...
+        return hyphenated_string.rsplit("-", number_of_trailing_items + number_of_items_of_interest - 1)[
+            :number_of_items_of_interest
+        ]
 
     proj_client = project_session.client("ecs")
 
@@ -335,9 +341,7 @@ def get_load_balancer_domain_and_configuration(
     no_items = True
     for cluster_arn in response["clusterArns"]:
         cluster_name = cluster_arn.split("/")[1]
-        cluster_name_items = separate_hyphenated_application_environment_and_service(cluster_name)
-        cluster_app = cluster_name_items[0]
-        cluster_env = cluster_name_items[1]
+        cluster_app, cluster_env = separate_hyphenated_application_environment_and_service(cluster_name, 2, 2)
         if cluster_app == app and cluster_env == env:
             no_items = False
             break
@@ -356,7 +360,7 @@ def get_load_balancer_domain_and_configuration(
     for service_arn in response["serviceArns"]:
         fully_qualified_service_name = service_arn.split("/")[2]
         service_app, service_env, service_name = separate_hyphenated_application_environment_and_service(
-            fully_qualified_service_name
+            fully_qualified_service_name, 3, 2
         )
         if service_app == app and service_env == env and service_name == svc:
             no_items = False
