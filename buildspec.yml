@@ -7,6 +7,7 @@ phases:
       - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
   pre_build:
     commands:
+    - echo "3.9" > .python-version
     - echo Logging in to AWS ECR....
     - aws --version
     - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
