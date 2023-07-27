@@ -13,10 +13,6 @@ BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
 FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
 
-HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
-ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
-ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
-
 
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)

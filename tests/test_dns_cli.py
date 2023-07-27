@@ -18,9 +18,10 @@ from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
 from commands.dns_cli import get_load_balancer_domain_and_configuration
-from tests.conftest import ALPHANUMERIC_ENVIRONMENT_NAME
-from tests.conftest import ALPHANUMERIC_SERVICE_NAME
-from tests.conftest import HYPHENATED_APPLICATION_NAME
+
+HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
+ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
+ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
