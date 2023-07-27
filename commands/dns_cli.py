@@ -330,9 +330,9 @@ def get_load_balancer_domain_and_configuration(
         # The application name may be hyphenated, so we start splitting
         # at the hyphen after the first item of interest and return the
         # items of interest only...
-        rsplit = hyphenated_string.rsplit("-", number_of_trailing_items + number_of_items_of_interest - 1)
-        interest = rsplit[:number_of_items_of_interest]
-        return interest
+        return hyphenated_string.rsplit("-", number_of_trailing_items + number_of_items_of_interest - 1)[
+            :number_of_items_of_interest
+        ]
 
     proj_client = project_session.client("ecs")
 
