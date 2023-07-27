@@ -183,7 +183,7 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
 @mock_ecs
 def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     boto3.Session().client("ecs").create_cluster(
-        clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-Cluster-r4nD0mStR1ng"
+        clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-Cluster-c0PIlotiD3ntIF3r"
     )
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration(
@@ -199,8 +199,8 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
 @mock_ec2
 @mock_ecs
 def test_get_load_balancer_domain_and_configuration(tmp_path):
-    cluster_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-Cluster-r4nD0mStR1ng"
-    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-Service-r4nD0mStR1ng"
+    cluster_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-Cluster-c0PIlotiD3ntIF3r"
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-Service-c0PIlotiD3ntIF3r"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
