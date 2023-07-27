@@ -321,7 +321,13 @@ def check_r53(domain_session, project_session, domain, base_domain):
     return cert_arn
 
 
-def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[str, dict]:
+def get_load_balancer_domain_and_configuration(
+    project_session: Session, app: str, svc: str, env: str
+) -> Tuple[str, dict]:
+    def separate_hyphenated_application_environment_and_service(hyphenated_string):
+        # The application name may be hyphenated, so we start splitting at the second from last occurrence of a hyphen
+        return hyphenated_string.rsplit("-", 2)
+
     proj_client = project_session.client("ecs")
 
     response = proj_client.list_clusters()
@@ -329,7 +335,7 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
     no_items = True
     for cluster_arn in response["clusterArns"]:
         cluster_name = cluster_arn.split("/")[1]
-        cluster_name_items = cluster_name.split("-")
+        cluster_name_items = separate_hyphenated_application_environment_and_service(cluster_name)
         cluster_app = cluster_name_items[0]
         cluster_env = cluster_name_items[1]
         if cluster_app == app and cluster_env == env:
@@ -348,12 +354,11 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
     check_response(response)
     no_items = True
     for service_arn in response["serviceArns"]:
-        service_name = service_arn.split("/")[2]
-        service_name_items = service_name.split("-")
-        service_app = service_name_items[0]
-        service_env = service_name_items[1]
-        service_service = service_name_items[2]
-        if service_app == app and service_env == env and service_service == svc:
+        fully_qualified_service_name = service_arn.split("/")[2]
+        service_app, service_env, service_name = separate_hyphenated_application_environment_and_service(
+            fully_qualified_service_name
+        )
+        if service_app == app and service_env == env and service_name == svc:
             no_items = False
             break
 
@@ -372,13 +377,11 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
             proj_client.describe_services(
                 cluster=cluster_name,
                 services=[
-                    service_name,
+                    fully_qualified_service_name,
                 ],
-            )[
-                "services"
-            ][0][
-                "loadBalancers"
-            ][0]["targetGroupArn"],
+            )["services"][
+                0
+            ]["loadBalancers"][0]["targetGroupArn"],
         ],
     )["TargetGroups"][0]["LoadBalancerArns"][0]
 
@@ -395,7 +398,7 @@ def lb_domain(project_session: Session, app: str, svc: str, env: str) -> Tuple[s
 
         # What happens if domain_name isn't set? Should we raise an error? Return default ? Or None?
 
-    return domain_name, response
+    return domain_name, response["LoadBalancers"][0]
 
 
 @click.group()
@@ -463,8 +466,10 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
 
     # Find the Load Balancer name.
-    domain_name, response = lb_domain(project_session, app, svc, env)
-    elb_name = response["LoadBalancers"][0]["DNSName"]
+    domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
+        project_session, app, svc, env
+    )
+    elb_name = load_balancer_configuration["DNSName"]
 
     click.echo(
         click.style("The Domain: ", fg="yellow")
