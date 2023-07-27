@@ -1,3 +1,4 @@
+import json
 from unittest.mock import mock_open
 from unittest.mock import patch
 
@@ -16,7 +17,11 @@ from commands.dns_cli import check_for_records
 from commands.dns_cli import check_r53
 from commands.dns_cli import create_cert
 from commands.dns_cli import create_hosted_zone
-from commands.dns_cli import lb_domain
+from commands.dns_cli import get_load_balancer_domain_and_configuration
+
+HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
+ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
+ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 
 
 # Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
@@ -61,7 +66,7 @@ def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, r
     with stubber:
         acm_session.describe_certificate(CertificateArn="arn:1234567890123456789")
 
-    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:") == True
+    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
 
 
 def test_add_records(route53_session):
@@ -103,7 +108,7 @@ def test_add_records(route53_session):
 def test_create_hosted_zone(mock_click, route53_session):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
-    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1) == True
+    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
 
 
 # Listcertificates is not implementaed in moto acm. Neeed to patch it
@@ -144,7 +149,7 @@ environments:
     result = runner.invoke(
         check_domain, ["--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"]
     )
-    assert result.output.startswith("Checking file: copilot/manifest.yml\nDomains listed in manifest file") == True
+    assert result.output.startswith("Checking file: copilot/manifest.yml\nDomains listed in manifest file")
 
 
 @patch(
@@ -160,62 +165,75 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
         assign_domain,
         ["--app", "some-app", "--domain-profile", "foo", "--project-profile", "foo", "--svc", "web", "--env", "dev"],
     )
-    assert result.output.startswith("There are no clusters matching") == True
+    assert result.output.startswith("There are no clusters matching")
 
 
 @mock_ecs
-def test_lb_domain_no_clusters(capfd):
+def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "app", "svc", "env")
+        get_load_balancer_domain_and_configuration(
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_ENVIRONMENT_NAME, ALPHANUMERIC_SERVICE_NAME
+        )
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no clusters matching app in this aws account\n"
+    assert out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this aws account\n"
 
 
 @mock_ecs
-def test_lb_domain_no_services(capfd):
-    boto3.Session().client("ecs").create_cluster(clusterName="app-env-svc")
+def test_get_load_balancer_domain_and_configuration_no_services(capfd):
+    boto3.Session().client("ecs").create_cluster(
+        clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}"
+    )
     with pytest.raises(SystemExit):
-        lb_domain(boto3.Session(), "app", "svc", "env")
+        get_load_balancer_domain_and_configuration(
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_SERVICE_NAME, ALPHANUMERIC_ENVIRONMENT_NAME
+        )
 
     out, _ = capfd.readouterr()
 
-    assert out == "There are no services matching svc in this aws account\n"
+    assert out == f"There are no services matching {ALPHANUMERIC_SERVICE_NAME} in this aws account\n"
 
 
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_lb_domain(tmp_path):
+def test_get_load_balancer_domain_and_configuration(tmp_path):
+    cluster_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}"
     session = boto3.Session()
-    vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
-    subnet_id = session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
-    elbv2_client = session.client("elbv2")
-    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
-    elbv2_client.create_listener(
-        LoadBalancerArn=lb_arn, DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}]
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16")["Subnet"][
+        "SubnetId"
+    ]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(Name="foo", Subnets=[mocked_subnet_id])[
+        "LoadBalancers"
+    ][0]["LoadBalancerArn"]
+    target_group_arn = mocked_elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
+    mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
-    ecs_client = session.client("ecs")
-    ecs_client.create_cluster(clusterName="app-env-svc")
-    ecs_client.create_service(
-        cluster="app-env-svc",
-        serviceName="app-env-svc",
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=cluster_name,
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
-    open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')
+    mocked_service_manifest_contents = {
+        "environments": {ALPHANUMERIC_ENVIRONMENT_NAME: {"http": {"alias": "somedomain.tld"}}}
+    }
+    open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
+
     with patch("commands.dns_cli.open", open_mock):
-        domain_name, response = lb_domain(boto3.Session(), "app", "svc", "env")
+        domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_SERVICE_NAME, ALPHANUMERIC_ENVIRONMENT_NAME
+        )
 
-    open_mock.assert_called_once_with("./copilot/svc/manifest.yml", "r")
-
-    assert domain_name == "blah"
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-    lb_response = response["LoadBalancers"][0]
-
-    assert lb_response["LoadBalancerArn"] == lb_arn
-    assert lb_response["LoadBalancerName"] == "foo"
-    assert lb_response["VpcId"] == vpc_id
-    assert lb_response["AvailabilityZones"][0]["SubnetId"] == subnet_id
+    open_mock.assert_called_once_with(f"./copilot/{ALPHANUMERIC_SERVICE_NAME}/manifest.yml", "r")
+    assert domain_name == "somedomain.tld"
+    assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
+    assert load_balancer_configuration["LoadBalancerName"] == "foo"
+    assert load_balancer_configuration["VpcId"] == mocked_vpc_id
+    assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
