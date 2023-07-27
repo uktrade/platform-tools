@@ -32,3 +32,5 @@ node_modules/
 
 tests/test-application/copilot
 
+dist
+
