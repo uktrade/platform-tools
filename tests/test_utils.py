@@ -16,7 +16,7 @@ def test_check_aws_conn_profile_not_configured(capsys):
 
 
 @mock_ssm
-def test_get_ssm_secret_values():
+def test_get_ssm_secrets():
     mocked_ssm = boto3.client("ssm")
     mocked_ssm.put_parameter(
         Name="/copilot/test-application/development/secrets/TEST_SECRET",
