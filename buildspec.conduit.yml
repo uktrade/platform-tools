@@ -16,4 +16,3 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push public.ecr.aws/uktrade/tunnel:latest
-      
