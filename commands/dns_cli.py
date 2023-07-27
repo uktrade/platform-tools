@@ -328,8 +328,8 @@ def get_load_balancer_domain_and_configuration(
         hyphenated_string, number_of_items_of_interest, number_of_trailing_items
     ):
         # The application name may be hyphenated, so we start splitting
-        # at the hyphen before the trailing items and return the
-        # first items of interest only...
+        # at the hyphen after the first item of interest and return the
+        # items of interest only...
         rsplit = hyphenated_string.rsplit("-", number_of_trailing_items + number_of_items_of_interest - 1)
         interest = rsplit[:number_of_items_of_interest]
         return interest
