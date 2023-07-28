@@ -128,7 +128,7 @@ def ensure_cwd_is_repo_root():
 
 def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     # Check that the aws profile exists and is set.
-    click.secho("Checking AWS connection...", fg="cyan")
+    click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
 
     try:
         session = boto3.session.Session(profile_name=aws_profile)
@@ -169,7 +169,7 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     )
     click.echo(
         click.style(f"User: ", fg="yellow")
-        + click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}", fg="white", bold=True),
+        + click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True),
     )
 
     return session

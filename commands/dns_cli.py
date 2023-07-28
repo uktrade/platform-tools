@@ -23,21 +23,29 @@ MAX_DOMAIN_DEPTH = 2
 AWS_CERT_REGION = "eu-west-2"
 
 
-def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=5, timeout=600):
-    click.secho("waiting for cert...", fg="yellow")
+def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
+    click.secho(f"Waiting up to {timeout} seconds for certificate to be validated...", fg="yellow")
     status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"]["Status"]
     elapsed_time = 0
     while status == "PENDING_VALIDATION":
-        if elapsed_time > timeout:
-            raise Exception(f"Timeout ({timeout}s) reached for certificate validation")
+        if elapsed_time >= timeout:
+            raise Exception(
+                f"Timeout ({timeout}s) reached for certificate validation, might be worth checking things in the AWS Console"
+            )
         click.echo(
             click.style(f"{certificate_arn}", fg="white", bold=True)
-            + click.style(f": Waiting {sleep_time}s for validation, {elapsed_time}s elapsed...", fg="yellow"),
+            + click.style(
+                f": Waiting {sleep_time}s for validation, {timeout - elapsed_time}s until we give up...", fg="yellow"
+            ),
         )
         time.sleep(sleep_time)
         status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"]["Status"]
         elapsed_time += sleep_time
-    click.secho("cert validated...", fg="green")
+
+    if status == "ISSUED":
+        click.secho("Certificate validated...", fg="green")
+    else:
+        raise Exception(f"""Certificate validation failed with the status "{status}".""")
 
 
 def create_cert(client, domain_client, domain, base_len):
@@ -59,11 +67,11 @@ def create_cert(client, domain_client, domain, base_len):
     # Need to check if cert status is issued, if pending need to update dns
     for cert in resp["CertificateSummaryList"]:
         if domain == cert["DomainName"]:
-            click.secho("Cert already exists, do not need to create.", fg="green")
+            click.secho("Certificate already exists, do not need to create.", fg="green")
             return cert["CertificateArn"]
 
     if not click.confirm(
-        click.style("Creating Cert for ", fg="yellow")
+        click.style("Creating Certificate for ", fg="yellow")
         + click.style(f"{domain}\n", fg="white", bold=True)
         + click.style("Do you want to continue?", fg="yellow"),
     ):
@@ -106,8 +114,10 @@ def create_cert(client, domain_client, domain, base_len):
     click.secho(domain_id, fg="yellow")
 
     if not click.confirm(
-        click.style("Updating DNS record for cert ", fg="yellow")
-        + click.style(f"{domain}\n", fg="white", bold=True)
+        click.style("Updating DNS record for certificate ", fg="yellow")
+        + click.style(f"{domain}", fg="white", bold=True)
+        + click.style(" with value ", fg="yellow")
+        + click.style(f"""{cert_record["Value"]}\n""", fg="white", bold=True)
         + click.style("Do you want to continue?", fg="yellow"),
     ):
         exit()
@@ -131,8 +141,10 @@ def create_cert(client, domain_client, domain, base_len):
         },
     )
 
-    # Wait for certificate to get to validation state before continuing
-    wait_for_certificate_validation(client, certificate_arn=arn, sleep_time=5, timeout=600)
+    # Wait for certificate to get to validation state before continuing.
+    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
+    # and wants to give it a chance to take longer in case that's all that's wrong.
+    wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
 
     return arn
 
@@ -229,7 +241,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
                 break
 
         # update CallerReference to unique string eg date.
-        click.secho(f"Creating hosted zone for {subdom}....", fg="yellow")
+        click.secho(f"Creating hosted zone for {subdom}...", fg="yellow")
         response = client.create_hosted_zone(
             Name=subdom,
             # Timestamp is on the end because CallerReference must be unique for every call
@@ -243,7 +255,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
 
         if not click.confirm(
             click.style(f"Updating parent {parent} domain with records: ", fg="cyan")
-            + click.style("{ns_records['NameServers']}\n", fg="white", bold=True)
+            + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
@@ -259,7 +271,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
             ChangeBatch={
                 "Changes": [
                     {
-                        "Action": "CREATE",
+                        "Action": "UPSERT",
                         "ResourceRecordSet": {
                             "Name": subdom,
                             "Type": "NS",
@@ -422,6 +434,12 @@ def domain():
 def check_domain(domain_profile, project_profile, base_domain):
     """Scans to see if Domain exists."""
 
+    # If you need to reset to debug this command, you will need to delete any of the following
+    # which have been created:
+    # the certificate in your application's AWS account,
+    # the hosted zone for the application environment in the dev AWS account,
+    # and the applications records on the hosted zone for the environment in the dev AWS account.
+
     path = "copilot"
 
     domain_session = check_aws_conn(domain_profile)
@@ -447,10 +465,14 @@ def check_domain(domain_profile, project_profile, base_domain):
                             click.style("Checking file: ", fg="cyan")
                             + click.style(os.path.join(root, file), fg="white"),
                         )
-                        click.secho("Domains listed in manifest file", fg="cyan", underline=True)
+                        click.secho("Domains listed in manifest file\n", fg="cyan", underline=True)
 
                         for env, domain in conf["environments"].items():
-                            click.secho("Environment: " + env + "\t=> Domain: " + domain["http"]["alias"], fg="yellow")
+                            click.secho(
+                                "Environment: " + env + " => Domain: " + domain["http"]["alias"],
+                                fg="yellow",
+                                bold=True,
+                            )
                             cert_arn = check_r53(domain_session, project_session, domain["http"]["alias"], base_domain)
                             cert_list.update({domain["http"]["alias"]: cert_arn})
                             click.echo(" ")
