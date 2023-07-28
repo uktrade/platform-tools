@@ -102,12 +102,14 @@ def create_cert(client, domain_client, domain, base_len):
     cert_record = response["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
     response = domain_client.list_hosted_zones_by_name()
 
+    domain_id = False
     for hz in response["HostedZones"]:
         if hz["Name"] == domain_to_create:
             domain_id = hz["Id"]
             break
     if not domain_id:
-        click.secho(f"Unable to find Domain ID for {domain_to_create} in the hosted zones")
+        # Will got here more than once during manual testing, it might be a race condition we need to handle better
+        click.secho(f"Unable to find Domain ID for {domain_to_create} in the hosted zones", fg="red", bold=True)
         exit(1)
 
     # Add NS records of subdomain to parent
