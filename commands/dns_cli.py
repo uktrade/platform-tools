@@ -35,7 +35,8 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, 
         click.echo(
             click.style(f"{certificate_arn}", fg="white", bold=True)
             + click.style(
-                f": Waiting {sleep_time}s for validation, {timeout - elapsed_time}s until we give up...", fg="yellow"
+                f": Waiting {sleep_time}s for validation, {elapsed_time}s elapsed, {timeout - elapsed_time}s until we give up...",
+                fg="yellow",
             ),
         )
         time.sleep(sleep_time)
@@ -269,7 +270,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
         nameservers = [f"{nameserver}." for nameserver in nameservers]
         nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
 
-        response = client.change_resource_record_sets(
+        client.change_resource_record_sets(
             HostedZoneId=parent_id,
             ChangeBatch={
                 "Changes": [
@@ -286,7 +287,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
             },
         )
 
-        return True
+    return True
 
 
 def check_r53(domain_session, project_session, domain, base_domain):
