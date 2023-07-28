@@ -98,6 +98,9 @@ def create_cert(client, domain_client, domain, base_len):
         if hz["Name"] == domain_to_create:
             domain_id = hz["Id"]
             break
+    if not domain_id:
+        click.secho(f"Unable to find Domain ID for {domain_to_create} in the hosted zones")
+        exit(1)
 
     # Add NS records of subdomain to parent
     click.secho(domain_id, fg="yellow")
@@ -195,7 +198,7 @@ def check_for_records(client, parent_id, subdom, subdom_id):
         if subdom in records["Name"]:
             click.secho(records["Name"] + " found", fg="green")
             records_to_add.append(records)
-            add_records(client, records, subdom_id)
+            add_records(client, records, subdom_id, "UPSERT")
     return True
 
 
@@ -226,9 +229,11 @@ def create_hosted_zone(client, domain, start_domain, base_len):
                 break
 
         # update CallerReference to unique string eg date.
+        click.secho(f"Creating hosted zone for {subdom}....", fg="yellow")
         response = client.create_hosted_zone(
             Name=subdom,
-            CallerReference=f"{subdom}_from_code",
+            # Timestamp is on the end because CallerReference must be unique for every call
+            CallerReference=f"{subdom}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
         subdom_id = response["HostedZone"]["Id"]
@@ -448,8 +453,10 @@ def check_domain(domain_profile, project_profile, base_domain):
                             click.secho("Environment: " + env + "\t=> Domain: " + domain["http"]["alias"], fg="yellow")
                             cert_arn = check_r53(domain_session, project_session, domain["http"]["alias"], base_domain)
                             cert_list.update({domain["http"]["alias"]: cert_arn})
+                            click.echo(" ")
+
     if cert_list:
-        click.secho("\nHere are your Cert ARNs:", fg="cyan")
+        click.secho("Here are your Certificate ARNs:", fg="cyan")
         for domain, cert in cert_list.items():
             click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
     else:
