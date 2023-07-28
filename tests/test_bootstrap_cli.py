@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from unittest.mock import MagicMock
+from unittest.mock import call
 from unittest.mock import patch
 
 import boto3
@@ -13,6 +14,7 @@ from moto import mock_ssm
 from moto import mock_sts
 from schema import SchemaError
 
+from commands.bootstrap_cli import copy_secrets
 from commands.bootstrap_cli import get_paas_env_vars
 from commands.bootstrap_cli import instructions
 from commands.bootstrap_cli import load_and_validate_config
@@ -274,6 +276,84 @@ def test_migrate_secrets_profile_not_configured(tmp_path):
     )
 
     assert """AWS profile "foo" is not configured.""" in result.output
+
+
+def test_copy_secrets_profile_not_configured(tmp_path):
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+
+    result = CliRunner().invoke(
+        copy_secrets,
+        ["development", "newenv", "--project-profile", "foo"],
+    )
+
+    assert """AWS profile "foo" is not configured.""" in result.output
+
+
+@mock_sts
+def test_copy_secrets_without_new_environment_directory(alias_session, aws_credentials, tmp_path):
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    os.mkdir(f"{tmp_path}/copilot")
+
+    runner = CliRunner()
+
+    runner.invoke(make_config)
+
+    result = runner.invoke(
+        copy_secrets,
+        ["development", "newenv", "--project-profile", "foo"],
+    )
+
+    assert result.exit_code == 1
+    assert """Target environment manifest for "newenv" does not exist.""" in result.output
+
+
+@patch("commands.bootstrap_cli.get_ssm_secrets")
+@patch("commands.bootstrap_cli.set_ssm_param")
+@mock_ssm
+@mock_sts
+def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
+    get_ssm_secrets.return_value = [
+        ("/copilot/test-application/development/secrets/ALLOWED_HOSTS", "test-application.development.dbt"),
+        ("/copilot/test-application/development/secrets/TEST_SECRET", "test value"),
+    ]
+
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application/bootstrap.yml")
+    os.mkdir(f"{tmp_path}/copilot")
+
+    runner = CliRunner()
+    runner.invoke(make_config)
+
+    my_file = Path(FIXTURES_DIR, "newenv_environment_manifest.yml")
+    os.mkdir(f"{tmp_path}/copilot/environments/newenv")
+    to_file = Path(tmp_path / "copilot/environments/newenv/manifest.yml")
+    shutil.copy(my_file, to_file)
+
+    result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
+
+    set_ssm_param.assert_has_calls(
+        [
+            call(
+                "test-application",
+                "newenv",
+                "/copilot/test-application/newenv/secrets/ALLOWED_HOSTS",
+                "test-application.development.dbt",
+                True,
+                True,
+                "Copied from development environment.",
+            ),
+            call(
+                "test-application",
+                "newenv",
+                "/copilot/test-application/newenv/secrets/TEST_SECRET",
+                "test value",
+                True,
+                True,
+                "Copied from development environment.",
+            ),
+        ]
+    )
+    assert "/copilot/test-application/newenv/secrets/ALLOWED_HOSTS" in result.output
+    assert "/copilot/test-application/newenv/secrets/TEST_SECRET" in result.output
 
 
 def test_instructions(tmp_path):
