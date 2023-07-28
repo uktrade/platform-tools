@@ -100,9 +100,10 @@ def create_cert(client, domain_client, domain, base_len):
         response = client.describe_certificate(CertificateArn=arn)
 
     cert_record = response["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
-    response = domain_client.list_hosted_zones_by_name()
 
+    click.secho(f"Looking fo ID of domain {domain_to_create}...", fg="yellow")
     domain_id = False
+    response = domain_client.list_hosted_zones_by_name()
     for hz in response["HostedZones"]:
         if hz["Name"] == domain_to_create:
             domain_id = hz["Id"]
@@ -273,7 +274,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
             ChangeBatch={
                 "Changes": [
                     {
-                        "Action": "UPSERT",
+                        "Action": "CREATE",
                         "ResourceRecordSet": {
                             "Name": subdom,
                             "Type": "NS",
