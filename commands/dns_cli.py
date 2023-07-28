@@ -244,7 +244,6 @@ def create_hosted_zone(client, domain, start_domain, base_len):
                 parent_id = hz["Id"]
                 break
 
-        # update CallerReference to unique string eg date.
         click.secho(f"Creating hosted zone for {subdom}...", fg="yellow")
         response = client.create_hosted_zone(
             Name=subdom,
@@ -469,20 +468,19 @@ def check_domain(domain_profile, project_profile, base_domain):
                             click.style("Checking file: ", fg="cyan")
                             + click.style(os.path.join(root, file), fg="white"),
                         )
-                        click.secho("Domains listed in manifest file\n", fg="cyan", underline=True)
+                        click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
                         for env, domain in conf["environments"].items():
                             click.secho(
-                                "Environment: " + env + " => Domain: " + domain["http"]["alias"],
+                                "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
                                 fg="yellow",
                                 bold=True,
                             )
                             cert_arn = check_r53(domain_session, project_session, domain["http"]["alias"], base_domain)
                             cert_list.update({domain["http"]["alias"]: cert_arn})
-                            click.echo(" ")
 
     if cert_list:
-        click.secho("Here are your Certificate ARNs:", fg="cyan")
+        click.secho("\nHere are your Certificate ARNs:", fg="cyan")
         for domain, cert in cert_list.items():
             click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
     else:
