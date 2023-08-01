@@ -30,8 +30,6 @@ sidecars:
       SERVER: localhost:8000
 
 
-
-
   ipfilter:
     port: 8000
     image: public.ecr.aws/uktrade/ip-filter:latest
@@ -74,11 +72,8 @@ variables:                    # Pass environment variables as key value pairs.
   TEST_VAR:
 
 
-
-
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
   TEST_SECRET: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TEST_SECRET
-
 
 
 # You can override any of the values defined above by environment.
