@@ -192,6 +192,12 @@ def make_storage():
                 mkdir(output_dir, service_path)
                 click.echo(mkfile(output_dir, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
+        if storage_type in ["aurora-postgres", "rds-postgres"]:
+            click.secho(
+                "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
+                fg="yellow",
+            )
+
     click.echo(templates["storage-instructions"].render(services=services))
 
 
