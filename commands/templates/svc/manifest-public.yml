@@ -99,7 +99,7 @@ environments:
   {%- for env_name, env in environments.items() %}
   {{ env_name }}:
     http:
-      alias: {{ env.url }}x
+      alias: {{ env.url }}
   {%- endfor -%}
 
 # TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.

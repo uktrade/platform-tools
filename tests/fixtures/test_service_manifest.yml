@@ -87,7 +87,7 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 environments:
   production:
     http:
-      alias: test-service.trad.gav.ikx
+      alias: test-service.trad.gav.ik
   test:
     http:
-      alias: test-service.landan.cloudapps.digitalx# TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.
+      alias: test-service.landan.cloudapps.digital# TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.
