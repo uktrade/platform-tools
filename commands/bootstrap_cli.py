@@ -298,6 +298,8 @@ def copy_secrets(project_profile, source_environment, target_environment):
                     f"""The "{secret_name.split("/")[-1]}" parameter already exists for the "{target_environment}" environment.""",
                     fg="yellow",
                 )
+            else:
+                raise e
 
 
 @bootstrap.command()
