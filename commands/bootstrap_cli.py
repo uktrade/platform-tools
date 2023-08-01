@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import yaml
+from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
 from schema import Schema
@@ -278,17 +279,25 @@ def copy_secrets(project_profile, source_environment, target_environment):
 
     for secret in secrets:
         secret_name = secret[0].replace(f"/{source_environment}/", f"/{target_environment}/")
-        set_ssm_param(
-            config["app"],
-            target_environment,
-            secret_name,
-            secret[1],
-            True,
-            True,
-            f"Copied from {source_environment} environment.",
-        )
 
         click.echo(secret_name)
+
+        try:
+            set_ssm_param(
+                config["app"],
+                target_environment,
+                secret_name,
+                secret[1],
+                False,
+                False,
+                f"Copied from {source_environment} environment.",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ParameterAlreadyExists":
+                click.secho(
+                    f"""The "{secret_name.split("/")[-1]}" parameter already exists for the "{target_environment}" environment.""",
+                    fg="yellow",
+                )
 
 
 @bootstrap.command()
