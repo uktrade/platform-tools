@@ -196,14 +196,16 @@ invalid-entry:
             ), f"addons.parameters.yml should be included for {storage_type}"
 
     @pytest.mark.parametrize(
-        "storage_file_contents, storage_type",
+        "storage_file_contents, storage_type, secret_name",
         [
-            (REDIS_STORAGE_CONTENTS, "redis"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
+            (REDIS_STORAGE_CONTENTS, "redis", "REDIS"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres", "RDS"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
-    def test_storage_instructions_with_postgres_storage_types(self, fakefs, storage_file_contents, storage_type):
+    def test_storage_instructions_with_postgres_storage_types(
+        self, fakefs, storage_file_contents, storage_type, secret_name
+    ):
         fakefs.create_file(
             "storage.yml",
             contents=storage_file_contents,
@@ -218,20 +220,12 @@ invalid-entry:
             assert (
                 "DATABASE_CREDENTIALS" not in result.output
             ), f"DATABASE_CREDENTIALS should not be included for {storage_type}"
-        elif storage_type == "rds-postgres":
+        else:
             assert (
                 "DATABASE_CREDENTIALS" in result.output
             ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
             assert (
-                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
-                in result.output
-            )
-        elif storage_type == "aurora-postgres":
-            assert (
-                "DATABASE_CREDENTIALS" in result.output
-            ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
-            assert (
-                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/AURORA"
+                f"""secretsmanager: /copilot/${{COPILOT_APPLICATION_NAME}}/${{COPILOT_ENVIRONMENT_NAME}}/secrets/{secret_name}"""
                 in result.output
             )
 
