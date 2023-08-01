@@ -190,10 +190,48 @@ invalid-entry:
             assert (
                 "File copilot/environments/addons/addons.parameters.yml" not in result.output
             ), f"addons.parameters.yml should not be included for {storage_type}"
+        elif storage_type == "rds-postgres":
+            assert (
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
+                in result.output
+            )
+        elif storage_type == "aurora-postgres":
+            assert (
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/AURORA"
+                in result.output
+            )
         else:
             assert (
                 "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
             ), f"addons.parameters.yml should be included for {storage_type}"
+
+    @pytest.mark.parametrize(
+        "storage_file_contents, storage_type",
+        [
+            (REDIS_STORAGE_CONTENTS, "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
+        ],
+    )
+    def test_env_addons_parameters_file_with_postgres_storage_types(self, fakefs, storage_file_contents, storage_type):
+        fakefs.create_file(
+            "storage.yml",
+            contents=storage_file_contents,
+        )
+        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        result = CliRunner().invoke(cli, ["make-storage"])
+
+        assert result.exit_code == 0
+        if storage_type == "redis":
+            assert (
+                "DATABASE_CREDENTIALS" not in result.output
+            ), f"DATABASE_CREDENTIALS should not be included for {storage_type}"
+        else:
+            assert (
+                "DATABASE_CREDENTIALS" in result.output
+            ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
