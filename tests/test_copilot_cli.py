@@ -190,16 +190,6 @@ invalid-entry:
             assert (
                 "File copilot/environments/addons/addons.parameters.yml" not in result.output
             ), f"addons.parameters.yml should not be included for {storage_type}"
-        elif storage_type == "rds-postgres":
-            assert (
-                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
-                in result.output
-            )
-        elif storage_type == "aurora-postgres":
-            assert (
-                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/AURORA"
-                in result.output
-            )
         else:
             assert (
                 "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
@@ -213,7 +203,7 @@ invalid-entry:
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
         ],
     )
-    def test_env_addons_parameters_file_with_postgres_storage_types(self, fakefs, storage_file_contents, storage_type):
+    def test_storage_instructions_with_postgres_storage_types(self, fakefs, storage_file_contents, storage_type):
         fakefs.create_file(
             "storage.yml",
             contents=storage_file_contents,
@@ -228,10 +218,22 @@ invalid-entry:
             assert (
                 "DATABASE_CREDENTIALS" not in result.output
             ), f"DATABASE_CREDENTIALS should not be included for {storage_type}"
-        else:
+        elif storage_type == "rds-postgres":
             assert (
                 "DATABASE_CREDENTIALS" in result.output
             ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
+            assert (
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
+                in result.output
+            )
+        elif storage_type == "aurora-postgres":
+            assert (
+                "DATABASE_CREDENTIALS" in result.output
+            ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
+            assert (
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/AURORA"
+                in result.output
+            )
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
