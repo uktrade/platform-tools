@@ -145,6 +145,31 @@ applications:
           - FEEDS__30__SEED
           - FEEDS__30__TYPE
           - FEEDS__30__UNIQUE_ID
+          - FEEDS__31__ACCESS_KEY_ID
+          - FEEDS__31__SECRET_ACCESS_KEY
+          - FEEDS__31__SEED
+          - FEEDS__31__TYPE
+          - FEEDS__31__UNIQUE_ID
+          - FEEDS__32__ACCESS_KEY_ID
+          - FEEDS__32__SECRET_ACCESS_KEY
+          - FEEDS__32__SEED
+          - FEEDS__32__TYPE
+          - FEEDS__32__UNIQUE_ID
+          - FEEDS__33__ACCESS_KEY_ID
+          - FEEDS__33__SECRET_ACCESS_KEY
+          - FEEDS__33__SEED
+          - FEEDS__33__TYPE
+          - FEEDS__33__UNIQUE_ID
+          - FEEDS__34__ACCESS_KEY_ID
+          - FEEDS__34__SECRET_ACCESS_KEY
+          - FEEDS__34__SEED
+          - FEEDS__34__TYPE
+          - FEEDS__34__UNIQUE_ID
+          - FEEDS__35__ACCESS_KEY_ID
+          - FEEDS__35__SECRET_ACCESS_KEY
+          - FEEDS__35__SEED
+          - FEEDS__35__TYPE
+          - FEEDS__35__UNIQUE_ID
           - INCOMING_ACCESS_KEY_PAIRS__01__DESCRIPTION
           - INCOMING_ACCESS_KEY_PAIRS__01__KEY_ID
           - INCOMING_ACCESS_KEY_PAIRS__01__PERMISSIONS__activities__1
@@ -731,6 +756,31 @@ applications:
           - FEEDS__31__SEED
           - FEEDS__31__TYPE
           - FEEDS__31__UNIQUE_ID
+          - FEEDS__32__ACCESS_KEY_ID
+          - FEEDS__32__SECRET_ACCESS_KEY
+          - FEEDS__32__SEED
+          - FEEDS__32__TYPE
+          - FEEDS__32__UNIQUE_ID
+          - FEEDS__33__ACCESS_KEY_ID
+          - FEEDS__33__SECRET_ACCESS_KEY
+          - FEEDS__33__SEED
+          - FEEDS__33__TYPE
+          - FEEDS__33__UNIQUE_ID
+          - FEEDS__34__ACCESS_KEY_ID
+          - FEEDS__34__SECRET_ACCESS_KEY
+          - FEEDS__34__SEED
+          - FEEDS__34__TYPE
+          - FEEDS__34__UNIQUE_ID
+          - FEEDS__35__ACCESS_KEY_ID
+          - FEEDS__35__SECRET_ACCESS_KEY
+          - FEEDS__35__SEED
+          - FEEDS__35__TYPE
+          - FEEDS__35__UNIQUE_ID
+          - FEEDS__36__ACCESS_KEY_ID
+          - FEEDS__36__SECRET_ACCESS_KEY
+          - FEEDS__36__SEED
+          - FEEDS__36__TYPE
+          - FEEDS__36__UNIQUE_ID
           - INCOMING_ACCESS_KEY_PAIRS__10__DESCRIPTION
           - INCOMING_ACCESS_KEY_PAIRS__10__KEY_ID
           - INCOMING_ACCESS_KEY_PAIRS__10__PERMISSIONS__activities__1__TERMS_KEY
@@ -1505,6 +1555,7 @@ applications:
           - GOVUK_PAY_AUTH_TOKEN
           - GOVUK_PAY_URL
           - HAWK_RECEIVER_IP_WHITELIST
+          - INTERACTION_NOTIFICATION_API_KEY
           - INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID
           - INVESTMENT_DOCUMENT_AWS_REGION
           - INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY
@@ -1516,6 +1567,8 @@ applications:
           - MAILBOX_AWS_REGION
           - MAILBOX_AWS_SECRET_ACCESS_KEY
           - MAILBOX_BUCKET
+          - MAILBOX_INGESTION_FAILURE_TEMPLATE_ID
+          - MAILBOX_INGESTION_SUCCESS_TEMPLATE_ID
           - MAILBOX_MEETINGS_IMAP_DOMAIN
           - MAILBOX_MEETINGS_PASSWORD
           - MAILBOX_MEETINGS_USERNAME
@@ -1851,6 +1904,7 @@ applications:
           - GOVUK_PAY_AUTH_TOKEN
           - GOVUK_PAY_URL
           - HAWK_RECEIVER_IP_WHITELIST
+          - INTERACTION_NOTIFICATION_API_KEY
           - INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID
           - INVESTMENT_DOCUMENT_AWS_REGION
           - INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY
@@ -1863,6 +1917,8 @@ applications:
           - MAILBOX_AWS_REGION
           - MAILBOX_AWS_SECRET_ACCESS_KEY
           - MAILBOX_BUCKET
+          - MAILBOX_INGESTION_FAILURE_TEMPLATE_ID
+          - MAILBOX_INGESTION_SUCCESS_TEMPLATE_ID
           - MAILBOX_MEETINGS_IMAP_DOMAIN
           - MAILBOX_MEETINGS_PASSWORD
           - MAILBOX_MEETINGS_USERNAME
@@ -2033,6 +2089,7 @@ applications:
           - GOVUK_PAY_AUTH_TOKEN
           - GOVUK_PAY_URL
           - HAWK_RECEIVER_IP_WHITELIST
+          - INTERACTION_NOTIFICATION_API_KEY
           - INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID
           - INVESTMENT_DOCUMENT_AWS_REGION
           - INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY
@@ -2045,6 +2102,8 @@ applications:
           - MAILBOX_AWS_REGION
           - MAILBOX_AWS_SECRET_ACCESS_KEY
           - MAILBOX_BUCKET
+          - MAILBOX_INGESTION_FAILURE_TEMPLATE_ID
+          - MAILBOX_INGESTION_SUCCESS_TEMPLATE_ID
           - MAILBOX_MEETINGS_IMAP_DOMAIN
           - MAILBOX_MEETINGS_PASSWORD
           - MAILBOX_MEETINGS_USERNAME
@@ -2076,20 +2135,12 @@ applications:
           - STATSD_PORT
           - STATSD_PREFIX
           processes:
-          - command: ''
-            type: celerybeat
-          - command: ''
-            type: celerylongrunning
-          - command: ''
-            type: celeryworker
-          - command: ''
-            type: background-worker
+          - command: ./rq-run.sh cron-scheduler.py
+            type: cron-scheduler
           - command: ./rq-run.sh long-running-worker.py
             type: long-running-worker
           - command: ./rq-run.sh short-running-worker.py
             type: short-running-worker
-          - command: ./rq-run.sh cron-scheduler.py
-            type: cron-scheduler
           - command: ./web.sh
             type: web
           routes:
@@ -2662,7 +2713,22 @@ applications:
     datahub-helpcentre:
       environments:
       - environment: dev
-        paas: NO-APP-FOUND
+        paas:
+          env_keys:
+          - AUTHBROKER_CLIENT_ID
+          - AUTHBROKER_CLIENT_SECRET
+          - AUTHBROKER_URL
+          - DJANGO_SETTINGS_MODULE
+          - ENV_NAME
+          - FEEDBACK_URL
+          - FEED_API_TOKEN
+          - SENTRY_DSN
+          - SHOW_ENV_BANNER
+          processes:
+          - command: ''
+            type: web
+          routes: []
+          services: []
         paas-location: dit-staging/datahub-dev/datahub-helpcentre-dev
       - environment: production
         paas: NO-APP-FOUND
@@ -2939,6 +3005,10 @@ applications:
           - PEOPLE_FINDER_BASE_URL
           - PEOPLE_FINDER_PRIVATE_KEY
           - PIPELINE_LOG_URL
+          - PUBLIC_DATA_API_BASE_URL
+          - PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+          - PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+          - PUBLIC_DATA_GATEWAY_BUCKET_NAME
           - SENTRY_DSN
           - SENTRY_ENVIRONMENT
           - SLACK_TOKEN_ID
@@ -2966,8 +3036,7 @@ applications:
           - command: /home/vcap/app/bin/paas-wrapper.sh airflow celery worker --queues
               high-memory-usage
             type: high-memory-worker
-          - command: /home/vcap/app/bin/paas-wrapper.sh alembic upgrade head && /home/vcap/app/bin/paas-wrapper.sh
-              airflow db upgrade && /home/vcap/app/bin/paas-wrapper.sh /home/vcap/app/bin/airflow-scheduler.sh
+          - command: /home/vcap/app/bin/paas-wrapper.sh /home/vcap/app/bin/airflow-scheduler.sh
             type: scheduler
           - command: ./tensorflow-worker-entrypoint.sh
             type: tensorflow-worker
@@ -3176,6 +3245,12 @@ applications:
           - HAWK_ALGORITHM
           - HAWK_ID
           - HAWK_KEY
+          - HMRC_SDES_TRA_AWS_ACCESS_KEY_ID
+          - HMRC_SDES_TRA_AWS_SECRET_ACCESS_KEY_ID
+          - HMRC_SDES_TRA_DATA_BUCKET
+          - HMRC_SDES_TRA_GPG_PRIVATE_KEY
+          - HMRC_SDES_TRA_IGNORE_FAILURES
+          - HMRC_SDES_TRA_NOTIFICATION_BUCKET
           - INGEST_TASK_CONCURRENCY
           - LEAVING_SERVICE_BASE_URL
           - LEAVING_SERVICE_HAWK_ID
@@ -3235,9 +3310,7 @@ applications:
           - command: /home/vcap/app/bin/paas-wrapper.sh airflow celery worker --queues
               sensors
             type: sensors-worker
-          - command: /home/vcap/app/bin/paas-wrapper.sh alembic upgrade head && /home/vcap/app/bin/paas-wrapper.sh
-              airflow db upgrade && /home/vcap/app/bin/paas-wrapper.sh airflow webserver
-              -p 8080
+          - command: /home/vcap/app/bin/paas-wrapper.sh airflow webserver -p 8080
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -3327,6 +3400,8 @@ applications:
           - COMPANIES_HOUSE_PSC_BASE_URL
           - COMPANIES_HOUSE_PSC_TOTAL_FILES
           - COMTRADE_GOODS_KEY
+          - COMTRADE_GOODS_MONTHLY_KEY
+          - COMTRADE_SERVICES_KEY
           - COMTRADE_TOKEN
           - CONSENT_BASE_URL
           - CONSENT_HAWK_ID
@@ -3340,6 +3415,9 @@ applications:
           - DATASETS_FINDER_ELASTICSEARCH_HOST
           - DATASETS_FINDER_ELASTICSEARCH_PORT
           - DATASETS_FINDER_SECRET_KEY
+          - DATA_CITY_LISTS_API_ENDPOINT
+          - DATA_CITY_LIST_API_ENDPOINT
+          - DATA_CITY_TOKEN
           - DATA_GOV_UK_LOGIN_URL
           - DATA_GOV_UK_PASSWORD
           - DATA_GOV_UK_TARIFF_PDG_BASE
@@ -3449,6 +3527,7 @@ applications:
           - GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_CREDENTIALS
           - GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_TABLE_PREFIX
           - GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_CREDENTIALS
+          - GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_TABLE_PREFIX
           - GOOGLE_BIGQUERY_TWUK_ANALYTICS_CREDENTIALS
           - GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX
           - GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX_SERVER_SIDE
@@ -3459,6 +3538,12 @@ applications:
           - HAWK_ALGORITHM
           - HAWK_ID
           - HAWK_KEY
+          - HMRC_SDES_TRA_AWS_ACCESS_KEY_ID
+          - HMRC_SDES_TRA_AWS_SECRET_ACCESS_KEY_ID
+          - HMRC_SDES_TRA_DATA_BUCKET
+          - HMRC_SDES_TRA_GPG_PRIVATE_KEY
+          - HMRC_SDES_TRA_IGNORE_FAILURES
+          - HMRC_SDES_TRA_NOTIFICATION_BUCKET
           - IHASCO_API_CREDENTIALS
           - IHASCO_BASE_URL
           - IHASCO_SLEEP_DURATION_SECONDS
@@ -3480,6 +3565,8 @@ applications:
           - LITE_BASE_URL
           - LITE_HAWK_ID
           - LITE_HAWK_SECRET
+          - MACMAPS_PASSWORD
+          - MACMAPS_USERNAME
           - MAPLECROFT_API_KEY
           - MAPLECROFT_BASE_URL
           - MARKET_ACCESS_BASE_URL
@@ -3599,9 +3686,9 @@ applications:
           - command: /home/vcap/app/bin/paas-wrapper.sh airflow celery worker --queues
               sensors
             type: sensors-worker
-          - command: /home/vcap/app/bin/paas-wrapper.sh alembic upgrade head && /home/vcap/app/bin/paas-wrapper.sh
-              airflow db upgrade && /home/vcap/app/bin/paas-wrapper.sh airflow webserver
-              -p 8080
+          - command: ''
+            type: migrate
+          - command: /home/vcap/app/bin/paas-wrapper.sh airflow webserver -p 8080
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -4152,6 +4239,7 @@ applications:
           - FAS_FROM_EMAIL
           - FAS_NOTIFICATIONS_UNSUBSCRIBE_URL
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_OPENAPI_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_REGISTRATION_LETTERS_ENABLED
           - FEATURE_TEST_API_ENABLED
@@ -4212,7 +4300,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-api-dev-redis-6
+            name: directory-api-dev-redis
         paas-location: dit-staging/directory-dev/directory-api-dev
       - environment: cd-feature_eu-west-2
         paas: NO-APP-FOUND
@@ -4341,13 +4429,17 @@ applications:
               Class: db.t3.small.'
             instance: small-ha-12
             name: directory-api-staging-db
-          - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM
-              per VM, 80GB disk space. Free for trial orgs. Costs for billable orgs.
-            instance: tiny-1
+          - description: 3 dedicated VMs, 1 CPU per VM, 4GB RAM per VM, 240GB disk
+              space.
+            instance: small-ha-1
             name: directory-api-staging-opensearch
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-api-staging-redis-ha-6
+            name: directory-api-staging-redis-ha
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-api-staging
         paas-location: dit-staging/directory-staging/directory-api-staging
       - environment: uat_eu-west-2
         paas:
@@ -4408,6 +4500,7 @@ applications:
           - FAS_FROM_EMAIL
           - FAS_NOTIFICATIONS_UNSUBSCRIBE_URL
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_OPENAPI_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_SKIP_MIGRATE
           - FEATURE_TEST_API_ENABLED
@@ -4467,14 +4560,18 @@ applications:
               db.t3.small.'
             instance: small-12
             name: directory-api-uat-db
-          - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM
-              per VM, 80GB disk space. Free for trial orgs. Costs for billable orgs.
-            instance: tiny-1
+          - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk
+              space.
+            instance: medium-ha-1
             name: directory-api-uat-opensearch
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-api-uat-redis-6
+            name: directory-api-uat-redis
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-api-uat
         paas-location: dit-staging/directory-uat/directory-api-uat
       - environment: prod_eu-west-2
         paas:
@@ -4592,9 +4689,9 @@ applications:
               Class: db.m5.large.'
             instance: medium-ha-12
             name: directory-api-db
-          - description: NOT Highly Available, 1 dedicated VM, 1 CPU per VM, 4GB RAM
-              per VM, 80GB disk space. Free for trial orgs. Costs for billable orgs.
-            instance: tiny-1
+          - description: 3 dedicated VMs, 2 CPU per VM, 8GB RAM per VM, 525GB disk
+              space.
+            instance: medium-ha-1
             name: directory-api-opensearch
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
@@ -4625,6 +4722,7 @@ applications:
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_SERVER_URL
           - ENVIRONMENT_CSS_THEME_FILE
+          - FEATURE_DIRECTORY_CMS_OPENAPI_ENABLED
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
           - FEATURE_MAINTENANCE_MODE_ENABLED
           - FEATURE_REDIS_USE_SSL
@@ -4685,7 +4783,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-cms-dev-redis-6
+            name: directory-cms-dev-redis
         paas-location: dit-staging/directory-dev/directory-cms-dev
       - environment: staging_eu-west-2
         paas:
@@ -4708,6 +4806,7 @@ applications:
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_SERVER_URL
           - ENVIRONMENT_CSS_THEME_FILE
+          - FEATURE_DIRECTORY_CMS_OPENAPI_ENABLED
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
           - FEATURE_MAINTENANCE_MODE_ENABLED
           - FEATURE_REDIS_USE_SSL
@@ -4777,7 +4876,11 @@ applications:
             name: directory-cms-staging-db
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-cms-staging-redis-ha-6
+            name: directory-cms-staging-redis-ha
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-cms-staging
         paas-location: dit-staging/directory-staging/directory-cms-staging
       - environment: uat_eu-west-2
         paas:
@@ -4798,6 +4901,7 @@ applications:
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_SERVER_URL
           - ENVIRONMENT_CSS_THEME_FILE
+          - FEATURE_DIRECTORY_CMS_OPENAPI_ENABLED
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
           - FEATURE_MAINTENANCE_MODE_ENABLED
           - FEATURE_REDIS_USE_SSL
@@ -4863,7 +4967,11 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-cms-uat-redis-6
+            name: directory-cms-uat-redis
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-cms-uat
         paas-location: dit-staging/directory-uat/directory-cms-uat
       - environment: prod_eu-west-2
         paas:
@@ -4884,6 +4992,7 @@ applications:
           - DEFAULT_HIGH_THRESHOLD_CPU_PERCENTAGE
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_SERVER_URL
+          - FEATURE_DIRECTORY_CMS_OPENAPI_ENABLED
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
           - FEATURE_MAINTENANCE_MODE_ENABLED
           - FEATURE_REDIS_USE_SSL
@@ -5008,7 +5117,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-cms-uat-redis-6
+            name: directory-cms-uat-redis
         paas-location: dit-staging/directory-uat/directory-cms-flower-uat
       - environment: production
         paas:
@@ -5049,6 +5158,7 @@ applications:
           - ELASTICSEARCH_INSTANCE_NAME
           - ELASTICSEARCH_PROVIDER
           - ELASTICSEARCH_USE_PARALLEL_BULK
+          - FEATURE_OPENAPI_ENABLED
           - HEALTH_CHECK_TOKEN
           - SECRET_KEY
           - SENTRY_DSN
@@ -5085,7 +5195,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-companies-house-search-dev-redis-6
+            name: directory-companies-house-search-dev-redis
         paas-location: dit-staging/directory-dev/directory-companies-house-search-dev
       - environment: staging_eu-west-2
         paas:
@@ -5096,6 +5206,7 @@ applications:
           - CSRF_COOKIE_SECURE
           - ELASTICSEARCH_PROVIDER
           - ELASTICSEARCH_USE_PARALLEL_BULK
+          - FEATURE_OPENAPI_ENABLED
           - HEALTH_CHECK_TOKEN
           - SECRET_KEY
           - SENTRY_DSN
@@ -5131,7 +5242,7 @@ applications:
             name: directory-companies-house-search-staging-opensearch
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-companies-house-search-staging-redis-ha-6
+            name: directory-companies-house-search-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-companies-house-search-staging
       - environment: uat_eu-west-2
         paas:
@@ -5142,6 +5253,7 @@ applications:
           - CSRF_COOKIE_SECURE
           - ELASTICSEARCH_PROVIDER
           - ELASTICSEARCH_USE_PARALLEL_BULK
+          - FEATURE_OPENAPI_ENABLED
           - HEALTH_CHECK_TOKEN
           - SECRET_KEY
           - SENTRY_DSN
@@ -5178,7 +5290,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-companies-house-search-uat-redis-6
+            name: directory-companies-house-search-uat-redis
         paas-location: dit-staging/directory-uat/directory-companies-house-search-uat
       - environment: prod_eu-west-2
         paas:
@@ -5282,6 +5394,7 @@ applications:
           - EMAIL_HOST_USER
           - EMAIL_PORT
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_OPENAPI_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_TEST_API_ENABLED
           - GOV_NOTIFY_API_KEY
@@ -5335,7 +5448,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-forms-api-dev-redis-6
+            name: directory-forms-api-dev-redis
         paas-location: dit-staging/directory-dev/directory-forms-api-dev
       - environment: staging_eu-west-2
         paas:
@@ -5358,6 +5471,7 @@ applications:
           - EMAIL_HOST_USER
           - EMAIL_PORT
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_OPENAPI_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_TEST_API_ENABLED
           - GOV_NOTIFY_API_KEY
@@ -5409,7 +5523,7 @@ applications:
             name: directory-forms-api-staging-db
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-forms-api-staging-redis-ha-6
+            name: directory-forms-api-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-forms-api-staging
       - environment: uat_eu-west-2
         paas:
@@ -5432,6 +5546,7 @@ applications:
           - EMAIL_HOST_USER
           - EMAIL_PORT
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_OPENAPI_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_TEST_API_ENABLED
           - GOV_NOTIFY_API_KEY
@@ -5490,7 +5605,11 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-forms-api-uat-redis-6
+            name: directory-forms-api-uat-redis
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-forms-api-uat
         paas-location: dit-staging/directory-uat/directory-forms-api-uat
       - environment: prod_eu-west-2
         paas:
@@ -5663,7 +5782,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-sso-dev-redis-6
+            name: directory-sso-dev-redis
         paas-location: dit-staging/directory-dev/directory-sso-dev
       - environment: staging_eu-west-2
         paas:
@@ -5766,7 +5885,7 @@ applications:
             name: directory-sso-staging-db
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-sso-staging-redis-ha-6
+            name: directory-sso-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-sso-staging
       - environment: uat_eu-west-2
         paas:
@@ -5880,10 +5999,13 @@ applications:
               db.t3.small.'
             instance: small-12
             name: directory-sso-uat-db
-          - description: 1.5GB RAM, single node, no failover, daily backups (for instances
-              created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-            instance: tiny-6.x
-            name: directory-sso-uat-redis-6
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-directory-sso-uat
+          - description: 3GB RAM, highly-available, daily backups
+            instance: small-ha-6.x
+            name: directory-sso-uat-small-ha-6
         paas-location: dit-staging/directory-uat/directory-sso-uat
       - environment: prod_eu-west-2
         paas:
@@ -5973,15 +6095,20 @@ applications:
             internal: true
             ipfilter: false
             path: ''
+          - domain: trade.great.gov.uk
+            host: cms
+            internal: false
+            ipfilter: true
+            path: /admin
           services:
           - description: '100GB Storage, Dedicated Instance, Highly Available, Storage
               Encrypted, Max 500 Concurrent Connections. Postgres Version 12. DB Instance
               Class: db.m5.large.'
             instance: medium-ha-12
             name: directory-sso-db
-          - description: 1.5GB RAM, highly-available, daily backups
-            instance: tiny-ha-6.x
-            name: directory-sso-redis-ha-6
+          - description: 3GB RAM, highly-available, daily backups
+            instance: small-ha-6.x
+            name: directory-sso-redis-small-ha-6
         paas-location: dit-services/directory/directory-sso
       name: directory-sso
       namespace: directory
@@ -6060,7 +6187,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-sso-profile-dev-redis-6
+            name: directory-sso-profile-dev-redis
         paas-location: dit-staging/directory-dev/directory-sso-profile-dev
       - environment: staging_eu-west-2
         paas:
@@ -6126,7 +6253,7 @@ applications:
           services:
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-sso-profile-staging-redis-ha-6
+            name: directory-sso-profile-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-sso-profile-staging
       - environment: uat_eu-west-2
         paas:
@@ -6224,7 +6351,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: sso-profile-redis-6
+            name: sso-profile-redis
         paas-location: dit-staging/directory-uat/directory-sso-profile-uat
       - environment: prod_eu-west-2
         paas:
@@ -6677,7 +6804,7 @@ applications:
           services:
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-ui-buyer-staging-redis-ha-6
+            name: directory-ui-buyer-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-ui-buyer-staging
       - environment: uat_eu-west-2
         paas:
@@ -6793,7 +6920,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: directory-ui-buyer-uat-redis-6
+            name: directory-ui-buyer-uat-redis
         paas-location: dit-staging/directory-uat/directory-ui-buyer-uat
       - environment: prod_eu-west-2
         paas:
@@ -6992,7 +7119,7 @@ applications:
             name: directory-ui-supplier-staging-s3-pub
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: directory-ui-supplier-staging-redis-ha-6
+            name: directory-ui-supplier-staging-redis-ha
         paas-location: dit-staging/directory-staging/directory-ui-supplier-staging
       - environment: uat_eu-west-2
         paas: NO-APP-FOUND
@@ -7334,6 +7461,7 @@ applications:
           - CONTACT_ENQUIRIES_AGENT_EMAIL_ADDRESS
           - CONTACT_EVENTS_AGENT_EMAIL_ADDRESS
           - CONTACT_INTERNATIONAL_AGENT_EMAIL_ADDRESS
+          - DATA_WORKSPACE_DATASETS_URL
           - DIRECTORY_API_CLIENT_API_KEY
           - DIRECTORY_API_CLIENT_BASE_URL
           - DIRECTORY_CH_SEARCH_CLIENT_API_KEY
@@ -7359,12 +7487,15 @@ applications:
           - EXPORTING_OPPORTUNITIES_API_SECRET
           - EXPORTING_OPPORTUNITIES_SEARCH_URL
           - EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
+          - EXPORT_ACADEMY_REMOVE_EVENT_MEDIA_AFTER_DAYS
           - FEATURE_COMPARE_MARKETS_TABS
           - FEATURE_DATA_PIPELINE_STATS
+          - FEATURE_DIGITAL_POINT_OF_ENTRY
           - FEATURE_EXPORT_ACADEMY
           - FEATURE_EXPORT_ACADEMY_RELEASE_2
           - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
           - FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
+          - FEATURE_GREAT_CMS_OPENAPI_ENABLED
           - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
           - FEATURE_INTERNATIONAL_ONLINE_OFFER
           - FEATURE_MARKET_GUIDES_MAP
@@ -7408,9 +7539,12 @@ applications:
           - UKEF_FORM_SUBMIT_TRACKER_URL
           - UTM_COOKIE_DOMAIN
           - WAGTAILADMIN_BASE_URL
+          - WAGTAILADMIN_COMMENTS_ENABLED
+          - WAGTAILTRANSFER_BASE_URL_PRODUCTION
           - WAGTAILTRANSFER_BASE_URL_STAGING
           - WAGTAILTRANSFER_BASE_URL_UAT
           - WAGTAILTRANSFER_SECRET_KEY
+          - WAGTAILTRANSFER_SECRET_KEY_PRODUCTION
           - WAGTAILTRANSFER_SECRET_KEY_STAGING
           - WAGTAILTRANSFER_SECRET_KEY_UAT
           processes:
@@ -7465,7 +7599,12 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: great-cms-dev-redis-6
+            name: great-cms-dev-redis
+          - description: '100GB Storage, Dedicated Instance, Highly Available, Storage
+              Encrypted, Max 200 Concurrent Connections. Postgres Version 13. DB Instance
+              Class: db.t3.small.'
+            instance: small-ha-13
+            name: aventri-migration-dev-db
         paas-location: dit-staging/directory-dev/great-cms-dev
       - environment: staging
         paas:
@@ -7501,6 +7640,7 @@ applications:
           - CONTACT_ENQUIRIES_AGENT_EMAIL_ADDRESS
           - CONTACT_EVENTS_AGENT_EMAIL_ADDRESS
           - CONTACT_INTERNATIONAL_AGENT_EMAIL_ADDRESS
+          - DATA_WORKSPACE_DATASETS_URL
           - DIRECTORY_API_CLIENT_API_KEY
           - DIRECTORY_API_CLIENT_BASE_URL
           - DIRECTORY_CH_SEARCH_CLIENT_API_KEY
@@ -7524,7 +7664,10 @@ applications:
           - EXPORTING_OPPORTUNITIES_API_BASE_URL
           - EXPORTING_OPPORTUNITIES_API_SECRET
           - EXPORTING_OPPORTUNITIES_SEARCH_URL
+          - EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
+          - EXPORT_ACADEMY_REMOVE_EVENT_MEDIA_AFTER_DAYS
           - FEATURE_COMPARE_MARKETS_TABS
+          - FEATURE_DIGITAL_POINT_OF_ENTRY
           - FEATURE_EXPORT_ACADEMY
           - FEATURE_EXPORT_ACADEMY_RELEASE_2
           - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
@@ -7532,6 +7675,8 @@ applications:
           - FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
           - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
           - FEATURE_INTERNATIONAL_ONLINE_OFFER
+          - FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE
+          - FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION
           - FEATURE_MOCK_CLIENT_IP_ENABLED
           - FEATURE_REDIS_USE_SSL
           - FEATURE_SHOW_BRAND_BANNER
@@ -7568,9 +7713,11 @@ applications:
           - UKEF_FORM_SUBMIT_TRACKER_URL
           - UTM_COOKIE_DOMAIN
           - WAGTAILADMIN_BASE_URL
+          - WAGTAILTRANSFER_BASE_URL_DEV
           - WAGTAILTRANSFER_BASE_URL_PRODUCTION
           - WAGTAILTRANSFER_BASE_URL_UAT
           - WAGTAILTRANSFER_SECRET_KEY
+          - WAGTAILTRANSFER_SECRET_KEY_DEV
           - WAGTAILTRANSFER_SECRET_KEY_PRODUCTION
           - WAGTAILTRANSFER_SECRET_KEY_UAT
           processes:
@@ -7578,6 +7725,10 @@ applications:
             type: celery_beat
           - command: celery -A config worker -l DEBUG
             type: celery_worker
+          - command: ''
+            type: build_assets
+          - command: ''
+            type: run
           - command: python manage.py collectstatic --noinput && python manage.py
               migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
             type: web
@@ -7613,11 +7764,6 @@ applications:
             ipfilter: true
             path: /international/expand-your-business-in-the-uk
           services:
-          - description: '100GB Storage, Dedicated Instance, Highly Available, Storage
-              Encrypted, Max 200 Concurrent Connections. Postgres Version 12. DB Instance
-              Class: db.t3.small.'
-            instance: small-ha-12
-            name: great-cms-staging-db
           - description: A single S3 bucket. Free for trial orgs. Costs for billable
               orgs.
             instance: default
@@ -7628,7 +7774,17 @@ applications:
             name: great-cms-staging-opensearch
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: great-cms-staging-redis-ha-6
+            name: great-cms-staging-redis-ha
+          - description: '100GB Storage, Dedicated Instance, Highly Available, Storage
+              Encrypted, Max 200 Concurrent Connections. Postgres Version 12. DB Instance
+              Class: db.t3.small.'
+            instance: small-ha-12
+            name: great-cms-staging-db-new
+          - description: '100GB Storage, Dedicated Instance, Highly Available, Storage
+              Encrypted, Max 200 Concurrent Connections. Postgres Version 13. DB Instance
+              Class: db.t3.small.'
+            instance: small-ha-13
+            name: aventri-migration-staging-db
         paas-location: dit-staging/directory-staging/great-cms-staging
       - environment: uat
         paas:
@@ -7687,11 +7843,14 @@ applications:
           - EXPORTING_OPPORTUNITIES_API_BASE_URL
           - EXPORTING_OPPORTUNITIES_API_SECRET
           - EXPORTING_OPPORTUNITIES_SEARCH_URL
+          - EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
+          - EXPORT_ACADEMY_REMOVE_EVENT_MEDIA_AFTER_DAYS
           - FEATURE_COMPARE_MARKETS_TABS
           - FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER
           - FEATURE_EXPORT_ACADEMY
           - FEATURE_EXPORT_ACADEMY_RELEASE_2
           - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
+          - FEATURE_GREAT_CMS_OPENAPI_ENABLED
           - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
           - FEATURE_INTERNATIONAL_ONLINE_OFFER
           - FEATURE_MAINTENANCE_MODE_ENABLED
@@ -7732,9 +7891,11 @@ applications:
           - UKEF_FORM_SUBMIT_TRACKER_URL
           - UTM_COOKIE_DOMAIN
           - WAGTAILADMIN_BASE_URL
+          - WAGTAILTRANSFER_BASE_URL_DEV
           - WAGTAILTRANSFER_BASE_URL_PRODUCTION
           - WAGTAILTRANSFER_BASE_URL_STAGING
           - WAGTAILTRANSFER_SECRET_KEY
+          - WAGTAILTRANSFER_SECRET_KEY_DEV
           - WAGTAILTRANSFER_SECRET_KEY_PRODUCTION
           - WAGTAILTRANSFER_SECRET_KEY_STAGING
           processes:
@@ -7775,9 +7936,13 @@ applications:
               per VM, 80GB disk space. Free for trial orgs. Costs for billable orgs.
             instance: tiny-1
             name: great-cms-uat-opensearch
-          - description: 1.5GB RAM, highly-available, daily backups
-            instance: tiny-ha-6.x
-            name: great-cms-uat-redis-6
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: "scale-great\u2014cms-uat"
+          - description: 3GB RAM, highly-available, daily backups
+            instance: small-ha-6.x
+            name: great-cms-uat-redis-small-ha-6
         paas-location: dit-staging/directory-uat/great-cms-uat
       - environment: production
         paas:
@@ -7839,6 +8004,7 @@ applications:
           - FEATURE_EXPORT_ACADEMY
           - FEATURE_EXPORT_ACADEMY_RELEASE_2
           - FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
+          - FEATURE_GREAT_CMS_OPENAPI_ENABLED
           - FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
           - FEATURE_INTERNATIONAL_ONLINE_OFFER
           - FEATURE_MAINTENANCE_MODE_ENABLED
@@ -7946,9 +8112,9 @@ applications:
               per VM, 80GB disk space. Free for trial orgs. Costs for billable orgs.
             instance: tiny-1
             name: great-cms-opensearch
-          - description: 1.5GB RAM, highly-available, daily backups
-            instance: tiny-ha-6.x
-            name: great-cms-redis-6
+          - description: 3GB RAM, highly-available, daily backups
+            instance: small-ha-6.x
+            name: great-cms-redis-small-ha-6
         paas-location: dit-services/directory/great-cms
       - environment: beta
         paas: NO-APP-FOUND
@@ -8082,7 +8248,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: great-domestic-ui-dev-redis-6
+            name: great-domestic-ui-dev-redis
         paas-location: dit-staging/directory-dev/great-domestic-ui-dev
       - environment: staging_eu-west-2
         paas:
@@ -8226,7 +8392,7 @@ applications:
             name: directory-staging-autoscaler
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: great-domestic-ui-staging-redis-ha-6
+            name: great-domestic-ui-staging-redis-ha
         paas-location: dit-staging/directory-staging/great-domestic-ui-staging
       - environment: uat_eu-west-2
         paas:
@@ -8353,7 +8519,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: great-domestic-ui-uat-redis-6
+            name: great-domestic-ui-uat-redis
         paas-location: dit-staging/directory-uat/great-domestic-ui-uat
       - environment: prod_eu-west-2
         paas:
@@ -8583,7 +8749,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: great-international-ui-dev-redis-6
+            name: great-international-ui-dev-redis
         paas-location: dit-staging/directory-dev/great-international-ui-dev
       - environment: staging
         paas:
@@ -8707,7 +8873,11 @@ applications:
             name: directory-ui-supplier-staging-s3-pub
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: great-international-ui-staging-redis-ha-6
+            name: great-international-ui-staging-redis-ha
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-great-international-ui-staging
         paas-location: dit-staging/directory-staging/great-international-ui-staging
       - environment: uat
         paas:
@@ -8814,10 +8984,13 @@ applications:
             ipfilter: true
             path: /international
           services:
-          - description: 1.5GB RAM, single node, no failover, daily backups (for instances
-              created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
-            instance: tiny-6.x
-            name: great-international-ui-uat-redis-6
+          - description: Configurable autoscaler to dynamically manage the number
+              of instances of your application.
+            instance: autoscaler-free-plan
+            name: scale-great-international-ui-uat
+          - description: 6.37GB RAM, highly-available, daily backups
+            instance: medium-ha-6.x
+            name: great-international-ui-uat-redis-medium-ha-6
         paas-location: dit-staging/directory-uat/great-international-ui-uat
       - environment: prod
         paas:
@@ -8942,9 +9115,9 @@ applications:
             ipfilter: false
             path: /international
           services:
-          - description: 3GB RAM, highly-available, daily backups
-            instance: small-ha-6.x
-            name: great-international-ui-redis-ha-6
+          - description: 6.37GB RAM, highly-available, daily backups
+            instance: medium-ha-6.x
+            name: great-international-ui-redis-medium-ha-6
         paas-location: dit-services/directory/great-international-ui
       name: great-international-ui
       namespace: directory
@@ -8991,6 +9164,7 @@ applications:
           - EMAIL_FROM
           - EMAIL_UUID
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_PIR_OPENAPI_ENABLED
           - FRONTEND_URL
           - GOV_NOTIFY_API_KEY
           - REDIS_URL
@@ -9043,7 +9217,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: invest-pir-api-dev-redis-6
+            name: invest-pir-api-dev-redis
         paas-location: dit-staging/directory-dev/invest-pir-api-dev
       - environment: staging_eu-west-2
         paas:
@@ -9069,6 +9243,7 @@ applications:
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
           - FRONTEND_URL
           - GOV_NOTIFY_API_KEY
+          - PIR_API_FEATURE_PIR_OPENAPI_ENABLED
           - REDIS_URL
           - RESET_EMAIL
           - RESTRICT_ADMIN
@@ -9115,7 +9290,7 @@ applications:
             name: invest-pir-api-staging-db
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
-            name: invest-pir-api-staging-redis-ha-6
+            name: invest-pir-api-staging-redis-ha
         paas-location: dit-staging/directory-staging/invest-pir-api-staging
       - environment: uat_eu-west-2
         paas:
@@ -9139,6 +9314,7 @@ applications:
           - EMAIL_FROM
           - EMAIL_UUID
           - FEATURE_ENFORCE_STAFF_SSO_ENABLED
+          - FEATURE_PIR_OPENAPI_ENABLED
           - FRONTEND_URL
           - GOV_NOTIFY_API_KEY
           - REDIS_URL
@@ -9188,7 +9364,7 @@ applications:
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-6.x
-            name: invest-pir-api-uat-redis-6
+            name: invest-pir-api-uat-redis
         paas-location: dit-staging/directory-uat/invest-pir-api-uat
       - environment: prod_eu-west-2
         paas:
@@ -10643,7 +10819,6 @@ applications:
           - DISABLE_COLLECTSTATIC
           - DJANGO_BASE_DIR
           - DJANGO_SECRET_KEY
-          - EECAN_ROLLOUT_FEATURE_FLAG
           - FORM_URL
           - GA_MEASUREMENT_PROTOCOL_TRACK_EVENTS
           - GA_MEASUREMENT_PROTOCOL_UA
@@ -10651,6 +10826,7 @@ applications:
           - GTM_COOKIES_WIN
           - GTM_ID
           - GTM_PREVIEW
+          - OLD_EECAN_ROLLOUT_FEATURE_FLAG
           - ROW_ROLLOUT_FEATURE_FLAG
           - SENTRY_DSN
           - SENTRY_ENVIRONMENT
@@ -11023,7 +11199,7 @@ applications:
             name: fft-temp-files
           - description: 3GB RAM, highly-available, daily backups
             instance: small-ha-6.x
-            name: fft-redis-6
+            name: fft-redis
         paas-location: dit-services/finance/fft
       name: fft
       namespace: finance
@@ -11051,6 +11227,7 @@ applications:
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_SERVER_TIMEOUT
           - ELASTIC_APM_URL
+          - GOV_NOTIFY_API_KEY
           - HAWK_AUTH_ID
           - HAWK_AUTH_KEY
           - ICMS_ADDRESS_API_KEY
@@ -11185,6 +11362,7 @@ applications:
           - ELASTIC_APM_URL
           - HAWK_AUTH_ID
           - HAWK_AUTH_KEY
+          - ICMS_ADDRESS_API_KEY
           - ICMS_ALLOWED_HOSTS
           - ICMS_DEFAULT_DOMAIN
           - ICMS_HMRC_DOMAIN
@@ -11610,10 +11788,6 @@ applications:
             ipfilter: true
             path: ''
           services:
-          - description: A single S3 bucket. Free for trial orgs. Costs for billable
-              orgs.
-            instance: default
-            name: s3-digital-workspace-v2-dev
           - description: 1.5GB RAM, single node, no failover, daily backups (for instances
               created after 21/1/2019). Free for trial orgs. Costs for billable orgs.
             instance: tiny-5.x
@@ -11627,6 +11801,10 @@ applications:
               db.t3.small.'
             instance: small-12
             name: pg-digital-workspace-dev
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: s3-digital-workspace-v2-dev
         paas-location: dit-staging/intranet-dev/digital-workspace-v2-dev
       - environment: staging
         paas:
@@ -12245,7 +12423,6 @@ applications:
           - AV_SERVICE_URL
           - AV_SERVICE_USERNAME
           - BACKGROUND_TASK_ENABLED
-          - BP_DEBUG
           - CERTIFICATE_PASSWORD
           - DEBUG
           - DISABLE_COLLECTSTATIC
@@ -12445,7 +12622,6 @@ applications:
           - AV_SERVICE_USERNAME
           - BACKGROUND_TASK_ENABLED
           - CERTIFICATE_PASSWORD
-          - DEBUG
           - DISABLE_COLLECTSTATIC
           - DJANGO_SECRET_KEY
           - DOCUMENT_SIGNING_ENABLED
@@ -12549,7 +12725,6 @@ applications:
           - EXPORTER_BASE_URL
           - EXPORTER_USERS
           - FEATURE_EMAIL_REPORTS_ENABLED
-          - FEATURE_STAFF_SSO_ENABLED
           - GA_KEY
           - GOV_NOTIFY_ENABLED
           - GOV_NOTIFY_KEY
@@ -13734,6 +13909,7 @@ applications:
           - FEATURE_LU_POST_CIRC_COUNTERSIGNING
           - FEATURE_MENTIONS_ENABLED
           - FEATURE_PRODUCTPEDIA_ON
+          - FEATURE_QUICK_SUMMARY
           - FEATURE_SPIRE_SEARCH_ON
           - FEEDBACK_URL
           - GOOGLE_ANALYTICS_KEY
@@ -14105,14 +14281,18 @@ applications:
           - NOTIFICATION_CLIENT
           - NOTIFICATION_CLIENT_API_KEY
           - NOTIFICATION_CONTEXT_SERVICE_URL
-          - NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED
+          - NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR
+          - NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT
+          - PROFILE_CARD_JS
+          - PROFILE_CARD_URL
           - SECRET_KEY
           - SENTRY_DSN
           - VITE_DEV
           - VITE_DEV_SERVER_URL
           processes:
-          - command: python manage.py migrate && python manage.py collectstatic --no-input
-              && waitress-serve --port=$PORT config.wsgi:application
+          - command: python manage.py migrate && python manage.py manage_groups &&
+              python manage.py collectstatic --no-input && waitress-serve --port=$PORT
+              config.wsgi:application
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -14128,7 +14308,43 @@ applications:
             name: irap-postgres
         paas-location: dit-staging/irap-dev/irap-dev
       - environment: staging
-        paas: NO-APP-FOUND
+        paas:
+          env_keys:
+          - APP_ENV
+          - AUTHBROKER_CLIENT_ID
+          - AUTHBROKER_CLIENT_SECRET
+          - AUTHBROKER_INTROSPECTION_TOKEN
+          - AUTHBROKER_URL
+          - DEV_TOOLS_DEFAULT_USER
+          - DEV_TOOLS_ENABLED
+          - DEV_TOOLS_LOGIN_URL
+          - DJANGO_SETTINGS_MODULE
+          - NOTIFICATION_CLIENT
+          - NOTIFICATION_CLIENT_API_KEY
+          - NOTIFICATION_CONTEXT_SERVICE_URL
+          - NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR
+          - NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT
+          - SECRET_KEY
+          - SENTRY_DSN
+          - VITE_DEV
+          - VITE_DEV_SERVER_URL
+          processes:
+          - command: python manage.py migrate && python manage.py manage_groups &&
+              python manage.py collectstatic --no-input && waitress-serve --port=$PORT
+              config.wsgi:application
+            type: web
+          routes:
+          - domain: london.cloudapps.digital
+            host: irap-staging
+            internal: false
+            ipfilter: false
+            path: ''
+          services:
+          - description: '100GB Storage, Dedicated Instance, Storage Encrypted, Max
+              200 Concurrent Connections. Postgres Version 13. DB Instance Class:
+              db.t3.small.'
+            instance: small-13
+            name: irap-postgres
         paas-location: dit-staging/irap-staging/irap-staging
       - environment: prod
         paas: NO-APP-FOUND
@@ -14219,6 +14435,7 @@ applications:
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_REPORTED_LM_EMAIL
+          - TEMPLATE_ID_LINE_MANAGER_MISSING_PERSON_ID_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_NOTIFICATION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_OFFLINE_SERVICE_NOW_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_REMINDER_EMAIL
@@ -14253,8 +14470,8 @@ applications:
             type: beat
           - command: celery -A config.celery worker -l INFO
             type: worker
-          - command: python manage.py collectstatic && waitress-serve --port=$PORT
-              config.wsgi:application
+          - command: npm run build && python manage.py collectstatic && python manage.py
+              migrate && waitress-serve --port=$PORT config.wsgi:application
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -14361,6 +14578,7 @@ applications:
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_REPORTED_LM_EMAIL
+          - TEMPLATE_ID_LINE_MANAGER_MISSING_PERSON_ID_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_NOTIFICATION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_OFFLINE_SERVICE_NOW_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_REMINDER_EMAIL
@@ -14395,8 +14613,8 @@ applications:
             type: beat
           - command: celery -A config.celery worker -l INFO
             type: worker
-          - command: npm run build && python manage.py collectstatic && waitress-serve
-              --port=$PORT config.wsgi:application
+          - command: npm run build && python manage.py collectstatic && python manage.py
+              migrate && waitress-serve --port=$PORT config.wsgi:application
             type: web
           routes:
           - domain: staging.uktrade.digital
@@ -14514,6 +14732,7 @@ applications:
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_CORRECTION_REPORTED_LM_EMAIL
+          - TEMPLATE_ID_LINE_MANAGER_MISSING_PERSON_ID_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_NOTIFICATION_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_OFFLINE_SERVICE_NOW_EMAIL
           - TEMPLATE_ID_LINE_MANAGER_REMINDER_EMAIL
@@ -14557,8 +14776,8 @@ applications:
             type: beat
           - command: celery -A config.celery worker -l INFO
             type: worker
-          - command: python manage.py collectstatic && waitress-serve --port=$PORT
-              config.wsgi:application
+          - command: npm run build && python manage.py collectstatic && python manage.py
+              migrate && waitress-serve --port=$PORT config.wsgi:application
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -14568,6 +14787,16 @@ applications:
             path: ''
           - domain: trade.gov.uk
             host: jml
+            internal: false
+            ipfilter: true
+            path: ''
+          - domain: leavingdbt.trade.gov.uk
+            host: ''
+            internal: false
+            ipfilter: true
+            path: ''
+          - domain: leavingdbt.trade.gov.uk
+            host: www
             internal: false
             ipfilter: true
             path: ''
@@ -16397,7 +16626,8 @@ applications:
           - ZENDESK_SUBDOMAIN
           - ZENDESK_TOKEN
           processes:
-          - command: python manage.py migrate && waitress-serve --port=$PORT config.wsgi:application
+          - command: python manage.py migrate && npm run build && python manage.py
+              collectstatic --noinput && waitress-serve --port=$PORT config.wsgi:application
             type: web
           routes:
           - domain: london.cloudapps.digital
@@ -16437,6 +16667,7 @@ applications:
           - ALLOWED_HOSTS
           - AUTH_EMAIL_TO_IPD_MAP
           - DEBUG
+          - ELASTIC_APM_ENABLED
           - ELASTIC_APM_ENVIRONMENT
           - ELASTIC_APM_SECRET_TOKEN
           - ELASTIC_APM_URL
@@ -16459,6 +16690,9 @@ applications:
           - MI_GOOGLE_USER_SYNC_SAML_APPLICATION_SLUG
           - NEW_AUTH_FLOW_EMAILS
           - OIDC_RSA_PRIVATE_KEY
+          - PF_PROFILE_API_ENDPOINT
+          - PF_PROFILE_API_HAWK_ID
+          - PF_PROFILE_API_HAWK_SECRET
           - RESTRICT_ADMIN
           - SAML2_APPSTREAM_AWS_ROLE_ARN
           - SAML2_QUICKSIGHT_AWS_ROLE_ARN
@@ -18467,6 +18701,8 @@ applications:
       - environment: development
         paas:
           env_keys:
+          - API_PUBLISH_FAILED_TEMPLATE_ID
+          - API_PUBLISH_SUCCESS_TEMPLATE_ID
           - AUTHBROKER_CLIENT_ID
           - AUTHBROKER_CLIENT_SECRET
           - AWS_ACCESS_KEY_ID
@@ -18478,6 +18714,10 @@ applications:
           - CLAM_AV_DOMAIN
           - CLAM_AV_PASSWORD
           - CLAM_AV_USERNAME
+          - CROWN_DEPENDENCIES_API_CRON
+          - CROWN_DEPENDENCIES_API_HOST
+          - CROWN_DEPENDENCIES_GET_API_KEY
+          - CROWN_DEPENDENCIES_POST_API_KEY
           - DISABLE_COLLECTSTATIC
           - ELASTIC_TOKEN
           - ENABLE_PACKAGING_NOTIFICATIONS
@@ -18501,9 +18741,9 @@ applications:
           processes:
           - command: celery -A common.celery beat
             type: beat
-          - command: celery -A common.celery worker -O fair -l info -Q standard
+          - command: celery -A common.celery worker -O fair -l info
             type: worker
-          - command: celery -A common.celery worker -O fair -l info -Q rule-check
+          - command: ''
             type: rule-check-worker
           - command: ''
             type: rule-worker
@@ -18539,10 +18779,16 @@ applications:
           - description: 3GB RAM, highly-available, daily backups
             instance: small-ha-5.x
             name: CELERY_BROKER
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: tamato-importer-bucket
         paas-location: dit-staging/tariffs-dev/tamato-dev
       - environment: uat
         paas:
           env_keys:
+          - API_PUBLISH_FAILED_TEMPLATE_ID
+          - API_PUBLISH_SUCCESS_TEMPLATE_ID
           - AUTHBROKER_CLIENT_ID
           - AUTHBROKER_CLIENT_SECRET
           - BASE_SERVICE_URL
@@ -18552,6 +18798,9 @@ applications:
           - CLAM_AV_DOMAIN
           - CLAM_AV_PASSWORD
           - CLAM_AV_USERNAME
+          - CROWN_DEPENDENCIES_API_HOST
+          - CROWN_DEPENDENCIES_GET_API_KEY
+          - CROWN_DEPENDENCIES_POST_API_KEY
           - DISABLE_COLLECTSTATIC
           - ELASTIC_TOKEN
           - ENABLE_PACKAGING_NOTIFICATIONS
@@ -18574,6 +18823,8 @@ applications:
             type: flower
           - command: celery -A common.celery worker -O fair -l info -Q rule-check
             type: rule-check-worker
+          - command: ''
+            type: importer-worker
           - command: gunicorn wsgi --bind 0.0.0.0:$PORT --timeout 1000 --worker-class=gevent
               --worker-connections=1000 --workers 9
             type: web
@@ -18599,10 +18850,16 @@ applications:
               orgs.
             instance: default
             name: hmrc-packaging-uat
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: tamato-importer-uat
         paas-location: dit-staging/tariffs-uat/tamato-uat
       - environment: test
         paas:
           env_keys:
+          - API_PUBLISH_FAILED_TEMPLATE_ID
+          - API_PUBLISH_SUCCESS_TEMPLATE_ID
           - AUTHBROKER_CLIENT_ID
           - AUTHBROKER_CLIENT_SECRET
           - BASE_SERVICE_URL
@@ -18611,6 +18868,9 @@ applications:
           - CLAM_AV_DOMAIN
           - CLAM_AV_PASSWORD
           - CLAM_AV_USERNAME
+          - CROWN_DEPENDENCIES_API_HOST
+          - CROWN_DEPENDENCIES_GET_API_KEY
+          - CROWN_DEPENDENCIES_POST_API_KEY
           - DISABLE_COLLECTSTATIC
           - ELASTIC_TOKEN
           - ENABLE_PACKAGING_NOTIFICATIONS
@@ -18631,6 +18891,8 @@ applications:
             type: worker
           - command: celery -A common.celery worker -O fair -l info -Q rule-check
             type: rule-check-worker
+          - command: celery -A common.celery worker -O fair -l info -Q importer
+            type: importer-worker
           - command: gunicorn wsgi --bind 0.0.0.0:$PORT --timeout 1000 --worker-class=gevent
               --worker-connections=1000 --workers 9
             type: web
@@ -18646,11 +18908,6 @@ applications:
             ipfilter: false
             path: ''
           services:
-          - description: '2.5TB Storage Storage, Dedicated Instance, Storage Encrypted,
-              Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class:
-              db.m5.2xlarge.'
-            instance: large-12-high-iops
-            name: tamato-test-db
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-5.x
             name: DJANGO_CACHE
@@ -18661,6 +18918,15 @@ applications:
               orgs.
             instance: default
             name: hmrc-packaging-test
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: tamato-importer-test
+          - description: '2.5TB Storage Storage, Dedicated Instance, Storage Encrypted,
+              Max 5000 Concurrent Connections. Postgres Version 12. DB Instance Class:
+              db.m5.2xlarge.'
+            instance: large-12-high-iops
+            name: tamato-test-db
         paas-location: dit-staging/tariffs-test/tamato-test
       - environment: training
         paas:
@@ -18675,6 +18941,7 @@ applications:
           - CLAM_AV_USERNAME
           - DISABLE_COLLECTSTATIC
           - ELASTIC_TOKEN
+          - ENABLE_CROWN_DEPENDENCIES_PUBLISHING
           - ENABLE_PACKAGING_NOTIFICATIONS
           - ENV
           - EXPORTER_DISABLE_NOTIFICATION
@@ -18721,10 +18988,16 @@ applications:
               orgs.
             instance: default
             name: hmrc-packaging-training
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: tamato-importer-training
         paas-location: dit-staging/tariffs-training/tamato-training
       - environment: production
         paas:
           env_keys:
+          - API_PUBLISH_FAILED_TEMPLATE_ID
+          - API_PUBLISH_SUCCESS_TEMPLATE_ID
           - AUTHBROKER_CLIENT_ID
           - AUTHBROKER_CLIENT_SECRET
           - AWS_ACCESS_KEY_ID
@@ -18736,6 +19009,9 @@ applications:
           - CLAM_AV_DOMAIN
           - CLAM_AV_PASSWORD
           - CLAM_AV_USERNAME
+          - CROWN_DEPENDENCIES_API_HOST
+          - CROWN_DEPENDENCIES_GET_API_KEY
+          - CROWN_DEPENDENCIES_POST_API_KEY
           - DISABLE_COLLECTSTATIC
           - ELASTIC_TOKEN
           - ENABLE_PACKAGING_NOTIFICATIONS
@@ -18798,6 +19074,10 @@ applications:
           - description: 12.93GB RAM, highly-available, daily backups
             instance: large-ha-5.x
             name: CELERY_BROKER
+          - description: A single S3 bucket. Free for trial orgs. Costs for billable
+              orgs.
+            instance: default
+            name: tamato-importer
         paas-location: dit-services/tariffs/tamato
       name: tamato
       namespace: trade-tariffs
@@ -19259,6 +19539,7 @@ applications:
           env_keys:
           - ALLOWED_HOSTS
           - API_PORT
+          - API_RATELIMIT_ENABLED
           - AUDIT_EMAIL_ENABLED
           - AUDIT_EMAIL_FROM_ADDRESS
           - AUDIT_EMAIL_FROM_NAME
@@ -19815,12 +20096,12 @@ applications:
             host: www
             internal: false
             ipfilter: false
-            path: /healthcheck
+            path: /health/
           - domain: investigations-trade-remedies.service.gov.uk
             host: www
             internal: false
             ipfilter: false
-            path: /health/
+            path: /healthcheck/
           services:
           - description: 1.5GB RAM, highly-available, daily backups
             instance: tiny-ha-6.x
@@ -20451,6 +20732,7 @@ applications:
           env_keys:
           - ALLOWED_HOSTS
           - API_BASE_URL
+          - API_RATELIMIT_ENABLED
           - BASIC_AUTH_USER
           - CLAM_AV_DOMAIN
           - CLAM_AV_PASSWORD
