@@ -109,17 +109,20 @@ def test_make_config(tmp_path):
 
     assert (tmp_path / "copilot").exists()
 
+    def real_line_breaks(input: any) -> str:
+        return str(input).replace("\\n", "\n")
+
     with open(str(tmp_path / "copilot/.workspace")) as workspace:
         assert workspace.read() == "application: test-app"
 
     with open(str(tmp_path / "copilot/environments/test/manifest.yml"), "rb") as test:
-        assert test.read() == test_environment_manifest
+        assert real_line_breaks(test.read()) == real_line_breaks(test_environment_manifest)
 
     with open(str(tmp_path / "copilot/environments/production/manifest.yml"), "rb") as production:
-        assert production.read() == production_environment_manifest
+        assert real_line_breaks(production.read()) == real_line_breaks(production_environment_manifest)
 
     with open(str(tmp_path / "copilot/test-service/manifest.yml"), "rb") as service:
-        assert service.read() == test_service_manifest
+        assert real_line_breaks(service.read()) == real_line_breaks(test_service_manifest)
 
 
 @mock_sts
