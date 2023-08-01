@@ -225,8 +225,8 @@ invalid-entry:
                 "DATABASE_CREDENTIALS" in result.output
             ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
             assert (
-                f"""secretsmanager: /copilot/${{COPILOT_APPLICATION_NAME}}/${{COPILOT_ENVIRONMENT_NAME}}/secrets/{secret_name}"""
-                in result.output
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/"
+                f"{secret_name}" in result.output
             )
 
     def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
