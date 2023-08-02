@@ -33,7 +33,7 @@ mys3bucket:
 
     assert (
         expect_jsonschema_validation_error(storage)
-        == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy']"
+        == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy', 'appconfig-ipfilter']"
     )
 
 

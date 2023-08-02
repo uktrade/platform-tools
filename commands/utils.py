@@ -130,6 +130,8 @@ def setup_templates():
             "public-manifest": templateEnv.get_template("svc/manifest-public.yml"),
             "backend-manifest": templateEnv.get_template("svc/manifest-backend.yml"),
             "s3-policy": templateEnv.get_template("addons/svc/s3-policy.yml"),
+            "s3": templateEnv.get_template("addons/svc/s3-policy.yml"),
+            "appconfig-ipfilter": templateEnv.get_template("addons/svc/appconfig-ipfilter.yml"),
         },
         "env": {
             "manifest": templateEnv.get_template("env/manifest.yml"),
