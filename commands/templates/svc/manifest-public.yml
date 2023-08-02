@@ -34,9 +34,7 @@ sidecars:
     image: public.ecr.aws/uktrade/ip-filter:latest
     variables:
       PORT: 8000
-      EMAIL_NAME: DBT
-      EMAIL: sre-team@digital.trade.gov.uk
-      ORIGIN_HOSTNAME: localhost:8080
+      SERVER: localhost:8080
       APPCONFIG_PROFILES: ipfilter:default:default
       IPFILTER_ENABLED: {{ ipfilter }}
 
