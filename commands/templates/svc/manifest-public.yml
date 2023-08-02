@@ -35,7 +35,7 @@ sidecars:
     variables:
       PORT: 8000
       EMAIL_NAME: DIT
-      EMAIL: sre@digital.trade.gov.uk
+      EMAIL: sre-team@digital.trade.gov.uk
       ORIGIN_HOSTNAME: localhost:8080
       APPCONFIG_PROFILES: ipfilter:default:default
       IPFILTER_ENABLED: {{ ipfilter }}
