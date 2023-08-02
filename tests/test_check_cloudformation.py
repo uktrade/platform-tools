@@ -45,10 +45,10 @@ def test_prepares_cloudformation_templates(copilot_directory: Path) -> None:
         "environments/staging",
         "s3proxy",
         "s3proxy/addons",
-        "s3proxy/addons/ip-filter.yml",
+        "s3proxy/addons/appconfig-ipfilter.yml",
         "web",
         "web/addons",
-        "web/addons/ip-filter.yml",
+        "web/addons/appconfig-ipfilter.yml",
         "web/addons/my-s3-bucket.yml",
         "web/addons/my-s3-bucket-bucket-access.yml",
     ]

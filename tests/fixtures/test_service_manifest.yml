@@ -29,23 +29,26 @@ sidecars:
     variables:
       SERVER: localhost:8000
 
-
   ipfilter:
     port: 8000
     image: public.ecr.aws/uktrade/ip-filter:latest
     variables:
       PORT: 8000
-      EMAIL_NAME: 'The Department for International Trade WebOps team'
-      EMAIL: test@test.test
-      LOG_LEVEL: DEBUG
+      EMAIL_NAME: DIT
+      EMAIL: sre@digital.trade.gov.uk
       ORIGIN_HOSTNAME: localhost:8080
-      ORIGIN_PROTO: http
-      CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
+      APPCONFIG_PROFILES: ipfilter:default:default
+      IPFILTER_ENABLED: True
 
+  appconfig:
+    port: 2772
+    image: public.ecr.aws/aws-appconfig/aws-appconfig-agent:2.x
+    essential: true
+    variables:
+      ROLE_ARN: arn:aws:iam::763451185160:role/AppConfigIpFilterRole
 
 # Configuration for your containers and service.
 image:
-
   location: not-a-url
     # Port exposed through your container to route traffic to it.
   port: 8080
@@ -75,6 +78,7 @@ variables:                    # Pass environment variables as key value pairs.
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
   TEST_SECRET: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TEST_SECRET
   TEST_SECRET_2: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TEST_SECRET_2
+  
 
 
 # You can override any of the values defined above by environment.
@@ -85,5 +89,3 @@ environments:
   test:
     http:
       alias: test-service.landan.cloudapps.digital
-
-# TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.

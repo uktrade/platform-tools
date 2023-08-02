@@ -127,6 +127,10 @@ def _validate_and_normalise_config(config_file):
 def make_storage():
     """Generate storage CloudFormation for each environment."""
 
+    # Addons that also require the addons.parameters.yml file to be added due to having
+    # custom cloudformation parameters
+    require_parameters_file = ["redis", "aurora-postgres", "rds-postgres", "opensearch"]
+
     overwrite = True
     output_dir = Path(".").absolute()
 
@@ -161,21 +165,21 @@ def make_storage():
 
         services.append(service)
 
-        if storage_type not in ["s3", "s3-policy"]:
+        if storage_type in require_parameters_file:
             contents = templates["env"]["parameters"].render({})
 
             click.echo(mkfile(output_dir, path / "addons.parameters.yml", contents, overwrite=overwrite))
 
         # s3-policy only applies to individual services
-        if storage_type != "s3-policy":
+        if storage_type in templates["env"]:
             template = templates["env"][storage_type]
             contents = template.render({"service": service})
 
             click.echo(mkfile(output_dir, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
         # s3 buckets require additional service level cloudformation to grant the ECS task role access to the bucket
-        if storage_type in ["s3", "s3-policy"]:
-            template = templates["svc"]["s3-policy"]
+        if storage_type in templates["svc"].keys():
+            template = templates["svc"][storage_type]
 
             for svc in storage_config.get("services", []):
                 service_path = Path(f"copilot/{svc}/addons/")
