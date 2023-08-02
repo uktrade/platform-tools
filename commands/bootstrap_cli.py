@@ -165,7 +165,7 @@ def make_config():
     # link to GitHub docs
     click.echo(
         "\nGitHub documentation: "
-        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration",
+        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration",
     )
 
 

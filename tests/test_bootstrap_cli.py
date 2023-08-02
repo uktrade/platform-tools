@@ -103,7 +103,7 @@ def test_make_config(tmp_path):
     result = CliRunner().invoke(make_config)
 
     assert (
-        "GitHub documentation: https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration"
+        "GitHub documentation: https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration"
         in result.output
     )
 
