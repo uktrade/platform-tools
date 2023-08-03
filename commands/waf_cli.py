@@ -95,7 +95,7 @@ def create_stack(cf_client, app, svc, env, raw):
 @click.option("--waf-path", help="path to waf.yml file", required=True)
 def custom_waf(app, project_profile, svc, env, waf_path):
     """Attach custom WAF to ECS Load Balancer."""
-    # breakpoint()
+
     project_session = check_aws_conn(project_profile)
     ensure_cwd_is_repo_root()
     path = Path().resolve() / waf_path

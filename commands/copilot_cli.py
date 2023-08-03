@@ -160,7 +160,7 @@ def make_storage():
             "storage_type": storage_type,
             **storage_config,
         }
-### ['appconfig-ipfilter', 'my-s3-bucket', 'my-s3-bucket-bucket-access', 'my-redis', 'my-rds-db', 'my-aurora-db', 'my-opensearch']
+
         services.append(environment_addon_config)
 
         service_addon_config = {
