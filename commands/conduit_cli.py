@@ -10,22 +10,60 @@ from commands.utils import check_aws_conn
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
 
+# def get_cluster_arn(app: str, env: str) -> str:
+#     client = boto3.client("resourcegroupstaggingapi")
+
+#     response = client.get_resources(
+#         TagFilters=[
+#             {"Key": "copilot-application", "Values": [app]},
+#             {"Key": "copilot-environment", "Values": [env]},
+#             {"Key": "aws:cloudformation:logical-id", "Values": ["Cluster"]},
+#         ]
+#     )
+#     breakpoint()
+#     return response["ResourceTagMappingList"][0]["ResourceARN"]
+
+
 def get_cluster_arn(app: str, env: str) -> str:
-    client = boto3.client("resourcegroupstaggingapi")
+    ecs_client = boto3.client("ecs")
+    clusters_response = ecs_client.list_clusters()
 
-    response = client.get_resources(
-        TagFilters=[
-            {"Key": "copilot-application", "Values": [app]},
-            {"Key": "copilot-environment", "Values": [env]},
-            {"Key": "aws:cloudformation:logical-id", "Values": ["Cluster"]},
-        ]
-    )
+    for cluster_arn in clusters_response["clusterArns"]:
+        # Describe the tags for the cluster
+        tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
+        tags = tags_response["tags"]
 
-    return response["ResourceTagMappingList"][0]["ResourceARN"]
+        app_key_found = False
+        env_key_found = False
+        cluster_key_found = False
+
+        # If the cluster has the desired tag, print the cluster ARN and the tag
+        for tag in tags:
+            if tag["key"] == "copilot-application" and tag["value"] == app:
+                app_key_found = True
+            if tag["key"] == "copilot-environment" and tag["value"] == env:
+                env_key_found = True
+            if tag["key"] == "aws:cloudformation:logical-id" and tag["value"] == "Cluster":
+                cluster_key_found = True
+
+        if app_key_found and env_key_found and cluster_key_found:
+            return cluster_arn
+
+
+def get_postgres_password(app: str, env: str) -> str:
+    secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
+    secret_string = boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)["SecretString"]
+    import json
+
+    secret_json = json.loads(secret_string)
+
+    return secret_json["password"]
 
 
 def create_task(app: str, env: str, secret_arn: str) -> None:
-    command = f"copilot task run -n dbtunnel --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --app {app} --env {env}"
+    postgres_password = get_postgres_password(app, env)
+
+    command = f"copilot task run -n dbtunnel --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password} --app {app} --env {env}"
     subprocess.call(command, shell=True)
 
 
@@ -40,7 +78,14 @@ def is_task_running(cluster_arn: str) -> bool:
 
     try:
         if tasks["taskArns"]:
-            return True
+            described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
+            breakpoint()
+            if described_tasks["tasks"][0]["lastStatus"] == "RUNNING":
+                print("TASK RUNNING")
+                return True
+            else:
+                print("TASK AINT RUNNING")
+                return False
     except ValueError:
         return False
 
@@ -52,13 +97,16 @@ def exec_into_task(app: str, env: str, cluster_arn: str) -> None:
     connected = False
     while time.time() < timeout:
         if is_task_running(cluster_arn):
+            print(time.time())
+            time.sleep(2)
+            print(time.time())
             os.system(f"copilot task exec --app {app} --env {env}")
             connected = True
             break
 
     if connected == False:
         print(
-            f"Attempt to exec into running task timed out. Try again by running `copilot task exec --app {app} --env {env} or check status of task in Amazon ECS console."
+            f"Attempt to exec into running task timed out. Try again by running `copilot task exec --app {app} --env {env}` or check status of task in Amazon ECS console."
         )
 
 

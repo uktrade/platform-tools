@@ -83,9 +83,9 @@ Resources:
       BackupRetentionPeriod: 7
       DBName: !Ref {{ service.prefix }}DBName
       MasterUsername:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Sub '${App}/${Env}/{{ service.secret_name }}', ":SecretString:password{% raw %}}}{% endraw %}" ]]
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
       DBSubnetGroupName: !Ref 'DBSubnetGroup'
       VPCSecurityGroups:
         - !Ref {{ service.prefix }}SecurityGroup
@@ -94,7 +94,7 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub '${App}/${Env}/{{ service.secret_name }}'
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
       Description: !Sub RDS main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "postgres"}'
