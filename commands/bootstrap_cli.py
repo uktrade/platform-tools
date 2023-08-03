@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import yaml
+from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
 from schema import Schema
@@ -13,6 +14,7 @@ from commands.utils import SSM_PATH
 from commands.utils import camel_case
 from commands.utils import check_aws_conn
 from commands.utils import get_ssm_secret_names
+from commands.utils import get_ssm_secrets
 from commands.utils import mkdir
 from commands.utils import mkfile
 from commands.utils import set_ssm_param
@@ -163,7 +165,7 @@ def make_config():
     # link to GitHub docs
     click.echo(
         "\nGitHub documentation: "
-        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration",
+        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration",
     )
 
 
@@ -257,6 +259,47 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     click.echo(f"{text} {ssm_path}")
                 else:
                     click.echo(f"{ssm_path} not created because `--dry-run` flag was included.")
+
+
+@bootstrap.command()
+@click.argument("source_environment")
+@click.argument("target_environment")
+@click.option("--project-profile", required=True, help="AWS account profile name")
+def copy_secrets(project_profile, source_environment, target_environment):
+    """Copy secrets from one environment to a new environment."""
+    check_aws_conn(project_profile)
+
+    if not Path(f"copilot/environments/{target_environment}").exists():
+        click.echo(f"""Target environment manifest for "{target_environment}" does not exist.""")
+        exit(1)
+
+    config_file = "bootstrap.yml"
+    config = load_and_validate_config(config_file)
+    secrets = get_ssm_secrets(config["app"], source_environment)
+
+    for secret in secrets:
+        secret_name = secret[0].replace(f"/{source_environment}/", f"/{target_environment}/")
+
+        click.echo(secret_name)
+
+        try:
+            set_ssm_param(
+                config["app"],
+                target_environment,
+                secret_name,
+                secret[1],
+                False,
+                False,
+                f"Copied from {source_environment} environment.",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ParameterAlreadyExists":
+                click.secho(
+                    f"""The "{secret_name.split("/")[-1]}" parameter already exists for the "{target_environment}" environment.""",
+                    fg="yellow",
+                )
+            else:
+                raise e
 
 
 @bootstrap.command()

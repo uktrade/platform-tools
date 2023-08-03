@@ -25,5 +25,6 @@ services:
   - OVERLAPPING_SECRET
   secrets:
     TEST_SECRET: TEST_SECRET
+    TEST_SECRET_2: TEST_SECRET_2
   env_vars:
     TEST_VAR: TEST_VAR
