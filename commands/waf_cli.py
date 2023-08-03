@@ -120,7 +120,7 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     cf_client = project_session.client("cloudformation")
 
     try:
-        cs_response = create_stack()
+        cs_response = create_stack(cf_client, app, svc, env, raw)
     except cf_client.exceptions.AlreadyExistsException:
         click.echo(
             click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")
