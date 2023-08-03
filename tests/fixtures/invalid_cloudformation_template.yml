@@ -9,6 +9,14 @@ Parameters:
     Type: String
     Description: Something to make the linting fail
 
+THIS
+
+TEMPLATE
+
+IS
+
+BROKEN
+
 Resources:
   postgresDBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
