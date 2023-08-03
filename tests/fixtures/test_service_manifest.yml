@@ -75,6 +75,7 @@ variables:                    # Pass environment variables as key value pairs.
 
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
   TEST_SECRET: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TEST_SECRET
+  
   TEST_SECRET_2: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/TEST_SECRET_2
   
 
