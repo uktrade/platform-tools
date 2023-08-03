@@ -156,12 +156,6 @@ def make_config():
 
         click.echo(mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
 
-        # for bs in service.get("backing-services", []):
-        #     bs["prefix"] = camel_case(name + "-" + bs["name"])
-
-        #     contents = templates.get(["svc"][bs["type"]].render(dict(service=bs))
-        #     mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
-
     # link to GitHub docs
     click.echo(
         "\nGitHub documentation: "
