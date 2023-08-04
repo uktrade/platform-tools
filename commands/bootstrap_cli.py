@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import yaml
+from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
 from schema import Schema
@@ -13,6 +14,7 @@ from commands.utils import SSM_PATH
 from commands.utils import camel_case
 from commands.utils import check_aws_conn
 from commands.utils import get_ssm_secret_names
+from commands.utils import get_ssm_secrets
 from commands.utils import mkdir
 from commands.utils import mkfile
 from commands.utils import set_ssm_param
@@ -133,7 +135,7 @@ def make_config():
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
         mkdir(base_path, f"copilot/environments/{name}")
-        contents = templates["env"]["manifest"].render(
+        contents = templates.get_template("env/manifest.yml").render(
             {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
         )
         click.echo(mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
@@ -150,20 +152,14 @@ def make_config():
 
             service["secrets"].update(related_service["secrets"])
 
-        contents = templates["svc"][service["type"] + "-manifest"].render(service)
+        contents = templates.get_template(f"svc/manifest-{service['type']}.yml").render(service)
 
         click.echo(mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
-
-        for bs in service.get("backing-services", []):
-            bs["prefix"] = camel_case(name + "-" + bs["name"])
-
-            contents = templates["svc"][bs["type"]].render(dict(service=bs))
-            mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
     # link to GitHub docs
     click.echo(
         "\nGitHub documentation: "
-        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copiltot-migration",
+        "https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration",
     )
 
 
@@ -260,6 +256,47 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 
 
 @bootstrap.command()
+@click.argument("source_environment")
+@click.argument("target_environment")
+@click.option("--project-profile", required=True, help="AWS account profile name")
+def copy_secrets(project_profile, source_environment, target_environment):
+    """Copy secrets from one environment to a new environment."""
+    check_aws_conn(project_profile)
+
+    if not Path(f"copilot/environments/{target_environment}").exists():
+        click.echo(f"""Target environment manifest for "{target_environment}" does not exist.""")
+        exit(1)
+
+    config_file = "bootstrap.yml"
+    config = load_and_validate_config(config_file)
+    secrets = get_ssm_secrets(config["app"], source_environment)
+
+    for secret in secrets:
+        secret_name = secret[0].replace(f"/{source_environment}/", f"/{target_environment}/")
+
+        click.echo(secret_name)
+
+        try:
+            set_ssm_param(
+                config["app"],
+                target_environment,
+                secret_name,
+                secret[1],
+                False,
+                False,
+                f"Copied from {source_environment} environment.",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ParameterAlreadyExists":
+                click.secho(
+                    f"""The "{secret_name.split("/")[-1]}" parameter already exists for the "{target_environment}" environment.""",
+                    fg="yellow",
+                )
+            else:
+                raise e
+
+
+@bootstrap.command()
 def instructions():
     """Show migration instructions."""
     templates = setup_templates()
@@ -268,7 +305,7 @@ def instructions():
     config = load_and_validate_config(config_file)
     config["config_file"] = config_file
 
-    instructions = templates["instructions"].render(config)
+    instructions = templates.get_template("instructions.txt").render(config)
 
     click.echo(instructions)
 

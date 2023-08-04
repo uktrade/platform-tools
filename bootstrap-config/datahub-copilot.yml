@@ -70,6 +70,7 @@ services:
   name: datahub-api
   overlapping_secrets:
   - DEBUG
+  - DJANGO_SETTINGS_MODULE
   - SENTRY_ENVIRONMENT
   repo: git@github.com:uktrade/data-hub-api.git
   secrets:
@@ -178,6 +179,7 @@ services:
     GOVUK_PAY_AUTH_TOKEN: GOVUK_PAY_AUTH_TOKEN
     GOVUK_PAY_URL: GOVUK_PAY_URL
     HAWK_RECEIVER_IP_WHITELIST: HAWK_RECEIVER_IP_WHITELIST
+    INTERACTION_NOTIFICATION_API_KEY: INTERACTION_NOTIFICATION_API_KEY
     INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID: INVESTMENT_DOCUMENT_AWS_ACCESS_KEY_ID
     INVESTMENT_DOCUMENT_AWS_REGION: INVESTMENT_DOCUMENT_AWS_REGION
     INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY: INVESTMENT_DOCUMENT_AWS_SECRET_ACCESS_KEY
@@ -190,6 +192,8 @@ services:
     MAILBOX_AWS_REGION: MAILBOX_AWS_REGION
     MAILBOX_AWS_SECRET_ACCESS_KEY: MAILBOX_AWS_SECRET_ACCESS_KEY
     MAILBOX_BUCKET: MAILBOX_BUCKET
+    MAILBOX_INGESTION_FAILURE_TEMPLATE_ID: MAILBOX_INGESTION_FAILURE_TEMPLATE_ID
+    MAILBOX_INGESTION_SUCCESS_TEMPLATE_ID: MAILBOX_INGESTION_SUCCESS_TEMPLATE_ID
     MAILBOX_MEETINGS_IMAP_DOMAIN: MAILBOX_MEETINGS_IMAP_DOMAIN
     MAILBOX_MEETINGS_PASSWORD: MAILBOX_MEETINGS_PASSWORD
     MAILBOX_MEETINGS_USERNAME: MAILBOX_MEETINGS_USERNAME
@@ -236,61 +240,7 @@ services:
     uat:
       paas: dit-staging/datahub-uat/datahub-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-api-celerybeat
-  notes: service created based on Procfile entry for datahub-api and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/data-hub-api.git
-  secrets: {}
-  secrets_from: datahub-api
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datahub-dev/datahub-api-dev
-    production:
-      paas: dit-services/datahub/datahub-api
-    staging:
-      paas: dit-staging/datahub-staging/datahub-api-staging
-    uat:
-      paas: dit-staging/datahub-uat/datahub-api-uat
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-api-celerylongrunning
-  notes: service created based on Procfile entry for datahub-api and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/data-hub-api.git
-  secrets: {}
-  secrets_from: datahub-api
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datahub-dev/datahub-api-dev
-    production:
-      paas: dit-services/datahub/datahub-api
-    staging:
-      paas: dit-staging/datahub-staging/datahub-api-staging
-    uat:
-      paas: dit-staging/datahub-uat/datahub-api-uat
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-api-celeryworker
-  notes: service created based on Procfile entry for datahub-api and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/data-hub-api.git
-  secrets: {}
-  secrets_from: datahub-api
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datahub-dev/datahub-api-dev
-    production:
-      paas: dit-services/datahub/datahub-api
-    staging:
-      paas: dit-staging/datahub-staging/datahub-api-staging
-    uat:
-      paas: dit-staging/datahub-uat/datahub-api-uat
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-api-background-worker
+  name: datahub-api-cron-scheduler
   notes: service created based on Procfile entry for datahub-api and will require
     access to the same backing services
   repo: git@github.com:uktrade/data-hub-api.git
@@ -327,24 +277,6 @@ services:
       paas: dit-staging/datahub-uat/datahub-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: datahub-api-short-running-worker
-  notes: service created based on Procfile entry for datahub-api and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/data-hub-api.git
-  secrets: {}
-  secrets_from: datahub-api
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datahub-dev/datahub-api-dev
-    production:
-      paas: dit-services/datahub/datahub-api
-    staging:
-      paas: dit-staging/datahub-staging/datahub-api-staging
-    uat:
-      paas: dit-staging/datahub-uat/datahub-api-uat
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-api-cron-scheduler
   notes: service created based on Procfile entry for datahub-api and will require
     access to the same backing services
   repo: git@github.com:uktrade/data-hub-api.git
@@ -499,6 +431,29 @@ services:
     DHFB_S3_BUCKET_NAME: DHFB_S3_BUCKET_NAME
     DHFB_SECRET_KEY: DHFB_SECRET_KEY
     DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      ipfilter: false
+      paas: dit-staging/datahub-dev/datahub-helpcentre-dev
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: datahub-helpcentre
+  overlapping_secrets:
+  - DJANGO_SETTINGS_MODULE
+  - SENTRY_DSN
+  repo: git@github.com:uktrade/data-hub-helpcentre.git
+  secrets:
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    ENV_NAME: ENV_NAME
+    FEEDBACK_URL: FEEDBACK_URL
+    FEED_API_TOKEN: FEED_API_TOKEN
+    SENTRY_DSN: SENTRY_DSN
+    SHOW_ENV_BANNER: SHOW_ENV_BANNER
   type: public
 - env_vars: {}
   environments:

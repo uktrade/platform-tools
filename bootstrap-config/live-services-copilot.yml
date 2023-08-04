@@ -13,9 +13,12 @@ environments:
     - ACM-ARN-FOR-data-services-help.trade.gov.uk
     - ACM-ARN-FOR-jml.london.cloudapps.digital
     - ACM-ARN-FOR-jml.trade.gov.uk
+    - ACM-ARN-FOR-leavingdbt.trade.gov.uk
+    - ACM-ARN-FOR-www.leavingdbt.trade.gov.uk
   staging:
     certificate_arns:
     - ACM-ARN-FOR-data-services-helpcentre-staging.london.cloudapps.digital
+    - ACM-ARN-FOR-irap-staging.london.cloudapps.digital
     - ACM-ARN-FOR-jml.staging.uktrade.digital
     - ACM-ARN-FOR-jml-staging.london.cloudapps.digital
 services:
@@ -76,6 +79,10 @@ services:
       ipfilter: true
       paas: dit-staging/irap-dev/irap-dev
       url: irap-dev.london.cloudapps.digital
+    staging:
+      ipfilter: false
+      paas: dit-staging/irap-staging/irap-staging
+      url: irap-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: irap
   overlapping_secrets:
@@ -101,7 +108,10 @@ services:
     NOTIFICATION_CLIENT: NOTIFICATION_CLIENT
     NOTIFICATION_CLIENT_API_KEY: NOTIFICATION_CLIENT_API_KEY
     NOTIFICATION_CONTEXT_SERVICE_URL: NOTIFICATION_CONTEXT_SERVICE_URL
-    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT
+    PROFILE_CARD_JS: PROFILE_CARD_JS
+    PROFILE_CARD_URL: PROFILE_CARD_URL
     SECRET_KEY: SECRET_KEY
     SENTRY_DSN: SENTRY_DSN
     VITE_DEV: VITE_DEV
@@ -116,7 +126,7 @@ services:
     production:
       ipfilter: true
       paas: dit-services/jml/jml
-      url: jml.trade.gov.uk
+      url: www.leavingdbt.trade.gov.uk
     staging:
       ipfilter: true
       paas: dit-staging/jml-staging/jml-staging
@@ -236,6 +246,7 @@ services:
     TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL: TEMPLATE_ID_LINE_MANAGER_CORRECTION_EMAIL
     TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL: TEMPLATE_ID_LINE_MANAGER_CORRECTION_HR_EMAIL
     TEMPLATE_ID_LINE_MANAGER_CORRECTION_REPORTED_LM_EMAIL: TEMPLATE_ID_LINE_MANAGER_CORRECTION_REPORTED_LM_EMAIL
+    TEMPLATE_ID_LINE_MANAGER_MISSING_PERSON_ID_EMAIL: TEMPLATE_ID_LINE_MANAGER_MISSING_PERSON_ID_EMAIL
     TEMPLATE_ID_LINE_MANAGER_NOTIFICATION_EMAIL: TEMPLATE_ID_LINE_MANAGER_NOTIFICATION_EMAIL
     TEMPLATE_ID_LINE_MANAGER_OFFLINE_SERVICE_NOW_EMAIL: TEMPLATE_ID_LINE_MANAGER_OFFLINE_SERVICE_NOW_EMAIL
     TEMPLATE_ID_LINE_MANAGER_REMINDER_EMAIL: TEMPLATE_ID_LINE_MANAGER_REMINDER_EMAIL

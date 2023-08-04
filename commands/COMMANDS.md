@@ -4,6 +4,7 @@
 - [copilot-helper bootstrap](#copilot-helper-bootstrap)
 - [copilot-helper bootstrap make-config](#copilot-helper-bootstrap-make-config)
 - [copilot-helper bootstrap migrate-secrets](#copilot-helper-bootstrap-migrate-secrets)
+- [copilot-helper bootstrap copy-secrets](#copilot-helper-bootstrap-copy-secrets)
 - [copilot-helper bootstrap instructions](#copilot-helper-bootstrap-instructions)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
@@ -68,6 +69,7 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 
 ## Commands
 
+- [`copy-secrets` ↪](#copilot-helper-bootstrap-copy-secrets)
 - [`instructions` ↪](#copilot-helper-bootstrap-instructions)
 - [`make-config` ↪](#copilot-helper-bootstrap-make-config)
 - [`migrate-secrets` ↪](#copilot-helper-bootstrap-migrate-secrets)
@@ -119,6 +121,31 @@ Usage: copilot-helper bootstrap migrate-secrets [OPTIONS]
   - Overwrite existing secrets?
 - `--dry-run <boolean>` _Defaults to False._
   - dry run
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper bootstrap copy-secrets
+
+[↩ Parent](#copilot-helper-bootstrap)
+
+    Copy secrets from one environment to a new environment.
+
+## Usage
+
+```
+Usage: copilot-helper bootstrap copy-secrets [OPTIONS] SOURCE_ENVIRONMENT
+                                             TARGET_ENVIRONMENT
+```
+
+## Arguments
+
+- `source_environment <text>`
+- `target_environment <text>`
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
