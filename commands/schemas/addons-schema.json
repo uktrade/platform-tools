@@ -1,6 +1,6 @@
 {
    "$schema": "http://json-schema.org/draft-07/schema#",
-   "$id": "http://github.com/uktrade/copilot-tools/storage-schema.json",
+   "$id": "http://github.com/uktrade/copilot-tools/addons-schema.json",
    "title": " Storage schema validation",
    "type": "object",
    "patternProperties": {

@@ -15,16 +15,16 @@ with open(PROJECT_ROOT / "commands/schemas/addons-schema.json") as fd:
     schema = json.load(fd)
 
 
-def expect_jsonschema_validation_error(storage):
+def expect_jsonschema_validation_error(addon):
     try:
-        validate(instance=storage, schema=schema)
+        validate(instance=addon, schema=schema)
     except jsonschema.exceptions.ValidationError as err:
         return err.message
     return False
 
 
 def test_require_valid_type():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mys3bucket:
     type: not-valid
@@ -32,7 +32,7 @@ mys3bucket:
     )
 
     assert (
-        expect_jsonschema_validation_error(storage)
+        expect_jsonschema_validation_error(addon)
         == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy', 'appconfig-ipfilter']"
     )
 
@@ -73,7 +73,7 @@ mys3bucket:
 def test_environment_extrakeys_not_allowed(addon_type):
     addon = yaml.safe_load(
         f"""
-mystorageitem:
+addonitem:
     type: {addon_type}
     environments:
         default:

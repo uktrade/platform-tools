@@ -57,9 +57,9 @@ my-s3-bucket:
 """
 
 
-class TestMakeStorageCommand:
+class TestMakeAddonCommand:
     def test_exit_if_no_copilot_directory(self, fakefs):
-        fakefs.create_file("storage.yml")
+        fakefs.create_file("addons.yml")
 
         result = CliRunner().invoke(cli, ["make-addons"])
 
@@ -70,7 +70,7 @@ class TestMakeStorageCommand:
         )
 
     def test_exit_if_no_local_copilot_services(self, fakefs):
-        fakefs.create_file("storage.yml")
+        fakefs.create_file("addons.yml")
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
@@ -81,7 +81,7 @@ class TestMakeStorageCommand:
 
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
-            "storage.yml",
+            "addons.yml",
             contents="""
 invalid-entry:
     type: s3-policy
@@ -105,7 +105,7 @@ invalid-entry:
 
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
-            "storage.yml",
+            "addons.yml",
             contents="""
 invalid-environment:
     type: s3-policy
@@ -133,7 +133,7 @@ invalid-environment:
         """
 
         fakefs.create_file(
-            "storage.yml",
+            "addons.yml",
             contents="""
 invalid-entry:
     type: s3-policy
@@ -154,7 +154,7 @@ invalid-entry:
         assert result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
 
     def test_exit_if_no_local_copilot_environments(self, fakefs):
-        fakefs.create_file("storage.yml")
+        fakefs.create_file("addons.yml")
 
         fakefs.create_file("copilot/web/manifest.yml")
 
@@ -164,7 +164,7 @@ invalid-entry:
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
     @pytest.mark.parametrize(
-        "storage_file_contents, storage_type",
+        "addon_file_contents, addon_type",
         [
             (REDIS_STORAGE_CONTENTS, "redis"),
             (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
@@ -173,12 +173,12 @@ invalid-entry:
             (S3_STORAGE_CONTENTS, "s3"),
         ],
     )
-    def test_env_addons_parameters_file_with_different_storage_types(
-        self, fakefs, storage_file_contents, storage_type
+    def test_env_addons_parameters_file_with_different_addon_types(
+        self, fakefs, addon_file_contents, addon_type
     ):
         fakefs.create_file(
-            "storage.yml",
-            contents=storage_file_contents,
+            "addons.yml",
+            contents=addon_file_contents,
         )
         fakefs.create_file("copilot/web/manifest.yml")
         fakefs.create_file("copilot/environments/development/manifest.yml")
@@ -186,29 +186,29 @@ invalid-entry:
         result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 0
-        if storage_type == "s3":
+        if addon_type == "s3":
             assert (
                 "File copilot/environments/addons/addons.parameters.yml" not in result.output
-            ), f"addons.parameters.yml should not be included for {storage_type}"
+            ), f"addons.parameters.yml should not be included for {addon_type}"
         else:
             assert (
                 "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
-            ), f"addons.parameters.yml should be included for {storage_type}"
+            ), f"addons.parameters.yml should be included for {addon_type}"
 
     @pytest.mark.parametrize(
-        "storage_file_contents, storage_type, secret_name",
+        "addon_file_contents, addon_type, secret_name",
         [
             (REDIS_STORAGE_CONTENTS, "redis", "REDIS"),
             (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres", "RDS"),
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
-    def test_storage_instructions_with_postgres_storage_types(
-        self, fakefs, storage_file_contents, storage_type, secret_name
+    def test_addon_instructions_with_postgres_addon_types(
+        self, fakefs, addon_file_contents, addon_type, secret_name
     ):
         fakefs.create_file(
-            "storage.yml",
-            contents=storage_file_contents,
+            "addons.yml",
+            contents=addon_file_contents,
         )
         fakefs.create_file("copilot/web/manifest.yml")
         fakefs.create_file("copilot/environments/development/manifest.yml")
@@ -216,14 +216,14 @@ invalid-entry:
         result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 0
-        if storage_type == "redis":
+        if addon_type == "redis":
             assert (
                 "DATABASE_CREDENTIALS" not in result.output
-            ), f"DATABASE_CREDENTIALS should not be included for {storage_type}"
+            ), f"DATABASE_CREDENTIALS should not be included for {addon_type}"
         else:
             assert (
                 "DATABASE_CREDENTIALS" in result.output
-            ), f"DATABASE_CREDENTIALS should be included for {storage_type}"
+            ), f"DATABASE_CREDENTIALS should be included for {addon_type}"
             assert (
                 "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/"
                 f"{secret_name}" in result.output
@@ -232,7 +232,7 @@ invalid-entry:
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
-        fakefs.create_file("./storage.yml")
+        fakefs.create_file("./addons.yml")
 
         fakefs.create_file(
             "./copilot/environments/development/manifest.yml",

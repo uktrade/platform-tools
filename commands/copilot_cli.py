@@ -35,12 +35,12 @@ def copilot():
 
 
 def _validate_and_normalise_config(config_file):
-    """Load the storage.yaml file, validate it and return the normalised config
+    """Load the addons.yaml file, validate it and return the normalised config
     dict."""
 
     def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
-        conf = storage_plans[addon_type][plan] if plan else {}
+        conf = addon_plans[addon_type][plan] if plan else {}
         conf.update(env_conf)
 
         return conf
@@ -49,7 +49,7 @@ def _validate_and_normalise_config(config_file):
         return {k.replace("-", "_"): v for k, v in source.items()}
 
     with open(PACKAGE_DIR / "addon-plans.yml", "r") as fd:
-        storage_plans = yaml.safe_load(fd)
+        addon_plans = yaml.safe_load(fd)
 
     with open(PACKAGE_DIR / "schemas/addons-schema.json", "r") as fd:
         schema = json.load(fd)
@@ -135,7 +135,7 @@ def make_addons():
     templates = setup_templates()
 
     config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
-    project_config = _validate_and_normalise_config("storage.yml")
+    project_config = _validate_and_normalise_config("addons.yml")
     config.update(project_config)
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
@@ -149,7 +149,7 @@ def make_addons():
     services = []
     for addon_name, addon_config in config.items():
         print(f">>>>>>>>> {addon_name}")
-        storage_type = addon_config.pop("type")
+        addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
 
         environment_addon_config = {
@@ -157,7 +157,7 @@ def make_addons():
             "name": addon_config.get("name", None) or addon_name,
             "environments": environments,
             "prefix": camel_case(addon_name),
-            "storage_type": storage_type,
+            "addon_type": addon_type,
             **addon_config,
         }
 
@@ -171,7 +171,7 @@ def make_addons():
         }
 
         # generate env addons
-        for addon in addon_template_map[storage_type].get("env", []):
+        for addon in addon_template_map[addon_type].get("env", []):
             template = templates.get_template(addon["template"])
 
             contents = template.render({"service": environment_addon_config})
@@ -181,7 +181,7 @@ def make_addons():
             click.echo(mkfile(output_dir, path / filename, contents, overwrite=overwrite))
 
         # generate svc addons
-        for addon in addon_template_map[storage_type].get("svc", []):
+        for addon in addon_template_map[addon_type].get("svc", []):
             template = templates.get_template(addon["template"])
 
             for svc in addon_config.get("services", []):
@@ -194,13 +194,13 @@ def make_addons():
                 mkdir(output_dir, service_path)
                 click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=overwrite))
 
-        if storage_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "rds-postgres"]:
             click.secho(
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",
             )
 
-    click.echo(templates.get_template("storage-instructions.txt").render(services=services))
+    click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
 
 @copilot.command()
