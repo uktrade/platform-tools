@@ -32,6 +32,7 @@ cfn-flip = "1.3.0"
 moto = {extras = ["all"], version = "^4.1.12"}
 aiohttp = "^3.8.4"
 certifi = "^2023.07.22"
+cryptography = "^41.0.3"
 
 [tool.poetry.group.dev.dependencies]
 cfn-lint = "^0.77.7"
