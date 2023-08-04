@@ -8,6 +8,7 @@ from moto import mock_acm
 from moto import mock_ecs
 from moto import mock_iam
 from moto import mock_route53
+from moto import mock_secretsmanager
 
 BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
@@ -69,4 +70,13 @@ def mocked_cluster():
                 {"key": "copilot-environment", "value": "staging"},
                 {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
             ]
+        )
+
+
+@pytest.fixture(scope="function")
+def mocked_pg_secret():
+    with mock_secretsmanager():
+        yield boto3.client("secretsmanager").create_secret(
+            Name="/copilot/dbt-app/staging/secrets/POSTGRES",
+            SecretString='{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
         )

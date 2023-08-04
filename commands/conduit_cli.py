@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import time
@@ -8,20 +9,6 @@ import click
 from commands.utils import check_aws_conn
 
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
-
-
-# def get_cluster_arn(app: str, env: str) -> str:
-#     client = boto3.client("resourcegroupstaggingapi")
-
-#     response = client.get_resources(
-#         TagFilters=[
-#             {"Key": "copilot-application", "Values": [app]},
-#             {"Key": "copilot-environment", "Values": [env]},
-#             {"Key": "aws:cloudformation:logical-id", "Values": ["Cluster"]},
-#         ]
-#     )
-#     breakpoint()
-#     return response["ResourceTagMappingList"][0]["ResourceARN"]
 
 
 def get_cluster_arn(app: str, env: str) -> str:
@@ -37,7 +24,6 @@ def get_cluster_arn(app: str, env: str) -> str:
         env_key_found = False
         cluster_key_found = False
 
-        # If the cluster has the desired tag, print the cluster ARN and the tag
         for tag in tags:
             if tag["key"] == "copilot-application" and tag["value"] == app:
                 app_key_found = True
@@ -50,27 +36,20 @@ def get_cluster_arn(app: str, env: str) -> str:
             return cluster_arn
 
 
-def get_postgres_password(app: str, env: str) -> str:
+def get_postgres_secret(app: str, env: str):
     secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
-    secret_string = boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)["SecretString"]
-    import json
 
-    secret_json = json.loads(secret_string)
-
-    return secret_json["password"]
+    return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
 
 
-def create_task(app: str, env: str, secret_arn: str) -> None:
-    postgres_password = get_postgres_password(app, env)
-
+def create_task(app: str, env: str) -> None:
+    secret = get_postgres_secret(app, env)
+    secret_arn = secret["ARN"]
+    secret_json = json.loads(secret["SecretString"])
+    postgres_password = secret_json["password"]
     command = f"copilot task run -n dbtunnel --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password} --app {app} --env {env}"
+
     subprocess.call(command, shell=True)
-
-
-def get_postgres_secret_arn(app: str, env: str) -> str:
-    secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
-
-    return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)["ARN"]
 
 
 def is_task_running(cluster_arn: str) -> bool:
@@ -79,12 +58,16 @@ def is_task_running(cluster_arn: str) -> bool:
     try:
         if tasks["taskArns"]:
             described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
-            breakpoint()
-            if described_tasks["tasks"][0]["lastStatus"] == "RUNNING":
-                print("TASK RUNNING")
+            agent_running = False
+
+            # The ExecuteCommandAgent often takes longer to start running than the task and without the agent it's not possible to exec into a task.
+            for agent in described_tasks["tasks"][0]["containers"][0]["managedAgents"]:
+                if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
+                    agent_running = True
+
+            if described_tasks["tasks"][0]["lastStatus"] == "RUNNING" and agent_running:
                 return True
             else:
-                print("TASK AINT RUNNING")
                 return False
     except ValueError:
         return False
@@ -97,9 +80,6 @@ def exec_into_task(app: str, env: str, cluster_arn: str) -> None:
     connected = False
     while time.time() < timeout:
         if is_task_running(cluster_arn):
-            print(time.time())
-            time.sleep(2)
-            print(time.time())
             os.system(f"copilot task exec --app {app} --env {env}")
             connected = True
             break
@@ -122,19 +102,16 @@ def conduit():
 def tunnel(project_profile: str, app: str, env: str) -> None:
     check_aws_conn(project_profile)
 
-    try:
-        cluster_arn = get_cluster_arn(app, env)
-    except IndexError:
+    cluster_arn = get_cluster_arn(app, env)
+    if not cluster_arn:
         click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
         exit()
 
     if not is_task_running(cluster_arn):
         try:
-            secret_arn = get_postgres_secret_arn(app, env)
+            create_task(app, env)
         except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
             click.secho(f"No secret found matching application {app} and environment {env}.")
             exit()
-
-        create_task(app, env, secret_arn)
 
     exec_into_task(app, env, cluster_arn)

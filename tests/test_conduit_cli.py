@@ -14,7 +14,7 @@ from moto.ec2 import utils as ec2_utils
 from commands.conduit_cli import create_task
 from commands.conduit_cli import exec_into_task
 from commands.conduit_cli import get_cluster_arn
-from commands.conduit_cli import get_postgres_secret_arn
+from commands.conduit_cli import get_postgres_secret
 from commands.conduit_cli import is_task_running
 from commands.conduit_cli import tunnel
 
@@ -30,29 +30,32 @@ def test_get_cluster_arn(alias_session, mocked_cluster):
 
 
 @patch("subprocess.call")
-def test_create_task(subprocess_call):
+def test_create_task(subprocess_call, mocked_pg_secret):
     """Test that create_task runs the `copilot task run` command with expected
     --app and --env flags."""
 
-    create_task("dbt-app", "staging", "arn::blah")
+    expected_arn = mocked_pg_secret["ARN"]
+    create_task("dbt-app", "staging")
 
     subprocess_call.assert_called_once_with(
-        "copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET=arn::blah --app dbt-app --env staging",
+        f"copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET={expected_arn} --env-vars POSTGRES_PASSWORD=abc123 --app dbt-app --env staging",
         shell=True,
     )
 
 
-@mock_secretsmanager
-def test_get_postgres_secret_arn():
-    """Test that, given app and environment strings, get_postgres_secret_arn
-    returns the app's secret arn string."""
+def test_get_postgres_secret(mocked_pg_secret):
+    """Test that, given app and environment strings, get_postgres_secret returns
+    the app's secret arn string."""
 
-    mocked_secret = boto3.client("secretsmanager").create_secret(
-        Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
+    expected_arn = mocked_pg_secret["ARN"]
+    secret_response = get_postgres_secret("dbt-app", "staging")
+
+    assert secret_response["ARN"] == expected_arn
+    assert (
+        secret_response["SecretString"]
+        == '{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}'
     )
-    expected_arn = mocked_secret["ARN"]
-
-    assert get_postgres_secret_arn("dbt-app", "staging") == expected_arn
+    assert secret_response["Name"] == "/copilot/dbt-app/staging/secrets/POSTGRES"
 
 
 def test_is_task_running_when_task_is_not_running(mocked_cluster):
@@ -89,9 +92,25 @@ def test_is_task_running(mocked_cluster):
             {"name": "test_container", "image": "test_image", "cpu": 100, "memory": 500, "essential": True}
         ],
     )["taskDefinition"]["taskDefinitionArn"]
-    mocked_ecs_client.run_task(cluster=mocked_cluster_arn, taskDefinition=mocked_task_definition_arn)
+    mocked_ecs_client.run_task(
+        cluster=mocked_cluster_arn, taskDefinition=mocked_task_definition_arn, enableExecuteCommand=True
+    )
 
-    assert is_task_running(mocked_cluster_arn)
+    # moto does not yet provide the ability to mock an executable task and its managed agents / containers, so we need to patch the expected response
+    def describe_tasks(cluster, tasks):
+        return {
+            "tasks": [
+                {
+                    "lastStatus": "RUNNING",
+                    "containers": [{"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}],
+                }
+            ]
+        }
+
+    mocked_ecs_client.describe_tasks = describe_tasks
+
+    with patch("commands.conduit_cli.boto3.client", return_value=mocked_ecs_client):
+        assert is_task_running(mocked_cluster_arn)
 
 
 @patch("os.system")
@@ -111,7 +130,7 @@ def test_exec_into_task_timeout(capsys):
 
     assert (
         capsys.readouterr().out
-        == "Attempt to exec into running task timed out. Try again by running `copilot task exec --app dbt-app --env staging or check status of task in Amazon ECS console.\n"
+        == "Attempt to exec into running task timed out. Try again by running `copilot task exec --app dbt-app --env staging` or check status of task in Amazon ECS console.\n"
     )
 
 
@@ -139,22 +158,18 @@ def test_tunnel_profile_not_configured():
 
 
 @mock_resourcegroupstaggingapi
-@mock_secretsmanager
 @mock_sts
 @patch("commands.conduit_cli.exec_into_task")
 @patch("commands.conduit_cli.create_task")
-def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, mocked_cluster):
+def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, mocked_cluster, mocked_pg_secret):
     """Test that, when a task is not already running, command creates and execs
     into a task."""
 
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    secret_arn = boto3.client("secretsmanager").create_secret(
-        Name="/copilot/dbt-app/staging/secrets/POSTGRES", SecretString="secretivestring"
-    )["ARN"]
 
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    create_task.assert_called_once_with("dbt-app", "staging", secret_arn)
+    create_task.assert_called_once_with("dbt-app", "staging")
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
 
 
