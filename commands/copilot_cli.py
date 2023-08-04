@@ -76,35 +76,35 @@ def _validate_and_normalise_config(config_file):
         exit(1)
 
     normalised_config = {}
-    for storage_name, storage_config in config.items():
-        storage_type = storage_config["type"]
-        normalised_config[storage_name] = copy.deepcopy(storage_config)
+    for addon_name, addon_config in config.items():
+        addon_type = addon_config["type"]
+        normalised_config[addon_name] = copy.deepcopy(addon_config)
 
-        if "services" in normalised_config[storage_name]:
-            if type(normalised_config[storage_name]["services"]) == str:
-                if normalised_config[storage_name]["services"] == "__all__":
-                    normalised_config[storage_name]["services"] = svc_names
+        if "services" in normalised_config[addon_name]:
+            if type(normalised_config[addon_name]["services"]) == str:
+                if normalised_config[addon_name]["services"] == "__all__":
+                    normalised_config[addon_name]["services"] = svc_names
                 else:
                     click.echo(
-                        click.style(f"{storage_name}.services must be a list of service names or '__all__'", fg="red"),
+                        click.style(f"{addon_name}.services must be a list of service names or '__all__'", fg="red"),
                     )
                     exit(1)
 
-            if not set(normalised_config[storage_name]["services"]).issubset(set(svc_names)):
+            if not set(normalised_config[addon_name]["services"]).issubset(set(svc_names)):
                 click.echo(
-                    click.style(f"Services listed in {storage_name}.services do not exist in ./copilot/", fg="red"),
+                    click.style(f"Services listed in {addon_name}.services do not exist in ./copilot/", fg="red"),
                 )
                 exit(1)
 
-        environments = normalised_config[storage_name].pop("environments", {})
+        environments = normalised_config[addon_name].pop("environments", {})
         default = environments.pop("default", {})
 
-        initial = _lookup_plan(storage_type, default)
+        initial = _lookup_plan(addon_type, default)
 
         if not set(environments.keys()).issubset(set(env_names)):
             click.echo(
                 click.style(
-                    f"Environment keys listed in {storage_name} do not match ./copilot/environments",
+                    f"Environment keys listed in {addon_name} do not match ./copilot/environments",
                     fg="red",
                 ),
             )
@@ -116,16 +116,16 @@ def _validate_and_normalise_config(config_file):
             normalised_environments[env] = _normalise_keys(initial)
 
         for env_name, env_config in environments.items():
-            normalised_environments[env_name].update(_lookup_plan(storage_type, _normalise_keys(env_config)))
+            normalised_environments[env_name].update(_lookup_plan(addon_type, _normalise_keys(env_config)))
 
-        normalised_config[storage_name]["environments"] = normalised_environments
+        normalised_config[addon_name]["environments"] = normalised_environments
 
     return normalised_config
 
 
 @copilot.command()
 def make_storage():
-    """Generate storage CloudFormation for each environment."""
+    """Generate addon CloudFormation for each environment."""
 
     overwrite = True
     output_dir = Path(".").absolute()
@@ -134,40 +134,40 @@ def make_storage():
 
     templates = setup_templates()
 
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-storage.yml")
+    config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
     project_config = _validate_and_normalise_config("storage.yml")
     config.update(project_config)
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    click.echo("\n>>> Generating storage cloudformation\n")
+    click.echo("\n>>> Generating addon cloudformation\n")
 
     path = Path(f"copilot/environments/addons/")
     mkdir(output_dir, path)
 
     services = []
-    for storage_name, storage_config in config.items():
-        print(f">>>>>>>>> {storage_name}")
-        storage_type = storage_config.pop("type")
-        environments = storage_config.pop("environments")
+    for addon_name, addon_config in config.items():
+        print(f">>>>>>>>> {addon_name}")
+        storage_type = addon_config.pop("type")
+        environments = addon_config.pop("environments")
 
         environment_addon_config = {
-            "secret_name": storage_name.upper().replace("-", "_"),
-            "name": storage_config.get("name", None) or storage_name,
+            "secret_name": addon_name.upper().replace("-", "_"),
+            "name": addon_config.get("name", None) or addon_name,
             "environments": environments,
-            "prefix": camel_case(storage_name),
+            "prefix": camel_case(addon_name),
             "storage_type": storage_type,
-            **storage_config,
+            **addon_config,
         }
 
         services.append(environment_addon_config)
 
         service_addon_config = {
-            "name": storage_config.get("name", None) or storage_name,
-            "prefix": camel_case(storage_name),
+            "name": addon_config.get("name", None) or addon_name,
+            "prefix": camel_case(addon_name),
             "environments": environments,
-            **storage_config,
+            **addon_config,
         }
 
         # generate env addons
@@ -176,7 +176,7 @@ def make_storage():
 
             contents = template.render({"service": environment_addon_config})
 
-            filename = addon.get("filename", f"{storage_name}.yml")
+            filename = addon.get("filename", f"{addon_name}.yml")
 
             click.echo(mkfile(output_dir, path / filename, contents, overwrite=overwrite))
 
@@ -184,12 +184,12 @@ def make_storage():
         for addon in addon_template_map[storage_type].get("svc", []):
             template = templates.get_template(addon["template"])
 
-            for svc in storage_config.get("services", []):
+            for svc in addon_config.get("services", []):
                 service_path = Path(f"copilot/{svc}/addons/")
 
                 contents = template.render({"service": service_addon_config})
 
-                filename = addon.get("filename", f"{storage_name}.yml")
+                filename = addon.get("filename", f"{addon_name}.yml")
 
                 mkdir(output_dir, service_path)
                 click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=overwrite))
