@@ -38,9 +38,9 @@ def _validate_and_normalise_config(config_file):
     """Load the storage.yaml file, validate it and return the normalised config
     dict."""
 
-    def _lookup_plan(storage_type, env_conf):
+    def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
-        conf = storage_plans[storage_type][plan] if plan else {}
+        conf = storage_plans[addon_type][plan] if plan else {}
         conf.update(env_conf)
 
         return conf
@@ -48,10 +48,10 @@ def _validate_and_normalise_config(config_file):
     def _normalise_keys(source: dict):
         return {k.replace("-", "_"): v for k, v in source.items()}
 
-    with open(PACKAGE_DIR / "storage-plans.yml", "r") as fd:
+    with open(PACKAGE_DIR / "addon-plans.yml", "r") as fd:
         storage_plans = yaml.safe_load(fd)
 
-    with open(PACKAGE_DIR / "schemas/storage-schema.json", "r") as fd:
+    with open(PACKAGE_DIR / "schemas/addons-schema.json", "r") as fd:
         schema = json.load(fd)
 
     # load and validate config

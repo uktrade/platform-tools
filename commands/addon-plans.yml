@@ -1,4 +1,4 @@
-# storage t-shirt sizes
+# t-shirt sizes for addons that support configurable storage/cpu etc. such as RDS, Opensearch and Elasticache Redis
 
 redis:
   # 568MB RAM, single node, no failover.
