@@ -89,8 +89,7 @@
                   "redis",
                   "opensearch",
                   "s3",
-                  "s3-policy",
-                  "appconfig-ipfilter"
+                  "s3-policy"
                ]
             }
          },

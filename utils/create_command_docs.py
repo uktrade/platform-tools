@@ -106,7 +106,7 @@ def create_docs(base_command, output):
     )
 
     with open(output, "w") as md_file:
-        md_file.write(templates.get_template("COMMANDS.md.jinja").render(content))
+        md_file.write(templates["docs"].render(content))
 
 
 @click.command()

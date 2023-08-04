@@ -38,10 +38,6 @@ def get_lint_result(path: str):
         "--ignore-templates",
         # addons.parameters.yml is not a CloudFormation template file
         f"{BASE_DIR}/tests/test-application/copilot/**/addons/addons.parameters.yml",
-        # "W2001 Parameter Env not used" is ignored becomes Copilot addons require 
-        # parameters even if they are not used in the Cloudformation template. 
-        "--ignore-checks", 
-        "W2001",
     ]
 
     click.secho(f"\n>>> Running lint check", fg="yellow")
