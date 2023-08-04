@@ -135,11 +135,10 @@ def make_storage():
     templates = setup_templates()
 
     config = _validate_and_normalise_config(PACKAGE_DIR / "default-storage.yml")
-    project_config = _validate_and_normalise_config("storage.yml")
-    config.update(project_config)
 
-    with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
-        addon_template_map = yaml.safe_load(fd)
+    project_config = _validate_and_normalise_config("storage.yml")
+
+    config.update(project_config)
 
     click.echo("\n>>> Generating storage cloudformation\n")
 
@@ -148,11 +147,10 @@ def make_storage():
 
     services = []
     for storage_name, storage_config in config.items():
-        print(f">>>>>>>>> {storage_name}")
         storage_type = storage_config.pop("type")
         environments = storage_config.pop("environments")
 
-        environment_addon_config = {
+        service = {
             "secret_name": storage_name.upper().replace("-", "_"),
             "name": storage_config.get("name", None) or storage_name,
             "environments": environments,
@@ -161,38 +159,38 @@ def make_storage():
             **storage_config,
         }
 
-        services.append(environment_addon_config)
+        services.append(service)
 
-        service_addon_config = {
-            "name": storage_config.get("name", None) or storage_name,
-            "prefix": camel_case(storage_name),
-            "environments": environments,
-            **storage_config,
-        }
+        if storage_type not in ["s3", "s3-policy"]:
+            contents = templates["env"]["parameters"].render({})
 
-        # generate env addons
-        for addon in addon_template_map[storage_type].get("env", []):
-            template = templates.get_template(addon["template"])
+            click.echo(mkfile(output_dir, path / "addons.parameters.yml", contents, overwrite=overwrite))
 
-            contents = template.render({"service": environment_addon_config})
+        # s3-policy only applies to individual services
+        if storage_type != "s3-policy":
+            template = templates["env"][storage_type]
+            contents = template.render({"service": service})
 
-            filename = addon.get("filename", f"{storage_name}.yml")
+            click.echo(mkfile(output_dir, path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
-            click.echo(mkfile(output_dir, path / filename, contents, overwrite=overwrite))
-
-        # generate svc addons
-        for addon in addon_template_map[storage_type].get("svc", []):
-            template = templates.get_template(addon["template"])
+        # s3 buckets require additional service level cloudformation to grant the ECS task role access to the bucket
+        if storage_type in ["s3", "s3-policy"]:
+            template = templates["svc"]["s3-policy"]
 
             for svc in storage_config.get("services", []):
                 service_path = Path(f"copilot/{svc}/addons/")
 
-                contents = template.render({"service": service_addon_config})
+                service = {
+                    "name": storage_config.get("name", None) or storage_name,
+                    "prefix": camel_case(storage_name),
+                    "environments": environments,
+                    **storage_config,
+                }
 
-                filename = addon.get("filename", f"{storage_name}.yml")
+                contents = template.render({"service": service})
 
                 mkdir(output_dir, service_path)
-                click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=overwrite))
+                click.echo(mkfile(output_dir, service_path / f"{storage_name}.yml", contents, overwrite=overwrite))
 
         if storage_type in ["aurora-postgres", "rds-postgres"]:
             click.secho(
@@ -200,7 +198,7 @@ def make_storage():
                 fg="yellow",
             )
 
-    click.echo(templates.get_template("storage-instructions.txt").render(services=services))
+    click.echo(templates["storage-instructions"].render(services=services))
 
 
 @copilot.command()
