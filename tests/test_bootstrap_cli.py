@@ -112,13 +112,13 @@ def test_make_config(tmp_path):
     with open(str(tmp_path / "copilot/.workspace")) as workspace:
         assert workspace.read() == "application: test-app"
 
-    with open(str(tmp_path / "copilot/environments/test/manifest.yml"), "r") as test:
+    with open(str(tmp_path / "copilot/environments/test/manifest.yml")) as test:
         assert test.read() == test_environment_manifest
 
-    with open(str(tmp_path / "copilot/environments/production/manifest.yml"), "r") as production:
+    with open(str(tmp_path / "copilot/environments/production/manifest.yml")) as production:
         assert production.read() == production_environment_manifest
 
-    with open(str(tmp_path / "copilot/test-service/manifest.yml"), "r") as service:
+    with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
         assert service.read() == test_service_manifest
 
 
