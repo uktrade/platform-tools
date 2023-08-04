@@ -16,3 +16,4 @@ Resources:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds:
         !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
+

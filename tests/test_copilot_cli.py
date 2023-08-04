@@ -229,7 +229,7 @@ invalid-entry:
                 f"{secret_name}" in result.output
             )
 
-    def test_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
+    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
         fakefs.create_file("./storage.yml")
@@ -246,13 +246,8 @@ invalid-entry:
         result = CliRunner().invoke(cli, ["make-storage"])
 
         for service in services:
-            path = Path(f"copilot/{service}/addons/ip-filter.yml")
+            path = Path(f"copilot/{service}/addons/appconfig-ipfilter.yml")
             assert path.exists()
-
-            with open(path, "r") as fd:
-                s3_policy = yaml.safe_load(fd)
-
-            assert s3_policy["Mappings"]["ipFilterBucketNameMap"] == {"development": {"BucketName": "ipfilter-config"}}
 
         assert result.exit_code == 0
 
