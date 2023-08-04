@@ -5,7 +5,6 @@
 - [copilot-helper bootstrap make-config](#copilot-helper-bootstrap-make-config)
 - [copilot-helper bootstrap migrate-secrets](#copilot-helper-bootstrap-migrate-secrets)
 - [copilot-helper bootstrap copy-secrets](#copilot-helper-bootstrap-copy-secrets)
-- [copilot-helper bootstrap instructions](#copilot-helper-bootstrap-instructions)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
@@ -18,7 +17,7 @@
 - [copilot-helper conduit](#copilot-helper-conduit)
 - [copilot-helper conduit tunnel](#copilot-helper-conduit-tunnel)
 - [copilot-helper copilot](#copilot-helper-copilot)
-- [copilot-helper copilot make-storage](#copilot-helper-copilot-make-storage)
+- [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
@@ -70,7 +69,6 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 ## Commands
 
 - [`copy-secrets` ↪](#copilot-helper-bootstrap-copy-secrets)
-- [`instructions` ↪](#copilot-helper-bootstrap-instructions)
 - [`make-config` ↪](#copilot-helper-bootstrap-make-config)
 - [`migrate-secrets` ↪](#copilot-helper-bootstrap-migrate-secrets)
 
@@ -146,23 +144,6 @@ Usage: copilot-helper bootstrap copy-secrets [OPTIONS] SOURCE_ENVIRONMENT
 
 - `--project-profile <text>`
   - AWS account profile name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper bootstrap instructions
-
-[↩ Parent](#copilot-helper-bootstrap)
-
-    Show migration instructions.
-
-## Usage
-
-```
-Usage: copilot-helper bootstrap instructions [OPTIONS]
-```
-
-## Options
-
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -445,18 +426,18 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 ## Commands
 
 - [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
-- [`make-storage` ↪](#copilot-helper-copilot-make-storage)
+- [`make-addons` ↪](#copilot-helper-copilot-make-addons)
 
-# copilot-helper copilot make-storage
+# copilot-helper copilot make-addons
 
 [↩ Parent](#copilot-helper-copilot)
 
-    Generate storage CloudFormation for each environment.
+    Generate addon CloudFormation for each environment.
 
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-storage [OPTIONS]
+Usage: copilot-helper copilot make-addons [OPTIONS]
 ```
 
 ## Options
