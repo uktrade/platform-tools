@@ -8,7 +8,7 @@ phases:
   pre_build:
     commands:
     - echo "3.9" > .python-version
-    - echo Logging in to AWS ECR....
+    - echo Logging in to AWS ECR...
     - aws --version
     - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
     - BUILDER_IMAGE_TAG=$(curl -s 'https://hub.docker.com/v2/repositories/paketobuildpacks/builder/tags?name=-full&page_size=1' | jq -r '.results[].name')

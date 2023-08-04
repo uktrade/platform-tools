@@ -15,16 +15,11 @@ http:
   # healthcheck: '/'
   target_container: nginx
   healthcheck:
-    {%- if ipfilter %}
-    {% else %}
-    {% endif -%}
     path: '/'
     port: 8080
     success_codes: '200,301,302'
     healthy_threshold: 3
     unhealthy_threshold: 2
-    interval: 5s
-    timeout: 30s
     grace_period: 90s
 
 sidecars:
@@ -32,30 +27,26 @@ sidecars:
     port: 443
     image: public.ecr.aws/uktrade/nginx-reverse-proxy:latest
     variables:
-      {% if ipfilter -%}
       SERVER: localhost:8000
-      {% else -%}
-      SERVER: localhost:8080
-      {% endif %}
 
-
-{% if ipfilter %}
   ipfilter:
     port: 8000
     image: public.ecr.aws/uktrade/ip-filter:latest
     variables:
       PORT: 8000
-      EMAIL_NAME: 'The Department for International Trade WebOps team'
-      EMAIL: test@test.test
-      LOG_LEVEL: DEBUG
-      ORIGIN_HOSTNAME: localhost:8080
-      ORIGIN_PROTO: http
-      CONFIG_FILE: 's3://ipfilter-config/ROUTES.yaml'
-{% endif %}
+      SERVER: localhost:8080
+      APPCONFIG_PROFILES: ipfilter:default:default
+      IPFILTER_ENABLED: {{ ipfilter }}
+
+  appconfig:
+    port: 2772
+    image: public.ecr.aws/aws-appconfig/aws-appconfig-agent:2.x
+    essential: true
+    variables:
+      ROLE_ARN: arn:aws:iam::763451185160:role/AppConfigIpFilterRole
 
 # Configuration for your containers and service.
 image:
-
   location: {{ image_location }}
     # Port exposed through your container to route traffic to it.
   port: 8080
@@ -79,16 +70,14 @@ storage:
 #
 variables:                    # Pass environment variables as key value pairs.
   PORT: 8080
-  {%- for envvar, value in env_vars.items() %}
+{%- for envvar, value in env_vars.items() %}
   {{ envvar }}:
-  {% endfor %}
-
+{%- endfor %}
 
 {% if secrets %}
 secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
-  {% for secret, value in secrets.items() -%}
-  {{ secret }}: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ value }}
-  {% endfor -%}
+  {%- for secret, value in secrets.items() %}
+  {{ secret }}: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ value }}{% endfor -%}
 {% else %}
 # secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
 {% endif %}
@@ -99,7 +88,5 @@ environments:
   {%- for env_name, env in environments.items() %}
   {{ env_name }}:
     http:
-      alias: {{ env.url }}x
-  {%- endfor -%}
-
-# TODO: enable/disable ip filter on a per env basis. For example, a service may need the ip filter in non production envs, but not production.
+      alias: {{ env.url }}
+  {%- endfor %}

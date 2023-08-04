@@ -100,17 +100,17 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     ensure_cwd_is_repo_root()
     path = Path().resolve() / waf_path
 
+    # The YAML data_dict needs verification, need to create a function to lint/check YAML formatting.
+    result = get_lint_result(str(path))
+    if result.returncode != 0:
+        click.secho(f"File failed lint check.\n{str(path)}", fg="red")
+        exit()
+
     try:
         with open(path, "r") as fd:
             data_dict = load_yaml(fd)
     except FileNotFoundError:
         click.secho(f"File not found...\n{path}", fg="red")
-        exit()
-
-    # The YAML data_dict needs verification, need to create a function to lint/check YAML formatting.
-    result = get_lint_result(str(path))
-    if result.returncode != 0:
-        click.secho(f"File failed lint check.\n{str(path)}", fg="red")
         exit()
 
     # dumper is used to resolve the shorthand in YAML file, eg !GetAtt
@@ -120,7 +120,7 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     cf_client = project_session.client("cloudformation")
 
     try:
-        cs_response = create_stack()
+        cs_response = create_stack(cf_client, app, svc, env, raw)
     except cf_client.exceptions.AlreadyExistsException:
         click.echo(
             click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")

@@ -85,8 +85,6 @@ def space_to_copilot_app(app_name, ns_conf):
             continue
 
         web_processes = [p for p in processes if p["type"] == "web"]
-        if len(web_processes) != 1:
-            breakpoint()
         other_proceses = [p for p in processes if p["type"] != "web"]
 
         svc = {

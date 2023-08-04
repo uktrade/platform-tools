@@ -9,6 +9,14 @@ Parameters:
     Type: String
     Description: Something to make the linting fail
 
+THIS
+
+TEMPLATE
+
+IS
+
+BROKEN
+
 Resources:
   postgresDBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
@@ -16,3 +24,4 @@ Resources:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds:
         !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
+

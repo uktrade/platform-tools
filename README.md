@@ -21,7 +21,7 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 2. Install the required dependencies:
 
    ```
-   pip install poetry && poetry install --with pre-commit && pre-commit install
+   pip install poetry && poetry install && poetry run pre-commit install
    ```
 
 ### Testing
