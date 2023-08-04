@@ -135,7 +135,7 @@ def make_config():
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
         mkdir(base_path, f"copilot/environments/{name}")
-        contents = templates["env"]["manifest"].render(
+        contents = templates.get_template("env/manifest.yml").render(
             {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
         )
         click.echo(mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
@@ -152,15 +152,9 @@ def make_config():
 
             service["secrets"].update(related_service["secrets"])
 
-        contents = templates["svc"][service["type"] + "-manifest"].render(service)
+        contents = templates.get_template(f"svc/manifest-{service['type']}.yml").render(service)
 
         click.echo(mkfile(base_path, f"copilot/{name}/manifest.yml", contents))
-
-        for bs in service.get("backing-services", []):
-            bs["prefix"] = camel_case(name + "-" + bs["name"])
-
-            contents = templates["svc"][bs["type"]].render(dict(service=bs))
-            mkfile(base_path, f"copilot/{name}/addons/{bs['name']}.yml", contents)
 
     # link to GitHub docs
     click.echo(
@@ -311,7 +305,7 @@ def instructions():
     config = load_and_validate_config(config_file)
     config["config_file"] = config_file
 
-    instructions = templates["instructions"].render(config)
+    instructions = templates.get_template("instructions.txt").render(config)
 
     click.echo(instructions)
 
