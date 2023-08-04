@@ -93,9 +93,9 @@ def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
 
-    test_environment_manifest = Path(FIXTURES_DIR, "test_environment_manifest.yml").resolve().read_bytes()
-    production_environment_manifest = Path(FIXTURES_DIR, "production_environment_manifest.yml").read_bytes()
-    test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_bytes()
+    test_environment_manifest = Path(FIXTURES_DIR, "test_environment_manifest.yml").read_text()
+    production_environment_manifest = Path(FIXTURES_DIR, "production_environment_manifest.yml").read_text()
+    test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
 
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
@@ -109,20 +109,17 @@ def test_make_config(tmp_path):
 
     assert (tmp_path / "copilot").exists()
 
-    def real_line_breaks(input: any) -> str:
-        return str(input).replace("\\n", "\n")
-
     with open(str(tmp_path / "copilot/.workspace")) as workspace:
         assert workspace.read() == "application: test-app"
 
-    with open(str(tmp_path / "copilot/environments/test/manifest.yml"), "rb") as test:
-        assert real_line_breaks(test.read()) == real_line_breaks(test_environment_manifest)
+    with open(str(tmp_path / "copilot/environments/test/manifest.yml")) as test:
+        assert test.read() == test_environment_manifest
 
-    with open(str(tmp_path / "copilot/environments/production/manifest.yml"), "rb") as production:
-        assert real_line_breaks(production.read()) == real_line_breaks(production_environment_manifest)
+    with open(str(tmp_path / "copilot/environments/production/manifest.yml")) as production:
+        assert production.read() == production_environment_manifest
 
-    with open(str(tmp_path / "copilot/test-service/manifest.yml"), "rb") as service:
-        assert real_line_breaks(service.read()) == real_line_breaks(test_service_manifest)
+    with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
+        assert service.read() == test_service_manifest
 
 
 @mock_sts

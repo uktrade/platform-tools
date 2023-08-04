@@ -121,7 +121,7 @@ def test_custom_waf_file_not_found(alias_session):
     )
     path_string = f"{TEST_APP_DIR}/not-a-path"
 
-    assert f"File not found...\n{path_string}" in result.output
+    assert f"File failed lint check.\n{path_string}" in result.output
     assert result.exit_code == 0
 
 
