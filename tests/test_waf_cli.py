@@ -19,8 +19,6 @@ from commands.waf_cli import check_waf
 from commands.waf_cli import custom_waf
 from tests.conftest import TEST_APP_DIR
 
-import pytest
-
 
 @mock_wafv2
 def test_check_waf():
@@ -123,11 +121,10 @@ def test_custom_waf_file_not_found(alias_session):
     )
     path_string = f"{TEST_APP_DIR}/not-a-path"
 
-    assert f"File not found...\n{path_string}" in result.output
+    assert f"File failed lint check.\n{path_string}" in result.output
     assert result.exit_code == 0
 
 
-@pytest.mark.skip("The WAF logic is broken and needs to be remediated in another PR")
 @mock_cloudformation
 @mock_sts
 def test_custom_waf_invalid_yml(alias_session):
