@@ -16,7 +16,6 @@ from schema import SchemaError
 
 from commands.bootstrap_cli import copy_secrets
 from commands.bootstrap_cli import get_paas_env_vars
-from commands.bootstrap_cli import instructions
 from commands.bootstrap_cli import load_and_validate_config
 from commands.bootstrap_cli import make_config
 from commands.bootstrap_cli import migrate_secrets
@@ -373,19 +372,6 @@ def test_copy_secrets_with_existing_secret(set_ssm_param, get_ssm_secrets, alias
     result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
 
     assert """The "TEST_SECRET" parameter already exists for the "newenv" environment.""" in result.output
-
-
-def test_instructions(tmp_path):
-    """Test that, given the path to a config file, instructions generates output
-    for specific services and environments."""
-
-    instructions_txt = Path(FIXTURES_DIR, "instructions.txt").read_text()
-
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
-
-    result = CliRunner().invoke(instructions)
-
-    assert result.output == instructions_txt
 
 
 def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):

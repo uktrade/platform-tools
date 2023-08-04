@@ -296,19 +296,5 @@ def copy_secrets(project_profile, source_environment, target_environment):
                 raise e
 
 
-@bootstrap.command()
-def instructions():
-    """Show migration instructions."""
-    templates = setup_templates()
-
-    config_file = "bootstrap.yml"
-    config = load_and_validate_config(config_file)
-    config["config_file"] = config_file
-
-    instructions = templates.get_template("instructions.txt").render(config)
-
-    click.echo(instructions)
-
-
 if __name__ == "__main__":
     bootstrap()
