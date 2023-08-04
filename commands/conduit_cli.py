@@ -13,9 +13,8 @@ CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
 def get_cluster_arn(app: str, env: str) -> str:
     ecs_client = boto3.client("ecs")
-    clusters_response = ecs_client.list_clusters()
 
-    for cluster_arn in clusters_response["clusterArns"]:
+    for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
         # Describe the tags for the cluster
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
         tags = tags_response["tags"]
@@ -65,10 +64,8 @@ def is_task_running(cluster_arn: str) -> bool:
                 if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
                     agent_running = True
 
-            if described_tasks["tasks"][0]["lastStatus"] == "RUNNING" and agent_running:
-                return True
-            else:
-                return False
+            return described_tasks["tasks"][0]["lastStatus"] == "RUNNING" and agent_running
+
     except ValueError:
         return False
 
