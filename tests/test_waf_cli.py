@@ -3,6 +3,9 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
+import cfn_flip.yaml_dumper
+import yaml
+from cfn_tools import load_yaml
 from click.testing import CliRunner
 from moto import mock_cloudformation
 from moto import mock_ec2
@@ -222,6 +225,17 @@ def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_st
 @patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
 @patch("commands.waf_cli.check_aws_conn")
 def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session):
+    cf_client = alias_session.client("cloudformation")
+
+    # We need to ensure a specific instance of the cloudformation client is returned by custom_waf, in order to assert that create_stack is called with this client
+    def client(*args, **kwargs):
+        if args and args[0] == "cloudformation":
+            return cf_client
+        else:
+            service_name = args[0]
+            return boto3.Session().client(service_name)
+
+    alias_session.client = client
     check_aws_conn.return_value = alias_session
     vpc_id = alias_session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
@@ -265,3 +279,10 @@ def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_doma
     api_call.assert_called_with("AssociateWebACL", {"WebACLArn": "somekinda-waf:arn", "ResourceArn": lb_arn})
     assert f"Custom WAF is now associated with {dns_name}" in result.output
     assert result.exit_code == 0
+
+    with open("waf.yml", "r") as fd:
+        data_dict = load_yaml(fd)
+        dumper = cfn_flip.yaml_dumper.get_dumper(clean_up=True, long_form=False)
+        raw = yaml.dump(data_dict, Dumper=dumper, default_flow_style=False, allow_unicode=True)
+
+    create_stack.assert_called_once_with(cf_client, "app", "svc", "env", raw)
