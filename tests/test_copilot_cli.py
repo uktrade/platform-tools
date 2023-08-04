@@ -61,7 +61,7 @@ class TestMakeStorageCommand:
     def test_exit_if_no_copilot_directory(self, fakefs):
         fakefs.create_file("storage.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert (
@@ -74,7 +74,7 @@ class TestMakeStorageCommand:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert result.output == "No services found in ./copilot/; exiting\n"
@@ -98,7 +98,7 @@ invalid-entry:
 
         fakefs.create_file("copilot/web/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert result.output == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
@@ -119,7 +119,7 @@ invalid-environment:
 
         fakefs.create_file("copilot/web/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert result.output == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
@@ -148,7 +148,7 @@ invalid-entry:
 
         fakefs.create_file("copilot/web/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
@@ -158,7 +158,7 @@ invalid-entry:
 
         fakefs.create_file("copilot/web/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
@@ -183,7 +183,7 @@ invalid-entry:
         fakefs.create_file("copilot/web/manifest.yml")
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 0
         if storage_type == "s3":
@@ -213,7 +213,7 @@ invalid-entry:
         fakefs.create_file("copilot/web/manifest.yml")
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 0
         if storage_type == "redis":
@@ -243,7 +243,7 @@ invalid-entry:
                 f"copilot/{service}/manifest.yml",
             )
 
-        result = CliRunner().invoke(cli, ["make-storage"])
+        result = CliRunner().invoke(cli, ["make-addons"])
 
         for service in services:
             path = Path(f"copilot/{service}/addons/appconfig-ipfilter.yml")

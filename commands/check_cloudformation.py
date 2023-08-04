@@ -7,7 +7,7 @@ from subprocess import run
 import click
 
 from commands.bootstrap_cli import make_config
-from commands.copilot_cli import make_storage
+from commands.copilot_cli import make_addons
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -38,9 +38,9 @@ def get_lint_result(path: str):
         "--ignore-templates",
         # addons.parameters.yml is not a CloudFormation template file
         f"{BASE_DIR}/tests/test-application/copilot/**/addons/addons.parameters.yml",
-        # "W2001 Parameter Env not used" is ignored becomes Copilot addons require 
-        # parameters even if they are not used in the Cloudformation template. 
-        "--ignore-checks", 
+        # "W2001 Parameter Env not used" is ignored becomes Copilot addons require
+        # parameters even if they are not used in the Cloudformation template.
+        "--ignore-checks",
         "W2001",
     ]
 
@@ -89,4 +89,4 @@ def prepare_cloudformation_templates(ctx: click.Context) -> None:
     if copilot_directory.exists():
         rmtree(copilot_directory)
     ctx.invoke(make_config)
-    ctx.invoke(make_storage)
+    ctx.invoke(make_addons)

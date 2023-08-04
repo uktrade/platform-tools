@@ -124,7 +124,7 @@ def _validate_and_normalise_config(config_file):
 
 
 @copilot.command()
-def make_storage():
+def make_addons():
     """Generate addon CloudFormation for each environment."""
 
     overwrite = True
