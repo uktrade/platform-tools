@@ -141,7 +141,7 @@ def make_addons():
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    click.echo("\n>>> Generating addon cloudformation\n")
+    click.echo("\n>>> Generating addons CloudFormation\n")
 
     path = Path(f"copilot/environments/addons/")
     mkdir(output_dir, path)
