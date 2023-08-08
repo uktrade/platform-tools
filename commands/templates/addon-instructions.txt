@@ -1,11 +1,11 @@
 
 Secret references:
 {%- for service in services %}
-{%- if service.storage_type == "redis" %}
+{%- if service.addon_type == "redis" %}
   REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
-{%- elif service.storage_type == "opensearch" %}
+{%- elif service.addon_type == "opensearch" %}
   OPENSEARCH_CREDENTIALS: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
-{%- elif service.storage_type in ["aurora-postgres", "rds-postgres"] %}
+{%- elif service.addon_type in ["aurora-postgres", "rds-postgres"] %}
   DATABASE_CREDENTIALS:
     secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- endif -%}

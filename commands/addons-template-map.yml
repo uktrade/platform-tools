@@ -2,10 +2,10 @@
 
 # explanation:
 
-# {storage-type}:
+# {addons-type}:
 #   env:
 #     - template: path/to/template.yml
-#       filename: some-fixed-name.yml  - optional, the file name will be the name of the storage item by default
+#       filename: some-fixed-name.yml  - optional, the file name will be the name of the addon item by default
 #   svc:
 #     - template: path/to/template.yml
 

@@ -8,23 +8,23 @@ from jsonschema import validate
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-with open(PROJECT_ROOT / "commands/storage-plans.yml") as fd:
+with open(PROJECT_ROOT / "commands/addon-plans.yml") as fd:
     plans = yaml.safe_load(fd)
 
-with open(PROJECT_ROOT / "commands/schemas/storage-schema.json") as fd:
+with open(PROJECT_ROOT / "commands/schemas/addons-schema.json") as fd:
     schema = json.load(fd)
 
 
-def expect_jsonschema_validation_error(storage):
+def expect_jsonschema_validation_error(addon):
     try:
-        validate(instance=storage, schema=schema)
+        validate(instance=addon, schema=schema)
     except jsonschema.exceptions.ValidationError as err:
         return err.message
     return False
 
 
 def test_require_valid_type():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mys3bucket:
     type: not-valid
@@ -32,13 +32,13 @@ mys3bucket:
     )
 
     assert (
-        expect_jsonschema_validation_error(storage)
+        expect_jsonschema_validation_error(addon)
         == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy', 'appconfig-ipfilter']"
     )
 
 
 @pytest.mark.parametrize(
-    "storage_type",
+    "addon_type",
     [
         "s3",
         "s3-policy",
@@ -48,20 +48,20 @@ mys3bucket:
         "aurora-postgres",
     ],
 )
-def test_extrakeys_not_allowed(storage_type):
-    storage = yaml.safe_load(
+def test_extrakeys_not_allowed(addon_type):
+    addon = yaml.safe_load(
         f"""
 mys3bucket:
-    type: {storage_type}
+    type: {addon_type}
     an-extra-key: "something"
 """,
     )
 
-    assert expect_jsonschema_validation_error(storage)
+    assert expect_jsonschema_validation_error(addon)
 
 
 @pytest.mark.parametrize(
-    "storage_type",
+    "addon_type",
     [
         "s3",
         "s3-policy",
@@ -70,11 +70,11 @@ mys3bucket:
         "rds-postgres",
     ],
 )
-def test_environment_extrakeys_not_allowed(storage_type):
-    storage = yaml.safe_load(
+def test_environment_extrakeys_not_allowed(addon_type):
+    addon = yaml.safe_load(
         f"""
-mystorageitem:
-    type: {storage_type}
+addonitem:
+    type: {addon_type}
     environments:
         default:
             an-extra-key: "something"
@@ -82,7 +82,7 @@ mystorageitem:
     )
 
     assert (
-        expect_jsonschema_validation_error(storage)
+        expect_jsonschema_validation_error(addon)
         == "Additional properties are not allowed ('an-extra-key' was unexpected)"
     )
 
@@ -97,7 +97,7 @@ mystorageitem:
     ],
 )
 def test_s3_bucketname_validation(bucket_name):
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         f"""
 mys3bucket:
     type: s3
@@ -106,11 +106,11 @@ mys3bucket:
 """,
     )
 
-    assert expect_jsonschema_validation_error(storage)
+    assert expect_jsonschema_validation_error(addon)
 
 
 @pytest.mark.parametrize(
-    "storage_yaml, validation_message",
+    "addon_yaml, validation_message",
     [
         (
             """
@@ -154,14 +154,14 @@ myredis:
         ),
     ],
 )
-def test_redis_invalid_input(storage_yaml, validation_message):
-    storage = yaml.safe_load(storage_yaml)
+def test_redis_invalid_input(addon_yaml, validation_message):
+    addon = yaml.safe_load(addon_yaml)
 
-    assert validation_message in expect_jsonschema_validation_error(storage)
+    assert validation_message in expect_jsonschema_validation_error(addon)
 
 
 @pytest.mark.parametrize(
-    "storage_yaml, validation_message",
+    "addon_yaml, validation_message",
     [
         (
             """
@@ -205,14 +205,14 @@ mypostgres:
         ),
     ],
 )
-def test_postgres_invalid_input(storage_yaml, validation_message):
-    storage = yaml.safe_load(storage_yaml)
+def test_postgres_invalid_input(addon_yaml, validation_message):
+    addon = yaml.safe_load(addon_yaml)
 
-    assert validation_message in expect_jsonschema_validation_error(storage)
+    assert validation_message in expect_jsonschema_validation_error(addon)
 
 
 @pytest.mark.parametrize(
-    "storage_yaml, validation_message",
+    "addon_yaml, validation_message",
     [
         (
             """
@@ -238,14 +238,14 @@ myaurora:
         ),
     ],
 )
-def test_aurora_invalid_input(storage_yaml, validation_message):
-    storage = yaml.safe_load(storage_yaml)
+def test_aurora_invalid_input(addon_yaml, validation_message):
+    addon = yaml.safe_load(addon_yaml)
 
-    assert validation_message in expect_jsonschema_validation_error(storage)
+    assert validation_message in expect_jsonschema_validation_error(addon)
 
 
 @pytest.mark.parametrize(
-    "storage_yaml, validation_message",
+    "addon_yaml, validation_message",
     [
         (
             """
@@ -279,14 +279,14 @@ myopensearch:
         ),
     ],
 )
-def test_opensearch_invalid_input(storage_yaml, validation_message):
-    storage = yaml.safe_load(storage_yaml)
+def test_opensearch_invalid_input(addon_yaml, validation_message):
+    addon = yaml.safe_load(addon_yaml)
 
-    assert validation_message in expect_jsonschema_validation_error(storage)
+    assert validation_message in expect_jsonschema_validation_error(addon)
 
 
 def test_s3_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mys3bucket:
     type: s3
@@ -307,9 +307,10 @@ mys3bucket:
 """,
     )
 
+    validate(instance=addon, schema=schema)
 
 def test_s3_policy_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mys3bucket:
     type: s3-policy
@@ -330,11 +331,11 @@ mys3bucket:
 """,
     )
 
-    validate(instance=storage, schema=schema)
+    validate(instance=addon, schema=schema)
 
 
 def test_redis_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 myredis:
     type: redis
@@ -349,11 +350,11 @@ myredis:
 """,
     )
 
-    validate(instance=storage, schema=schema)
+    validate(instance=addon, schema=schema)
 
 
 def test_opensearch_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 myopensearch:
     type: opensearch
@@ -367,11 +368,11 @@ myopensearch:
 """,
     )
 
-    validate(instance=storage, schema=schema)
+    validate(instance=addon, schema=schema)
 
 
 def test_postgres_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mypostgres:
     type: rds-postgres
@@ -386,11 +387,11 @@ mypostgres:
 """,
     )
 
-    validate(instance=storage, schema=schema)
+    validate(instance=addon, schema=schema)
 
 
 def test_aurora_valid_example():
-    storage = yaml.safe_load(
+    addon = yaml.safe_load(
         """
 mypostgres:
     type: aurora-postgres
@@ -402,7 +403,7 @@ mypostgres:
 """,
     )
 
-    validate(instance=storage, schema=schema)
+    validate(instance=addon, schema=schema)
 
 
 def test_schema_opensearch_plans_match_available_plans():
