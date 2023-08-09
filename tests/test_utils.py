@@ -36,7 +36,7 @@ def test_get_ssm_secrets():
     [(False, False), (False, True)],
 )
 @mock_ssm
-def test_set_ssm_param(overwrite, exists, alias_session, aws_credentials):
+def test_set_ssm_param(overwrite, exists):
     mocked_ssm = boto3.client("ssm")
 
     set_ssm_param(
@@ -67,3 +67,39 @@ def test_set_ssm_param(overwrite, exists, alias_session, aws_credentials):
 
     # assert result is a superset of expected_response
     assert result.items() >= expected_response.items()
+
+
+@mock_ssm
+def test_set_ssm_param_with_existing_secret():
+    mocked_ssm = boto3.client("ssm")
+
+    mocked_ssm.put_parameter(
+        Name="/copilot/test-application/development/secrets/TEST_SECRET",
+        Description="A test parameter",
+        Value="test value",
+        Type="SecureString",
+    )
+
+    params = dict(
+        Path="/copilot/test-application/development/secrets/",
+        Recursive=False,
+        WithDecryption=True,
+        MaxResults=10,
+    )
+
+    assert mocked_ssm.get_parameters_by_path(**params)["Parameters"][0]["Value"] == "test value"
+
+    set_ssm_param(
+        "test-application",
+        "development",
+        "/copilot/test-application/development/secrets/TEST_SECRET",
+        "overwritten value",
+        True,
+        True,
+        "Created for testing purposes.",
+    )
+
+    result = mocked_ssm.get_parameters_by_path(**params)["Parameters"][0]["Value"]
+
+    assert result != "test value"
+    assert result == "overwritten value"
