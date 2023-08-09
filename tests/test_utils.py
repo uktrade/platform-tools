@@ -31,8 +31,12 @@ def test_get_ssm_secrets():
     assert result == [("/copilot/test-application/development/secrets/TEST_SECRET", "test value")]
 
 
+@pytest.mark.parametrize(
+    "overwrite, exists",
+    [(False, False), (False, True)],
+)
 @mock_ssm
-def test_set_ssm_param(alias_session, aws_credentials):
+def test_set_ssm_param(overwrite, exists, alias_session, aws_credentials):
     mocked_ssm = boto3.client("ssm")
 
     set_ssm_param(
@@ -40,8 +44,8 @@ def test_set_ssm_param(alias_session, aws_credentials):
         "development",
         "/copilot/test-application/development/secrets/TEST_SECRET",
         "random value",
-        False,
-        False,
+        overwrite,
+        exists,
         "Created for testing purposes.",
     )
 
