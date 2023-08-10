@@ -103,3 +103,84 @@ def test_set_ssm_param_with_existing_secret():
 
     assert result != "test value"
     assert result == "overwritten value"
+
+
+@mock_ssm
+def test_set_ssm_param_tags():
+    mocked_ssm = boto3.client("ssm")
+
+    set_ssm_param(
+        "test-application",
+        "development",
+        "/copilot/test-application/development/secrets/TEST_SECRET",
+        "random value",
+        False,
+        False,
+        "Created for testing purposes.",
+    )
+
+    parameters = mocked_ssm.describe_parameters(
+        ParameterFilters=[
+            {"Key": "tag:copilot-application", "Values": ["test-application"]},
+            {"Key": "tag:copilot-environment", "Values": ["development"]},
+        ]
+    )["Parameters"]
+    assert len(parameters) == 1
+    assert parameters[0]["Name"] == "/copilot/test-application/development/secrets/TEST_SECRET"
+
+    filters = [{"Key": "tag:copilot-application"}]
+    response = mocked_ssm.describe_parameters(ParameterFilters=filters)
+    assert len(response["Parameters"]) == 1
+    assert {parameter["Name"] for parameter in response["Parameters"]} == set(
+        ["/copilot/test-application/development/secrets/TEST_SECRET"]
+    )
+
+
+@mock_ssm
+def test_set_ssm_param_tags_with_existing_secret():
+    mocked_ssm = boto3.client("ssm")
+
+    mocked_ssm.put_parameter(
+        Name="/copilot/test-application/development/secrets/TEST_SECRET",
+        Description="A test parameter",
+        Value="test value",
+        Type="SecureString",
+        Tags=[
+            {"Key": "copilot-application", "Value": "test-application"},
+            {"Key": "copilot-environment", "Value": "development"},
+        ],
+    )
+
+    parameters = mocked_ssm.describe_parameters(
+        ParameterFilters=[
+            {"Key": "tag:copilot-application", "Values": ["test-application"]},
+            {"Key": "tag:copilot-environment", "Values": ["development"]},
+        ]
+    )["Parameters"]
+    assert len(parameters) == 1
+
+    set_ssm_param(
+        "test-application",
+        "development",
+        "/copilot/test-application/development/secrets/TEST_SECRET",
+        "overwritten value",
+        True,
+        True,
+        "Created for testing purposes.",
+    )
+
+    parameters = mocked_ssm.describe_parameters(
+        ParameterFilters=[
+            {"Key": "tag:copilot-application", "Values": ["test-application"]},
+            {"Key": "tag:copilot-environment", "Values": ["development"]},
+        ]
+    )["Parameters"]
+    assert len(parameters) == 1
+    assert parameters[0]["Name"] == "/copilot/test-application/development/secrets/TEST_SECRET"
+
+    filters = [{"Key": "tag:copilot-application"}]
+    response = mocked_ssm.describe_parameters(ParameterFilters=filters)
+    assert len(response["Parameters"]) == 1
+    assert {parameter["Name"] for parameter in response["Parameters"]} == set(
+        ["/copilot/test-application/development/secrets/TEST_SECRET"]
+    )
