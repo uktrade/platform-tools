@@ -35,10 +35,10 @@ def test_create_task(subprocess_call, mocked_pg_secret):
     --app and --env flags."""
 
     expected_arn = mocked_pg_secret["ARN"]
-    create_task("dbt-app", "staging")
+    create_task("dbt-app", "staging", "postgres")
 
     subprocess_call.assert_called_once_with(
-        f"copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET={expected_arn} --env-vars POSTGRES_PASSWORD=abc123 --app dbt-app --env staging",
+        f"copilot task run -n tunnel-postgres --image public.ecr.aws/uktrade/tunnel --app dbt-app --env staging --secrets DB_SECRET={expected_arn} --env-vars POSTGRES_PASSWORD=abc123",
         shell=True,
     )
 
@@ -62,7 +62,7 @@ def test_is_task_running_when_task_is_not_running(mocked_cluster):
     """Given an ECS Cluster ARN string, is_task_running should return False when
     the task is not running."""
 
-    assert not is_task_running(mocked_cluster["cluster"]["clusterArn"])
+    assert not is_task_running(mocked_cluster["cluster"]["clusterArn"], "postgres")
 
 
 @mock_ec2
@@ -87,7 +87,7 @@ def test_is_task_running(mocked_cluster):
         cluster=mocked_cluster_arn, instanceIdentityDocument=mocked_instance_id_document
     )
     mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
-        family="copilot-dbtunnel",
+        family="copilot-tunnel-postgres",
         containerDefinitions=[
             {"name": "test_container", "image": "test_image", "cpu": 100, "memory": 500, "essential": True}
         ],
@@ -110,23 +110,25 @@ def test_is_task_running(mocked_cluster):
     mocked_ecs_client.describe_tasks = describe_tasks
 
     with patch("commands.conduit_cli.boto3.client", return_value=mocked_ecs_client):
-        assert is_task_running(mocked_cluster_arn)
+        assert is_task_running(mocked_cluster_arn, "postgres")
 
 
 @patch("os.system")
+@patch("commands.conduit_cli.get_addon_command", return_value="test command")
 @patch("commands.conduit_cli.is_task_running", return_value=True)
-def test_exec_into_task(is_task_running, system):
+def test_exec_into_task(is_task_running, get_addon_command, system):
     """Test that exec_into_task runs the `copilot task exec` command with
     expected --app and --env flags."""
 
-    exec_into_task("dbt-app", "staging", "arn:random")
+    exec_into_task("dbt-app", "staging", "arn:random", "postgres")
 
-    system.assert_called_once_with("copilot task exec --app dbt-app --env staging")
+    get_addon_command.assert_called_once_with("dbt-app", "staging", "postgres")
+    system.assert_called_once_with("copilot task exec --app dbt-app --env staging --command 'test command'")
 
 
 @freeze_time("Jan 14th, 2020", auto_tick_seconds=60)
 def test_exec_into_task_timeout(capsys):
-    exec_into_task("dbt-app", "staging", "arn:random")
+    exec_into_task("dbt-app", "staging", "arn:random", "postgres")
 
     assert (
         capsys.readouterr().out
@@ -169,8 +171,8 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, moc
 
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    create_task.assert_called_once_with("dbt-app", "staging")
-    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
+    create_task.assert_called_once_with("dbt-app", "staging", "postgres")
+    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn, "postgres")
 
 
 # patching is_task_running because it's tested separately above and requires a lot of moto legwork.
@@ -189,7 +191,7 @@ def test_tunnel_task_already_running(create_task, exec_into_task, is_task_runnin
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     assert not create_task.called
-    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
+    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn, "postgres")
 
 
 @mock_resourcegroupstaggingapi

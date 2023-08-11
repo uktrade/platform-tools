@@ -1,0 +1,5 @@
+# Pull latest PostgreSQL Docker image
+# FROM --platform=linux/amd64 public.ecr.aws/docker/library/postgres:latest
+FROM public.ecr.aws/docker/library/redis:latest
+
+RUN apt-get update && apt-get install ca-certificates

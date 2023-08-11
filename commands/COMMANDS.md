@@ -424,6 +424,8 @@ Usage: copilot-helper conduit tunnel [OPTIONS]
   - AWS application name
 - `--env <text>`
   - AWS environment name
+- `--addon-type <choice>` _Defaults to postgres._
+  - The addon you wish to connect to
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
