@@ -6,6 +6,8 @@ import botocore
 import click
 import jinja2
 
+from commands.exceptions import ValidationException
+
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
@@ -52,6 +54,9 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists, descript
         ],
         Tier="Intelligent-Tiering",
     )
+
+    if overwrite and not exists:
+        raise ValidationException("""Arguments "overwrite" is set to True, but "exists" is set to False.""")
 
     if overwrite and exists:
         # Tags can't be updated when overwriting
