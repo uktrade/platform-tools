@@ -199,7 +199,8 @@ def test_migrate_secrets_param_already_exists(client, get_paas_env_vars, alias_s
     """Test that, where a secret already exists in aws ssm and overwrite flag
     isn't set, migrate_secrets doesn't update it."""
 
-    set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
+    # client = boto3.session.Session().client("ssm")
+    set_ssm_param(boto3.client("ssm"), "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
 
     result = CliRunner().invoke(
@@ -223,7 +224,7 @@ def test_migrate_secrets_overwrite(client, get_paas_env_vars, alias_session, aws
     """Test that, where a secret already exists in aws ssm and overwrite flag is
     set, migrate_secrets updates it."""
 
-    set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
+    set_ssm_param(boto3.client("ssm"), "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
 
     result = CliRunner().invoke(
