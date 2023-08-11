@@ -131,6 +131,6 @@ def test_set_ssm_param_tags():
     filters = [{"Key": "tag:copilot-application"}]
     response = mocked_ssm.describe_parameters(ParameterFilters=filters)
     assert len(response["Parameters"]) == 1
-    assert {parameter["Name"] for parameter in response["Parameters"]} == set(
-        ["/copilot/test-application/development/secrets/TEST_SECRET"]
-    )
+    assert {parameter["Name"] for parameter in response["Parameters"]} == {
+        "/copilot/test-application/development/secrets/TEST_SECRET"
+    }
