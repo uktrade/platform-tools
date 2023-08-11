@@ -432,7 +432,7 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 
 [↩ Parent](#copilot-helper-copilot)
 
-    Generate addon CloudFormation for each environment.
+    Generate addons CloudFormation for each environment.
 
 ## Usage
 
