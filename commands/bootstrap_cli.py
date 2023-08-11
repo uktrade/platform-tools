@@ -3,7 +3,6 @@
 from collections import defaultdict
 from pathlib import Path
 
-import boto3
 import click
 import yaml
 from botocore.exceptions import ClientError
@@ -243,7 +242,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 
                 if overwrite or not param_exists:
                     if not dry_run:
-                        set_ssm_param(boto3.client("ssm"), config["app"], env_name, ssm_path, param_value, overwrite, param_exists)
+                        set_ssm_param(config["app"], env_name, ssm_path, param_value, overwrite, param_exists)
 
                     if not param_exists:
                         existing_ssm_data[env_name].append(ssm_path)
@@ -278,7 +277,6 @@ def copy_secrets(project_profile, source_environment, target_environment):
 
         try:
             set_ssm_param(
-                boto3.client("ssm"),
                 config["app"],
                 target_environment,
                 secret_name,

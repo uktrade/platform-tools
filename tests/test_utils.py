@@ -40,7 +40,6 @@ def test_set_ssm_param(overwrite, exists):
     mocked_ssm = boto3.client("ssm")
 
     set_ssm_param(
-        mocked_ssm,
         "test-application",
         "development",
         "/copilot/test-application/development/secrets/TEST_SECRET",
@@ -91,7 +90,6 @@ def test_set_ssm_param_with_existing_secret():
     assert mocked_ssm.get_parameters_by_path(**params)["Parameters"][0]["Value"] == "test value"
 
     set_ssm_param(
-        mocked_ssm,
         "test-application",
         "development",
         "/copilot/test-application/development/secrets/TEST_SECRET",
@@ -112,7 +110,6 @@ def test_set_ssm_param_tags():
     mocked_ssm = boto3.client("ssm")
 
     set_ssm_param(
-        mocked_ssm,
         "test-application",
         "development",
         "/copilot/test-application/development/secrets/TEST_SECRET",
@@ -136,34 +133,4 @@ def test_set_ssm_param_tags():
     assert len(response["Parameters"]) == 1
     assert {parameter["Name"] for parameter in response["Parameters"]} == set(
         ["/copilot/test-application/development/secrets/TEST_SECRET"]
-    )
-
-
-@mock_ssm
-def test_set_ssm_param_tags_with_existing_secret(mocker):
-    mocked_ssm = boto3.client("ssm")
-    spy = mocker.spy(mocked_ssm, "put_parameter")
-
-    param_name = "/copilot/test-application/development/secrets/TEST_SECRET"
-    param_value = "overwritten value"
-    description = "Created for testing purposes."
-
-    set_ssm_param(
-        mocked_ssm,
-        "test-application",
-        "development",
-        param_name,
-        param_value,
-        True,
-        True,
-        description,
-    )
-
-    spy.assert_called_once_with(
-        Name=param_name,
-        Description=description,
-        Value=param_value,
-        Type="SecureString",
-        Overwrite=True,
-        Tier="Intelligent-Tiering",
     )

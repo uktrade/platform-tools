@@ -37,7 +37,9 @@ def camel_case(s):
     return "".join([s[0].lower(), s[1:]])
 
 
-def set_ssm_param(client, app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."):
+def set_ssm_param(app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."):
+    client = boto3.client("ssm")
+
     args = dict(
         Name=param_name,
         Description=description,
