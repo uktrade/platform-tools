@@ -124,13 +124,13 @@ frozenlist = ">=1.1.0"
 
 [[package]]
 name = "async-timeout"
-version = "4.0.2"
+version = "4.0.3"
 description = "Timeout context manager for asyncio programs"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
-    {file = "async_timeout-4.0.2-py3-none-any.whl", hash = "sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c"},
+    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
+    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
 ]
 
 [[package]]
@@ -188,17 +188,17 @@ wrapt = "*"
 
 [[package]]
 name = "boto3"
-version = "1.28.23"
+version = "1.28.24"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.28.23-py3-none-any.whl", hash = "sha256:807d4a4698ba9a76d5901a1663ff1943d13efbc388908f38b60f209c3511f1d6"},
-    {file = "boto3-1.28.23.tar.gz", hash = "sha256:839deb868d1278dd5a3f87208cfc4a8e259c95ca3cbe607cc322d435f02f63b0"},
+    {file = "boto3-1.28.24-py3-none-any.whl", hash = "sha256:0300ca6ec8bc136eb316b32cc1e30c66b85bc497f5a5fe42e095ae4280569708"},
+    {file = "boto3-1.28.24.tar.gz", hash = "sha256:9d1b4713c888e53a218648ad71522bee9bec9d83f2999fff2494675af810b632"},
 ]
 
 [package.dependencies]
-botocore = ">=1.31.23,<1.32.0"
+botocore = ">=1.31.24,<1.32.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -207,13 +207,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.28.23"
-description = "Type annotations for boto3 1.28.23 generated with mypy-boto3-builder 7.17.2"
+version = "1.28.24"
+description = "Type annotations for boto3 1.28.24 generated with mypy-boto3-builder 7.17.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "boto3-stubs-1.28.23.tar.gz", hash = "sha256:210012db23c1679464d7630c05a9535ebf0f7d9d2c0aa4dbd9e20fe3a72b4dbf"},
-    {file = "boto3_stubs-1.28.23-py3-none-any.whl", hash = "sha256:846669f0c43e1f88b466c6b3bdc701272f9c476021b5aef4fd981cfe6f78ce25"},
+    {file = "boto3-stubs-1.28.24.tar.gz", hash = "sha256:375ed143ff4af674d923a7a7420e46f6109960bb731133b282a59beec4ad3418"},
+    {file = "boto3_stubs-1.28.24-py3-none-any.whl", hash = "sha256:5d3c0df26006f98126624a999384a247138d83470c034f0f03cf92435487529f"},
 ]
 
 [package.dependencies]
@@ -256,7 +256,7 @@ backup-gateway = ["mypy-boto3-backup-gateway (>=1.28.0,<1.29.0)"]
 backupstorage = ["mypy-boto3-backupstorage (>=1.28.0,<1.29.0)"]
 batch = ["mypy-boto3-batch (>=1.28.0,<1.29.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.28.0,<1.29.0)"]
-boto3 = ["boto3 (==1.28.23)", "botocore (==1.31.23)"]
+boto3 = ["boto3 (==1.28.24)", "botocore (==1.31.24)"]
 braket = ["mypy-boto3-braket (>=1.28.0,<1.29.0)"]
 budgets = ["mypy-boto3-budgets (>=1.28.0,<1.29.0)"]
 ce = ["mypy-boto3-ce (>=1.28.0,<1.29.0)"]
@@ -580,13 +580,13 @@ xray = ["mypy-boto3-xray (>=1.28.0,<1.29.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.31.23"
+version = "1.31.24"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.31.23-py3-none-any.whl", hash = "sha256:d0a95f74eb6bd99e8f52f16af0a430ba6cd1526744f40ffdd3fcccceeaf961c2"},
-    {file = "botocore-1.31.23.tar.gz", hash = "sha256:f3258feaebce48f138eb2675168c4d33cc3d99e9f45af13cb8de47bdc2b9c573"},
+    {file = "botocore-1.31.24-py3-none-any.whl", hash = "sha256:8c7ba9b09e9104e2d473214e1ffcf84b77e04cf6f5f2344942c1eed9e299f947"},
+    {file = "botocore-1.31.24.tar.gz", hash = "sha256:2d8f412c67f9285219f52d5dbbb6ef0dfa9f606da29cbdd41b6d6474bcc4bbd4"},
 ]
 
 [package.dependencies]
@@ -1989,23 +1989,6 @@ pytest = ">=7.3.1"
 test = ["coverage (>=7.2.7)", "pytest-mock (>=3.10)"]
 
 [[package]]
-name = "pytest-mock"
-version = "3.11.1"
-description = "Thin-wrapper around the mock package for easier use with pytest"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "pytest-mock-3.11.1.tar.gz", hash = "sha256:7f6b125602ac6d743e523ae0bfa71e1a697a2f5534064528c6ff84c2f7c2fc7f"},
-    {file = "pytest_mock-3.11.1-py3-none-any.whl", hash = "sha256:21c279fff83d70763b05f8874cc9cfb3fcacd6d354247a976f9529d19f9acf39"},
-]
-
-[package.dependencies]
-pytest = ">=5.0"
-
-[package.extras]
-dev = ["pre-commit", "pytest-asyncio", "tox"]
-
-[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -2723,4 +2706,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "3450267e862fc50071f137730dd220e6c16fb51da30edb9f458d3c20f97b6d1d"
+content-hash = "6d682a2bd433112d9571e6bd2045eccfb836315d8f658ba901e095701516c737"
