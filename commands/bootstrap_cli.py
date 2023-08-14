@@ -11,7 +11,6 @@ from schema import Optional
 from schema import Schema
 
 from commands.utils import SSM_PATH
-from commands.utils import camel_case
 from commands.utils import check_aws_conn
 from commands.utils import get_ssm_secret_names
 from commands.utils import get_ssm_secrets

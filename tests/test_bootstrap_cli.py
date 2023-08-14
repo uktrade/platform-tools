@@ -209,7 +209,7 @@ def test_migrate_secrets_param_already_exists(client, get_paas_env_vars, alias_s
 
     assert "NOT overwritten" in result.output
 
-    client = boto3.session.Session().client("ssm")
+    client = boto3.client("ssm")
     response = client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
 
     assert response["Parameter"]["Version"] == 1
