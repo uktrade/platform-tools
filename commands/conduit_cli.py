@@ -35,8 +35,8 @@ def get_cluster_arn(app: str, env: str) -> str:
             return cluster_arn
 
 
-def get_postgres_secret(app: str, env: str):
-    secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
+def get_postgres_secret(app: str, env: str, name: str = "POSTGRES"):
+    secret_name = f"/copilot/{app}/{env}/secrets/{name}"
 
     return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
 

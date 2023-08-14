@@ -58,6 +58,26 @@ def test_get_postgres_secret(mocked_pg_secret):
     assert secret_response["Name"] == "/copilot/dbt-app/staging/secrets/POSTGRES"
 
 
+@mock_secretsmanager
+def test_get_postgres_secret_with_custom_name():
+    """Test that, given app, environment, and name strings, get_postgres_secret
+    returns the app's custom named postgres credentials."""
+    mocked_secretsmanager = boto3.client("secretsmanager")
+
+    secret_resource = {
+        "Name": "/copilot/dbt-app/staging/secrets/custom-name",
+        "Description": "A test parameter",
+        "SecretString": '{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
+    }
+
+    mocked_secretsmanager.create_secret(**secret_resource)
+
+    secret_response = get_postgres_secret("dbt-app", "staging", "custom-name")
+
+    assert secret_response["SecretString"] == secret_resource["SecretString"]
+    assert secret_response["Name"] == "/copilot/dbt-app/staging/secrets/custom-name"
+
+
 def test_is_task_running_when_task_is_not_running(mocked_cluster):
     """Given an ECS Cluster ARN string, is_task_running should return False when
     the task is not running."""
