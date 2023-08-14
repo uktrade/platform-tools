@@ -35,14 +35,14 @@ def get_cluster_arn(app: str, env: str) -> str:
             return cluster_arn
 
 
-def get_postgres_secret(app: str, env: str):
-    secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
+def get_postgres_secret(app: str, env: str, name: str):
+    secret_name = f"/copilot/{app}/{env}/secrets/{name}"
 
     return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
 
 
-def create_task(app: str, env: str) -> None:
-    secret = get_postgres_secret(app, env)
+def create_task(app: str, env: str, db_secret_name: str) -> None:
+    secret = get_postgres_secret(app, env, db_secret_name)
     secret_arn = secret["ARN"]
     secret_json = json.loads(secret["SecretString"])
     postgres_password = secret_json["password"]
@@ -96,7 +96,8 @@ def conduit():
 @click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-def tunnel(project_profile: str, app: str, env: str) -> None:
+@click.option("--db-secret-name", help="Database credentials secret name", required=True, default="POSTGRES")
+def tunnel(project_profile: str, app: str, env: str, db_secret_name: str) -> None:
     check_aws_conn(project_profile)
 
     cluster_arn = get_cluster_arn(app, env)
@@ -106,7 +107,7 @@ def tunnel(project_profile: str, app: str, env: str) -> None:
 
     if not is_task_running(cluster_arn):
         try:
-            create_task(app, env)
+            create_task(app, env, db_secret_name)
         except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
             click.secho(f"No secret found matching application {app} and environment {env}.")
             exit()

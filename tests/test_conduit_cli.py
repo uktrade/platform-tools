@@ -35,7 +35,7 @@ def test_create_task(subprocess_call, mocked_pg_secret):
     --app and --env flags."""
 
     expected_arn = mocked_pg_secret["ARN"]
-    create_task("dbt-app", "staging")
+    create_task("dbt-app", "staging", "POSTGRES")
 
     subprocess_call.assert_called_once_with(
         f"copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET={expected_arn} --env-vars POSTGRES_PASSWORD=abc123 --app dbt-app --env staging",
@@ -48,7 +48,7 @@ def test_get_postgres_secret(mocked_pg_secret):
     the app's secret arn string."""
 
     expected_arn = mocked_pg_secret["ARN"]
-    secret_response = get_postgres_secret("dbt-app", "staging")
+    secret_response = get_postgres_secret("dbt-app", "staging", "POSTGRES")
 
     assert secret_response["ARN"] == expected_arn
     assert (
@@ -56,6 +56,26 @@ def test_get_postgres_secret(mocked_pg_secret):
         == '{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}'
     )
     assert secret_response["Name"] == "/copilot/dbt-app/staging/secrets/POSTGRES"
+
+
+@mock_secretsmanager
+def test_get_postgres_secret_with_custom_name():
+    """Test that, given app, environment, and name strings, get_postgres_secret
+    returns the app's custom named Postgres credentials from Secrets Manager."""
+    mocked_secretsmanager = boto3.client("secretsmanager")
+
+    secret_resource = {
+        "Name": "/copilot/dbt-app/staging/secrets/custom-name",
+        "Description": "A test parameter",
+        "SecretString": '{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
+    }
+
+    mocked_secretsmanager.create_secret(**secret_resource)
+
+    secret_response = get_postgres_secret("dbt-app", "staging", "custom-name")
+
+    assert secret_response["SecretString"] == secret_resource["SecretString"]
+    assert secret_response["Name"] == secret_resource["Name"]
 
 
 def test_is_task_running_when_task_is_not_running(mocked_cluster):
@@ -169,7 +189,7 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, moc
 
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    create_task.assert_called_once_with("dbt-app", "staging")
+    create_task.assert_called_once_with("dbt-app", "staging", "POSTGRES")
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
 
 
@@ -189,6 +209,36 @@ def test_tunnel_task_already_running(create_task, exec_into_task, is_task_runnin
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
     assert not create_task.called
+    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
+
+
+@mock_resourcegroupstaggingapi
+@mock_sts
+@patch("commands.conduit_cli.exec_into_task")
+@patch("commands.conduit_cli.create_task")
+def test_tunnel_task_with_custom_db_secret_name(
+    create_task, exec_into_task, alias_session, mocked_cluster, mocked_pg_secret
+):
+    """Test that, when a task is not already running, command creates and execs
+    into a task with optional --db-secret-name flag."""
+
+    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    CliRunner().invoke(
+        tunnel,
+        [
+            "--project-profile",
+            "foo",
+            "--app",
+            "dbt-app",
+            "--env",
+            "staging",
+            "--db-secret-name",
+            "custom-db-secret-name",
+        ],
+    )
+
+    create_task.assert_called_once_with("dbt-app", "staging", "custom-db-secret-name")
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
 
 
