@@ -179,13 +179,20 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
         exit()
 
     alias_client = session.client("iam")
+    breakpoint()
     account_name = alias_client.list_account_aliases()["AccountAliases"]
+    if account_name:
+        click.echo(
+            click.style("Logged in with AWS account: ", fg="yellow")
+            + click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+        )
+    else:
+        click.echo(
+            click.style("Logged in with AWS account id: ", fg="yellow")
+            + click.style(f"{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+        )
     click.echo(
-        click.style(f"Logged in with AWS account: ", fg="yellow")
-        + click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True),
-    )
-    click.echo(
-        click.style(f"User: ", fg="yellow")
+        click.style("User: ", fg="yellow")
         + click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True),
     )
 
