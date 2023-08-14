@@ -170,3 +170,36 @@ def test_set_ssm_param_tags():
     assert {parameter["Name"] for parameter in response["Parameters"]} == {
         "/copilot/test-application/development/secrets/TEST_SECRET"
     }
+
+
+@mock_ssm
+def test_set_ssm_param_tags_with_existing_secret():
+    mocked_ssm = boto3.client("ssm")
+
+    secret_name = "/copilot/test-application/development/secrets/TEST_SECRET"
+    tags = [
+        {"Key": "copilot-application", "Value": "test-application"},
+        {"Key": "copilot-environment", "Value": "development"},
+    ]
+
+    mocked_ssm.put_parameter(
+        Name=secret_name,
+        Description="A test parameter",
+        Value="test value",
+        Type="SecureString",
+        Tags=tags,
+    )
+
+    assert tags == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)["TagList"]
+
+    set_ssm_param(
+        "test-application",
+        "development",
+        secret_name,
+        "random value",
+        True,
+        True,
+        "Created for testing purposes.",
+    )
+
+    assert tags == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)["TagList"]
