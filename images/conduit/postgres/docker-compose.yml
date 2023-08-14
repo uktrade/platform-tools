@@ -1,0 +1,13 @@
+version: '3.8'
+services: 
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=password
+  client:
+    build:
+      context: .
+    environment:
+      - DB_SECRET={"host":"db","username":"postgres","password":"password","dbname":"postgres","port":"5432"}
+    links:
+      - db
