@@ -189,7 +189,7 @@ def test_tunnel_task_not_running(create_task, exec_into_task, alias_session, moc
 
     CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    create_task.assert_called_once_with("dbt-app", "staging")
+    create_task.assert_called_once_with("dbt-app", "staging", "POSTGRES")
     exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
 
 

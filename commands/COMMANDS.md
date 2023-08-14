@@ -405,6 +405,8 @@ Usage: copilot-helper conduit tunnel [OPTIONS]
   - AWS application name
 - `--env <text>`
   - AWS environment name
+- `--db-secret <text>` _Defaults to POSTGRES._
+  - DB Credentials secret name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
