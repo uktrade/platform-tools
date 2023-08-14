@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import time
@@ -44,15 +43,16 @@ def get_postgres_secret(app: str, env: str, name: str):
 def create_task(app: str, env: str, db_secret_name: str) -> None:
     secret = get_postgres_secret(app, env, db_secret_name)
     secret_arn = secret["ARN"]
-    secret_json = json.loads(secret["SecretString"])
-    postgres_password = secret_json["password"]
-    command = f"copilot task run -n dbtunnel --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password} --app {app} --env {env}"
+
+    command = f"copilot task run --name conduit-postgres --image {CONDUIT_DOCKER_IMAGE_LOCATION} --secrets DB_SECRET={secret_arn} --app {app} --env {env}"
 
     subprocess.call(command, shell=True)
 
 
 def is_task_running(cluster_arn: str) -> bool:
-    tasks = boto3.client("ecs").list_tasks(cluster=cluster_arn, desiredStatus="RUNNING", family="copilot-dbtunnel")
+    tasks = boto3.client("ecs").list_tasks(
+        cluster=cluster_arn, desiredStatus="RUNNING", family="copilot-conduit-postgres"
+    )
 
     try:
         if tasks["taskArns"]:

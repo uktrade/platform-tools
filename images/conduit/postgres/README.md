@@ -4,8 +4,8 @@
 
 Requires:
 
-- `docker`
-- `aws` cli
+- [`docker`](https://www.docker.com)
+- [`aws` CLI](https://aws.amazon.com/cli/)
 
 From this image directory:
 
@@ -20,8 +20,8 @@ From this image directory:
 
 Requires:
 
-- `docker`
-- `docker-compose`
+- [`docker`](https://www.docker.com)
+- [`docker-compose`](https://docs.docker.com/compose/)
 
 Steps:
 
