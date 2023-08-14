@@ -4,11 +4,15 @@ import subprocess
 import time
 
 import boto3
+import botocore  # noqa
 import click
 
 from commands.utils import check_aws_conn
 
-CONDUIT_IMAGE_LOCATIONS = {"postgres": "public.ecr.aws/uktrade/tunnel", "redis": "public.ecr.aws/uktrade/redis-tunnel"}
+CONDUIT_IMAGE_LOCATIONS = {
+    "postgres": "public.ecr.aws/uktrade/tunnel-postgres",
+    "redis": "public.ecr.aws/uktrade/tunnel-redis",
+}
 
 
 def get_cluster_arn(app: str, env: str) -> str:
@@ -147,6 +151,7 @@ def conduit():
     help="The addon you wish to connect to",
     type=click.Choice(["postgres", "redis"]),
     default="postgres",
+    required=True,
 )
 def tunnel(project_profile: str, app: str, env: str, addon_type: str = "postgres") -> None:
     check_aws_conn(project_profile)
