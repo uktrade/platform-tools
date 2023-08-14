@@ -96,8 +96,8 @@ def conduit():
 @click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--db-secret", help="DB Credentials secret name", required=True, default="POSTGRES")
-def tunnel(project_profile: str, app: str, env: str, db_secret: str) -> None:
+@click.option("--db-secret-name", help="Database credentials secret name", required=True, default="POSTGRES")
+def tunnel(project_profile: str, app: str, env: str, db_secret_name: str) -> None:
     check_aws_conn(project_profile)
 
     cluster_arn = get_cluster_arn(app, env)
@@ -107,7 +107,7 @@ def tunnel(project_profile: str, app: str, env: str, db_secret: str) -> None:
 
     if not is_task_running(cluster_arn):
         try:
-            create_task(app, env, db_secret)
+            create_task(app, env, db_secret_name)
         except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
             click.secho(f"No secret found matching application {app} and environment {env}.")
             exit()

@@ -213,6 +213,36 @@ def test_tunnel_task_already_running(create_task, exec_into_task, is_task_runnin
 
 
 @mock_resourcegroupstaggingapi
+@mock_sts
+@patch("commands.conduit_cli.exec_into_task")
+@patch("commands.conduit_cli.create_task")
+def test_tunnel_task_with_custom_db_secret_name(
+    create_task, exec_into_task, alias_session, mocked_cluster, mocked_pg_secret
+):
+    """Test that, when a task is not already running, command creates and execs
+    into a task."""
+
+    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    CliRunner().invoke(
+        tunnel,
+        [
+            "--project-profile",
+            "foo",
+            "--app",
+            "dbt-app",
+            "--env",
+            "staging",
+            "--db-secret-name",
+            "custom-db-secret-name",
+        ],
+    )
+
+    create_task.assert_called_once_with("dbt-app", "staging", "custom-db-secret-name")
+    exec_into_task.assert_called_once_with("dbt-app", "staging", cluster_arn)
+
+
+@mock_resourcegroupstaggingapi
 @mock_secretsmanager
 @mock_sts
 @patch("commands.conduit_cli.is_task_running", return_value=False)
