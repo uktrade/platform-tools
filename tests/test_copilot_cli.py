@@ -1,13 +1,16 @@
+import os
+import shutil
 from pathlib import Path
 
 import boto3
 import pytest
-import yaml
 from click.testing import CliRunner
 from moto import mock_ssm
 
 from commands.copilot_cli import copilot as cli
+from commands.copilot_cli import make_addons
 from commands.utils import SSM_PATH
+from tests.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
 redis:
@@ -58,6 +61,37 @@ my-s3-bucket:
 
 
 class TestMakeAddonCommand:
+    def test_make_addons_success(self, tmp_path):
+        """Test that make_addons generates the expected directories and file
+        contents."""
+        # Arrange
+        shutil.copytree(FIXTURES_DIR / "make_addons/full/config", tmp_path, dirs_exist_ok=True)
+        os.chdir(tmp_path)
+
+        # Act
+        result = CliRunner().invoke(make_addons)
+
+        # Assert:
+        # The run should have been a success:
+        assert result.exit_code == 0
+        # We have an aurora DB, so we expect a warning:
+        assert "Note: The key DATABASE_CREDENTIALS may need to be changed" in result.stdout
+
+        # The files generated are as expected
+        expected_dir = FIXTURES_DIR / "make_addons" / "full" / "expected"
+        for path, _, files in os.walk(expected_dir):
+            expected_count = len(files)
+            actual_count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+            assert expected_count == actual_count
+
+            for f in files:
+                file_path = Path(path, f)
+                relative_path = Path(file_path).relative_to(expected_dir)
+
+                expected = file_path.read_text()
+                actual = Path(tmp_path, "copilot", relative_path).read_text()
+                assert expected == actual
+
     def test_exit_if_no_copilot_directory(self, fakefs):
         fakefs.create_file("addons.yml")
 
@@ -173,9 +207,7 @@ invalid-entry:
             (S3_STORAGE_CONTENTS, "s3"),
         ],
     )
-    def test_env_addons_parameters_file_with_different_addon_types(
-        self, fakefs, addon_file_contents, addon_type
-    ):
+    def test_env_addons_parameters_file_with_different_addon_types(self, fakefs, addon_file_contents, addon_type):
         fakefs.create_file(
             "addons.yml",
             contents=addon_file_contents,
@@ -203,9 +235,7 @@ invalid-entry:
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
-    def test_addon_instructions_with_postgres_addon_types(
-        self, fakefs, addon_file_contents, addon_type, secret_name
-    ):
+    def test_addon_instructions_with_postgres_addon_types(self, fakefs, addon_file_contents, addon_type, secret_name):
         fakefs.create_file(
             "addons.yml",
             contents=addon_file_contents,
@@ -221,9 +251,7 @@ invalid-entry:
                 "DATABASE_CREDENTIALS" not in result.output
             ), f"DATABASE_CREDENTIALS should not be included for {addon_type}"
         else:
-            assert (
-                "DATABASE_CREDENTIALS" in result.output
-            ), f"DATABASE_CREDENTIALS should be included for {addon_type}"
+            assert "DATABASE_CREDENTIALS" in result.output, f"DATABASE_CREDENTIALS should be included for {addon_type}"
             assert (
                 "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/"
                 f"{secret_name}" in result.output

@@ -1,3 +1,5 @@
+import os
+import shutil
 from pathlib import Path
 
 import boto3
@@ -81,3 +83,9 @@ def mocked_pg_secret():
             Name="/copilot/dbt-app/staging/secrets/POSTGRES",
             SecretString='{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
         )
+
+
+def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file, destination_filename):
+    os.chdir(tmp_path)
+    Path(destination_filename).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", destination_filename)
