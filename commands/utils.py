@@ -6,6 +6,8 @@ import botocore
 import click
 import jinja2
 
+from commands.exceptions import ValidationException
+
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
@@ -39,6 +41,7 @@ def camel_case(s):
 
 def set_ssm_param(app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."):
     client = boto3.client("ssm")
+
     args = dict(
         Name=param_name,
         Description=description,
@@ -51,6 +54,9 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists, descript
         ],
         Tier="Intelligent-Tiering",
     )
+
+    if overwrite and not exists:
+        raise ValidationException("""Arguments "overwrite" is set to True, but "exists" is set to False.""")
 
     if overwrite and exists:
         # Tags can't be updated when overwriting
@@ -174,12 +180,18 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
 
     alias_client = session.client("iam")
     account_name = alias_client.list_account_aliases()["AccountAliases"]
+    if account_name:
+        click.echo(
+            click.style("Logged in with AWS account: ", fg="yellow")
+            + click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+        )
+    else:
+        click.echo(
+            click.style("Logged in with AWS account id: ", fg="yellow")
+            + click.style(f"{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+        )
     click.echo(
-        click.style(f"Logged in with AWS account: ", fg="yellow")
-        + click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True),
-    )
-    click.echo(
-        click.style(f"User: ", fg="yellow")
+        click.style("User: ", fg="yellow")
         + click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True),
     )
 

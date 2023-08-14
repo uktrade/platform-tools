@@ -48,7 +48,7 @@ my-redis:
       engine: '6.2'
       # availble engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
 
-      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
+      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
 
     production:
       plan: medium-ha

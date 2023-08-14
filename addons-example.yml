@@ -1,8 +1,8 @@
-# storage-example.yml
+# addons-example.yml
 
 ##### general structure:
 
-# my-thing: # the name of storage item
+# my-thing: # the name of addon item
 #   type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
 #
 #   environments:  # per environment configuration is defined here.
@@ -10,11 +10,11 @@
 #       some-setting: x
 #       another-setting: y
 #
-#       plan: a-valid-plan  # some storage types support plans/t-shirt sizes.  These are listed in storage-plans.yaml in this repo.
+#       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
 #
 #     production:  # you can override defaults on a per environment basis
 #
-#       plan: some-other-plan  # Any of the keys defined in a storage plan can also be overridden
+#       plan: some-other-plan  # Any of the keys defined in a addon plan can also be overridden
 #       volume-size: 200
 
 
@@ -68,7 +68,7 @@ my-redis:
       engine: '6.2'
       # availble engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
 
-      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See storage-plans.yaml.
+      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
 
     production:
       plan: medium-ha

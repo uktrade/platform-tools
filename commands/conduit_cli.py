@@ -39,14 +39,14 @@ def get_cluster_arn(app: str, env: str) -> str:
             return cluster_arn
 
 
-def get_postgres_secret(app: str, env: str):
-    secret_name = f"/copilot/{app}/{env}/secrets/POSTGRES"
+def get_postgres_secret(app: str, env: str, name: str):
+    secret_name = f"/copilot/{app}/{env}/secrets/{name}"
 
     return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
 
 
-def update_postgres_command(app: str, env: str, command: str) -> str:
-    secret = get_postgres_secret(app, env)
+def update_postgres_command(app: str, env: str, command: str, secret_name: str) -> str:
+    secret = get_postgres_secret(app, env, secret_name)
     secret_arn = secret["ARN"]
     secret_json = json.loads(secret["SecretString"])
     postgres_password = secret_json["password"]
@@ -55,10 +55,10 @@ def update_postgres_command(app: str, env: str, command: str) -> str:
     return new_command
 
 
-def create_task(app: str, env: str, addon_type: str) -> None:
+def create_task(app: str, env: str, addon_type: str, secret_name: str) -> None:
     command = f"copilot task run -n tunnel-{addon_type} --image {CONDUIT_IMAGE_LOCATIONS[addon_type]} --app {app} --env {env}"
     if addon_type == "postgres":
-        command = update_postgres_command(app, env, command)
+        command = update_postgres_command(app, env, command, secret_name)
 
     subprocess.call(command, shell=True)
 
@@ -99,9 +99,9 @@ def get_redis_cluster(app: str, env: str):
             return cluster
 
 
-def get_addon_command(app: str, env: str, addon_type: str) -> str:
+def get_addon_command(app: str, env: str, addon_type: str, secret_name: str = "POSTGRES") -> str:
     if addon_type == "postgres":
-        secret = get_postgres_secret(app, env)
+        secret = get_postgres_secret(app, env, secret_name)
         secret_json = json.loads(secret["SecretString"])
         connection_string = f"postgres://{secret_json['username']}:{secret_json['password']}@{secret_json['host']}:5432/{secret_json['dbname']}"
 
@@ -119,14 +119,14 @@ def get_addon_command(app: str, env: str, addon_type: str) -> str:
         return f"redis-cli -c -h {address} --tls -p {port}"
 
 
-def exec_into_task(app: str, env: str, cluster_arn: str, addon_type: str) -> None:
+def exec_into_task(app: str, env: str, cluster_arn: str, addon_type: str, secret_name: str = "POSTGRES") -> None:
     # There is a delay between a task's being created and its health status changing from PROVISIONING to RUNNING,
     # so we need to wait before running the exec command or timeout if taking too long.
     timeout = time.time() + 60
     connected = False
     while time.time() < timeout:
         if is_task_running(cluster_arn, addon_type):
-            addon_command = get_addon_command(app, env, addon_type)
+            addon_command = get_addon_command(app, env, addon_type, secret_name)
             os.system(f"copilot task exec --app {app} --env {env} --command '{addon_command}'")
             connected = True
             break
@@ -153,7 +153,10 @@ def conduit():
     default="postgres",
     required=True,
 )
-def tunnel(project_profile: str, app: str, env: str, addon_type: str = "postgres") -> None:
+@click.option("--db-secret-name", help="Database credentials secret name", required=True, default="POSTGRES")
+def tunnel(
+    project_profile: str, app: str, env: str, addon_type: str = "postgres", db_secret_name: str = "POSTGRES"
+) -> None:
     check_aws_conn(project_profile)
 
     cluster_arn = get_cluster_arn(app, env)
@@ -163,7 +166,7 @@ def tunnel(project_profile: str, app: str, env: str, addon_type: str = "postgres
 
     if not is_task_running(cluster_arn, addon_type):
         try:
-            create_task(app, env, addon_type)
+            create_task(app, env, addon_type, db_secret_name)
         except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
             click.secho(f"No secret found matching application {app} and environment {env}.")
             exit()

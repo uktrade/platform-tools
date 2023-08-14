@@ -11,7 +11,6 @@ from schema import Optional
 from schema import Schema
 
 from commands.utils import SSM_PATH
-from commands.utils import camel_case
 from commands.utils import check_aws_conn
 from commands.utils import get_ssm_secret_names
 from commands.utils import get_ssm_secrets
@@ -294,20 +293,6 @@ def copy_secrets(project_profile, source_environment, target_environment):
                 )
             else:
                 raise e
-
-
-@bootstrap.command()
-def instructions():
-    """Show migration instructions."""
-    templates = setup_templates()
-
-    config_file = "bootstrap.yml"
-    config = load_and_validate_config(config_file)
-    config["config_file"] = config_file
-
-    instructions = templates.get_template("instructions.txt").render(config)
-
-    click.echo(instructions)
 
 
 if __name__ == "__main__":
