@@ -61,7 +61,7 @@ def test_get_postgres_secret(mocked_pg_secret):
 @mock_secretsmanager
 def test_get_postgres_secret_with_custom_name():
     """Test that, given app, environment, and name strings, get_postgres_secret
-    returns the app's custom named postgres credentials."""
+    returns the app's custom named Postgres credentials from Secrets Manager."""
     mocked_secretsmanager = boto3.client("secretsmanager")
 
     secret_resource = {
@@ -220,7 +220,7 @@ def test_tunnel_task_with_custom_db_secret_name(
     create_task, exec_into_task, alias_session, mocked_cluster, mocked_pg_secret
 ):
     """Test that, when a task is not already running, command creates and execs
-    into a task."""
+    into a task with optional --db-secret-name flag."""
 
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
