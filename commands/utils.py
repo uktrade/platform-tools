@@ -179,7 +179,6 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
         exit()
 
     alias_client = session.client("iam")
-    breakpoint()
     account_name = alias_client.list_account_aliases()["AccountAliases"]
     if account_name:
         click.echo(
