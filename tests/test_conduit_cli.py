@@ -35,7 +35,7 @@ def test_create_task(subprocess_call, mocked_pg_secret):
     --app and --env flags."""
 
     expected_arn = mocked_pg_secret["ARN"]
-    create_task("dbt-app", "staging")
+    create_task("dbt-app", "staging", "POSTGRES")
 
     subprocess_call.assert_called_once_with(
         f"copilot task run -n dbtunnel --image public.ecr.aws/uktrade/tunnel --secrets DB_SECRET={expected_arn} --env-vars POSTGRES_PASSWORD=abc123 --app dbt-app --env staging",
@@ -48,7 +48,7 @@ def test_get_postgres_secret(mocked_pg_secret):
     the app's secret arn string."""
 
     expected_arn = mocked_pg_secret["ARN"]
-    secret_response = get_postgres_secret("dbt-app", "staging")
+    secret_response = get_postgres_secret("dbt-app", "staging", "POSTGRES")
 
     assert secret_response["ARN"] == expected_arn
     assert (
@@ -75,7 +75,7 @@ def test_get_postgres_secret_with_custom_name():
     secret_response = get_postgres_secret("dbt-app", "staging", "custom-name")
 
     assert secret_response["SecretString"] == secret_resource["SecretString"]
-    assert secret_response["Name"] == "/copilot/dbt-app/staging/secrets/custom-name"
+    assert secret_response["Name"] == secret_resource["Name"]
 
 
 def test_is_task_running_when_task_is_not_running(mocked_cluster):

@@ -35,14 +35,14 @@ def get_cluster_arn(app: str, env: str) -> str:
             return cluster_arn
 
 
-def get_postgres_secret(app: str, env: str, name: str = "POSTGRES"):
+def get_postgres_secret(app: str, env: str, name: str):
     secret_name = f"/copilot/{app}/{env}/secrets/{name}"
 
     return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
 
 
-def create_task(app: str, env: str, db_secret: str = "POSTGRES") -> None:
-    secret = get_postgres_secret(app, env, db_secret)
+def create_task(app: str, env: str, db_secret_name: str) -> None:
+    secret = get_postgres_secret(app, env, db_secret_name)
     secret_arn = secret["ARN"]
     secret_json = json.loads(secret["SecretString"])
     postgres_password = secret_json["password"]
