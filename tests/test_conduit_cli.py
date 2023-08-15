@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import boto3
 import pytest
 from moto import mock_ecs
@@ -14,6 +16,7 @@ from moto import mock_ssm
 # from commands.conduit_cli import tunnel
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import NoConnectionSecretError
+from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
 
@@ -108,7 +111,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
         get_connection_secret_arn("test-application", "development", "POSTGRES")
 
 
-# create_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str, addon_name: str = None)
+# create_addon_client_task(app:str, env: str, addon_type: str, addon_name: str = None)
 #   secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
 #
 #   subprocess.call(f"copilot task run --app {app} --env {env} --name conduit-{addon_type} "
@@ -121,15 +124,29 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
 #   - test subprocess.call is not executed when no connection secret is found
 
 
-def test_create_addon_client_task():
+@patch("subprocess.call")
+@patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-arn")
+def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
+    create_addon_client_task("test-application", "development", "postgres")
+
+    get_connection_secret_arn.assert_called_once_with("test-application", "development", "POSTGRES")
+    subprocess_call.assert_called_once_with(
+        f"copilot task run --app test-application --env development --name conduit-postgres "
+        f"--image public.ecr.aws/uktrade/tunnel:postgres "
+        f"--secrets CONNECTION_SECRET=test-arn",
+        shell=True,
+    )
+
+
+@patch("subprocess.call")
+@patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-arn")
+def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, subprocess_call):
     pass
 
 
-def test_create_addon_client_task_with_addon_name():
-    pass
-
-
-def test_create_addon_client_task_when_no_secret_found():
+@patch("subprocess.call")
+@patch("commands.conduit_cli.get_connection_secret_arn", side_effect=NoConnectionSecretError)
+def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
     pass
 
 
