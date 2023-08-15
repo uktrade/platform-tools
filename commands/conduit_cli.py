@@ -99,24 +99,32 @@ def get_redis_cluster(app: str, env: str):
             return cluster
 
 
+def get_postgres_command(app: str, env: str, secret_name: str):
+    secret = get_postgres_secret(app, env, secret_name)
+    secret_json = json.loads(secret["SecretString"])
+    connection_string = f"postgres://{secret_json['username']}:{secret_json['password']}@{secret_json['host']}:5432/{secret_json['dbname']}"
+
+    return f"psql {connection_string}"
+
+
+def get_redis_command(app: str, env: str):
+    cluster = get_redis_cluster(app, env)
+    if not cluster:
+        click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
+        exit()
+
+    address = cluster["CacheNodes"][0]["Endpoint"]["Address"]
+    port = cluster["CacheNodes"][0]["Endpoint"]["Port"]
+
+    return f"redis-cli -c -h {address} --tls -p {port}"
+
+
 def get_addon_command(app: str, env: str, addon_type: str, secret_name: str = "POSTGRES") -> str:
     if addon_type == "postgres":
-        secret = get_postgres_secret(app, env, secret_name)
-        secret_json = json.loads(secret["SecretString"])
-        connection_string = f"postgres://{secret_json['username']}:{secret_json['password']}@{secret_json['host']}:5432/{secret_json['dbname']}"
-
-        return f"psql {connection_string}"
+        return get_postgres_command(app, env, secret_name)
 
     if addon_type == "redis":
-        cluster = get_redis_cluster(app, env)
-        if not cluster:
-            click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
-            exit()
-
-        address = cluster["CacheNodes"][0]["Endpoint"]["Address"]
-        port = cluster["CacheNodes"][0]["Endpoint"]["Port"]
-
-        return f"redis-cli -c -h {address} --tls -p {port}"
+        return get_redis_command(app, env)
 
 
 def exec_into_task(app: str, env: str, cluster_arn: str, addon_type: str, secret_name: str = "POSTGRES") -> None:
@@ -144,8 +152,8 @@ def conduit():
 
 @conduit.command()
 @click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--app", help="AWS application name", required=True)
-@click.option("--env", help="AWS environment name", required=True)
+@click.option("--app", help="AWS Copilot application name", required=True)
+@click.option("--env", help="AWS Copilot environment name", required=True)
 @click.option(
     "--addon-type",
     help="The addon you wish to connect to",

@@ -402,9 +402,9 @@ Usage: copilot-helper conduit tunnel [OPTIONS]
 - `--project-profile <text>`
   - AWS account profile name
 - `--app <text>`
-  - AWS application name
+  - AWS Copilot application name
 - `--env <text>`
-  - AWS environment name
+  - AWS Copilot environment name
 - `--addon-type <choice>` _Defaults to postgres._
   - The addon you wish to connect to
 - `--db-secret-name <text>` _Defaults to POSTGRES._
