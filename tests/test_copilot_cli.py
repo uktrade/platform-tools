@@ -7,6 +7,7 @@ import pytest
 from click.testing import CliRunner
 from moto import mock_ssm
 
+from commands.copilot_cli import ADDON_CONFIG_FILENAME
 from commands.copilot_cli import copilot as cli
 from commands.copilot_cli import make_addons
 from commands.utils import SSM_PATH
@@ -65,20 +66,19 @@ class TestMakeAddonCommand:
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
-        shutil.copytree(FIXTURES_DIR / "make_addons/full/config", tmp_path, dirs_exist_ok=True)
+        shutil.copytree(FIXTURES_DIR / "make_addons/config", tmp_path, dirs_exist_ok=True)
         os.chdir(tmp_path)
 
         # Act
         result = CliRunner().invoke(make_addons)
 
         # Assert:
-        # The run should have been a success:
-        assert result.exit_code == 0
-        # We have an aurora DB, so we expect a warning:
-        assert "Note: The key DATABASE_CREDENTIALS may need to be changed" in result.stdout
+        assert result.exit_code == 0, f"The exit code should have been 0 (success) but was {result.exit_code}"
+        assert (
+            "Note: The key DATABASE_CREDENTIALS may need to be changed" in result.stdout
+        ), "We have an aurora DB, so we expect a warning"
 
-        # The files generated are as expected
-        expected_dir = FIXTURES_DIR / "make_addons" / "full" / "expected"
+        expected_dir = FIXTURES_DIR / "make_addons" / "expected"
         for path, _, files in os.walk(expected_dir):
             expected_count = len(files)
             actual_count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
@@ -90,10 +90,10 @@ class TestMakeAddonCommand:
 
                 expected = file_path.read_text()
                 actual = Path(tmp_path, "copilot", relative_path).read_text()
-                assert expected == actual
+                assert expected == actual, f"The file {file_path} did not have the expected content"
 
     def test_exit_if_no_copilot_directory(self, fakefs):
-        fakefs.create_file("addons.yml")
+        fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         result = CliRunner().invoke(cli, ["make-addons"])
 
@@ -104,7 +104,7 @@ class TestMakeAddonCommand:
         )
 
     def test_exit_if_no_local_copilot_services(self, fakefs):
-        fakefs.create_file("addons.yml")
+        fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
@@ -115,7 +115,7 @@ class TestMakeAddonCommand:
 
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
-            "addons.yml",
+            ADDON_CONFIG_FILENAME,
             contents="""
 invalid-entry:
     type: s3-policy
@@ -139,7 +139,7 @@ invalid-entry:
 
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
-            "addons.yml",
+            ADDON_CONFIG_FILENAME,
             contents="""
 invalid-environment:
     type: s3-policy
@@ -167,7 +167,7 @@ invalid-environment:
         """
 
         fakefs.create_file(
-            "addons.yml",
+            ADDON_CONFIG_FILENAME,
             contents="""
 invalid-entry:
     type: s3-policy
@@ -188,7 +188,7 @@ invalid-entry:
         assert result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
 
     def test_exit_if_no_local_copilot_environments(self, fakefs):
-        fakefs.create_file("addons.yml")
+        fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         fakefs.create_file("copilot/web/manifest.yml")
 
@@ -209,7 +209,7 @@ invalid-entry:
     )
     def test_env_addons_parameters_file_with_different_addon_types(self, fakefs, addon_file_contents, addon_type):
         fakefs.create_file(
-            "addons.yml",
+            ADDON_CONFIG_FILENAME,
             contents=addon_file_contents,
         )
         fakefs.create_file("copilot/web/manifest.yml")
@@ -237,7 +237,7 @@ invalid-entry:
     )
     def test_addon_instructions_with_postgres_addon_types(self, fakefs, addon_file_contents, addon_type, secret_name):
         fakefs.create_file(
-            "addons.yml",
+            ADDON_CONFIG_FILENAME,
             contents=addon_file_contents,
         )
         fakefs.create_file("copilot/web/manifest.yml")
@@ -260,7 +260,7 @@ invalid-entry:
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
-        fakefs.create_file("./addons.yml")
+        fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         fakefs.create_file(
             "./copilot/environments/development/manifest.yml",
