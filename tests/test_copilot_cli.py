@@ -7,7 +7,6 @@ import pytest
 from click.testing import CliRunner
 from moto import mock_ssm
 
-from commands.copilot_cli import ADDON_CONFIG_FILENAME
 from commands.copilot_cli import copilot as cli
 from commands.copilot_cli import make_addons
 from commands.utils import SSM_PATH
@@ -59,6 +58,8 @@ my-s3-bucket:
     development:
       bucket-name: my-bucket-dev
 """
+
+ADDON_CONFIG_FILENAME = "addons.yml"
 
 
 class TestMakeAddonCommand:

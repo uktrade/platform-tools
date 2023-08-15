@@ -388,5 +388,4 @@ def setup_newenv_environment(tmp_path, runner):
 
 def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
     os.chdir(tmp_path)
-    Path("bootstrap.yml").parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", "bootstrap.yml")

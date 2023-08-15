@@ -16,8 +16,6 @@ from .utils import mkdir
 from .utils import mkfile
 from .utils import setup_templates
 
-ADDON_CONFIG_FILENAME = "addons.yml"
-
 PACKAGE_DIR = Path(__file__).resolve().parent
 
 WAF_ACL_ARN_KEY = "waf-acl-arn"
@@ -137,7 +135,7 @@ def make_addons():
     templates = setup_templates()
 
     config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
-    project_config = _validate_and_normalise_config(ADDON_CONFIG_FILENAME)
+    project_config = _validate_and_normalise_config("addons.yml")
     config.update(project_config)
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
