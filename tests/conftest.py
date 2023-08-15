@@ -67,8 +67,8 @@ def mocked_cluster():
     with mock_ecs():
         yield boto3.client("ecs").create_cluster(
             tags=[
-                {"key": "copilot-application", "value": "dbt-app"},
-                {"key": "copilot-environment", "value": "staging"},
+                {"key": "copilot-application", "value": "test-application"},
+                {"key": "copilot-environment", "value": "development"},
                 {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
             ]
         )

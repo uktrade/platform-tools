@@ -68,6 +68,13 @@ def get_cluster_arn(app: str, env: str) -> str:
 #   - test getting an existing parameter secret
 #   - test when neither parameter store or secrets manager has a value raises an error
 
+
+def get_connection_secret_arn(app: str, env: str, name: str) -> str:
+    connection_secret_id = f"/copilot/{app}/{env}/secrets/{name}"
+
+    return boto3.client("secretsmanager").describe_secret(SecretId=connection_secret_id)["ARN"]
+
+
 # create_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str, addon_name: str = None)
 #   secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
 #

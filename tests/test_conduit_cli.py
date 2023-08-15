@@ -1,6 +1,8 @@
+import boto3
 import pytest
 from moto import mock_ecs
 from moto import mock_resourcegroupstaggingapi
+from moto import mock_secretsmanager
 
 # from commands.conduit_cli import create_task
 # from commands.conduit_cli import exec_into_task
@@ -11,6 +13,7 @@ from moto import mock_resourcegroupstaggingapi
 # from commands.conduit_cli import tunnel
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import get_cluster_arn
+from commands.conduit_cli import get_connection_secret_arn
 
 # from moto import mock_secretsmanager
 # from moto import mock_sts
@@ -28,7 +31,7 @@ def test_get_cluster_arn(mocked_cluster):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
 
-    assert get_cluster_arn("dbt-app", "staging") == mocked_cluster["cluster"]["clusterArn"]
+    assert get_cluster_arn("test-application", "development") == mocked_cluster["cluster"]["clusterArn"]
 
 
 @mock_ecs
@@ -37,7 +40,7 @@ def test_get_cluster_arn_when_there_is_no_cluster():
     exception when no cluster tagged with these strings exists."""
 
     with pytest.raises(NoClusterConduitError):
-        get_cluster_arn("dbt-app", "nope")
+        get_cluster_arn("test-application", "nope")
 
 
 # get_connection_secret_arn(app: str, env: str, name: str) -> str
@@ -50,9 +53,28 @@ def test_get_cluster_arn_when_there_is_no_cluster():
 #   - test getting an existing parameter secret
 #   - test when neither parameter store or secrets manager has a value raises an error
 
+# def test_get_secret_arn(mocked_pg_secret):
+#     """Test that, given app, environment, and name strings, get_postgres_secret
+#     returns the app's default named Postgres credentials from Secrets Manager."""
+#     arn = get_secret_arn("dbt-app", "staging", "POSTGRES")
+#
+#     assert arn == mocked_pg_secret['ARN']
 
+
+@mock_secretsmanager
 def test_get_connection_secret_arn_from_secrets_manager():
-    pass
+    mock_secretsmanager = boto3.client("secretsmanager")
+    mock_secretsmanager.create_secret(
+        Name="/copilot/test-application/development/secrets/POSTGRES",
+        SecretString="something-secret",
+    )
+
+    arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
+
+    assert arn.startswith(
+        "arn:aws:secretsmanager:eu-west-2:123456789012:secret:"
+        "/copilot/test-application/development/secrets/POSTGRES-"
+    )
 
 
 def test_get_connection_secret_arn_from_parameter_store():
@@ -201,15 +223,6 @@ def test_conduit_command_when_client_task_fails_to_start(addon_type):
     pass
 
 
-# @mock_resourcegroupstaggingapi
-# def test_get_cluster_arn(alias_session, mocked_cluster):
-#     """Test that, given app and environment strings, get_cluster_arn returns the
-#     arn of a cluster tagged with these strings."""
-#
-#     expected_arn = mocked_cluster["cluster"]["clusterArn"]
-#
-#     assert get_cluster_arn("dbt-app", "staging") == expected_arn
-#
 #
 # def test_get_secret_arn(mocked_pg_secret):
 #     """Test that, given app, environment, and name strings, get_postgres_secret
