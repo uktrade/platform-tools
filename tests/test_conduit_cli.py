@@ -175,7 +175,7 @@ def test_tunnel_no_cluster_resource(alias_session):
 
     result = CliRunner().invoke(tunnel, ["--project-profile", "foo", "--app", "dbt-app", "--env", "staging"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert "No cluster resource found with tag filter values dbt-app and staging" in result.output
 
 

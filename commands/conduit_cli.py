@@ -50,9 +50,8 @@ def update_postgres_command(app: str, env: str, command: str, secret_name: str) 
     secret_arn = secret["ARN"]
     secret_json = json.loads(secret["SecretString"])
     postgres_password = secret_json["password"]
-    new_command = command + f" --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password}"
 
-    return new_command
+    return f"{command} --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password}"
 
 
 def create_task(app: str, env: str, addon_type: str, secret_name: str) -> None:
@@ -170,7 +169,7 @@ def tunnel(
     cluster_arn = get_cluster_arn(app, env)
     if not cluster_arn:
         click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
-        exit()
+        exit(1)
 
     if not is_task_running(cluster_arn, addon_type):
         try:
