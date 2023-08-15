@@ -65,6 +65,8 @@ def test_get_cluster_arn_when_there_is_no_cluster():
 
 @mock_secretsmanager
 def test_get_connection_secret_arn_from_secrets_manager():
+    """Test that, given app, environment and secret name strings,
+    get_connection_secret_arn returns an ARN from secrets manager."""
     mock_secretsmanager = boto3.client("secretsmanager")
     mock_secretsmanager.create_secret(
         Name="/copilot/test-application/development/secrets/POSTGRES",
@@ -82,6 +84,8 @@ def test_get_connection_secret_arn_from_secrets_manager():
 @mock_secretsmanager
 @mock_ssm
 def test_get_connection_secret_arn_from_parameter_store():
+    """Test that, given app, environment and secret name strings,
+    get_connection_secret_arn returns an ARN from parameter store."""
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
         Name="/copilot/test-application/development/secrets/POSTGRES",
@@ -97,6 +101,9 @@ def test_get_connection_secret_arn_from_parameter_store():
 @mock_secretsmanager
 @mock_ssm
 def test_get_connection_secret_arn_when_secret_does_not_exist():
+    """Test that, given app, environment and secret name strings,
+    get_connection_secret_arn raises an exception when no matching secret exists
+    in secrets manager or parameter store."""
     with pytest.raises(NoConnectionSecretError):
         get_connection_secret_arn("test-application", "development", "POSTGRES")
 
