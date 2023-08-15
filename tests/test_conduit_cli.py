@@ -155,7 +155,10 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 @patch("subprocess.call")
 @patch("commands.conduit_cli.get_connection_secret_arn", side_effect=NoConnectionSecretError)
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
-    pass
+    with pytest.raises(NoConnectionSecretError):
+        create_addon_client_task("test-application", "development", "postgres", "named-postgres")
+
+        subprocess_call.assert_not_called()
 
 
 # addon_client_is_running(app:str, env: str, cluster_arn: str, addon_type: str) -> bool
