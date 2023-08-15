@@ -139,9 +139,17 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
 
 
 @patch("subprocess.call")
-@patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-arn")
+@patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-named-arn")
 def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, subprocess_call):
-    pass
+    create_addon_client_task("test-application", "development", "postgres", "named-postgres")
+
+    get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED-POSTGRES")
+    subprocess_call.assert_called_once_with(
+        f"copilot task run --app test-application --env development --name conduit-postgres "
+        f"--image public.ecr.aws/uktrade/tunnel:postgres "
+        f"--secrets CONNECTION_SECRET=test-named-arn",
+        shell=True,
+    )
 
 
 @patch("subprocess.call")

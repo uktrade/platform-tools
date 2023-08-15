@@ -107,8 +107,8 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
 #   - test subprocess.call is not executed when no connection secret is found
 
 
-def create_addon_client_task(app: str, env: str, addon_type: str):
-    connection_secret_arn = get_connection_secret_arn(app, env, addon_type.upper())
+def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str = None):
+    connection_secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
 
     subprocess.call(
         f"copilot task run --app {app} --env {env} --name conduit-{addon_type} "
