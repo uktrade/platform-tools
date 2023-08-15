@@ -28,9 +28,7 @@ def test_get_cluster_arn(mocked_cluster):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
 
-    expected_arn = mocked_cluster["cluster"]["clusterArn"]
-
-    assert get_cluster_arn("dbt-app", "staging") == expected_arn
+    assert get_cluster_arn("dbt-app", "staging") == mocked_cluster["cluster"]["clusterArn"]
 
 
 @mock_ecs
