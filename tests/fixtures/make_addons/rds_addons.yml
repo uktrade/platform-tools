@@ -1,0 +1,8 @@
+##### RDS postgres example:
+
+my-rds-db:
+  type: rds-postgres
+
+  environments:
+    default:
+      plan: small-13-ha

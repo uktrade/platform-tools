@@ -63,35 +63,60 @@ ADDON_CONFIG_FILENAME = "addons.yml"
 
 
 class TestMakeAddonCommand:
-    def test_make_addons_success(self, tmp_path):
+    @pytest.mark.parametrize(
+        "addon_file,expected_env_addons,expected_service_addons,expect_db_warning",
+        [
+            (
+                "s3_addons.yml",
+                ["my-s3-bucket.yml"],
+                ["appconfig-ipfilter.yml", "my-s3-bucket.yml", "my-s3-bucket-bucket-access.yml"],
+                False,
+            ),
+            (
+                "opensearch_addons.yml",
+                ["my-opensearch.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                False,
+            ),
+            ("rds_addons.yml", ["my-rds-db.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], True),
+            ("redis_addons.yml", ["my-redis.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], False),
+            ("aurora_addons.yml", ["my-aurora-db.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], True),
+        ],
+    )
+    def test_make_addons_success(
+        self, tmp_path, addon_file, expected_env_addons, expected_service_addons, expect_db_warning
+    ):
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
-        shutil.copytree(FIXTURES_DIR / "make_addons/config", tmp_path, dirs_exist_ok=True)
-        os.chdir(tmp_path)
+        addons_dir = FIXTURES_DIR / "make_addons"
+        shutil.copytree(addons_dir / "config", tmp_path, dirs_exist_ok=True)
+        shutil.copy2(addons_dir / addon_file, tmp_path / ADDON_CONFIG_FILENAME)
 
         # Act
+        os.chdir(tmp_path)
         result = CliRunner().invoke(make_addons)
 
         # Assert:
         assert result.exit_code == 0, f"The exit code should have been 0 (success) but was {result.exit_code}"
-        assert (
-            "Note: The key DATABASE_CREDENTIALS may need to be changed" in result.stdout
-        ), "We have an aurora DB, so we expect a warning"
+        db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
+        assert (db_warning in result.stdout) is expect_db_warning, "If we have a DB addon we expect a warning"
 
-        expected_dir = FIXTURES_DIR / "make_addons" / "expected"
-        for path, _, files in os.walk(expected_dir):
-            expected_count = len(files)
-            actual_count = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
-            assert expected_count == actual_count
+        expected_env_files = [Path("environments/addons", filename) for filename in expected_env_addons]
+        expected_service_files = [Path("web/addons", filename) for filename in expected_service_addons]
+        all_expected_files = expected_env_files + expected_service_files
 
-            for f in files:
-                file_path = Path(path, f)
-                relative_path = Path(file_path).relative_to(expected_dir)
+        for f in all_expected_files:
+            expected = Path(addons_dir, "expected", f).read_text()
+            actual = Path(tmp_path, "copilot", f).read_text()
+            assert expected == actual, f"The file {f} did not have the expected content"
 
-                expected = file_path.read_text()
-                actual = Path(tmp_path, "copilot", relative_path).read_text()
-                assert expected == actual, f"The file {file_path} did not have the expected content"
+        copilot_dir = Path(tmp_path, "copilot")
+        actual_files = [Path(d, f).relative_to(copilot_dir) for d, _, files in os.walk(copilot_dir) for f in files]
+
+        assert len(all_expected_files) + 2 == len(
+            actual_files
+        ), "We expect the actual filecount to match the expected with the addition of the two initial manifest.yml files"
 
     def test_exit_if_no_copilot_directory(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
