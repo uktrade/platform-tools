@@ -1,2 +1,0 @@
-# Pull latest PostgreSQL Docker image
-FROM public.ecr.aws/docker/library/postgres:latest

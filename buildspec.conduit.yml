@@ -10,10 +10,10 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t tunnel:latest --file Dockerfile.conduit .
-      - docker tag tunnel:latest public.ecr.aws/uktrade/tunnel:latest
+      - docker build -t tunnel-$ADDON_TYPE:latest --file Dockerfile.conduit.$ADDON_TYPE .
+      - docker tag tunnel-$ADDON_TYPE:latest public.ecr.aws/uktrade/tunnel-$ADDON_TYPE:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push public.ecr.aws/uktrade/tunnel:latest
+      - docker push public.ecr.aws/uktrade/tunnel-$ADDON_TYPE:latest
