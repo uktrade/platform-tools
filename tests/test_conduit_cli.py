@@ -3,6 +3,7 @@ import pytest
 from moto import mock_ecs
 from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
+from moto import mock_ssm
 
 # from commands.conduit_cli import create_task
 # from commands.conduit_cli import exec_into_task
@@ -77,8 +78,20 @@ def test_get_connection_secret_arn_from_secrets_manager():
     )
 
 
+@mock_secretsmanager
+@mock_ssm
 def test_get_connection_secret_arn_from_parameter_store():
-    pass
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name="/copilot/test-application/development/secrets/POSTGRES",
+        Value="something-secret",
+        Type="SecureString",
+    )
+
+    arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
+    print(arn)
+
+    assert arn == "arn:aws:ssm:eu-west-2:123456789012:parameter/copilot/test-application/development/secrets/POSTGRES"
 
 
 def test_get_connection_secret_arn_when_secret_does_not_exist():

@@ -72,7 +72,18 @@ def get_cluster_arn(app: str, env: str) -> str:
 def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     connection_secret_id = f"/copilot/{app}/{env}/secrets/{name}"
 
-    return boto3.client("secretsmanager").describe_secret(SecretId=connection_secret_id)["ARN"]
+    secrets_manager = boto3.client("secretsmanager")
+    ssm = boto3.client("ssm")
+
+    try:
+        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
+    except secrets_manager.exceptions.ResourceNotFoundException:
+        pass
+
+    try:
+        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"]["ARN"]
+    except ssm.exceptions.ParameterNotFound:
+        pass
 
 
 # create_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str, addon_name: str = None)
