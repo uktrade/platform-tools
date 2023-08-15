@@ -374,11 +374,6 @@ def test_copy_secrets_with_existing_secret(set_ssm_param, get_ssm_secrets, alias
     assert """The "TEST_SECRET" parameter already exists for the "newenv" environment.""" in result.output
 
 
-def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
-    os.chdir(tmp_path)
-    shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", "bootstrap.yml")
-
-
 def setup_newenv_environment(tmp_path, runner):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application/bootstrap.yml")
     os.mkdir(f"{tmp_path}/copilot")
@@ -389,3 +384,8 @@ def setup_newenv_environment(tmp_path, runner):
     os.mkdir(f"{tmp_path}/copilot/environments/newenv")
     to_file = Path(tmp_path / "copilot/environments/newenv/manifest.yml")
     shutil.copy(my_file, to_file)
+
+
+def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
+    os.chdir(tmp_path)
+    shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", "bootstrap.yml")

@@ -1,0 +1,8 @@
+# At present, this may include parameters which are not used in your application's addons.
+# If you get a "parse environment addons: template does not require the parameter "{parameter_name}" in parameters file" error,
+# just delete the offending parameter from this file.
+# To be fixed under "DBTP-295 Only add the required parameters to addons.parameters.yml"
+Parameters:
+  EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
+  PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, !Ref PrivateSubnet3, ] ]
+  VpcId: !Ref VPC
