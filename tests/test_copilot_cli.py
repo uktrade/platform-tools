@@ -100,7 +100,7 @@ class TestMakeAddonCommand:
         # Assert:
         assert result.exit_code == 0, f"The exit code should have been 0 (success) but was {result.exit_code}"
         db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
-        assert (db_warning in result.stdout) is expect_db_warning, "If we have a DB addon we expect a warning"
+        assert (db_warning in result.stdout) == expect_db_warning, "If we have a DB addon we expect a warning"
 
         expected_env_files = [Path("environments/addons", filename) for filename in expected_env_addons]
         expected_service_files = [Path("web/addons", filename) for filename in expected_service_addons]
