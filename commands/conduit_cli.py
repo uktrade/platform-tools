@@ -10,6 +10,10 @@ class NoClusterConduitError(ConduitError):
     pass
 
 
+class NoConnectionSecretError(ConduitError):
+    pass
+
+
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
 # 1st iteration: copilot-helper conduit [addon_type] --app [application name] --env [env name] --name <addon_name>
@@ -84,6 +88,8 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
         return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"]["ARN"]
     except ssm.exceptions.ParameterNotFound:
         pass
+
+    raise NoConnectionSecretError
 
 
 # create_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str, addon_name: str = None)

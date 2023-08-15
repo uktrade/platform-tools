@@ -13,6 +13,7 @@ from moto import mock_ssm
 # from commands.conduit_cli import is_task_running
 # from commands.conduit_cli import tunnel
 from commands.conduit_cli import NoClusterConduitError
+from commands.conduit_cli import NoConnectionSecretError
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
 
@@ -89,13 +90,15 @@ def test_get_connection_secret_arn_from_parameter_store():
     )
 
     arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
-    print(arn)
 
     assert arn == "arn:aws:ssm:eu-west-2:123456789012:parameter/copilot/test-application/development/secrets/POSTGRES"
 
 
+@mock_secretsmanager
+@mock_ssm
 def test_get_connection_secret_arn_when_secret_does_not_exist():
-    pass
+    with pytest.raises(NoConnectionSecretError):
+        get_connection_secret_arn("test-application", "development", "POSTGRES")
 
 
 # create_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str, addon_name: str = None)
