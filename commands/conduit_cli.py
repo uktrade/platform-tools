@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import boto3
 import click
@@ -156,8 +157,17 @@ def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
 
 
 def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_type: str):
-    if addon_client_is_running(cluster_arn, addon_type):
-        subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
+    tries = 0
+    running = False
+
+    while tries < 15 and not running:
+        tries += 1
+
+        if addon_client_is_running(cluster_arn, addon_type):
+            running = True
+            subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
+
+        time.sleep(1)
 
 
 # commands: postgres, redis, opensearch

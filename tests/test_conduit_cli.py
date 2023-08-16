@@ -240,8 +240,25 @@ def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, 
     )
 
 
-def test_connect_to_addon_client_task_when_timeout_reached():
-    pass
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("time.sleep")
+@patch("subprocess.call")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
+def test_connect_to_addon_client_task_when_timeout_reached(
+    addon_client_is_running, subprocess_call, sleep, addon_type
+):
+    """Test that, given app, env, ECS cluster ARN and addon type, when the
+    client agent fails to start, connect_to_addon_client_task calls
+    addon_client_is_running with cluster ARN and addon type 15 times, but does
+    not call subprocess.call."""
+    connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
+
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
+    assert addon_client_is_running.call_count == 15
+    subprocess_call.assert_not_called()
 
 
 # commands: postgres, redis, opensearch
