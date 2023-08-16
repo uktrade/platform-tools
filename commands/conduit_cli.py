@@ -73,7 +73,7 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     connection_secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
 
     subprocess.call(
-        f"copilot task run --app {app} --env {env} --name conduit-{addon_type} "
+        f"copilot task run --app {app} --env {env} --task-group-name conduit-{addon_type} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn}",
         shell=True,
