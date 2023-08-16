@@ -154,6 +154,12 @@ def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
 #   - test subprocess.call executed when addon_client_is_running == True
 #   - test subprocess.call not executed when addon_client_is_running == False and exception raised
 
+
+def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_type: str):
+    if addon_client_is_running(cluster_arn, addon_type):
+        subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
+
+
 # commands: postgres, redis, opensearch
 # tests:
 #   happy path --addon-name not specified

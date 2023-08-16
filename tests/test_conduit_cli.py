@@ -17,6 +17,7 @@ from moto import mock_ssm
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import NoConnectionSecretError
 from commands.conduit_cli import addon_client_is_running
+from commands.conduit_cli import connect_to_addon_client_task
 from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
@@ -216,8 +217,27 @@ def test_addon_client_is_running_when_no_client_agent_running(mock_cluster_clien
 #   - test subprocess.call not executed when addon_client_is_running == False and exception raised
 
 
-def test_connect_to_addon_client_task(mock_cluster_client_task):
-    pass
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("subprocess.call")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=True)
+def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, addon_type):
+    """
+    Test that, given app, env, ECS cluster ARN and addon type,
+    connect_to_addon_client_task calls addon_client_is_running with cluster ARN
+    and addon type.
+
+    It then subsequently calls subprocess.call with the correct app, env and
+    addon type.
+    """
+    connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
+
+    addon_client_is_running.assert_called_once_with("test-arn", addon_type)
+    subprocess_call.assert_called_once_with(
+        f"copilot task exec --app test-application --env development --name conduit-{addon_type}", shell=True
+    )
 
 
 def test_connect_to_addon_client_task_when_timeout_reached():
