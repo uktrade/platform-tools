@@ -8,6 +8,6 @@ services:
     build:
       context: .
     environment:
-      - DB_SECRET={"host":"db","username":"postgres","password":"password","dbname":"postgres","port":"5432"}
+      - CONNECTION_SECRET={"host":"db","username":"postgres","password":"password","dbname":"postgres","port":"5432"}
     links:
       - db
