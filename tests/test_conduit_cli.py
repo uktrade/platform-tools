@@ -442,8 +442,31 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_conduit_command_when_no_connection_secret_exists_with_addon_name(addon_type):
-    pass
+@patch("click.secho")
+@patch("commands.conduit_cli.start_conduit")
+def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_conduit, secho, addon_type):
+    """Test that given an addon type, app, env and addon name strings, when
+    there is no connection secret available, the conduit command handles the
+    NoConnectionSecretError exception with addon name."""
+    start_conduit.side_effect = NoConnectionSecretError(addon_type)
+
+    result = CliRunner().invoke(
+        conduit,
+        [
+            addon_type,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+            "--addon-name",
+            "custom-addon",
+        ],
+    )
+
+    assert result.exit_code == 1
+    secho.assert_called_once_with(
+        f"""No secret called "custom-addon" for "test-application" in "development" environment.""", fg="red"
+    )
 
 
 @pytest.mark.parametrize(

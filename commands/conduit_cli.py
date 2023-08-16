@@ -315,7 +315,7 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
     except NoConnectionSecretError as err:
-        click.secho(f"""No secret called "{err}" for "{app}" in "{env}" environment.""", fg="red")
+        click.secho(f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
 
 
