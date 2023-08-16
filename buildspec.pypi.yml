@@ -26,4 +26,4 @@ phases:
       - poetry config pypi-token.pypi ${PYPI_TOKEN}
       - poetry publish
       - echo Checking the package has reached PyPI
-      - python utils/check_pypi.py
+      - python utils/check_pypi.py --max-retries 20 --retry-interval 6
