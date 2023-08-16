@@ -16,6 +16,7 @@ from moto import mock_ssm
 # from commands.conduit_cli import tunnel
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import NoConnectionSecretError
+from commands.conduit_cli import TaskConnectionTimeoutError
 from commands.conduit_cli import addon_client_is_running
 from commands.conduit_cli import connect_to_addon_client_task
 from commands.conduit_cli import create_addon_client_task
@@ -196,7 +197,8 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     client agent fails to start, connect_to_addon_client_task calls
     addon_client_is_running with cluster ARN and addon type 15 times, but does
     not call subprocess.call."""
-    connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
+    with pytest.raises(TaskConnectionTimeoutError):
+        connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
 
     addon_client_is_running.assert_called_with("test-arn", addon_type)
     assert addon_client_is_running.call_count == 15

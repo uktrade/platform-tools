@@ -17,6 +17,10 @@ class NoConnectionSecretError(ConduitError):
     pass
 
 
+class TaskConnectionTimeoutError(ConduitError):
+    pass
+
+
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
 
@@ -117,6 +121,9 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_typ
             subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
 
         time.sleep(1)
+
+    if not running:
+        raise TaskConnectionTimeoutError
 
 
 # commands: postgres, redis, opensearch
