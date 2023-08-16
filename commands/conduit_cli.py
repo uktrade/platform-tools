@@ -317,6 +317,11 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
     except NoConnectionSecretError as err:
         click.secho(f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
+    except TaskConnectionTimeoutError:
+        click.secho(
+            f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""", fg="red"
+        )
+        exit(1)
 
 
 # @conduit.command()

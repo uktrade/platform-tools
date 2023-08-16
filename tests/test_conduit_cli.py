@@ -465,7 +465,7 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_
 
     assert result.exit_code == 1
     secho.assert_called_once_with(
-        f"""No secret called "custom-addon" for "test-application" in "development" environment.""", fg="red"
+        """No secret called "custom-addon" for "test-application" in "development" environment.""", fg="red"
     )
 
 
@@ -473,8 +473,28 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_conduit_command_when_client_task_fails_to_start(addon_type):
-    pass
+@patch("click.secho")
+@patch("commands.conduit_cli.start_conduit", side_effect=TaskConnectionTimeoutError)
+def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, addon_type):
+    """Test that given an addon type, app and env strings, when the ECS client
+    task fails to start, the conduit command handles the
+    TaskConnectionTimeoutError exception."""
+    result = CliRunner().invoke(
+        conduit,
+        [
+            addon_type,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ],
+    )
+
+    assert result.exit_code == 1
+    secho.assert_called_once_with(
+        f"""Client ({addon_type}) ECS task has failed to start for "test-application" in "development" environment.""",
+        fg="red",
+    )
 
 
 #
