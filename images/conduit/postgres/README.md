@@ -9,12 +9,13 @@ Requires:
 
 From this image directory:
 
-1. `docker build -t public.ecr.aws/uktrade/tunnel:postgres .`
-2. `docker tag public.ecr.aws/uktrade/tunnel:postgres public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD) .`
-3. `aws sso login`
-4. `aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
+1. `aws sso login`
+2. `aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
+3. `docker build -t public.ecr.aws/uktrade/tunnel:postgres .`
+4. `docker tag public.ecr.aws/uktrade/tunnel:postgres public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
 5. `docker push public.ecr.aws/uktrade/tunnel:postgres`
 6. `docker push public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
+7. `docker logout public.ecr.aws/uktrade`
 
 ## Testing Locally
 
