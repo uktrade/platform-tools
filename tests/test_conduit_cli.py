@@ -127,6 +127,9 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
 @patch("subprocess.call")
 @patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-arn")
 def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
+    """Test that, given app and environment strings, create_addon_client_task
+    calls get_connection_secret_arn with the default secret name and
+    subsequently subprocess.call with the correct secret ARN."""
     create_addon_client_task("test-application", "development", "postgres")
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "POSTGRES")
@@ -141,6 +144,9 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
 @patch("subprocess.call")
 @patch("commands.conduit_cli.get_connection_secret_arn", return_value="test-named-arn")
 def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, subprocess_call):
+    """Test that, given app, environment and secret name strings,
+    create_addon_client_task calls get_connection_secret_arn with the custom
+    secret name and subsequently subprocess.call with the correct secret ARN."""
     create_addon_client_task("test-application", "development", "postgres", "named-postgres")
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED-POSTGRES")
@@ -155,6 +161,9 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 @patch("subprocess.call")
 @patch("commands.conduit_cli.get_connection_secret_arn", side_effect=NoConnectionSecretError)
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
+    """Test that, given app, environment and secret name strings,
+    create_addon_client_task raises a NoConnectionSecretError and does not call
+    subprocess.call."""
     with pytest.raises(NoConnectionSecretError):
         create_addon_client_task("test-application", "development", "postgres", "named-postgres")
 
