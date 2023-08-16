@@ -200,7 +200,8 @@ def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, 
 
     addon_client_is_running.assert_called_once_with("test-arn", addon_type)
     subprocess_call.assert_called_once_with(
-        f"copilot task exec --app test-application --env development --name conduit-{addon_type}", shell=True
+        f"copilot task exec --app test-application --env development --name conduit-{addon_type} --command bash",
+        shell=True,
     )
 
 

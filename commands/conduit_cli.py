@@ -123,7 +123,9 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_typ
 
         if addon_client_is_running(cluster_arn, addon_type):
             running = True
-            subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
+            subprocess.call(
+                f"copilot task exec --app {app} --env {env} --name conduit-{addon_type} --command bash", shell=True
+            )
 
         time.sleep(1)
 
