@@ -66,7 +66,7 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     except ssm.exceptions.ParameterNotFound:
         pass
 
-    raise NoConnectionSecretError
+    raise NoConnectionSecretError(name)
 
 
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str = None):
@@ -313,6 +313,9 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
         start_conduit(app, env, addon_type, addon_name)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
+    except NoConnectionSecretError as err:
+        click.secho(f"""No secret called "{err}" for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
 
 
