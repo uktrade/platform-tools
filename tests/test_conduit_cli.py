@@ -358,6 +358,27 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
+@patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.create_addon_client_task")
+@patch("commands.conduit_cli.connect_to_addon_client_task", side_effect=TaskConnectionTimeoutError)
+def test_start_conduit_when_addon_client_task_fails_to_start(
+    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+):
+    """Test that given app, env, and addon type strings when the client task
+    fails to start, start_conduit calls get_cluster_arn,
+    create_addon_client_task and connect_to_addon_client_task then the
+    NoConnectionSecretError is raised."""
+    with pytest.raises(TaskConnectionTimeoutError):
+        start_conduit("test-application", "development", addon_type)
+    get_cluster_arn.assert_called_once_with("test-application", "development")
+    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
 def test_conduit_command(addon_type):
     pass
 
