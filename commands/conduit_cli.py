@@ -303,39 +303,13 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     connect_to_addon_client_task(app, env, cluster_arn, addon_type)
 
 
-@click.group()
-def conduit():
-    pass
-
-
-@conduit.command()
-@click.option("--project-profile", required=True, help="AWS account profile name")
+@click.command()
+@click.argument("addon_type")
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--secret-name", help="Name of a custom connection secret to inject", required=False)
-def postgres(project_profile: str, app: str, env: str, secret_name: str):
-    # create_conduit_tunnel(project_profile, app, env, 'postgres', secret_name)
-    pass
-
-
-@conduit.command()
-@click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--app", help="AWS application name", required=True)
-@click.option("--env", help="AWS environment name", required=True)
-@click.option("--secret-name", help="Name of a custom connection secret to inject", required=False)
-def redis(project_profile: str, app: str, env: str, secret_name: str):
-    # create_conduit_tunnel(project_profile, app, env, 'redis', secret_name)
-    pass
-
-
-@conduit.command()
-@click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--app", help="AWS application name", required=True)
-@click.option("--env", help="AWS environment name", required=True)
-@click.option("--secret-name", help="Name of a custom connection secret to inject", required=False)
-def opensearch(project_profile: str, app: str, env: str, secret_name: str):
-    # create_conduit_tunnel(project_profile, app, env, 'opensearch', secret_name)
-    pass
+@click.option("--addon-name", help="Name of custom Postgres addon", required=False)
+def conduit(addon_type: str, app: str, env: str, addon_name: str):
+    start_conduit(app, env, addon_type, addon_name)
 
 
 # @conduit.command()

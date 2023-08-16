@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from click.testing import CliRunner
 from moto import mock_ecs
 from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
@@ -18,6 +19,7 @@ from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import NoConnectionSecretError
 from commands.conduit_cli import TaskConnectionTimeoutError
 from commands.conduit_cli import addon_client_is_running
+from commands.conduit_cli import conduit
 from commands.conduit_cli import connect_to_addon_client_task
 from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
@@ -337,8 +339,22 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_conduit_command(addon_type):
-    pass
+@patch("commands.conduit_cli.start_conduit")
+def test_conduit_command(start_conduit, addon_type):
+    """Test that given an addon type, app and env strings, the conduit command
+    calls start_conduit with app, env, addon type and no addon name."""
+    CliRunner().invoke(
+        conduit,
+        [
+            addon_type,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ],
+    )
+
+    start_conduit.assert_called_once_with("test-application", "development", addon_type, None)
 
 
 @pytest.mark.parametrize(

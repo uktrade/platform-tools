@@ -15,9 +15,6 @@
 - [copilot-helper codebuild delete-project](#copilot-helper-codebuild-delete-project)
 - [copilot-helper codebuild slackcreds](#copilot-helper-codebuild-slackcreds)
 - [copilot-helper conduit](#copilot-helper-conduit)
-- [copilot-helper conduit postgres](#copilot-helper-conduit-postgres)
-- [copilot-helper conduit redis](#copilot-helper-conduit-redis)
-- [copilot-helper conduit opensearch](#copilot-helper-conduit-opensearch)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
@@ -377,86 +374,21 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper conduit [OPTIONS] COMMAND [ARGS]...
+Usage: copilot-helper conduit [OPTIONS] ADDON_TYPE
 ```
+
+## Arguments
+
+- `addon_type <text>`
 
 ## Options
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`opensearch` ↪](#copilot-helper-conduit-opensearch)
-- [`postgres` ↪](#copilot-helper-conduit-postgres)
-- [`redis` ↪](#copilot-helper-conduit-redis)
-
-# copilot-helper conduit postgres
-
-[↩ Parent](#copilot-helper-conduit)
-
-## Usage
-
-```
-Usage: copilot-helper conduit postgres [OPTIONS]
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name
 - `--app <text>`
   - AWS application name
 - `--env <text>`
   - AWS environment name
-- `--secret-name <text>`
-  - Name of a custom connection secret to inject
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper conduit redis
-
-[↩ Parent](#copilot-helper-conduit)
-
-## Usage
-
-```
-Usage: copilot-helper conduit redis [OPTIONS]
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name
-- `--app <text>`
-  - AWS application name
-- `--env <text>`
-  - AWS environment name
-- `--secret-name <text>`
-  - Name of a custom connection secret to inject
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper conduit opensearch
-
-[↩ Parent](#copilot-helper-conduit)
-
-## Usage
-
-```
-Usage: copilot-helper conduit opensearch [OPTIONS]
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name
-- `--app <text>`
-  - AWS application name
-- `--env <text>`
-  - AWS environment name
-- `--secret-name <text>`
-  - Name of a custom connection secret to inject
+- `--addon-name <text>`
+  - Name of custom Postgres addon
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
