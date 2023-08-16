@@ -361,8 +361,25 @@ def test_conduit_command(start_conduit, addon_type):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_conduit_command_with_addon_name(addon_type):
-    pass
+@patch("commands.conduit_cli.start_conduit")
+def test_conduit_command_with_addon_name(start_conduit, addon_type):
+    """Test that given an addon type, app, env and addon name strings, the
+    conduit command calls start_conduit with app, env, addon type and custom
+    addon name."""
+    CliRunner().invoke(
+        conduit,
+        [
+            addon_type,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+            "--addon-name",
+            "custom-addon",
+        ],
+    )
+
+    start_conduit.assert_called_once_with("test-application", "development", addon_type, "custom-addon")
 
 
 @pytest.mark.parametrize(
