@@ -266,10 +266,59 @@ def test_start_conduit_with_custom_addon_name(
 #   - test that get_cluster_arn is called
 #   - test that "no cluster for app or env exists" is logged
 #   - test that command exits with non-zero code
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("commands.conduit_cli.get_cluster_arn", side_effect=NoClusterConduitError)
+@patch("commands.conduit_cli.create_addon_client_task")
+@patch("commands.conduit_cli.connect_to_addon_client_task")
+def test_start_conduit_when_no_cluster_present(
+    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+):
+    """
+    Test that given app, env, addon type and no available ecs cluster,
+    start_conduit calls get_cluster_arn and the NoClusterConduitError is raised.
+
+    Neither created_addon_client_task or connect_to_addon_client_task are
+    called.
+    """
+    with pytest.raises(NoClusterConduitError):
+        start_conduit("test-application", "development", addon_type, "custom-addon-name")
+    get_cluster_arn.assert_called_once_with("test-application", "development")
+    create_addon_client_task.assert_not_called()
+    connect_to_addon_client_task.assert_not_called()
+
+
 #  sad path no secret exists --addon-name not specified
 #   - test that get_connection_secret_arn is called with addon_type
 #   - test that "no connection string for addon exists" is logged
 #   - test that command exits with non-zero code
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.create_addon_client_task", side_effect=NoConnectionSecretError)
+@patch("commands.conduit_cli.connect_to_addon_client_task")
+def test_start_conduit_when_no_secret_exists(
+    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+):
+    """Test that given app, env, addon type and no available , start_conduit
+    calls get_cluster_arn, then create_addon_client_task and the
+    NoConnectionSecretError is raised and connect_to_addon_client_task is not
+    called."""
+    with pytest.raises(NoConnectionSecretError):
+        start_conduit("test-application", "development", addon_type)
+    get_cluster_arn.assert_called_once_with("test-application", "development")
+    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    connect_to_addon_client_task.assert_not_called()
+
+
 #  sad path no secret exists --addon-name specified
 #   - test that get_connection_secret_arn is called with addon_name
 #   - test that "no connection string for addon exists" is logged
