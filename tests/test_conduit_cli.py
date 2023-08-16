@@ -224,6 +224,9 @@ def test_connect_to_addon_client_task_when_timeout_reached(
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit(connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type):
+    """Test that given app, env and addon type strings, start_conduit calls
+    get_cluster_arn, created_addon_client_task and
+    connect_to_addon_client_task."""
     start_conduit("test-application", "development", addon_type, None)
     get_cluster_arn.assert_called_once_with("test-application", "development")
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
@@ -236,6 +239,29 @@ def test_start_conduit(connect_to_addon_client_task, create_addon_client_task, g
 #   - test that get_connection_secret is called with addon_name
 #   - test that addon_client_is_running is called with addon_type
 #   - test that connect_to_addon_client_task is called with addon_type
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.create_addon_client_task")
+@patch("commands.conduit_cli.connect_to_addon_client_task")
+def test_start_conduit_with_custom_addon_name(
+    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+):
+    """Test that given app, env, addon type and addon name strings,
+    start_conduit calls get_cluster_arn, created_addon_client_task and
+    connect_to_addon_client_task."""
+    start_conduit("test-application", "development", addon_type, "custom-addon-name")
+    get_cluster_arn.assert_called_once_with("test-application", "development")
+    create_addon_client_task.assert_called_once_with(
+        "test-application", "development", addon_type, "custom-addon-name"
+    )
+    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+
+
 #  sad path no cluster exists
 #   - test that get_cluster_arn is called
 #   - test that "no cluster for app or env exists" is logged
