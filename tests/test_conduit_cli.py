@@ -99,9 +99,11 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "POSTGRES")
     subprocess_call.assert_called_once_with(
-        f"copilot task run --app test-application --env development --task-group-name conduit-postgres "
-        f"--image public.ecr.aws/uktrade/tunnel:postgres "
-        f"--secrets CONNECTION_SECRET=test-arn",
+        "copilot task run --app test-application --env development --task-group-name conduit-postgres "
+        "--image public.ecr.aws/uktrade/tunnel:postgres "
+        "--secrets CONNECTION_SECRET=test-arn "
+        "--platform-os linux "
+        "--platform-arch arm64",
         shell=True,
     )
 
@@ -116,9 +118,11 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED-POSTGRES")
     subprocess_call.assert_called_once_with(
-        f"copilot task run --app test-application --env development --task-group-name conduit-postgres "
-        f"--image public.ecr.aws/uktrade/tunnel:postgres "
-        f"--secrets CONNECTION_SECRET=test-named-arn",
+        "copilot task run --app test-application --env development --task-group-name conduit-postgres "
+        "--image public.ecr.aws/uktrade/tunnel:postgres "
+        "--secrets CONNECTION_SECRET=test-named-arn "
+        "--platform-os linux "
+        "--platform-arch arm64",
         shell=True,
     )
 

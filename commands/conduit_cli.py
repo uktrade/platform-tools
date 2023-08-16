@@ -75,7 +75,9 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     subprocess.call(
         f"copilot task run --app {app} --env {env} --task-group-name conduit-{addon_type} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={connection_secret_arn}",
+        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        "--platform-os linux "
+        "--platform-arch arm64",
         shell=True,
     )
 
