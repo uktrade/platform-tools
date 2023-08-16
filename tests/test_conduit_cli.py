@@ -22,16 +22,6 @@ from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
 
-# from moto import mock_secretsmanager
-# from moto import mock_sts
-# from moto.ec2 import utils as ec2_utils
-
-
-# get_cluster_arn(app: str, env: str) -> str
-# tests:
-#   - test getting a cluster that exists
-#   - test getting a cluster that does not exist
-
 
 @mock_resourcegroupstaggingapi
 def test_get_cluster_arn(mocked_cluster):
@@ -48,24 +38,6 @@ def test_get_cluster_arn_when_there_is_no_cluster():
 
     with pytest.raises(NoClusterConduitError):
         get_cluster_arn("test-application", "nope")
-
-
-# get_connection_secret_arn(app: str, env: str, name: str) -> str
-#   try boto3.client("secretsmanager").describe_secret(SecretId=secret_name)['ARN']
-#   try boto3.client("ssm").get_parameter(Name=secret_name, WithDecryption=False)['Parameter']['ARN']
-#   raise some type of error
-#
-# tests:
-#   - test getting an existing secrets manager secret
-#   - test getting an existing parameter secret
-#   - test when neither parameter store or secrets manager has a value raises an error
-
-# def test_get_secret_arn(mocked_pg_secret):
-#     """Test that, given app, environment, and name strings, get_postgres_secret
-#     returns the app's default named Postgres credentials from Secrets Manager."""
-#     arn = get_secret_arn("dbt-app", "staging", "POSTGRES")
-#
-#     assert arn == mocked_pg_secret['ARN']
 
 
 @mock_secretsmanager
@@ -111,19 +83,6 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
     in secrets manager or parameter store."""
     with pytest.raises(NoConnectionSecretError):
         get_connection_secret_arn("test-application", "development", "POSTGRES")
-
-
-# create_addon_client_task(app:str, env: str, addon_type: str, addon_name: str = None)
-#   secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
-#
-#   subprocess.call(f"copilot task run --app {app} --env {env} --name conduit-{addon_type} "
-#                   f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-#                   f"--secrets CONNECTION_SECRET={secret_arn}", shell=True)
-#
-# tests:
-#   - test subprocess.call is executed with addon_type for secret
-#   - test subprocess.call is executed with addon_name for secret
-#   - test subprocess.call is not executed when no connection secret is found
 
 
 @patch("subprocess.call")
@@ -172,14 +131,6 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
         subprocess_call.assert_not_called()
 
 
-# addon_client_is_running(app:str, env: str, cluster_arn: str, addon_type: str) -> bool
-#
-# tests:
-#   - test list_tasks is called with the correct family based on addon_type
-#   - test returns true when there is a running managed agent
-#   - test returns false when no running managed agents
-
-
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
@@ -206,15 +157,6 @@ def test_addon_client_is_running_when_no_client_agent_running(mock_cluster_clien
 
     with patch("commands.conduit_cli.boto3.client", return_value=mocked_cluster_for_client):
         assert addon_client_is_running(mocked_cluster_arn, addon_type) is False
-
-
-# connect_to_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str)
-#   wait until the client task is started and managed agent running
-#   subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
-#
-# tests:
-#   - test subprocess.call executed when addon_client_is_running == True
-#   - test subprocess.call not executed when addon_client_is_running == False and exception raised
 
 
 @pytest.mark.parametrize(

@@ -19,25 +19,6 @@ class NoConnectionSecretError(ConduitError):
 
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 
-# 1st iteration: copilot-helper conduit [addon_type] --app [application name] --env [env name] --name <addon_name>
-# 2nd iteration: copilot-helper conduit [addon_name] --app [application name] --env [env name]
-# 3rd iteration: addont_type image aliases - When looking at aurora-postgres etc, change to
-#                postgres as that image will allow connection
-# 4th iteration: allow port tunnelling so local developer clients can access addon services with --tunnel flag
-#                https://aws.amazon.com/blogs/aws/new-port-forwarding-using-aws-system-manager-sessions-manager/
-
-# Single task per addon type - must check if existing clients running before docker container quits.
-
-# app - the application name - potentially get from local directory.
-# env - the application environment - always required, user confirms by this.
-# addon_type - the type of conduit to start - redis, postgres, opensearch
-# addon_name - optional - only if the name of the addon is not the same as addon type
-
-# get_cluster_arn(app: str, env: str) -> str
-# tests:
-#   - test getting a cluster that exists
-#   - test getting a cluster that does not exist
-
 
 def get_cluster_arn(app: str, env: str) -> str:
     ecs_client = boto3.client("ecs")
@@ -65,17 +46,6 @@ def get_cluster_arn(app: str, env: str) -> str:
     raise NoClusterConduitError
 
 
-# get_connection_secret_arn(app: str, env: str, name: str) -> str
-#   try boto3.client("secretsmanager").describe_secret(SecretId=secret_name)['ARN']
-#   try boto3.client("ssm").get_parameter(Name=secret_name, WithDecryption=False)['Parameter']['ARN']
-#   raise some type of error
-#
-# tests:
-#   - test getting an existing secrets manager secret
-#   - test getting an existing parameter secret
-#   - test when neither parameter store or secrets manager has a value raises an error
-
-
 def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     connection_secret_id = f"/copilot/{app}/{env}/secrets/{name}"
 
@@ -95,19 +65,6 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     raise NoConnectionSecretError
 
 
-# create_addon_client_task(app:str, env: str, addon_type: str, addon_name: str = None)
-#   secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
-#
-#   subprocess.call(f"copilot task run --app {app} --env {env} --name conduit-{addon_type} "
-#                   f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-#                   f"--secrets CONNECTION_SECRET={secret_arn}", shell=True)
-#
-# tests:
-#   - test subprocess.call is executed with addon_type for secret
-#   - test subprocess.call is executed with addon_name for secret
-#   - test subprocess.call is not executed when no connection secret is found
-
-
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str = None):
     connection_secret_arn = get_connection_secret_arn(app, env, (addon_name or addon_type).upper())
 
@@ -117,14 +74,6 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
         f"--secrets CONNECTION_SECRET={connection_secret_arn}",
         shell=True,
     )
-
-
-# addon_client_is_running(app:str, env: str, cluster_arn: str, addon_type: str) -> bool
-#
-# tests:
-#   - test list_tasks is called with the correct family based on addon_type
-#   - test returns false when no running managed agents
-#   - test returns true when there is a running managed agent
 
 
 def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
