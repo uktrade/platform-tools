@@ -309,7 +309,11 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.option("--env", help="AWS environment name", required=True)
 @click.option("--addon-name", help="Name of custom Postgres addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
-    start_conduit(app, env, addon_type, addon_name)
+    try:
+        start_conduit(app, env, addon_type, addon_name)
+    except NoClusterConduitError:
+        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
 
 
 # @conduit.command()

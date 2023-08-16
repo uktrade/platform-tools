@@ -386,8 +386,27 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_conduit_command_when_no_cluster_exists(addon_type):
-    pass
+@patch("click.secho")
+@patch("commands.conduit_cli.start_conduit", side_effect=NoClusterConduitError)
+def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type):
+    """Test that given an addon type, app and env strings, when there is no ECS
+    Cluster available, the conduit command handles the NoClusterConduitError
+    exception."""
+    result = CliRunner().invoke(
+        conduit,
+        [
+            addon_type,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ],
+    )
+
+    assert result.exit_code == 1
+    secho.assert_called_once_with(
+        """No ECS cluster found for "test-application" in "development" environment.""", fg="red"
+    )
 
 
 @pytest.mark.parametrize(
