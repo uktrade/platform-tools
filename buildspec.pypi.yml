@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  shell: bash
+  secrets-manager:
+    PYPI_TOKEN: "pypi:token"
+
+phases:
+  install:
+    commands:
+      - echo Setting local Python versions
+      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
+      - echo Installing dependencies
+      - pip install poetry
+      - poetry install
+
+  build:
+    commands:
+      - echo Running check-cloudformation
+      - poetry run ./copilot_helper.py check-cloudformation
+      - echo Running tests
+      - poetry run tox
+      - echo Building python package
+      - poetry build
+      - echo Publishing python package
+      - poetry config pypi-token.pypi ${PYPI_TOKEN}
+      - poetry publish
+      - echo Checking the package has reached PyPI
+      - python utils/check_pypi.py
