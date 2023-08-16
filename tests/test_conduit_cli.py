@@ -206,16 +206,6 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     subprocess_call.assert_not_called()
 
 
-# commands: postgres, redis, opensearch
-# tests:
-#   happy path --addon-name not specified
-#   - test that get_cluster_arn is called
-#   - test that create_addon_client_task is called without an addon_name
-#   - test that get_connection_secret is called with addon_type
-#   - test that addon_client_is_running is called with addon_type
-#   - test that connect_to_addon_client_task is called with addon_type
-
-
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
@@ -231,14 +221,6 @@ def test_start_conduit(connect_to_addon_client_task, create_addon_client_task, g
     get_cluster_arn.assert_called_once_with("test-application", "development")
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
-
-
-#   happy path --addon-name specified
-#   - test that get_cluster_arn is called
-#   - test that create_addon_client_task is called with an addon_name
-#   - test that get_connection_secret is called with addon_name
-#   - test that addon_client_is_running is called with addon_type
-#   - test that connect_to_addon_client_task is called with addon_type
 
 
 @pytest.mark.parametrize(
@@ -260,12 +242,6 @@ def test_start_conduit_with_custom_addon_name(
         "test-application", "development", addon_type, "custom-addon-name"
     )
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
-
-
-#  sad path no cluster exists
-#   - test that get_cluster_arn is called
-#   - test that "no cluster for app or env exists" is logged
-#   - test that command exits with non-zero code
 
 
 @pytest.mark.parametrize(
@@ -292,12 +268,6 @@ def test_start_conduit_when_no_cluster_present(
     connect_to_addon_client_task.assert_not_called()
 
 
-#  sad path no secret exists --addon-name not specified
-#   - test that get_connection_secret_arn is called with addon_type
-#   - test that "no connection string for addon exists" is logged
-#   - test that command exits with non-zero code
-
-
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
@@ -317,12 +287,6 @@ def test_start_conduit_when_no_secret_exists(
     get_cluster_arn.assert_called_once_with("test-application", "development")
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
     connect_to_addon_client_task.assert_not_called()
-
-
-#  sad path no secret exists --addon-name specified
-#   - test that get_connection_secret_arn is called with addon_name
-#   - test that "no connection string for addon exists" is logged
-#   - test that command exits with non-zero code
 
 
 @pytest.mark.parametrize(
@@ -346,12 +310,6 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
         "test-application", "development", addon_type, "custom-addon-name"
     )
     connect_to_addon_client_task.assert_not_called()
-
-
-#  sad path task fails to start
-#   - test that addon_client_is_running is called x times
-#   - test that "addon client failed to start, check logs" is logged (should we print logs?)
-#   - test that command exits with non-zero code
 
 
 @pytest.mark.parametrize(
