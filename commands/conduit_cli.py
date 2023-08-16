@@ -87,6 +87,9 @@ def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
         family=f"copilot-conduit-{addon_type}",
     )
 
+    if not tasks["taskArns"]:
+        return False
+
     described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
 
     # The ExecuteCommandAgent often takes longer to start running than the task and without the

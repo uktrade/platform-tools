@@ -79,7 +79,7 @@ def mocked_cluster():
 
 @pytest.fixture(scope="function")
 def mock_cluster_client_task(mocked_cluster):
-    def _setup(addon_type, agent_last_status="RUNNING"):
+    def _setup(addon_type, agent_last_status="RUNNING", task_running=True):
         with mock_ec2():
             mocked_ecs_client = boto3.client("ecs")
             mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
@@ -111,16 +111,20 @@ def mock_cluster_client_task(mocked_cluster):
                 ],
             )["taskDefinition"]["taskDefinitionArn"]
 
-            mocked_ecs_client.run_task(
-                cluster=mocked_cluster_arn,
-                taskDefinition=mocked_task_definition_arn,
-                enableExecuteCommand=True,
-            )
+            if task_running:
+                mocked_ecs_client.run_task(
+                    cluster=mocked_cluster_arn,
+                    taskDefinition=mocked_task_definition_arn,
+                    enableExecuteCommand=True,
+                )
 
             def describe_tasks(cluster, tasks):
                 """Moto does not yet provide the ability to mock an executable
                 task and its managed agents / containers, so we need to patch
                 the expected response."""
+                if not task_running:
+                    raise Exception
+
                 return {
                     "tasks": [
                         {
