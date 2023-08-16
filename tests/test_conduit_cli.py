@@ -184,6 +184,8 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     ["postgres", "redis", "opensearch"],
 )
 def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon_type):
+    """Test that, given cluster ARN, addon type and with a running agent,
+    addon_client_is_running returns True."""
     mocked_cluster_for_client = mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
@@ -191,8 +193,18 @@ def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon
         assert addon_client_is_running(mocked_cluster_arn, addon_type)
 
 
-def test_addon_client_is_running_when_no_client_running():
-    pass
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+def test_addon_client_is_running_when_no_client_agent_running(mock_cluster_client_task, mocked_cluster, addon_type):
+    """Test that, given cluster ARN, addon type and without a running agent,
+    addon_client_is_running returns False."""
+    mocked_cluster_for_client = mock_cluster_client_task(addon_type, "ACTIVATING")
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    with patch("commands.conduit_cli.boto3.client", return_value=mocked_cluster_for_client):
+        assert addon_client_is_running(mocked_cluster_arn, addon_type) is False
 
 
 # connect_to_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str)

@@ -79,7 +79,7 @@ def mocked_cluster():
 
 @pytest.fixture(scope="function")
 def mock_cluster_client_task(mocked_cluster):
-    def _setup(addon_type):
+    def _setup(addon_type, agent_last_status="RUNNING"):
         with mock_ec2():
             mocked_ecs_client = boto3.client("ecs")
             mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
@@ -130,7 +130,7 @@ def mock_cluster_client_task(mocked_cluster):
                                     "managedAgents": [
                                         {
                                             "name": "ExecuteCommandAgent",
-                                            "lastStatus": "RUNNING",
+                                            "lastStatus": agent_last_status,
                                         }
                                     ],
                                 }

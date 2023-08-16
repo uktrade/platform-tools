@@ -143,6 +143,8 @@ def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
                 if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
                     return True
 
+    return False
+
 
 # connect_to_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str)
 #   wait until the client task is started and managed agent running
