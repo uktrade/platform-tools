@@ -307,7 +307,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.argument("addon_type")
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--addon-name", help="Name of custom Postgres addon", required=False)
+@click.option("--addon-name", help="Name of custom addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
     try:
         start_conduit(app, env, addon_type, addon_name)

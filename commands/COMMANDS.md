@@ -388,7 +388,7 @@ Usage: copilot-helper conduit [OPTIONS] ADDON_TYPE
 - `--env <text>`
   - AWS environment name
 - `--addon-name <text>`
-  - Name of custom Postgres addon
+  - Name of custom addon
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
