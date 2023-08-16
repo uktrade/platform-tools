@@ -16,6 +16,7 @@ from moto import mock_ssm
 # from commands.conduit_cli import tunnel
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import NoConnectionSecretError
+from commands.conduit_cli import addon_client_is_running
 from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
@@ -178,8 +179,16 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
 #   - test returns false when no running managed agents
 
 
-def test_addon_client_is_running():
-    pass
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon_type):
+    mocked_cluster_for_client = mock_cluster_client_task(addon_type)
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    with patch("commands.conduit_cli.boto3.client", return_value=mocked_cluster_for_client):
+        assert addon_client_is_running(mocked_cluster_arn, addon_type)
 
 
 def test_addon_client_is_running_when_no_client_running():
@@ -195,7 +204,7 @@ def test_addon_client_is_running_when_no_client_running():
 #   - test subprocess.call not executed when addon_client_is_running == False and exception raised
 
 
-def test_connect_to_addon_client_task():
+def test_connect_to_addon_client_task(mock_cluster_client_task):
     pass
 
 

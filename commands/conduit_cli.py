@@ -125,6 +125,25 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
 #   - test returns false when no running managed agents
 #   - test returns true when there is a running managed agent
 
+
+def addon_client_is_running(cluster_arn: str, addon_type: str) -> bool:
+    tasks = boto3.client("ecs").list_tasks(
+        cluster=cluster_arn,
+        desiredStatus="RUNNING",
+        family=f"copilot-conduit-{addon_type}",
+    )
+
+    described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
+
+    # The ExecuteCommandAgent often takes longer to start running than the task and without the
+    # agent it's not possible to exec into a task.
+    for task in described_tasks["tasks"]:
+        for container in task["containers"]:
+            for agent in container["managedAgents"]:
+                if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
+                    return True
+
+
 # connect_to_addon_client_task(app:str, env: str, cluster_arn: str, addon_type: str)
 #   wait until the client task is started and managed agent running
 #   subprocess.call(f"copilot task exec --app {app} --env {env} --name conduit-{addon_type}", shell=True)
