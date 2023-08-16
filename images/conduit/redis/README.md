@@ -1,0 +1,32 @@
+# Redis Conduit
+
+## Publishing Manually
+
+Requires:
+
+- [`docker`](https://www.docker.com)
+- [`aws` CLI](https://aws.amazon.com/cli/)
+
+From this image directory:
+
+1. `docker build -t public.ecr.aws/uktrade/tunnel:redis .`
+2. `docker tag public.ecr.aws/uktrade/tunnel:redis public.ecr.aws/uktrade/tunnel:redis-$(git rev-parse --short HEAD) .`
+3. `aws sso login`
+4. `aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
+5. `docker push public.ecr.aws/uktrade/tunnel:redis`
+6. `docker push public.ecr.aws/uktrade/tunnel:redis-$(git rev-parse --short HEAD)`
+
+## Testing Locally
+
+Requires:
+
+- [`docker`](https://www.docker.com)
+- [`docker-compose`](https://docs.docker.com/compose/)
+
+Steps:
+
+1. `docker-compose up` to bring up the client and database
+2. `docker-compose exec client bash` to connect to the database
+3. You will now be in a `redis-cli` session, run `CONFIG GET databases` to check available databases
+4. Enter `ctrl+d` or `QUIT` to exit.
+5. Note that the client container has now exited in `docker-compose` logs
