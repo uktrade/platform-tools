@@ -10,15 +10,19 @@ PYPI_RELEASES_URL = "https://pypi.org/rss/project/dbt-copilot-tools/releases.xml
 def opts():
     parser = argparse.ArgumentParser(description="Tool to check PyPI for the presence of the copilot-tools package")
     parser.add_argument("--retry-interval", help="Delay before retrying", type=int, default=6)
-    parser.add_argument("--max-retries", help="Maximum number of retries", type=int, default=20)
+    parser.add_argument("--max-attempts", help="Maximum number of attempts", type=int, default=1)
+    parser.add_argument("--version", help="Display the project version", action="store_true")
     return parser.parse_args()
 
 
 def main():
     options = opts()
     version = get_current_version()
-    for i in range(options.max_retries):
-        print(f"Attempt {i + 1} of {options.max_retries}: ", end="")
+    print("Version:", version)
+    if options.version:
+        exit(0)
+    for i in range(options.max_attempts):
+        print(f"Attempt {i + 1} of {options.max_attempts}: ", end="")
         if version in get_releases():
             print(f"Version {version} has been found in PyPI.")
             exit(0)
@@ -41,7 +45,6 @@ def get_current_version():
     with open("pyproject.toml", "rb") as fh:
         pyproject = tomllib.load(fh)
         version = pyproject["tool"]["poetry"]["version"]
-        print("Version:", version)
         return version
 
 

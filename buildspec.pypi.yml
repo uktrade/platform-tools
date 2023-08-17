@@ -20,10 +20,17 @@ phases:
       - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
-      - echo Building python package
-      - poetry build
-      - echo Publishing python package
-      - poetry config pypi-token.pypi ${PYPI_TOKEN}
-      - poetry publish
-      - echo Checking the package has reached PyPI
-      - python utils/check_pypi.py --max-retries 20 --retry-interval 6
+      - |
+        if ! python utils/check_pypi.py
+        then
+          echo Building python package
+          poetry build
+          VERSION=$(python utils/check_pypi.py --version)
+          echo Publishing python package ${VERSION}
+          poetry config pypi-token.pypi ${PYPI_TOKEN}
+          poetry publish
+          echo Checking the package has reached PyPI
+          python utils/check_pypi.py --max-attempts 20
+        else
+          echo ${VERSION} of the package has already been published
+        fi
