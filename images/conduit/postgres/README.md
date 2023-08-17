@@ -30,4 +30,4 @@ Steps:
 2. `docker-compose exec client bash` to connect to the database
 3. You will now be in a `psql` session, run `\list` to check available schemas
 4. Enter `ctrl+d` or `\q` to exit.
-5. Note that the client container has now exited in `docker-compose` logs
+5. Note that the client container will now show a shutdown countdown in `docker-compose` logs every 60 seconds.
