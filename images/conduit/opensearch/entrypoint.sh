@@ -7,9 +7,9 @@ echo $CONNECTION_SECRET | gawk '{
   match($0, /^https:\/\/([A-Za-z0-9_]+):([^@]+)@(.+)$/, arr);
   print "profiles:"
   print "    - name: connection"
-  print "      endpoint: https://"arr[3]
-  print "      user: "arr[1]
-  print "      password: "arr[2]
+  print "      endpoint: \"https://"arr[3]"\""
+  print "      user: \""arr[1]"\""
+  print "      password: \""arr[2]"\""
 }' > /root/.opensearch-cli/config.yaml
 
 chmod 600 /root/.opensearch-cli/config.yaml
