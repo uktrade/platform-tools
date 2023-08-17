@@ -1,10 +1,12 @@
 import argparse
+import json
 import time
 import tomllib
-import xml.etree.ElementTree as ET
 from urllib.request import urlopen
 
-PYPI_RELEASES_URL = "https://pypi.org/rss/project/dbt-copilot-tools/releases.xml"
+PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-copilot-tools/json"
+OK = 0
+FAIL = 1
 
 
 def opts():
@@ -15,38 +17,36 @@ def opts():
     return parser.parse_args()
 
 
-def main():
-    options = opts()
-    version = get_current_version()
+def check_for_version_in_pypi_releases(options, version, get_releases_fn):
     print("Version:", version)
     if options.version:
-        exit(0)
+        return OK
     for i in range(options.max_attempts):
         print(f"Attempt {i + 1} of {options.max_attempts}: ", end="")
-        if version in get_releases():
+        releases = get_releases_fn()
+        if version in releases:
             print(f"Version {version} has been found in PyPI.")
-            exit(0)
-        print(f"Package not yet found in PyPI. Retrying in {options.retry_interval}s.")
+            return OK
+        if i + 1 < options.max_attempts:
+            print(f"Package not yet found in PyPI. Retrying in {options.retry_interval}s.")
         time.sleep(options.retry_interval)
 
     print(f"Version {version} could not be found in PyPI.")
-    exit(1)
+    return FAIL
 
 
 def get_releases():
     pypi_releases = urlopen(PYPI_RELEASES_URL)
-    rss_feed = ET.fromstring(pypi_releases.read())
-    channel = rss_feed.find("channel")
-    items = channel.findall("item")
-    return [item.find("title").text for item in items]
+    data = json.loads(pypi_releases.read())
+    return data["releases"].keys()
 
 
-def get_current_version():
-    with open("pyproject.toml", "rb") as fh:
+def get_current_version(project_file):
+    with open(project_file, "rb") as fh:
         pyproject = tomllib.load(fh)
         version = pyproject["tool"]["poetry"]["version"]
         return version
 
 
 if __name__ == "__main__":
-    main()
+    exit(check_for_version_in_pypi_releases(opts(), get_current_version("pyproject.toml"), get_releases))
