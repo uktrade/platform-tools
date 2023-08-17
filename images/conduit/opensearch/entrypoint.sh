@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
 
 ## SETUP Connection Profile
-mkdir -p /usr/share/opensearch/.opensearch-cli/
+mkdir -p /root/.opensearch-cli/
 
-echo $CONNECTION_SECRET | awk '{
+echo $CONNECTION_SECRET | gawk '{
   match($0, /^https:\/\/([A-Za-z0-9_]+):([^@]+)@(.+)$/, arr);
   print "profiles:"
   print "    - name: connection"
   print "      endpoint: https://"arr[3]
   print "      user: "arr[1]
   print "      password: "arr[2]
-}' > /usr/share/opensearch/.opensearch-cli/config.yaml
+}' > /root/.opensearch-cli/config.yaml
 
-chown opensearch:opensearch /usr/share/opensearch/.opensearch-cli/config.yaml
-
-chmod 600 /usr/share/opensearch/.opensearch-cli/config.yaml
-
+chmod 600 /root/.opensearch-cli/config.yaml
 
 ## RUN check for connected clients
 TASKS_RUNNING=0

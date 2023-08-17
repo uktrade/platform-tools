@@ -19,7 +19,7 @@ function os_run_next_command() {
   echo -n "opensearch => "
   read
   echo "Running opensearch-cli $REPLY"
-  /usr/share/opensearch/opensearch-cli $REPLY --profile connection
+  /root/opensearch-cli $REPLY --profile connection
 }
 
 os_entry
