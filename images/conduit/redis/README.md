@@ -12,7 +12,7 @@ From this image directory:
 1. `aws sso login`
 2. `aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
 3. `docker build -t public.ecr.aws/uktrade/tunnel:redis .`
-4. `docker tag public.ecr.aws/uktrade/tunnel:redis public.ecr.aws/uktrade/tunnel:redis-$(git rev-parse --short HEAD) .`
+4. `docker tag public.ecr.aws/uktrade/tunnel:redis public.ecr.aws/uktrade/tunnel:redis-$(git rev-parse --short HEAD)`
 5. `docker push public.ecr.aws/uktrade/tunnel:redis`
 6. `docker push public.ecr.aws/uktrade/tunnel:redis-$(git rev-parse --short HEAD)`
 7. `docker logout public.ecr.aws/uktrade`
