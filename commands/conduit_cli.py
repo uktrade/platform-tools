@@ -151,26 +151,3 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
             f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""", fg="red"
         )
         exit(1)
-
-
-# @conduit.command()
-# @click.option("--project-profile", required=True, help="AWS account profile name")
-# @click.option("--app", help="AWS application name", required=True)
-# @click.option("--env", help="AWS environment name", required=True)
-# @click.option("--db-secret-name", help="Database credentials secret name", required=True, default="POSTGRES")
-# def tunnel(project_profile: str, app: str, env: str, db_secret_name: str) -> None:
-#     check_aws_conn(project_profile)
-#
-#     cluster_arn = get_cluster_arn(app, env)
-#     if not cluster_arn:
-#         click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
-#         exit()
-#
-#     if not is_task_running(cluster_arn):
-#         try:
-#             create_task(app, env, db_secret_name)
-#         except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
-#             click.secho(f"No secret found matching application {app} and environment {env}.")
-#             exit()
-#
-#     exec_into_task(app, env, cluster_arn)
