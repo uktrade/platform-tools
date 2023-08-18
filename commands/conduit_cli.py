@@ -306,7 +306,8 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_typ
 
 def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     cluster_arn = get_cluster_arn(app, env)
-    create_addon_client_task(app, env, addon_type, addon_name)
+    if not addon_client_is_running(cluster_arn, addon_type):
+        create_addon_client_task(app, env, addon_type, addon_name)
     connect_to_addon_client_task(app, env, cluster_arn, addon_type)
 
 

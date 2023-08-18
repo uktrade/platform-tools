@@ -232,14 +232,18 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
-def test_start_conduit(connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type):
+def test_start_conduit(
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+):
     """Test that given app, env and addon type strings, start_conduit calls
-    get_cluster_arn, created_addon_client_task and
+    get_cluster_arn, addon_client_is_running, created_addon_client_task and
     connect_to_addon_client_task."""
     start_conduit("test-application", "development", addon_type, None)
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
 
@@ -249,16 +253,18 @@ def test_start_conduit(connect_to_addon_client_task, create_addon_client_task, g
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_with_custom_addon_name(
-    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
     """Test that given app, env, addon type and addon name strings,
-    start_conduit calls get_cluster_arn, created_addon_client_task and
-    connect_to_addon_client_task."""
+    start_conduit calls get_cluster_arn, addon_client_is_running,
+    created_addon_client_task and connect_to_addon_client_task."""
     start_conduit("test-application", "development", addon_type, "custom-addon-name")
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with(
         "test-application", "development", addon_type, "custom-addon-name"
     )
@@ -270,21 +276,23 @@ def test_start_conduit_with_custom_addon_name(
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", side_effect=NoClusterConduitError)
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_cluster_present(
-    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
     """
     Test that given app, env, addon type and no available ecs cluster,
     start_conduit calls get_cluster_arn and the NoClusterConduitError is raised.
 
-    Neither created_addon_client_task or connect_to_addon_client_task are
-    called.
+    Neither created_addon_client_task, addon_client_is_running or
+    connect_to_addon_client_task are called.
     """
     with pytest.raises(NoClusterConduitError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_not_called()
     create_addon_client_task.assert_not_called()
     connect_to_addon_client_task.assert_not_called()
 
@@ -294,18 +302,20 @@ def test_start_conduit_when_no_cluster_present(
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task", side_effect=NoConnectionSecretError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_secret_exists(
-    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
     """Test that given app, env, addon type and no available secret,
-    start_conduit calls get_cluster_arn, then create_addon_client_task and the
-    NoConnectionSecretError is raised and connect_to_addon_client_task is not
-    called."""
+    start_conduit calls get_cluster_arn, then addon_client_is_running and
+    create_addon_client_task and the NoConnectionSecretError is raised and
+    connect_to_addon_client_task is not called."""
     with pytest.raises(NoConnectionSecretError):
         start_conduit("test-application", "development", addon_type)
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
     connect_to_addon_client_task.assert_not_called()
 
@@ -315,18 +325,21 @@ def test_start_conduit_when_no_secret_exists(
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task", side_effect=NoConnectionSecretError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_custom_addon_secret_exists(
-    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
     """Test that given app, env, addon type, addon name and no available custom
     addon secret, start_conduit calls get_cluster_arn, then
-    create_addon_client_task and the NoConnectionSecretError is raised and
-    connect_to_addon_client_task is not called."""
+    addon_client_is_running, create_addon_client_task and the
+    NoConnectionSecretError is raised and connect_to_addon_client_task is not
+    called."""
     with pytest.raises(NoConnectionSecretError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with(
         "test-application", "development", addon_type, "custom-addon-name"
     )
@@ -338,19 +351,44 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     ["postgres", "redis", "opensearch"],
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task", side_effect=TaskConnectionTimeoutError)
 def test_start_conduit_when_addon_client_task_fails_to_start(
-    connect_to_addon_client_task, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
     """Test that given app, env, and addon type strings when the client task
     fails to start, start_conduit calls get_cluster_arn,
-    create_addon_client_task and connect_to_addon_client_task then the
-    NoConnectionSecretError is raised."""
+    addon_client_is_running, create_addon_client_task and
+    connect_to_addon_client_task then the NoConnectionSecretError is raised."""
     with pytest.raises(TaskConnectionTimeoutError):
         start_conduit("test-application", "development", addon_type)
     get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
+@patch("commands.conduit_cli.create_addon_client_task")
+@patch("commands.conduit_cli.addon_client_is_running", return_value=True)
+@patch("commands.conduit_cli.connect_to_addon_client_task")
+def test_start_conduit_when_addon_client_task_is_already_running(
+    connect_to_addon_client_task, addon_client_is_running, create_addon_client_task, get_cluster_arn, addon_type
+):
+    """Test that given app, env, and addon type strings when the client task is
+    already running, start_conduit calls get_cluster_arn,
+    addon_client_is_running and connect_to_addon_client_task then the
+    create_addon_client_task is not called."""
+    start_conduit("test-application", "development", addon_type)
+
+    get_cluster_arn.assert_called_once_with("test-application", "development")
+    addon_client_is_running.assert_called_once_with("test-arn", addon_type)
+    create_addon_client_task.assert_not_called()
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
 
 
