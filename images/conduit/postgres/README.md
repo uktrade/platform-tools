@@ -1,6 +1,6 @@
 # Postgres Conduit
 
-## Publishing Manually
+## Publishing manually
 
 Requires:
 
@@ -17,7 +17,7 @@ From this image directory:
 6. `docker push public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
 7. `docker logout public.ecr.aws/uktrade`
 
-## Testing Locally
+## Testing locally
 
 Requires:
 
