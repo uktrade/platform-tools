@@ -95,7 +95,7 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
     """Test that, given app and environment strings, create_addon_client_task
     calls get_connection_secret_arn with the default secret name and
     subsequently subprocess.call with the correct secret ARN."""
-    create_addon_client_task("test-application", "development", "postgres")
+    create_addon_client_task("test-application", "development", "postgres", "postgres")
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "POSTGRES")
     subprocess_call.assert_called_once_with(
@@ -118,7 +118,7 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 
     get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED-POSTGRES")
     subprocess_call.assert_called_once_with(
-        "copilot task run --app test-application --env development --task-group-name conduit-postgres "
+        "copilot task run --app test-application --env development --task-group-name conduit-named-postgres "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
         "--secrets CONNECTION_SECRET=test-named-arn "
         "--platform-os linux "
@@ -242,9 +242,10 @@ def test_start_conduit(
     get_cluster_arn, addon_client_is_running, created_addon_client_task and
     connect_to_addon_client_task."""
     start_conduit("test-application", "development", addon_type, None)
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
 
 
@@ -263,12 +264,15 @@ def test_start_conduit_with_custom_addon_name(
     start_conduit calls get_cluster_arn, addon_client_is_running,
     created_addon_client_task and connect_to_addon_client_task."""
     start_conduit("test-application", "development", addon_type, "custom-addon-name")
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
-    addon_client_is_running.assert_called_with("test-arn", addon_type)
+    addon_client_is_running.assert_called_with("test-arn", "custom-addon-name")
     create_addon_client_task.assert_called_once_with(
         "test-application", "development", addon_type, "custom-addon-name"
     )
-    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+    connect_to_addon_client_task.assert_called_once_with(
+        "test-application", "development", "test-arn", "custom-addon-name"
+    )
 
 
 @pytest.mark.parametrize(
@@ -291,6 +295,7 @@ def test_start_conduit_when_no_cluster_present(
     """
     with pytest.raises(NoClusterConduitError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_not_called()
     create_addon_client_task.assert_not_called()
@@ -314,9 +319,10 @@ def test_start_conduit_when_no_secret_exists(
     connect_to_addon_client_task is not called."""
     with pytest.raises(NoConnectionSecretError):
         start_conduit("test-application", "development", addon_type)
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
     connect_to_addon_client_task.assert_not_called()
 
 
@@ -338,8 +344,9 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     called."""
     with pytest.raises(NoConnectionSecretError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
-    addon_client_is_running.assert_called_with("test-arn", addon_type)
+    addon_client_is_running.assert_called_with("test-arn", "custom-addon-name")
     create_addon_client_task.assert_called_once_with(
         "test-application", "development", addon_type, "custom-addon-name"
     )
@@ -363,9 +370,10 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     connect_to_addon_client_task then the NoConnectionSecretError is raised."""
     with pytest.raises(TaskConnectionTimeoutError):
         start_conduit("test-application", "development", addon_type)
+
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, None)
+    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
 
 
