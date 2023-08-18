@@ -9,6 +9,7 @@ from moto import mock_secretsmanager
 from moto import mock_ssm
 
 from commands.conduit_cli import CreateTaskTimeoutConduitError
+from commands.conduit_cli import InvalidAddonTypeConduitError
 from commands.conduit_cli import NoClusterConduitError
 from commands.conduit_cli import SecretNotFoundConduitError
 from commands.conduit_cli import addon_client_is_running
@@ -240,6 +241,31 @@ def test_start_conduit(
     addon_client_is_running.assert_called_with("test-arn", addon_type)
     create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
     connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+
+
+@patch(
+    "commands.conduit_cli.get_cluster_arn",
+)
+@patch("commands.conduit_cli.addon_client_is_running")
+@patch("commands.conduit_cli.create_addon_client_task")
+@patch("commands.conduit_cli.connect_to_addon_client_task")
+def test_start_conduit_when_addon_type_is_invalid(
+    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn
+):
+    """
+    Test that given app, env and invalid addon type, start_conduit raises an
+    InvalidAddonTypeConduitError.
+
+    Neither get_cluster_arn, created_addon_client_task, addon_client_is_running
+    or connect_to_addon_client_task are called.
+    """
+    with pytest.raises(InvalidAddonTypeConduitError):
+        start_conduit("test-application", "development", "nope")
+
+    get_cluster_arn.assert_not_called()
+    addon_client_is_running.assert_not_called()
+    create_addon_client_task.assert_not_called()
+    connect_to_addon_client_task.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -551,5 +577,28 @@ def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, a
     assert result.exit_code == 1
     secho.assert_called_once_with(
         f"""Client ({addon_type}) ECS task has failed to start for "test-application" in "development" environment.""",
+        fg="red",
+    )
+
+
+@patch("click.secho")
+@patch("commands.conduit_cli.start_conduit", side_effect=InvalidAddonTypeConduitError)
+def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho):
+    """Test that given an invalid addon type, app and env strings, the conduit
+    command handles the InvalidAddonTypeConduitError exception."""
+    result = CliRunner().invoke(
+        conduit,
+        [
+            "nope",
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ],
+    )
+
+    assert result.exit_code == 1
+    secho.assert_called_once_with(
+        f"""Addon type "nope" does not exist, try one of opensearch, postgres, redis.""",
         fg="red",
     )

@@ -9,6 +9,10 @@ class ConduitError(Exception):
     pass
 
 
+class InvalidAddonTypeConduitError(ConduitError):
+    pass
+
+
 class NoClusterConduitError(ConduitError):
     pass
 
@@ -22,6 +26,11 @@ class CreateTaskTimeoutConduitError(ConduitError):
 
 
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
+CONDUIT_ADDON_TYPES = [
+    "opensearch",
+    "postgres",
+    "redis",
+]
 
 
 def get_cluster_arn(app: str, env: str) -> str:
@@ -124,6 +133,9 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
 
 
 def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
+    if addon_type not in CONDUIT_ADDON_TYPES:
+        raise InvalidAddonTypeConduitError(addon_type)
+
     cluster_arn = get_cluster_arn(app, env)
     addon_name = addon_name or addon_type
 
@@ -138,8 +150,14 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.option("--env", help="AWS environment name", required=True)
 @click.option("--addon-name", help="Name of custom addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
+    """Create a conduit connection to a backing service of ADDON_TYPE."""
     try:
         start_conduit(app, env, addon_type, addon_name)
+    except InvalidAddonTypeConduitError:
+        click.secho(
+            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""", fg="red"
+        )
+        exit(1)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)

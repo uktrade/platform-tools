@@ -371,6 +371,8 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
 
 [↩ Parent](#copilot-helper)
 
+    Create a conduit connection to a backing service of ADDON_TYPE.
+
 ## Usage
 
 ```
