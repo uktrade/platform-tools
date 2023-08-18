@@ -150,7 +150,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.option("--env", help="AWS environment name", required=True)
 @click.option("--addon-name", help="Name of custom addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
-    """Create a conduit connection to a backing service of ADDON_TYPE."""
+    """Create a conduit connection to a ADDON_TYPE backing service."""
     try:
         start_conduit(app, env, addon_type, addon_name)
     except InvalidAddonTypeConduitError:
