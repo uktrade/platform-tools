@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   shell: bash
-  secrets-manager:
-    PYPI_TOKEN: "pypi:token"
+  parameter-store:
+    PYPI_TOKEN: "pypi-token"
 
 phases:
   install:
