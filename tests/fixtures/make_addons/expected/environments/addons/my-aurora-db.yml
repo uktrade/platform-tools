@@ -1,0 +1,144 @@
+Parameters:
+  # Copilot required Parameters...
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+  # Parameters from the parent stack brought in via addons.parameters.yml...
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnets:
+    Type: String
+  VpcId:
+    Type: String
+
+  # Other parameters...
+  # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
+  myAuroraDbDBName:
+    Type: String
+    Description: The name of the initial database to be created in the Aurora Serverless v2 cluster.
+    Default: main
+    # Cannot have special characters
+    # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
+
+Mappings:
+  myAuroraDbEnvScalingConfigurationMap:
+  
+    development:
+      DBMinCapacity: 0.5
+      DBMaxCapacity: 8
+      MultiAZ:  false 
+  
+
+Resources:
+  myAuroraDbDBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+  myAuroraDbSecurityGroup:
+    Metadata:
+      'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster myAuroraDb'
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'The Security Group for my-aurora-db to access Aurora Serverless v2 cluster myAuroraDb.'
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-my-aurora-db-Aurora'
+  myAuroraDbDBClusterSecurityGroup:
+    Metadata:
+      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster myAuroraDb'
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
+      SecurityGroupIngress:
+        - ToPort: 5432
+          FromPort: 5432
+          IpProtocol: tcp
+          Description: 'From the Aurora Security Group of the workload my-aurora-db.'
+          SourceSecurityGroupId: !Ref myAuroraDbSecurityGroup
+      VpcId: !Ref VpcId
+  myAuroraDbAuroraSecret:
+    Metadata:
+      'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_AURORA_DB'
+      Description: !Sub Aurora main user secret for ${AWS::StackName}
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "postgres"}'
+        GenerateStringKey: "password"
+        ExcludePunctuation: true
+        IncludeSpace: false
+        PasswordLength: 16
+
+  myAuroraDbDBClusterParameterGroup:
+    Metadata:
+      'aws:copilot:description': 'A DB parameter group for engine configuration values'
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'aurora-postgresql14'
+      Parameters:
+        client_encoding: 'UTF8'
+  myAuroraDbDBCluster:
+    Metadata:
+      'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 database cluster'
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      AutoMinorVersionUpgrade: true
+      MasterUsername:
+        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
+      MasterUserPassword:
+        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
+      DatabaseName: !Ref myAuroraDbDBName
+      Engine: 'aurora-postgresql'
+      EngineVersion: '14.4'
+      DBClusterParameterGroupName: !Ref myAuroraDbDBClusterParameterGroup
+      DBSubnetGroupName: !Ref myAuroraDbDBSubnetGroup
+      Port: 5432
+      VpcSecurityGroupIds:
+        - !Ref myAuroraDbDBClusterSecurityGroup
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+      StorageEncrypted: true
+  myAuroraDbDBWriterInstance:
+    Metadata:
+      'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 writer instance'
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBClusterIdentifier: !Ref myAuroraDbDBCluster
+      DBInstanceClass: db.serverless
+      EnablePerformanceInsights: true
+      Engine: 'aurora-postgresql'
+      MultiAZ: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      PromotionTier: 1
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: AWS::Region
+
+  myAuroraDbSecretAuroraClusterAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref myAuroraDbAuroraSecret
+      TargetId: !Ref myAuroraDbDBCluster
+      TargetType: AWS::RDS::DBCluster
+
+  # Enable ingress from other ECS services created within the environment.
+  myAuroraDbEnvironmentIngress:
+    Metadata:
+      'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress Security Group from Fargate containers
+      GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
