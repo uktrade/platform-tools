@@ -8,9 +8,9 @@ from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
 from moto import mock_ssm
 
+from commands.conduit_cli import CreateTaskTimeoutConduitError
 from commands.conduit_cli import NoClusterConduitError
-from commands.conduit_cli import NoConnectionSecretError
-from commands.conduit_cli import TaskConnectionTimeoutError
+from commands.conduit_cli import SecretNotFoundConduitError
 from commands.conduit_cli import addon_client_is_running
 from commands.conduit_cli import conduit
 from commands.conduit_cli import connect_to_addon_client_task
@@ -78,7 +78,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn raises an exception when no matching secret exists
     in secrets manager or parameter store."""
-    with pytest.raises(NoConnectionSecretError):
+    with pytest.raises(SecretNotFoundConduitError):
         get_connection_secret_arn("test-application", "development", "POSTGRES")
 
 
@@ -121,12 +121,12 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 
 
 @patch("subprocess.call")
-@patch("commands.conduit_cli.get_connection_secret_arn", side_effect=NoConnectionSecretError)
+@patch("commands.conduit_cli.get_connection_secret_arn", side_effect=SecretNotFoundConduitError)
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
-    with pytest.raises(NoConnectionSecretError):
+    with pytest.raises(SecretNotFoundConduitError):
         create_addon_client_task("test-application", "development", "postgres", "named-postgres")
 
         subprocess_call.assert_not_called()
@@ -212,7 +212,7 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     client agent fails to start, connect_to_addon_client_task calls
     addon_client_is_running with cluster ARN and addon type 15 times, but does
     not call subprocess.call."""
-    with pytest.raises(TaskConnectionTimeoutError):
+    with pytest.raises(CreateTaskTimeoutConduitError):
         connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
 
     addon_client_is_running.assert_called_with("test-arn", addon_type)
@@ -301,7 +301,7 @@ def test_start_conduit_when_no_cluster_present(
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
 @patch("commands.conduit_cli.addon_client_is_running", return_value=False)
-@patch("commands.conduit_cli.create_addon_client_task", side_effect=NoConnectionSecretError)
+@patch("commands.conduit_cli.create_addon_client_task", side_effect=SecretNotFoundConduitError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_secret_exists(
     connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
@@ -310,7 +310,7 @@ def test_start_conduit_when_no_secret_exists(
     start_conduit calls get_cluster_arn, then addon_client_is_running and
     create_addon_client_task and the NoConnectionSecretError is raised and
     connect_to_addon_client_task is not called."""
-    with pytest.raises(NoConnectionSecretError):
+    with pytest.raises(SecretNotFoundConduitError):
         start_conduit("test-application", "development", addon_type)
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
@@ -325,7 +325,7 @@ def test_start_conduit_when_no_secret_exists(
 )
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
 @patch("commands.conduit_cli.addon_client_is_running", return_value=False)
-@patch("commands.conduit_cli.create_addon_client_task", side_effect=NoConnectionSecretError)
+@patch("commands.conduit_cli.create_addon_client_task", side_effect=SecretNotFoundConduitError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_custom_addon_secret_exists(
     connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
@@ -335,7 +335,7 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     addon_client_is_running, create_addon_client_task and the
     NoConnectionSecretError is raised and connect_to_addon_client_task is not
     called."""
-    with pytest.raises(NoConnectionSecretError):
+    with pytest.raises(SecretNotFoundConduitError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
@@ -353,7 +353,7 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
 @patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
-@patch("commands.conduit_cli.connect_to_addon_client_task", side_effect=TaskConnectionTimeoutError)
+@patch("commands.conduit_cli.connect_to_addon_client_task", side_effect=CreateTaskTimeoutConduitError)
 def test_start_conduit_when_addon_client_task_fails_to_start(
     connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
 ):
@@ -361,7 +361,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     fails to start, start_conduit calls get_cluster_arn,
     addon_client_is_running, create_addon_client_task and
     connect_to_addon_client_task then the NoConnectionSecretError is raised."""
-    with pytest.raises(TaskConnectionTimeoutError):
+    with pytest.raises(CreateTaskTimeoutConduitError):
         start_conduit("test-application", "development", addon_type)
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
@@ -477,7 +477,7 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
     """Test that given an addon type, app and env strings, when there is no
     connection secret available, the conduit command handles the
     NoConnectionSecretError exception."""
-    start_conduit.side_effect = NoConnectionSecretError(addon_type)
+    start_conduit.side_effect = SecretNotFoundConduitError(addon_type)
 
     result = CliRunner().invoke(
         conduit,
@@ -506,7 +506,7 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_
     """Test that given an addon type, app, env and addon name strings, when
     there is no connection secret available, the conduit command handles the
     NoConnectionSecretError exception with addon name."""
-    start_conduit.side_effect = NoConnectionSecretError(addon_type)
+    start_conduit.side_effect = SecretNotFoundConduitError(addon_type)
 
     result = CliRunner().invoke(
         conduit,
@@ -532,7 +532,7 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
-@patch("commands.conduit_cli.start_conduit", side_effect=TaskConnectionTimeoutError)
+@patch("commands.conduit_cli.start_conduit", side_effect=CreateTaskTimeoutConduitError)
 def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, addon_type):
     """Test that given an addon type, app and env strings, when the ECS client
     task fails to start, the conduit command handles the

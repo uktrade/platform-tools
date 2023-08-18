@@ -13,11 +13,11 @@ class NoClusterConduitError(ConduitError):
     pass
 
 
-class NoConnectionSecretError(ConduitError):
+class SecretNotFoundConduitError(ConduitError):
     pass
 
 
-class TaskConnectionTimeoutError(ConduitError):
+class CreateTaskTimeoutConduitError(ConduitError):
     pass
 
 
@@ -65,7 +65,7 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     except ssm.exceptions.ParameterNotFound:
         pass
 
-    raise NoConnectionSecretError(name)
+    raise SecretNotFoundConduitError(name)
 
 
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str):
@@ -120,7 +120,7 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
         time.sleep(1)
 
     if not running:
-        raise TaskConnectionTimeoutError
+        raise CreateTaskTimeoutConduitError
 
 
 def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
@@ -143,10 +143,10 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
-    except NoConnectionSecretError as err:
+    except SecretNotFoundConduitError as err:
         click.secho(f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
-    except TaskConnectionTimeoutError:
+    except CreateTaskTimeoutConduitError:
         click.secho(
             f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""", fg="red"
         )
