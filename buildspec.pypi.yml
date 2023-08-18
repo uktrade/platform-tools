@@ -10,6 +10,8 @@ phases:
     commands:
       - echo Setting local Python versions
       - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
+      - echo Ensure we are using python 3.11
+      - pyenv local 3.11
       - echo Installing dependencies
       - pip install poetry
       - poetry install
@@ -21,8 +23,6 @@ phases:
       - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
-      - echo Ensure we are using python 3.11
-      - pyenv local 3.11
       - |
         if ! python utils/check_pypi.py
         then
