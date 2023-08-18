@@ -12,6 +12,7 @@ echo $CONNECTION_SECRET | gawk '{
   print "      password: \""arr[2]"\""
 }' > /root/.opensearch-cli/config.yaml
 
+# opensearch-cli requires this specific permission set
 chmod 600 /root/.opensearch-cli/config.yaml
 
 ## RUN check for connected clients
