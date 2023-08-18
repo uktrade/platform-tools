@@ -1,7 +1,6 @@
 import argparse
 import json
 import time
-import tomllib
 from urllib.request import urlopen
 
 PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-copilot-tools/json"
@@ -43,6 +42,8 @@ def get_releases():
 
 def get_current_version(project_file):
     with open(project_file, "rb") as fh:
+        import tomllib
+
         pyproject = tomllib.load(fh)
         version = pyproject["tool"]["poetry"]["version"]
         return version

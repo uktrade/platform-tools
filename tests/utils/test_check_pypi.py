@@ -1,4 +1,4 @@
-from tomllib import TOMLDecodeError
+import sys
 
 import pytest
 
@@ -8,18 +8,24 @@ from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases
 
 FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
+TOML_UNSUPPORTED = "tomllib added in 3.11. We don't anticipate needing to run this pipeline tool in older versions"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason=TOML_UNSUPPORTED)
 def test_get_current_version__success():
     version = get_current_version(FIXTURES_DIR / "pyproject.toml")
     assert version == "0.1.21"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason=TOML_UNSUPPORTED)
 def test_get_current_version__fails_with_malformed_toml():
+    from tomllib import TOMLDecodeError
+
     with pytest.raises(TOMLDecodeError):
         get_current_version(FIXTURES_DIR / "pyproject_malformed.toml")
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason=TOML_UNSUPPORTED)
 def test_get_current_version__fails_with_missing_version():
     with pytest.raises(KeyError):
         get_current_version(FIXTURES_DIR / "pyproject_no_version.toml")

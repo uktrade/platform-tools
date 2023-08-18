@@ -16,10 +16,13 @@ phases:
 
   build:
     commands:
+      - python --version
       - echo Running check-cloudformation
       - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
+      - echo Ensure we are using python 3.11
+      - pyenv local 3.11
       - |
         if ! python utils/check_pypi.py
         then
