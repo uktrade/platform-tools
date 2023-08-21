@@ -1,0 +1,11 @@
+version: '3.8'
+services: 
+  cache:
+    image: redis
+  client:
+    build:
+      context: .
+    environment:
+      - CONNECTION_SECRET=redis://cache:6379
+    links:
+      - cache

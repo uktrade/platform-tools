@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import boto3
@@ -5,10 +6,12 @@ import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
+from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_iam
 from moto import mock_route53
 from moto import mock_secretsmanager
+from moto.ec2 import utils as ec2_utils
 
 BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
@@ -67,11 +70,84 @@ def mocked_cluster():
     with mock_ecs():
         yield boto3.client("ecs").create_cluster(
             tags=[
-                {"key": "copilot-application", "value": "dbt-app"},
-                {"key": "copilot-environment", "value": "staging"},
+                {"key": "copilot-application", "value": "test-application"},
+                {"key": "copilot-environment", "value": "development"},
                 {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
             ]
         )
+
+
+@pytest.fixture(scope="function")
+def mock_cluster_client_task(mocked_cluster):
+    def _setup(addon_type, agent_last_status="RUNNING", task_running=True):
+        with mock_ec2():
+            mocked_ecs_client = boto3.client("ecs")
+            mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+            mocked_ec2_client = boto3.client("ec2")
+            mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
+            mocked_ec2_client.run_instances(
+                ImageId=mocked_ec2_images[0]["ImageId"],
+                MinCount=1,
+                MaxCount=1,
+            )
+            mocked_ec2_instances = boto3.client("ec2").describe_instances()
+            mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
+
+            mocked_ec2 = boto3.resource("ec2")
+            mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
+            mocked_instance_id_document = json.dumps(
+                ec2_utils.generate_instance_identity_document(mocked_ec2_instance),
+            )
+
+            mocked_ecs_client.register_container_instance(
+                cluster=mocked_cluster_arn,
+                instanceIdentityDocument=mocked_instance_id_document,
+            )
+            mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
+                family=f"copilot-conduit-{addon_type}",
+                containerDefinitions=[
+                    {"name": "test_container", "image": "test_image", "cpu": 256, "memory": 512, "essential": True}
+                ],
+            )["taskDefinition"]["taskDefinitionArn"]
+
+            if task_running:
+                mocked_ecs_client.run_task(
+                    cluster=mocked_cluster_arn,
+                    taskDefinition=mocked_task_definition_arn,
+                    enableExecuteCommand=True,
+                )
+
+            def describe_tasks(cluster, tasks):
+                """Moto does not yet provide the ability to mock an executable
+                task and its managed agents / containers, so we need to patch
+                the expected response."""
+                if not task_running:
+                    raise Exception
+
+                return {
+                    "tasks": [
+                        {
+                            "lastStatus": "RUNNING",
+                            "containers": [
+                                {
+                                    "managedAgents": [
+                                        {
+                                            "name": "ExecuteCommandAgent",
+                                            "lastStatus": agent_last_status,
+                                        }
+                                    ],
+                                }
+                            ],
+                        }
+                    ],
+                }
+
+            mocked_ecs_client.describe_tasks = describe_tasks
+
+            return mocked_ecs_client
+
+    return _setup
 
 
 @pytest.fixture(scope="function")

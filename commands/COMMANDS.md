@@ -15,7 +15,6 @@
 - [copilot-helper codebuild delete-project](#copilot-helper-codebuild-delete-project)
 - [copilot-helper codebuild slackcreds](#copilot-helper-codebuild-slackcreds)
 - [copilot-helper conduit](#copilot-helper-conduit)
-- [copilot-helper conduit tunnel](#copilot-helper-conduit-tunnel)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
@@ -372,43 +371,26 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
 
 [↩ Parent](#copilot-helper)
 
-## Usage
-
-```
-Usage: copilot-helper conduit [OPTIONS] COMMAND [ARGS]...
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`tunnel` ↪](#copilot-helper-conduit-tunnel)
-
-# copilot-helper conduit tunnel
-
-[↩ Parent](#copilot-helper-conduit)
+    Create a conduit connection to a ADDON_TYPE backing service.
 
 ## Usage
 
 ```
-Usage: copilot-helper conduit tunnel [OPTIONS]
+Usage: copilot-helper conduit [OPTIONS] ADDON_TYPE
 ```
+
+## Arguments
+
+- `addon_type <text>`
 
 ## Options
 
-- `--project-profile <text>`
-  - AWS account profile name
 - `--app <text>`
-  - AWS Copilot application name
+  - AWS application name
 - `--env <text>`
-  - AWS Copilot environment name
-- `--addon-type <choice>` _Defaults to postgres._
-  - The addon you wish to connect to
-- `--db-secret-name <text>` _Defaults to POSTGRES._
-  - Database credentials secret name
+  - AWS environment name
+- `--addon-name <text>`
+  - Name of custom addon
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

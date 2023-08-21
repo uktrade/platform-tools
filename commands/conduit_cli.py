@@ -1,25 +1,48 @@
-import json
-import os
+import re
 import subprocess
 import time
 
 import boto3
-import botocore  # noqa
 import click
 
-from commands.utils import check_aws_conn
 
-CONDUIT_IMAGE_LOCATIONS = {
-    "postgres": "public.ecr.aws/uktrade/tunnel-postgres",
-    "redis": "public.ecr.aws/uktrade/tunnel-redis",
-}
+class ConduitError(Exception):
+    pass
+
+
+class InvalidAddonTypeConduitError(ConduitError):
+    pass
+
+
+class NoClusterConduitError(ConduitError):
+    pass
+
+
+class SecretNotFoundConduitError(ConduitError):
+    pass
+
+
+class CreateTaskTimeoutConduitError(ConduitError):
+    pass
+
+
+CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
+CONDUIT_ADDON_TYPES = [
+    "opensearch",
+    "postgres",
+    "redis",
+]
+
+
+def normalise_string(to_normalise: str) -> str:
+    output = re.sub("[^0-9a-zA-Z]+", "-", to_normalise)
+    return output.lower()
 
 
 def get_cluster_arn(app: str, env: str) -> str:
     ecs_client = boto3.client("ecs")
 
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
-        # Describe the tags for the cluster
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
         tags = tags_response["tags"]
 
@@ -38,144 +61,118 @@ def get_cluster_arn(app: str, env: str) -> str:
         if app_key_found and env_key_found and cluster_key_found:
             return cluster_arn
 
-
-def get_postgres_secret(app: str, env: str, name: str):
-    secret_name = f"/copilot/{app}/{env}/secrets/{name}"
-
-    return boto3.client("secretsmanager").get_secret_value(SecretId=secret_name)
+    raise NoClusterConduitError
 
 
-def update_postgres_command(app: str, env: str, command: str, secret_name: str) -> str:
-    secret = get_postgres_secret(app, env, secret_name)
-    secret_arn = secret["ARN"]
-    secret_json = json.loads(secret["SecretString"])
-    postgres_password = secret_json["password"]
+def get_connection_secret_arn(app: str, env: str, name: str) -> str:
+    connection_secret_id = f"/copilot/{app}/{env}/secrets/{name}"
 
-    return f"{command} --secrets DB_SECRET={secret_arn} --env-vars POSTGRES_PASSWORD={postgres_password}"
-
-
-def create_task(app: str, env: str, addon_type: str, secret_name: str) -> None:
-    command = f"copilot task run -n tunnel-{addon_type} --image {CONDUIT_IMAGE_LOCATIONS[addon_type]} --app {app} --env {env}"
-    if addon_type == "postgres":
-        command = update_postgres_command(app, env, command, secret_name)
-
-    subprocess.call(command, shell=True)
-
-
-def is_task_running(cluster_arn: str, addon_type: str) -> bool:
-    tasks = boto3.client("ecs").list_tasks(
-        cluster=cluster_arn, desiredStatus="RUNNING", family=f"copilot-tunnel-{addon_type}"
-    )
+    secrets_manager = boto3.client("secretsmanager")
+    ssm = boto3.client("ssm")
 
     try:
-        if tasks["taskArns"]:
-            described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
-            agent_running = False
+        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
+    except secrets_manager.exceptions.ResourceNotFoundException:
+        pass
 
-            # The ExecuteCommandAgent often takes longer to start running than the task and without the agent it's not possible to exec into a task.
-            for agent in described_tasks["tasks"][0]["containers"][0]["managedAgents"]:
-                if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
-                    agent_running = True
+    try:
+        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"]["ARN"]
+    except ssm.exceptions.ParameterNotFound:
+        pass
 
-            return described_tasks["tasks"][0]["lastStatus"] == "RUNNING" and agent_running
+    raise SecretNotFoundConduitError(name)
 
-    except ValueError:
+
+def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str):
+    connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
+
+    subprocess.call(
+        f"copilot task run --app {app} --env {env} --task-group-name conduit-{normalise_string(addon_name)} "
+        f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
+
+
+def addon_client_is_running(cluster_arn: str, addon_name: str) -> bool:
+    tasks = boto3.client("ecs").list_tasks(
+        cluster=cluster_arn,
+        desiredStatus="RUNNING",
+        family=f"copilot-conduit-{normalise_string(addon_name)}",
+    )
+
+    if not tasks["taskArns"]:
         return False
 
+    described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
 
-def get_redis_cluster(app: str, env: str):
-    elasticache = boto3.client("elasticache")
-    resource_tagging = boto3.client("resourcegroupstaggingapi")
-    clusters = elasticache.describe_cache_clusters(ShowCacheNodeInfo=True)["CacheClusters"]
-    desired_tags = {"copilot-application": app, "copilot-environment": env}
+    # The ExecuteCommandAgent often takes longer to start running than the task and without the
+    # agent it's not possible to exec into a task.
+    for task in described_tasks["tasks"]:
+        for container in task["containers"]:
+            for agent in container["managedAgents"]:
+                if agent["name"] == "ExecuteCommandAgent" and agent["lastStatus"] == "RUNNING":
+                    return True
 
-    for cluster in clusters:
-        tags = resource_tagging.get_resources(ResourceARNList=[cluster["ARN"]])["ResourceTagMappingList"][0]["Tags"]
-        tag_dict = {tag["Key"]: tag["Value"] for tag in tags}
-
-        # Check if desired tags are a subset of the cluster's tags
-        if desired_tags.items() <= tag_dict.items():
-            return cluster
+    return False
 
 
-def get_postgres_command(app: str, env: str, secret_name: str):
-    secret = get_postgres_secret(app, env, secret_name)
-    secret_json = json.loads(secret["SecretString"])
-    connection_string = f"postgres://{secret_json['username']}:{secret_json['password']}@{secret_json['host']}:5432/{secret_json['dbname']}"
+def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_name: str):
+    tries = 0
+    running = False
 
-    return f"psql {connection_string}"
+    while tries < 15 and not running:
+        tries += 1
 
+        if addon_client_is_running(cluster_arn, addon_name):
+            running = True
+            subprocess.call(
+                f"copilot task exec --app {app} --env {env} --name conduit-{normalise_string(addon_name)} --command bash",
+                shell=True,
+            )
 
-def get_redis_command(app: str, env: str):
-    cluster = get_redis_cluster(app, env)
-    if not cluster:
-        click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
-        exit()
+        time.sleep(1)
 
-    address = cluster["CacheNodes"][0]["Endpoint"]["Address"]
-    port = cluster["CacheNodes"][0]["Endpoint"]["Port"]
-
-    return f"redis-cli -c -h {address} --tls -p {port}"
-
-
-def get_addon_command(app: str, env: str, addon_type: str, secret_name: str = "POSTGRES") -> str:
-    if addon_type == "postgres":
-        return get_postgres_command(app, env, secret_name)
-
-    if addon_type == "redis":
-        return get_redis_command(app, env)
+    if not running:
+        raise CreateTaskTimeoutConduitError
 
 
-def exec_into_task(app: str, env: str, cluster_arn: str, addon_type: str, secret_name: str = "POSTGRES") -> None:
-    # There is a delay between a task's being created and its health status changing from PROVISIONING to RUNNING,
-    # so we need to wait before running the exec command or timeout if taking too long.
-    timeout = time.time() + 60
-    connected = False
-    while time.time() < timeout:
-        if is_task_running(cluster_arn, addon_type):
-            addon_command = get_addon_command(app, env, addon_type, secret_name)
-            os.system(f"copilot task exec --app {app} --env {env} --command '{addon_command}'")
-            connected = True
-            break
-
-    if connected == False:
-        print(
-            f"Attempt to exec into running task timed out. Try again by running `copilot task exec --app {app} --env {env}` or check status of task in Amazon ECS console."
-        )
-
-
-@click.group()
-def conduit():
-    pass
-
-
-@conduit.command()
-@click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--app", help="AWS Copilot application name", required=True)
-@click.option("--env", help="AWS Copilot environment name", required=True)
-@click.option(
-    "--addon-type",
-    help="The addon you wish to connect to",
-    type=click.Choice(["postgres", "redis"]),
-    default="postgres",
-    required=True,
-)
-@click.option("--db-secret-name", help="Database credentials secret name", required=True, default="POSTGRES")
-def tunnel(
-    project_profile: str, app: str, env: str, addon_type: str = "postgres", db_secret_name: str = "POSTGRES"
-) -> None:
-    check_aws_conn(project_profile)
+def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
+    if addon_type not in CONDUIT_ADDON_TYPES:
+        raise InvalidAddonTypeConduitError(addon_type)
 
     cluster_arn = get_cluster_arn(app, env)
-    if not cluster_arn:
-        click.secho(f"No cluster resource found with tag filter values {app} and {env}", fg="red")
+    addon_name = addon_name or addon_type
+
+    if not addon_client_is_running(cluster_arn, addon_name):
+        create_addon_client_task(app, env, addon_type, addon_name)
+    connect_to_addon_client_task(app, env, cluster_arn, addon_name)
+
+
+@click.command()
+@click.argument("addon_type")
+@click.option("--app", help="AWS application name", required=True)
+@click.option("--env", help="AWS environment name", required=True)
+@click.option("--addon-name", help="Name of custom addon", required=False)
+def conduit(addon_type: str, app: str, env: str, addon_name: str):
+    """Create a conduit connection to a ADDON_TYPE backing service."""
+    try:
+        start_conduit(app, env, addon_type, addon_name)
+    except InvalidAddonTypeConduitError:
+        click.secho(
+            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""", fg="red"
+        )
         exit(1)
-
-    if not is_task_running(cluster_arn, addon_type):
-        try:
-            create_task(app, env, addon_type, db_secret_name)
-        except boto3.client("secretsmanager").exceptions.ResourceNotFoundException:
-            click.secho(f"No secret found matching application {app} and environment {env}.")
-            exit()
-
-    exec_into_task(app, env, cluster_arn, addon_type)
+    except NoClusterConduitError:
+        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
+    except SecretNotFoundConduitError as err:
+        click.secho(f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
+    except CreateTaskTimeoutConduitError:
+        click.secho(
+            f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""", fg="red"
+        )
+        exit(1)

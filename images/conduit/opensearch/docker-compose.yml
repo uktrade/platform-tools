@@ -1,0 +1,13 @@
+version: '3.8'
+services: 
+  search:
+    image: opensearchproject/opensearch
+    environment:
+      - discovery.type=single-node
+  client:
+    build:
+      context: .
+    environment:
+      - CONNECTION_SECRET=https://admin:admin@search:9200
+    links:
+      - search
