@@ -8,12 +8,14 @@ phases:
       - echo Login to Amazon ECR
       - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
       - SHORT_HASH=$(git rev-parse --short HEAD)
+
   build:
     commands:
       - echo Build $ADDON_TYPE ($SHORT_HASH) started on `date`
       - docker build -t public.ecr.aws/uktrade/tunnel:$ADDON_TYPE .
       - docker tag public.ecr.aws/uktrade/tunnel:$ADDON_TYPE public.ecr.aws/uktrade/tunnel:$ADDON_TYPE-$SHORT_HASH
       - echo Build $ADDON_TYPE ($SHORT_HASH) completed on `date`
+
   post_build:
     commands:
       - echo Push $ADDON_TYPE ($SHORT_HASH) started on `date`
