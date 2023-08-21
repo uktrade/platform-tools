@@ -22,6 +22,7 @@ src/
 .direnv/
 .envrc
 .pytest_cache
+.tox/
 
 *.swp
 
