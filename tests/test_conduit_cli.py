@@ -18,7 +18,23 @@ from commands.conduit_cli import connect_to_addon_client_task
 from commands.conduit_cli import create_addon_client_task
 from commands.conduit_cli import get_cluster_arn
 from commands.conduit_cli import get_connection_secret_arn
+from commands.conduit_cli import normalise_string
 from commands.conduit_cli import start_conduit
+
+
+@pytest.mark.parametrize(
+    "test_instance",
+    [
+        ("WORD", "word"),
+        ("Some-String", "some-string"),
+        ("SoMe_StriNg", "some-string"),
+        ("Long String With Spaces", "long-string-with-spaces"),
+    ],
+)
+def test_normalise_string(test_instance):
+    """Test that given a set of strings, normalise_string produces the expected
+    result."""
+    assert normalise_string(test_instance[0]) == test_instance[1]
 
 
 @mock_resourcegroupstaggingapi
@@ -108,9 +124,9 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
     """Test that, given app, environment and secret name strings,
     create_addon_client_task calls get_connection_secret_arn with the custom
     secret name and subsequently subprocess.call with the correct secret ARN."""
-    create_addon_client_task("test-application", "development", "postgres", "named-postgres")
+    create_addon_client_task("test-application", "development", "postgres", "named_postgres")
 
-    get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED-POSTGRES")
+    get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED_POSTGRES")
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development --task-group-name conduit-named-postgres "
         "--image public.ecr.aws/uktrade/tunnel:postgres "

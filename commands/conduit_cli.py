@@ -1,3 +1,4 @@
+import re
 import subprocess
 import time
 
@@ -31,6 +32,11 @@ CONDUIT_ADDON_TYPES = [
     "postgres",
     "redis",
 ]
+
+
+def normalise_string(to_normalise: str) -> str:
+    output = re.sub("[^0-9a-zA-Z]+", "-", to_normalise)
+    return output.lower()
 
 
 def get_cluster_arn(app: str, env: str) -> str:
@@ -81,7 +87,7 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
 
     subprocess.call(
-        f"copilot task run --app {app} --env {env} --task-group-name conduit-{addon_name} "
+        f"copilot task run --app {app} --env {env} --task-group-name conduit-{normalise_string(addon_name)} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn} "
         "--platform-os linux "
@@ -94,7 +100,7 @@ def addon_client_is_running(cluster_arn: str, addon_name: str) -> bool:
     tasks = boto3.client("ecs").list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
-        family=f"copilot-conduit-{addon_name}",
+        family=f"copilot-conduit-{normalise_string(addon_name)}",
     )
 
     if not tasks["taskArns"]:
@@ -123,7 +129,8 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
         if addon_client_is_running(cluster_arn, addon_name):
             running = True
             subprocess.call(
-                f"copilot task exec --app {app} --env {env} --name conduit-{addon_name} --command bash", shell=True
+                f"copilot task exec --app {app} --env {env} --name conduit-{normalise_string(addon_name)} --command bash",
+                shell=True,
             )
 
         time.sleep(1)
