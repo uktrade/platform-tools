@@ -9,29 +9,24 @@ phases:
   install:
     commands:
       - echo Setting local Python versions
-      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
+      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' | sort -rV > .python-version
       - echo Installing dependencies
       - pip install poetry
       - poetry install
 
   build:
     commands:
-      - python --version
       - echo Running check-cloudformation
       - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
       - |
+        VERSION=$(python utils/check_pypi.py --version)
         if ! python utils/check_pypi.py
         then
-          echo Ensure we are using python 3.11
-          pyenv local 3.11
-          echo Building python package
-          pip install poetry
-          poetry install
+          echo Building Python package
           poetry build
-          VERSION=$(python utils/check_pypi.py --version)
-          echo Publishing python package ${VERSION}
+          echo Publishing Python package ${VERSION}
           poetry config pypi-token.pypi ${PYPI_TOKEN}
           poetry publish
           echo Checking the package has reached PyPI
