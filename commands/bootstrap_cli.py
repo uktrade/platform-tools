@@ -12,7 +12,6 @@ from schema import Schema
 
 from commands.utils import SSM_PATH
 from commands.utils import check_aws_conn
-from commands.utils import get_ssm_secret_names
 from commands.utils import get_ssm_secrets
 from commands.utils import mkdir
 from commands.utils import mkfile
