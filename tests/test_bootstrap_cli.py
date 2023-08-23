@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
@@ -10,6 +11,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from cloudfoundry_client.common_objects import JsonObject
+from freezegun import freeze_time
 from moto import mock_ssm
 from moto import mock_sts
 from schema import SchemaError
@@ -88,6 +90,8 @@ def test_load_and_validate_config_invalid_file():
     )
 
 
+@freeze_time("2023-08-22 16:00:00")
+@patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""

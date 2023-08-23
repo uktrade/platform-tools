@@ -7,6 +7,7 @@ import click
 import jinja2
 
 from commands.exceptions import ValidationException
+from commands.jinja2_tags import VersionTag
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -128,6 +129,7 @@ def setup_templates():
     Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.PackageLoader("commands")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
+    templateEnv.add_extension(VersionTag)
 
     return templateEnv
 

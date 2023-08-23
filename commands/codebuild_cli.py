@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import json
 import os
+from importlib.metadata import version
 
 import click
 from boto3.session import Session
@@ -10,7 +11,9 @@ from .utils import check_aws_conn
 from .utils import check_response
 
 AWS_REGION = "eu-west-2"
-DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
+CI_BUILDER_VERSION = "0.2.326-full"
+CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
+DEFAULT_CI_BUILDER = CI_BUILDER + ":" + CI_BUILDER_VERSION
 
 
 def import_pat(pat: str, client: CodeBuildClient):
@@ -109,11 +112,15 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
     client = project_session.client("codebuild", region_name=AWS_REGION)
     check_github_conn(client)
 
+    copilot_tools_version = version("dbt-copilot-tools")
+
     environment = {
         "type": "LINUX_CONTAINER",
         "image": f"{builderimage}",
         "computeType": "BUILD_GENERAL1_SMALL",
-        "environmentVariables": [],
+        "environmentVariables": [
+            {"name": "COPILOT_TOOLS_VERSION", "value": f"{copilot_tools_version}", "type": "PLAINTEXT"},
+        ],
         "privilegedMode": True,
         "imagePullCredentialsType": f"{role_type}",
     }
