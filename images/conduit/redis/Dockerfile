@@ -2,7 +2,7 @@ FROM public.ecr.aws/docker/library/debian:12-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y jq procps lsb-release curl gpg && \
+    apt-get install -y jq procps lsb-release ca-certificates curl gpg && \
     update-ca-certificates && \
     apt-get clean
 
