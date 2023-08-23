@@ -12,7 +12,7 @@ Docker tag specific to the addon they allow access to.
 ## Supported addons
 
 - [Postgres](./postgres) - [public.ecr.aws/uktrade/tunnel:postgres](https://gallery.ecr.aws/uktrade/tunnel)
-- [Pedis](./redis) - [public.ecr.aws/uktrade/tunnel:redis](https://gallery.ecr.aws/uktrade/tunnel)
+- [Redis](./redis) - [public.ecr.aws/uktrade/tunnel:redis](https://gallery.ecr.aws/uktrade/tunnel)
 - [OpenSearch](./opensearch) - [public.ecr.aws/uktrade/tunnel:opensearch](https://gallery.ecr.aws/uktrade/tunnel)
 
 ## Overview
