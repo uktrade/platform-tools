@@ -1,3 +1,4 @@
+# {% version_info %}
 # The manifest for the "{{ name }}" service.
 # Read the full specification for the "Backend Service" type at:
 #  https://aws.github.io/copilot-cli/docs/manifest/backend-service/

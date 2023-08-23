@@ -1,3 +1,4 @@
+# {% version_info %}
 Metadata:
   cfn-lint:
     config:
