@@ -17,10 +17,10 @@ Docker tag specific to the addon they allow access to.
 
 ## Overview
 
-Each image is based on `debian:12-slim` and installs the required tooling to
-connect to the relevant addon service. This is because many images such as
-the official Postgres image will start a server when they launch, which is
-not desirable for a client image.
+Each image is based on [`public.ecr.aws/docker/library/debian:12-slim`](https://gallery.ecr.aws/debian/debian)
+and installs the required tooling to connect to the relevant addon service.
+This is because many images such as the official Postgres image will start
+a server when they launch, which is not desirable for a client image.
 
 Each image directory contains documentation on how to test and manually deploy
 each image. They also contain an `entrypoint.sh` and `shell-profile.sh` file.
