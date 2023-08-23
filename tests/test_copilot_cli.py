@@ -1,10 +1,13 @@
 import os
 import shutil
 from pathlib import Path
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import boto3
 import pytest
 from click.testing import CliRunner
+from freezegun import freeze_time
 from moto import mock_ssm
 
 from commands.copilot_cli import copilot as cli
@@ -83,6 +86,8 @@ class TestMakeAddonCommand:
             ("aurora_addons.yml", ["my-aurora-db.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], True),
         ],
     )
+    @freeze_time("2023-08-22 16:00:00")
+    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_success(
         self, tmp_path, addon_file, expected_env_addons, expected_service_addons, expect_db_warning
     ):
