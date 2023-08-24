@@ -238,6 +238,7 @@ invalid-entry:
             (S3_STORAGE_CONTENTS, "s3"),
         ],
     )
+    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_env_addons_parameters_file_with_different_addon_types(self, fakefs, addon_file_contents, addon_type):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -266,6 +267,7 @@ invalid-entry:
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
+    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_addon_instructions_with_postgres_addon_types(self, fakefs, addon_file_contents, addon_type, secret_name):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -288,6 +290,7 @@ invalid-entry:
                 f"{secret_name}" in result.output
             )
 
+    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
