@@ -279,7 +279,7 @@ Usage: copilot-helper codebuild codedeploy [OPTIONS]
   - Git branch
 - `--buildspec <text>`
   - Location of buildspec file in repo
-- `--builderimage <text>` _Defaults to public.ecr.aws/uktrade/ci-image-builder._
+- `--builderimage <text>` _Defaults to public.ecr.aws/uktrade/ci-image-builder:0.2.326-full._
   - Builder image
 - `--project-profile <text>`
   - aws account profile name
