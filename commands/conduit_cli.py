@@ -134,7 +134,7 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
         if addon_client_is_running(app, env, cluster_arn, addon_name):
             running = True
             subprocess.call(
-                f"copilot task exec "
+                "copilot task exec "
                 f"--app {app} --env {env} "
                 f"--name conduit-{app}-{env}-{normalise_string(addon_name)} "
                 f"--command bash",
