@@ -309,6 +309,7 @@ mys3bucket:
 
     validate(instance=addon, schema=schema)
 
+
 def test_s3_policy_valid_example():
     addon = yaml.safe_load(
         """
@@ -415,4 +416,6 @@ def test_schema_redis_plans_match_available_plans():
 
 
 def test_schema_postgres_plans_match_available_plans():
-    assert set(schema["definitions"]["rds-postgres-plans"]["enum"]) == set(plans["rds-postgres"].keys())
+    assert set(schema["definitions"]["rds-postgres-plans"]["enum"]) == set(
+        plans["rds-postgres"].keys()
+    )

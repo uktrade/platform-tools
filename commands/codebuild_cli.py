@@ -33,7 +33,10 @@ def check_github_conn(client: CodeBuildClient):
     # If there are no source code creds defined then AWS is not linked to Github
     if not response["sourceCredentialsInfos"]:
         if not click.confirm(
-            click.style("GitHub is not linked in this AWS account\nDo you want to link with a PAT?", fg="yellow")
+            click.style(
+                "GitHub is not linked in this AWS account\nDo you want to link with a PAT?",
+                fg="yellow",
+            )
         ):
             exit()
 
@@ -62,7 +65,9 @@ def check_service_role(role_name, project_session: Session) -> str:
             click.style("Service Role", fg="yellow")
             + click.style(f" {role_name} ", fg="white", bold=True)
             + click.style("does not exist; run: ", fg="yellow")
-            + click.style("copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>", fg="cyan")
+            + click.style(
+                "copilot-helper.py codebuild create-codedeploy-role --type <ci/custom>", fg="cyan"
+            )
         )
         role_arn = ""
         exit()
@@ -97,7 +102,8 @@ def check_git_url(git: str) -> str:
         click.echo(
             click.style("Unable to recognise Git URL format, make sure it is either:\n", fg="red")
             + click.style(
-                "https://github.com/<org>/<repository-name>\n" + "git@github.com:<org>/<repository-name>",
+                "https://github.com/<org>/<repository-name>\n"
+                + "git@github.com:<org>/<repository-name>",
                 fg="white",
                 bold=True,
             )
@@ -106,7 +112,9 @@ def check_git_url(git: str) -> str:
     return git_url
 
 
-def modify_project(project_session, update, name, desc, git, branch, buildspec, builderimage, release, role_type):
+def modify_project(
+    project_session, update, name, desc, git, branch, buildspec, builderimage, release, role_type
+):
     git_url = check_git_url(git)
     role_arn = check_service_role("ci-CodeBuild-role", project_session)
     client = project_session.client("codebuild", region_name=AWS_REGION)
@@ -119,7 +127,11 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
         "image": f"{builderimage}",
         "computeType": "BUILD_GENERAL1_SMALL",
         "environmentVariables": [
-            {"name": "COPILOT_TOOLS_VERSION", "value": f"{copilot_tools_version}", "type": "PLAINTEXT"},
+            {
+                "name": "COPILOT_TOOLS_VERSION",
+                "value": f"{copilot_tools_version}",
+                "type": "PLAINTEXT",
+            },
         ],
         "privilegedMode": True,
         "imagePullCredentialsType": f"{role_type}",
@@ -159,7 +171,9 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
                 logsConfig=logsConfig,
             )
         except client.exceptions.ResourceNotFoundException:
-            click.secho("Unable to update a project that does not exist, remove the --update flag", fg="red")
+            click.secho(
+                "Unable to update a project that does not exist, remove the --update flag", fg="red"
+            )
             exit()
 
         response_webhook = client.update_webhook(
@@ -233,7 +247,9 @@ def link_github(pat: str, project_profile: str) -> None:
 
 @codebuild.command()
 @click.option("--project-profile", help="aws account profile name", required=True)
-@click.option("--type", type=click.Choice(["ci", "custom"]), help="type of project <ci/custom>", default="ci")
+@click.option(
+    "--type", type=click.Choice(["ci", "custom"]), help="type of project <ci/custom>", default="ci"
+)
 def create_codedeploy_role(project_profile: str, type) -> None:
     """Add AWS Role needed for codedeploy."""
 
@@ -273,7 +289,8 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 
         except client.exceptions.LimitExceededException:
             click.secho(
-                "You have hit the limit of max managed policies, " "please delete an existing version and try again",
+                "You have hit the limit of max managed policies, "
+                "please delete an existing version and try again",
                 fg="red",
             )
             exit()
@@ -283,7 +300,9 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 
     # Now create a role if not present and attach policy
     try:
-        response = client.create_role(RoleName=f"{type}-CodeBuild-role", AssumeRolePolicyDocument=json.dumps(role_doc))
+        response = client.create_role(
+            RoleName=f"{type}-CodeBuild-role", AssumeRolePolicyDocument=json.dumps(role_doc)
+        )
         check_response(response)
         click.secho("Role created", fg="green")
     except client.exceptions.EntityAlreadyExistsException:
@@ -306,12 +325,29 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 @click.option("--buildspec", required=True, help="Location of buildspec file in repo")
 @click.option("--builderimage", default=DEFAULT_CI_BUILDER, help="Builder image")
 @click.option("--project-profile", required=True, help="aws account profile name")
-@click.option("--release", is_flag=True, show_default=True, default=False, help="Trigger builds on release tags")
+@click.option(
+    "--release",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Trigger builds on release tags",
+)
 def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project_profile, release):
     """Builds Code build boilerplate."""
 
     project_session = check_aws_conn(project_profile)
-    modify_project(project_session, update, name, desc, git, branch, buildspec, builderimage, release, "SERVICE_ROLE")
+    modify_project(
+        project_session,
+        update,
+        name,
+        desc,
+        git,
+        branch,
+        buildspec,
+        builderimage,
+        release,
+        "SERVICE_ROLE",
+    )
 
 
 @codebuild.command()
@@ -321,13 +357,26 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
 @click.option("--git", required=True, help="Git url of code")
 @click.option("--branch", required=True, help="Git branch")
 @click.option("--buildspec", required=True, help="Location of buildspec file in repo")
-@click.option("--builderimage", default="aws/codebuild/amazonlinux2-x86_64-standard:3.0", help="Builder image")
+@click.option(
+    "--builderimage", default="aws/codebuild/amazonlinux2-x86_64-standard:3.0", help="Builder image"
+)
 @click.option("--project-profile", required=True, help="aws account profile name")
 def buildproject(update, name, desc, git, branch, buildspec, builderimage, project_profile):
     """Builds Code build for ad hoc projects."""
 
     project_session = check_aws_conn(project_profile)
-    modify_project(project_session, update, name, desc, git, branch, buildspec, builderimage, False, "CODEBUILD")
+    modify_project(
+        project_session,
+        update,
+        name,
+        desc,
+        git,
+        branch,
+        buildspec,
+        builderimage,
+        False,
+        "CODEBUILD",
+    )
 
 
 @codebuild.command()
@@ -365,12 +414,23 @@ def slackcreds(workspace, channel, token, project_profile):
             "description": "Slack Workspace ID",
             "value": workspace,
         },
-        "channel": {"name": "/codebuild/slack_channel_id", "description": "Slack Channel ID", "value": channel},
-        "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": token},
+        "channel": {
+            "name": "/codebuild/slack_channel_id",
+            "description": "Slack Channel ID",
+            "value": channel,
+        },
+        "token": {
+            "name": "/codebuild/slack_api_token",
+            "description": "Slack API Token",
+            "value": token,
+        },
     }
 
     if not click.confirm(
-        click.style("Updating Parameter Store with Slack credentials.\nDo you want to update it?", fg="yellow")
+        click.style(
+            "Updating Parameter Store with Slack credentials.\nDo you want to update it?",
+            fg="yellow",
+        )
     ):
         exit()
 

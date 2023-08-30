@@ -40,7 +40,9 @@ def camel_case(s):
     return "".join([s[0].lower(), s[1:]])
 
 
-def set_ssm_param(app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."):
+def set_ssm_param(
+    app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."
+):
     client = boto3.client("ssm")
 
     args = dict(
@@ -57,7 +59,9 @@ def set_ssm_param(app, env, param_name, param_value, overwrite, exists, descript
     )
 
     if overwrite and not exists:
-        raise ValidationException("""Arguments "overwrite" is set to True, but "exists" is set to False.""")
+        raise ValidationException(
+            """Arguments "overwrite" is set to True, but "exists" is set to False."""
+        )
 
     if overwrite and exists:
         # Tags can't be updated when overwriting
@@ -185,7 +189,9 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+            + click.style(
+                f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True
+            ),
         )
     else:
         click.echo(
@@ -194,7 +200,9 @@ def check_aws_conn(aws_profile: str) -> boto3.session.Session:
         )
     click.echo(
         click.style("User: ", fg="yellow")
-        + click.style(f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True),
+        + click.style(
+            f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True
+        ),
     )
 
     return session
