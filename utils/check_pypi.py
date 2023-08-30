@@ -9,7 +9,9 @@ FAIL = 1
 
 
 def opts():
-    parser = argparse.ArgumentParser(description="Tool to check PyPI for the presence of the copilot-tools package")
+    parser = argparse.ArgumentParser(
+        description="Tool to check PyPI for the presence of the copilot-tools package"
+    )
     parser.add_argument("--retry-interval", help="Delay before retrying", type=int, default=6)
     parser.add_argument("--max-attempts", help="Maximum number of attempts", type=int, default=1)
     parser.add_argument("--version", help="Display the project version", action="store_true")
@@ -50,4 +52,8 @@ def get_current_version(project_file):
 
 
 if __name__ == "__main__":
-    exit(check_for_version_in_pypi_releases(opts(), get_current_version("pyproject.toml"), get_releases))
+    exit(
+        check_for_version_in_pypi_releases(
+            opts(), get_current_version("pyproject.toml"), get_releases
+        )
+    )

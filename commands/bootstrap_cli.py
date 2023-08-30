@@ -135,19 +135,26 @@ def make_config():
     for name, env in config["environments"].items():
         mkdir(base_path, f"copilot/environments/{name}")
         contents = templates.get_template("env/manifest.yml").render(
-            {"name": name, "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else ""},
+            {
+                "name": name,
+                "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else "",
+            },
         )
         click.echo(mkfile(base_path, f"copilot/environments/{name}/manifest.yml", contents))
 
     # create each service directory and manifest.yml
     for service in config["services"]:
-        service["ipfilter"] = any(env.get("ipfilter", False) for _, env in service["environments"].items())
+        service["ipfilter"] = any(
+            env.get("ipfilter", False) for _, env in service["environments"].items()
+        )
         name = service["name"]
         mkdir(base_path, f"copilot/{name}/addons/")
 
         if "secrets_from" in service:
             # Copy secrets from the app referred to in the "secrets_from" key
-            related_service = [s for s in config["services"] if s["name"] == service["secrets_from"]][0]
+            related_service = [
+                s for s in config["services"] if s["name"] == service["secrets_from"]
+            ][0]
 
             service["secrets"].update(related_service["secrets"])
 
@@ -166,7 +173,13 @@ def make_config():
 @click.option("--project-profile", required=True, help="aws account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
-@click.option("--overwrite", is_flag=True, show_default=True, default=False, help="Overwrite existing secrets?")
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Overwrite existing secrets?",
+)
 @click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
 def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     """
@@ -216,7 +229,9 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                 continue
 
             click.echo("-----------------")
-            click.echo(f">>> migrating secrets for service: {service_name}; environment: {env_name}")
+            click.echo(
+                f">>> migrating secrets for service: {service_name}; environment: {env_name}"
+            )
 
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
@@ -228,7 +243,9 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                 if app_secret_key not in env_vars:
                     # NOT FOUND
                     param_value = "NOT FOUND"
-                    click.echo(f"Key not found in paas app: {app_secret_key}; setting to 'NOT FOUND'")
+                    click.echo(
+                        f"Key not found in paas app: {app_secret_key}; setting to 'NOT FOUND'"
+                    )
                 elif not env_vars[app_secret_key]:
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
@@ -242,13 +259,21 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 
                 if overwrite or not param_exists:
                     if not dry_run:
-                        set_ssm_param(config["app"], env_name, ssm_path, param_value, overwrite, param_exists)
+                        set_ssm_param(
+                            config["app"], env_name, ssm_path, param_value, overwrite, param_exists
+                        )
 
                     if not param_exists:
                         existing_ssm_data[env_name].append(ssm_path)
 
                 if not dry_run:
-                    text = "Created" if not param_exists else "Overwritten" if overwrite else "NOT overwritten"
+                    text = (
+                        "Created"
+                        if not param_exists
+                        else "Overwritten"
+                        if overwrite
+                        else "NOT overwritten"
+                    )
                     click.echo(f"{text} {ssm_path}")
                 else:
                     click.echo(f"{ssm_path} not created because `--dry-run` flag was included.")

@@ -40,7 +40,9 @@ def waf():
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option("--project-profile", help="aws account profile name for application account", required=True)
+@click.option(
+    "--project-profile", help="aws account profile name for application account", required=True
+)
 @click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
 def attach_waf(app, project_profile, svc, env):
@@ -50,7 +52,8 @@ def attach_waf(app, project_profile, svc, env):
     waf_arn = check_waf(project_session)
     if not waf_arn:
         click.secho(
-            "Default WAF rule does not exists in this AWS account, " "please have this created by the SRE team",
+            "Default WAF rule does not exists in this AWS account, "
+            "please have this created by the SRE team",
             fg="red",
         )
         exit()
@@ -89,7 +92,9 @@ def create_stack(cf_client, app, svc, env, raw):
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option("--project-profile", help="aws account profile name for application account", required=True)
+@click.option(
+    "--project-profile", help="aws account profile name for application account", required=True
+)
 @click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
 @click.option("--waf-path", help="path to waf.yml file", required=True)
@@ -123,7 +128,9 @@ def custom_waf(app, project_profile, svc, env, waf_path):
         cs_response = create_stack(cf_client, app, svc, env, raw)
     except cf_client.exceptions.AlreadyExistsException:
         click.echo(
-            click.style("CloudFormation Stack already exists, please delete the stack first.\n", fg="red")
+            click.style(
+                "CloudFormation Stack already exists, please delete the stack first.\n", fg="red"
+            )
             + click.style(f"{app}-{svc}-{env}-CustomWAFStack", fg="red"),
         )
         exit()
@@ -137,11 +144,15 @@ def custom_waf(app, project_profile, svc, env, waf_path):
         response = cf_client.describe_stacks(StackName=cs_response["StackId"])
 
     if response["Stacks"][0]["StackStatus"] == "DELETE_IN_PROGRESS":
-        click.secho("Failed to create CloudFormation stack, see AWS webconsole for details", fg="red")
+        click.secho(
+            "Failed to create CloudFormation stack, see AWS webconsole for details", fg="red"
+        )
         exit()
 
     waf_arn = response["Stacks"][0]["Outputs"][0]["OutputValue"]
-    click.echo(click.style("WAF created: ", fg="yellow") + click.style(f"{waf_arn}", fg="white", bold=True))
+    click.echo(
+        click.style("WAF created: ", fg="yellow") + click.style(f"{waf_arn}", fg="white", bold=True)
+    )
 
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
         project_session, app, svc, env

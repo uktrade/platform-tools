@@ -116,11 +116,15 @@ def space_to_copilot_app(app_name, ns_conf):
                         url = route["domain"]
 
                     if "certificate_arns" in app_config["environments"][environment["environment"]]:
-                        app_config["environments"][environment["environment"]]["certificate_arns"].append(
+                        app_config["environments"][environment["environment"]][
+                            "certificate_arns"
+                        ].append(
                             f"ACM-ARN-FOR-{url}",
                         )
                     else:
-                        app_config["environments"][environment["environment"]]["certificate_arns"] = [
+                        app_config["environments"][environment["environment"]][
+                            "certificate_arns"
+                        ] = [
                             f"ACM-ARN-FOR-{url}",
                         ]
 

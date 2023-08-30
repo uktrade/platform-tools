@@ -42,7 +42,10 @@ def test_get_cluster_arn(mocked_cluster):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
 
-    assert get_cluster_arn("test-application", "development") == mocked_cluster["cluster"]["clusterArn"]
+    assert (
+        get_cluster_arn("test-application", "development")
+        == mocked_cluster["cluster"]["clusterArn"]
+    )
 
 
 @mock_ecs
@@ -86,7 +89,10 @@ def test_get_connection_secret_arn_from_parameter_store():
 
     arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
 
-    assert arn == "arn:aws:ssm:eu-west-2:123456789012:parameter/copilot/test-application/development/secrets/POSTGRES"
+    assert (
+        arn
+        == "arn:aws:ssm:eu-west-2:123456789012:parameter/copilot/test-application/development/secrets/POSTGRES"
+    )
 
 
 @mock_secretsmanager
@@ -126,7 +132,9 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
     secret name and subsequently subprocess.call with the correct secret ARN."""
     create_addon_client_task("test-application", "development", "postgres", "named_postgres")
 
-    get_connection_secret_arn.assert_called_once_with("test-application", "development", "NAMED_POSTGRES")
+    get_connection_secret_arn.assert_called_once_with(
+        "test-application", "development", "NAMED_POSTGRES"
+    )
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development --task-group-name conduit-named-postgres "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
@@ -167,7 +175,9 @@ def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_addon_client_is_running_when_no_client_task_running(mock_cluster_client_task, mocked_cluster, addon_type):
+def test_addon_client_is_running_when_no_client_task_running(
+    mock_cluster_client_task, mocked_cluster, addon_type
+):
     """Test that, given cluster ARN, addon type and without a running client
     task, addon_client_is_running returns False."""
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, task_running=False)
@@ -181,7 +191,9 @@ def test_addon_client_is_running_when_no_client_task_running(mock_cluster_client
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_addon_client_is_running_when_no_client_agent_running(mock_cluster_client_task, mocked_cluster, addon_type):
+def test_addon_client_is_running_when_no_client_agent_running(
+    mock_cluster_client_task, mocked_cluster, addon_type
+):
     """Test that, given cluster ARN, addon type and without a running agent,
     addon_client_is_running returns False."""
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, "ACTIVATING")
@@ -246,7 +258,11 @@ def test_connect_to_addon_client_task_when_timeout_reached(
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env and addon type strings, start_conduit calls
     get_cluster_arn, addon_client_is_running, created_addon_client_task and
@@ -255,8 +271,12 @@ def test_start_conduit(
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
-    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+    create_addon_client_task.assert_called_once_with(
+        "test-application", "development", addon_type, addon_type
+    )
+    connect_to_addon_client_task.assert_called_once_with(
+        "test-application", "development", "test-arn", addon_type
+    )
 
 
 @patch(
@@ -293,7 +313,11 @@ def test_start_conduit_when_addon_type_is_invalid(
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_with_custom_addon_name(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env, addon type and addon name strings,
     start_conduit calls get_cluster_arn, addon_client_is_running,
@@ -319,7 +343,11 @@ def test_start_conduit_with_custom_addon_name(
 @patch("commands.conduit_cli.create_addon_client_task")
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_cluster_present(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """
     Test that given app, env, addon type and no available ecs cluster,
@@ -346,7 +374,11 @@ def test_start_conduit_when_no_cluster_present(
 @patch("commands.conduit_cli.create_addon_client_task", side_effect=SecretNotFoundConduitError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_secret_exists(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env, addon type and no available secret,
     start_conduit calls get_cluster_arn, then addon_client_is_running and
@@ -357,7 +389,9 @@ def test_start_conduit_when_no_secret_exists(
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
+    create_addon_client_task.assert_called_once_with(
+        "test-application", "development", addon_type, addon_type
+    )
     connect_to_addon_client_task.assert_not_called()
 
 
@@ -370,7 +404,11 @@ def test_start_conduit_when_no_secret_exists(
 @patch("commands.conduit_cli.create_addon_client_task", side_effect=SecretNotFoundConduitError)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_no_custom_addon_secret_exists(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env, addon type, addon name and no available custom
     addon secret, start_conduit calls get_cluster_arn, then
@@ -395,9 +433,15 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 @patch("commands.conduit_cli.get_cluster_arn", return_value="test-arn")
 @patch("commands.conduit_cli.addon_client_is_running", return_value=False)
 @patch("commands.conduit_cli.create_addon_client_task")
-@patch("commands.conduit_cli.connect_to_addon_client_task", side_effect=CreateTaskTimeoutConduitError)
+@patch(
+    "commands.conduit_cli.connect_to_addon_client_task", side_effect=CreateTaskTimeoutConduitError
+)
 def test_start_conduit_when_addon_client_task_fails_to_start(
-    connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env, and addon type strings when the client task
     fails to start, start_conduit calls get_cluster_arn,
@@ -408,8 +452,12 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
 
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_with("test-arn", addon_type)
-    create_addon_client_task.assert_called_once_with("test-application", "development", addon_type, addon_type)
-    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+    create_addon_client_task.assert_called_once_with(
+        "test-application", "development", addon_type, addon_type
+    )
+    connect_to_addon_client_task.assert_called_once_with(
+        "test-application", "development", "test-arn", addon_type
+    )
 
 
 @pytest.mark.parametrize(
@@ -421,7 +469,11 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
 @patch("commands.conduit_cli.addon_client_is_running", return_value=True)
 @patch("commands.conduit_cli.connect_to_addon_client_task")
 def test_start_conduit_when_addon_client_task_is_already_running(
-    connect_to_addon_client_task, addon_client_is_running, create_addon_client_task, get_cluster_arn, addon_type
+    connect_to_addon_client_task,
+    addon_client_is_running,
+    create_addon_client_task,
+    get_cluster_arn,
+    addon_type,
 ):
     """Test that given app, env, and addon type strings when the client task is
     already running, start_conduit calls get_cluster_arn,
@@ -432,7 +484,9 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     get_cluster_arn.assert_called_once_with("test-application", "development")
     addon_client_is_running.assert_called_once_with("test-arn", addon_type)
     create_addon_client_task.assert_not_called()
-    connect_to_addon_client_task.assert_called_once_with("test-application", "development", "test-arn", addon_type)
+    connect_to_addon_client_task.assert_called_once_with(
+        "test-application", "development", "test-arn", addon_type
+    )
 
 
 @pytest.mark.parametrize(
@@ -479,7 +533,9 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type):
         ],
     )
 
-    start_conduit.assert_called_once_with("test-application", "development", addon_type, "custom-addon")
+    start_conduit.assert_called_once_with(
+        "test-application", "development", addon_type, "custom-addon"
+    )
 
 
 @pytest.mark.parametrize(
@@ -534,7 +590,8 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
 
     assert result.exit_code == 1
     secho.assert_called_once_with(
-        f"""No secret called "{addon_type}" for "test-application" in "development" environment.""", fg="red"
+        f"""No secret called "{addon_type}" for "test-application" in "development" environment.""",
+        fg="red",
     )
 
 
@@ -544,7 +601,9 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
 )
 @patch("click.secho")
 @patch("commands.conduit_cli.start_conduit")
-def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_conduit, secho, addon_type):
+def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
+    start_conduit, secho, addon_type
+):
     """Test that given an addon type, app, env and addon name strings, when
     there is no connection secret available, the conduit command handles the
     NoConnectionSecretError exception with addon name."""
@@ -565,7 +624,8 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(start_
 
     assert result.exit_code == 1
     secho.assert_called_once_with(
-        """No secret called "custom-addon" for "test-application" in "development" environment.""", fg="red"
+        """No secret called "custom-addon" for "test-application" in "development" environment.""",
+        fg="red",
     )
 
 

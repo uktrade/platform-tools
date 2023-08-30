@@ -8,7 +8,9 @@ from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases
 
 FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
-TOML_UNSUPPORTED = "tomllib added in 3.11. We don't anticipate needing to run this pipeline tool in older versions"
+TOML_UNSUPPORTED = (
+    "tomllib added in 3.11. We don't anticipate needing to run this pipeline tool in older versions"
+)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason=TOML_UNSUPPORTED)
@@ -44,7 +46,9 @@ class FakeOpts:
 
 def test_check_for_version_in_pypi_releases__print_version_only(capsys):
     opts = FakeOpts(retry_interval=1, max_attempts=1, version=True)
-    exit_code = check_for_version_in_pypi_releases(opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"])
+    exit_code = check_for_version_in_pypi_releases(
+        opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"]
+    )
 
     captured_output = capsys.readouterr()
     lines = [line.strip() for line in captured_output.out.split("\n") if line]
@@ -55,7 +59,9 @@ def test_check_for_version_in_pypi_releases__print_version_only(capsys):
 
 def test_check_for_version_in_pypi_releases__version_found_immediately(capsys):
     opts = FakeOpts(retry_interval=1, max_attempts=3, version=False)
-    exit_code = check_for_version_in_pypi_releases(opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"])
+    exit_code = check_for_version_in_pypi_releases(
+        opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"]
+    )
 
     captured_output = capsys.readouterr()
     lines = [line.strip() for line in captured_output.out.split("\n") if line]
@@ -66,7 +72,9 @@ def test_check_for_version_in_pypi_releases__version_found_immediately(capsys):
 
 def test_check_for_version_in_pypi_releases__version_not_found(capsys):
     opts = FakeOpts(retry_interval=0.1, max_attempts=3, version=False)
-    exit_code = check_for_version_in_pypi_releases(opts, "0.1.22", lambda: ["0.1.2", "0.1.21", "0.1.1"])
+    exit_code = check_for_version_in_pypi_releases(
+        opts, "0.1.22", lambda: ["0.1.2", "0.1.21", "0.1.1"]
+    )
 
     captured_output = capsys.readouterr()
     lines = [line.strip() for line in captured_output.out.split("\n") if line]

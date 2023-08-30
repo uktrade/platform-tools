@@ -76,7 +76,9 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
         pass
 
     try:
-        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"]["ARN"]
+        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
+            "ARN"
+        ]
     except ssm.exceptions.ParameterNotFound:
         pass
 
@@ -106,7 +108,9 @@ def addon_client_is_running(cluster_arn: str, addon_name: str) -> bool:
     if not tasks["taskArns"]:
         return False
 
-    described_tasks = boto3.client("ecs").describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
+    described_tasks = boto3.client("ecs").describe_tasks(
+        cluster=cluster_arn, tasks=tasks["taskArns"]
+    )
 
     # The ExecuteCommandAgent often takes longer to start running than the task and without the
     # agent it's not possible to exec into a task.
@@ -162,17 +166,22 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
         start_conduit(app, env, addon_type, addon_name)
     except InvalidAddonTypeConduitError:
         click.secho(
-            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""", fg="red"
+            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            fg="red",
         )
         exit(1)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
     except SecretNotFoundConduitError as err:
-        click.secho(f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""", fg="red")
+        click.secho(
+            f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""",
+            fg="red",
+        )
         exit(1)
     except CreateTaskTimeoutConduitError:
         click.secho(
-            f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""", fg="red"
+            f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""",
+            fg="red",
         )
         exit(1)

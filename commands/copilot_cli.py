@@ -22,7 +22,9 @@ WAF_ACL_ARN_KEY = "waf-acl-arn"
 
 
 def list_copilot_local_environments():
-    return [path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")]
+    return [
+        path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")
+    ]
 
 
 def list_copilot_local_services():
@@ -68,7 +70,9 @@ def _validate_and_normalise_config(config_file):
     svc_names = list_copilot_local_services()
 
     if not env_names:
-        click.echo(click.style(f"No environments found in ./copilot/environments; exiting", fg="red"))
+        click.echo(
+            click.style(f"No environments found in ./copilot/environments; exiting", fg="red")
+        )
         exit(1)
 
     if not svc_names:
@@ -86,13 +90,19 @@ def _validate_and_normalise_config(config_file):
                     normalised_config[addon_name]["services"] = svc_names
                 else:
                     click.echo(
-                        click.style(f"{addon_name}.services must be a list of service names or '__all__'", fg="red"),
+                        click.style(
+                            f"{addon_name}.services must be a list of service names or '__all__'",
+                            fg="red",
+                        ),
                     )
                     exit(1)
 
             if not set(normalised_config[addon_name]["services"]).issubset(set(svc_names)):
                 click.echo(
-                    click.style(f"Services listed in {addon_name}.services do not exist in ./copilot/", fg="red"),
+                    click.style(
+                        f"Services listed in {addon_name}.services do not exist in ./copilot/",
+                        fg="red",
+                    ),
                 )
                 exit(1)
 
@@ -116,7 +126,9 @@ def _validate_and_normalise_config(config_file):
             normalised_environments[env] = _normalise_keys(initial)
 
         for env_name, env_config in environments.items():
-            normalised_environments[env_name].update(_lookup_plan(addon_type, _normalise_keys(env_config)))
+            normalised_environments[env_name].update(
+                _lookup_plan(addon_type, _normalise_keys(env_config))
+            )
 
         normalised_config[addon_name]["environments"] = normalised_environments
 
@@ -192,7 +204,9 @@ def make_addons():
                 filename = addon.get("filename", f"{addon_name}.yml")
 
                 mkdir(output_dir, service_path)
-                click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=overwrite))
+                click.echo(
+                    mkfile(output_dir, service_path / filename, contents, overwrite=overwrite)
+                )
 
         if addon_type in ["aurora-postgres", "rds-postgres"]:
             click.secho(
