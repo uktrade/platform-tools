@@ -25,7 +25,9 @@ AWS_CERT_REGION = "eu-west-2"
 
 def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
     click.secho(f"Waiting up to {timeout} seconds for certificate to be validated...", fg="yellow")
-    status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"]["Status"]
+    status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"][
+        "Status"
+    ]
     elapsed_time = 0
     while status == "PENDING_VALIDATION":
         if elapsed_time >= timeout:
@@ -40,7 +42,9 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, 
             ),
         )
         time.sleep(sleep_time)
-        status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"]["Status"]
+        status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"][
+            "Status"
+        ]
         elapsed_time += sleep_time
 
     if status == "ISSUED":
@@ -111,7 +115,11 @@ def create_cert(client, domain_client, domain, base_len):
             break
     if not domain_id:
         # Will got here more than once during manual testing, it might be a race condition we need to handle better
-        click.secho(f"Unable to find Domain ID for {domain_to_create} in the hosted zones", fg="red", bold=True)
+        click.secho(
+            f"Unable to find Domain ID for {domain_to_create} in the hosted zones",
+            fg="red",
+            bold=True,
+        )
         exit(1)
 
     # Add NS records of subdomain to parent
@@ -168,7 +176,9 @@ def add_records(client, records, subdom_id, action):
                             "AliasTarget": {
                                 "HostedZoneId": records["AliasTarget"]["HostedZoneId"],
                                 "DNSName": records["AliasTarget"]["DNSName"],
-                                "EvaluateTargetHealth": records["AliasTarget"]["EvaluateTargetHealth"],
+                                "EvaluateTargetHealth": records["AliasTarget"][
+                                    "EvaluateTargetHealth"
+                                ],
                             },
                         },
                     },
@@ -350,9 +360,9 @@ def get_load_balancer_domain_and_configuration(
         # The application name may be hyphenated, so we start splitting
         # at the hyphen after the first item of interest and return the
         # items of interest only...
-        return hyphenated_string.rsplit("-", number_of_trailing_items + number_of_items_of_interest - 1)[
-            :number_of_items_of_interest
-        ]
+        return hyphenated_string.rsplit(
+            "-", number_of_trailing_items + number_of_items_of_interest - 1
+        )[:number_of_items_of_interest]
 
     proj_client = project_session.client("ecs")
 
@@ -361,7 +371,9 @@ def get_load_balancer_domain_and_configuration(
     no_items = True
     for cluster_arn in response["clusterArns"]:
         cluster_name = cluster_arn.split("/")[1]
-        cluster_app, cluster_env = separate_hyphenated_application_environment_and_service(cluster_name, 2, 2)
+        cluster_app, cluster_env = separate_hyphenated_application_environment_and_service(
+            cluster_name, 2, 2
+        )
         if cluster_app == app and cluster_env == env:
             no_items = False
             break
@@ -379,7 +391,11 @@ def get_load_balancer_domain_and_configuration(
     no_items = True
     for service_arn in response["serviceArns"]:
         fully_qualified_service_name = service_arn.split("/")[2]
-        service_app, service_env, service_name = separate_hyphenated_application_environment_and_service(
+        (
+            service_app,
+            service_env,
+            service_name,
+        ) = separate_hyphenated_application_environment_and_service(
             fully_qualified_service_name, 3, 2
         )
         if service_app == app and service_env == env and service_name == svc:
@@ -403,9 +419,7 @@ def get_load_balancer_domain_and_configuration(
                 services=[
                     fully_qualified_service_name,
                 ],
-            )["services"][
-                0
-            ]["loadBalancers"][0]["targetGroupArn"],
+            )["services"][0]["loadBalancers"][0]["targetGroupArn"],
         ],
     )["TargetGroups"][0]["LoadBalancerArns"][0]
 
@@ -431,8 +445,12 @@ def domain():
 
 
 @domain.command()
-@click.option("--domain-profile", help="aws account profile name for R53 domains account", required=True)
-@click.option("--project-profile", help="aws account profile name for certificates account", required=True)
+@click.option(
+    "--domain-profile", help="aws account profile name for R53 domains account", required=True
+)
+@click.option(
+    "--project-profile", help="aws account profile name for certificates account", required=True
+)
 @click.option("--base-domain", help="root domain", required=True)
 def check_domain(domain_profile, project_profile, base_domain):
     """Scans to see if Domain exists."""
@@ -476,7 +494,12 @@ def check_domain(domain_profile, project_profile, base_domain):
                                 fg="yellow",
                                 bold=True,
                             )
-                            cert_arn = check_r53(domain_session, project_session, domain["http"]["alias"], base_domain)
+                            cert_arn = check_r53(
+                                domain_session,
+                                project_session,
+                                domain["http"]["alias"],
+                                base_domain,
+                            )
                             cert_list.update({domain["http"]["alias"]: cert_arn})
 
     if cert_list:
@@ -489,8 +512,12 @@ def check_domain(domain_profile, project_profile, base_domain):
 
 @domain.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option("--domain-profile", help="aws account profile name for R53 domains account", required=True)
-@click.option("--project-profile", help="aws account profile name for application account", required=True)
+@click.option(
+    "--domain-profile", help="aws account profile name for R53 domains account", required=True
+)
+@click.option(
+    "--project-profile", help="aws account profile name for application account", required=True
+)
 @click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
 def assign_domain(app, domain_profile, project_profile, svc, env):
@@ -526,7 +553,10 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
     parts = domain_name.split(".")
     for _ in range(len(parts) - 1):
         subdom = ".".join(parts) + "."
-        click.echo(click.style("Searching for ", fg="yellow") + click.style(f"{subdom}..", fg="white", bold=True))
+        click.echo(
+            click.style("Searching for ", fg="yellow")
+            + click.style(f"{subdom}..", fg="white", bold=True)
+        )
 
         if subdom in hosted_zones:
             click.echo(
@@ -549,7 +579,9 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
                     )
                     click.echo(
                         click.style("is pointing to LB ", fg="yellow")
-                        + click.style(f"{record['ResourceRecords'][0]['Value']}", fg="white", bold=True),
+                        + click.style(
+                            f"{record['ResourceRecords'][0]['Value']}", fg="white", bold=True
+                        ),
                     )
                     if record["ResourceRecords"][0]["Value"] != elb_name:
                         if click.confirm(
@@ -568,11 +600,20 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
                         click.secho("No need to add as it already exists", fg="green")
                     exit()
 
-            record = {"Name": domain_name, "Type": "CNAME", "TTL": 300, "ResourceRecords": [{"Value": elb_name}]}
+            record = {
+                "Name": domain_name,
+                "Type": "CNAME",
+                "TTL": 300,
+                "ResourceRecords": [{"Value": elb_name}],
+            }
 
             if not click.confirm(
                 click.style("Creating R53 record: ", fg="yellow")
-                + click.style(f"{record['Name']} -> {record['ResourceRecords'][0]['Value']}\n", fg="white", bold=True)
+                + click.style(
+                    f"{record['Name']} -> {record['ResourceRecords'][0]['Value']}\n",
+                    fg="white",
+                    bold=True,
+                )
                 + click.style("In Domain: ", fg="yellow")
                 + click.style(f"{subdom}", fg="white", bold=True)
                 + click.style("\tZone ID: ", fg="yellow")

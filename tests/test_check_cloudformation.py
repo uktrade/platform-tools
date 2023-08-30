@@ -29,7 +29,9 @@ def test_prepares_cloudformation_templates(copilot_directory: Path) -> None:
 
     CliRunner().invoke(check_cloudformation_command)
 
-    assert copilot_directory.exists(), "copilot directory should exist and include cloudformation templates"
+    assert (
+        copilot_directory.exists()
+    ), "copilot directory should exist and include cloudformation templates"
     expected_paths = [
         "celery",
         "environments",
@@ -64,7 +66,9 @@ def ensure_directory_does_not_exist(copilot_directory: Path) -> None:
 
 
 def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: str) -> None:
-    template = "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
+    template = (
+        "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
+    )
     ensure_directory_does_not_exist(copilot_directory)
     addons_directory = Path(f"{BASE_DIR}/tests/test-application/copilot/environments/addons")
     addons_directory.mkdir(parents=True, exist_ok=True)
@@ -72,7 +76,9 @@ def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: str)
 
 
 @patch("commands.check_cloudformation.prepare_cloudformation_templates")
-def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates, copilot_directory: Path) -> None:
+def test_outputs_passed_results_summary(
+    patched_prepare_cloudformation_templates, copilot_directory: Path
+) -> None:
     patched_prepare_cloudformation_templates.return_value(None)
     prepare_fake_cloudformation_templates(copilot_directory, passing=True)
 
@@ -84,12 +90,14 @@ def test_outputs_passed_results_summary(patched_prepare_cloudformation_templates
 
 
 @patch("commands.check_cloudformation.prepare_cloudformation_templates")
-def test_outputs_failed_results_summary(patched_prepare_cloudformation_templates, copilot_directory: Path) -> None:
+def test_outputs_failed_results_summary(
+    patched_prepare_cloudformation_templates, copilot_directory: Path
+) -> None:
     patched_prepare_cloudformation_templates.return_value(None)
     prepare_fake_cloudformation_templates(copilot_directory, passing=False)
 
     result = CliRunner().invoke(check_cloudformation_command)
 
     assert (
-       "The CloudFormation templates failed the following checks :-(\n  - lint\n" in result.output
+        "The CloudFormation templates failed the following checks :-(\n  - lint\n" in result.output
     ), "The failed checks summary was not outputted"

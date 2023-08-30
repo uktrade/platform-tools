@@ -21,7 +21,11 @@ def import_ci_config():
         }[k]
 
     def _clean(env):
-        return {_rename(k): v for k, v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]}
+        return {
+            _rename(k): v
+            for k, v in env.items()
+            if k not in ["type", "region", "run", "secrets", "vars"]
+        }
 
     path = Path(SOURCE_PATH)
 

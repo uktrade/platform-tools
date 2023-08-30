@@ -137,7 +137,10 @@ def test_set_ssm_param_with_overwrite_but_not_exists():
             "Created for testing purposes.",
         )
 
-    assert """Arguments "overwrite" is set to True, but "exists" is set to False.""" == exception.value.args[0]
+    assert (
+        """Arguments "overwrite" is set to True, but "exists" is set to False."""
+        == exception.value.args[0]
+    )
 
 
 @mock_ssm
@@ -190,7 +193,12 @@ def test_set_ssm_param_tags_with_existing_secret():
         Tags=tags,
     )
 
-    assert tags == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)["TagList"]
+    assert (
+        tags
+        == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)[
+            "TagList"
+        ]
+    )
 
     set_ssm_param(
         "test-application",
@@ -202,4 +210,9 @@ def test_set_ssm_param_tags_with_existing_secret():
         "Created for testing purposes.",
     )
 
-    assert tags == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)["TagList"]
+    assert (
+        tags
+        == mocked_ssm.list_tags_for_resource(ResourceType="Parameter", ResourceId=secret_name)[
+            "TagList"
+        ]
+    )
