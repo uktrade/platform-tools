@@ -27,7 +27,11 @@ def test_check_waf():
         Name="default",
         Scope="REGIONAL",
         DefaultAction={},
-        VisibilityConfig={"SampledRequestsEnabled": True, "CloudWatchMetricsEnabled": True, "MetricName": "blah"},
+        VisibilityConfig={
+            "SampledRequestsEnabled": True,
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": "blah",
+        },
     )["Summary"]["ARN"]
 
     assert check_waf(session) == arn
@@ -40,7 +44,11 @@ def test_check_waf_no_arn():
         Name="non-default",
         Scope="REGIONAL",
         DefaultAction={},
-        VisibilityConfig={"SampledRequestsEnabled": True, "CloudWatchMetricsEnabled": True, "MetricName": "blah"},
+        VisibilityConfig={
+            "SampledRequestsEnabled": True,
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": "blah",
+        },
     )["Summary"]["ARN"]
 
     assert check_waf(session) == ""
@@ -53,10 +61,16 @@ def test_attach_waf_no_default(alias_session):
         Name="non-default",
         Scope="REGIONAL",
         DefaultAction={},
-        VisibilityConfig={"SampledRequestsEnabled": True, "CloudWatchMetricsEnabled": True, "MetricName": "blah"},
+        VisibilityConfig={
+            "SampledRequestsEnabled": True,
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": "blah",
+        },
     )["Summary"]["ARN"]
     runner = CliRunner()
-    result = runner.invoke(attach_waf, ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env"])
+    result = runner.invoke(
+        attach_waf, ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env"]
+    )
 
     assert "Default WAF rule does not exists in this AWS account," in result.output
 
@@ -69,14 +83,19 @@ def test_attach_waf_no_default(alias_session):
 def test_attach_waf(alias_session):
     session = boto3.Session()
     vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
-    subnet_id = session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
+    subnet_id = session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")[
+        "Subnet"
+    ]["SubnetId"]
     elbv2_client = session.client("elbv2")
     lb_response = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])
     dns_name = lb_response["LoadBalancers"][0]["DNSName"]
     lb_arn = lb_response["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0]["TargetGroupArn"]
+    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0][
+        "TargetGroupArn"
+    ]
     elbv2_client.create_listener(
-        LoadBalancerArn=lb_arn, DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}]
+        LoadBalancerArn=lb_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
     ecs_client = session.client("ecs")
     ecs_client.create_cluster(clusterName="app-env-svc")
@@ -90,7 +109,11 @@ def test_attach_waf(alias_session):
         Name="default",
         Scope="REGIONAL",
         DefaultAction={},
-        VisibilityConfig={"SampledRequestsEnabled": True, "CloudWatchMetricsEnabled": True, "MetricName": "blah"},
+        VisibilityConfig={
+            "SampledRequestsEnabled": True,
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": "blah",
+        },
     )["Summary"]["ARN"]
     runner = CliRunner()
     response = session.client("wafv2").get_web_acl_for_resource(ResourceArn=lb_arn)
@@ -117,7 +140,18 @@ def test_custom_waf_file_not_found(alias_session):
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
-        ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env", "--waf-path", "not-a-path"],
+        [
+            "--app",
+            "app",
+            "--project-profile",
+            "foo",
+            "--svc",
+            "svc",
+            "--env",
+            "env",
+            "--waf-path",
+            "not-a-path",
+        ],
     )
     path_string = f"{TEST_APP_DIR}/not-a-path"
 
@@ -145,7 +179,9 @@ def test_custom_waf_invalid_yml(alias_session):
             "copilot/environments/addons/invalid_cloudformation_template.yml",
         ],
     )
-    path_string = str(TEST_APP_DIR / "copilot" / "environments" / "addons" / "invalid_cloudformation_template.yml")
+    path_string = str(
+        TEST_APP_DIR / "copilot" / "environments" / "addons" / "invalid_cloudformation_template.yml"
+    )
 
     assert result.exit_code == 0
     assert f"File failed lint check.\n{path_string}" in result.output
@@ -159,9 +195,9 @@ def test_custom_waf_invalid_yml(alias_session):
 def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
     os.chdir(TEST_APP_DIR)
     check_aws_conn.return_value = alias_session
-    create_stack.side_effect = alias_session.client("cloudformation").exceptions.AlreadyExistsException(
-        {"Error": {"Code": 666, "Message": ""}}, "operation name"
-    )
+    create_stack.side_effect = alias_session.client(
+        "cloudformation"
+    ).exceptions.AlreadyExistsException({"Error": {"Code": 666, "Message": ""}}, "operation name")
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -189,9 +225,14 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
     "commands.waf_cli.botocore.client.BaseClient._make_api_call",
     return_value={"Stacks": [{"StackStatus": "DELETE_IN_PROGRESS"}]},
 )
-@patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
+@patch(
+    "commands.waf_cli.create_stack",
+    return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
+)
 @patch("commands.waf_cli.check_aws_conn")
-def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_stacks, alias_session):
+def test_custom_waf_delete_in_progress(
+    check_aws_conn, create_stack, describe_stacks, alias_session
+):
     check_aws_conn.return_value = alias_session
     os.chdir(TEST_APP_DIR)
     runner = CliRunner()
@@ -222,9 +263,14 @@ def test_custom_waf_delete_in_progress(check_aws_conn, create_stack, describe_st
 @mock_sts
 @mock_wafv2
 @patch("commands.waf_cli.get_load_balancer_domain_and_configuration")
-@patch("commands.waf_cli.create_stack", return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}})
+@patch(
+    "commands.waf_cli.create_stack",
+    return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
+)
 @patch("commands.waf_cli.check_aws_conn")
-def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session):
+def test_custom_waf(
+    check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session
+):
     cf_client = alias_session.client("cloudformation")
 
     # We need to ensure a specific instance of the cloudformation client is returned by custom_waf, in order to assert that create_stack is called with this client
@@ -238,10 +284,16 @@ def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_doma
     alias_session.client = client
     check_aws_conn.return_value = alias_session
     vpc_id = alias_session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
-    subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")["Subnet"]["SubnetId"]
+    subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")[
+        "Subnet"
+    ]["SubnetId"]
     elbv2_client = alias_session.client("elbv2")
-    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0]["LoadBalancerArn"]
-    load_balancer_configuration = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])["LoadBalancers"][0]
+    lb_arn = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])["LoadBalancers"][0][
+        "LoadBalancerArn"
+    ]
+    load_balancer_configuration = elbv2_client.describe_load_balancers(LoadBalancerArns=[lb_arn])[
+        "LoadBalancers"
+    ][0]
     get_elastic_load_balancer_domain_and_configuration.return_value = (
         "domain-name",
         load_balancer_configuration,
@@ -254,7 +306,14 @@ def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_doma
     with patch(
         "commands.waf_cli.botocore.client.BaseClient._make_api_call",
         side_effect=[
-            {"Stacks": [{"StackStatus": "CREATE_COMPLETE", "Outputs": [{"OutputValue": "somekinda-waf:arn"}]}]},
+            {
+                "Stacks": [
+                    {
+                        "StackStatus": "CREATE_COMPLETE",
+                        "Outputs": [{"OutputValue": "somekinda-waf:arn"}],
+                    }
+                ]
+            },
             {"ResponseMetadata": {"HTTPStatusCode": 200}},
         ],
     ) as api_call:
@@ -276,7 +335,9 @@ def test_custom_waf(check_aws_conn, create_stack, get_elastic_load_balancer_doma
 
     assert f"WAF created: somekinda-waf:arn" in result.output
     api_call.assert_any_call("DescribeStacks", {"StackName": "abc"})
-    api_call.assert_called_with("AssociateWebACL", {"WebACLArn": "somekinda-waf:arn", "ResourceArn": lb_arn})
+    api_call.assert_called_with(
+        "AssociateWebACL", {"WebACLArn": "somekinda-waf:arn", "ResourceArn": lb_arn}
+    )
     assert f"Custom WAF is now associated with {dns_name}" in result.output
     assert result.exit_code == 0
 

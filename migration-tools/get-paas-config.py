@@ -19,7 +19,11 @@ def import_ci_config():
         }[k]
 
     def _clean(env):
-        return {_rename(k): v for k, v in env.items() if k not in ["type", "region", "run", "secrets", "vars"]}
+        return {
+            _rename(k): v
+            for k, v in env.items()
+            if k not in ["type", "region", "run", "secrets", "vars"]
+        }
 
     path = Path(SOURCE_PATH)
 
@@ -48,7 +52,11 @@ def get_paas_data(client):
             print(f"└── Space: {space['entity']['name']}")
             for app in space.apps():
                 print(f"    ├── {app['entity']['name']}")
-                env_keys = list(app["entity"]["environment_json"].keys()) if app["entity"]["environment_json"] else []
+                env_keys = (
+                    list(app["entity"]["environment_json"].keys())
+                    if app["entity"]["environment_json"]
+                    else []
+                )
 
                 env_keys = [k for k in env_keys if k not in ["GIT_COMMIT", "GIT_BRANCH"]]
 

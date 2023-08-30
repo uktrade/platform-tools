@@ -53,7 +53,10 @@ def test_check_service_role_returns_role_arn():
         AssumeRolePolicyDocument="123",
     )
 
-    assert check_service_role("ci-CodeBuild-role", session) == "arn:aws:iam::123456789012:role/ci-CodeBuild-role"
+    assert (
+        check_service_role("ci-CodeBuild-role", session)
+        == "arn:aws:iam::123456789012:role/ci-CodeBuild-role"
+    )
 
 
 @mock_ssm
@@ -75,8 +78,14 @@ def test_update_parameter():
 @pytest.mark.parametrize(
     "url,expected",
     [
-        ("https://github.com/uktrade/digital-workspace", "https://github.com/uktrade/digital-workspace"),
-        ("git@github.com:uktrade/digital-workspace", "https://github.com/uktrade/digital-workspace"),
+        (
+            "https://github.com/uktrade/digital-workspace",
+            "https://github.com/uktrade/digital-workspace",
+        ),
+        (
+            "git@github.com:uktrade/digital-workspace",
+            "https://github.com/uktrade/digital-workspace",
+        ),
     ],
 )
 def test_check_git_url_valid(url, expected):
@@ -117,9 +126,9 @@ def test_link_github(import_pat, alias_session):
 def test_create_codedeploy_role_returns_200(alias_session):
     runner = CliRunner()
     result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo"])
-    response = alias_session.client("iam", region_name=AWS_REGION).get_role(RoleName="ci-CodeBuild-role")[
-        "ResponseMetadata"
-    ]
+    response = alias_session.client("iam", region_name=AWS_REGION).get_role(
+        RoleName="ci-CodeBuild-role"
+    )["ResponseMetadata"]
     policy = alias_session.client("iam", region_name=AWS_REGION).list_attached_role_policies(
         RoleName="ci-CodeBuild-role",
     )["AttachedPolicies"][0]
@@ -165,7 +174,9 @@ def test_create_codedeploy_role_policy_already_exists(alias_session):
 def test_create_codedeploy_role_limit_exceeded_exception(alias_session):
     runner = CliRunner()
     for i in range(6):
-        result = runner.invoke(create_codedeploy_role, ["--project-profile", "foo", "--type", "ci"], input="y")
+        result = runner.invoke(
+            create_codedeploy_role, ["--project-profile", "foo", "--type", "ci"], input="y"
+        )
 
     assert (
         "You have hit the limit of max managed policies, please delete an existing version and try again"
@@ -196,7 +207,16 @@ def test_slackcreds(alias_session):
     runner = CliRunner()
     result = runner.invoke(
         slackcreds,
-        ["--workspace", "workspace", "--channel", "channel", "--token", "token", "--project-profile", "foo"],
+        [
+            "--workspace",
+            "workspace",
+            "--channel",
+            "channel",
+            "--token",
+            "token",
+            "--project-profile",
+            "foo",
+        ],
         input="y",
     )
 
@@ -208,8 +228,16 @@ def test_slackcreds(alias_session):
             "description": "Slack Workspace ID",
             "value": "workspace",
         },
-        "channel": {"name": "/codebuild/slack_channel_id", "description": "Slack Channel ID", "value": "channel"},
-        "token": {"name": "/codebuild/slack_api_token", "description": "Slack API Token", "value": "token"},
+        "channel": {
+            "name": "/codebuild/slack_channel_id",
+            "description": "Slack Channel ID",
+            "value": "channel",
+        },
+        "token": {
+            "name": "/codebuild/slack_api_token",
+            "description": "Slack API Token",
+            "value": "token",
+        },
     }
     for item, value in SLACK.items():
         response = alias_session.client("ssm").get_parameter(Name=SLACK[item]["name"])

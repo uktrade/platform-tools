@@ -92,7 +92,9 @@ def mock_cluster_client_task(mocked_cluster):
                 MaxCount=1,
             )
             mocked_ec2_instances = boto3.client("ec2").describe_instances()
-            mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
+            mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0][
+                "InstanceId"
+            ]
 
             mocked_ec2 = boto3.resource("ec2")
             mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
@@ -107,7 +109,13 @@ def mock_cluster_client_task(mocked_cluster):
             mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
                 family=f"copilot-conduit-{addon_type}",
                 containerDefinitions=[
-                    {"name": "test_container", "image": "test_image", "cpu": 256, "memory": 512, "essential": True}
+                    {
+                        "name": "test_container",
+                        "image": "test_image",
+                        "cpu": 256,
+                        "memory": 512,
+                        "essential": True,
+                    }
                 ],
             )["taskDefinition"]["taskDefinitionArn"]
 

@@ -32,7 +32,9 @@ class MockEntity(JsonObject):
         return [space]
 
     def apps(self):
-        app = MockEntity(entity={"name": "test-service", "environment_json": {"TEST_VAR": "TEST_VAR"}})
+        app = MockEntity(
+            entity={"name": "test-service", "environment_json": {"TEST_VAR": "TEST_VAR"}}
+        )
         return [app]
 
 
@@ -97,7 +99,9 @@ def test_make_config(tmp_path):
     contents."""
 
     test_environment_manifest = Path(FIXTURES_DIR, "test_environment_manifest.yml").read_text()
-    production_environment_manifest = Path(FIXTURES_DIR, "production_environment_manifest.yml").read_text()
+    production_environment_manifest = Path(
+        FIXTURES_DIR, "production_environment_manifest.yml"
+    ).read_text()
     test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
 
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
@@ -159,7 +163,11 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
 
 @pytest.mark.parametrize(
     "env_vars,param_value",
-    [({}, "NOT FOUND"), ({"TEST_SECRET": None}, "EMPTY"), ({"TEST_SECRET": "TEST_SECRET"}, "TEST_SECRET")],
+    [
+        ({}, "NOT FOUND"),
+        ({"TEST_SECRET": None}, "EMPTY"),
+        ({"TEST_SECRET": "TEST_SECRET"}, "TEST_SECRET"),
+    ],
 )
 @mock_ssm
 @mock_sts
@@ -199,11 +207,15 @@ def test_migrate_secrets_param_doesnt_exist(
 @mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_param_already_exists(client, get_paas_env_vars, alias_session, aws_credentials, tmp_path):
+def test_migrate_secrets_param_already_exists(
+    client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
+):
     """Test that, where a secret already exists in aws ssm and overwrite flag
     isn't set, migrate_secrets doesn't update it."""
 
-    set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
+    set_ssm_param(
+        "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
+    )
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
 
     result = CliRunner().invoke(
@@ -223,11 +235,15 @@ def test_migrate_secrets_param_already_exists(client, get_paas_env_vars, alias_s
 @mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_overwrite(client, get_paas_env_vars, alias_session, aws_credentials, tmp_path):
+def test_migrate_secrets_overwrite(
+    client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
+):
     """Test that, where a secret already exists in aws ssm and overwrite flag is
     set, migrate_secrets updates it."""
 
-    set_ssm_param("test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False)
+    set_ssm_param(
+        "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
+    )
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
 
     result = CliRunner().invoke(
@@ -248,7 +264,9 @@ def test_migrate_secrets_overwrite(client, get_paas_env_vars, alias_session, aws
 @mock_sts
 @patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
 @patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
-def test_migrate_secrets_dry_run(client, get_paas_env_vars, alias_session, aws_credentials, tmp_path):
+def test_migrate_secrets_dry_run(
+    client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
+):
     """Test that, when dry-run flag is passed, migrate_secrets does not create a
     secret."""
 
@@ -316,7 +334,10 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
 @mock_sts
 def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
     get_ssm_secrets.return_value = [
-        ("/copilot/test-application/development/secrets/ALLOWED_HOSTS", "test-application.development.dbt"),
+        (
+            "/copilot/test-application/development/secrets/ALLOWED_HOSTS",
+            "test-application.development.dbt",
+        ),
         ("/copilot/test-application/development/secrets/TEST_SECRET", "test value"),
     ]
 
@@ -355,7 +376,9 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
 @patch("commands.bootstrap_cli.set_ssm_param")
 @mock_ssm
 @mock_sts
-def test_copy_secrets_with_existing_secret(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
+def test_copy_secrets_with_existing_secret(
+    set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
+):
     set_ssm_param.side_effect = alias_session.client("ssm").exceptions.ParameterAlreadyExists(
         {
             "Error": {
@@ -375,7 +398,10 @@ def test_copy_secrets_with_existing_secret(set_ssm_param, get_ssm_secrets, alias
 
     result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
 
-    assert """The "TEST_SECRET" parameter already exists for the "newenv" environment.""" in result.output
+    assert (
+        """The "TEST_SECRET" parameter already exists for the "newenv" environment."""
+        in result.output
+    )
 
 
 def setup_newenv_environment(tmp_path, runner):

@@ -81,9 +81,24 @@ class TestMakeAddonCommand:
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
-            ("rds_addons.yml", ["my-rds-db.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], True),
-            ("redis_addons.yml", ["my-redis.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], False),
-            ("aurora_addons.yml", ["my-aurora-db.yml", "addons.parameters.yml"], ["appconfig-ipfilter.yml"], True),
+            (
+                "rds_addons.yml",
+                ["my-rds-db.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                True,
+            ),
+            (
+                "redis_addons.yml",
+                ["my-redis.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                False,
+            ),
+            (
+                "aurora_addons.yml",
+                ["my-aurora-db.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                True,
+            ),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
@@ -103,12 +118,20 @@ class TestMakeAddonCommand:
         result = CliRunner().invoke(make_addons)
 
         # Assert:
-        assert result.exit_code == 0, f"The exit code should have been 0 (success) but was {result.exit_code}"
+        assert (
+            result.exit_code == 0
+        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
         db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
-        assert (db_warning in result.stdout) == expect_db_warning, "If we have a DB addon we expect a warning"
+        assert (
+            db_warning in result.stdout
+        ) == expect_db_warning, "If we have a DB addon we expect a warning"
 
-        expected_env_files = [Path("environments/addons", filename) for filename in expected_env_addons]
-        expected_service_files = [Path("web/addons", filename) for filename in expected_service_addons]
+        expected_env_files = [
+            Path("environments/addons", filename) for filename in expected_env_addons
+        ]
+        expected_service_files = [
+            Path("web/addons", filename) for filename in expected_service_addons
+        ]
         all_expected_files = expected_env_files + expected_service_files
 
         for f in all_expected_files:
@@ -117,7 +140,11 @@ class TestMakeAddonCommand:
             assert expected == actual, f"The file {f} did not have the expected content"
 
         copilot_dir = Path(tmp_path, "copilot")
-        actual_files = [Path(d, f).relative_to(copilot_dir) for d, _, files in os.walk(copilot_dir) for f in files]
+        actual_files = [
+            Path(d, f).relative_to(copilot_dir)
+            for d, _, files in os.walk(copilot_dir)
+            for f in files
+        ]
 
         assert len(all_expected_files) + 2 == len(
             actual_files
@@ -166,7 +193,10 @@ invalid-entry:
         result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
-        assert result.output == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
+        assert (
+            result.output
+            == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
+        )
 
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
@@ -187,7 +217,10 @@ invalid-environment:
         result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
-        assert result.output == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
+        assert (
+            result.output
+            == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
+        )
 
     def test_exit_if_services_key_invalid(self, fakefs):
         """
@@ -216,7 +249,9 @@ invalid-entry:
         result = CliRunner().invoke(cli, ["make-addons"])
 
         assert result.exit_code == 1
-        assert result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
+        assert (
+            result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
+        )
 
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
@@ -239,7 +274,9 @@ invalid-entry:
         ],
     )
     @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_env_addons_parameters_file_with_different_addon_types(self, fakefs, addon_file_contents, addon_type):
+    def test_env_addons_parameters_file_with_different_addon_types(
+        self, fakefs, addon_file_contents, addon_type
+    ):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents=addon_file_contents,
@@ -256,7 +293,8 @@ invalid-entry:
             ), f"addons.parameters.yml should not be included for {addon_type}"
         else:
             assert (
-                "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+                "File copilot/environments/addons/addons.parameters.yml overwritten"
+                in result.output
             ), f"addons.parameters.yml should be included for {addon_type}"
 
     @pytest.mark.parametrize(
@@ -268,7 +306,9 @@ invalid-entry:
         ],
     )
     @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_addon_instructions_with_postgres_addon_types(self, fakefs, addon_file_contents, addon_type, secret_name):
+    def test_addon_instructions_with_postgres_addon_types(
+        self, fakefs, addon_file_contents, addon_type, secret_name
+    ):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents=addon_file_contents,
@@ -284,7 +324,9 @@ invalid-entry:
                 "DATABASE_CREDENTIALS" not in result.output
             ), f"DATABASE_CREDENTIALS should not be included for {addon_type}"
         else:
-            assert "DATABASE_CREDENTIALS" in result.output, f"DATABASE_CREDENTIALS should be included for {addon_type}"
+            assert (
+                "DATABASE_CREDENTIALS" in result.output
+            ), f"DATABASE_CREDENTIALS should be included for {addon_type}"
             assert (
                 "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/"
                 f"{secret_name}" in result.output
