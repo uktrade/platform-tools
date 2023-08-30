@@ -89,7 +89,8 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
 
     subprocess.call(
-        f"copilot task run --app {app} --env {env} --task-group-name conduit-{normalise_string(addon_name)} "
+        f"copilot task run --app {app} --env {env} "
+        f"--task-group-name conduit-{app}-{env}-{normalise_string(addon_name)} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn} "
         "--platform-os linux "
@@ -98,11 +99,11 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     )
 
 
-def addon_client_is_running(cluster_arn: str, addon_name: str) -> bool:
+def addon_client_is_running(cluster_arn: str, app: str, env: str, addon_name: str) -> bool:
     tasks = boto3.client("ecs").list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
-        family=f"copilot-conduit-{normalise_string(addon_name)}",
+        family=f"copilot-conduit-{app}-{env}-{normalise_string(addon_name)}",
     )
 
     if not tasks["taskArns"]:
@@ -130,10 +131,13 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
     while tries < 15 and not running:
         tries += 1
 
-        if addon_client_is_running(cluster_arn, addon_name):
+        if addon_client_is_running(cluster_arn, app, env, addon_name):
             running = True
             subprocess.call(
-                f"copilot task exec --app {app} --env {env} --name conduit-{normalise_string(addon_name)} --command bash",
+                f"copilot task exec "
+                f"--app {app} --env {env} "
+                f"--name conduit-{app}-{env}-{normalise_string(addon_name)} "
+                f"--command bash",
                 shell=True,
             )
 
@@ -150,7 +154,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     cluster_arn = get_cluster_arn(app, env)
     addon_name = addon_name or addon_type
 
-    if not addon_client_is_running(cluster_arn, addon_name):
+    if not addon_client_is_running(cluster_arn, app, env, addon_name):
         create_addon_client_task(app, env, addon_type, addon_name)
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 

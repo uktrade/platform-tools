@@ -107,7 +107,7 @@ def mock_cluster_client_task(mocked_cluster):
                 instanceIdentityDocument=mocked_instance_id_document,
             )
             mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
-                family=f"copilot-conduit-{addon_type}",
+                family=f"copilot-conduit-test-application-development-{addon_type}",
                 containerDefinitions=[
                     {
                         "name": "test_container",
