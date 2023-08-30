@@ -99,7 +99,7 @@ def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: st
     )
 
 
-def addon_client_is_running(cluster_arn: str, app: str, env: str, addon_name: str) -> bool:
+def addon_client_is_running(app: str, env: str, cluster_arn: str, addon_name: str) -> bool:
     tasks = boto3.client("ecs").list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
@@ -131,7 +131,7 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
     while tries < 15 and not running:
         tries += 1
 
-        if addon_client_is_running(cluster_arn, app, env, addon_name):
+        if addon_client_is_running(app, env, cluster_arn, addon_name):
             running = True
             subprocess.call(
                 f"copilot task exec "
@@ -154,7 +154,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     cluster_arn = get_cluster_arn(app, env)
     addon_name = addon_name or addon_type
 
-    if not addon_client_is_running(cluster_arn, app, env, addon_name):
+    if not addon_client_is_running(app, env, cluster_arn, addon_name):
         create_addon_client_task(app, env, addon_type, addon_name)
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 
