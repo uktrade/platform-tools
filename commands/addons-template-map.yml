@@ -26,7 +26,7 @@ rds-postgres:
       filename: addons.parameters.yml
 opensearch:
   env:
-    - template: addons/env/rds-postgres.yml
+    - template: addons/env/opensearch.yml
     - template: addons/env/addons.parameters.yml
       filename: addons.parameters.yml
 s3:
