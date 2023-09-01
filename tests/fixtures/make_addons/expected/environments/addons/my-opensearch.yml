@@ -49,7 +49,8 @@ Resources:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: !Sub Aurora main user secret for ${AWS::StackName}
+      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_OPENSEARCH'
+      Description: !Sub OpenSearch main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "opensearch"}'
         GenerateStringKey: "password"
