@@ -97,7 +97,7 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ service.name|replace("-", "") }}*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ service.name|replace("-", "")|truncate(15) }}*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
@@ -154,7 +154,7 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ service.name|replace("-", "") }}*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ service.name|replace("-", "")|truncate(15) }}*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
