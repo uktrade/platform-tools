@@ -184,7 +184,7 @@ Resources:
         InstanceType: !FindInMap [myOpensearchWithALongNameEnvScalingConfigurationMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: true
         ZoneAwarenessConfig:
-          AvailabilityZoneCount: 3
+          AvailabilityZoneCount: 2
           #Fn::length always resolves to 1 despite there being subnets.
       VPCOptions:
         SecurityGroupIds:
