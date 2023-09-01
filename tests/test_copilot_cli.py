@@ -77,7 +77,11 @@ class TestMakeAddonCommand:
             ),
             (
                 "opensearch_addons.yml",
-                ["my-opensearch.yml", "addons.parameters.yml"],
+                [
+                    "my-opensearch.yml",
+                    "my-opensearch-with-a-long-name.yml",
+                    "addons.parameters.yml",
+                ],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
