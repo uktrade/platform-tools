@@ -7,30 +7,6 @@
 name: {{ name }}
 type: Environment
 
-# Import your own VPC and subnets or configure how they should be created.
-# network:
-#   vpc:
-#     id:
-
-network:
-  vpc:
-    cidr: '10.0.0.0/16'
-    subnets:
-      public:
-        - cidr: '10.0.0.0/24'
-          az: 'eu-west-2a'
-        - cidr: '10.0.1.0/24'
-          az: 'eu-west-2b'
-        - cidr: '10.0.2.0/24'
-          az: 'eu-west-2c'
-      private:
-        - cidr: '10.0.3.0/24'
-          az: 'eu-west-2a'
-        - cidr: '10.0.4.0/24'
-          az: 'eu-west-2b'
-        - cidr: '10.0.5.0/24'
-          az: 'eu-west-2c'
-
 # Configure the load balancers in your environment, once created.
 {% if certificate_arn %}
 http:

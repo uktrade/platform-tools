@@ -5,5 +5,5 @@
 # To be fixed under "DBTP-295 Only add the required parameters to addons.parameters.yml"
 Parameters:
   EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
-  PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, !Ref PrivateSubnet3, ] ]
+  PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]
   VpcId: !Ref VPC
