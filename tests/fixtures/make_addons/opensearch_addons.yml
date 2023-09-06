@@ -10,7 +10,9 @@ my-opensearch:
       # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
       engine: "2.3"
 
-my-opensearch-with-a-long-name:
+# This name is meant to be 18 characters without hyphens,
+# this tests access policy generation.
+my-opensearch-longer:
   type: opensearch
 
   environments:
