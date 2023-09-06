@@ -66,7 +66,7 @@ network:
   vpc:
     placement: 'private'
 
-# The application currently does not work of the file system is readonly, e.g...
+# The application currently does not work if the file system is readonly, e.g...
 #
 # File "/layers/paketo-buildpacks_cpython/cpython/lib/python3.9/tempfile.py", line 291, in gettempdir
 # tempdir = _get_default_tempdir()
