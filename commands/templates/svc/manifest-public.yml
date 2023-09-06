@@ -66,6 +66,9 @@ network:
   vpc:
     placement: 'private'
 
+# The application currently may not work if the file system is readonly, e.g...
+# FileNotFoundError: [Errno 2] No usable temporary directory found in ['/tmp', '/var/tmp', '/usr/tmp', '/workspace']
+# ...so you may need to comment out the two lines below...
 storage:
   readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
