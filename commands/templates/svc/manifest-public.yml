@@ -66,6 +66,15 @@ network:
   vpc:
     placement: 'private'
 
+# The application currently does not work of the file system is readonly, e.g...
+#
+# File "/layers/paketo-buildpacks_cpython/cpython/lib/python3.9/tempfile.py", line 291, in gettempdir
+# tempdir = _get_default_tempdir()
+# File "/layers/paketo-buildpacks_cpython/cpython/lib/python3.9/tempfile.py", line 223, in _get_default_tempdir
+# raise FileNotFoundError(_errno.ENOENT
+# FileNotFoundError: [Errno 2] No usable temporary directory found in ['/tmp', '/var/tmp', '/usr/tmp', '/workspace']
+#
+# You may need to comment out the two lines below...
 storage:
   readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
