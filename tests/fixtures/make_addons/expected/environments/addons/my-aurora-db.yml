@@ -76,6 +76,7 @@ Resources:
         ExcludePunctuation: true
         IncludeSpace: false
         PasswordLength: 16
+        ExcludeCharacters: '"@/\;='
 
   myAuroraDbDBClusterParameterGroup:
     Metadata:
