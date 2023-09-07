@@ -58,7 +58,7 @@ Resources:
         RequireEachIncludedType: true
         IncludeSpace: false
         PasswordLength: 20
-        ExcludeCharacters: '"@/\;='
+        ExcludeCharacters: '"@/\;=?&`><:|#'
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   {{ service.prefix }}OpenSearchSecurityGroup:

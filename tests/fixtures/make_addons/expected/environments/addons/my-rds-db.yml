@@ -103,7 +103,7 @@ Resources:
         ExcludePunctuation: true
         IncludeSpace: false
         PasswordLength: 16
-        ExcludeCharacters: '"@/\;='
+        ExcludeCharacters: '"@/\;=?&`><:|#'
 
   myRdsDbSecretRDSAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
