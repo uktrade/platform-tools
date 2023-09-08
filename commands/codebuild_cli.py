@@ -11,9 +11,7 @@ from .utils import check_aws_conn
 from .utils import check_response
 
 AWS_REGION = "eu-west-2"
-CI_BUILDER_VERSION = "0.2.326-full"
-CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
-DEFAULT_CI_BUILDER = CI_BUILDER + ":" + CI_BUILDER_VERSION
+DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
 
 
 def import_pat(pat: str, client: CodeBuildClient):
@@ -112,9 +110,7 @@ def check_git_url(git: str) -> str:
     return git_url
 
 
-def modify_project(
-    project_session, update, name, desc, git, branch, buildspec, builderimage, release, role_type
-):
+def modify_project(project_session, update, name, desc, git, branch, buildspec, release, role_type):
     git_url = check_git_url(git)
     role_arn = check_service_role("ci-CodeBuild-role", project_session)
     client = project_session.client("codebuild", region_name=AWS_REGION)
@@ -124,7 +120,7 @@ def modify_project(
 
     environment = {
         "type": "LINUX_CONTAINER",
-        "image": f"{builderimage}",
+        "image": f"{DEFAULT_CI_BUILDER}",
         "computeType": "BUILD_GENERAL1_SMALL",
         "environmentVariables": [
             {
@@ -323,7 +319,6 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 @click.option("--git", required=True, help="Git url of code")
 @click.option("--branch", required=True, help="Git branch")
 @click.option("--buildspec", required=True, help="Location of buildspec file in repo")
-@click.option("--builderimage", default=DEFAULT_CI_BUILDER, help="Builder image")
 @click.option("--project-profile", required=True, help="aws account profile name")
 @click.option(
     "--release",
@@ -332,7 +327,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
     default=False,
     help="Trigger builds on release tags",
 )
-def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project_profile, release):
+def codedeploy(update, name, desc, git, branch, buildspec, project_profile, release):
     """Builds Code build boilerplate."""
 
     project_session = check_aws_conn(project_profile)
@@ -344,7 +339,6 @@ def codedeploy(update, name, desc, git, branch, buildspec, builderimage, project
         git,
         branch,
         buildspec,
-        builderimage,
         release,
         "SERVICE_ROLE",
     )
