@@ -491,6 +491,8 @@ Usage: copilot-helper domain check-domain [OPTIONS]
   - aws account profile name for certificates account
 - `--base-domain <text>`
   - root domain
+- `--env <text>`
+  - AWS Copilot environment name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

@@ -452,7 +452,8 @@ def domain():
     "--project-profile", help="aws account profile name for certificates account", required=True
 )
 @click.option("--base-domain", help="root domain", required=True)
-def check_domain(domain_profile, project_profile, base_domain):
+@click.option("--env", help="AWS Copilot environment name", required=False)
+def check_domain(domain_profile, project_profile, base_domain, env):
     """Scans to see if Domain exists."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
@@ -488,7 +489,11 @@ def check_domain(domain_profile, project_profile, base_domain):
                         )
                         click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                        for env, domain in conf["environments"].items():
+                        environments = conf["environments"].items()
+                        if env:
+                            environments = [e for e in environments if e[0] == env]
+
+                        for env, domain in environments:
                             click.secho(
                                 "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
                                 fg="yellow",
