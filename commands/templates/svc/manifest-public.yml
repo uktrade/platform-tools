@@ -38,6 +38,7 @@ sidecars:
       SERVER: localhost:8080
       APPCONFIG_PROFILES: ipfilter:default:default
       IPFILTER_ENABLED: {{ ipfilter }}
+      EMAIL: sre@digital.trade.gov.uk
 
   appconfig:
     port: 2772
