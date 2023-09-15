@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import re
 import subprocess
 import time
@@ -64,37 +65,40 @@ def get_cluster_arn(app: str, env: str) -> str:
     raise NoClusterConduitError
 
 
-def get_connection_secret_arn(app: str, env: str, name: str) -> str:
-    connection_secret_id = f"/copilot/{app}/{env}/secrets/{name}"
+@dataclass
+class ConnectionSecrets:
+    connection_secret: str
+    security_groups: str
 
-    secrets_manager = boto3.client("secretsmanager")
-    ssm = boto3.client("ssm")
 
+def get_connection_secrets(app: str, env: str, name: str) -> ConnectionSecrets:
     try:
-        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
-    except secrets_manager.exceptions.ResourceNotFoundException:
-        pass
-
-    try:
-        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
-            "ARN"
-        ]
-    except ssm.exceptions.ParameterNotFound:
-        pass
-
-    raise SecretNotFoundConduitError(name)
+        command = subprocess.run(
+            args=["copilot", "task", "run", "--generate-cmd", f"{app}/{env}/data-store"],
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+        breakpoint()
+        return ConnectionSecrets(
+            connection_secret=re.search(r"_SECRET=((\w|:|-)+)", command.stderr).group(1),
+            security_groups= re.search(r"security-groups (\S+)", command.stderr).group(1))
+    except subprocess.CalledProcessError as e:
+        print(e.stderr)
+        raise e
 
 
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str):
-    connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
+    connection_secrets = get_connection_secrets(app, env, addon_name.upper())
 
     subprocess.call(
         f"copilot task run --app {app} --env {env} "
         f"--task-group-name conduit-{app}-{env}-{normalise_string(addon_name)} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        f"--secrets CONNECTION_SECRET={connection_secrets.connection_secret} "
         "--platform-os linux "
-        "--platform-arch arm64",
+        "--platform-arch arm64 "
+        f"--security-groups {connection_secrets.security_groups} ",
         shell=True,
     )
 
