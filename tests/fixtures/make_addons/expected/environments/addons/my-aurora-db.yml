@@ -40,6 +40,7 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+
   myAuroraDbSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster myAuroraDb'
@@ -50,6 +51,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-my-aurora-db-Aurora'
+
   myAuroraDbDBClusterSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster myAuroraDb'
@@ -63,6 +65,7 @@ Resources:
           Description: 'From the Aurora Security Group of the workload my-aurora-db.'
           SourceSecurityGroupId: !Ref myAuroraDbSecurityGroup
       VpcId: !Ref VpcId
+
   myAuroraDbAuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
@@ -87,6 +90,9 @@ Resources:
       Family: 'aurora-postgresql14'
       Parameters:
         client_encoding: 'UTF8'
+        log_statement: ddl
+        log_statement_sample_rate: '1.0'
+
   myAuroraDbDBCluster:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 database cluster'
@@ -109,6 +115,7 @@ Resources:
         MinCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
+
   myAuroraDbDBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 writer instance'
