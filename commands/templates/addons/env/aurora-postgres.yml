@@ -27,12 +27,12 @@ Parameters:
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-  {% for environment_name, config in service.environments.items() %}
+{% for environment_name, config in service.environments.items() %}
     {{ environment_name }}:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
-      MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
-  {% endfor %}
+      MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
+{% endfor %}
 
 Resources:
   {{ service.prefix }}DBSubnetGroup:
@@ -40,6 +40,7 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+
   {{ service.prefix }}SecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
@@ -50,6 +51,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
+
   {{ service.prefix }}DBClusterSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.prefix }}'
@@ -63,6 +65,7 @@ Resources:
           Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
           SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
       VpcId: !Ref VpcId
+
   {{ service.prefix }}AuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
@@ -87,6 +90,9 @@ Resources:
       Family: 'aurora-postgresql{{ service.version|round(0, "floor")|int }}'
       Parameters:
         client_encoding: 'UTF8'
+        log_statement: ddl
+        log_statement_sample_rate: '1.0'
+
   {{ service.prefix }}DBCluster:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 database cluster'
@@ -109,6 +115,7 @@ Resources:
         MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
+
   {{ service.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
