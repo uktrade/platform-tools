@@ -27,12 +27,12 @@ Parameters:
 
 Mappings:
   myAuroraDbEnvScalingConfigurationMap:
-  
+
     development:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
-      MultiAZ:  false 
-  
+      MultiAZ: false
+
 
 Resources:
   myAuroraDbDBSubnetGroup:

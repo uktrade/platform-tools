@@ -27,23 +27,23 @@ Parameters:
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-    {% for env_name, config in service.environments.items() %}
+{% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
-      MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
+      MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
-      StorageType: {% if env_name == "prod" %} io1 {% else %} gp3 {% endif %}
-
-    {% endfor %}
+      StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}
+{% endfor %}
 
 Resources:
   # Subnet group to control where the DB gets placed
-  DBSubnetGroup:
+  {{ service.prefix }}DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
   {{ service.prefix }}SecurityGroup:
@@ -53,8 +53,9 @@ Resources:
     Properties:
       GroupDescription: "DB Security Group"
       VpcId: !Ref VpcId
+
   # Enable ingress from other ECS services created within the environment.
-  DBIngress:
+  {{ service.prefix }}DBIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
@@ -65,6 +66,19 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
+
+  {{ service.prefix }}RDSDBParameterGroup:
+    Metadata:
+      'aws:copilot:description': 'A DB parameter group for engine configuration values'
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'postgres13'
+      Parameters:
+        client_encoding: 'UTF8'
+        log_statement: ddl
+        log_statement_sample_rate: '1.0'
+
   # The cluster itself.
   {{ service.prefix }}DBInstance:
     Metadata:
@@ -80,6 +94,7 @@ Resources:
       MaxAllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBParameterGroupName: !Ref {{ service.prefix }}RDSDBParameterGroup
       AllowMajorVersionUpgrade: false
       BackupRetentionPeriod: 7
       DBName: !Ref {{ service.prefix }}DBName
@@ -87,9 +102,10 @@ Resources:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
-      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      DBSubnetGroupName: !Ref '{{ service.prefix }}DBSubnetGroup'
       VPCSecurityGroups:
         - !Ref {{ service.prefix }}SecurityGroup
+
   {{ service.prefix }}RDSSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'

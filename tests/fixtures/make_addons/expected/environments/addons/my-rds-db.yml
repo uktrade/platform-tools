@@ -27,23 +27,23 @@ Parameters:
 
 Mappings:
   myRdsDbEnvScalingConfigurationMap:
-    
+
     development:
       DBInstanceClass: 'db.t3.small'
-      MultiAZ:  true 
+      MultiAZ: true
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
-      StorageType:  gp3 
+      StorageType: gp3
 
-    
 
 Resources:
   # Subnet group to control where the DB gets placed
-  DBSubnetGroup:
+  myRdsDbDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
   myRdsDbSecurityGroup:
@@ -53,8 +53,9 @@ Resources:
     Properties:
       GroupDescription: "DB Security Group"
       VpcId: !Ref VpcId
+
   # Enable ingress from other ECS services created within the environment.
-  DBIngress:
+  myRdsDbDBIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
@@ -65,6 +66,19 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
+
+  myRdsDbRDSDBParameterGroup:
+    Metadata:
+      'aws:copilot:description': 'A DB parameter group for engine configuration values'
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'postgres13'
+      Parameters:
+        client_encoding: 'UTF8'
+        log_statement: ddl
+        log_statement_sample_rate: '1.0'
+
   # The cluster itself.
   myRdsDbDBInstance:
     Metadata:
@@ -80,6 +94,7 @@ Resources:
       MaxAllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
       AllowMajorVersionUpgrade: false
       BackupRetentionPeriod: 7
       DBName: !Ref myRdsDbDBName
@@ -87,9 +102,10 @@ Resources:
         !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:username}}" ]]
       MasterUserPassword:
         !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:password}}" ]]
-      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      DBSubnetGroupName: !Ref 'myRdsDbDBSubnetGroup'
       VPCSecurityGroups:
         - !Ref myRdsDbSecurityGroup
+
   myRdsDbRDSSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'

@@ -27,12 +27,12 @@ Parameters:
 
 Mappings:
   {{ service.prefix }}EnvScalingConfigurationMap:
-  {% for environment_name, config in service.environments.items() %}
+{% for environment_name, config in service.environments.items() %}
     {{ environment_name }}:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
-      MultiAZ: {% if config.replicas %} true {% else %} false {% endif %}
-  {% endfor %}
+      MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
+{% endfor %}
 
 Resources:
   {{ service.prefix }}DBSubnetGroup:
