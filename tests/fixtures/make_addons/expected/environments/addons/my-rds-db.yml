@@ -87,6 +87,9 @@ Resources:
     Properties:
       AutoMinorVersionUpgrade: true
       EnablePerformanceInsights: true
+      EnableCloudwatchLogsExports:
+        - postgresql
+        - upgrade
       Engine: postgres
       EngineVersion: '13'
       DBInstanceClass: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
