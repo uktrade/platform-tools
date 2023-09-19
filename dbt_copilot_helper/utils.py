@@ -6,8 +6,8 @@ import botocore
 import click
 import jinja2
 
-from commands.exceptions import ValidationException
-from commands.jinja2_tags import VersionTag
+from dbt_copilot_helper.exceptions import ValidationException
+from dbt_copilot_helper.jinja2_tags import VersionTag
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -131,7 +131,7 @@ def get_ssm_secrets(app, env):
 
 def setup_templates():
     Path(__file__).parent.parent / Path("templates")
-    templateLoader = jinja2.PackageLoader("commands")
+    templateLoader = jinja2.PackageLoader("dbt_copilot_helper")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
     templateEnv.add_extension(VersionTag)
 

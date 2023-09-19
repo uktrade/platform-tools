@@ -25,11 +25,11 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
-    fs.add_real_directory(BASE_DIR / "commands/templates")
-    fs.add_real_directory(BASE_DIR / "commands/schemas")
-    fs.add_real_file(BASE_DIR / "commands/addon-plans.yml")
-    fs.add_real_file(BASE_DIR / "commands/default-addons.yml")
-    fs.add_real_file(BASE_DIR / "commands/addons-template-map.yml")
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates")
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas")
+    fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")
+    fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
+    fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
 
     return fs

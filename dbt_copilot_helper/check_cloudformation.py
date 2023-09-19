@@ -6,8 +6,8 @@ from subprocess import run
 
 import click
 
-from commands.bootstrap_cli import make_config
-from commands.copilot_cli import make_addons
+from dbt_copilot_helper.bootstrap_cli import make_config
+from dbt_copilot_helper.copilot_cli import make_addons
 
 BASE_DIR = Path(__file__).parent.parent
 

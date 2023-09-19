@@ -10,8 +10,8 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
-from commands.check_cloudformation import get_lint_result
-from commands.dns_cli import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.check_cloudformation import get_lint_result
+from dbt_copilot_helper.dns_cli import get_load_balancer_domain_and_configuration
 
 from .utils import check_aws_conn
 from .utils import check_response

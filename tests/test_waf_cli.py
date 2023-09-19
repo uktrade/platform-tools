@@ -14,9 +14,9 @@ from moto import mock_elbv2
 from moto import mock_sts
 from moto import mock_wafv2
 
-from commands.waf_cli import attach_waf
-from commands.waf_cli import check_waf
-from commands.waf_cli import custom_waf
+from dbt_copilot_helper.waf_cli import attach_waf
+from dbt_copilot_helper.waf_cli import check_waf
+from dbt_copilot_helper.waf_cli import custom_waf
 from tests.conftest import TEST_APP_DIR
 
 
@@ -119,7 +119,7 @@ def test_attach_waf(alias_session):
     response = session.client("wafv2").get_web_acl_for_resource(ResourceArn=lb_arn)
 
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-    with patch("commands.dns_cli.open", open_mock):
+    with patch("dbt_copilot_helper.dns_cli.open", open_mock):
         result = runner.invoke(
             attach_waf, ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env"]
         )
@@ -190,8 +190,8 @@ def test_custom_waf_invalid_yml(alias_session):
 # No Moto CloudFormation support for AWS::WAFv2::WebACL
 @mock_cloudformation
 @mock_sts
-@patch("commands.waf_cli.check_aws_conn")
-@patch("commands.waf_cli.create_stack")
+@patch("dbt_copilot_helper.waf_cli.check_aws_conn")
+@patch("dbt_copilot_helper.waf_cli.create_stack")
 def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
     os.chdir(TEST_APP_DIR)
     check_aws_conn.return_value = alias_session
@@ -222,14 +222,14 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
 @mock_cloudformation
 @mock_sts
 @patch(
-    "commands.waf_cli.botocore.client.BaseClient._make_api_call",
+    "dbt_copilot_helper.waf_cli.botocore.client.BaseClient._make_api_call",
     return_value={"Stacks": [{"StackStatus": "DELETE_IN_PROGRESS"}]},
 )
 @patch(
-    "commands.waf_cli.create_stack",
+    "dbt_copilot_helper.waf_cli.create_stack",
     return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
 )
-@patch("commands.waf_cli.check_aws_conn")
+@patch("dbt_copilot_helper.waf_cli.check_aws_conn")
 def test_custom_waf_delete_in_progress(
     check_aws_conn, create_stack, describe_stacks, alias_session
 ):
@@ -262,12 +262,12 @@ def test_custom_waf_delete_in_progress(
 @mock_elbv2
 @mock_sts
 @mock_wafv2
-@patch("commands.waf_cli.get_load_balancer_domain_and_configuration")
+@patch("dbt_copilot_helper.waf_cli.get_load_balancer_domain_and_configuration")
 @patch(
-    "commands.waf_cli.create_stack",
+    "dbt_copilot_helper.waf_cli.create_stack",
     return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
 )
-@patch("commands.waf_cli.check_aws_conn")
+@patch("dbt_copilot_helper.waf_cli.check_aws_conn")
 def test_custom_waf(
     check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session
 ):
@@ -304,7 +304,7 @@ def test_custom_waf(
 
     # patching here, to avoid inadvertently mocking the moto test setup calls above, expecting two different boto methods to be called
     with patch(
-        "commands.waf_cli.botocore.client.BaseClient._make_api_call",
+        "dbt_copilot_helper.waf_cli.botocore.client.BaseClient._make_api_call",
         side_effect=[
             {
                 "Stacks": [
