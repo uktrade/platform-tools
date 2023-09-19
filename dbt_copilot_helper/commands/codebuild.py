@@ -2,13 +2,14 @@
 import json
 import os
 from importlib.metadata import version
+from pathlib import Path
 
 import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
-from .utils import check_aws_conn
-from .utils import check_response
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import check_response
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
@@ -252,7 +253,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
     project_session = check_aws_conn(project_profile)
     account_id = project_session.client("sts").get_caller_identity().get("Account")
 
-    current_filepath = os.path.dirname(os.path.realpath(__file__))
+    current_filepath = Path(os.path.realpath(__file__)).parent.parent
 
     with open(f"{current_filepath}/templates/{type}-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)

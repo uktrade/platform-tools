@@ -10,14 +10,14 @@ from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
 from schema import Schema
 
-from commands.utils import SSM_PATH
-from commands.utils import check_aws_conn
-from commands.utils import get_ssm_secret_names
-from commands.utils import get_ssm_secrets
-from commands.utils import mkdir
-from commands.utils import mkfile
-from commands.utils import set_ssm_param
-from commands.utils import setup_templates
+from dbt_copilot_helper.utils import SSM_PATH
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import get_ssm_secret_names
+from dbt_copilot_helper.utils import get_ssm_secrets
+from dbt_copilot_helper.utils import mkdir
+from dbt_copilot_helper.utils import mkfile
+from dbt_copilot_helper.utils import set_ssm_param
+from dbt_copilot_helper.utils import setup_templates
 
 config_schema = Schema(
     {

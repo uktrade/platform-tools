@@ -10,7 +10,7 @@ from typing import Optional
 
 import click
 
-from commands.utils import setup_templates
+from dbt_copilot_helper.utils import setup_templates
 
 
 class Parameter(NamedTuple):

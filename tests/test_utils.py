@@ -2,10 +2,10 @@ import boto3
 import pytest
 from moto import mock_ssm
 
-from commands.exceptions import ValidationException
-from commands.utils import check_aws_conn
-from commands.utils import get_ssm_secrets
-from commands.utils import set_ssm_param
+from dbt_copilot_helper.exceptions import ValidationException
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import get_ssm_secrets
+from dbt_copilot_helper.utils import set_ssm_param
 
 
 def test_check_aws_conn_profile_not_configured(capsys):

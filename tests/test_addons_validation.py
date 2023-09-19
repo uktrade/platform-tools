@@ -8,10 +8,10 @@ from jsonschema import validate
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-with open(PROJECT_ROOT / "commands/addon-plans.yml") as fd:
+with open(PROJECT_ROOT / "dbt_copilot_helper/addon-plans.yml") as fd:
     plans = yaml.safe_load(fd)
 
-with open(PROJECT_ROOT / "commands/schemas/addons-schema.json") as fd:
+with open(PROJECT_ROOT / "dbt_copilot_helper/schemas/addons-schema.json") as fd:
     schema = json.load(fd)
 
 

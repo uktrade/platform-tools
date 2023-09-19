@@ -10,12 +10,11 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
-from commands.check_cloudformation import get_lint_result
-from commands.dns_cli import get_load_balancer_domain_and_configuration
-
-from .utils import check_aws_conn
-from .utils import check_response
-from .utils import ensure_cwd_is_repo_root
+from dbt_copilot_helper.commands.check_cloudformation import get_lint_result
+from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import check_response
+from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
 
 # This may need to change, once we determine what the default WAF name will be.
 WAF_DEFAULT_NAME = "default"
