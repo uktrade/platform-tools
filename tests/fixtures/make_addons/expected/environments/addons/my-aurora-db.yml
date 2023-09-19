@@ -106,6 +106,8 @@ Resources:
       DatabaseName: !Ref myAuroraDbDBName
       Engine: 'aurora-postgresql'
       EngineVersion: '14.4'
+      EnableCloudwatchLogsExports:
+        - postgresql
       DBClusterParameterGroupName: !Ref myAuroraDbDBClusterParameterGroup
       DBSubnetGroupName: !Ref myAuroraDbDBSubnetGroup
       Port: 5432
