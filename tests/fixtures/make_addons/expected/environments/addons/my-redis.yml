@@ -75,6 +75,9 @@ Resources:
         FromPort: 6379
         ToPort: 6379
         SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-my-redis-Redis-SecurityGroup'
 
   myRedisReplicationGroup:
     Type: 'AWS::ElastiCache::ReplicationGroup'
