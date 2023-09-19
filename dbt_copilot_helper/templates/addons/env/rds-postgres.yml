@@ -53,6 +53,9 @@ Resources:
     Properties:
       GroupDescription: "DB Security Group"
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-RDS-Postgres-SecurityGroup'
 
   # Enable ingress from other ECS services created within the environment.
   {{ service.prefix }}DBIngress:
