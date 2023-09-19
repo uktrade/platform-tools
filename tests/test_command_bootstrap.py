@@ -107,8 +107,6 @@ def test_make_config(tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
-    print(os.listdir(tmp_path))
-
     result = CliRunner().invoke(make_config)
 
     assert (
