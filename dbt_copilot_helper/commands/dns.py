@@ -8,9 +8,9 @@ import click
 import yaml
 from boto3 import Session
 
-from .utils import check_aws_conn
-from .utils import check_response
-from .utils import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import check_response
+from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
 
 # To do
 # -----

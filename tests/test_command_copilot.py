@@ -10,8 +10,8 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_ssm
 
-from dbt_copilot_helper.copilot_cli import copilot as cli
-from dbt_copilot_helper.copilot_cli import make_addons
+from dbt_copilot_helper.commands.copilot import copilot as cli
+from dbt_copilot_helper.commands.copilot import make_addons
 from dbt_copilot_helper.utils import SSM_PATH
 from tests.conftest import FIXTURES_DIR
 

@@ -10,14 +10,14 @@ from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_elbv2
 
-from dbt_copilot_helper.dns_cli import add_records
-from dbt_copilot_helper.dns_cli import assign_domain
-from dbt_copilot_helper.dns_cli import check_domain
-from dbt_copilot_helper.dns_cli import check_for_records
-from dbt_copilot_helper.dns_cli import check_r53
-from dbt_copilot_helper.dns_cli import create_cert
-from dbt_copilot_helper.dns_cli import create_hosted_zone
-from dbt_copilot_helper.dns_cli import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.commands.dns import add_records
+from dbt_copilot_helper.commands.dns import assign_domain
+from dbt_copilot_helper.commands.dns import check_domain
+from dbt_copilot_helper.commands.dns import check_for_records
+from dbt_copilot_helper.commands.dns import check_r53
+from dbt_copilot_helper.commands.dns import create_cert
+from dbt_copilot_helper.commands.dns import create_hosted_zone
+from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
 ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
@@ -43,7 +43,7 @@ def test_check_for_records(route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.dns_cli.wait_for_certificate_validation",
+    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
     return_value="arn:1234",
 )
 @patch("click.confirm")
@@ -122,7 +122,7 @@ def test_create_hosted_zone(mock_click, route53_session):
 
 # Listcertificates is not implementaed in moto acm. Neeed to patch it
 @patch(
-    "dbt_copilot_helper.dns_cli.create_cert",
+    "dbt_copilot_helper.commands.dns.create_cert",
     return_value="arn:1234",
 )
 def test_check_r53(create_cert, route53_session):
@@ -133,10 +133,10 @@ def test_check_r53(create_cert, route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.dns_cli.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_aws_conn",
 )
 @patch(
-    "dbt_copilot_helper.dns_cli.check_r53",
+    "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
 def test_check_domain(check_aws_conn, check_r53, fakefs):
@@ -165,10 +165,10 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.dns_cli.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_aws_conn",
 )
 @patch(
-    "dbt_copilot_helper.dns_cli.check_r53",
+    "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
 def test_check_domain_env_flag(check_aws_conn, check_r53, fakefs):
@@ -207,11 +207,11 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.dns_cli.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_aws_conn",
 )
-@patch("dbt_copilot_helper.dns_cli.check_response", return_value="{}")
+@patch("dbt_copilot_helper.commands.dns.check_response", return_value="{}")
 @patch(
-    "dbt_copilot_helper.dns_cli.ensure_cwd_is_repo_root",
+    "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
 def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
@@ -306,7 +306,7 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
     }
     open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
 
-    with patch("dbt_copilot_helper.dns_cli.open", open_mock):
+    with patch("dbt_copilot_helper.commands.dns.open", open_mock):
         domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
             boto3.Session(),
             HYPHENATED_APPLICATION_NAME,

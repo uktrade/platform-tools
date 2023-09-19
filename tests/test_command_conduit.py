@@ -8,18 +8,18 @@ from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
 from moto import mock_ssm
 
-from dbt_copilot_helper.conduit_cli import CreateTaskTimeoutConduitError
-from dbt_copilot_helper.conduit_cli import InvalidAddonTypeConduitError
-from dbt_copilot_helper.conduit_cli import NoClusterConduitError
-from dbt_copilot_helper.conduit_cli import SecretNotFoundConduitError
-from dbt_copilot_helper.conduit_cli import addon_client_is_running
-from dbt_copilot_helper.conduit_cli import conduit
-from dbt_copilot_helper.conduit_cli import connect_to_addon_client_task
-from dbt_copilot_helper.conduit_cli import create_addon_client_task
-from dbt_copilot_helper.conduit_cli import get_cluster_arn
-from dbt_copilot_helper.conduit_cli import get_connection_secret_arn
-from dbt_copilot_helper.conduit_cli import normalise_string
-from dbt_copilot_helper.conduit_cli import start_conduit
+from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
+from dbt_copilot_helper.commands.conduit import InvalidAddonTypeConduitError
+from dbt_copilot_helper.commands.conduit import NoClusterConduitError
+from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+from dbt_copilot_helper.commands.conduit import addon_client_is_running
+from dbt_copilot_helper.commands.conduit import conduit
+from dbt_copilot_helper.commands.conduit import connect_to_addon_client_task
+from dbt_copilot_helper.commands.conduit import create_addon_client_task
+from dbt_copilot_helper.commands.conduit import get_cluster_arn
+from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
+from dbt_copilot_helper.commands.conduit import normalise_string
+from dbt_copilot_helper.commands.conduit import start_conduit
 
 
 @pytest.mark.parametrize(
@@ -106,7 +106,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist():
 
 
 @patch("subprocess.call")
-@patch("dbt_copilot_helper.conduit_cli.get_connection_secret_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
 def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
     """Test that, given app and environment strings, create_addon_client_task
     calls get_connection_secret_arn with the default secret name and
@@ -126,7 +126,9 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
 
 
 @patch("subprocess.call")
-@patch("dbt_copilot_helper.conduit_cli.get_connection_secret_arn", return_value="test-named-arn")
+@patch(
+    "dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-named-arn"
+)
 def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, subprocess_call):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task calls get_connection_secret_arn with the custom
@@ -149,7 +151,7 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 
 @patch("subprocess.call")
 @patch(
-    "dbt_copilot_helper.conduit_cli.get_connection_secret_arn",
+    "dbt_copilot_helper.commands.conduit.get_connection_secret_arn",
     side_effect=SecretNotFoundConduitError,
 )
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
@@ -173,7 +175,7 @@ def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.conduit_cli.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert addon_client_is_running(
             "test-application", "development", mocked_cluster_arn, addon_type
@@ -193,7 +195,7 @@ def test_addon_client_is_running_when_no_client_task_running(
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.conduit_cli.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert (
             addon_client_is_running(
@@ -216,7 +218,7 @@ def test_addon_client_is_running_when_no_client_agent_running(
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.conduit_cli.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert (
             addon_client_is_running(
@@ -231,7 +233,7 @@ def test_addon_client_is_running_when_no_client_agent_running(
     ["postgres", "redis", "opensearch"],
 )
 @patch("subprocess.call")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=True)
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=True)
 def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, addon_type):
     """
     Test that, given app, env, ECS cluster ARN and addon type,
@@ -260,7 +262,7 @@ def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, 
 )
 @patch("time.sleep")
 @patch("subprocess.call")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 def test_connect_to_addon_client_task_when_timeout_reached(
     addon_client_is_running, subprocess_call, sleep, addon_type
 ):
@@ -282,10 +284,10 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit(
     connect_to_addon_client_task,
     create_addon_client_task,
@@ -311,11 +313,11 @@ def test_start_conduit(
 
 
 @patch(
-    "dbt_copilot_helper.conduit_cli.get_cluster_arn",
+    "dbt_copilot_helper.commands.conduit.get_cluster_arn",
 )
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running")
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running")
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_when_addon_type_is_invalid(
     connect_to_addon_client_task, create_addon_client_task, addon_client_is_running, get_cluster_arn
 ):
@@ -339,10 +341,10 @@ def test_start_conduit_when_addon_type_is_invalid(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_with_custom_addon_name(
     connect_to_addon_client_task,
     create_addon_client_task,
@@ -371,10 +373,10 @@ def test_start_conduit_with_custom_addon_name(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", side_effect=NoClusterConduitError)
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", side_effect=NoClusterConduitError)
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_when_no_cluster_present(
     connect_to_addon_client_task,
     create_addon_client_task,
@@ -402,13 +404,13 @@ def test_start_conduit_when_no_cluster_present(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch(
-    "dbt_copilot_helper.conduit_cli.create_addon_client_task",
+    "dbt_copilot_helper.commands.conduit.create_addon_client_task",
     side_effect=SecretNotFoundConduitError,
 )
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_when_no_secret_exists(
     connect_to_addon_client_task,
     create_addon_client_task,
@@ -437,13 +439,13 @@ def test_start_conduit_when_no_secret_exists(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch(
-    "dbt_copilot_helper.conduit_cli.create_addon_client_task",
+    "dbt_copilot_helper.commands.conduit.create_addon_client_task",
     side_effect=SecretNotFoundConduitError,
 )
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_when_no_custom_addon_secret_exists(
     connect_to_addon_client_task,
     create_addon_client_task,
@@ -473,11 +475,11 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
 @patch(
-    "dbt_copilot_helper.conduit_cli.connect_to_addon_client_task",
+    "dbt_copilot_helper.commands.conduit.connect_to_addon_client_task",
     side_effect=CreateTaskTimeoutConduitError,
 )
 def test_start_conduit_when_addon_client_task_fails_to_start(
@@ -510,10 +512,10 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.conduit_cli.create_addon_client_task")
-@patch("dbt_copilot_helper.conduit_cli.addon_client_is_running", return_value=True)
-@patch("dbt_copilot_helper.conduit_cli.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=True)
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 def test_start_conduit_when_addon_client_task_is_already_running(
     connect_to_addon_client_task,
     addon_client_is_running,
@@ -541,7 +543,7 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.start_conduit")
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command(start_conduit, addon_type):
     """Test that given an addon type, app and env strings, the conduit command
     calls start_conduit with app, env, addon type and no addon name."""
@@ -563,7 +565,7 @@ def test_conduit_command(start_conduit, addon_type):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.conduit_cli.start_conduit")
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_with_addon_name(start_conduit, addon_type):
     """Test that given an addon type, app, env and addon name strings, the
     conduit command calls start_conduit with app, env, addon type and custom
@@ -591,7 +593,7 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type):
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
-@patch("dbt_copilot_helper.conduit_cli.start_conduit", side_effect=NoClusterConduitError)
+@patch("dbt_copilot_helper.commands.conduit.start_conduit", side_effect=NoClusterConduitError)
 def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type):
     """Test that given an addon type, app and env strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
@@ -618,7 +620,7 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
-@patch("dbt_copilot_helper.conduit_cli.start_conduit")
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, addon_type):
     """Test that given an addon type, app and env strings, when there is no
     connection secret available, the conduit command handles the
@@ -648,7 +650,7 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
-@patch("dbt_copilot_helper.conduit_cli.start_conduit")
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     start_conduit, secho, addon_type
 ):
@@ -682,7 +684,9 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
-@patch("dbt_copilot_helper.conduit_cli.start_conduit", side_effect=CreateTaskTimeoutConduitError)
+@patch(
+    "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=CreateTaskTimeoutConduitError
+)
 def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, addon_type):
     """Test that given an addon type, app and env strings, when the ECS client
     task fails to start, the conduit command handles the
@@ -706,7 +710,9 @@ def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, a
 
 
 @patch("click.secho")
-@patch("dbt_copilot_helper.conduit_cli.start_conduit", side_effect=InvalidAddonTypeConduitError)
+@patch(
+    "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=InvalidAddonTypeConduitError
+)
 def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho):
     """Test that given an invalid addon type, app and env strings, the conduit
     command handles the InvalidAddonTypeConduitError exception."""

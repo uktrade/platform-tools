@@ -9,14 +9,14 @@ import click
 import yaml
 from jsonschema import validate as validate_json
 
-from .utils import SSM_BASE_PATH
-from .utils import camel_case
-from .utils import ensure_cwd_is_repo_root
-from .utils import mkdir
-from .utils import mkfile
-from .utils import setup_templates
+from dbt_copilot_helper.utils import SSM_BASE_PATH
+from dbt_copilot_helper.utils import camel_case
+from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils import mkdir
+from dbt_copilot_helper.utils import mkfile
+from dbt_copilot_helper.utils import setup_templates
 
-PACKAGE_DIR = Path(__file__).resolve().parent
+PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
 WAF_ACL_ARN_KEY = "waf-acl-arn"
 

@@ -4,15 +4,15 @@ from importlib.metadata import version
 
 import click
 
-from dbt_copilot_helper.bootstrap_cli import bootstrap as bootstrap_commands
-from dbt_copilot_helper.check_cloudformation import (
+from dbt_copilot_helper.commands.bootstrap import bootstrap as bootstrap_commands
+from dbt_copilot_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
-from dbt_copilot_helper.codebuild_cli import codebuild as codebuild_commands
-from dbt_copilot_helper.conduit_cli import conduit as conduit_commands
-from dbt_copilot_helper.copilot_cli import copilot as copilot_commands
-from dbt_copilot_helper.dns_cli import domain as domain_commands
-from dbt_copilot_helper.waf_cli import waf as waf_commands
+from dbt_copilot_helper.commands.codebuild import codebuild as codebuild_commands
+from dbt_copilot_helper.commands.conduit import conduit as conduit_commands
+from dbt_copilot_helper.commands.copilot import copilot as copilot_commands
+from dbt_copilot_helper.commands.dns import domain as domain_commands
+from dbt_copilot_helper.commands.waf import waf as waf_commands
 
 
 @click.group()

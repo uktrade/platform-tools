@@ -6,10 +6,10 @@ from subprocess import run
 
 import click
 
-from dbt_copilot_helper.bootstrap_cli import make_config
-from dbt_copilot_helper.copilot_cli import make_addons
+from dbt_copilot_helper.commands.bootstrap import make_config
+from dbt_copilot_helper.commands.copilot import make_addons
 
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent.parent.parent
 
 
 @click.group(invoke_without_command=True, chain=True)
@@ -54,9 +54,6 @@ def get_lint_result(path: str):
 @click.pass_context
 def lint(ctx: click.Context) -> None:
     """Runs cfn-lint against the generated CloudFormation templates."""
-
-    BASE_DIR = Path(__file__).parent.parent
-
     result = get_lint_result(f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml")
 
     click.secho(result.stdout.decode())
