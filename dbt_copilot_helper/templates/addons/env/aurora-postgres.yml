@@ -106,6 +106,8 @@ Resources:
       DatabaseName: !Ref {{ service.prefix }}DBName
       Engine: 'aurora-postgresql'
       EngineVersion: '{{ service.version }}'
+      EnableCloudwatchLogsExports:
+        - postgresql
       DBClusterParameterGroupName: !Ref {{ service.prefix }}DBClusterParameterGroup
       DBSubnetGroupName: !Ref {{ service.prefix }}DBSubnetGroup
       Port: 5432
