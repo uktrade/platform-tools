@@ -157,7 +157,7 @@ environments:
     runner = CliRunner()
     result = runner.invoke(
         check_domain,
-        ["--domain-profile", "foo", "--project-profile", "foo", "--base-domain", "test.1234"],
+        ["--domain-profile", "dev", "--project-profile", "foo", "--base-domain", "test.1234"],
     )
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nEnvironment: staging => Domain: v2.app.staging.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\nDomain: v2.app.staging.test.12345\t => Cert ARN: arn:1234\n"
 
@@ -191,7 +191,7 @@ environments:
         check_domain,
         [
             "--domain-profile",
-            "foo",
+            "dev",
             "--project-profile",
             "foo",
             "--base-domain",
@@ -221,7 +221,7 @@ def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
             "--app",
             "some-app",
             "--domain-profile",
-            "foo",
+            "dev",
             "--project-profile",
             "foo",
             "--svc",
@@ -246,7 +246,7 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     out, _ = capfd.readouterr()
 
     assert (
-        out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this aws account\n"
+        out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this AWS account\n"
     )
 
 

@@ -8,6 +8,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import check_response
 from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
@@ -332,7 +333,7 @@ def check_r53(domain_session, project_session, domain, base_domain):
         if subdom in hosted_zones:
             click.secho("Found hosted zone " + hosted_zones[subdom]["Name"], fg="green")
 
-            # We only want to go 2 sub domains deep in R53
+            # We only want to go 2 subdomains deep in Route53
             if (len(parts) - base_len) < MAX_DOMAIN_DEPTH:
                 click.secho("Creating Hosted Zone", fg="magenta")
                 create_hosted_zone(domain_client, domain, subdom, base_len)
@@ -382,7 +383,7 @@ def get_load_balancer_domain_and_configuration(
         click.echo(
             click.style("There are no clusters matching ", fg="red")
             + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in this aws account", fg="red"),
+            + click.style("in this AWS account", fg="red"),
         )
         exit()
 
@@ -439,17 +440,20 @@ def get_load_balancer_domain_and_configuration(
     return domain_name, response["LoadBalancers"][0]
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def domain():
     pass
 
 
 @domain.command()
 @click.option(
-    "--domain-profile", help="aws account profile name for R53 domains account", required=True
+    "--domain-profile",
+    help="AWS account profile name for Route53 domains account",
+    required=True,
+    type=click.Choice(["dev", "live"]),
 )
 @click.option(
-    "--project-profile", help="aws account profile name for certificates account", required=True
+    "--project-profile", help="AWS account profile name for certificates account", required=True
 )
 @click.option("--base-domain", help="root domain", required=True)
 @click.option("--env", help="AWS Copilot environment name", required=False)
@@ -517,16 +521,19 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
 @domain.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option(
-    "--domain-profile", help="aws account profile name for R53 domains account", required=True
-)
-@click.option(
-    "--project-profile", help="aws account profile name for application account", required=True
-)
-@click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
+@click.option(
+    "--domain-profile",
+    help="AWS account profile name for Route53 domains account",
+    required=True,
+    type=click.Choice(["dev", "live"]),
+)
+@click.option(
+    "--project-profile", help="AWS account profile name for application account", required=True
+)
 def assign_domain(app, domain_profile, project_profile, svc, env):
-    """Check R53 domain is pointing to the correct ECS Load Blanacer."""
+    """Check Route53 domain is pointing to the correct ECS Load Balancer."""
     domain_session = check_aws_conn(domain_profile)
     project_session = check_aws_conn(project_profile)
 
@@ -543,14 +550,14 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
         + click.style(f"{domain_name}\n", fg="white", bold=True)
         + click.style("has been assigned the Load Balancer: ", fg="yellow")
         + click.style(f"{elb_name}\n", fg="white", bold=True)
-        + click.style("Checking to see if this is in R53", fg="yellow"),
+        + click.style("Checking to see if this is in Route53", fg="yellow"),
     )
 
     domain_client = domain_session.client("route53")
     response = domain_client.list_hosted_zones_by_name()
     check_response(response)
 
-    # Scan R53 Zone for matching domains and update records if needed.
+    # Scan Route53 Zone for matching domains and update records if needed.
     hosted_zones = {}
     for hz in response["HostedZones"]:
         hosted_zones[hz["Name"]] = hz
@@ -613,7 +620,7 @@ def assign_domain(app, domain_profile, project_profile, svc, env):
             }
 
             if not click.confirm(
-                click.style("Creating R53 record: ", fg="yellow")
+                click.style("Creating Route53 record: ", fg="yellow")
                 + click.style(
                     f"{record['Name']} -> {record['ResourceRecords'][0]['Value']}\n",
                     fg="white",

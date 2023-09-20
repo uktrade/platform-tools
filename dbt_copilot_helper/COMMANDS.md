@@ -30,7 +30,7 @@
 ## Usage
 
 ```
-Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
+copilot-helper <command> [--version] 
 ```
 
 ## Options
@@ -57,7 +57,7 @@ Usage: copilot-helper [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
+copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets) 
 ```
 
 ## Options
@@ -80,7 +80,7 @@ Usage: copilot-helper bootstrap [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config [OPTIONS]
+copilot-helper bootstrap make-config 
 ```
 
 ## Options
@@ -103,13 +103,15 @@ Usage: copilot-helper bootstrap make-config [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap migrate-secrets [OPTIONS]
+copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
+                                         [--env <env>] [--svc <svc>] 
+                                         [--overwrite] [--dry-run] 
 ```
 
 ## Options
 
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--env <text>`
   - Migrate secrets from a specific environment
 - `--svc <text>`
@@ -130,8 +132,8 @@ Usage: copilot-helper bootstrap migrate-secrets [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap copy-secrets [OPTIONS] SOURCE_ENVIRONMENT
-                                             TARGET_ENVIRONMENT
+copilot-helper bootstrap copy-secrets <source_environment> <target_environment> 
+                                      --project-profile <project_profile> 
 ```
 
 ## Arguments
@@ -157,8 +159,7 @@ Usage: copilot-helper bootstrap copy-secrets [OPTIONS] SOURCE_ENVIRONMENT
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation [OPTIONS] COMMAND1 [ARGS]...
-                                           [COMMAND2 [ARGS]...]...
+copilot-helper check-cloudformation lint 
 ```
 
 ## Options
@@ -179,7 +180,7 @@ Usage: copilot-helper check-cloudformation [OPTIONS] COMMAND1 [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation lint [OPTIONS]
+copilot-helper check-cloudformation lint 
 ```
 
 ## Options
@@ -194,7 +195,7 @@ Usage: copilot-helper check-cloudformation lint [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild [OPTIONS] COMMAND [ARGS]...
+copilot-helper codebuild <command> 
 ```
 
 ## Options
@@ -220,7 +221,7 @@ Usage: copilot-helper codebuild [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper codebuild link-github [OPTIONS]
+copilot-helper codebuild link-github --pat <pat> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -228,7 +229,7 @@ Usage: copilot-helper codebuild link-github [OPTIONS]
 - `--pat <text>`
   - PAT Token
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -241,13 +242,14 @@ Usage: copilot-helper codebuild link-github [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild create-codedeploy-role [OPTIONS]
+copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> 
+                                                [--type (ci|custom)] 
 ```
 
 ## Options
 
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--type <choice>` _Defaults to ci._
   - type of project <ci/custom>
 - `--help <boolean>` _Defaults to False._
@@ -262,7 +264,9 @@ Usage: copilot-helper codebuild create-codedeploy-role [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild codedeploy [OPTIONS]
+copilot-helper codebuild codedeploy --name <name> --git <git> --branch <branch> 
+                                    --buildspec <buildspec> --project-profile <project_profile> 
+                                    [--desc <desc>] [--update] [--release] 
 ```
 
 ## Options
@@ -280,7 +284,7 @@ Usage: copilot-helper codebuild codedeploy [OPTIONS]
 - `--buildspec <text>`
   - Location of buildspec file in repo
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--release <boolean>` _Defaults to False._
   - Trigger builds on release tags
 - `--help <boolean>` _Defaults to False._
@@ -295,7 +299,11 @@ Usage: copilot-helper codebuild codedeploy [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild buildproject [OPTIONS]
+copilot-helper codebuild buildproject --name <name> --git <git> 
+                                      --branch <branch> --buildspec <buildspec> 
+                                      --project-profile <project_profile> 
+                                      [--desc <desc>] [--builderimage <builderimage>] 
+                                      [--update] 
 ```
 
 ## Options
@@ -315,7 +323,7 @@ Usage: copilot-helper codebuild buildproject [OPTIONS]
 - `--builderimage <text>` _Defaults to aws/codebuild/amazonlinux2-x86_64-standard:3.0._
   - Builder image
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -328,7 +336,7 @@ Usage: copilot-helper codebuild buildproject [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild delete-project [OPTIONS]
+copilot-helper codebuild delete-project --name <name> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -336,7 +344,7 @@ Usage: copilot-helper codebuild delete-project [OPTIONS]
 - `--name <text>`
   - Name of project
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -349,7 +357,8 @@ Usage: copilot-helper codebuild delete-project [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper codebuild slackcreds [OPTIONS]
+copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel> 
+                                    --token <token> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -361,7 +370,7 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
 - `--token <text>`
   - Slack api token
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -369,17 +378,18 @@ Usage: copilot-helper codebuild slackcreds [OPTIONS]
 
 [↩ Parent](#copilot-helper)
 
-    Create a conduit connection to a ADDON_TYPE backing service.
+    Create a conduit connection to an addon.
 
 ## Usage
 
 ```
-Usage: copilot-helper conduit [OPTIONS] ADDON_TYPE
+copilot-helper conduit (opensearch|postgres|redis) 
+                       --app <app> --env <env> [--addon-name <addon_name>] 
 ```
 
 ## Arguments
 
-- `addon_type <text>`
+- `addon_type <choice>`
 
 ## Options
 
@@ -399,7 +409,7 @@ Usage: copilot-helper conduit [OPTIONS] ADDON_TYPE
 ## Usage
 
 ```
-Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
+copilot-helper copilot (make-addons|get-env-secrets) 
 ```
 
 ## Options
@@ -421,7 +431,7 @@ Usage: copilot-helper copilot [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-addons [OPTIONS]
+copilot-helper copilot make-addons 
 ```
 
 ## Options
@@ -438,7 +448,7 @@ Usage: copilot-helper copilot make-addons [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper copilot get-env-secrets [OPTIONS] APP ENV
+copilot-helper copilot get-env-secrets <app> <env> 
 ```
 
 ## Arguments
@@ -458,7 +468,7 @@ Usage: copilot-helper copilot get-env-secrets [OPTIONS] APP ENV
 ## Usage
 
 ```
-Usage: copilot-helper domain [OPTIONS] COMMAND [ARGS]...
+copilot-helper domain (check-domain|assign-domain) 
 ```
 
 ## Options
@@ -480,15 +490,16 @@ Usage: copilot-helper domain [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper domain check-domain [OPTIONS]
+copilot-helper domain check-domain --domain-profile (dev|live) --project-profile <project_profile> 
+                                   --base-domain <base_domain> [--env <env>] 
 ```
 
 ## Options
 
-- `--domain-profile <text>`
-  - aws account profile name for R53 domains account
+- `--domain-profile <choice>`
+  - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
-  - aws account profile name for certificates account
+  - AWS account profile name for certificates account
 - `--base-domain <text>`
   - root domain
 - `--env <text>`
@@ -500,26 +511,28 @@ Usage: copilot-helper domain check-domain [OPTIONS]
 
 [↩ Parent](#copilot-helper-domain)
 
-    Check R53 domain is pointing to the correct ECS Load Blanacer.
+    Check Route53 domain is pointing to the correct ECS Load Balancer.
 
 ## Usage
 
 ```
-Usage: copilot-helper domain assign-domain [OPTIONS]
+copilot-helper domain assign-domain --app <app> --env <env> --svc <svc> 
+                                    --domain-profile (dev|live) 
+                                    --project-profile <project_profile> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
-- `--domain-profile <text>`
-  - aws account profile name for R53 domains account
-- `--project-profile <text>`
-  - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
 - `--env <text>`
   - Environment
+- `--svc <text>`
+  - Service Name
+- `--domain-profile <choice>`
+  - AWS account profile name for Route53 domains account
+- `--project-profile <text>`
+  - AWS account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -530,7 +543,7 @@ Usage: copilot-helper domain assign-domain [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper waf [OPTIONS] COMMAND [ARGS]...
+copilot-helper waf (attach-waf|custom-waf) 
 ```
 
 ## Options
@@ -552,19 +565,20 @@ Usage: copilot-helper waf [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: copilot-helper waf attach-waf [OPTIONS]
+copilot-helper waf attach-waf --app <app> --env <env> --svc <svc> 
+                              --project-profile <project_profile> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
-- `--project-profile <text>`
-  - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
 - `--env <text>`
   - Environment
+- `--svc <text>`
+  - Service Name
+- `--project-profile <text>`
+  - AWS account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -577,19 +591,21 @@ Usage: copilot-helper waf attach-waf [OPTIONS]
 ## Usage
 
 ```
-Usage: copilot-helper waf custom-waf [OPTIONS]
+copilot-helper waf custom-waf --app <app> --env <env> --svc <svc> 
+                              --project-profile <project_profile> 
+                              --waf-path <waf_path> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
-- `--project-profile <text>`
-  - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
 - `--env <text>`
   - Environment
+- `--svc <text>`
+  - Service Name
+- `--project-profile <text>`
+  - AWS account profile name for application account
 - `--waf-path <text>`
   - path to waf.yml file
 - `--help <boolean>` _Defaults to False._

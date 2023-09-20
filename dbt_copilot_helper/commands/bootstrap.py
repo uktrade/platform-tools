@@ -11,6 +11,7 @@ from schema import Optional
 from schema import Schema
 
 from dbt_copilot_helper.utils import SSM_PATH
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import get_ssm_secret_names
 from dbt_copilot_helper.utils import get_ssm_secrets
@@ -105,7 +106,7 @@ def load_and_validate_config(path):
     return config
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def bootstrap():
     pass
 
@@ -170,7 +171,7 @@ def make_config():
 
 
 @bootstrap.command()
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option(
