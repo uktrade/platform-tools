@@ -262,6 +262,9 @@ def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = Fal
                 if getattr(param, "default", None) is None:
                     options += param.secondary_opts
                 help_text += wrap % "|".join(options)
+            elif hasattr(param.type, "choices"):
+                wrap = "%s (%s) " if param.required else "[%s (%s)] "
+                help_text += wrap % (param.opts[0], "|".join(param.type.choices))
             else:
                 wrap = "%s <%s> " if param.required else "[%s <%s>] "
                 help_text += wrap % (param.opts[0], param.name)

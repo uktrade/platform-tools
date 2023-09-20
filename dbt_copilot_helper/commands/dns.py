@@ -447,7 +447,10 @@ def domain():
 
 @domain.command()
 @click.option(
-    "--domain-profile", help="aws account profile name for R53 domains account", required=True
+    "--domain-profile",
+    help="aws account profile name for R53 domains account",
+    required=True,
+    type=click.Choice(["dev", "live"]),
 )
 @click.option(
     "--project-profile", help="aws account profile name for certificates account", required=True

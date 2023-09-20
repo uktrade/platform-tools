@@ -243,7 +243,7 @@ copilot-helper codebuild link-github --pat <pat> --project-profile <project_prof
 
 ```
 copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> 
-                                                [--type <type>] 
+                                                [--type (ci|custom)] 
 ```
 
 ## Options
@@ -490,14 +490,13 @@ copilot-helper domain (check-domain|assign-domain)
 ## Usage
 
 ```
-copilot-helper domain check-domain --domain-profile <domain_profile> 
-                                   --project-profile <project_profile> 
+copilot-helper domain check-domain --domain-profile (dev|live) --project-profile <project_profile> 
                                    --base-domain <base_domain> [--env <env>] 
 ```
 
 ## Options
 
-- `--domain-profile <text>`
+- `--domain-profile <choice>`
   - aws account profile name for R53 domains account
 - `--project-profile <text>`
   - aws account profile name for certificates account
