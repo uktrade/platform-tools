@@ -89,7 +89,7 @@ def get_cmd_metadata(
         options=[param for param in params if param.param_type_name == "option"],
         parent_reference=parent_reference,
         subcommands=subcommands,
-        usage=cmd.get_usage(context),
+        usage="\n".join(map(lambda x: x[7:], cmd.get_usage(context).split("\n"))),
     )
 
     for sub in subcommands_names.values():

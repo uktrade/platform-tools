@@ -30,7 +30,7 @@
 ## Usage
 
 ```
-Usage: copilot-helper <command> [--version] 
+copilot-helper <command> [--version] 
 ```
 
 ## Options
@@ -57,7 +57,7 @@ Usage: copilot-helper <command> [--version]
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets) 
+copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets) 
 ```
 
 ## Options
@@ -80,7 +80,7 @@ Usage: copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets)
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap make-config 
+copilot-helper bootstrap make-config 
 ```
 
 ## Options
@@ -103,9 +103,9 @@ Usage: copilot-helper bootstrap make-config
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                                [--env <env>] [--svc <svc>] 
-                                                [--dry-run] [--overwrite] 
+copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
+                                         [--env <env>] [--svc <svc>] 
+                                         [--dry-run] [--overwrite] 
 ```
 
 ## Options
@@ -132,8 +132,8 @@ Usage: copilot-helper bootstrap migrate-secrets --project-profile <project_profi
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap copy-secrets <source_environment> <target_environment> 
-                                             --project-profile <project_profile> 
+copilot-helper bootstrap copy-secrets <source_environment> <target_environment> 
+                                      --project-profile <project_profile> 
 ```
 
 ## Arguments
@@ -159,7 +159,7 @@ Usage: copilot-helper bootstrap copy-secrets <source_environment> <target_enviro
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation lint 
+copilot-helper check-cloudformation lint 
 ```
 
 ## Options
@@ -180,7 +180,7 @@ Usage: copilot-helper check-cloudformation lint
 ## Usage
 
 ```
-Usage: copilot-helper check-cloudformation lint 
+copilot-helper check-cloudformation lint 
 ```
 
 ## Options
@@ -195,7 +195,7 @@ Usage: copilot-helper check-cloudformation lint
 ## Usage
 
 ```
-Usage: copilot-helper codebuild <command> 
+copilot-helper codebuild <command> 
 ```
 
 ## Options
@@ -221,7 +221,7 @@ Usage: copilot-helper codebuild <command>
 ## Usage
 
 ```
-Usage: copilot-helper codebuild link-github --pat <pat> --project-profile <project_profile> 
+copilot-helper codebuild link-github --pat <pat> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -242,8 +242,8 @@ Usage: copilot-helper codebuild link-github --pat <pat> --project-profile <proje
 ## Usage
 
 ```
-Usage: copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> 
-                                                       [--type <type>] 
+copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> 
+                                                [--type <type>] 
 ```
 
 ## Options
@@ -264,10 +264,10 @@ Usage: copilot-helper codebuild create-codedeploy-role --project-profile <projec
 ## Usage
 
 ```
-Usage: copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec> 
-                                           --git <git> --name <name> --project-profile <project_profile> 
-                                           [--desc <desc>] [--release] 
-                                           [--update] 
+copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec> 
+                                    --git <git> --name <name> --project-profile <project_profile> 
+                                    [--desc <desc>] [--release] 
+                                    [--update] 
 ```
 
 ## Options
@@ -300,11 +300,11 @@ Usage: copilot-helper codebuild codedeploy --branch <branch> --buildspec <builds
 ## Usage
 
 ```
-Usage: copilot-helper codebuild buildproject --branch <branch> --buildspec <buildspec> 
-                                             --git <git> --name <name> 
-                                             --project-profile <project_profile> 
-                                             [--builderimage <builderimage>] 
-                                             [--desc <desc>] [--update] 
+copilot-helper codebuild buildproject --branch <branch> --buildspec <buildspec> 
+                                      --git <git> --name <name> 
+                                      --project-profile <project_profile> 
+                                      [--builderimage <builderimage>] 
+                                      [--desc <desc>] [--update] 
 ```
 
 ## Options
@@ -337,7 +337,7 @@ Usage: copilot-helper codebuild buildproject --branch <branch> --buildspec <buil
 ## Usage
 
 ```
-Usage: copilot-helper codebuild delete-project --name <name> --project-profile <project_profile> 
+copilot-helper codebuild delete-project --name <name> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -358,8 +358,8 @@ Usage: copilot-helper codebuild delete-project --name <name> --project-profile <
 ## Usage
 
 ```
-Usage: copilot-helper codebuild slackcreds --channel <channel> --project-profile <project_profile> 
-                                           --token <token> --workspace <workspace> 
+copilot-helper codebuild slackcreds --channel <channel> --project-profile <project_profile> 
+                                    --token <token> --workspace <workspace> 
 ```
 
 ## Options
@@ -384,8 +384,8 @@ Usage: copilot-helper codebuild slackcreds --channel <channel> --project-profile
 ## Usage
 
 ```
-Usage: copilot-helper conduit (opensearch|postgres|redis) 
-                              --app <app> --env <env> [--addon-name <addon_name>] 
+copilot-helper conduit (opensearch|postgres|redis) 
+                       --app <app> --env <env> [--addon-name <addon_name>] 
 ```
 
 ## Arguments
@@ -410,7 +410,7 @@ Usage: copilot-helper conduit (opensearch|postgres|redis)
 ## Usage
 
 ```
-Usage: copilot-helper copilot (make-addons|get-env-secrets) 
+copilot-helper copilot (make-addons|get-env-secrets) 
 ```
 
 ## Options
@@ -432,7 +432,7 @@ Usage: copilot-helper copilot (make-addons|get-env-secrets)
 ## Usage
 
 ```
-Usage: copilot-helper copilot make-addons 
+copilot-helper copilot make-addons 
 ```
 
 ## Options
@@ -449,7 +449,7 @@ Usage: copilot-helper copilot make-addons
 ## Usage
 
 ```
-Usage: copilot-helper copilot get-env-secrets <app> <env> 
+copilot-helper copilot get-env-secrets <app> <env> 
 ```
 
 ## Arguments
@@ -469,7 +469,7 @@ Usage: copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-Usage: copilot-helper domain (check-domain|assign-domain) 
+copilot-helper domain (check-domain|assign-domain) 
 ```
 
 ## Options
@@ -491,9 +491,9 @@ Usage: copilot-helper domain (check-domain|assign-domain)
 ## Usage
 
 ```
-Usage: copilot-helper domain check-domain --base-domain <base_domain> --domain-profile <domain_profile> 
-                                          --project-profile <project_profile> 
-                                          [--env <env>] 
+copilot-helper domain check-domain --base-domain <base_domain> --domain-profile <domain_profile> 
+                                   --project-profile <project_profile> 
+                                   [--env <env>] 
 ```
 
 ## Options
@@ -518,9 +518,9 @@ Usage: copilot-helper domain check-domain --base-domain <base_domain> --domain-p
 ## Usage
 
 ```
-Usage: copilot-helper domain assign-domain --app <app> --domain-profile <domain_profile> 
-                                           --env <env> --project-profile <project_profile> 
-                                           --svc <svc> 
+copilot-helper domain assign-domain --app <app> --domain-profile <domain_profile> 
+                                    --env <env> --project-profile <project_profile> 
+                                    --svc <svc> 
 ```
 
 ## Options
@@ -545,7 +545,7 @@ Usage: copilot-helper domain assign-domain --app <app> --domain-profile <domain_
 ## Usage
 
 ```
-Usage: copilot-helper waf (attach-waf|custom-waf) 
+copilot-helper waf (attach-waf|custom-waf) 
 ```
 
 ## Options
@@ -567,8 +567,8 @@ Usage: copilot-helper waf (attach-waf|custom-waf)
 ## Usage
 
 ```
-Usage: copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project_profile> 
-                                     --svc <svc> 
+copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project_profile> 
+                              --svc <svc> 
 ```
 
 ## Options
@@ -593,8 +593,8 @@ Usage: copilot-helper waf attach-waf --app <app> --env <env> --project-profile <
 ## Usage
 
 ```
-Usage: copilot-helper waf custom-waf --app <app> --env <env> --project-profile <project_profile> 
-                                     --svc <svc> --waf-path <waf_path> 
+copilot-helper waf custom-waf --app <app> --env <env> --project-profile <project_profile> 
+                              --svc <svc> --waf-path <waf_path> 
 ```
 
 ## Options
