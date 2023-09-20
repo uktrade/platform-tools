@@ -111,7 +111,7 @@ copilot-helper bootstrap migrate-secrets --project-profile <project_profile>
 ## Options
 
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--env <text>`
   - Migrate secrets from a specific environment
 - `--svc <text>`
@@ -229,7 +229,7 @@ copilot-helper codebuild link-github --pat <pat> --project-profile <project_prof
 - `--pat <text>`
   - PAT Token
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -249,7 +249,7 @@ copilot-helper codebuild create-codedeploy-role --project-profile <project_profi
 ## Options
 
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--type <choice>` _Defaults to ci._
   - type of project <ci/custom>
 - `--help <boolean>` _Defaults to False._
@@ -284,7 +284,7 @@ copilot-helper codebuild codedeploy --name <name> --git <git> --branch <branch>
 - `--buildspec <text>`
   - Location of buildspec file in repo
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--release <boolean>` _Defaults to False._
   - Trigger builds on release tags
 - `--help <boolean>` _Defaults to False._
@@ -323,7 +323,7 @@ copilot-helper codebuild buildproject --name <name> --git <git>
 - `--builderimage <text>` _Defaults to aws/codebuild/amazonlinux2-x86_64-standard:3.0._
   - Builder image
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -344,7 +344,7 @@ copilot-helper codebuild delete-project --name <name> --project-profile <project
 - `--name <text>`
   - Name of project
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -370,7 +370,7 @@ copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel>
 - `--token <text>`
   - Slack api token
 - `--project-profile <text>`
-  - aws account profile name
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -497,9 +497,9 @@ copilot-helper domain check-domain --domain-profile (dev|live) --project-profile
 ## Options
 
 - `--domain-profile <choice>`
-  - aws account profile name for R53 domains account
+  - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
-  - aws account profile name for certificates account
+  - AWS account profile name for certificates account
 - `--base-domain <text>`
   - root domain
 - `--env <text>`
@@ -511,13 +511,13 @@ copilot-helper domain check-domain --domain-profile (dev|live) --project-profile
 
 [↩ Parent](#copilot-helper-domain)
 
-    Check R53 domain is pointing to the correct ECS Load Blanacer.
+    Check Route53 domain is pointing to the correct ECS Load Balancer.
 
 ## Usage
 
 ```
 copilot-helper domain assign-domain --app <app> --env <env> --svc <svc> 
-                                    --domain-profile <domain_profile> 
+                                    --domain-profile (dev|live) 
                                     --project-profile <project_profile> 
 ```
 
@@ -529,10 +529,10 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
   - Environment
 - `--svc <text>`
   - Service Name
-- `--domain-profile <text>`
-  - aws account profile name for R53 domains account
+- `--domain-profile <choice>`
+  - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
-  - aws account profile name for application account
+  - AWS account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -578,7 +578,7 @@ copilot-helper waf attach-waf --app <app> --env <env> --svc <svc>
 - `--svc <text>`
   - Service Name
 - `--project-profile <text>`
-  - aws account profile name for application account
+  - AWS account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -605,7 +605,7 @@ copilot-helper waf custom-waf --app <app> --env <env> --svc <svc>
 - `--svc <text>`
   - Service Name
 - `--project-profile <text>`
-  - aws account profile name for application account
+  - AWS account profile name for application account
 - `--waf-path <text>`
   - path to waf.yml file
 - `--help <boolean>` _Defaults to False._

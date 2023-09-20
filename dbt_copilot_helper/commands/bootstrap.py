@@ -171,7 +171,7 @@ def make_config():
 
 
 @bootstrap.command()
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option(
