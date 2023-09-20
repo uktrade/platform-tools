@@ -5,6 +5,9 @@ import boto3
 import botocore
 import click
 import jinja2
+from click import Argument
+from click import Context
+from click import HelpFormatter
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.jinja2_tags import VersionTag
@@ -215,3 +218,55 @@ def check_response(response):
             fg="red",
         )
         exit()
+
+
+def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = False) -> None:
+    help_text = f"Usage: {ctx.command_path} "
+    arguments = list(filter(lambda p: p.__class__.__name__ == "Argument", ctx.command.params))
+    arguments.sort(key=lambda e: e.name)
+    arguments.sort(key=lambda e: e.required, reverse=True)
+
+    if group:
+        command_list = list(ctx.command.commands.keys())
+
+        if len(command_list) == 1:
+            help_text += f"{command_list[0]} "
+        elif len(command_list) <= 4:
+            arguments.insert(0, Argument(["command"], type=click.Choice(command_list)))
+        else:
+            arguments.insert(0, Argument(["command"]))
+
+    options = list(filter(lambda p: p.__class__.__name__ == "Option", ctx.command.params))
+    options.sort(key=lambda e: e.name)
+    options.sort(key=lambda e: e.required, reverse=True)
+    options.sort(key=lambda e: e.is_flag)
+
+    for param in arguments:
+        if hasattr(param.type, "choices"):
+            wrap = "(%s) " if param.required else "[(%s)] "
+            help_text += wrap % "|".join(param.type.choices)
+        else:
+            wrap = "<%s> " if param.required else "[<%s>] "
+            help_text += wrap % param.name
+
+    for param in options:
+        if param.is_flag:
+            wrap = "%s " if param.required else "[%s] "
+            help_text += wrap % "|".join(param.opts + param.secondary_opts)
+        else:
+            wrap = "%s <%s> " if param.required else "[%s <%s>] "
+            help_text += wrap % (param.opts[0], param.name)
+
+    formatter.write(f"{help_text}\n")
+
+
+class ClickDocOptCommand(click.Command):
+    def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
+        format_click_usage(ctx, formatter)
+
+
+class ClickDocOptGroup(click.Group):
+    command_class = ClickDocOptCommand
+
+    def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
+        format_click_usage(ctx, formatter, True)

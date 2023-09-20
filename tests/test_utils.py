@@ -1,8 +1,12 @@
 import boto3
+import click
 import pytest
+from click.testing import CliRunner
 from moto import mock_ssm
 
 from dbt_copilot_helper.exceptions import ValidationException
+from dbt_copilot_helper.utils import ClickDocOptCommand
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import get_ssm_secrets
 from dbt_copilot_helper.utils import set_ssm_param
@@ -216,3 +220,89 @@ def test_set_ssm_param_tags_with_existing_secret():
             "TagList"
         ]
     )
+
+
+def test_click_docopt_command_help():
+    @click.command(cls=ClickDocOptCommand)
+    @click.argument("required-choice", type=click.Choice(["req-one", "req-two"]), required=True)
+    @click.argument("optional-choice", type=click.Choice(["opt-one", "opt-two"]), required=False)
+    @click.argument("required", required=True)
+    @click.argument("optional", required=False)
+    @click.option("--required-free-text", help="Required Free Text", required=True)
+    @click.option("--optional-free-text", help="Optional Free Text", required=False)
+    @click.option("--flag/--no-flag", help="Boolean Flag")
+    def test_help():
+        pass
+
+    result = CliRunner().invoke(test_help, ["--help"])
+
+    assert (
+        "test-help <required> (req-one|req-two) [<optional>] [(opt-one|opt-two)]" in result.output
+    )
+    assert (
+        "--required-free-text <required_free_text> [--optional-free-text <optional_free_text>]"
+        in result.output
+    )
+    assert "[--flag|--no-flag]" in result.output
+
+
+def test_click_docopt_command_group_usage_command():
+    @click.group(cls=ClickDocOptGroup)
+    def test_group():
+        pass
+
+    @test_group.command()
+    def command_one():
+        pass
+
+    result = CliRunner().invoke(test_group, ["--help"])
+
+    assert "test-group command-one" in result.output
+
+
+def test_click_docopt_command_group_usage_command_choice():
+    @click.group(cls=ClickDocOptGroup)
+    def test_group():
+        pass
+
+    @test_group.command()
+    def command_one():
+        pass
+
+    @test_group.command()
+    def command_two():
+        pass
+
+    result = CliRunner().invoke(test_group, ["--help"])
+
+    assert "test-group (command-one|command-two)" in result.output
+
+
+def test_click_docopt_command_group_usage_command_many():
+    @click.group(cls=ClickDocOptGroup)
+    def test_group():
+        pass
+
+    @test_group.command()
+    def command_one():
+        pass
+
+    @test_group.command()
+    def command_two():
+        pass
+
+    @test_group.command()
+    def command_three():
+        pass
+
+    @test_group.command()
+    def command_four():
+        pass
+
+    @test_group.command()
+    def command_five():
+        pass
+
+    result = CliRunner().invoke(test_group, ["--help"])
+
+    assert "test-group <command>" in result.output
