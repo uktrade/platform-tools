@@ -8,6 +8,7 @@ import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import check_response
 
@@ -227,7 +228,7 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
     )
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def codebuild():
     pass
 

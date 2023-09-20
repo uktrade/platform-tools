@@ -13,9 +13,10 @@ from dbt_copilot_helper.commands.conduit import conduit as conduit_commands
 from dbt_copilot_helper.commands.copilot import copilot as copilot_commands
 from dbt_copilot_helper.commands.dns import domain as domain_commands
 from dbt_copilot_helper.commands.waf import waf as waf_commands
+from dbt_copilot_helper.utils import ClickDocOptGroup
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 @click.version_option(
     version=version("dbt-copilot-tools"),
     message=f"dbt-copilot-tools %(version)s",

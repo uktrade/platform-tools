@@ -5,6 +5,8 @@ import time
 import boto3
 import click
 
+from dbt_copilot_helper.utils import ClickDocOptCommand
+
 
 class ConduitError(Exception):
     pass
@@ -159,13 +161,13 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 
 
-@click.command()
-@click.argument("addon_type")
+@click.command(cls=ClickDocOptCommand)
+@click.argument("addon_type", type=click.Choice(CONDUIT_ADDON_TYPES))
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
 @click.option("--addon-name", help="Name of custom addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
-    """Create a conduit connection to a ADDON_TYPE backing service."""
+    """Create a conduit connection to an addon."""
     try:
         start_conduit(app, env, addon_type, addon_name)
     except InvalidAddonTypeConduitError:

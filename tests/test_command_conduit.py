@@ -727,8 +727,8 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho):
         ],
     )
 
-    assert result.exit_code == 1
-    secho.assert_called_once_with(
-        f"""Addon type "nope" does not exist, try one of opensearch, postgres, redis.""",
-        fg="red",
-    )
+    assert result.exit_code == 2
+    assert (
+        "Invalid value for '{opensearch|postgres|redis}': 'nope' is not one of 'opensearch', "
+        "'postgres', 'redis'"
+    ) in result.output

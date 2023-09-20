@@ -10,6 +10,7 @@ import yaml
 from jsonschema import validate as validate_json
 
 from dbt_copilot_helper.utils import SSM_BASE_PATH
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import camel_case
 from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils import mkdir
@@ -31,7 +32,7 @@ def list_copilot_local_services():
     return [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def copilot():
     pass
 

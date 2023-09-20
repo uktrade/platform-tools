@@ -8,6 +8,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import check_response
 from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
@@ -439,7 +440,7 @@ def get_load_balancer_domain_and_configuration(
     return domain_name, response["LoadBalancers"][0]
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def domain():
     pass
 

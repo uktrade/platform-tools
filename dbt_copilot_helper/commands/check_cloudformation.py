@@ -8,11 +8,12 @@ import click
 
 from dbt_copilot_helper.commands.bootstrap import make_config
 from dbt_copilot_helper.commands.copilot import make_addons
+from dbt_copilot_helper.utils import ClickDocOptGroup
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
 
-@click.group(invoke_without_command=True, chain=True)
+@click.group(invoke_without_command=True, chain=True, cls=ClickDocOptGroup)
 @click.pass_context
 def check_cloudformation(ctx: click.Context) -> None:
     """

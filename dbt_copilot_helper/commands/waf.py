@@ -12,6 +12,7 @@ from cfn_tools import load_yaml
 
 from dbt_copilot_helper.commands.check_cloudformation import get_lint_result
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import check_response
 from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
@@ -32,7 +33,7 @@ def check_waf(project_session: boto3.Session) -> str:
     return arn
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def waf():
     pass
 
