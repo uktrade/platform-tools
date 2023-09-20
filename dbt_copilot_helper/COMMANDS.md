@@ -103,7 +103,9 @@ Usage: copilot-helper bootstrap make-config
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap migrate-secrets --project-profile <project_profile> [--env <env>] [--svc <svc>] [--dry-run] [--overwrite] 
+Usage: copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
+                                                [--env <env>] [--svc <svc>] 
+                                                [--dry-run] [--overwrite] 
 ```
 
 ## Options
@@ -130,7 +132,8 @@ Usage: copilot-helper bootstrap migrate-secrets --project-profile <project_profi
 ## Usage
 
 ```
-Usage: copilot-helper bootstrap copy-secrets <source_environment> <target_environment> --project-profile <project_profile> 
+Usage: copilot-helper bootstrap copy-secrets <source_environment> <target_environment> 
+                                             --project-profile <project_profile> 
 ```
 
 ## Arguments
@@ -239,7 +242,8 @@ Usage: copilot-helper codebuild link-github --pat <pat> --project-profile <proje
 ## Usage
 
 ```
-Usage: copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> [--type <type>] 
+Usage: copilot-helper codebuild create-codedeploy-role --project-profile <project_profile> 
+                                                       [--type <type>] 
 ```
 
 ## Options
@@ -260,7 +264,10 @@ Usage: copilot-helper codebuild create-codedeploy-role --project-profile <projec
 ## Usage
 
 ```
-Usage: copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec> --git <git> --name <name> --project-profile <project_profile> [--desc <desc>] [--release] [--update] 
+Usage: copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec> 
+                                           --git <git> --name <name> --project-profile <project_profile> 
+                                           [--desc <desc>] [--release] 
+                                           [--update] 
 ```
 
 ## Options
@@ -293,7 +300,11 @@ Usage: copilot-helper codebuild codedeploy --branch <branch> --buildspec <builds
 ## Usage
 
 ```
-Usage: copilot-helper codebuild buildproject --branch <branch> --buildspec <buildspec> --git <git> --name <name> --project-profile <project_profile> [--builderimage <builderimage>] [--desc <desc>] [--update] 
+Usage: copilot-helper codebuild buildproject --branch <branch> --buildspec <buildspec> 
+                                             --git <git> --name <name> 
+                                             --project-profile <project_profile> 
+                                             [--builderimage <builderimage>] 
+                                             [--desc <desc>] [--update] 
 ```
 
 ## Options
@@ -347,7 +358,8 @@ Usage: copilot-helper codebuild delete-project --name <name> --project-profile <
 ## Usage
 
 ```
-Usage: copilot-helper codebuild slackcreds --channel <channel> --project-profile <project_profile> --token <token> --workspace <workspace> 
+Usage: copilot-helper codebuild slackcreds --channel <channel> --project-profile <project_profile> 
+                                           --token <token> --workspace <workspace> 
 ```
 
 ## Options
@@ -372,7 +384,8 @@ Usage: copilot-helper codebuild slackcreds --channel <channel> --project-profile
 ## Usage
 
 ```
-Usage: copilot-helper conduit (opensearch|postgres|redis) --app <app> --env <env> [--addon-name <addon_name>] 
+Usage: copilot-helper conduit (opensearch|postgres|redis) 
+                              --app <app> --env <env> [--addon-name <addon_name>] 
 ```
 
 ## Arguments
@@ -478,7 +491,9 @@ Usage: copilot-helper domain (check-domain|assign-domain)
 ## Usage
 
 ```
-Usage: copilot-helper domain check-domain --base-domain <base_domain> --domain-profile <domain_profile> --project-profile <project_profile> [--env <env>] 
+Usage: copilot-helper domain check-domain --base-domain <base_domain> --domain-profile <domain_profile> 
+                                          --project-profile <project_profile> 
+                                          [--env <env>] 
 ```
 
 ## Options
@@ -503,7 +518,9 @@ Usage: copilot-helper domain check-domain --base-domain <base_domain> --domain-p
 ## Usage
 
 ```
-Usage: copilot-helper domain assign-domain --app <app> --domain-profile <domain_profile> --env <env> --project-profile <project_profile> --svc <svc> 
+Usage: copilot-helper domain assign-domain --app <app> --domain-profile <domain_profile> 
+                                           --env <env> --project-profile <project_profile> 
+                                           --svc <svc> 
 ```
 
 ## Options
@@ -550,7 +567,8 @@ Usage: copilot-helper waf (attach-waf|custom-waf)
 ## Usage
 
 ```
-Usage: copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project_profile> --svc <svc> 
+Usage: copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project_profile> 
+                                     --svc <svc> 
 ```
 
 ## Options
@@ -575,7 +593,8 @@ Usage: copilot-helper waf attach-waf --app <app> --env <env> --project-profile <
 ## Usage
 
 ```
-Usage: copilot-helper waf custom-waf --app <app> --env <env> --project-profile <project_profile> --svc <svc> --waf-path <waf_path> 
+Usage: copilot-helper waf custom-waf --app <app> --env <env> --project-profile <project_profile> 
+                                     --svc <svc> --waf-path <waf_path> 
 ```
 
 ## Options

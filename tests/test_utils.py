@@ -243,7 +243,7 @@ def test_click_docopt_command_help():
         "--required-free-text <required_free_text> [--optional-free-text <optional_free_text>]"
         in result.output
     )
-    assert "[--flag|--no-flag]" in result.output
+    assert "[--flag]" in result.output
 
 
 def test_click_docopt_command_group_usage_command():

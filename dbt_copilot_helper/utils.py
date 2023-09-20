@@ -222,9 +222,14 @@ def check_response(response):
 
 def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = False) -> None:
     help_text = f"Usage: {ctx.command_path} "
-    arguments = list(filter(lambda p: p.__class__.__name__ == "Argument", ctx.command.params))
-    arguments.sort(key=lambda e: e.name)
-    arguments.sort(key=lambda e: e.required, reverse=True)
+    current_line = 0
+    indent = len(help_text)
+
+    parameters = list(ctx.command.params)
+    parameters.sort(key=lambda e: e.name)
+    parameters.sort(key=lambda e: e.required, reverse=True)
+    parameters.sort(key=lambda e: hasattr(e, "is_flag") and e.is_flag)
+    parameters.sort(key=lambda p: p.__class__.__name__ == "Option")
 
     if group:
         command_list = list(ctx.command.commands.keys())
@@ -232,30 +237,39 @@ def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = Fal
         if len(command_list) == 1:
             help_text += f"{command_list[0]} "
         elif len(command_list) <= 4:
-            arguments.insert(0, Argument(["command"], type=click.Choice(command_list)))
+            parameters.insert(0, Argument(["command"], type=click.Choice(command_list)))
         else:
-            arguments.insert(0, Argument(["command"]))
+            parameters.insert(0, Argument(["command"]))
 
-    options = list(filter(lambda p: p.__class__.__name__ == "Option", ctx.command.params))
-    options.sort(key=lambda e: e.name)
-    options.sort(key=lambda e: e.required, reverse=True)
-    options.sort(key=lambda e: e.is_flag)
+    for index, param in enumerate(parameters):
+        if param.__class__.__name__ == "Argument":
+            if hasattr(param.type, "choices"):
+                wrap = "(%s) " if param.required else "[(%s)] "
+                help_text += wrap % "|".join(param.type.choices)
+            else:
+                wrap = "<%s> " if param.required else "[<%s>] "
+                help_text += wrap % param.name
+        elif param.__class__.__name__ == "Option":
+            if (
+                parameters[index - 1].__class__.__name__ == "Argument"
+                and not help_text.split("\n")[current_line].isspace()
+                and len(help_text.split("\n")[current_line]) > 40
+            ):
+                help_text += "\n" + (" " * indent)
+                current_line += 1
+            if getattr(param, "is_flag", False):
+                wrap = "%s " if param.required else "[%s] "
+                options = param.opts
+                if getattr(param, "default", None) is None:
+                    options += param.secondary_opts
+                help_text += wrap % "|".join(options)
+            else:
+                wrap = "%s <%s> " if param.required else "[%s <%s>] "
+                help_text += wrap % (param.opts[0], param.name)
 
-    for param in arguments:
-        if hasattr(param.type, "choices"):
-            wrap = "(%s) " if param.required else "[(%s)] "
-            help_text += wrap % "|".join(param.type.choices)
-        else:
-            wrap = "<%s> " if param.required else "[<%s>] "
-            help_text += wrap % param.name
-
-    for param in options:
-        if param.is_flag:
-            wrap = "%s " if param.required else "[%s] "
-            help_text += wrap % "|".join(param.opts + param.secondary_opts)
-        else:
-            wrap = "%s <%s> " if param.required else "[%s <%s>] "
-            help_text += wrap % (param.opts[0], param.name)
+        if index + 1 != len(parameters) and len(help_text.split("\n")[current_line]) > 70:
+            help_text += "\n" + (" " * indent)
+            current_line += 1
 
     formatter.write(f"{help_text}\n")
 
