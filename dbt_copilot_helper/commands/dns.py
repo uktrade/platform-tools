@@ -518,14 +518,14 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
 @domain.command()
 @click.option("--app", help="Application Name", required=True)
+@click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
 @click.option(
     "--domain-profile", help="aws account profile name for R53 domains account", required=True
 )
 @click.option(
     "--project-profile", help="aws account profile name for application account", required=True
 )
-@click.option("--svc", help="Service Name", required=True)
-@click.option("--env", help="Environment", required=True)
 def assign_domain(app, domain_profile, project_profile, svc, env):
     """Check R53 domain is pointing to the correct ECS Load Blanacer."""
     domain_session = check_aws_conn(domain_profile)

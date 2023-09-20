@@ -219,8 +219,8 @@ def make_addons():
 
 
 @copilot.command()
-@click.argument("app", type=str)
-@click.argument("env", type=str)
+@click.argument("app", type=str, required=True)
+@click.argument("env", type=str, required=True)
 def get_env_secrets(app, env):
     """List secret names and values for an environment."""
 

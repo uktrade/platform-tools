@@ -105,7 +105,7 @@ copilot-helper bootstrap make-config
 ```
 copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
                                          [--env <env>] [--svc <svc>] 
-                                         [--dry-run] [--overwrite] 
+                                         [--overwrite] [--dry-run] 
 ```
 
 ## Options
@@ -264,10 +264,9 @@ copilot-helper codebuild create-codedeploy-role --project-profile <project_profi
 ## Usage
 
 ```
-copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec> 
-                                    --git <git> --name <name> --project-profile <project_profile> 
-                                    [--desc <desc>] [--release] 
-                                    [--update] 
+copilot-helper codebuild codedeploy --name <name> --git <git> --branch <branch> 
+                                    --buildspec <buildspec> --project-profile <project_profile> 
+                                    [--desc <desc>] [--update] [--release] 
 ```
 
 ## Options
@@ -300,11 +299,11 @@ copilot-helper codebuild codedeploy --branch <branch> --buildspec <buildspec>
 ## Usage
 
 ```
-copilot-helper codebuild buildproject --branch <branch> --buildspec <buildspec> 
-                                      --git <git> --name <name> 
+copilot-helper codebuild buildproject --name <name> --git <git> 
+                                      --branch <branch> --buildspec <buildspec> 
                                       --project-profile <project_profile> 
-                                      [--builderimage <builderimage>] 
-                                      [--desc <desc>] [--update] 
+                                      [--desc <desc>] [--builderimage <builderimage>] 
+                                      [--update] 
 ```
 
 ## Options
@@ -358,8 +357,8 @@ copilot-helper codebuild delete-project --name <name> --project-profile <project
 ## Usage
 
 ```
-copilot-helper codebuild slackcreds --channel <channel> --project-profile <project_profile> 
-                                    --token <token> --workspace <workspace> 
+copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel> 
+                                    --token <token> --project-profile <project_profile> 
 ```
 
 ## Options
@@ -491,9 +490,9 @@ copilot-helper domain (check-domain|assign-domain)
 ## Usage
 
 ```
-copilot-helper domain check-domain --base-domain <base_domain> --domain-profile <domain_profile> 
+copilot-helper domain check-domain --domain-profile <domain_profile> 
                                    --project-profile <project_profile> 
-                                   [--env <env>] 
+                                   --base-domain <base_domain> [--env <env>] 
 ```
 
 ## Options
@@ -518,23 +517,23 @@ copilot-helper domain check-domain --base-domain <base_domain> --domain-profile 
 ## Usage
 
 ```
-copilot-helper domain assign-domain --app <app> --domain-profile <domain_profile> 
-                                    --env <env> --project-profile <project_profile> 
-                                    --svc <svc> 
+copilot-helper domain assign-domain --app <app> --env <env> --svc <svc> 
+                                    --domain-profile <domain_profile> 
+                                    --project-profile <project_profile> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
+- `--env <text>`
+  - Environment
+- `--svc <text>`
+  - Service Name
 - `--domain-profile <text>`
   - aws account profile name for R53 domains account
 - `--project-profile <text>`
   - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
-- `--env <text>`
-  - Environment
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -567,20 +566,20 @@ copilot-helper waf (attach-waf|custom-waf)
 ## Usage
 
 ```
-copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project_profile> 
-                              --svc <svc> 
+copilot-helper waf attach-waf --app <app> --env <env> --svc <svc> 
+                              --project-profile <project_profile> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
-- `--project-profile <text>`
-  - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
 - `--env <text>`
   - Environment
+- `--svc <text>`
+  - Service Name
+- `--project-profile <text>`
+  - aws account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -593,20 +592,21 @@ copilot-helper waf attach-waf --app <app> --env <env> --project-profile <project
 ## Usage
 
 ```
-copilot-helper waf custom-waf --app <app> --env <env> --project-profile <project_profile> 
-                              --svc <svc> --waf-path <waf_path> 
+copilot-helper waf custom-waf --app <app> --env <env> --svc <svc> 
+                              --project-profile <project_profile> 
+                              --waf-path <waf_path> 
 ```
 
 ## Options
 
 - `--app <text>`
   - Application Name
-- `--project-profile <text>`
-  - aws account profile name for application account
-- `--svc <text>`
-  - Service Name
 - `--env <text>`
   - Environment
+- `--svc <text>`
+  - Service Name
+- `--project-profile <text>`
+  - aws account profile name for application account
 - `--waf-path <text>`
   - path to waf.yml file
 - `--help <boolean>` _Defaults to False._

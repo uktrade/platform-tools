@@ -40,11 +40,11 @@ def waf():
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
+@click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
 @click.option(
     "--project-profile", help="aws account profile name for application account", required=True
 )
-@click.option("--svc", help="Service Name", required=True)
-@click.option("--env", help="Environment", required=True)
 def attach_waf(app, project_profile, svc, env):
     """Attach default WAF rule to ECS Load Balancer."""
 
@@ -92,11 +92,11 @@ def create_stack(cf_client, app, svc, env, raw):
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
+@click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
 @click.option(
     "--project-profile", help="aws account profile name for application account", required=True
 )
-@click.option("--svc", help="Service Name", required=True)
-@click.option("--env", help="Environment", required=True)
 @click.option("--waf-path", help="path to waf.yml file", required=True)
 def custom_waf(app, project_profile, svc, env, waf_path):
     """Attach custom WAF to ECS Load Balancer."""
