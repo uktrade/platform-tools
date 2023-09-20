@@ -226,8 +226,8 @@ def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = Fal
     indent = len(help_text)
 
     parameters = list(ctx.command.params)
-    parameters.sort(key=lambda e: e.required, reverse=True)
-    parameters.sort(key=lambda e: hasattr(e, "is_flag") and e.is_flag)
+    parameters.sort(key=lambda p: p.required, reverse=True)
+    parameters.sort(key=lambda p: hasattr(p, "is_flag") and p.is_flag)
     parameters.sort(key=lambda p: p.__class__.__name__ == "Option")
 
     if group:

@@ -2,8 +2,11 @@
 
 import click
 
+from dbt_copilot_helper.utils import ClickDocOptCommand
+from dbt_copilot_helper.utils import ClickDocOptGroup
 
-@click.command()
+
+@click.command(cls=ClickDocOptCommand)
 @click.option("--count", default=1, help="number of greetings")
 @click.argument("name")
 def hello(count, name):
@@ -11,7 +14,7 @@ def hello(count, name):
         click.echo(f"Hello {name}!")
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def cli():
     pass
 

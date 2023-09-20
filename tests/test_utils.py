@@ -224,10 +224,10 @@ def test_set_ssm_param_tags_with_existing_secret():
 
 def test_click_docopt_command_help():
     @click.command(cls=ClickDocOptCommand)
-    @click.argument("required-choice", type=click.Choice(["req-one", "req-two"]), required=True)
-    @click.argument("optional-choice", type=click.Choice(["opt-one", "opt-two"]), required=False)
     @click.argument("required", required=True)
     @click.argument("optional", required=False)
+    @click.argument("required-choice", type=click.Choice(["req-one", "req-two"]), required=True)
+    @click.argument("optional-choice", type=click.Choice(["opt-one", "opt-two"]), required=False)
     @click.option("--required-free-text", help="Required Free Text", required=True)
     @click.option("--optional-free-text", help="Optional Free Text", required=False)
     @click.option("--flag/--no-flag", help="Boolean Flag")

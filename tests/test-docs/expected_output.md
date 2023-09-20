@@ -8,7 +8,7 @@
 ## Usage
 
 ```
-Usage: cli [OPTIONS] COMMAND [ARGS]...
+cli hello 
 ```
 
 ## Options
@@ -27,7 +27,7 @@ Usage: cli [OPTIONS] COMMAND [ARGS]...
 ## Usage
 
 ```
-Usage: cli hello [OPTIONS] NAME
+cli hello <name> [--count <count>] 
 ```
 
 ## Arguments
