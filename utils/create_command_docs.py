@@ -89,6 +89,7 @@ def get_cmd_metadata(
         options=[param for param in params if param.param_type_name == "option"],
         parent_reference=parent_reference,
         subcommands=subcommands,
+        # Strip "Usage: " (7 characters) and re-indent each line to match
         usage="\n".join(map(lambda x: x[7:], cmd.get_usage(context).split("\n"))),
     )
 
