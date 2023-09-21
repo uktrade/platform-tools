@@ -11,14 +11,15 @@ from schema import Optional
 from schema import Or
 from schema import Schema
 
-from commands.utils import SSM_PATH
-from commands.utils import check_aws_conn
-from commands.utils import get_ssm_secret_names
-from commands.utils import get_ssm_secrets
-from commands.utils import mkdir
-from commands.utils import mkfile
-from commands.utils import set_ssm_param
-from commands.utils import setup_templates
+from dbt_copilot_helper.utils import SSM_PATH
+from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import get_ssm_secret_names
+from dbt_copilot_helper.utils import get_ssm_secrets
+from dbt_copilot_helper.utils import mkdir
+from dbt_copilot_helper.utils import mkfile
+from dbt_copilot_helper.utils import set_ssm_param
+from dbt_copilot_helper.utils import setup_templates
 
 config_schema = Schema(
     {
@@ -133,7 +134,7 @@ def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def bootstrap():
     pass
 
@@ -199,7 +200,7 @@ def make_config():
 
 
 @bootstrap.command()
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option("--env", help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option(

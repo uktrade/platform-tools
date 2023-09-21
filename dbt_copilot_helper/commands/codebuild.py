@@ -2,13 +2,15 @@
 import json
 import os
 from importlib.metadata import version
+from pathlib import Path
 
 import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
-from .utils import check_aws_conn
-from .utils import check_response
+from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import check_response
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"
@@ -226,14 +228,14 @@ def modify_project(project_session, update, name, desc, git, branch, buildspec, 
     )
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def codebuild():
     pass
 
 
 @codebuild.command()
 @click.option("--pat", help="PAT Token", required=True)
-@click.option("--project-profile", help="aws account profile name", required=True)
+@click.option("--project-profile", help="AWS account profile name", required=True)
 def link_github(pat: str, project_profile: str) -> None:
     """Links CodeDeploy to Github via users PAT."""
     project_session = check_aws_conn(project_profile)
@@ -242,7 +244,7 @@ def link_github(pat: str, project_profile: str) -> None:
 
 
 @codebuild.command()
-@click.option("--project-profile", help="aws account profile name", required=True)
+@click.option("--project-profile", help="AWS account profile name", required=True)
 @click.option(
     "--type", type=click.Choice(["ci", "custom"]), help="type of project <ci/custom>", default="ci"
 )
@@ -252,7 +254,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
     project_session = check_aws_conn(project_profile)
     account_id = project_session.client("sts").get_caller_identity().get("Account")
 
-    current_filepath = os.path.dirname(os.path.realpath(__file__))
+    current_filepath = Path(os.path.realpath(__file__)).parent.parent
 
     with open(f"{current_filepath}/templates/{type}-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
@@ -319,7 +321,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 @click.option("--git", required=True, help="Git url of code")
 @click.option("--branch", required=True, help="Git branch")
 @click.option("--buildspec", required=True, help="Location of buildspec file in repo")
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 @click.option(
     "--release",
     is_flag=True,
@@ -354,7 +356,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, project_profile, rele
 @click.option(
     "--builderimage", default="aws/codebuild/amazonlinux2-x86_64-standard:3.0", help="Builder image"
 )
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 def buildproject(update, name, desc, git, branch, buildspec, builderimage, project_profile):
     """Builds Code build for ad hoc projects."""
 
@@ -375,7 +377,7 @@ def buildproject(update, name, desc, git, branch, buildspec, builderimage, proje
 
 @codebuild.command()
 @click.option("--name", required=True, help="Name of project")
-@click.option("--project-profile", required=True, help="aws account profile name")
+@click.option("--project-profile", required=True, help="AWS account profile name")
 def delete_project(name, project_profile):
     """Delete CodeBuild projects."""
 
@@ -397,7 +399,7 @@ def delete_project(name, project_profile):
 @click.option("--workspace", help="Slack Workspace id", required=True)
 @click.option("--channel", help="Slack channel id", required=True)
 @click.option("--token", help="Slack api token", required=True)
-@click.option("--project-profile", help="aws account profile name", required=True)
+@click.option("--project-profile", help="AWS account profile name", required=True)
 def slackcreds(workspace, channel, token, project_profile):
     """Add Slack credentials into AWS Parameter Store."""
     project_session = check_aws_conn(project_profile)

@@ -10,7 +10,7 @@ from typing import Optional
 
 import click
 
-from commands.utils import setup_templates
+from dbt_copilot_helper.utils import setup_templates
 
 
 class Parameter(NamedTuple):
@@ -89,7 +89,8 @@ def get_cmd_metadata(
         options=[param for param in params if param.param_type_name == "option"],
         parent_reference=parent_reference,
         subcommands=subcommands,
-        usage=cmd.get_usage(context),
+        # Strip "Usage: " (7 characters) and re-indent each line to match
+        usage="\n".join(map(lambda x: x[7:], cmd.get_usage(context).split("\n"))),
     )
 
     for sub in subcommands_names.values():

@@ -10,9 +10,9 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_ssm
 
-from commands.copilot_cli import copilot as cli
-from commands.copilot_cli import make_addons
-from commands.utils import SSM_PATH
+from dbt_copilot_helper.commands.copilot import copilot as cli
+from dbt_copilot_helper.commands.copilot import make_addons
+from dbt_copilot_helper.utils import SSM_PATH
 from tests.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
@@ -106,7 +106,7 @@ class TestMakeAddonCommand:
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
-    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_success(
         self, tmp_path, addon_file, expected_env_addons, expected_service_addons, expect_db_warning
     ):
@@ -277,7 +277,7 @@ invalid-entry:
             (S3_STORAGE_CONTENTS, "s3"),
         ],
     )
-    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_env_addons_parameters_file_with_different_addon_types(
         self, fakefs, addon_file_contents, addon_type
     ):
@@ -309,7 +309,7 @@ invalid-entry:
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
-    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_addon_instructions_with_postgres_addon_types(
         self, fakefs, addon_file_contents, addon_type, secret_name
     ):
@@ -336,7 +336,7 @@ invalid-entry:
                 f"{secret_name}" in result.output
             )
 
-    @patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 

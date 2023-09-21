@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from commands.check_cloudformation import (
+from dbt_copilot_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
 from tests.conftest import BASE_DIR
@@ -75,7 +75,7 @@ def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: str)
     copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
 
 
-@patch("commands.check_cloudformation.prepare_cloudformation_templates")
+@patch("dbt_copilot_helper.commands.check_cloudformation.prepare_cloudformation_templates")
 def test_outputs_passed_results_summary(
     patched_prepare_cloudformation_templates, copilot_directory: Path
 ) -> None:
@@ -89,7 +89,7 @@ def test_outputs_passed_results_summary(
     ), "The passed checks summary was not outputted"
 
 
-@patch("commands.check_cloudformation.prepare_cloudformation_templates")
+@patch("dbt_copilot_helper.commands.check_cloudformation.prepare_cloudformation_templates")
 def test_outputs_failed_results_summary(
     patched_prepare_cloudformation_templates, copilot_directory: Path
 ) -> None:

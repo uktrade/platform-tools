@@ -16,12 +16,12 @@ from moto import mock_ssm
 from moto import mock_sts
 from schema import SchemaError
 
-from commands.bootstrap_cli import copy_secrets
-from commands.bootstrap_cli import get_paas_env_vars
-from commands.bootstrap_cli import load_and_validate_config
-from commands.bootstrap_cli import make_config
-from commands.bootstrap_cli import migrate_secrets
-from commands.utils import set_ssm_param
+from dbt_copilot_helper.commands.bootstrap import copy_secrets
+from dbt_copilot_helper.commands.bootstrap import get_paas_env_vars
+from dbt_copilot_helper.commands.bootstrap import load_and_validate_config
+from dbt_copilot_helper.commands.bootstrap import make_config
+from dbt_copilot_helper.commands.bootstrap import migrate_secrets
+from dbt_copilot_helper.utils import set_ssm_param
 from tests.conftest import BASE_DIR
 from tests.conftest import FIXTURES_DIR
 
@@ -38,7 +38,7 @@ class MockEntity(JsonObject):
         return [app]
 
 
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_get_pass_env_vars(client):
     """Test that, given a CloudFoundryClient instance and an app's path string,
     get_paas_env_vars returns a dict of environment variables."""
@@ -93,7 +93,7 @@ def test_load_and_validate_config_invalid_file():
 
 
 @freeze_time("2023-08-22 16:00:00")
-@patch("commands.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
@@ -130,7 +130,7 @@ def test_make_config(tmp_path):
 
 
 @mock_sts
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
@@ -146,7 +146,7 @@ def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credential
 
 
 @mock_sts
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_service_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
@@ -171,8 +171,8 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
 )
 @mock_ssm
 @mock_sts
-@patch("commands.bootstrap_cli.get_paas_env_vars")
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_param_doesnt_exist(
     client,
     get_paas_env_vars,
@@ -205,8 +205,8 @@ def test_migrate_secrets_param_doesnt_exist(
 
 @mock_ssm
 @mock_sts
-@patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_param_already_exists(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -233,8 +233,8 @@ def test_migrate_secrets_param_already_exists(
 
 @mock_ssm
 @mock_sts
-@patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_overwrite(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -262,8 +262,8 @@ def test_migrate_secrets_overwrite(
 
 @mock_ssm
 @mock_sts
-@patch("commands.bootstrap_cli.get_paas_env_vars", return_value={})
-@patch("commands.bootstrap_cli.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
 def test_migrate_secrets_dry_run(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -328,8 +328,8 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
     assert """Target environment manifest for "newenv" does not exist.""" in result.output
 
 
-@patch("commands.bootstrap_cli.get_ssm_secrets")
-@patch("commands.bootstrap_cli.set_ssm_param")
+@patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
+@patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
 def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
@@ -372,8 +372,8 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
     assert "/copilot/test-application/newenv/secrets/TEST_SECRET" in result.output
 
 
-@patch("commands.bootstrap_cli.get_ssm_secrets")
-@patch("commands.bootstrap_cli.set_ssm_param")
+@patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
+@patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
 def test_copy_secrets_with_existing_secret(

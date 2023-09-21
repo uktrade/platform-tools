@@ -10,13 +10,13 @@ from moto import mock_iam
 from moto import mock_ssm
 from moto import mock_sts
 
-from commands.codebuild_cli import AWS_REGION
-from commands.codebuild_cli import check_git_url
-from commands.codebuild_cli import check_service_role
-from commands.codebuild_cli import create_codedeploy_role
-from commands.codebuild_cli import link_github
-from commands.codebuild_cli import slackcreds
-from commands.codebuild_cli import update_parameter
+from dbt_copilot_helper.commands.codebuild import AWS_REGION
+from dbt_copilot_helper.commands.codebuild import check_git_url
+from dbt_copilot_helper.commands.codebuild import check_service_role
+from dbt_copilot_helper.commands.codebuild import create_codedeploy_role
+from dbt_copilot_helper.commands.codebuild import link_github
+from dbt_copilot_helper.commands.codebuild import slackcreds
+from dbt_copilot_helper.commands.codebuild import update_parameter
 
 # Not much value in testing these while moto doesn't support `import_source_credentials`` or `list_source_credentials`
 # def test_import_pat():
@@ -111,7 +111,7 @@ def test_check_git_url_invalid(url, capfd):
     )
 
 
-@patch("commands.codebuild_cli.import_pat")
+@patch("dbt_copilot_helper.commands.codebuild.import_pat")
 @mock_sts
 @mock_codebuild
 def test_link_github(import_pat, alias_session):
@@ -143,7 +143,9 @@ def test_create_codedeploy_role_returns_200(alias_session):
 @mock_sts
 def test_create_codedeploy_role_policy_already_exists(alias_session):
     current_filepath = os.path.dirname(os.path.realpath(__file__))
-    with open(f"{current_filepath}/../commands/templates/ci-codebuild-role-policy.json") as f:
+    with open(
+        f"{current_filepath}/../dbt_copilot_helper/templates/ci-codebuild-role-policy.json"
+    ) as f:
         policy_doc = json.load(f)
     alias_session.client("iam", region_name=AWS_REGION).create_policy(
         PolicyName="ci-CodeBuild-policy",
@@ -177,6 +179,7 @@ def test_create_codedeploy_role_limit_exceeded_exception(alias_session):
         result = runner.invoke(
             create_codedeploy_role, ["--project-profile", "foo", "--type", "ci"], input="y"
         )
+        print(result)
 
     assert (
         "You have hit the limit of max managed policies, please delete an existing version and try again"
@@ -187,7 +190,7 @@ def test_create_codedeploy_role_limit_exceeded_exception(alias_session):
 # Commented out while we investigate potential bug - `create_project` wants a service role arn passed as an argument and we are passing it a non-service role arn
 # https://uktrade.atlassian.net/browse/DBTP-184
 
-# @patch("commands.codebuild_cli.check_github_conn")
+# @patch("dbt_copilot_helper.commands.codebuild.check_github_conn")
 # @mock_sts
 # @mock_iam
 # @mock_codebuild

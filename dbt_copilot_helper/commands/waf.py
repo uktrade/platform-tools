@@ -10,12 +10,12 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
-from commands.check_cloudformation import get_lint_result
-from commands.dns_cli import get_load_balancer_domain_and_configuration
-
-from .utils import check_aws_conn
-from .utils import check_response
-from .utils import ensure_cwd_is_repo_root
+from dbt_copilot_helper.commands.check_cloudformation import get_lint_result
+from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils import check_aws_conn
+from dbt_copilot_helper.utils import check_response
+from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
 
 # This may need to change, once we determine what the default WAF name will be.
 WAF_DEFAULT_NAME = "default"
@@ -33,18 +33,18 @@ def check_waf(project_session: boto3.Session) -> str:
     return arn
 
 
-@click.group()
+@click.group(cls=ClickDocOptGroup)
 def waf():
     pass
 
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option(
-    "--project-profile", help="aws account profile name for application account", required=True
-)
-@click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
+@click.option(
+    "--project-profile", help="AWS account profile name for application account", required=True
+)
 def attach_waf(app, project_profile, svc, env):
     """Attach default WAF rule to ECS Load Balancer."""
 
@@ -92,11 +92,11 @@ def create_stack(cf_client, app, svc, env, raw):
 
 @waf.command()
 @click.option("--app", help="Application Name", required=True)
-@click.option(
-    "--project-profile", help="aws account profile name for application account", required=True
-)
-@click.option("--svc", help="Service Name", required=True)
 @click.option("--env", help="Environment", required=True)
+@click.option("--svc", help="Service Name", required=True)
+@click.option(
+    "--project-profile", help="AWS account profile name for application account", required=True
+)
 @click.option("--waf-path", help="path to waf.yml file", required=True)
 def custom_waf(app, project_profile, svc, env, waf_path):
     """Attach custom WAF to ECS Load Balancer."""
