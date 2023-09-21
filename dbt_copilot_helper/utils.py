@@ -8,6 +8,7 @@ import jinja2
 from click import Argument
 from click import Context
 from click import HelpFormatter
+from schema import SchemaError
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.jinja2_tags import VersionTag
@@ -286,3 +287,12 @@ class ClickDocOptGroup(click.Group):
 
     def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
         format_click_usage(ctx, formatter, True)
+
+
+def validate_string(regex_pattern):
+    def validator(string):
+        if not re.match(regex_pattern, string):
+            raise SchemaError(f"String '{string}' does not match the required pattern.")
+        return string
+
+    return validator

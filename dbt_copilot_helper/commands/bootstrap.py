@@ -20,6 +20,10 @@ from dbt_copilot_helper.utils import mkdir
 from dbt_copilot_helper.utils import mkfile
 from dbt_copilot_helper.utils import set_ssm_param
 from dbt_copilot_helper.utils import setup_templates
+from dbt_copilot_helper.utils import validate_string
+
+range_validator = validate_string(r"^\d+-\d+$")
+seconds_validator = validate_string(r"^\d+s$")
 
 config_schema = Schema(
     {
@@ -45,10 +49,10 @@ config_schema = Schema(
                         Optional("count"): Or(
                             int,
                             {  # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
-                                "range": str,  # e.g. 1-10
+                                "range": range_validator,  # e.g. 1-10
                                 Optional("cooldown"): {
-                                    "in": str,  # e.g 30s
-                                    "out": str,  # e.g 30s
+                                    "in": seconds_validator,  # e.g 30s
+                                    "out": seconds_validator,  # e.g 30s
                                 },
                                 Optional("cpu_percentage"): int,
                                 Optional("memory_percentage"): Or(
@@ -56,13 +60,13 @@ config_schema = Schema(
                                     {
                                         "value": int,
                                         "cooldown": {
-                                            "in": str,  # e.g. 80s
-                                            "out": str,  # e.g 160s
+                                            "in": seconds_validator,  # e.g. 80s
+                                            "out": seconds_validator,  # e.g 160s
                                         },
                                     },
                                 ),
                                 Optional("requests"): int,
-                                Optional("response_time"): str,  # e.g. 2s
+                                Optional("response_time"): seconds_validator,  # e.g. 2s
                             },
                         ),
                     },
