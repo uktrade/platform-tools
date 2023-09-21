@@ -144,10 +144,11 @@ def bootstrap():
 
 
 @bootstrap.command()
-def make_config():
+@click.option("-d", "--manifest-dir", type=str, default=".")
+def make_config(manifest_dir="."):
     """Generate Copilot boilerplate code."""
 
-    base_path = Path(".")
+    base_path = Path(manifest_dir)
     config = load_and_validate_config("bootstrap.yml")
 
     templates = setup_templates()

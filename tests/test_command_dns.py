@@ -287,9 +287,10 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
     mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
         Name="foo", Subnets=[mocked_subnet_id]
     )["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group_arn = mocked_elbv2_client.create_target_group(Name="foo")["TargetGroups"][0][
-        "TargetGroupArn"
-    ]
+    target_group = mocked_elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
     mocked_elbv2_client.create_listener(
         LoadBalancerArn=mocked_load_balancer_arn,
         DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],

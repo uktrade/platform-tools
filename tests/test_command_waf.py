@@ -1,9 +1,11 @@
 import os
+from shutil import rmtree
 from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
 import cfn_flip.yaml_dumper
+import pytest
 import yaml
 from cfn_tools import load_yaml
 from click.testing import CliRunner
@@ -18,6 +20,18 @@ from dbt_copilot_helper.commands.waf import attach_waf
 from dbt_copilot_helper.commands.waf import check_waf
 from dbt_copilot_helper.commands.waf import custom_waf
 from tests.conftest import TEST_APP_DIR
+
+
+@pytest.fixture
+def setup_test_directory():
+    copilot_dir = TEST_APP_DIR / "copilot"
+    if copilot_dir.exists():
+        rmtree(copilot_dir)
+    os.mkdir(copilot_dir)
+    os.chdir(TEST_APP_DIR)
+    yield
+    if copilot_dir.exists():
+        rmtree(copilot_dir)
 
 
 @mock_wafv2
@@ -90,9 +104,10 @@ def test_attach_waf(alias_session):
     lb_response = elbv2_client.create_load_balancer(Name="foo", Subnets=[subnet_id])
     dns_name = lb_response["LoadBalancers"][0]["DNSName"]
     lb_arn = lb_response["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group_arn = elbv2_client.create_target_group(Name="foo")["TargetGroups"][0][
-        "TargetGroupArn"
-    ]
+    target_group = elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
     elbv2_client.create_listener(
         LoadBalancerArn=lb_arn,
         DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
@@ -135,8 +150,7 @@ def test_attach_waf(alias_session):
 
 
 @mock_sts
-def test_custom_waf_file_not_found(alias_session):
-    os.chdir(TEST_APP_DIR)
+def test_custom_waf_file_not_found(alias_session, setup_test_directory):
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -161,8 +175,7 @@ def test_custom_waf_file_not_found(alias_session):
 
 @mock_cloudformation
 @mock_sts
-def test_custom_waf_invalid_yml(alias_session):
-    os.chdir(TEST_APP_DIR)
+def test_custom_waf_invalid_yml(alias_session, setup_test_directory):
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -192,8 +205,9 @@ def test_custom_waf_invalid_yml(alias_session):
 @mock_sts
 @patch("dbt_copilot_helper.commands.waf.check_aws_conn")
 @patch("dbt_copilot_helper.commands.waf.create_stack")
-def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_session):
-    os.chdir(TEST_APP_DIR)
+def test_custom_waf_cf_stack_already_exists(
+    create_stack, check_aws_conn, alias_session, setup_test_directory
+):
     check_aws_conn.return_value = alias_session
     create_stack.side_effect = alias_session.client(
         "cloudformation"
@@ -231,10 +245,9 @@ def test_custom_waf_cf_stack_already_exists(create_stack, check_aws_conn, alias_
 )
 @patch("dbt_copilot_helper.commands.waf.check_aws_conn")
 def test_custom_waf_delete_in_progress(
-    check_aws_conn, create_stack, describe_stacks, alias_session
+    check_aws_conn, create_stack, describe_stacks, alias_session, setup_test_directory
 ):
     check_aws_conn.return_value = alias_session
-    os.chdir(TEST_APP_DIR)
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -269,7 +282,11 @@ def test_custom_waf_delete_in_progress(
 )
 @patch("dbt_copilot_helper.commands.waf.check_aws_conn")
 def test_custom_waf(
-    check_aws_conn, create_stack, get_elastic_load_balancer_domain_and_configuration, alias_session
+    check_aws_conn,
+    create_stack,
+    get_elastic_load_balancer_domain_and_configuration,
+    alias_session,
+    setup_test_directory,
 ):
     cf_client = alias_session.client("cloudformation")
 
@@ -299,7 +316,6 @@ def test_custom_waf(
         load_balancer_configuration,
     )
     dns_name = load_balancer_configuration["DNSName"]
-    os.chdir(TEST_APP_DIR)
     runner = CliRunner()
 
     # patching here, to avoid inadvertently mocking the moto test setup calls above, expecting two different boto methods to be called
