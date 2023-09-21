@@ -97,7 +97,7 @@ environments:
     http:
       alias: {{ env.url }}
     {%- if env.count %}
-    count:
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
       {{ env.count | to_yaml | indent(6) | trim }}
     {%- endif %}
 {%- endfor %}
