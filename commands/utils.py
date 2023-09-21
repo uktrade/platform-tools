@@ -129,7 +129,7 @@ def get_ssm_secrets(app, env):
     return sorted(secrets)
 
 
-def setup_templates():
+def setup_templates() -> jinja2.Environment:
     Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.PackageLoader("commands")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)

@@ -91,8 +91,12 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 
 # You can override any of the values defined above by environment.
 environments:
-  {%- for env_name, env in environments.items() %}
+{%- for env_name, env in environments.items() %}
   {{ env_name }}:
     http:
       alias: {{ env.url }}
-  {%- endfor %}
+    {%- if env.count %}
+    count:
+      {{ env.count | to_yaml | indent(6) | trim }}
+    {%- endif %}
+{%- endfor %}
