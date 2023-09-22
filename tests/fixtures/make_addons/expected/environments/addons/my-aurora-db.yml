@@ -31,7 +31,6 @@ Mappings:
     development:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
-      MultiAZ: false
 
 
 Resources:
@@ -127,7 +126,6 @@ Resources:
       DBInstanceClass: db.serverless
       EnablePerformanceInsights: true
       Engine: 'aurora-postgresql'
-      MultiAZ: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
       PromotionTier: 1
       AvailabilityZone: !Select
         - 0
