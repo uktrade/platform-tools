@@ -292,6 +292,9 @@
             "max-capacity": {
                "type": "number",
                "minimum": 0.5
+            },
+            "replicas": {
+               "type": "integer"
             }
          },
          "additionalProperties": false
