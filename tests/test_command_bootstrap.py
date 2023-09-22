@@ -405,7 +405,7 @@ def test_copy_secrets_with_existing_secret(
 
 
 def setup_newenv_environment(tmp_path, runner):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application/bootstrap.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application-deploy/bootstrap.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     runner.invoke(make_config)

@@ -38,7 +38,7 @@ def get_lint_result(path: str):
         path,
         "--ignore-templates",
         # addons.parameters.yml is not a CloudFormation template file
-        f"{BASE_DIR}/tests/test-application/copilot/**/addons/addons.parameters.yml",
+        f"{BASE_DIR}/tests/test-application-deploy/copilot/**/addons/addons.parameters.yml",
         # "W2001 Parameter Env not used" is ignored becomes Copilot addons require
         # parameters even if they are not used in the Cloudformation template.
         "--ignore-checks",
@@ -55,7 +55,7 @@ def get_lint_result(path: str):
 @click.pass_context
 def lint(ctx: click.Context) -> None:
     """Runs cfn-lint against the generated CloudFormation templates."""
-    result = get_lint_result(f"{BASE_DIR}/tests/test-application/copilot/**/addons/*.yml")
+    result = get_lint_result(f"{BASE_DIR}/tests/test-application-deploy/copilot/**/addons/*.yml")
 
     click.secho(result.stdout.decode())
     if result.returncode == 0:
@@ -82,7 +82,7 @@ def process_result(ctx: click.Context, result) -> None:
 
 def prepare_cloudformation_templates(ctx: click.Context) -> None:
     click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
-    os.chdir(f"{BASE_DIR}/tests/test-application")
+    os.chdir(f"{BASE_DIR}/tests/test-application-deploy")
     copilot_directory = Path("./copilot")
     if copilot_directory.exists():
         rmtree(copilot_directory)

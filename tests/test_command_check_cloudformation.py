@@ -14,7 +14,7 @@ from tests.conftest import BASE_DIR
 
 @pytest.fixture
 def copilot_directory() -> Path:
-    return Path(f"{BASE_DIR}/tests/test-application/copilot")
+    return Path(f"{BASE_DIR}/tests/test-application-deploy/copilot")
 
 
 def test_runs_all_checks_when_given_no_arguments() -> None:
@@ -70,7 +70,7 @@ def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: str)
         "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
     )
     ensure_directory_does_not_exist(copilot_directory)
-    addons_directory = Path(f"{BASE_DIR}/tests/test-application/copilot/environments/addons")
+    addons_directory = Path(f"{BASE_DIR}/tests/test-application-deploy/copilot/environments/addons")
     addons_directory.mkdir(parents=True, exist_ok=True)
     copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
 
