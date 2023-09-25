@@ -80,13 +80,13 @@ copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets)
 ## Usage
 
 ```
-copilot-helper bootstrap make-config [-d <manifest_dir>] 
+copilot-helper bootstrap make-config [-d <directory>] 
 ```
 
 ## Options
 
 - `-d
---manifest-dir <text>` _Defaults to .._
+--directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
