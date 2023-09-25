@@ -22,7 +22,7 @@ def check_cloudformation(ctx: click.Context, directory: str) -> None:
 
     if ctx.invoked_subcommand is None:
         click.secho(f"\n>>> Running all checks", fg="yellow")
-        for name, command in ctx.command.commands.items():
+        for command in ctx.command.commands.values():
             ctx.invoke(command)
 
 
