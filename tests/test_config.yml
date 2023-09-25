@@ -17,6 +17,7 @@ services:
       ipfilter: true
       paas: dit-services/trade-space/test-service
       url: test-service.trad.gav.ik
+      memory: 1024
       count:
         range: 1-10
         cooldown:

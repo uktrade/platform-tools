@@ -96,6 +96,9 @@ environments:
   {{ env_name }}:
     http:
       alias: {{ env.url }}
+    {%- if env.memory %}
+    memory: {{ env.memory }}
+    {%- endif %}
     {%- if env.count %}
     count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
       {{ env.count | to_yaml | indent(6) | trim }}

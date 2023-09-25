@@ -46,6 +46,7 @@ config_schema = Schema(
                         "paas": str,
                         Optional("url"): str,
                         Optional("ipfilter"): bool,
+                        Optional("memory"): int,
                         Optional("count"): Or(
                             int,
                             {  # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
