@@ -21,7 +21,7 @@ http:
     success_codes: '200,301,302'
     healthy_threshold: 3
     unhealthy_threshold: 2
-    grace_period: 90s
+    grace_period: 180s
 
 sidecars:
   nginx:
