@@ -15,7 +15,7 @@ repos:
     hooks:
       - id: check-cloudformation
         name: Check generated CloudFormation templates
-        entry: poetry run pytest -k test_linting_check_passed
+        entry: poetry run pytest -k test_check_cloudformation_with_no_args_summarises_all_successes
         language: system
         pass_filenames: false
         always_run: true
