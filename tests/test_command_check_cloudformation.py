@@ -96,5 +96,3 @@ def test_linting_check_failed(test_application, copilot_directory: Path) -> None
         "The CloudFormation templates failed the following checks:\n  - lint [E0000 could not find expected ':'"
         in result.output
     )
-
-    # assert "E0000 could not find expected ':'" in result.output
