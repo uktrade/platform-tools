@@ -440,13 +440,13 @@ copilot-helper copilot (make-addons|get-env-secrets)
 ## Usage
 
 ```
-copilot-helper copilot make-addons [-d <manifest_dir>] 
+copilot-helper copilot make-addons [-d <directory>] 
 ```
 
 ## Options
 
 - `-d
---manifest-dir <text>` _Defaults to .._
+--directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
