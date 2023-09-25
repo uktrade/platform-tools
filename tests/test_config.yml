@@ -17,6 +17,19 @@ services:
       ipfilter: true
       paas: dit-services/trade-space/test-service
       url: test-service.trad.gav.ik
+      count:
+        range: 1-10
+        cooldown:
+          in: 30s
+          out: 60s
+        cpu_percentage: 70
+        memory_percentage:
+          value: 80
+          cooldown:
+            in: 80s
+            out: 160s
+        requests: 10000
+        response_time: 2s
     test:
       ipfilter: false
       paas: dit-staging/blah/test-service

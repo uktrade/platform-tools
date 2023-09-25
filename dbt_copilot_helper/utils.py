@@ -8,6 +8,7 @@ import jinja2
 from click import Argument
 from click import Context
 from click import HelpFormatter
+from schema import SchemaError
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.jinja2_tags import VersionTag
@@ -132,7 +133,7 @@ def get_ssm_secrets(app, env):
     return sorted(secrets)
 
 
-def setup_templates():
+def setup_templates() -> jinja2.Environment:
     Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.PackageLoader("dbt_copilot_helper")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
@@ -286,3 +287,14 @@ class ClickDocOptGroup(click.Group):
 
     def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
         format_click_usage(ctx, formatter, True)
+
+
+def validate_string(regex_pattern):
+    def validator(string):
+        if not re.match(regex_pattern, string):
+            raise SchemaError(
+                f"String '{string}' does not match the required pattern '{regex_pattern}'. For more details on valid string patterns see: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            )
+        return string
+
+    return validator
