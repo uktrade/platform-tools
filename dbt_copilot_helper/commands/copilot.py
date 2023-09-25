@@ -137,11 +137,12 @@ def _validate_and_normalise_config(config_file):
 
 
 @copilot.command()
-def make_addons():
+@click.option("-d", "--directory", type=str, default=".")
+def make_addons(directory="."):
     """Generate addons CloudFormation for each environment."""
 
     overwrite = True
-    output_dir = Path(".").absolute()
+    output_dir = Path(directory).absolute()
 
     ensure_cwd_is_repo_root()
 
