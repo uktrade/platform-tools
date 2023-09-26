@@ -17,6 +17,7 @@ services:
       ipfilter: true
       paas: dit-services/trade-space/test-service
       url: test-service.trad.gav.ik
+      memory: 1024
       count:
         range: 1-10
         cooldown:
@@ -34,6 +35,7 @@ services:
       ipfilter: false
       paas: dit-staging/blah/test-service
       url: test-service.landan.cloudapps.digital
+      count: 2
   overlapping_secrets:
   - OVERLAPPING_SECRET
   secrets:
