@@ -80,10 +80,13 @@ copilot-helper bootstrap (make-config|migrate-secrets|copy-secrets)
 ## Usage
 
 ```
-copilot-helper bootstrap make-config 
+copilot-helper bootstrap make-config [-d <directory>] 
 ```
 
 ## Options
+
+- `-d
+--directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -159,10 +162,13 @@ copilot-helper bootstrap copy-secrets <source_environment> <target_environment>
 ## Usage
 
 ```
-copilot-helper check-cloudformation lint 
+copilot-helper check-cloudformation lint [-d <directory>] 
 ```
 
 ## Options
+
+- `-d
+--directory <text>` _Defaults to copilot._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -180,10 +186,13 @@ copilot-helper check-cloudformation lint
 ## Usage
 
 ```
-copilot-helper check-cloudformation lint 
+copilot-helper check-cloudformation lint [-d <directory>] 
 ```
 
 ## Options
+
+- `-d
+--directory <text>` _Defaults to copilot._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -431,10 +440,13 @@ copilot-helper copilot (make-addons|get-env-secrets)
 ## Usage
 
 ```
-copilot-helper copilot make-addons 
+copilot-helper copilot make-addons [-d <directory>] 
 ```
 
 ## Options
+
+- `-d
+--directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
