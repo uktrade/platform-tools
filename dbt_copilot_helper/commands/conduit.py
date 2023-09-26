@@ -6,6 +6,9 @@ import boto3
 import click
 
 from dbt_copilot_helper.utils.click import ClickDocOptCommand
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 
 class ConduitError(Exception):
@@ -168,6 +171,8 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.option("--addon-name", help="Name of custom addon", required=False)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
     """Create a conduit connection to an addon."""
+    check_copilot_helper_version_needs_update()
+
     try:
         start_conduit(app, env, addon_type, addon_name)
     except InvalidAddonTypeConduitError:

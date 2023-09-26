@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import boto3
 import jsonschema
@@ -165,3 +166,15 @@ def mocked_pg_secret():
             Name="/copilot/dbt-app/staging/secrets/POSTGRES",
             SecretString='{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
         )
+
+
+@pytest.fixture(scope="function")
+def validate_version():
+    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
+        get_app_versions.return_value = ((1, 0, 0), (1, 0, 0))
+        with patch(
+            "dbt_copilot_helper.utils.versioning.validate_version_compatibility",
+            side_effect=None,
+            return_value=None,
+        ) as patched:
+            yield patched

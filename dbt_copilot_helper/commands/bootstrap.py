@@ -21,6 +21,9 @@ from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import validate_string
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
@@ -139,9 +142,9 @@ def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
 
 
-@click.group(cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup)
 def bootstrap():
-    pass
+    check_copilot_helper_version_needs_update()
 
 
 @bootstrap.command()

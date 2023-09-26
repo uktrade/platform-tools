@@ -16,6 +16,9 @@ from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,9 +35,9 @@ def list_copilot_local_services():
     return [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
 
 
-@click.group(cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
-    pass
+    check_copilot_helper_version_needs_update()
 
 
 def _validate_and_normalise_config(config_file):

@@ -12,6 +12,9 @@ from dbt_copilot_helper.utils.aws import check_aws_conn
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 # To do
 # -----
@@ -440,9 +443,9 @@ def get_load_balancer_domain_and_configuration(
     return domain_name, response["LoadBalancers"][0]
 
 
-@click.group(cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup)
 def domain():
-    pass
+    check_copilot_helper_version_needs_update()
 
 
 @domain.command()
