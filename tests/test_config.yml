@@ -35,6 +35,7 @@ services:
       ipfilter: false
       paas: dit-staging/blah/test-service
       url: test-service.landan.cloudapps.digital
+      count: 2
   overlapping_secrets:
   - OVERLAPPING_SECRET
   secrets:
