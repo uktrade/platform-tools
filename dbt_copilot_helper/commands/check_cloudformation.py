@@ -1,90 +1,67 @@
 #!/usr/bin/env python
-import os
 from pathlib import Path
-from shutil import rmtree
-from subprocess import run
 
 import click
 
-from dbt_copilot_helper.commands.bootstrap import make_config
-from dbt_copilot_helper.commands.copilot import make_addons
 from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils import get_lint_result
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
 
 @click.group(invoke_without_command=True, chain=True, cls=ClickDocOptGroup)
+@click.option("-d", "--directory", type=str, default="copilot")
 @click.pass_context
-def check_cloudformation(ctx: click.Context) -> None:
+def check_cloudformation(ctx: click.Context, directory: str) -> None:
     """
     Runs the checks passed in the command arguments.
 
     If no argument is passed, it will run all the checks.
     """
-
-    ctx.obj = {"passing_checks": [], "failing_checks": []}
-
-    prepare_cloudformation_templates(ctx)
+    ctx.ensure_object(dict)
 
     if ctx.invoked_subcommand is None:
         click.secho(f"\n>>> Running all checks", fg="yellow")
-        for name, command in ctx.command.commands.items():
+        for command in ctx.command.commands.values():
             ctx.invoke(command)
 
 
-def get_lint_result(path: str):
-    command = [
-        "cfn-lint",
-        path,
-        "--ignore-templates",
-        # addons.parameters.yml is not a CloudFormation template file
-        f"{BASE_DIR}/tests/test-application-deploy/copilot/**/addons/addons.parameters.yml",
-        # "W2001 Parameter Env not used" is ignored becomes Copilot addons require
-        # parameters even if they are not used in the Cloudformation template.
-        "--ignore-checks",
-        "W2001",
-    ]
-
-    click.secho(f"\n>>> Running lint check", fg="yellow")
-    click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
-
-    return run(command, capture_output=True)
-
-
 @check_cloudformation.command()
+@click.option("-d", "--directory", type=str, default="copilot")
 @click.pass_context
-def lint(ctx: click.Context) -> None:
+def lint(ctx: click.Context, directory: str) -> bool:
     """Runs cfn-lint against the generated CloudFormation templates."""
-    result = get_lint_result(f"{BASE_DIR}/tests/test-application-deploy/copilot/**/addons/*.yml")
+    addons_manifests = f"{directory}/**/addons/*.yml"
+    # addons.parameters.yml is not a CloudFormation template file
+    ignore_addons_params = f"{directory}/**/addons/addons.parameters.yml"
+    # "W2001 Parameter Env not used" is ignored becomes Copilot addons require
+    # parameters even if they are not used in the Cloudformation template.
+    ignore_checks = "W2001"
 
-    click.secho(result.stdout.decode())
-    if result.returncode == 0:
-        ctx.obj["passing_checks"].append("lint")
-    else:
-        click.secho(result.stderr.decode())
-        ctx.obj["failing_checks"].append("lint")
+    result = get_lint_result(addons_manifests, ignore_addons_params, ignore_checks)
+    success = result.returncode == 0
+
+    ctx.obj["lint"] = {
+        "success": success,
+        "message": result.stdout.decode() if not success else None,
+    }
+
+    return success
 
 
 @check_cloudformation.result_callback()
 @click.pass_context
-def process_result(ctx: click.Context, result) -> None:
-    if ctx.obj["passing_checks"]:
-        click.secho("\nThe CloudFormation templates passed the following checks :-)", fg="green")
-        for passing_check in ctx.obj["passing_checks"]:
-            click.secho(f"  - {passing_check}", fg="green")
-
-    if ctx.obj["failing_checks"]:
-        click.secho("\nThe CloudFormation templates failed the following checks :-(", fg="red")
-        for failing_check in ctx.obj["failing_checks"]:
-            click.secho(f"  - {failing_check}", fg="red")
+def process_result(ctx: click.Context, result, directory) -> None:
+    successful = {k: v for k, v in ctx.obj.items() if v["success"]}
+    failed = {k: v for k, v in ctx.obj.items() if not v["success"]}
+    if successful:
+        click.secho("\nThe CloudFormation templates passed the following checks:", fg="green")
+        for subcommand_name in successful:
+            click.secho(f"  - {subcommand_name}", fg="white")
+    if failed:
+        click.secho("\nThe CloudFormation templates failed the following checks:", fg="red")
+        for subcommand_name in failed:
+            message = failed[subcommand_name]["message"]
+            click.secho(f"  - {subcommand_name} [{message}]", fg="white")
         exit(1)
-
-
-def prepare_cloudformation_templates(ctx: click.Context) -> None:
-    click.secho(f"\n>>> Preparing CloudFormation templates\n", fg="yellow")
-    os.chdir(f"{BASE_DIR}/tests/test-application-deploy")
-    copilot_directory = Path("./copilot")
-    if copilot_directory.exists():
-        rmtree(copilot_directory)
-    ctx.invoke(make_config)
-    ctx.invoke(make_addons)
+    exit(0)

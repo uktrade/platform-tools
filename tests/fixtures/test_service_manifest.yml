@@ -21,7 +21,7 @@ http:
     success_codes: '200,301,302'
     healthy_threshold: 3
     unhealthy_threshold: 2
-    grace_period: 90s
+    grace_period: 180s
 
 sidecars:
   nginx:
@@ -90,6 +90,21 @@ environments:
   production:
     http:
       alias: test-service.trad.gav.ik
+    memory: 1024
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+      range: 1-10
+      cooldown:
+        in: 30s
+        out: 60s
+      cpu_percentage: 70
+      memory_percentage:
+        value: 80
+        cooldown:
+          in: 80s
+          out: 160s
+      requests: 10000
+      response_time: 2s
   test:
     http:
       alias: test-service.landan.cloudapps.digital
+    count: 2 # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count

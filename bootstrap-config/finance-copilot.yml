@@ -8,9 +8,7 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-fft-hotfix.trade.dev.uktrade.digital
     - ACM-ARN-FOR-fft-hotfix.london.cloudapps.digital
-  prod-data:
-    certificate_arns:
-    - ACM-ARN-FOR-fft-prod-data.london.cloudapps.digital
+  prod-data: {}
   production:
     certificate_arns:
     - ACM-ARN-FOR-fido-prod.london.cloudapps.digital
@@ -23,18 +21,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/finance-dev/fft-dev
       url: fft-dev.london.cloudapps.digital
     hotfix:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/finance-hotfix/fft-hotfix
       url: fft-hotfix.london.cloudapps.digital
-    prod-data:
-      ipfilter: true
-      paas: dit-staging/finance-prod-data/fft-prod-data
-      url: fft-prod-data.london.cloudapps.digital
     production:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/finance/fft
       url: fft.trade.gov.uk
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -74,8 +72,6 @@ services:
       paas: dit-staging/finance-dev/fft-dev
     hotfix:
       paas: dit-staging/finance-hotfix/fft-hotfix
-    prod-data:
-      paas: dit-staging/finance-prod-data/fft-prod-data
     production:
       paas: dit-services/finance/fft
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

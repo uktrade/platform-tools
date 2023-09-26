@@ -65,6 +65,8 @@ def get_paas_data(client):
                     "routes": [],
                     "env_keys": env_keys,
                     "processes": [],
+                    "count": app["entity"]["instances"],
+                    "memory": app["entity"]["memory"],
                 }
 
                 key_ = f"{org['entity']['name']}/{space['entity']['name']}/{app['entity']['name']}"

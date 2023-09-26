@@ -3,6 +3,7 @@ import click
 import pytest
 from click.testing import CliRunner
 from moto import mock_ssm
+from schema import SchemaError
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.utils import ClickDocOptCommand
@@ -10,6 +11,7 @@ from dbt_copilot_helper.utils import ClickDocOptGroup
 from dbt_copilot_helper.utils import check_aws_conn
 from dbt_copilot_helper.utils import get_ssm_secrets
 from dbt_copilot_helper.utils import set_ssm_param
+from dbt_copilot_helper.utils import validate_string
 
 
 def test_check_aws_conn_profile_not_configured(capsys):
@@ -312,3 +314,21 @@ def test_click_docopt_command_group_usage_command_many():
     result = CliRunner().invoke(test_group, ["--help"])
 
     assert "test-group <command>" in result.output
+
+
+@pytest.mark.parametrize(
+    "regex_pattern, valid_string, invalid_string",
+    [(r"^\d+-\d+$", "1-10", "20-21-23"), (r"^\d+s$", "10s", "10seconds")],
+)
+def test_validate_string(regex_pattern, valid_string, invalid_string):
+    validator = validate_string(regex_pattern)
+
+    assert validator(valid_string) == valid_string
+
+    with pytest.raises(SchemaError) as err:
+        validator(invalid_string)
+
+    assert (
+        err.value.args[0]
+        == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For more details on valid string patterns see: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+    )

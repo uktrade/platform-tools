@@ -8,6 +8,7 @@ import yaml
 from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 from schema import Optional
+from schema import Or
 from schema import Schema
 
 from dbt_copilot_helper.utils import SSM_PATH
@@ -19,6 +20,10 @@ from dbt_copilot_helper.utils import mkdir
 from dbt_copilot_helper.utils import mkfile
 from dbt_copilot_helper.utils import set_ssm_param
 from dbt_copilot_helper.utils import setup_templates
+from dbt_copilot_helper.utils import validate_string
+
+range_validator = validate_string(r"^\d+-\d+$")
+seconds_validator = validate_string(r"^\d+s$")
 
 config_schema = Schema(
     {
@@ -41,6 +46,30 @@ config_schema = Schema(
                         "paas": str,
                         Optional("url"): str,
                         Optional("ipfilter"): bool,
+                        Optional("memory"): int,
+                        Optional("count"): Or(
+                            int,
+                            {  # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+                                "range": range_validator,  # e.g. 1-10
+                                Optional("cooldown"): {
+                                    "in": seconds_validator,  # e.g 30s
+                                    "out": seconds_validator,  # e.g 30s
+                                },
+                                Optional("cpu_percentage"): int,
+                                Optional("memory_percentage"): Or(
+                                    int,
+                                    {
+                                        "value": int,
+                                        "cooldown": {
+                                            "in": seconds_validator,  # e.g. 80s
+                                            "out": seconds_validator,  # e.g 160s
+                                        },
+                                    },
+                                ),
+                                Optional("requests"): int,
+                                Optional("response_time"): seconds_validator,  # e.g. 2s
+                            },
+                        ),
                     },
                 },
                 Optional("backing-services"): [
@@ -101,9 +130,13 @@ def load_and_validate_config(path):
 
     # validate the file
     schema = Schema(config_schema)
-    config = schema.validate(conf)
+    schema.validate(conf)
 
-    return config
+    return conf
+
+
+def to_yaml(value):
+    return yaml.dump(value, sort_keys=False)
 
 
 @click.group(cls=ClickDocOptGroup)
@@ -112,13 +145,15 @@ def bootstrap():
 
 
 @bootstrap.command()
-def make_config():
+@click.option("-d", "--directory", type=str, default=".")
+def make_config(directory="."):
     """Generate Copilot boilerplate code."""
 
-    base_path = Path(".")
+    base_path = Path(directory)
     config = load_and_validate_config("bootstrap.yml")
 
     templates = setup_templates()
+    templates.filters["to_yaml"] = to_yaml
 
     click.echo(">>> Generating Copilot configuration files\n")
 

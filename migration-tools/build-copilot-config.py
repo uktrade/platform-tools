@@ -134,6 +134,17 @@ def space_to_copilot_app(app_name, ns_conf):
                     "ipfilter": ipfilter,
                 }
 
+                # Pass non-default govuk paas scaling info to service environment dict
+                if environment["paas"]["memory"] != 512:
+                    svc["environments"][environment["environment"]]["memory"] = environment["paas"][
+                        "memory"
+                    ]
+
+                if environment["paas"]["count"] != 1:
+                    svc["environments"][environment["environment"]]["count"] = environment["paas"][
+                        "count"
+                    ]
+
         app_config["services"].append(svc)
 
         for process in other_proceses:
@@ -152,6 +163,9 @@ def space_to_copilot_app(app_name, ns_conf):
             for env_name, env_conf in psvc["environments"].items():
                 del env_conf["url"]
                 del env_conf["ipfilter"]
+                del env_conf["memory"]
+                if "count" in env_conf:
+                    del env_conf["count"]
 
             app_config["services"].append(psvc)
 

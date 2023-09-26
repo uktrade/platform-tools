@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from subprocess import run
 
 import boto3
 import botocore
@@ -8,6 +9,7 @@ import jinja2
 from click import Argument
 from click import Context
 from click import HelpFormatter
+from schema import SchemaError
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.jinja2_tags import VersionTag
@@ -132,7 +134,7 @@ def get_ssm_secrets(app, env):
     return sorted(secrets)
 
 
-def setup_templates():
+def setup_templates() -> jinja2.Environment:
     Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.PackageLoader("dbt_copilot_helper")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
@@ -276,6 +278,19 @@ def format_click_usage(ctx: Context, formatter: HelpFormatter, group: bool = Fal
     formatter.write(f"{help_text}\n")
 
 
+def get_lint_result(path: str, ignore_path: str = None, ignore_checks: str = None):
+    command = ["cfn-lint", path]
+    if ignore_path:
+        command.extend(["--ignore-templates", ignore_path])
+    if ignore_checks:
+        command.extend(["--ignore-checks", ignore_checks])
+
+    click.secho(f"\n>>> Running lint check", fg="yellow")
+    click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
+
+    return run(command, capture_output=True)
+
+
 class ClickDocOptCommand(click.Command):
     def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
         format_click_usage(ctx, formatter)
@@ -286,3 +301,14 @@ class ClickDocOptGroup(click.Group):
 
     def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
         format_click_usage(ctx, formatter, True)
+
+
+def validate_string(regex_pattern):
+    def validator(string):
+        if not re.match(regex_pattern, string):
+            raise SchemaError(
+                f"String '{string}' does not match the required pattern '{regex_pattern}'. For more details on valid string patterns see: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            )
+        return string
+
+    return validator
