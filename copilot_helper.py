@@ -13,7 +13,7 @@ from dbt_copilot_helper.commands.conduit import conduit as conduit_commands
 from dbt_copilot_helper.commands.copilot import copilot as copilot_commands
 from dbt_copilot_helper.commands.dns import domain as domain_commands
 from dbt_copilot_helper.commands.waf import waf as waf_commands
-from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
 
 @click.group(cls=ClickDocOptGroup)

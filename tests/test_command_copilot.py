@@ -10,9 +10,9 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_ssm
 
-from dbt_copilot_helper.commands.copilot import copilot as cli
-from dbt_copilot_helper.commands.copilot import make_addons
-from dbt_copilot_helper.utils import SSM_PATH
+from dbt_copilot_helper.commands.copilot import copilot
+from dbt_copilot_helper.utils.aws import SSM_PATH
+
 from tests.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
@@ -119,7 +119,7 @@ class TestMakeAddonCommand:
 
         # Act
         os.chdir(tmp_path)
-        result = CliRunner().invoke(make_addons)
+        result = CliRunner().invoke(copilot, ['make-addons'])
 
         # Assert:
         assert (

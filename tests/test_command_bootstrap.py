@@ -21,7 +21,7 @@ from dbt_copilot_helper.commands.bootstrap import get_paas_env_vars
 from dbt_copilot_helper.commands.bootstrap import load_and_validate_config
 from dbt_copilot_helper.commands.bootstrap import make_config
 from dbt_copilot_helper.commands.bootstrap import migrate_secrets
-from dbt_copilot_helper.utils import set_ssm_param
+from dbt_copilot_helper.utils.aws import set_ssm_param
 from tests.conftest import BASE_DIR
 from tests.conftest import FIXTURES_DIR
 

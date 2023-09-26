@@ -5,7 +5,7 @@ import time
 import boto3
 import click
 
-from dbt_copilot_helper.utils import ClickDocOptCommand
+from dbt_copilot_helper.utils.click import ClickDocOptCommand
 
 
 class ConduitError(Exception):

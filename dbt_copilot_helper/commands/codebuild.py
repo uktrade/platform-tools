@@ -8,9 +8,9 @@ import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import check_aws_conn
-from dbt_copilot_helper.utils import check_response
+from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_response
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
 AWS_REGION = "eu-west-2"
 DEFAULT_CI_BUILDER = "public.ecr.aws/uktrade/ci-image-builder"

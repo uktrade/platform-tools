@@ -11,16 +11,16 @@ from schema import Optional
 from schema import Or
 from schema import Schema
 
-from dbt_copilot_helper.utils import SSM_PATH
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import check_aws_conn
-from dbt_copilot_helper.utils import get_ssm_secret_names
-from dbt_copilot_helper.utils import get_ssm_secrets
-from dbt_copilot_helper.utils import mkdir
-from dbt_copilot_helper.utils import mkfile
-from dbt_copilot_helper.utils import set_ssm_param
-from dbt_copilot_helper.utils import setup_templates
-from dbt_copilot_helper.utils import validate_string
+from dbt_copilot_helper.utils.aws import SSM_PATH
+from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import get_ssm_secret_names
+from dbt_copilot_helper.utils.aws import get_ssm_secrets
+from dbt_copilot_helper.utils.aws import set_ssm_param
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import mkdir
+from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.validation import validate_string
 
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")

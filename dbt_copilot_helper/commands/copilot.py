@@ -9,13 +9,13 @@ import click
 import yaml
 from jsonschema import validate as validate_json
 
-from dbt_copilot_helper.utils import SSM_BASE_PATH
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import camel_case
-from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
-from dbt_copilot_helper.utils import mkdir
-from dbt_copilot_helper.utils import mkfile
-from dbt_copilot_helper.utils import setup_templates
+from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.files import mkdir
+from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.template import camel_case
+from dbt_copilot_helper.utils.template import setup_templates
 
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 

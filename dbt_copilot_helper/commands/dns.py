@@ -8,10 +8,10 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import check_aws_conn
-from dbt_copilot_helper.utils import check_response
-from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_response
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 
 # To do
 # -----
