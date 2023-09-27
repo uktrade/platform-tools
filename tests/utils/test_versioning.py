@@ -98,14 +98,14 @@ def test_validate_version_compatability(
 @pytest.mark.parametrize(
     "template_check",
     [
-        ("addon_newer_major_version.yml", IncompatibleMajorVersion, None),
-        ("addon_newer_minor_version.yml", IncompatibleMinorVersion, None),
-        ("addon_older_major_version.yml", IncompatibleMajorVersion, None),
-        ("addon_older_minor_version.yml", IncompatibleMinorVersion, None),
+        ("addon_newer_major_version.yml", IncompatibleMajorVersion, ""),
+        ("addon_newer_minor_version.yml", IncompatibleMinorVersion, ""),
+        ("addon_older_major_version.yml", IncompatibleMajorVersion, ""),
+        ("addon_older_minor_version.yml", IncompatibleMinorVersion, ""),
         ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
     ],
 )
-def test_validate_template_version(template_check: Tuple[str, Type[BaseException], str | None]):
+def test_validate_template_version(template_check: Tuple[str, Type[BaseException], str]):
     template_name, raises, message = template_check
 
     with pytest.raises(raises) as exception:
@@ -114,7 +114,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
         )
         validate_template_version((10, 10, 10), template_path)
 
-    if message is not None:
+    if message:
         assert (message % template_path) == str(exception.value)
 
 
