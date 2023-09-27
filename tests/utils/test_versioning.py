@@ -16,6 +16,7 @@ from dbt_copilot_helper.utils.versioning import parse_version
 from dbt_copilot_helper.utils.versioning import string_version
 from dbt_copilot_helper.utils.versioning import validate_template_version
 from dbt_copilot_helper.utils.versioning import validate_version_compatibility
+from tests.conftest import BASE_DIR
 
 
 @pytest.mark.parametrize(
@@ -108,7 +109,9 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
     template_name, raises, message = template_check
 
     with pytest.raises(raises) as exception:
-        template_path = str(Path(f"tests/fixtures/version_validation/{template_name}").resolve())
+        template_path = str(
+            Path(f"{BASE_DIR}/tests/fixtures/version_validation/{template_name}").resolve()
+        )
         validate_template_version((10, 10, 10), template_path)
 
     if message is not None:

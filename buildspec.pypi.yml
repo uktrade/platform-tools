@@ -16,8 +16,6 @@ phases:
 
   build:
     commands:
-      - echo Running check-cloudformation
-      - poetry run ./copilot_helper.py check-cloudformation
       - echo Running tests
       - poetry run tox
       - |

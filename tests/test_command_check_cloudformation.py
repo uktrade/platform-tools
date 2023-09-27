@@ -14,10 +14,7 @@ from dbt_copilot_helper.commands.copilot import make_addons
 from tests.conftest import BASE_DIR
 
 
-def prepare_fake_cloudformation_templates(copilot_directory: Path, passing: bool) -> None:
-    template = (
-        "valid_cloudformation_template.yml" if passing else "invalid_cloudformation_template.yml"
-    )
+def prepare_fake_cloudformation_templates(template: str) -> None:
     addons_directory = Path(f"{BASE_DIR}/tests/test-application-deploy/copilot/environments/addons")
     addons_directory.mkdir(parents=True, exist_ok=True)
     copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
@@ -30,12 +27,22 @@ def ensure_directory_does_not_exist(copilot_directory: Path) -> None:
 
 
 @pytest.fixture
+def app_with_valid_cf_template(application_under_test):
+    prepare_fake_cloudformation_templates("valid_cloudformation_template.yml")
+
+
+@pytest.fixture
+def app_with_invalid_cf_template(application_under_test):
+    prepare_fake_cloudformation_templates("invalid_cloudformation_template.yml")
+
+
+@pytest.fixture
 def copilot_directory() -> Path:
     return Path(f"{BASE_DIR}/tests/test-application-deploy/copilot")
 
 
 @pytest.fixture
-def test_application(copilot_directory):
+def application_under_test(copilot_directory):
     ensure_directory_does_not_exist(copilot_directory)
     os.chdir(copilot_directory.parent)
     CliRunner().invoke(make_config)
@@ -45,10 +52,8 @@ def test_application(copilot_directory):
 
 
 def test_check_cloudformation_with_no_args_summarises_all_successes(
-    test_application, copilot_directory: Path
+    app_with_valid_cf_template, copilot_directory: Path
 ) -> None:
-    prepare_fake_cloudformation_templates(copilot_directory, passing=True)
-
     result = CliRunner().invoke(
         check_cloudformation_command, args=["--directory", copilot_directory]
     )
@@ -59,10 +64,8 @@ def test_check_cloudformation_with_no_args_summarises_all_successes(
 
 
 def test_check_cloudformation_with_no_args_summarises_all_failures(
-    test_application, copilot_directory: Path
+    app_with_invalid_cf_template, copilot_directory: Path
 ) -> None:
-    prepare_fake_cloudformation_templates(copilot_directory, passing=False)
-
     result = CliRunner().invoke(
         check_cloudformation_command, args=["--directory", copilot_directory]
     )
@@ -73,9 +76,7 @@ def test_check_cloudformation_with_no_args_summarises_all_failures(
     )
 
 
-def test_linting_check_passed(test_application, copilot_directory: Path) -> None:
-    prepare_fake_cloudformation_templates(copilot_directory, passing=True)
-
+def test_linting_check_passed(app_with_valid_cf_template, copilot_directory: Path) -> None:
     result = CliRunner().invoke(
         check_cloudformation_command, args=["lint", "--directory", copilot_directory]
     )
@@ -84,9 +85,7 @@ def test_linting_check_passed(test_application, copilot_directory: Path) -> None
     assert "The CloudFormation templates passed the following checks:\n  - lint" in result.output
 
 
-def test_linting_check_failed(test_application, copilot_directory: Path) -> None:
-    prepare_fake_cloudformation_templates(copilot_directory, passing=False)
-
+def test_linting_check_failed(app_with_invalid_cf_template, copilot_directory: Path) -> None:
     result = CliRunner().invoke(
         check_cloudformation_command, args=["lint", "--directory", copilot_directory]
     )
