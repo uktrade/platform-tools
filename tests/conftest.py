@@ -178,3 +178,13 @@ def validate_version():
             return_value=None,
         ) as patched:
             yield patched
+
+
+@pytest.fixture(scope="function")
+def mock_tool_versions():
+    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
+        with patch("dbt_copilot_helper.utils.versioning.get_aws_versions") as get_aws_versions:
+            with patch(
+                "dbt_copilot_helper.utils.versioning.get_copilot_versions"
+            ) as get_copilot_versions:
+                yield get_app_versions, get_aws_versions, get_copilot_versions

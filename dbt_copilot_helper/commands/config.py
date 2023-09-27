@@ -136,10 +136,6 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def application():
-    pass
-
-
 def tool_versions():
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
