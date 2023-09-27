@@ -133,7 +133,8 @@ def check_copilot_helper_version_needs_update():
     except IncompatibleMajorVersion:
         click.secho(message, fg="red")
         click.secho(
-            "This command will not run until you upgrade dbt-copilot-tools; exiting...", fg="red"
+            "This command will not run until you upgrade dbt-copilot-tools; exiting...",
+            fg="red",
         )
         exit(1)
     except IncompatibleMinorVersion:
