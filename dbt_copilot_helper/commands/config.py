@@ -14,10 +14,13 @@ no = "\033[91m✖\033[0m"
 maybe = "\033[93m?\033[0m"
 
 RECOMMENDATIONS = {
-    "dbt-copilot-tools-upgrade": "Upgrade dbt-copilot-tools to version {version} `pip install "
-    "--upgrade dbt-copilot-tools=={version}`.",
-    "dbt-copilot-tools-upgrade-note": "Post upgrade, run `copilot-helper copilot make-addons` to "
-    "update your addon templates.",
+    "dbt-copilot-tools-upgrade": (
+        "Upgrade dbt-copilot-tools to version {version} `pip install "
+        "--upgrade dbt-copilot-tools=={version}`."
+    ),
+    "dbt-copilot-tools-upgrade-note": (
+        "Post upgrade, run `copilot-helper copilot make-addons` to " "update your addon templates."
+    ),
     "generic-tool-upgrade": "Upgrade {tool} to version {version}.",
 }
 
@@ -139,8 +142,18 @@ def application():
 
 def tool_versions():
     click.secho("Checking tooling versions...", fg="blue")
+    recommendations = {}
+
     copilot_version, copilot_released_version = versioning.get_copilot_versions()
+    if copilot_version is None:
+        recommendations[
+            "install-copilot"
+        ] = "Install AWS Copilot https://aws.github.io/copilot-cli/"
+
     aws_version, aws_released_version = versioning.get_aws_versions()
+    if aws_version is None:
+        recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
+
     app_version, app_released_version = versioning.get_app_versions()
 
     tool_versions_table = PrettyTable()
@@ -179,15 +192,13 @@ def tool_versions():
 
     click.secho(tool_versions_table)
 
-    recommendations = {}
-
-    if aws_version != aws_released_version:
+    if aws_version != aws_released_version and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
             version=versioning.string_version(aws_released_version),
         )
 
-    if copilot_version != copilot_released_version:
+    if copilot_version != copilot_released_version and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
             version=versioning.string_version(copilot_released_version),

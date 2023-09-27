@@ -3,6 +3,7 @@ import subprocess
 from importlib.metadata import version
 from pathlib import Path
 from typing import Tuple
+from typing import Union
 
 import click
 import requests
@@ -12,21 +13,54 @@ from dbt_copilot_helper.exceptions import IncompatibleMinorVersion
 from dbt_copilot_helper.exceptions import ValidationException
 
 
-def string_version(input_version: Tuple[int, int, int]) -> str:
+def string_version(input_version: Union[Tuple[int, int, int], None]) -> str:
+    if input_version is None:
+        return "unknown"
     major, minor, patch = input_version
     return ".".join([str(s) for s in [major, minor, patch]])
 
 
+def parse_version(input_version: Union[str, None]) -> Union[Tuple[int, int, int], None]:
+    if input_version is None:
+        return None
+
+    version_plain = input_version.replace("v", "")
+    version_segments = re.split(r"[.\-]", version_plain)
+
+    if len(version_segments) != 3:
+        return None
+
+    output_version = [0, 0, 0]
+    for index, segment in enumerate(version_segments):
+        try:
+            output_version[index] = int(segment)
+        except ValueError:
+            output_version[index] = -1
+    return output_version[0], output_version[1], output_version[2]
+
+
 def get_copilot_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
-    response = subprocess.run("copilot --version", capture_output=True, shell=True)
-    [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+    copilot_version = None
+
+    try:
+        response = subprocess.run("copilot --version", capture_output=True, shell=True)
+        [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+    except ValueError:
+        pass
+
     return parse_version(copilot_version), get_github_released_version("aws/copilot-cli")
 
 
 def get_aws_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
-    response = subprocess.run("aws --version", capture_output=True, shell=True)
-    matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-    return parse_version(matched.group(1)), get_github_released_version("aws/aws-cli", True)
+    aws_version = None
+    try:
+        response = subprocess.run("aws --version", capture_output=True, shell=True)
+        matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+        aws_version = parse_version(matched.group(1))
+    except ValueError:
+        pass
+
+    return aws_version, get_github_released_version("aws/aws-cli", True)
 
 
 def get_github_released_version(repository: str, tags: bool = False) -> Tuple[int, int, int]:
@@ -107,15 +141,3 @@ def check_copilot_helper_version_needs_update():
         continue_confirmation = click.confirm("Do you wish to continue executing?", default=False)
         if not continue_confirmation:
             exit(1)
-
-
-def parse_version(input_version: str) -> Tuple[int, int, int]:
-    version_plain = input_version.replace("v", "")
-    version_segments = re.split(r"[.\-]", version_plain)
-    output_version = [0, 0, 0]
-    for index, segment in enumerate(version_segments):
-        try:
-            output_version[index] = int(segment)
-        except ValueError:
-            output_version[index] = -1
-    return output_version[0], output_version[1], output_version[2]
