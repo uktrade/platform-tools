@@ -102,6 +102,12 @@ class TestMakeAddonCommand:
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
+            (
+                "monitoring_addons.yml",
+                ["monitoring.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                False,
+            ),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
@@ -125,6 +131,7 @@ class TestMakeAddonCommand:
         # Act
         os.chdir(tmp_path)
         result = CliRunner().invoke(copilot, ["make-addons"])
+        print(result.output)
 
         assert (
             result.exit_code == 0

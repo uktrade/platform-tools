@@ -78,6 +78,18 @@
                "then": {
                   "$ref": "#/definitions/opensearch"
                }
+            },
+            {
+               "if": {
+                  "properties": {
+                     "type": {
+                        "const": "monitoring"
+                     }
+                  }
+               },
+               "then": {
+                  "$ref": "#/definitions/monitoring"
+               }
             }
          ],
          "properties": {
@@ -90,7 +102,8 @@
                   "opensearch",
                   "s3",
                   "s3-policy",
-                  "appconfig-ipfilter"
+                  "appconfig-ipfilter",
+                  "monitoring"
                ]
             }
          },
@@ -161,6 +174,24 @@
                "patternProperties": {
                   "^[a-zA-Z0-9]*$": {
                      "$ref": "#/definitions/opensearch-environment"
+                  }
+               },
+               "additionalProperties": false
+            }
+         },
+         "additionalProperties": false
+      },
+      "monitoring": {
+         "type": "object",
+         "properties": {
+            "type": {
+               "type": "string"
+            },
+            "environments": {
+               "type": "object",
+               "patternProperties": {
+                  "^[a-zA-Z0-9]*$": {
+                     "$ref": "#/definitions/monitoring-environment"
                   }
                },
                "additionalProperties": false
@@ -256,6 +287,15 @@
             },
             "engine": {
                "$ref": "#/definitions/opensearch-engine-versions"
+            }
+         },
+         "additionalProperties": false
+      },
+      "monitoring-environment": {
+         "type": "object",
+         "properties": {
+            "enable-ops-center": {
+               "type": "boolean"
             }
          },
          "additionalProperties": false
