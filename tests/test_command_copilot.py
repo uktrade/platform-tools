@@ -131,7 +131,6 @@ class TestMakeAddonCommand:
         # Act
         os.chdir(tmp_path)
         result = CliRunner().invoke(copilot, ["make-addons"])
-        print(result.output)
 
         assert (
             result.exit_code == 0
