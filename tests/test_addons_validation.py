@@ -33,7 +33,8 @@ mys3bucket:
 
     assert (
         expect_jsonschema_validation_error(addon)
-        == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', 's3', 's3-policy', 'appconfig-ipfilter']"
+        == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', "
+        "'s3', 's3-policy', 'appconfig-ipfilter', 'monitoring']"
     )
 
 
@@ -68,6 +69,7 @@ mys3bucket:
         "redis",
         "opensearch",
         "rds-postgres",
+        "monitoring",
     ],
 )
 def test_environment_extrakeys_not_allowed(addon_type):
@@ -280,6 +282,37 @@ myopensearch:
     ],
 )
 def test_opensearch_invalid_input(addon_yaml, validation_message):
+    addon = yaml.safe_load(addon_yaml)
+
+    assert validation_message in expect_jsonschema_validation_error(addon)
+
+
+@pytest.mark.parametrize(
+    "addon_yaml, validation_message",
+    [
+        (
+            """
+monitoring:
+    type: monitoring
+    environments:
+        prod:
+            enable-ops-center: string
+""",
+            "'string' is not of type 'boolean'",
+        ),
+        (
+            """
+monitoring:
+    type: monitoring
+    environments:
+        prod:
+            unknown-parameter: test
+""",
+            "Additional properties are not allowed ('unknown-parameter' was unexpected)",
+        ),
+    ],
+)
+def test_monitoring_invalid_input(addon_yaml, validation_message):
     addon = yaml.safe_load(addon_yaml)
 
     assert validation_message in expect_jsonschema_validation_error(addon)

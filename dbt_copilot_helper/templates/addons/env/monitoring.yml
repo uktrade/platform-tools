@@ -1,0 +1,40 @@
+# {% version_info %}
+
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+Mappings:
+  {{ service.prefix }}EnvConfiguration:
+{% for environment_name, config in service.environments.items() %}
+    {{ environment_name }}:
+      EnableOpsCenter: {% if config.enable_ops_center %}true{% else %}false{% endif %}
+{% endfor %}
+
+Resources:
+  {{ service.prefix }}ResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name: !Sub "${App}-${Env}-group"
+      Description: !Sub "Resource group for ${App} in ${Env} environment."
+      ResourceQuery:
+        Type: TAG_FILTERS_1_0
+        Query:
+          TagFilters:
+            - Key: copilot-application
+              Values:
+                - !Sub "${App}"
+            - Key: copilot-environment
+              Values:
+                - !Sub "${Env}"
+
+  {{ service.prefix }}ApplicationInsights:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      AutoConfigurationEnabled: true
+      ResourceGroupName: !Ref {{ service.prefix }}ResourceGroup
+      OpsCenterEnabled: !FindInMap [{{ service.prefix }}EnvConfiguration, !Ref Env, EnableOpsCenter]

@@ -102,6 +102,12 @@ class TestMakeAddonCommand:
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
+            (
+                "monitoring_addons.yml",
+                ["monitoring.yml", "addons.parameters.yml"],
+                ["appconfig-ipfilter.yml"],
+                False,
+            ),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
