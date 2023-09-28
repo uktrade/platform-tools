@@ -21,6 +21,7 @@ class TestCopilotHelperCli:
             "check-cloudformation",
             "codebuild",
             "conduit",
+            "config",
             "copilot",
             "domain",
             "waf",

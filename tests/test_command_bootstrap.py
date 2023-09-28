@@ -21,7 +21,7 @@ from dbt_copilot_helper.commands.bootstrap import get_paas_env_vars
 from dbt_copilot_helper.commands.bootstrap import load_and_validate_config
 from dbt_copilot_helper.commands.bootstrap import make_config
 from dbt_copilot_helper.commands.bootstrap import migrate_secrets
-from dbt_copilot_helper.utils import set_ssm_param
+from dbt_copilot_helper.utils.aws import set_ssm_param
 from tests.conftest import BASE_DIR
 from tests.conftest import FIXTURES_DIR
 
@@ -405,7 +405,7 @@ def test_copy_secrets_with_existing_secret(
 
 
 def setup_newenv_environment(tmp_path, runner):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application/bootstrap.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application-deploy/bootstrap.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     runner.invoke(make_config)

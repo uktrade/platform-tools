@@ -3,8 +3,8 @@ from pathlib import Path
 
 import click
 
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import get_lint_result
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.cloudformation import get_lint_result
 
 BASE_DIR = Path(__file__).parent.parent.parent
 

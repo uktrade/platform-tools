@@ -15,7 +15,7 @@ from tests.conftest import BASE_DIR
 
 
 def prepare_fake_cloudformation_templates(template: str) -> None:
-    addons_directory = Path(f"{BASE_DIR}/tests/test-application/copilot/environments/addons")
+    addons_directory = Path(f"{BASE_DIR}/tests/test-application-deploy/copilot/environments/addons")
     addons_directory.mkdir(parents=True, exist_ok=True)
     copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
 
@@ -38,7 +38,7 @@ def app_with_invalid_cf_template(application_under_test):
 
 @pytest.fixture
 def copilot_directory() -> Path:
-    return Path(f"{BASE_DIR}/tests/test-application/copilot")
+    return Path(f"{BASE_DIR}/tests/test-application-deploy/copilot")
 
 
 @pytest.fixture

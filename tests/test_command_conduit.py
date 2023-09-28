@@ -544,10 +544,10 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     ["postgres", "redis", "opensearch"],
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command(start_conduit, addon_type):
+def test_conduit_command(start_conduit, addon_type, validate_version):
     """Test that given an addon type, app and env strings, the conduit command
     calls start_conduit with app, env, addon type and no addon name."""
-    CliRunner().invoke(
+    output = CliRunner().invoke(
         conduit,
         [
             addon_type,
@@ -558,6 +558,7 @@ def test_conduit_command(start_conduit, addon_type):
         ],
     )
 
+    validate_version.assert_called_once()
     start_conduit.assert_called_once_with("test-application", "development", addon_type, None)
 
 
@@ -566,7 +567,7 @@ def test_conduit_command(start_conduit, addon_type):
     ["postgres", "redis", "opensearch"],
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command_with_addon_name(start_conduit, addon_type):
+def test_conduit_command_with_addon_name(start_conduit, addon_type, validate_version):
     """Test that given an addon type, app, env and addon name strings, the
     conduit command calls start_conduit with app, env, addon type and custom
     addon name."""
@@ -583,6 +584,7 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type):
         ],
     )
 
+    validate_version.assert_called_once()
     start_conduit.assert_called_once_with(
         "test-application", "development", addon_type, "custom-addon"
     )
@@ -594,7 +596,7 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type):
 )
 @patch("click.secho")
 @patch("dbt_copilot_helper.commands.conduit.start_conduit", side_effect=NoClusterConduitError)
-def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type):
+def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type, validate_version):
     """Test that given an addon type, app and env strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
     exception."""
@@ -610,6 +612,7 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type
     )
 
     assert result.exit_code == 1
+    validate_version.assert_called_once()
     secho.assert_called_once_with(
         """No ECS cluster found for "test-application" in "development" environment.""", fg="red"
     )
@@ -621,7 +624,9 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type
 )
 @patch("click.secho")
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, addon_type):
+def test_conduit_command_when_no_connection_secret_exists(
+    start_conduit, secho, addon_type, validate_version
+):
     """Test that given an addon type, app and env strings, when there is no
     connection secret available, the conduit command handles the
     NoConnectionSecretError exception."""
@@ -639,6 +644,7 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
     )
 
     assert result.exit_code == 1
+    validate_version.assert_called_once()
     secho.assert_called_once_with(
         f"""No secret called "{addon_type}" for "test-application" in "development" environment.""",
         fg="red",
@@ -652,7 +658,7 @@ def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, 
 @patch("click.secho")
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
-    start_conduit, secho, addon_type
+    start_conduit, secho, addon_type, validate_version
 ):
     """Test that given an addon type, app, env and addon name strings, when
     there is no connection secret available, the conduit command handles the
@@ -673,6 +679,7 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     )
 
     assert result.exit_code == 1
+    validate_version.assert_called_once()
     secho.assert_called_once_with(
         """No secret called "custom-addon" for "test-application" in "development" environment.""",
         fg="red",
@@ -687,7 +694,9 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
 @patch(
     "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=CreateTaskTimeoutConduitError
 )
-def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, addon_type):
+def test_conduit_command_when_client_task_fails_to_start(
+    start_conduit, secho, addon_type, validate_version
+):
     """Test that given an addon type, app and env strings, when the ECS client
     task fails to start, the conduit command handles the
     TaskConnectionTimeoutError exception."""
@@ -703,6 +712,7 @@ def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, a
     )
 
     assert result.exit_code == 1
+    validate_version.assert_called_once()
     secho.assert_called_once_with(
         f"""Client ({addon_type}) ECS task has failed to start for "test-application" in "development" environment.""",
         fg="red",
@@ -713,7 +723,7 @@ def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, a
 @patch(
     "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=InvalidAddonTypeConduitError
 )
-def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho):
+def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, validate_version):
     """Test that given an invalid addon type, app and env strings, the conduit
     command handles the InvalidAddonTypeConduitError exception."""
     result = CliRunner().invoke(
@@ -728,6 +738,7 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho):
     )
 
     assert result.exit_code == 2
+    assert not validate_version.called
     assert (
         "Invalid value for '{opensearch|postgres|redis}': 'nope' is not one of 'opensearch', "
         "'postgres', 'redis'"

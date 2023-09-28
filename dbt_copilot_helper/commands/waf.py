@@ -11,11 +11,14 @@ import yaml
 from cfn_tools import load_yaml
 
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import check_aws_conn
-from dbt_copilot_helper.utils import check_response
-from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
-from dbt_copilot_helper.utils import get_lint_result
+from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_response
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.cloudformation import get_lint_result
+from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 # This may need to change, once we determine what the default WAF name will be.
 WAF_DEFAULT_NAME = "default"
@@ -33,9 +36,9 @@ def check_waf(project_session: boto3.Session) -> str:
     return arn
 
 
-@click.group(cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup)
 def waf():
-    pass
+    check_copilot_helper_version_needs_update()
 
 
 @waf.command()

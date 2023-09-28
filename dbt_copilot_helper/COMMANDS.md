@@ -15,6 +15,8 @@
 - [copilot-helper codebuild delete-project](#copilot-helper-codebuild-delete-project)
 - [copilot-helper codebuild slackcreds](#copilot-helper-codebuild-slackcreds)
 - [copilot-helper conduit](#copilot-helper-conduit)
+- [copilot-helper config](#copilot-helper-config)
+- [copilot-helper config validate](#copilot-helper-config-validate)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
@@ -46,6 +48,7 @@ copilot-helper <command> [--version]
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
 - [`codebuild` ↪](#copilot-helper-codebuild)
 - [`conduit` ↪](#copilot-helper-conduit)
+- [`config` ↪](#copilot-helper-config)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
 - [`waf` ↪](#copilot-helper-waf)
@@ -408,6 +411,44 @@ copilot-helper conduit (opensearch|postgres|redis)
   - AWS environment name
 - `--addon-name <text>`
   - Name of custom addon
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper config
+
+[↩ Parent](#copilot-helper)
+
+    Perform actions on configuration files.
+
+## Usage
+
+```
+copilot-helper config validate 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`validate` ↪](#copilot-helper-config-validate)
+
+# copilot-helper config validate
+
+[↩ Parent](#copilot-helper-config)
+
+    Validate deployment or application configuration.
+
+## Usage
+
+```
+copilot-helper config validate 
+```
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

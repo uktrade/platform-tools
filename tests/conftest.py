@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import boto3
 import jsonschema
@@ -14,7 +15,7 @@ from moto import mock_secretsmanager
 from moto.ec2 import utils as ec2_utils
 
 BASE_DIR = Path(__file__).parent.parent
-TEST_APP_DIR = BASE_DIR / "tests" / "test-application"
+TEST_APP_DIR = BASE_DIR / "tests" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
 
 
@@ -165,3 +166,25 @@ def mocked_pg_secret():
             Name="/copilot/dbt-app/staging/secrets/POSTGRES",
             SecretString='{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
         )
+
+
+@pytest.fixture(scope="function")
+def validate_version():
+    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
+        get_app_versions.return_value = ((1, 0, 0), (1, 0, 0))
+        with patch(
+            "dbt_copilot_helper.utils.versioning.validate_version_compatibility",
+            side_effect=None,
+            return_value=None,
+        ) as patched:
+            yield patched
+
+
+@pytest.fixture(scope="function")
+def mock_tool_versions():
+    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
+        with patch("dbt_copilot_helper.utils.versioning.get_aws_versions") as get_aws_versions:
+            with patch(
+                "dbt_copilot_helper.utils.versioning.get_copilot_versions"
+            ) as get_copilot_versions:
+                yield get_app_versions, get_aws_versions, get_copilot_versions

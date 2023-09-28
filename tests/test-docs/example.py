@@ -2,8 +2,8 @@
 
 import click
 
-from dbt_copilot_helper.utils import ClickDocOptCommand
-from dbt_copilot_helper.utils import ClickDocOptGroup
+from dbt_copilot_helper.utils.click import ClickDocOptCommand
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
 
 @click.command(cls=ClickDocOptCommand)

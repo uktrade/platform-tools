@@ -9,13 +9,16 @@ import click
 import yaml
 from jsonschema import validate as validate_json
 
-from dbt_copilot_helper.utils import SSM_BASE_PATH
-from dbt_copilot_helper.utils import ClickDocOptGroup
-from dbt_copilot_helper.utils import camel_case
-from dbt_copilot_helper.utils import ensure_cwd_is_repo_root
-from dbt_copilot_helper.utils import mkdir
-from dbt_copilot_helper.utils import mkfile
-from dbt_copilot_helper.utils import setup_templates
+from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.files import mkdir
+from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.template import camel_case
+from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.versioning import (
+    check_copilot_helper_version_needs_update,
+)
 
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,9 +35,9 @@ def list_copilot_local_services():
     return [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
 
 
-@click.group(cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
-    pass
+    check_copilot_helper_version_needs_update()
 
 
 def _validate_and_normalise_config(config_file):
