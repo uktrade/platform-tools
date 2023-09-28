@@ -22,10 +22,6 @@ from dbt_copilot_helper.commands.conduit import normalise_string
 from dbt_copilot_helper.commands.conduit import start_conduit
 
 
-def noop():
-    pass
-
-
 @pytest.mark.parametrize(
     "test_instance",
     [
