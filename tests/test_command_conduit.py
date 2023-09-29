@@ -58,6 +58,7 @@ def test_get_cluster_arn_when_there_is_no_cluster():
 
 
 @mock_secretsmanager
+@mock_ssm
 def test_get_connection_secret_arn_from_secrets_manager():
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn returns an ARN from secrets manager."""
@@ -75,7 +76,6 @@ def test_get_connection_secret_arn_from_secrets_manager():
     )
 
 
-@mock_secretsmanager
 @mock_ssm
 def test_get_connection_secret_arn_from_parameter_store():
     """Test that, given app, environment and secret name strings,

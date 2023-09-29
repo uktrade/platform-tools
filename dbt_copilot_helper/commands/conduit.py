@@ -76,15 +76,15 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
     ssm = boto3.client("ssm")
 
     try:
-        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
-    except secrets_manager.exceptions.ResourceNotFoundException:
-        pass
-
-    try:
         return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
             "ARN"
         ]
     except ssm.exceptions.ParameterNotFound:
+        pass
+
+    try:
+        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
+    except secrets_manager.exceptions.ResourceNotFoundException:
         pass
 
     raise SecretNotFoundConduitError(name)
