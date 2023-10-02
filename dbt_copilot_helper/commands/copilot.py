@@ -2,6 +2,7 @@
 
 import copy
 import json
+import subprocess
 from pathlib import Path
 
 import boto3
@@ -248,3 +249,19 @@ def get_env_secrets(app, env):
             break
 
     print("\n".join(sorted(secrets)))
+
+
+@copilot.command()
+@click.option("--env", type=str, required=True)
+@click.option("--name", type=str, required=True)
+@click.option("--image-tag", type=str, required=False, show_default=True, default="latest")
+def svc_deploy(env, name, image_tag):
+    """Deploy specific image tag to a service, defaulting to the one currently
+    tagged latest."""
+
+    # Todo: If --image-tag is unset or latest, figure out the image tag from AWS ECR or blow up
+
+    subprocess.call(
+        f"IMAGE_TAG={image_tag} copilot svc deploy --env {env} --name {name}",
+        shell=True,
+    )

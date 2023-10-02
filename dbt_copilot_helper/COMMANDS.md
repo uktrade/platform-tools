@@ -20,6 +20,7 @@
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
+- [copilot-helper copilot svc-deploy](#copilot-helper-copilot-svc-deploy)
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
@@ -459,7 +460,7 @@ copilot-helper config validate
 ## Usage
 
 ```
-copilot-helper copilot (make-addons|get-env-secrets) 
+copilot-helper copilot (make-addons|get-env-secrets|svc-deploy) 
 ```
 
 ## Options
@@ -471,6 +472,7 @@ copilot-helper copilot (make-addons|get-env-secrets)
 
 - [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
 - [`make-addons` ↪](#copilot-helper-copilot-make-addons)
+- [`svc-deploy` ↪](#copilot-helper-copilot-svc-deploy)
 
 # copilot-helper copilot make-addons
 
@@ -510,6 +512,30 @@ copilot-helper copilot get-env-secrets <app> <env>
 - `env <text>`
 
 ## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper copilot svc-deploy
+
+[↩ Parent](#copilot-helper-copilot)
+
+    Deploy specific image tag to a service, defaulting to the one currently
+    tagged latest.
+
+## Usage
+
+```
+copilot-helper copilot svc-deploy --env <env> --name <name> [--image-tag <image_tag>] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--name <text>`
+
+- `--image-tag <text>` _Defaults to latest._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
