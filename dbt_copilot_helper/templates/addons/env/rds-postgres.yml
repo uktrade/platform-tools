@@ -208,20 +208,21 @@ Resources:
           import boto3
           import cfnresponse
           import psycopg2
-          
-          
+          from botocore.exceptions import ClientError
+
+
           def drop_user(cursor):
               cursor.execute("SELECT * FROM pg_catalog.pg_user WHERE usename = 'application_user'")
-          
+
               if cursor.fetchone() is not None:
                   cursor.execute("GRANT application_user TO postgres")
                   cursor.execute("DROP OWNED BY application_user")
                   cursor.execute("DROP USER application_user")
-          
-          
+
+
           def create_db_user(conn, cursor, password):
               drop_user(cursor)
-          
+
               cursor.execute("CREATE USER application_user WITH ENCRYPTED PASSWORD '%s'" % password)
               cursor.execute(
                   "GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON ALL TABLES IN SCHEMA public TO application_user;")
@@ -229,28 +230,28 @@ Resources:
               cursor.execute(
                   "ALTER DEFAULT PRIVILEGES FOR USER application_user IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON TABLES TO application_user;")
               conn.commit()
-          
-          
+
+
           def handler(event, context):
               print("REQUEST RECEIVED:\n" + json.dumps(event))
-          
+
               db_master_user_secret = event['ResourceProperties']['MasterUserSecret']
               application_user_secret_name = event['ResourceProperties']['SecretName']
               application_user_secret_description = event['ResourceProperties']['SecretDescription']
               copilot_application = event['ResourceProperties']['CopilotApplication']
               copilot_environment = event['ResourceProperties']['CopilotEnvironment']
-          
+
               secrets_manager = boto3.client("secretsmanager")
-          
+
               master_user = json.loads(secrets_manager.get_secret_value(SecretId=db_master_user_secret)["SecretString"])
-          
+
               application_user_password = secrets_manager.get_random_password(
                   PasswordLength=16,
                   ExcludeCharacters='[]{}()"@/\;=?&`><:|#',
                   ExcludePunctuation=True,
                   IncludeSpace=False,
               )["RandomPassword"]
-          
+
               application_user_secret_string = {
                   "username": "application_user",
                   "password": application_user_password,
@@ -260,7 +261,7 @@ Resources:
                   "host": master_user["host"],
                   "dbInstanceIdentifier": master_user["dbInstanceIdentifier"]
               }
-          
+
               conn = psycopg2.connect(
                   dbname=master_user["dbname"],
                   user=master_user["username"],
@@ -268,19 +269,20 @@ Resources:
                   host=master_user["host"],
                   port=master_user["port"]
               )
-          
+
               cursor = conn.cursor()
-          
+
               response = {"Status": "SUCCESS"}
-          
+
               try:
                   match event["RequestType"]:
                       case "Create":
                           create_db_user(conn, cursor, application_user_password)
-          
-                          response = {
-                              **response,
-                              "Data": secrets_manager.create_secret(
+
+                          application_user_secret = None
+
+                          try:
+                              application_user_secret = secrets_manager.create_secret(
                                   Name=application_user_secret_name,
                                   Description=application_user_secret_description,
                                   SecretString=json.dumps(application_user_secret_string),
@@ -292,10 +294,20 @@ Resources:
                                       {'Key': 'copilot-environment', 'Value': copilot_environment},
                                   ],
                               )
+                          except ClientError as error:
+                              if error.response["Error"]["Code"] == "ResourceExistsException":
+                                  application_user_secret = secrets_manager.update_secret(
+                                      SecretId=application_user_secret_name,
+                                      SecretString=json.dumps(application_user_secret_string),
+                                  )
+
+                          response = {
+                              **response,
+                              "Data": application_user_secret
                           }
                       case "Update":
                           create_db_user(conn, cursor, application_user_password)
-          
+
                           response = {
                               **response,
                               "Data": secrets_manager.update_secret(
@@ -305,7 +317,7 @@ Resources:
                           }
                       case "Delete":
                           drop_user(cursor)
-          
+
                           response = {
                               **response,
                               "Data": secrets_manager.delete_secret(
@@ -318,10 +330,10 @@ Resources:
                                       "Data": {"Error": f"""Invalid requestType of '${event["RequestType"]}'"""}}
               except Exception as e:
                   response = {"Status": "FAILED", "Data": {"Error": str(e)}}
-          
+
               cursor.close()
               conn.close()
-          
+
               print(json.dumps(response, default=str))
               cfnresponse.send(event, context, response["Status"], json.dumps(response["Data"], default=str),
                                event["LogicalResourceId"])
