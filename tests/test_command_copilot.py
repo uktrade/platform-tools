@@ -313,15 +313,10 @@ invalid-entry:
 
         assert result.exit_code == 0
         validate_version.assert_called_once()
-        if addon_type == "s3":
-            assert (
-                "File copilot/environments/addons/addons.parameters.yml" not in result.output
-            ), f"addons.parameters.yml should not be included for {addon_type}"
-        else:
-            assert (
-                "File copilot/environments/addons/addons.parameters.yml overwritten"
-                in result.output
-            ), f"addons.parameters.yml should be included for {addon_type}"
+
+        assert (
+            "File copilot/environments/addons/addons.parameters.yml overwritten" in result.output
+        ), f"addons.parameters.yml should be included for {addon_type}"
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",
