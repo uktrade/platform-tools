@@ -150,35 +150,25 @@ class TestMakeAddonCommand:
         ]
         all_expected_files = expected_env_files + expected_service_files
 
-        for f in all_expected_files:
-            expected_file = Path(addons_dir, "expected", f)
-            out_file = Path(addons_dir, "expected/environments/addons", "vpc-endpoint1.yml")
+        for file in all_expected_files:
+            expected_file = Path(addons_dir, "expected", file)
+            if file.name == "vpc-endpoint.yml":
+                if addon_file == "rds_addons.yml":
+                    vpc_endpoint_file = "rds-postgres"
+                elif addon_file == "aurora_addons.yml":
+                    vpc_endpoint_file = "aurora-postgres"
+                else:
+                    vpc_endpoint_file = "default"
 
-            if f.name == "vpc-endpoint.yml":
-                with expected_file.open() as vpc_endpoint_file:
-                    buffer = vpc_endpoint_file.readlines()
-
-                with out_file.open("w") as vpc_endpoint_file:
-                    print("addon_file", addon_file)
-                    for line in buffer:
-                        print(line)
-
-                        if "EnvironmentSecurityGroup" in line:
-                            vpc_endpoint_file.write(line)
-                        elif addon_file == "rds_addons.yml" and "myRdsDbSecurityGroup" in line:
-                            vpc_endpoint_file.write(line)
-                        elif (
-                            addon_file == "aurora_addons.yml"
-                            and "myAuroraDbDBClusterSecurityGroup" in line
-                        ):
-                            vpc_endpoint_file.write(line)
-
-                with out_file.open() as vpc_endpoint_file:
-                    print("asdf", vpc_endpoint_file.readlines())
+                expected_file = Path(
+                    addons_dir,
+                    "expected/environments/addons",
+                    f"vpc-endpoint-{vpc_endpoint_file}.yml",
+                )
 
             expected = expected_file.read_text()
-            actual = Path(tmp_path, "copilot", f).read_text()
-            assert expected == actual, f"The file {f} did not have the expected content"
+            actual = Path(tmp_path, "copilot", file).read_text()
+            assert actual == expected, f"The file {file} did not have the expected content"
 
         copilot_dir = Path(tmp_path, "copilot")
         actual_files = [
@@ -187,11 +177,9 @@ class TestMakeAddonCommand:
             for f in files
         ]
 
-        print("HERE>>>>>>", all_expected_files)
-        print("ACTUAL FILES>>>>>>", actual_files)
-        assert len(all_expected_files) + 2 == len(
-            actual_files
-        ), "We expect the actual filecount to match the expected with the addition of the two initial manifest.yml files"
+        assert (
+            len(actual_files) == len(all_expected_files) + 2
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml files"
 
     def test_exit_if_no_copilot_directory(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)

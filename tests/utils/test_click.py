@@ -1,6 +1,6 @@
 import click
-
 from click.testing import CliRunner
+
 from dbt_copilot_helper.utils.click import ClickDocOptCommand
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 

@@ -1,3 +1,0 @@
-- !Ref myAuroraDbDBClusterSecurityGroup.GroupId
-- !Ref myRdsDbSecurityGroup.GroupId
-- !Ref EnvironmentSecurityGroup
