@@ -26,6 +26,8 @@ Resources:
     Properties:
       PrivateDnsEnabled: true
       SecurityGroupIds:
+        - !Ref myAuroraDbDBClusterSecurityGroup.GroupId
+        - !Ref myRdsDbSecurityGroup.GroupId
         - !Ref EnvironmentSecurityGroup
       ServiceName: 'com.amazonaws.eu-west-2.secretsmanager'
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
