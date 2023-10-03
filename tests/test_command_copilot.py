@@ -151,7 +151,32 @@ class TestMakeAddonCommand:
         all_expected_files = expected_env_files + expected_service_files
 
         for f in all_expected_files:
-            expected = Path(addons_dir, "expected", f).read_text()
+            expected_file = Path(addons_dir, "expected", f)
+            out_file = Path(addons_dir, "expected/environments/addons", "vpc-endpoint1.yml")
+
+            if f.name == "vpc-endpoint.yml":
+                with expected_file.open() as vpc_endpoint_file:
+                    buffer = vpc_endpoint_file.readlines()
+
+                with out_file.open("w") as vpc_endpoint_file:
+                    print("addon_file", addon_file)
+                    for line in buffer:
+                        print(line)
+
+                        if "EnvironmentSecurityGroup" in line:
+                            vpc_endpoint_file.write(line)
+                        elif addon_file == "rds_addons.yml" and "myRdsDbSecurityGroup" in line:
+                            vpc_endpoint_file.write(line)
+                        elif (
+                            addon_file == "aurora_addons.yml"
+                            and "myAuroraDbDBClusterSecurityGroup" in line
+                        ):
+                            vpc_endpoint_file.write(line)
+
+                with out_file.open() as vpc_endpoint_file:
+                    print("asdf", vpc_endpoint_file.readlines())
+
+            expected = expected_file.read_text()
             actual = Path(tmp_path, "copilot", f).read_text()
             assert expected == actual, f"The file {f} did not have the expected content"
 
