@@ -70,7 +70,7 @@ class TestMakeAddonCommand:
         [
             (
                 "s3_addons.yml",
-                ["my-s3-bucket.yml"],
+                ["my-s3-bucket.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
                 ["appconfig-ipfilter.yml", "my-s3-bucket.yml", "my-s3-bucket-bucket-access.yml"],
                 False,
             ),
@@ -80,31 +80,32 @@ class TestMakeAddonCommand:
                     "my-opensearch.yml",
                     "my-opensearch-longer.yml",
                     "addons.parameters.yml",
+                    "vpc-endpoint.yml",
                 ],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
-                ["my-rds-db.yml", "addons.parameters.yml"],
+                ["my-rds-db.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
-                ["my-redis.yml", "addons.parameters.yml"],
+                ["my-redis.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
-                ["my-aurora-db.yml", "addons.parameters.yml"],
+                ["my-aurora-db.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
-                ["monitoring.yml", "addons.parameters.yml"],
+                ["monitoring.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
@@ -161,6 +162,8 @@ class TestMakeAddonCommand:
             for f in files
         ]
 
+        print("HERE>>>>>>", all_expected_files)
+        print("ACTUAL FILES>>>>>>", actual_files)
         assert len(all_expected_files) + 2 == len(
             actual_files
         ), "We expect the actual filecount to match the expected with the addition of the two initial manifest.yml files"

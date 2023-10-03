@@ -45,3 +45,8 @@ monitoring:
     - template: addons/env/monitoring.yml
     - template: addons/env/addons.parameters.yml
       filename: addons.parameters.yml
+vpc-endpoint:
+  env:
+    - template: addons/env/vpc-endpoint.yml
+    - template: addons/env/addons.parameters.yml
+      filename: addons.parameters.yml

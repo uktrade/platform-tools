@@ -1,0 +1,42 @@
+# {% version_info %}
+
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnets:
+    Type: String
+  VpcId:
+    Type: String
+
+Resources:
+  VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - E1010
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+    {%- for addon, config in addons -%}
+      {%- set prefix = addon.split('-')|first|lower ~ addon.split('-')[1:]|map('capitalize')|join -%}
+      {%- if config.type == "aurora-postgres" %}
+        - !GetAtt {{ prefix }}DBClusterSecurityGroup.GroupId
+      {%- endif -%}
+      {%- if config.type == "rds-postgres" %}
+        - !GetAtt {{ prefix }}SecurityGroup.GroupId
+      {%- endif -%}
+    {%- endfor %}
+        - !Ref EnvironmentSecurityGroup
+      ServiceName: 'com.amazonaws.eu-west-2.secretsmanager'
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+      VpcEndpointType: Interface
+      VpcId: !Ref VpcId

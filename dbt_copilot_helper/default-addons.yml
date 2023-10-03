@@ -4,3 +4,6 @@
 appconfig-ipfilter:
   type: appconfig-ipfilter
   services: __all__
+
+vpc-endpoint:
+  type: vpc-endpoint
