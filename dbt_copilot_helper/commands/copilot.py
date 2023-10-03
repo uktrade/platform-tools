@@ -2,15 +2,12 @@
 
 import copy
 import json
-import subprocess
 from pathlib import Path
 
-import boto3
 import click
 import yaml
 from jsonschema import validate as validate_json
 
-from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.files import mkdir
@@ -221,47 +218,3 @@ def make_addons(directory="."):
             )
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
-
-
-@copilot.command()
-@click.argument("app", type=str, required=True)
-@click.argument("env", type=str, required=True)
-def get_env_secrets(app, env):
-    """List secret names and values for an environment."""
-
-    client = boto3.client("ssm")
-
-    path = SSM_BASE_PATH.format(app=app, env=env)
-
-    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
-    secrets = []
-
-    # TODO: refactor shared code with get_ssm_secret_names
-    while True:
-        response = client.get_parameters_by_path(**params)
-
-        for secret in response["Parameters"]:
-            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
-
-        if "NextToken" in response:
-            params["NextToken"] = response["NextToken"]
-        else:
-            break
-
-    print("\n".join(sorted(secrets)))
-
-
-@copilot.command()
-@click.option("--env", type=str, required=True)
-@click.option("--name", type=str, required=True)
-@click.option("--image-tag", type=str, required=False, show_default=True, default="latest")
-def svc_deploy(env, name, image_tag):
-    """Deploy specific image tag to a service, defaulting to the one currently
-    tagged latest."""
-
-    # Todo: If --image-tag is unset or latest, figure out the image tag from AWS ECR or blow up
-
-    subprocess.call(
-        f"IMAGE_TAG={image_tag} copilot svc deploy --env {env} --name {name}",
-        shell=True,
-    )

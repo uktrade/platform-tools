@@ -19,11 +19,11 @@
 - [copilot-helper config validate](#copilot-helper-config-validate)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
-- [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
-- [copilot-helper copilot svc-deploy](#copilot-helper-copilot-svc-deploy)
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper svc](#copilot-helper-svc)
+- [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
 - [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
 - [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
@@ -52,6 +52,7 @@ copilot-helper <command> [--version]
 - [`config` ↪](#copilot-helper-config)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
+- [`svc` ↪](#copilot-helper-svc)
 - [`waf` ↪](#copilot-helper-waf)
 
 # copilot-helper bootstrap
@@ -460,7 +461,7 @@ copilot-helper config validate
 ## Usage
 
 ```
-copilot-helper copilot (make-addons|get-env-secrets|svc-deploy) 
+copilot-helper copilot make-addons 
 ```
 
 ## Options
@@ -470,9 +471,7 @@ copilot-helper copilot (make-addons|get-env-secrets|svc-deploy)
 
 ## Commands
 
-- [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
 - [`make-addons` ↪](#copilot-helper-copilot-make-addons)
-- [`svc-deploy` ↪](#copilot-helper-copilot-svc-deploy)
 
 # copilot-helper copilot make-addons
 
@@ -490,52 +489,6 @@ copilot-helper copilot make-addons [-d <directory>]
 
 - `-d
 --directory <text>` _Defaults to .._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper copilot get-env-secrets
-
-[↩ Parent](#copilot-helper-copilot)
-
-    List secret names and values for an environment.
-
-## Usage
-
-```
-copilot-helper copilot get-env-secrets <app> <env> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper copilot svc-deploy
-
-[↩ Parent](#copilot-helper-copilot)
-
-    Deploy specific image tag to a service, defaulting to the one currently
-    tagged latest.
-
-## Usage
-
-```
-copilot-helper copilot svc-deploy --env <env> --name <name> [--image-tag <image_tag>] 
-```
-
-## Options
-
-- `--env <text>`
-
-- `--name <text>`
-
-- `--image-tag <text>` _Defaults to latest._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -612,6 +565,50 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper svc
+
+[↩ Parent](#copilot-helper)
+
+    AWS Copilot svc actions with DBT extras.
+
+## Usage
+
+```
+copilot-helper svc deploy 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`deploy` ↪](#copilot-helper-svc-deploy)
+
+# copilot-helper svc deploy
+
+[↩ Parent](#copilot-helper-svc)
+
+    Deploy image tag to a service, default to image tagged latest.
+
+## Usage
+
+```
+copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--name <text>`
+
+- `--image-tag <text>` _Defaults to latest._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
