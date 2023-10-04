@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import re
+import subprocess
 
 import boto3
 import click
@@ -32,26 +33,17 @@ def deploy(env, name, image_tag):
                 {"imageTag": "latest"},
             ],
         )
-        print(response)
-
         image_tags = response["imageDetails"][0]["imageTags"]
-        print(image_tags)
-        filtered = filter(lambda tag: re.match("([a-f0-9]7)", tag), image_tags)
-        print(list(filtered))
-
-        # breakpoint()
-        image_tag = re.findall("([a-f0-9]*)", image_tags)
-
-        return image_tag
+        # Todo: Swap this in once images are being tagged right (commit{1}-[a-f0-9]{7,32})
+        filtered = filter(lambda tag: re.match("([a-f0-9]{7})", tag), image_tags)
+        return list(filtered)[0]
 
     if image_tag == "latest":
         image_tag = get_commit_tag_for_latest_image()
 
-    print(image_tag)
-
     command = f"IMAGE_TAG={image_tag} copilot svc deploy --env {env} --name {name}"
-    print("Running: ", command)
-    # subprocess.call(
-    #     command,
-    #     shell=True,
-    # )
+    print("Running:", command)
+    subprocess.call(
+        command,
+        shell=True,
+    )
