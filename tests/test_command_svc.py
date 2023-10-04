@@ -6,53 +6,37 @@ from click.testing import CliRunner
 from dbt_copilot_helper.commands.svc import deploy
 
 
+@patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(subprocess_call):
+def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(
+    subprocess_call, mock_boto_client
+):
     """Test that given an env, name and image tag, copilot svc deploy is called
     with values to deploy the specified image to the environment's service."""
 
-    hex_string = random_hex_string(7)
-    commit_hash = f"tag{hex_string}"
-    env = f"env{hex_string}"
-    name = f"name{hex_string}"
-    expected_tag = f"commit-{commit_hash}"
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--image-tag", expected_tag],
+        ["--env", env, "--name", name, "--image-tag", f"commit-{commit_hash}"],
     )
 
+    mock_boto_client.describe_images.assert_not_called()
     subprocess_call.assert_called_once_with(
-        f"IMAGE_TAG={expected_tag} copilot svc deploy --env {env} --name {name}",
+        f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
     )
 
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(
-    subprocess_call, mock_boto_client
-):
+def test_svc_deploy_with__latest_deploys_image_tagged_latest(subprocess_call, mock_boto_client):
     """Test that given the image tag latest, copilot svc deploy is called with
     the unique tag of the image currently tagged latest."""
 
-    hex_string = random_hex_string(7)
-    commit_hash = f"{hex_string}"
-    branch_name = "does-not-matter"
-    env = f"env{hex_string}"
-    name = f"name{hex_string}"
-    mock_boto_client.return_value = mock_boto_client
-    mock_boto_client.describe_images.return_value = {
-        "imageDetails": [
-            {
-                "imageTags": [
-                    f"commit-{commit_hash}",
-                    f"branch-{branch_name}",
-                    "latest",
-                ]
-            }
-        ]
-    }
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
@@ -60,9 +44,31 @@ def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(
     )
 
     mock_boto_client.describe_images.assert_called_once()
-    expected_tag = f"commit-{commit_hash}"
     subprocess_call.assert_called_once_with(
-        f"IMAGE_TAG={expected_tag} copilot svc deploy --env {env} --name {name}",
+        f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
+        shell=True,
+    )
+
+
+@patch("boto3.client")
+@patch("subprocess.call")
+def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
+    subprocess_call, mock_boto_client
+):
+    """Test that given the image tag latest, copilot svc deploy is called with
+    the unique tag of the image currently tagged latest."""
+
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images(branch_name, commit_hash, mock_boto_client)
+
+    CliRunner().invoke(
+        deploy,
+        ["--env", env, "--name", name],
+    )
+
+    mock_boto_client.describe_images.assert_called_once()
+    subprocess_call.assert_called_once_with(
+        f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
     )
 
@@ -98,5 +104,25 @@ def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(
     #                                        builds from Dockerfiles.
 
 
-def random_hex_string(length):
-    return uuid.uuid4().hex[:length]
+def mock_describe_images(branch_name, commit_hash, mock_boto_client):
+    mock_boto_client.return_value = mock_boto_client
+    mock_boto_client.describe_images.return_value = {
+        "imageDetails": [
+            {
+                "imageTags": [
+                    f"commit-{commit_hash}",
+                    f"branch-{branch_name}",
+                    "latest",
+                ]
+            }
+        ]
+    }
+
+
+def set_up_test_variables():
+    hex_string = uuid.uuid4().hex[:7]
+    commit_hash = f"{hex_string}"
+    branch_name = "does-not-matter"
+    env = f"env{hex_string}"
+    name = f"name{hex_string}"
+    return branch_name, commit_hash, env, name
