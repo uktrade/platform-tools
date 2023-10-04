@@ -51,6 +51,10 @@ def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(subproc
         shell=True,
     )
 
+    # TODO: test if the latest tag does not have a commit- tag
+
+    # TODO: test if the tag does not exist
+
     # TODO: Pass other AWS Copilot flags through...
     # Flags
     #       --allow-downgrade                Optional. Allow using an older version of Copilot to

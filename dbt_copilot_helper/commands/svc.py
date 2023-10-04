@@ -35,8 +35,7 @@ def deploy(env, name, image_tag):
             ],
         )
         image_tags = response["imageDetails"][0]["imageTags"]
-        # Todo: Swap this in once images are being tagged right (commit{1}-[a-f0-9]{7,32})
-        filtered = filter(lambda tag: re.match("([a-f0-9]{7})", tag), image_tags)
+        filtered = filter(lambda tag: re.match("(commit{1}-[a-f0-9]{7,32})", tag), image_tags)
         return list(filtered)[0]
 
     if image_tag == "latest":
