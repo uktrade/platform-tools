@@ -345,6 +345,16 @@ Resources:
       MasterUserSecret: !Ref myRdsDbRDSSecret
       SecretDescription: !Sub RDS application user secret for ${AWS::StackName}
       SecretName: !Sub '/copilot/${App}/${Env}/secrets/MY_RDS_DB_APPLICATION_USER'
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E3005
+    DependsOn:
+      - VpcEndpoint
+      - myRdsDbDBInstance
 
   myRdsDbLambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
