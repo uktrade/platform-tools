@@ -1,11 +1,9 @@
+import uuid
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from faker import Faker
 
 from dbt_copilot_helper.commands.svc import deploy
-
-faker = Faker()
 
 
 @patch("subprocess.call")
@@ -13,39 +11,56 @@ def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(subprocess_cal
     """Test that given an env, name and image tag, copilot svc deploy is called
     with values to deploy the specified image to the environment's service."""
 
-    random_string = faker.random_letters(length=5)
-    tag = f"tag{random_string}"
-    env = f"env{random_string}"
-    name = f"name{random_string}"
+    hex_string = random_hex_string(7)
+    commit_hash = f"tag{hex_string}"
+    env = f"env{hex_string}"
+    name = f"name{hex_string}"
+    expected_tag = f"commit-{commit_hash}"
 
     CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--image-tag", tag],
+        ["--env", env, "--name", name, "--image-tag", expected_tag],
     )
 
     subprocess_call.assert_called_once_with(
-        f"IMAGE_TAG={tag} copilot svc deploy --env {env} --name {name}",
+        f"IMAGE_TAG={expected_tag} copilot svc deploy --env {env} --name {name}",
         shell=True,
     )
 
 
+@patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(subprocess_call):
+def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(
+    subprocess_call, mock_boto_client
+):
     """Test that given the image tag latest, copilot svc deploy is called with
     the unique tag of the image currently tagged latest."""
 
-    random_string = faker.random_letters(length=5)
-    expected_tag = f"tag{random_string}"
-    env = f"env{random_string}"
-    name = f"name{random_string}"
-
-    # TODO: Patch boto3.client("ecr") to return expected list
+    hex_string = random_hex_string(7)
+    commit_hash = f"{hex_string}"
+    branch_name = "does-not-matter"
+    env = f"env{hex_string}"
+    name = f"name{hex_string}"
+    mock_boto_client.return_value = mock_boto_client
+    mock_boto_client.describe_images.return_value = {
+        "imageDetails": [
+            {
+                "imageTags": [
+                    f"commit-{commit_hash}",
+                    f"branch-{branch_name}",
+                    "latest",
+                ]
+            }
+        ]
+    }
 
     CliRunner().invoke(
         deploy,
         ["--env", env, "--name", name, "--image-tag", "latest"],
     )
 
+    mock_boto_client.describe_images.assert_called_once()
+    expected_tag = f"commit-{commit_hash}"
     subprocess_call.assert_called_once_with(
         f"IMAGE_TAG={expected_tag} copilot svc deploy --env {env} --name {name}",
         shell=True,
@@ -81,3 +96,7 @@ def test_svc_deploy_with_env_name_and_latest_deploys_image_tagged_latest(subproc
     #                                        Allows you to categorize resources. (default [])
     #       --tag string                     Optional. The tag for the container images Copilot
     #                                        builds from Dockerfiles.
+
+
+def random_hex_string(length):
+    return uuid.uuid4().hex[:length]
