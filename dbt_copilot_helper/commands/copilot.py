@@ -4,10 +4,12 @@ import copy
 import json
 from pathlib import Path
 
+import boto3
 import click
 import yaml
 from jsonschema import validate as validate_json
 
+from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.files import mkdir
@@ -218,3 +220,31 @@ def make_addons(directory="."):
             )
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
+
+
+@copilot.command()
+@click.argument("app", type=str, required=True)
+@click.argument("env", type=str, required=True)
+def get_env_secrets(app, env):
+    """List secret names and values for an environment."""
+
+    client = boto3.client("ssm")
+
+    path = SSM_BASE_PATH.format(app=app, env=env)
+
+    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
+    secrets = []
+
+    # TODO: refactor shared code with get_ssm_secret_names
+    while True:
+        response = client.get_parameters_by_path(**params)
+
+        for secret in response["Parameters"]:
+            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
+
+        if "NextToken" in response:
+            params["NextToken"] = response["NextToken"]
+        else:
+            break
+
+    print("\n".join(sorted(secrets)))

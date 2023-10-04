@@ -19,6 +19,7 @@
 - [copilot-helper config validate](#copilot-helper-config-validate)
 - [copilot-helper copilot](#copilot-helper-copilot)
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
+- [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
@@ -461,7 +462,7 @@ copilot-helper config validate
 ## Usage
 
 ```
-copilot-helper copilot make-addons 
+copilot-helper copilot (make-addons|get-env-secrets) 
 ```
 
 ## Options
@@ -471,6 +472,7 @@ copilot-helper copilot make-addons
 
 ## Commands
 
+- [`get-env-secrets` ↪](#copilot-helper-copilot-get-env-secrets)
 - [`make-addons` ↪](#copilot-helper-copilot-make-addons)
 
 # copilot-helper copilot make-addons
@@ -489,6 +491,28 @@ copilot-helper copilot make-addons [-d <directory>]
 
 - `-d
 --directory <text>` _Defaults to .._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper copilot get-env-secrets
+
+[↩ Parent](#copilot-helper-copilot)
+
+    List secret names and values for an environment.
+
+## Usage
+
+```
+copilot-helper copilot get-env-secrets <app> <env> 
+```
+
+## Arguments
+
+- `app <text>`
+- `env <text>`
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
