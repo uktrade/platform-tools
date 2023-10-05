@@ -21,8 +21,9 @@ def svc():
 @svc.command()
 @click.option("--env", type=str, required=True)
 @click.option("--name", type=str, required=True)
+@click.option("--repository", type=str, required=True)
 @click.option("--image-tag", type=str, required=False, show_default=True, default="latest")
-def deploy(env, name, image_tag):
+def deploy(env, name, repository, image_tag):
     """Deploy image tag to a service, default to image tagged latest."""
 
     def get_all_tags_for_image(image_tag):
@@ -30,7 +31,7 @@ def deploy(env, name, image_tag):
         try:
             response = ecr_client.describe_images(
                 registryId=registry_id,
-                repositoryName=repository_name,
+                repositoryName=repository,
                 imageIds=[
                     {"imageTag": image_tag},
                 ],
@@ -54,8 +55,7 @@ def deploy(env, name, image_tag):
             )
             exit(1)
 
-    # TODO: Unhardcode these two...
-    repository_name = "demodjango"
+    # TODO: Unhardcode this...
     registry_id = "854321987474"
 
     image_tags = get_all_tags_for_image(image_tag)

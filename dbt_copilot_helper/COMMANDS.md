@@ -622,7 +622,8 @@ copilot-helper svc deploy
 ## Usage
 
 ```
-copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>] 
+copilot-helper svc deploy --env <env> --name <name> --repository <repository> 
+                          [--image-tag <image_tag>] 
 ```
 
 ## Options
@@ -630,6 +631,8 @@ copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>]
 - `--env <text>`
 
 - `--name <text>`
+
+- `--repository <text>`
 
 - `--image-tag <text>` _Defaults to latest._
 
