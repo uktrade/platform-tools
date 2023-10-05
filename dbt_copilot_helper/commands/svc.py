@@ -27,6 +27,7 @@ def deploy(env, name, repository, image_tag):
     """Deploy image tag to a service, default to image tagged latest."""
 
     def get_all_tags_for_image(image_tag):
+        registry_id = boto3.client("sts").get_caller_identity()["Account"]
         ecr_client = boto3.client("ecr")
         try:
             response = ecr_client.describe_images(
@@ -54,9 +55,6 @@ def deploy(env, name, repository, image_tag):
                 fg="red",
             )
             exit(1)
-
-    # TODO: Unhardcode this...
-    registry_id = "854321987474"
 
     image_tags = get_all_tags_for_image(image_tag)
 
