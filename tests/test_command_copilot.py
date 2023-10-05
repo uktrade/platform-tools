@@ -70,7 +70,7 @@ class TestMakeAddonCommand:
         [
             (
                 "s3_addons.yml",
-                ["my-s3-bucket.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
+                ["my-s3-bucket.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml", "my-s3-bucket.yml", "my-s3-bucket-bucket-access.yml"],
                 False,
             ),
@@ -80,32 +80,32 @@ class TestMakeAddonCommand:
                     "my-opensearch.yml",
                     "my-opensearch-longer.yml",
                     "addons.parameters.yml",
-                    "vpc-endpoint.yml",
+                    "vpc.yml",
                 ],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
-                ["my-rds-db.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
+                ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
-                ["my-redis.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
+                ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
-                ["my-aurora-db.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
+                ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
-                ["monitoring.yml", "addons.parameters.yml", "vpc-endpoint.yml"],
+                ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
@@ -152,18 +152,18 @@ class TestMakeAddonCommand:
 
         for file in all_expected_files:
             expected_file = Path(addons_dir, "expected", file)
-            if file.name == "vpc-endpoint.yml":
+            if file.name == "vpc.yml":
                 if addon_file == "rds_addons.yml":
-                    vpc_endpoint_file = "rds-postgres"
+                    vpc_file = "rds-postgres"
                 elif addon_file == "aurora_addons.yml":
-                    vpc_endpoint_file = "aurora-postgres"
+                    vpc_file = "aurora-postgres"
                 else:
-                    vpc_endpoint_file = "default"
+                    vpc_file = "default"
 
                 expected_file = Path(
                     addons_dir,
                     "expected/environments/addons",
-                    f"vpc-endpoint-{vpc_endpoint_file}.yml",
+                    f"vpc-{vpc_file}.yml",
                 )
 
             expected = expected_file.read_text()

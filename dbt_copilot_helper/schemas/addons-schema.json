@@ -104,7 +104,7 @@
                   "s3-policy",
                   "appconfig-ipfilter",
                   "monitoring",
-                  "vpc-endpoint"
+                  "vpc"
                ]
             }
          },
