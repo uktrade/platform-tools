@@ -25,24 +25,50 @@ def svc():
 def deploy(env, name, image_tag):
     """Deploy image tag to a service, default to image tagged latest."""
 
-    def get_commit_tag_for_latest_image():
+    def get_all_tags_for_image(image_tag):
         ecr_client = boto3.client("ecr")
-        response = ecr_client.describe_images(
-            registryId="854321987474",
-            repositoryName="demodjango",
-            imageIds=[
-                {"imageTag": "latest"},
-            ],
-        )
-        image_tags = response["imageDetails"][0]["imageTags"]
+        try:
+            response = ecr_client.describe_images(
+                registryId=registry_id,
+                repositoryName=repository_name,
+                imageIds=[
+                    {"imageTag": image_tag},
+                ],
+            )
+            print("response:", type(response))
+            return response["imageDetails"][0]["imageTags"]
+        except Exception as exception:
+            print("exception:", type(exception))
+            click.secho(
+                f"""No image exists with the tag "{image_tag}" exists in the repository with the"""
+                f""" name "{repository_name}" in the registry with id  "{registry_id}".""",
+                fg="red",
+            )
+            exit(1)
+        except ecr_client.exceptions.ImageNotFoundException as exception:
+            print("exception:", type(exception))
+            click.secho(
+                f"""No image exists with the tag "{image_tag}" exists in the repository with the"""
+                f""" name "{repository_name}" in the registry with id  "{registry_id}".""",
+                fg="red",
+            )
+            exit(1)
+
+    def get_commit_tag_for_latest_image(image_tags):
         filtered = filter(lambda tag: re.match("(commit{1}-[a-f0-9]{7,32})", tag), image_tags)
         return list(filtered)[0]
 
+    # TODO: Unhardcode these two...
+    repository_name = "demodjango"
+    registry_id = "854321987474"
+
+    image_tags = get_all_tags_for_image(image_tag)
+
     if image_tag == "latest":
-        image_tag = get_commit_tag_for_latest_image()
+        image_tag = get_commit_tag_for_latest_image(image_tags)
 
     command = f"IMAGE_TAG={image_tag} copilot svc deploy --env {env} --name {name}"
-    print("Running:", command)
+    click.echo(f"Running: {command}")
     subprocess.call(
         command,
         shell=True,

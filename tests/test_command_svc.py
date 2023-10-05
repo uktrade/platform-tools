@@ -1,9 +1,12 @@
 import uuid
 from unittest.mock import patch
 
+import boto3
+import botocore.errorfactory
+import pytest
 from click.testing import CliRunner
-
 from dbt_copilot_helper.commands.svc import deploy
+from dbt_copilot_helper.exceptions import ImageNotFoundException
 
 
 @patch("boto3.client")
@@ -22,7 +25,7 @@ def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(
         ["--env", env, "--name", name, "--image-tag", f"commit-{commit_hash}"],
     )
 
-    mock_boto_client.describe_images.assert_not_called()
+    mock_boto_client.describe_images.assert_called_once()
     subprocess_call.assert_called_once_with(
         f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
@@ -72,11 +75,37 @@ def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
         shell=True,
     )
 
+
+@patch("boto3.client")
+@patch("subprocess.call")
+def test_svc_deploy_with_nonexistent_image_tag_throws_exception(subprocess_call, mock_boto_client, alias_session):
+    """Test that given an image tag which does not exist, an exception is thrown."""
+
+    # def raise_error():
+    #     raise botocore.errorfactory.ClientExceptionsFactory("
+
+    thing = botocore.errorfactory.ClientExceptionsFactory()
+
+    exception = thing.create_client_exceptions(
+        botocore.session.get_session().get_service_model("ecr")
+    ).ImageNotFoundException
+
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_boto_client.return_value = mock_boto_client
+    mock_boto_client.describe_images.side_effect = exception
+
+    result = CliRunner().invoke(
+        deploy,
+        ["--env", env, "--name", name, "--image-tag", f"commit-{commit_hash}"],
+    )
+
+    assert type(result.exception) is mock_boto_client.exceptions.ImageNotFoundException
+
+    # TODO: test if latest tag does not exist
+
     # TODO: test if the latest tag does not have a commit- tag
 
-    # TODO: test if the tag does not exist
-
-    # TODO: Pass other AWS Copilot flags through...
+    # TODO: Pass other AWS Copilot flags through...?
     # Flags
     #       --allow-downgrade                Optional. Allow using an older version of Copilot to
     #                                        update Copilot components

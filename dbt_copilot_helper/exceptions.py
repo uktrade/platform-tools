@@ -14,3 +14,7 @@ class IncompatibleMinorVersion(ValidationException):
         super().__init__()
         self.app_version = app_version
         self.check_version = check_version
+
+
+class ImageNotFoundException(Exception):
+    pass
