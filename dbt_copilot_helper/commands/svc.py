@@ -35,10 +35,8 @@ def deploy(env, name, image_tag):
                     {"imageTag": image_tag},
                 ],
             )
-            print("response:", type(response))
             return response["imageDetails"][0]["imageTags"]
-        except ecr_client.exceptions.ImageNotFoundException as exception:
-            print("exception:", type(exception))
+        except ecr_client.exceptions.ImageNotFoundException:
             click.secho(
                 f"""No image exists with the tag "{image_tag}" exists in the repository with the"""
                 f""" name "{repository_name}" in the registry with id  "{registry_id}".""",
@@ -47,8 +45,15 @@ def deploy(env, name, image_tag):
             exit(1)
 
     def get_commit_tag_for_latest_image(image_tags):
-        filtered = filter(lambda tag: re.match("(commit{1}-[a-f0-9]{7,32})", tag), image_tags)
-        return list(filtered)[0]
+        try:
+            filtered = filter(lambda tag: re.match("(commit{1}-[a-f0-9]{7,32})", tag), image_tags)
+            return list(filtered)[0]
+        except IndexError:
+            click.secho(
+                """The image tagged "latest" does not have a commit tag.""",
+                fg="red",
+            )
+            exit(1)
 
     # TODO: Unhardcode these two...
     repository_name = "demodjango"

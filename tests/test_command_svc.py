@@ -75,10 +75,7 @@ def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
 
 
 @patch("boto3.client")
-@patch("subprocess.call")
-def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
-    subprocess_call, mock_boto_client, alias_session
-):
+def test_svc_deploy_with_nonexistent_image_tag_throws_exception(mock_boto_client):
     """Test that given an image tag which does not exist, an exception is
     thrown."""
 
@@ -95,17 +92,29 @@ def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
         ["--env", env, "--name", name, "--image-tag", expected_tag],
     )
 
-    print(result.stdout)
-
     assert result.exit_code == 1
     assert (
         f"""No image exists with the tag "{expected_tag}" exists in the repository with the name"""
         f""" "{repository_name}" in the registry with id  "{registry_id}".""" in result.stdout
     )
 
-    # TODO: test if latest tag does not exist
 
-    # TODO: test if the latest tag does not have a commit- tag
+@patch("boto3.client")
+def test_svc_deploy_with_latest_but_no_commit_tag_throws_exception(mock_boto_client):
+    """Test that given the image tag latest, where the image tagged latest has
+    no commit tag, fails with a helpful message."""
+
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    commit_hash = None
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
+
+    result = CliRunner().invoke(
+        deploy,
+        ["--env", env, "--name", name, "--image-tag", "latest"],
+    )
+
+    assert result.exit_code == 1
+    assert """The image tagged "latest" does not have a commit tag.""" in result.stdout
 
     # TODO: Pass other AWS Copilot flags through...?
     # Flags
@@ -137,17 +146,15 @@ def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
 
 def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client):
     mock_boto_client.return_value = mock_boto_client
-    mock_boto_client.describe_images.return_value = {
-        "imageDetails": [
-            {
-                "imageTags": [
-                    f"commit-{commit_hash}",
-                    f"branch-{branch_name}",
-                    "latest",
-                ]
-            }
-        ]
-    }
+    image_tags = [
+        f"commit-{commit_hash}",
+        f"branch-{branch_name}",
+        "latest",
+    ]
+    if not commit_hash:
+        del image_tags[0]
+    return_value = {"imageDetails": [{"imageTags": image_tags}]}
+    mock_boto_client.describe_images.return_value = return_value
 
 
 def mock_describe_images_image_not_found(mock_boto_client):
