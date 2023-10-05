@@ -1,12 +1,10 @@
 import uuid
 from unittest.mock import patch
 
-import boto3
 import botocore.errorfactory
-import pytest
 from click.testing import CliRunner
+
 from dbt_copilot_helper.commands.svc import deploy
-from dbt_copilot_helper.exceptions import ImageNotFoundException
 
 
 @patch("boto3.client")
@@ -78,26 +76,37 @@ def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with_nonexistent_image_tag_throws_exception(subprocess_call, mock_boto_client, alias_session):
-    """Test that given an image tag which does not exist, an exception is thrown."""
+def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
+    subprocess_call, mock_boto_client, alias_session
+):
+    """Test that given an image tag which does not exist, an exception is
+    thrown."""
 
-    # def raise_error():
-    #     raise botocore.errorfactory.ClientExceptionsFactory("
+    client_exceptions_factory = botocore.errorfactory.ClientExceptionsFactory()
 
-    thing = botocore.errorfactory.ClientExceptionsFactory()
-
-    exception = thing.create_client_exceptions(
+    exception = client_exceptions_factory.create_client_exceptions(
         botocore.session.get_session().get_service_model("ecr")
     ).ImageNotFoundException
 
+    mock_boto_client.return_value.exceptions.ImageNotFoundException = exception
+    mock_boto_client.return_value.describe_images.side_effect = exception(
+        {
+            "Error": {
+                "Code": "ImageNotFoundException",
+                "Message": "The image requested does not exist in the specified repository.",
+            },
+        },
+        "DescribeImages",
+    )
+
     branch_name, commit_hash, env, name = set_up_test_variables()
-    mock_boto_client.return_value = mock_boto_client
-    mock_boto_client.describe_images.side_effect = exception
 
     result = CliRunner().invoke(
         deploy,
         ["--env", env, "--name", name, "--image-tag", f"commit-{commit_hash}"],
     )
+
+    print(result.stdout)
 
     assert type(result.exception) is mock_boto_client.exceptions.ImageNotFoundException
 
