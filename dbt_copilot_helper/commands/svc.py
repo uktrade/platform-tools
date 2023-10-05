@@ -38,8 +38,7 @@ def deploy(env, name, image_tag):
             return response["imageDetails"][0]["imageTags"]
         except ecr_client.exceptions.ImageNotFoundException:
             click.secho(
-                f"""No image exists with the tag "{image_tag}" exists in the repository with the"""
-                f""" name "{repository_name}" in the registry with id  "{registry_id}".""",
+                f"""No image exists with the tag "{image_tag}".""",
                 fg="red",
             )
             exit(1)

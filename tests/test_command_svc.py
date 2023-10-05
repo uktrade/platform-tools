@@ -32,9 +32,11 @@ def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with__latest_deploys_image_tagged_latest(subprocess_call, mock_boto_client):
+def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
+    subprocess_call, mock_boto_client
+):
     """Test that given the image tag latest, copilot svc deploy is called with
-    the unique tag of the image currently tagged latest."""
+    the unique commit tag of the image currently tagged latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
@@ -53,11 +55,11 @@ def test_svc_deploy_with__latest_deploys_image_tagged_latest(subprocess_call, mo
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
+def test_svc_deploy_with__no_image_tag_deploys_commit_tag_of_latest_image(
     subprocess_call, mock_boto_client
 ):
-    """Test that given the image tag latest, copilot svc deploy is called with
-    the unique tag of the image currently tagged latest."""
+    """Test that given no image tag, copilot svc deploy is called with the
+    unique tag of the image currently tagged latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
@@ -75,17 +77,15 @@ def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
 
 
 @patch("boto3.client")
-def test_svc_deploy_with_nonexistent_image_tag_throws_exception(mock_boto_client):
-    """Test that given an image tag which does not exist, an exception is
-    thrown."""
+def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(mock_boto_client):
+    """Test that given an image tag which does not exist, it fails with a
+    helpful message."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_image_not_found(mock_boto_client)
     expected_tag = f"commit-{commit_hash}"
 
     # TODO: Unhardcode these two...
-    repository_name = "demodjango"
-    registry_id = "854321987474"
 
     result = CliRunner().invoke(
         deploy,
@@ -93,16 +93,13 @@ def test_svc_deploy_with_nonexistent_image_tag_throws_exception(mock_boto_client
     )
 
     assert result.exit_code == 1
-    assert (
-        f"""No image exists with the tag "{expected_tag}" exists in the repository with the name"""
-        f""" "{repository_name}" in the registry with id  "{registry_id}".""" in result.stdout
-    )
+    assert f"""No image exists with the tag "{expected_tag}".""" in result.stdout
 
 
 @patch("boto3.client")
-def test_svc_deploy_with_latest_but_no_commit_tag_throws_exception(mock_boto_client):
+def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_client):
     """Test that given the image tag latest, where the image tagged latest has
-    no commit tag, fails with a helpful message."""
+    no commit tag, it fails with a helpful message."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     commit_hash = None
@@ -153,8 +150,7 @@ def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
     ]
     if not commit_hash:
         del image_tags[0]
-    return_value = {"imageDetails": [{"imageTags": image_tags}]}
-    mock_boto_client.describe_images.return_value = return_value
+    mock_boto_client.describe_images.return_value = {"imageDetails": [{"imageTags": image_tags}]}
 
 
 def mock_describe_images_image_not_found(mock_boto_client):
