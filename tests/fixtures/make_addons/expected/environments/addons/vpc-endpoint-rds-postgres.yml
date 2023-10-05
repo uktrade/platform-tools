@@ -12,6 +12,8 @@ Parameters:
     Type: String
   PrivateSubnets:
     Type: String
+  PublicSubnets:
+    Type: String
   VpcId:
     Type: String
 
@@ -35,3 +37,75 @@ Resources:
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       VpcEndpointType: Interface
       VpcId: !Ref VpcId
+
+  AdditionalNatGatewayAttachment1:
+    Metadata:
+      'aws:copilot:description': 'An Elastic IP for an additional NAT Gateway 1'
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AdditionalNatGatewayAttachment2:
+    Metadata:
+      'aws:copilot:description': 'An Elastic IP for an additional NAT Gateway 2'
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AdditionalNatGateway1:
+    Metadata:
+      'aws:copilot:description': 'Additional NAT Gateway 1'
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt AdditionalNatGatewayAttachment1.AllocationId
+      SubnetId: !Select [ 0, !Split [ ",", !Ref PublicSubnets ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-Additional-NAT-Gateway-1'
+
+  AdditionalNatGateway2:
+    Metadata:
+      'aws:copilot:description': 'Additional NAT Gateway 2'
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt AdditionalNatGatewayAttachment2.AllocationId
+      SubnetId: !Select [ 1, !Split [ ",", !Ref PublicSubnets ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-Additional-NAT-Gateway-2'
+
+  AdditionalPrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  AdditionalPrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  AdditionalPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AdditionalNatGateway1
+
+  AdditionalPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AdditionalNatGateway2
+
+  AdditionalPrivateRouteTable1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable1
+      SubnetId: !Select [ 0, !Split [ ",", !Ref PrivateSubnets ] ]
+
+  AdditionalPrivateRouteTable2Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable2
+      SubnetId: !Select [ 1, !Split [ ",", !Ref PrivateSubnets ] ]
