@@ -26,7 +26,7 @@ def svc():
 def deploy(env, name, repository, image_tag):
     """Deploy image tag to a service, default to image tagged latest."""
 
-    def get_all_tags_for_image(image_tag):
+    def get_all_tags_for_image(image_tag_needle):
         registry_id = boto3.client("sts").get_caller_identity()["Account"]
         ecr_client = boto3.client("ecr")
         try:
@@ -34,20 +34,22 @@ def deploy(env, name, repository, image_tag):
                 registryId=registry_id,
                 repositoryName=repository,
                 imageIds=[
-                    {"imageTag": image_tag},
+                    {"imageTag": image_tag_needle},
                 ],
             )
             return response["imageDetails"][0]["imageTags"]
         except ecr_client.exceptions.ImageNotFoundException:
             click.secho(
-                f"""No image exists with the tag "{image_tag}".""",
+                f"""No image exists with the tag "{image_tag_needle}".""",
                 fg="red",
             )
             exit(1)
 
-    def get_commit_tag_for_latest_image(image_tags):
+    def get_commit_tag_for_latest_image(image_tags_haystack):
         try:
-            filtered = filter(lambda tag: re.match("(commit{1}-[a-f0-9]{7,32})", tag), image_tags)
+            filtered = filter(
+                lambda tag: re.match("(commit-[a-f0-9]{7,32})", tag), image_tags_haystack
+            )
             return list(filtered)[0]
         except IndexError:
             click.secho(
