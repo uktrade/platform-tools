@@ -16,7 +16,7 @@ def test_svc_deploy_with_env_name_and_image_tag_deploys_image_tag(
     with values to deploy the specified image to the environment's service."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
-    mock_describe_images(branch_name, commit_hash, mock_boto_client)
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
@@ -37,7 +37,7 @@ def test_svc_deploy_with__latest_deploys_image_tagged_latest(subprocess_call, mo
     the unique tag of the image currently tagged latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
-    mock_describe_images(branch_name, commit_hash, mock_boto_client)
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
@@ -60,7 +60,7 @@ def test_svc_deploy_with__no_image_tag_deploys_image_tagged_latest(
     the unique tag of the image currently tagged latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
-    mock_describe_images(branch_name, commit_hash, mock_boto_client)
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
@@ -82,33 +82,26 @@ def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
     """Test that given an image tag which does not exist, an exception is
     thrown."""
 
-    client_exceptions_factory = botocore.errorfactory.ClientExceptionsFactory()
-
-    exception = client_exceptions_factory.create_client_exceptions(
-        botocore.session.get_session().get_service_model("ecr")
-    ).ImageNotFoundException
-
-    mock_boto_client.return_value.exceptions.ImageNotFoundException = exception
-    mock_boto_client.return_value.describe_images.side_effect = exception(
-        {
-            "Error": {
-                "Code": "ImageNotFoundException",
-                "Message": "The image requested does not exist in the specified repository.",
-            },
-        },
-        "DescribeImages",
-    )
-
     branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images_image_not_found(mock_boto_client)
+    expected_tag = f"commit-{commit_hash}"
+
+    # TODO: Unhardcode these two...
+    repository_name = "demodjango"
+    registry_id = "854321987474"
 
     result = CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--image-tag", f"commit-{commit_hash}"],
+        ["--env", env, "--name", name, "--image-tag", expected_tag],
     )
 
     print(result.stdout)
 
-    assert type(result.exception) is mock_boto_client.exceptions.ImageNotFoundException
+    assert result.exit_code == 1
+    assert (
+        f"""No image exists with the tag "{expected_tag}" exists in the repository with the name"""
+        f""" "{repository_name}" in the registry with id  "{registry_id}".""" in result.stdout
+    )
 
     # TODO: test if latest tag does not exist
 
@@ -142,7 +135,7 @@ def test_svc_deploy_with_nonexistent_image_tag_throws_exception(
     #                                        builds from Dockerfiles.
 
 
-def mock_describe_images(branch_name, commit_hash, mock_boto_client):
+def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client):
     mock_boto_client.return_value = mock_boto_client
     mock_boto_client.describe_images.return_value = {
         "imageDetails": [
@@ -155,6 +148,23 @@ def mock_describe_images(branch_name, commit_hash, mock_boto_client):
             }
         ]
     }
+
+
+def mock_describe_images_image_not_found(mock_boto_client):
+    client_exceptions_factory = botocore.errorfactory.ClientExceptionsFactory()
+    exception = client_exceptions_factory.create_client_exceptions(
+        botocore.session.get_session().get_service_model("ecr")
+    ).ImageNotFoundException
+    mock_boto_client.return_value.exceptions.ImageNotFoundException = exception
+    mock_boto_client.return_value.describe_images.side_effect = exception(
+        {
+            "Error": {
+                "Code": "ImageNotFoundException",
+                "Message": "The image requested does not exist in the specified repository.",
+            },
+        },
+        "DescribeImages",
+    )
 
 
 def set_up_test_variables():
