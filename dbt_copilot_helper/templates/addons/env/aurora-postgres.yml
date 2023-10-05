@@ -153,59 +153,54 @@ Resources:
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  # Enable ingress from Lambda Functions.
   {{ service.prefix }}LambdaIngress:
     Metadata:
-      'aws:copilot:description': 'Allow ingress from Lambda functions in my application to the DB cluster'
+      'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from Lambda Function
+      Description: Ingress from Lambda Functions to DB
       GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
 
-  # Enable ingress from Secrets Manager.
   {{ service.prefix }}SecretsManagerIngress:
     Metadata:
-      'aws:copilot:description': 'Allow ingress from Secrets Manager in my application to the DB cluster'
+      'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Ingress from Secrets Manager
+      Description: Ingress from Lambda Functions to Secrets Manager
       GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
 
-  # Enable egress from Lambda Function.
   {{ service.prefix }}LambdaEgress:
     Metadata:
-      'aws:copilot:description': 'Allow egress from Lambda functions in my application to the DB cluster'
+      'aws:copilot:description': 'Allow egress from DB cluster in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: Egress from Lambda Function
+      Description: Egress from DB to Lambda Functions
       GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
       DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
 
-  # Enable egress from Secrets Manager.
   {{ service.prefix }}SecretsManagerEgress:
     Metadata:
-      'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the DB cluster'
+      'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: Egress from Secrets Manager
+      Description: Egress from Secrets Manager to Lambda Functions
       GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
 
-  # Enable egress for HTTPS.
   {{ service.prefix }}HTTPSEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS'
@@ -217,19 +212,6 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-
-  # Enable egress for HTTP.
-  {{ service.prefix }}HTTPEgress:
-    Metadata:
-      'aws:copilot:description': 'Allow egress for HTTP'
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      CidrIp: 0.0.0.0/0
-      Description: Egress for HTTP
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
 
   {{ service.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
