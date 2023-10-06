@@ -376,6 +376,41 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
+def test_copy_secrets_skips_aws_secrets(
+    set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
+):
+    get_ssm_secrets.return_value = [
+        ("/copilot/test-application/development/secrets/GOOD_SECRET", "good value"),
+        ("/copilot/test-application/development/secrets/AWS_BAD_SECRET", "bad value"),
+    ]
+
+    runner = CliRunner()
+    setup_newenv_environment(tmp_path, runner)
+
+    result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
+
+    set_ssm_param.assert_called_once()
+    set_ssm_param.assert_has_calls(
+        [
+            call(
+                "test-application",
+                "newenv",
+                "/copilot/test-application/newenv/secrets/GOOD_SECRET",
+                "good value",
+                False,
+                False,
+                "Copied from development environment.",
+            ),
+        ]
+    )
+    assert "/copilot/test-application/newenv/secrets/GOOD_SECRET" in result.output
+    assert "/copilot/test-application/newenv/secrets/AWS_BAD_SECRET" not in result.output
+
+
+@patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
+@patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
+@mock_ssm
+@mock_sts
 def test_copy_secrets_with_existing_secret(
     set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
 ):
