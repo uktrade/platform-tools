@@ -203,7 +203,7 @@ Resources:
 
   myAuroraDbHTTPSEgress:
     Metadata:
-      'aws:copilot:description': 'Allow egress for HTTPS'
+      'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       CidrIp: 0.0.0.0/0
