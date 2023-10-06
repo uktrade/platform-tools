@@ -1,11 +1,14 @@
 import json
+import logging
 import unittest
 from io import BytesIO
+from unittest.mock import MagicMock
 from unittest.mock import patch
 from urllib.error import HTTPError
 
 from parameterized import parameterized
 
+from dbt_copilot_helper.custom_resources import s3_object
 from dbt_copilot_helper.custom_resources.s3_object import handler
 
 
@@ -74,6 +77,9 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         side_effect=HTTPError("https://example.com", 404, "Not Found", None, BytesIO(b"Some Data")),
     )
     def test_failure_to_update_resource_status_retries_5_times(self, urlopen):
+        logger = logging.getLogger(s3_object.__name__)
+        logger.error = MagicMock(logger.error)
+
         with_missing_keys = self._resource_properties.copy()
         del with_missing_keys["S3Bucket"]
 
@@ -82,6 +88,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         handler(event, {})
 
         self.assertEqual(5, urlopen.call_count)
+        logger.error.assert_called_with("HTTP Error 404: Not Found [https://example.com]")
 
 
 if __name__ == "__main__":

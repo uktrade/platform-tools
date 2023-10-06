@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib import request
 from urllib.error import HTTPError
 
@@ -6,9 +7,7 @@ import boto3
 
 s3_client = boto3.client("s3")
 
-# Initial code taken from "https://github.com/awslabs/aws-cloudformation-templates/blob
-# /a11722da8379dd52726ecfcd552f7983e9bb563f/aws/services/CloudFormation/MacrosExamples/S3Objects
-# /lambda/resource.py"
+logger = logging.getLogger(__name__)
 
 
 def send_response(event, context, status, message):
@@ -39,16 +38,8 @@ def send_response(event, context, status, message):
         try:
             request.urlopen(send)
             break
-        except HTTPError:
-            pass
-
-    # request = Request(, data=body)
-    # request.add_header('Content-Type', '')
-    # request.add_header('Content-Length', str(len(body)))
-    # request.get_method = lambda: 'PUT'
-    #
-    # opener = build_opener(HTTPHandler)
-    # opener.open(request)
+        except HTTPError as ex:
+            logger.error(f"{ex} [{ex.url}]")
 
 
 def handler(event, context):
@@ -119,3 +110,8 @@ def handler(event, context):
     #     return sendResponse(event, context, "SUCCESS", "Deleted")
     #
     # return sendResponse(event, context, "FAILED", "Unexpected: {}".format(request))
+
+
+# Initial code taken from "https://github.com/awslabs/aws-cloudformation-templates/blob
+# /a11722da8379dd52726ecfcd552f7983e9bb563f/aws/services/CloudFormation/MacrosExamples/S3Objects
+# /lambda/resource.py"
