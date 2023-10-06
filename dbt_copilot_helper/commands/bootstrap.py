@@ -226,11 +226,12 @@ def make_config(directory="."):
 @click.option("--dry-run", is_flag=True, show_default=True, default=False, help="dry run")
 def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     """
-    Migrate secrets from your gov paas application to AWS/copilot.
+    Migrate secrets from your GOV.UK PaaS application to DBT PaaS.
 
-    You need to be authenticated via cf cli and the AWS cli to use this commmand.
+    You need to be authenticated via Cloud Foundry CLI and the AWS CLI to use this command.
 
-    If you're using AWS profiles, use the AWS_PROFILE env var to indicate the which profile to use, e.g.:
+    If you're using AWS profiles, use the AWS_PROFILE environment variable to indicate the which
+    profile to use, e.g.:
 
     AWS_PROFILE=myaccount copilot-bootstrap.py ...
     """
@@ -281,6 +282,9 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 
             click.echo("Transfering secrets ...")
             for app_secret_key, ssm_secret_key in secrets.items():
+                if secret_should_be_skipped(app_secret_key):
+                    continue
+
                 ssm_path = SSM_PATH.format(app=config["app"], env=env_name, name=ssm_secret_key)
 
                 if app_secret_key not in env_vars:

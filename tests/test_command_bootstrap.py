@@ -506,6 +506,6 @@ def assert_secret_does_not_exist(secret_name):
         response = get_parameter(f"{secret_name}")
     except Exception as exception:
         assert exception.response["Error"]["Code"] == "ParameterNotFound"
-        assert "(ParameterNotFound)" in exception.__str__()
+        return
 
     assert response["ResponseMetadata"]["HTTPStatusCode"] != 200
