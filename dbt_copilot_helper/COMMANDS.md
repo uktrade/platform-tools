@@ -617,7 +617,7 @@ copilot-helper svc deploy
 
 [↩ Parent](#copilot-helper-svc)
 
-    Deploy image tag to a service, default to image tagged latest.
+    Deploy image tag to a service, defaults to image tagged latest.
 
 ## Usage
 
