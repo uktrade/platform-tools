@@ -47,10 +47,10 @@ def deploy(env, name, repository, image_tag):
 
     def get_commit_tag_for_latest_image(image_tags_haystack):
         try:
-            filtered = filter(
-                lambda tag: re.match("(commit-[a-f0-9]{7,32})", tag), image_tags_haystack
-            )
-            return list(filtered)[0]
+            filtered = [
+                tag for tag in image_tags_haystack if re.match("(commit-[a-f0-9]{7,32})", tag)
+            ]
+            return filtered[0]
         except IndexError:
             click.secho(
                 """The image tagged "latest" does not have a commit tag.""",
