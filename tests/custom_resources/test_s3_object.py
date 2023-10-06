@@ -8,6 +8,8 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 
 import boto3
+import pytest
+from botocore.exceptions import ClientError
 from moto import mock_s3
 from parameterized import parameterized
 
@@ -134,6 +136,36 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         sent_body = json.loads(sent_request.data.decode())
 
         self.assertEqual(act_object, self._resource_properties["S3ObjectBody"].encode("utf-8"))
+        self.assertEqual("https://example.com/cf-response", sent_request.full_url)
+        self.assertEqual("SUCCESS", sent_body["Status"])
+        self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
+
+    @patch("urllib.request.urlopen", return_value=None)
+    @mock_s3
+    def test_resource_delete_removes_an_object_from_s3_and_reports_success(self, urlopen):
+        s3_client = boto3.client("s3", "eu-west-2")
+        bucket = self._resource_properties["S3Bucket"]
+        key = self._resource_properties["S3ObjectKey"]
+        s3_client.create_bucket(
+            Bucket=bucket, CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+        )
+        s3_client.put_object(
+            Bucket=self._resource_properties["S3Bucket"],
+            Key=self._resource_properties["S3ObjectKey"],
+            Body=self._resource_properties["S3ObjectBody"].encode("utf-8"),
+        )
+        event = self._event.copy()
+        event["RequestType"] = "Delete"
+
+        handler(event, {})
+
+        sent_request = urlopen.call_args_list[0].args[0]
+        sent_body = json.loads(sent_request.data.decode())
+
+        with pytest.raises(ClientError) as ex:
+            s3_client.get_object(Bucket=bucket, Key=key)
+
+        self.assertEqual("NoSuchKey", ex.value.response["Error"]["Code"])
         self.assertEqual("https://example.com/cf-response", sent_request.full_url)
         self.assertEqual("SUCCESS", sent_body["Status"])
         self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])

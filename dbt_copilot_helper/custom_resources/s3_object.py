@@ -47,7 +47,7 @@ def send_response(event, context, status, message):
 
 def handler(event, context):
     s3_client = boto3.client("s3")
-    event["RequestType"]
+    request_type = event["RequestType"]
     properties = event["ResourceProperties"]
     required_properties = [
         "CopilotApplication",
@@ -64,11 +64,17 @@ def handler(event, context):
             event, context, "FAILED", f"Missing required properties: {missing_properties}"
         )
 
-    s3_client.put_object(
-        Bucket=properties["S3Bucket"],
-        Key=properties["S3ObjectKey"],
-        Body=properties["S3ObjectBody"].encode("utf-8"),
-    )
+    if request_type == "Delete":
+        s3_client.delete_object(
+            Bucket=properties["S3Bucket"],
+            Key=properties["S3ObjectKey"],
+        )
+    else:
+        s3_client.put_object(
+            Bucket=properties["S3Bucket"],
+            Key=properties["S3ObjectKey"],
+            Body=properties["S3ObjectBody"].encode("utf-8"),
+        )
 
     send_response(event, context, "SUCCESS", "Created")
 
