@@ -73,11 +73,12 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual("FAILED", sent_body["Status"])
         self.assertEqual(f"Missing required properties: {missing_properties}", sent_body["Reason"])
 
+    @patch("time.sleep", return_value=None)
     @patch(
         "urllib.request.urlopen",
         side_effect=HTTPError("https://example.com", 404, "Not Found", None, BytesIO(b"Some Data")),
     )
-    def test_failure_to_update_resource_status_retries_5_times(self, urlopen):
+    def test_failure_to_update_resource_status_retries_5_times(self, urlopen, sleep):
         logger = logging.getLogger(s3_object.__name__)
         logger.warning = MagicMock(logger.warning)
         logger.error = MagicMock(logger.error)
@@ -99,6 +100,14 @@ class TestS3ObjectCustomResource(unittest.TestCase):
             ]
         )
         logger.error.assert_called_with("HTTP Error 404: Not Found [https://example.com]")
+        sleep.assert_has_calls(
+            [
+                call(5),
+                call(10),
+                call(15),
+                call(20),
+            ]
+        )
 
 
 if __name__ == "__main__":

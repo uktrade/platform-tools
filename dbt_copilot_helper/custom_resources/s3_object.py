@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from urllib import request
 from urllib.error import HTTPError
 
@@ -43,6 +44,7 @@ def send_response(event, context, status, message):
                 logger.warning(f"{ex} [{ex.url}] - Retry {count}")
             else:
                 logger.error(f"{ex} [{ex.url}]")
+            time.sleep(count * 5)
 
 
 def handler(event, context):
