@@ -12,8 +12,9 @@ from dbt_copilot_helper.commands.svc import deploy
 def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
     subprocess_call, mock_boto_client
 ):
-    """Test that given an env, name and image tag, copilot svc deploy is called
-    with values to deploy the specified image to the environment's service."""
+    """Test that given an env, name, repository and image tag, copilot svc
+    deploy is called with values to deploy the specified image to the
+    environment's service."""
 
     branch_name, commit_hash, env, name, repository = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
