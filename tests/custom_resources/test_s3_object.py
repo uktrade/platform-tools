@@ -1,6 +1,8 @@
 import json
 import unittest
+from io import BytesIO
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 from parameterized import parameterized
 
@@ -66,6 +68,20 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual("https://example.com/cf-response", sent_request.full_url)
         self.assertEqual("FAILED", sent_body["Status"])
         self.assertEqual(f"Missing required properties: {missing_properties}", sent_body["Reason"])
+
+    @patch(
+        "urllib.request.urlopen",
+        side_effect=HTTPError("https://example.com", 404, "Not Found", None, BytesIO(b"Some Data")),
+    )
+    def test_failure_to_update_resource_status_retries_5_times(self, urlopen):
+        with_missing_keys = self._resource_properties.copy()
+        del with_missing_keys["S3Bucket"]
+
+        event = self._create_event.copy()
+        event["ResourceProperties"] = with_missing_keys
+        handler(event, {})
+
+        self.assertEqual(5, urlopen.call_count)
 
 
 if __name__ == "__main__":

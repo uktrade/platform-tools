@@ -1,5 +1,6 @@
 import json
 from urllib import request
+from urllib.error import HTTPError
 
 import boto3
 
@@ -31,9 +32,16 @@ def send_response(event, context, status, message):
 
     send = request.Request(event["ResponseURL"], data=body)
     send.get_method = lambda: "PUT"
-    request.urlopen(send)
 
-    #
+    count = 0
+    while count < 5:
+        count += 1
+        try:
+            request.urlopen(send)
+            break
+        except HTTPError:
+            pass
+
     # request = Request(, data=body)
     # request.add_header('Content-Type', '')
     # request.add_header('Content-Length', str(len(body)))
