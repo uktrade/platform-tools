@@ -39,7 +39,10 @@ def send_response(event, context, status, message):
             request.urlopen(send)
             break
         except HTTPError as ex:
-            logger.error(f"{ex} [{ex.url}]")
+            if count < 5:
+                logger.warning(f"{ex} [{ex.url}] - Retry {count}")
+            else:
+                logger.error(f"{ex} [{ex.url}]")
 
 
 def handler(event, context):

@@ -3,6 +3,7 @@ import logging
 import unittest
 from io import BytesIO
 from unittest.mock import MagicMock
+from unittest.mock import call
 from unittest.mock import patch
 from urllib.error import HTTPError
 
@@ -78,6 +79,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
     )
     def test_failure_to_update_resource_status_retries_5_times(self, urlopen):
         logger = logging.getLogger(s3_object.__name__)
+        logger.warning = MagicMock(logger.warning)
         logger.error = MagicMock(logger.error)
 
         with_missing_keys = self._resource_properties.copy()
@@ -88,6 +90,14 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         handler(event, {})
 
         self.assertEqual(5, urlopen.call_count)
+        logger.warning.assert_has_calls(
+            [
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 1"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 2"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 3"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 4"),
+            ]
+        )
         logger.error.assert_called_with("HTTP Error 404: Not Found [https://example.com]")
 
 
