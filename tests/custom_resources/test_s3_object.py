@@ -138,6 +138,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual(act_object, self._resource_properties["S3ObjectBody"].encode("utf-8"))
         self.assertEqual("https://example.com/cf-response", sent_request.full_url)
         self.assertEqual("SUCCESS", sent_body["Status"])
+        self.assertEqual(f"{request_type}d", sent_body["Reason"])
         self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
 
     @patch("urllib.request.urlopen", return_value=None)
@@ -168,6 +169,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual("NoSuchKey", ex.value.response["Error"]["Code"])
         self.assertEqual("https://example.com/cf-response", sent_request.full_url)
         self.assertEqual("SUCCESS", sent_body["Status"])
+        self.assertEqual("Deleted", sent_body["Reason"])
         self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
 
 

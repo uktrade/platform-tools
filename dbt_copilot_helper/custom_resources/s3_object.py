@@ -76,7 +76,7 @@ def handler(event, context):
             Body=properties["S3ObjectBody"].encode("utf-8"),
         )
 
-    send_response(event, context, "SUCCESS", "Created")
+    send_response(event, context, "SUCCESS", f"{request_type}d")
 
     # if request in ("Create", "Update"):
     #     if "Body" in properties:
