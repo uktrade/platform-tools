@@ -172,6 +172,27 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual("Deleted", sent_body["Reason"])
         self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
 
+    @parameterized.expand([("Create", "Put"), ("Update", "Put"), ("Delete", "Delete")])
+    @patch("urllib.request.urlopen", return_value=None)
+    @mock_s3
+    def test_resource_action_failure_reports_failure(self, request_type, request_action, urlopen):
+        event = self._event.copy()
+        event["RequestType"] = request_type
+
+        handler(event, {})
+
+        sent_request = urlopen.call_args_list[0].args[0]
+        sent_body = json.loads(sent_request.data.decode())
+
+        self.assertEqual("https://example.com/cf-response", sent_request.full_url)
+        self.assertEqual("FAILED", sent_body["Status"])
+        self.assertEqual(
+            f"An error occurred (NoSuchBucket) when calling the {request_action}Object operation: "
+            "The specified bucket does not exist",
+            sent_body["Reason"],
+        )
+        self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
+
 
 if __name__ == "__main__":
     unittest.main()

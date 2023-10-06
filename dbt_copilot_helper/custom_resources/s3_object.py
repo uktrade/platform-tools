@@ -5,6 +5,7 @@ from urllib import request
 from urllib.error import HTTPError
 
 import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -64,44 +65,19 @@ def handler(event, context):
             event, context, "FAILED", f"Missing required properties: {missing_properties}"
         )
 
-    if request_type == "Delete":
-        s3_client.delete_object(
-            Bucket=properties["S3Bucket"],
-            Key=properties["S3ObjectKey"],
-        )
-    else:
-        s3_client.put_object(
-            Bucket=properties["S3Bucket"],
-            Key=properties["S3ObjectKey"],
-            Body=properties["S3ObjectBody"].encode("utf-8"),
-        )
+    try:
+        if request_type == "Delete":
+            s3_client.delete_object(
+                Bucket=properties["S3Bucket"],
+                Key=properties["S3ObjectKey"],
+            )
+        else:
+            s3_client.put_object(
+                Bucket=properties["S3Bucket"],
+                Key=properties["S3ObjectKey"],
+                Body=properties["S3ObjectBody"].encode("utf-8"),
+            )
 
-    send_response(event, context, "SUCCESS", f"{request_type}d")
-
-    # if request in ("Create", "Update"):
-    #     if "Body" in properties:
-    #         target.update({
-    #             "Body": properties["Body"],
-    #         })
-    #
-    #         s3_client.put_object(**target)
-    #
-    #     else:
-    #         return sendResponse(event, context, "FAILED", "Malformed body")
-    #
-    #     return sendResponse(event, context, "SUCCESS", "Created")
-    #
-    # if request == "Delete":
-    #     s3_client.delete_object(
-    #         Bucket=target["Bucket"],
-    #         Key=target["Key"],
-    #     )
-    #
-    #     return sendResponse(event, context, "SUCCESS", "Deleted")
-    #
-    # return sendResponse(event, context, "FAILED", "Unexpected: {}".format(request))
-
-
-# Initial code taken from "https://github.com/awslabs/aws-cloudformation-templates/blob
-# /a11722da8379dd52726ecfcd552f7983e9bb563f/aws/services/CloudFormation/MacrosExamples/S3Objects
-# /lambda/resource.py"
+        send_response(event, context, "SUCCESS", f"{request_type}d")
+    except ClientError as ex:
+        send_response(event, context, "FAILED", f"{ex}")
