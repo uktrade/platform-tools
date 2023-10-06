@@ -6,8 +6,6 @@ from urllib.error import HTTPError
 
 import boto3
 
-s3_client = boto3.client("s3")
-
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +46,8 @@ def send_response(event, context, status, message):
 
 
 def handler(event, context):
+    s3_client = boto3.client("s3")
+    event["RequestType"]
     properties = event["ResourceProperties"]
     required_properties = [
         "CopilotApplication",
@@ -64,11 +64,12 @@ def handler(event, context):
             event, context, "FAILED", f"Missing required properties: {missing_properties}"
         )
 
-    # if "Target" not in properties or all(prop not in properties for prop in ["Body", "Base64Body", "Source"]):
-    #     return sendResponse(event, context, "FAILED", "Missing required parameters")
-    #
-    # target = properties["Target"]
-    #
+    s3_client.put_object(
+        Bucket=properties["S3Bucket"],
+        Key=properties["S3ObjectKey"],
+        Body=properties["S3ObjectBody"].encode("utf-8"),
+    )
+
     # if request in ("Create", "Update"):
     #     if "Body" in properties:
     #         target.update({
@@ -76,30 +77,6 @@ def handler(event, context):
     #         })
     #
     #         s3_client.put_object(**target)
-    #
-    #     elif "Base64Body" in properties:
-    #         try:
-    #             body = base64.b64decode(properties["Base64Body"])
-    #         except:
-    #             return sendResponse(event, context, "FAILED", "Malformed Base64Body")
-    #
-    #         target.update({
-    #             "Body": body
-    #         })
-    #
-    #         s3_client.put_object(**target)
-    #
-    #     elif "Source" in properties:
-    #         source = properties["Source"]
-    #
-    #         s3_client.copy_object(
-    #             CopySource=source,
-    #             Bucket=target["Bucket"],
-    #             Key=target["Key"],
-    #             MetadataDirective="COPY",
-    #             TaggingDirective="COPY",
-    #             ACL=target["ACL"],
-    #         )
     #
     #     else:
     #         return sendResponse(event, context, "FAILED", "Malformed body")

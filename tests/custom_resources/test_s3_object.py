@@ -7,6 +7,8 @@ from unittest.mock import call
 from unittest.mock import patch
 from urllib.error import HTTPError
 
+import boto3
+from moto import mock_s3
 from parameterized import parameterized
 
 from dbt_copilot_helper.custom_resources import s3_object
@@ -108,6 +110,20 @@ class TestS3ObjectCustomResource(unittest.TestCase):
                 call(20),
             ]
         )
+
+    @mock_s3
+    def test_resource_creation_puts_an_object_in_s3_and_reports_success(self):
+        s3_client = boto3.client("s3", "eu-west-2")
+
+        bucket = self._resource_properties["S3Bucket"]
+        key = self._resource_properties["S3ObjectKey"]
+        s3_client.create_bucket(
+            Bucket=bucket, CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+        )
+        handler(self._create_event, {})
+        act_object = s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
+
+        self.assertEqual(act_object, self._resource_properties["S3ObjectBody"].encode("utf-8"))
 
 
 if __name__ == "__main__":
