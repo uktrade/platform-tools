@@ -24,7 +24,7 @@ def svc():
 @click.option("--repository", type=str, required=True)
 @click.option("--image-tag", type=str, required=False, show_default=True, default="latest")
 def deploy(env, name, repository, image_tag):
-    """Deploy image tag to a service, default to image tagged latest."""
+    """Deploy image tag to a service, defaults to image tagged latest."""
 
     def get_all_tags_for_image(image_tag_needle):
         registry_id = boto3.client("sts").get_caller_identity()["Account"]
