@@ -337,6 +337,9 @@ def copy_secrets(project_profile, source_environment, target_environment):
     for secret in secrets:
         secret_name = secret[0].replace(f"/{source_environment}/", f"/{target_environment}/")
 
+        if "/AWS_" in secret_name:
+            continue
+
         click.echo(secret_name)
 
         try:
