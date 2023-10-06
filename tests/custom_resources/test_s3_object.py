@@ -26,7 +26,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
             "S3ObjectBody": "test content",
         }
 
-        self._create_event = {
+        self._event = {
             "RequestType": "Create",
             "LogicalResourceId": "servicePrefixS3Object0",
             "StackId": "1906d5fb-e2b3-426c-b308-14dd13efd918",
@@ -65,7 +65,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         for missing_key in missing_properties:
             del with_missing_keys[missing_key]
 
-        event = self._create_event.copy()
+        event = self._event.copy()
         event["ResourceProperties"] = with_missing_keys
         handler(event, {})
         sent_request = urlopen.call_args_list[0].args[0]
@@ -88,7 +88,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         with_missing_keys = self._resource_properties.copy()
         del with_missing_keys["S3Bucket"]
 
-        event = self._create_event.copy()
+        event = self._event.copy()
         event["ResourceProperties"] = with_missing_keys
         handler(event, {})
 
@@ -111,19 +111,32 @@ class TestS3ObjectCustomResource(unittest.TestCase):
             ]
         )
 
+    @parameterized.expand([("Create",), ("Update",)])
+    @patch("urllib.request.urlopen", return_value=None)
     @mock_s3
-    def test_resource_creation_puts_an_object_in_s3_and_reports_success(self):
+    def test_resource_creation_puts_an_object_in_s3_and_reports_success(
+        self, request_type, urlopen
+    ):
         s3_client = boto3.client("s3", "eu-west-2")
+        event = self._event.copy()
+        event["RequestType"] = request_type
 
         bucket = self._resource_properties["S3Bucket"]
         key = self._resource_properties["S3ObjectKey"]
         s3_client.create_bucket(
             Bucket=bucket, CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
         )
-        handler(self._create_event, {})
+
+        handler(event, {})
+
         act_object = s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
+        sent_request = urlopen.call_args_list[0].args[0]
+        sent_body = json.loads(sent_request.data.decode())
 
         self.assertEqual(act_object, self._resource_properties["S3ObjectBody"].encode("utf-8"))
+        self.assertEqual("https://example.com/cf-response", sent_request.full_url)
+        self.assertEqual("SUCCESS", sent_body["Status"])
+        self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
 
 
 if __name__ == "__main__":

@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def send_response(event, context, status, message):
-    bucket = event["ResourceProperties"].get("Target", {}).get("Bucket")
-    key = event["ResourceProperties"].get("Target", {}).get("Key")
+    bucket = event["ResourceProperties"].get("S3Bucket", "")
+    key = event["ResourceProperties"].get("S3ObjectKey", "")
 
     body = json.dumps(
         {
@@ -69,6 +69,8 @@ def handler(event, context):
         Key=properties["S3ObjectKey"],
         Body=properties["S3ObjectBody"].encode("utf-8"),
     )
+
+    send_response(event, context, "SUCCESS", "Created")
 
     # if request in ("Create", "Update"):
     #     if "Body" in properties:
