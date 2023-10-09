@@ -23,6 +23,8 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper svc](#copilot-helper-svc)
+- [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
 - [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
 - [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
@@ -51,6 +53,7 @@ copilot-helper <command> [--version]
 - [`config` ↪](#copilot-helper-config)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
+- [`svc` ↪](#copilot-helper-svc)
 - [`waf` ↪](#copilot-helper-waf)
 
 # copilot-helper bootstrap
@@ -586,6 +589,53 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper svc
+
+[↩ Parent](#copilot-helper)
+
+    AWS Copilot svc actions with DBT extras.
+
+## Usage
+
+```
+copilot-helper svc deploy 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`deploy` ↪](#copilot-helper-svc-deploy)
+
+# copilot-helper svc deploy
+
+[↩ Parent](#copilot-helper-svc)
+
+    Deploy image tag to a service, defaults to image tagged latest.
+
+## Usage
+
+```
+copilot-helper svc deploy --env <env> --name <name> --repository <repository> 
+                          [--image-tag <image_tag>] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--name <text>`
+
+- `--repository <text>`
+
+- `--image-tag <text>` _Defaults to latest._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
