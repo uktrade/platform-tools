@@ -62,17 +62,25 @@ mys3bucket:
 
 
 @pytest.mark.parametrize(
-    "addon_type",
+    "addon_type,message",
     [
-        "s3",
-        "s3-policy",
-        "redis",
-        "opensearch",
-        "rds-postgres",
-        "monitoring",
+        (
+            "s3",
+            "{'type': 's3', 'environments': {'default': {'an-extra-key': 'something'}}} is not "
+            "valid under any of the given schemas",
+        ),
+        (
+            "s3-policy",
+            "{'type': 's3', 'environments': {'default': {'an-extra-key': 'something'}}} "
+            "is not valid under any of the given schemas",
+        ),
+        ("redis", None),
+        ("opensearch", None),
+        ("rds-postgres", None),
+        ("monitoring", None),
     ],
 )
-def test_environment_extrakeys_not_allowed(addon_type):
+def test_environment_extrakeys_not_allowed(addon_type, message):
     addon = yaml.safe_load(
         f"""
 addonitem:
@@ -86,6 +94,8 @@ addonitem:
     assert (
         expect_jsonschema_validation_error(addon)
         == "Additional properties are not allowed ('an-extra-key' was unexpected)"
+        if message is None
+        else message
     )
 
 
