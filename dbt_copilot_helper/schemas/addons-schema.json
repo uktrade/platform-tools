@@ -117,33 +117,84 @@
    },
    "definitions": {
       "s3": {
-         "type": "object",
-         "properties": {
-            "type": {
-               "type": "string"
-            },
-            "bucket-name": {
-               "type": "string",
-               "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-            },
-            "readonly": {
-               "type": "boolean"
-            },
-            "services": {
-               "type": ["array", "string"]
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/s3-environment"
+        "oneOf": [
+           {
+              "type": "object",
+               "properties": {
+                  "type": {
+                     "type": "string",
+                     "enum": [
+                          "s3-policy"
+                     ]
+                  },
+                  "bucket-name": {
+                     "type": "string",
+                     "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+                  },
+                  "readonly": {
+                     "type": "boolean"
+                  },
+                  "services": {
+                     "type": ["array", "string"]
+                  },
+                  "environments": {
+                     "type": "object",
+                     "patternProperties": {
+                        "^[a-zA-Z0-9]*$": {
+                           "$ref": "#/definitions/s3-environment"
+                        }
+                     },
+                     "additionalProperties": false
                   }
                },
+               "required": [],
                "additionalProperties": false
-            }
-         },
-         "required": [],
-         "additionalProperties": false
+           }, {
+              "type": "object",
+               "properties": {
+                  "type": {
+                     "type": "string",
+                     "enum": ["s3"]
+                  },
+                  "bucket-name": {
+                     "type": "string",
+                     "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+                  },
+                  "readonly": {
+                     "type": "boolean"
+                  },
+                  "services": {
+                     "type": ["array", "string"]
+                  },
+                  "environments": {
+                     "type": "object",
+                     "patternProperties": {
+                        "^[a-zA-Z0-9]*$": {
+                           "$ref": "#/definitions/s3-environment"
+                        }
+                     },
+                     "additionalProperties": false
+                  },
+                  "objects": {
+                     "type": "array",
+                     "items": {
+                        "type": "object",
+                        "properties": {
+                           "key": {
+                              "type": "string"
+                           },
+                           "body": {
+                              "type": "string"
+                           }
+                        },
+                        "required": ["key"]
+                     }
+                  }
+               },
+               "required": [],
+               "additionalProperties": false
+           }
+        ]
       },
       "redis": {
          "type": "object",
