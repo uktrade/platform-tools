@@ -228,7 +228,7 @@ Resources:
                 Resource: 'arn:aws:logs:*:*:*'
 
 
-  myS3BucketWithAnObjectS3Object:
+  myS3BucketWithAnObjectS3Object0:
     Type: 'Custom::S3ObjectUploader'
     Properties:
       ServiceToken: !GetAtt myS3BucketWithAnObjectS3ObjectUploader.Arn

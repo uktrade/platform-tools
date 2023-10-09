@@ -157,7 +157,7 @@ Resources:
                 Resource: 'arn:aws:logs:*:*:*'
 
 {% for s3object in service.objects %}
-  {{ service.prefix }}S3Object{{ loop.counter }}:
+  {{ service.prefix }}S3Object{{ loop.index0 }}:
     Type: 'Custom::S3ObjectUploader'
     Properties:
       ServiceToken: !GetAtt {{ service.prefix }}S3ObjectUploader.Arn
