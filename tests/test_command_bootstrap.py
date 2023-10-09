@@ -196,11 +196,7 @@ def test_migrate_secrets_param_doesnt_exist(
     assert ">>> migrating secrets for service: test-service; environment: test" in result.output
     assert "Created" in result.output
 
-    client = boto3.session.Session().client("ssm")
-    response = client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
-
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-    assert response["Parameter"]["Value"] == f"kms:alias/aws/ssm:{param_value}"
+    assert_secret_exists_with_value("TEST_SECRET", param_value)
 
 
 @mock_ssm
@@ -225,8 +221,7 @@ def test_migrate_secrets_param_already_exists(
 
     assert "NOT overwritten" in result.output
 
-    client = boto3.client("ssm")
-    response = client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
+    response = get_parameter("TEST_SECRET")
 
     assert response["Parameter"]["Version"] == 1
 
@@ -254,8 +249,7 @@ def test_migrate_secrets_overwrite(
     assert "Overwritten" in result.output
     assert "NOT overwritten" not in result.output
 
-    client = boto3.session.Session().client("ssm")
-    response = client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
+    response = get_parameter("TEST_SECRET")
 
     assert response["Parameter"]["Version"] == 2
 
@@ -286,6 +280,41 @@ def test_migrate_secrets_dry_run(
 
     with pytest.raises(client.exceptions.ParameterNotFound):
         client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
+
+
+@mock_ssm
+@mock_sts
+@patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
+@patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
+def test_migrate_secrets_skips_aws_secrets(
+    client,
+    get_paas_env_vars_mock,
+    alias_session,
+    aws_credentials,
+    tmp_path,
+):
+    """Test that, where a secret's name begins with "AWS_", it is not
+    migrated."""
+
+    good_secret_name = "TEST_SECRET"
+    good_secret_value = "good value"
+    bad_secret_name = "AWS_BAD_SECRET"
+    bad_secret_value = "bad value"
+
+    get_paas_env_vars_mock.return_value = {
+        good_secret_name: good_secret_value,
+        bad_secret_name: bad_secret_value,
+    }
+    # get_paas_env_vars_mock.return_value = {good_secret_name: good_secret_value}
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+
+    CliRunner().invoke(
+        migrate_secrets,
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+    )
+
+    assert_secret_exists_with_value(good_secret_name, good_secret_value)
+    assert_secret_does_not_exist(bad_secret_name)
 
 
 def test_migrate_secrets_profile_not_configured(tmp_path):
@@ -376,6 +405,41 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
+def test_copy_secrets_skips_aws_secrets(
+    set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
+):
+    get_ssm_secrets.return_value = [
+        ("/copilot/test-application/development/secrets/GOOD_SECRET", "good value"),
+        ("/copilot/test-application/development/secrets/AWS_BAD_SECRET", "bad value"),
+    ]
+
+    runner = CliRunner()
+    setup_newenv_environment(tmp_path, runner)
+
+    result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
+
+    set_ssm_param.assert_called_once()
+    set_ssm_param.assert_has_calls(
+        [
+            call(
+                "test-application",
+                "newenv",
+                "/copilot/test-application/newenv/secrets/GOOD_SECRET",
+                "good value",
+                False,
+                False,
+                "Copied from development environment.",
+            ),
+        ]
+    )
+    assert "/copilot/test-application/newenv/secrets/GOOD_SECRET" in result.output
+    assert "/copilot/test-application/newenv/secrets/AWS_BAD_SECRET" not in result.output
+
+
+@patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
+@patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
+@mock_ssm
+@mock_sts
 def test_copy_secrets_with_existing_secret(
     set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
 ):
@@ -419,3 +483,27 @@ def setup_newenv_environment(tmp_path, runner):
 def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
     os.chdir(tmp_path)
     shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", "bootstrap.yml")
+
+
+def get_parameter(secret_name):
+    return (
+        boto3.session.Session()
+        .client("ssm")
+        .get_parameter(Name=f"/copilot/test-app/test/secrets/{secret_name}")
+    )
+
+
+def assert_secret_exists_with_value(secret_name, secret_value):
+    response = get_parameter(secret_name)
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+    assert response["Parameter"]["Value"] == f"kms:alias/aws/ssm:{secret_value}"
+
+
+def assert_secret_does_not_exist(secret_name):
+    try:
+        response = get_parameter(f"{secret_name}")
+    except Exception as exception:
+        assert exception.response["Error"]["Code"] == "ParameterNotFound"
+        return
+
+    assert response["ResponseMetadata"]["HTTPStatusCode"] != 200
