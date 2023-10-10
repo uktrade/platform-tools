@@ -49,7 +49,7 @@ sidecars:
 
 # Configuration for your containers and service.
 image:
-  location: 123456789474.dkr.ecr.eu-west-2.amazonaws.com/testapp/web:{IMAGE_TAG}
+  location: 123456789474.dkr.ecr.eu-west-2.amazonaws.com/testapp/test-service:{IMAGE_TAG}
   # Port exposed through your container to route traffic to it.
   port: 8080
 
