@@ -9,6 +9,7 @@ import click
 
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.manifests import get_repository_name_from_manifest
+from dbt_copilot_helper.utils.manifests import get_service_name_from_manifest
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -27,10 +28,27 @@ def svc():
 def deploy(env, name, image_tag):
     """Deploy image tag to a service, defaults to image tagged latest."""
 
+    service_manifest = Path("copilot") / name / "manifest.yml"
+
+    try:
+        service_name_in_manifest = get_service_name_from_manifest(service_manifest)
+        if service_name_in_manifest != name:
+            click.secho(
+                f"Service manifest for {name} has name attribute {service_name_in_manifest}",
+                fg="red",
+            )
+            exit(1)
+
+    except FileNotFoundError:
+        click.secho(
+            f"Service manifest for {name} could not be found at path {service_manifest}", fg="red"
+        )
+        exit(1)
+
     def get_all_tags_for_image(image_tag_needle):
         registry_id = boto3.client("sts").get_caller_identity()["Account"]
         ecr_client = boto3.client("ecr")
-        repository_name = get_repository_name_from_manifest(Path("copilot") / name / "manifest.yml")
+        repository_name = get_repository_name_from_manifest(service_manifest)
         try:
             response = ecr_client.describe_images(
                 registryId=registry_id,

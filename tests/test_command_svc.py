@@ -68,7 +68,11 @@ def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
         ["--env", env, "--name", name, "--image-tag", "latest"],
     )
 
-    mock_boto_client.describe_images.assert_called_once()
+    mock_boto_client.describe_images.assert_called_once_with(
+        registryId=ANY,
+        repositoryName=f"testapp/{name}",
+        imageIds=ANY,
+    )
     subprocess_call.assert_called_once_with(
         f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
@@ -92,7 +96,11 @@ def test_svc_deploy_with__no_image_tag_deploys_commit_tag_of_latest_image(
         ["--env", env, "--name", name],
     )
 
-    mock_boto_client.describe_images.assert_called_once()
+    mock_boto_client.describe_images.assert_called_once_with(
+        registryId=ANY,
+        repositoryName=f"testapp/{name}",
+        imageIds=ANY,
+    )
     subprocess_call.assert_called_once_with(
         f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
@@ -134,7 +142,69 @@ def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_c
     assert result.exit_code == 1
     assert """The image tagged "latest" does not have a commit tag.""" in result.stdout
 
-    # TODO: Pass other AWS Copilot flags through...?
+
+@patch("boto3.client")
+@patch("subprocess.call")
+def test_svc_deploy_with_missing_manifest_file_fails_with_message(
+    subprocess_call, mock_boto_client, tmp_path
+):
+    """If the manifest is missing, display an error message."""
+    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
+
+    os.chdir(tmp_path)
+
+    result = CliRunner().invoke(
+        deploy,
+        [
+            "--env",
+            env,
+            "--name",
+            name,
+            "--image-tag",
+            f"commit-{commit_hash}",
+        ],
+    )
+
+    mock_boto_client.describe_images.assert_not_called()
+    assert result.exit_code == 1
+    assert (
+        f"Service manifest for {name} could not be found at path copilot/test-service/manifest.yml"
+        in result.stdout
+    )
+
+
+@patch("boto3.client")
+@patch("subprocess.call")
+def test_svc_deploy_with_mismatched_name_in_manifest_file_fails_with_message(
+    subprocess_call, mock_boto_client, tmp_path
+):
+    """If the manifest has a different name than the service name we pass into
+    the command, display an error message."""
+    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    other_name = "other_name"
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
+
+    os.chdir(tmp_path)
+    manifest_dir = Path("copilot") / other_name
+    os.makedirs(manifest_dir)
+    shutil.copy(UTILS_FIXTURES_DIR / "test_service_manifest.yml", manifest_dir / "manifest.yml")
+
+    result = CliRunner().invoke(
+        deploy,
+        [
+            "--env",
+            env,
+            "--name",
+            other_name,
+            "--image-tag",
+            f"commit-{commit_hash}",
+        ],
+    )
+
+    mock_boto_client.describe_images.assert_not_called()
+    assert result.exit_code == 1
+    assert f"Service manifest for {other_name} has name attribute {name}" in result.stdout
 
 
 def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client):
