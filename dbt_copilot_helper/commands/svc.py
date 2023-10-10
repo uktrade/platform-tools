@@ -44,7 +44,7 @@ def deploy(env, name, image_tag):
         exit(1)
 
     repository_name = get_repository_name_from_manifest(service_manifest)
-    if service_manifest not in repository_name:
+    if service_name_in_manifest not in repository_name:
         click.secho(
             f"The image location does not contain the service name ({name}) in the service manifest.",
             fg="red",
