@@ -21,7 +21,7 @@ def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
     deploy is called with values to deploy the specified image to the
     environment's service."""
 
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     os.chdir(tmp_path)
@@ -60,7 +60,7 @@ def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
     """Test that given the image tag latest, copilot svc deploy is called with
     the unique commit tag of the image currently tagged latest."""
 
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
@@ -87,8 +87,7 @@ def test_svc_deploy_with__no_image_tag_deploys_commit_tag_of_latest_image(
     """Test that given no image tag, copilot svc deploy is called with the
     unique tag of the image currently tagged latest."""
 
-    # Take out repository
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
@@ -112,7 +111,7 @@ def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(mock_boto_clie
     """Test that given an image tag which does not exist, it fails with a
     helpful message."""
 
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_image_not_found(mock_boto_client)
     expected_tag = f"commit-{commit_hash}"
 
@@ -130,7 +129,7 @@ def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_c
     """Test that given the image tag latest, where the image tagged latest has
     no commit tag, it fails with a helpful message."""
 
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     commit_hash = None
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
@@ -149,7 +148,7 @@ def test_svc_deploy_with_missing_manifest_file_fails_with_message(
     subprocess_call, mock_boto_client, tmp_path
 ):
     """If the manifest is missing, display an error message."""
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     os.chdir(tmp_path)
@@ -181,7 +180,7 @@ def test_svc_deploy_with_mismatched_name_in_manifest_file_fails_with_message(
 ):
     """If the manifest has a different name than the service name we pass into
     the command, display an error message."""
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     other_name = "other_name"
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
@@ -214,7 +213,7 @@ def test_svc_deploy_with_service_name_not_in_image_location_fails_with_message(
 ):
     """If the manifest image location does not contain the service name, fail
     with a message."""
-    branch_name, commit_hash, env, name, repository = set_up_test_variables()
+    branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     os.chdir(tmp_path)
@@ -281,5 +280,5 @@ def set_up_test_variables():
     branch_name = "does-not-matter"
     env = f"env{hex_string}"
     name = "test-service"
-    repository = f"repo{hex_string}"
-    return branch_name, commit_hash, env, name, repository
+
+    return branch_name, commit_hash, env, name
