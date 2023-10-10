@@ -1,16 +1,21 @@
+import os
+import shutil
 import uuid
+from pathlib import Path
+from unittest.mock import ANY
 from unittest.mock import patch
 
 import botocore.errorfactory
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.svc import deploy
+from tests.conftest import UTILS_FIXTURES_DIR
 
 
 @patch("boto3.client")
 @patch("subprocess.call")
 def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
-    subprocess_call, mock_boto_client
+    subprocess_call, mock_boto_client, tmp_path
 ):
     """Test that given an env, name, repository and image tag, copilot svc
     deploy is called with values to deploy the specified image to the
@@ -19,6 +24,11 @@ def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
     branch_name, commit_hash, env, name, repository = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
+    os.chdir(tmp_path)
+    manifest_dir = Path("copilot") / name
+    os.makedirs(manifest_dir)
+    shutil.copy(UTILS_FIXTURES_DIR / "test_service_manifest.yml", manifest_dir / "manifest.yml")
+
     CliRunner().invoke(
         deploy,
         [
@@ -26,14 +36,16 @@ def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
             env,
             "--name",
             name,
-            "--repository",
-            repository,
             "--image-tag",
             f"commit-{commit_hash}",
         ],
     )
 
-    mock_boto_client.describe_images.assert_called_once()
+    mock_boto_client.describe_images.assert_called_once_with(
+        registryId=ANY,
+        repositoryName=f"testapp/{name}",
+        imageIds=ANY,
+    )
     subprocess_call.assert_called_once_with(
         f"IMAGE_TAG=commit-{commit_hash} copilot svc deploy --env {env} --name {name}",
         shell=True,
@@ -53,7 +65,7 @@ def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
 
     CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--repository", repository, "--image-tag", "latest"],
+        ["--env", env, "--name", name, "--image-tag", "latest"],
     )
 
     mock_boto_client.describe_images.assert_called_once()
@@ -71,12 +83,13 @@ def test_svc_deploy_with__no_image_tag_deploys_commit_tag_of_latest_image(
     """Test that given no image tag, copilot svc deploy is called with the
     unique tag of the image currently tagged latest."""
 
+    # Take out repository
     branch_name, commit_hash, env, name, repository = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--repository", repository],
+        ["--env", env, "--name", name],
     )
 
     mock_boto_client.describe_images.assert_called_once()
@@ -97,7 +110,7 @@ def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(mock_boto_clie
 
     result = CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--repository", repository, "--image-tag", expected_tag],
+        ["--env", env, "--name", name, "--image-tag", expected_tag],
     )
 
     assert result.exit_code == 1
@@ -115,7 +128,7 @@ def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_c
 
     result = CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--repository", repository, "--image-tag", "latest"],
+        ["--env", env, "--name", name, "--image-tag", "latest"],
     )
 
     assert result.exit_code == 1
@@ -158,6 +171,6 @@ def set_up_test_variables():
     commit_hash = f"{hex_string}"
     branch_name = "does-not-matter"
     env = f"env{hex_string}"
-    name = f"name{hex_string}"
+    name = "test-service"
     repository = f"repo{hex_string}"
     return branch_name, commit_hash, env, name, repository
