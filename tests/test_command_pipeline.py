@@ -11,6 +11,7 @@ def test_pipeline_generate_with_no_args_creates_the_pipeline_configuration(tmp_p
     """"""
 
     os.chdir(tmp_path)
+    shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
     shutil.copy(FIXTURES_DIR / "pipeline/pipelines.yml", "pipelines.yml")
 
     CliRunner().invoke(generate)
@@ -19,7 +20,7 @@ def test_pipeline_generate_with_no_args_creates_the_pipeline_configuration(tmp_p
     # exp_manifest = exp_files_dir / "manifest.yml"
     # exp_buildspec = exp_files_dir / "buildspec.yml"
     # exp_cfn_patches = exp_files_dir / "overrides" / "cfn.patches.yml"
-    output_dir = tmp_path / "copilot" / "pipelines" / "my-app-environments"
+    output_dir = tmp_path / "copilot" / "pipelines" / "test-app-environments"
 
     assert (output_dir / "buildspec.yml").exists()
     assert (output_dir / "manifest.yml").exists()
