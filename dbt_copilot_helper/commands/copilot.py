@@ -49,6 +49,11 @@ def _validate_and_normalise_config(config_file):
     def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
         conf = addon_plans[addon_type][plan] if plan else {}
+
+        # Make a copy of the addon plan config so subsequent
+        # calls do not override the root object
+        conf = conf.copy()
+
         conf.update(env_conf)
 
         return conf
