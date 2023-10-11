@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import boto3
 import pytest
-import yaml
 from click.testing import CliRunner
 from cloudfoundry_client.common_objects import JsonObject
 from freezegun import freeze_time
@@ -18,12 +17,12 @@ from schema import SchemaError
 
 from dbt_copilot_helper.commands.bootstrap import copy_secrets
 from dbt_copilot_helper.commands.bootstrap import get_paas_env_vars
-from dbt_copilot_helper.commands.bootstrap import load_and_validate_config
 from dbt_copilot_helper.commands.bootstrap import make_config
 from dbt_copilot_helper.commands.bootstrap import migrate_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
-from tests.conftest import BASE_DIR
+from dbt_copilot_helper.utils.files import load_and_validate_config
 from tests.conftest import FIXTURES_DIR
+from tests.conftest import TEST_APP_DIR
 
 
 class MockEntity(JsonObject):
@@ -64,24 +63,11 @@ def test_get_paas_env_vars_exception():
     assert err.value.args[0] == f"Application {paas} not found"
 
 
-def test_load_and_validate_config_valid_file():
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
-
-    path = Path(__file__).parent.resolve() / "test_config.yml"
-    validated = load_and_validate_config(path)
-
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    assert validated == conf
-
-
 def test_load_and_validate_config_invalid_file():
     """Test that, given the path to an invalid yaml file,
     load_and_validate_config raises a SchemaError with specific field errors."""
 
-    path = Path(__file__).parent.resolve() / "invalid_test_config.yml"
+    path = FIXTURES_DIR / "invalid_bootstrap_config.yml"
 
     with pytest.raises(SchemaError) as err:
         load_and_validate_config(path)
@@ -104,7 +90,7 @@ def test_make_config(tmp_path):
     ).read_text()
     test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
 
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     result = CliRunner().invoke(make_config)
@@ -135,7 +121,7 @@ def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credential
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
 
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -151,7 +137,7 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
 
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -186,7 +172,7 @@ def test_migrate_secrets_param_doesnt_exist(
     migrate_secrets creates it."""
 
     get_paas_env_vars.return_value = env_vars
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -212,7 +198,7 @@ def test_migrate_secrets_param_already_exists(
     set_ssm_param(
         "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
     )
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -239,7 +225,7 @@ def test_migrate_secrets_overwrite(
     set_ssm_param(
         "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
     )
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -264,7 +250,7 @@ def test_migrate_secrets_dry_run(
     """Test that, when dry-run flag is passed, migrate_secrets does not create a
     secret."""
 
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -306,7 +292,7 @@ def test_migrate_secrets_skips_aws_secrets(
         bad_secret_name: bad_secret_value,
     }
     # get_paas_env_vars_mock.return_value = {good_secret_name: good_secret_value}
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     CliRunner().invoke(
         migrate_secrets,
@@ -318,7 +304,7 @@ def test_migrate_secrets_skips_aws_secrets(
 
 
 def test_migrate_secrets_profile_not_configured(tmp_path):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
@@ -329,7 +315,7 @@ def test_migrate_secrets_profile_not_configured(tmp_path):
 
 
 def test_copy_secrets_profile_not_configured(tmp_path):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         copy_secrets,
@@ -341,7 +327,7 @@ def test_copy_secrets_profile_not_configured(tmp_path):
 
 @mock_sts
 def test_copy_secrets_without_new_environment_directory(alias_session, aws_credentials, tmp_path):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test_config.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     runner = CliRunner()
@@ -469,7 +455,7 @@ def test_copy_secrets_with_existing_secret(
 
 
 def setup_newenv_environment(tmp_path, runner):
-    switch_to_tmp_dir_and_copy_config_file(tmp_path, "test-application-deploy/bootstrap.yml")
+    switch_to_tmp_dir_and_copy_config_file(tmp_path, TEST_APP_DIR / "bootstrap.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
     runner.invoke(make_config)
@@ -480,9 +466,9 @@ def setup_newenv_environment(tmp_path, runner):
     shutil.copy(my_file, to_file)
 
 
-def switch_to_tmp_dir_and_copy_config_file(tmp_path, valid_config_file):
+def switch_to_tmp_dir_and_copy_config_file(tmp_path, bootstrap_config_file):
     os.chdir(tmp_path)
-    shutil.copy(f"{BASE_DIR}/tests/{valid_config_file}", "bootstrap.yml")
+    shutil.copy(bootstrap_config_file, "bootstrap.yml")
 
 
 def get_parameter(secret_name):

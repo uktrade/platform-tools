@@ -4,12 +4,8 @@ from collections import defaultdict
 from pathlib import Path
 
 import click
-import yaml
 from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
-from schema import Optional
-from schema import Or
-from schema import Schema
 
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from dbt_copilot_helper.utils.aws import check_aws_conn
@@ -17,94 +13,13 @@ from dbt_copilot_helper.utils.aws import get_ssm_secret_names
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.files import to_yaml
 from dbt_copilot_helper.utils.template import setup_templates
-from dbt_copilot_helper.utils.validation import validate_string
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
-)
-
-range_validator = validate_string(r"^\d+-\d+$")
-seconds_validator = validate_string(r"^\d+s$")
-
-config_schema = Schema(
-    {
-        "app": str,
-        "environments": {str: {Optional("certificate_arns"): [str]}},
-        "services": [
-            {
-                "name": str,
-                "type": lambda s: s
-                in (
-                    "public",
-                    "backend",
-                ),
-                "repo": str,
-                "image_location": str,
-                Optional("notes"): str,
-                Optional("secrets_from"): str,
-                "environments": {
-                    str: {
-                        "paas": str,
-                        Optional("url"): str,
-                        Optional("ipfilter"): bool,
-                        Optional("memory"): int,
-                        Optional("count"): Or(
-                            int,
-                            {  # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
-                                "range": range_validator,  # e.g. 1-10
-                                Optional("cooldown"): {
-                                    "in": seconds_validator,  # e.g 30s
-                                    "out": seconds_validator,  # e.g 30s
-                                },
-                                Optional("cpu_percentage"): int,
-                                Optional("memory_percentage"): Or(
-                                    int,
-                                    {
-                                        "value": int,
-                                        "cooldown": {
-                                            "in": seconds_validator,  # e.g. 80s
-                                            "out": seconds_validator,  # e.g 160s
-                                        },
-                                    },
-                                ),
-                                Optional("requests"): int,
-                                Optional("response_time"): seconds_validator,  # e.g. 2s
-                            },
-                        ),
-                    },
-                },
-                Optional("backing-services"): [
-                    {
-                        "name": str,
-                        "type": lambda s: s
-                        in (
-                            "s3",
-                            "s3-policy",
-                            "aurora-postgres",
-                            "rds-postgres",
-                            "redis",
-                            "opensearch",
-                        ),
-                        Optional("paas-description"): str,
-                        Optional("paas-instance"): str,
-                        Optional("notes"): str,
-                        Optional("bucket_name"): str,  # for external-s3 type
-                        Optional("readonly"): bool,  # for external-s3 type
-                        Optional("shared"): bool,
-                    },
-                ],
-                Optional("overlapping_secrets"): [str],
-                "secrets": {
-                    Optional(str): str,
-                },
-                "env_vars": {
-                    Optional(str): str,
-                },
-            },
-        ],
-    },
 )
 
 
@@ -129,21 +44,6 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
         raise Exception(f"Application {paas} not found")
 
     return dict(env_vars)
-
-
-def load_and_validate_config(path):
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    # validate the file
-    schema = Schema(config_schema)
-    schema.validate(conf)
-
-    return conf
-
-
-def to_yaml(value):
-    return yaml.dump(value, sort_keys=False)
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
