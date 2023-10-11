@@ -17,6 +17,7 @@ from moto.ec2 import utils as ec2_utils
 BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
+EXPECTED_FILES_DIR = BASE_DIR / "tests" / "expected_files"
 UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
 
 

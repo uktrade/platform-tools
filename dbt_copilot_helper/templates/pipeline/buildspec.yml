@@ -1,0 +1,53 @@
+# Buildspec runs in the build stage of your environment pipeline to generate the environment CloudFormation stack config.
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo "cd into $CODEBUILD_SRC_DIR"
+      - cd $CODEBUILD_SRC_DIR
+      # Download the copilot linux binary. You can update this version.
+      - wget -q https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v1.31.0
+      - mv ./copilot-linux-v1.31.0 ./copilot-linux
+      - chmod +x ./copilot-linux
+      - pip install dbt-copilot-tools
+  build:
+    commands:
+       - copilot-helper copilot make-addons
+       # Produce a git diff, then:
+       # - Strip lines that include line numbers - sed '/^@@/d'
+       # - Strip lines that include the file names - sed '/^---/d' and sed '/^+++/d'
+       # - Strip the git index lines - sed '/^index/d'
+       # - Strip lines that are only comments - sed '/^-#/d' and sed '/^+#/d'
+       # - Strip lines that are diff commands - sed '/^diff/d'
+       # We are left with only direct changes to cloudformation addons made by copilot helper
+       - export ACTUAL_DIFF="$(git diff --unified=0 | sed '/^@@/d' | sed '/^--- a/d' | sed '/^+++ b/d' | sed '/^index/d' | sed '/^-#/d' | sed '/^+#/d' | sed '/^diff/d')"
+       - |
+         if [[ "$ACTUAL_DIFF" != "" ]]; then
+           echo 'Changes are introduced with the latest version of copilot-helper:'
+           echo
+           git diff --unified=0 | sed '/^@@/d' | sed '/^index/d' | sed '/^-#/d' | sed '/^+#/d' | sed '/^diff/d'
+           echo
+           echo 'Upgrade to the latest version with pip install --upgrade dbt-copilot-tools'
+           echo 'And run copilot-helper copilot make-addons to regenerate your addons templates'
+           exit 1
+         fi
+  post_build:
+    commands:
+      - git checkout -- .
+      - export COLOR="false"
+      - export CI="true"
+      - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/my-app-environments/manifest.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
+      - stages=$(echo $pipeline | jq -r '.stages[].name')
+      # Generate the cloudformation templates.
+      - >
+        for env in $stages; do
+          ./copilot-linux env package -n $env --output-dir './infrastructure' --upload-assets --force;
+          if [ $? -ne 0 ]; then
+            echo "Cloudformation stack and config files were not generated. Please check build logs to see if there was a manifest validation error." 1>&2;
+            exit 1;
+          fi
+        done;
+      - ls -lah ./infrastructure
+artifacts:
+  files:
+    - "infrastructure/*"

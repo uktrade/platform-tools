@@ -1,0 +1,19 @@
+# Give the source stage a more meaningful name
+- op: replace
+  path: /Resources/Pipeline/Properties/Stages/0/Actions/0/Name
+  value: DeployCodebase
+
+# Add git metadata to the
+- op: add
+  path: /Resources/Pipeline/Properties/Stages/0/Actions/0/Configuration/OutputArtifactFormat
+  value: CODEBUILD_CLONE_REF
+
+# Add codestar permissions to codebuild role
+- op: add
+  path: /Resources/BuildProjectPolicy/Properties/PolicyDocument/Statement/-
+  value:
+    Effect: Allow
+    Action:
+      - codestar-connections:UseConnection
+    Resource:
+      - arn:aws:codestar-connections:eu-west-2:854321987474:connection/5affa613-6bb2-4a66-9f4f-75e4e054046d
