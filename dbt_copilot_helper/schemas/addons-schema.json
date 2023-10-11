@@ -338,6 +338,11 @@
             },
             "engine": {
                "$ref": "#/definitions/opensearch-engine-versions"
+            },
+            "volume_size": {
+               "type": "integer",
+               "minimum": 10,
+               "exclusiveMaximum": 512
             }
          },
          "additionalProperties": false
