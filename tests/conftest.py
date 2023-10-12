@@ -17,6 +17,7 @@ from moto.ec2 import utils as ec2_utils
 BASE_DIR = Path(__file__).parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
+UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
 
 
 # tell yaml to ignore CFN ! function prefixes
@@ -26,6 +27,7 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources")
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates")
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")

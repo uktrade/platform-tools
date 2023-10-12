@@ -70,8 +70,13 @@ class TestMakeAddonCommand:
         [
             (
                 "s3_addons.yml",
-                ["my-s3-bucket.yml"],
-                ["appconfig-ipfilter.yml", "my-s3-bucket.yml", "my-s3-bucket-bucket-access.yml"],
+                ["my-s3-bucket.yml", "my-s3-bucket-with-an-object.yml"],
+                [
+                    "appconfig-ipfilter.yml",
+                    "my-s3-bucket.yml",
+                    "my-s3-bucket-with-an-object.yml",
+                    "my-s3-bucket-bucket-access.yml",
+                ],
                 False,
             ),
             (
