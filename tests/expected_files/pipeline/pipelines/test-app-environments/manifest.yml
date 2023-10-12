@@ -2,7 +2,7 @@
 # For more info: https://aws.github.io/copilot-cli/docs/manifest/pipeline/
 
 # The name of the pipeline.
-name: my-app-environments
+name: test-app-environments
 
 # The version of the schema used in this template.
 version: 1
@@ -15,7 +15,7 @@ source:
   # Additional properties that further specify the location of the artifacts.
   properties:
     branch: main
-    repository: https://github.com/uktrade/copilot-tools
+    repository: https://github.com/uktrade/test-app.git
     # Optional: specify the name of an existing CodeStar Connections connection.
     connection_name: Digital-workspace
 

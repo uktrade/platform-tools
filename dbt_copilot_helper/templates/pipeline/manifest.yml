@@ -15,7 +15,7 @@ source:
   # Additional properties that further specify the location of the artifacts.
   properties:
     branch: main
-    repository: https://github.com/uktrade/copilot-tools
+    repository: {{ git_repo }}
     # Optional: specify the name of an existing CodeStar Connections connection.
     connection_name: Digital-workspace
 

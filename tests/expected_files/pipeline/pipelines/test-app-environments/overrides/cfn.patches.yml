@@ -16,4 +16,4 @@
     Action:
       - codestar-connections:UseConnection
     Resource:
-      - arn:aws:codestar-connections:eu-west-2:854321987474:connection/5affa613-6bb2-4a66-9f4f-75e4e054046d
+      - arn:aws:codestar-connections:eu-west-2:1234567:connection/blah613-blah-4a66-b4f-blahe054blah
