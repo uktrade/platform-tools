@@ -17,7 +17,7 @@ source:
     branch: main
     repository: https://github.com/uktrade/test-app.git
     # Optional: specify the name of an existing CodeStar Connections connection.
-    connection_name: Digital-workspace
+    connection_name: Test-application
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:

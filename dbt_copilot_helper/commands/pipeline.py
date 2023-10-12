@@ -21,8 +21,9 @@ def pipeline():
 
 
 @pipeline.command()
+@click.option("-c", "--codestar-connection", type=str)
 @click.option("-d", "--directory", type=str, default=".")
-def generate(directory="."):
+def generate(codestar_connection, directory="."):
     templates = setup_templates()
     config = load_and_validate_config("bootstrap.yml")
 
@@ -42,6 +43,7 @@ def generate(directory="."):
     template_data = {
         "app": config["app"],
         "git_repo": http_repo,
+        "codestar_connection_name": codestar_connection,
     }
 
     contents = templates.get_template("pipeline/buildspec.yml").render(template_data)

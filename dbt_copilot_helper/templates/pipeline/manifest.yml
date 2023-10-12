@@ -17,7 +17,7 @@ source:
     branch: main
     repository: {{ git_repo }}
     # Optional: specify the name of an existing CodeStar Connections connection.
-    connection_name: Digital-workspace
+    connection_name: {{ codestar_connection_name }}
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:

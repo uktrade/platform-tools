@@ -10,7 +10,7 @@ from tests.conftest import EXPECTED_FILES_DIR
 from tests.conftest import FIXTURES_DIR
 
 
-def test_pipeline_generate_with_no_args_creates_the_pipeline_configuration(tmp_path):
+def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(tmp_path):
     """"""
     os.chdir(tmp_path)
     shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
@@ -18,7 +18,7 @@ def test_pipeline_generate_with_no_args_creates_the_pipeline_configuration(tmp_p
     subprocess.run(["git", "init"])
     subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
-    CliRunner().invoke(generate)
+    CliRunner().invoke(generate, ["--codestar-connection", "Test-application"])
 
     output_dir = tmp_path / "copilot" / "pipelines" / "test-app-environments"
     buildspec = output_dir / "buildspec.yml"
@@ -37,3 +37,11 @@ def test_pipeline_generate_with_no_args_creates_the_pipeline_configuration(tmp_p
     assert buildspec.read_text() == exp_buildspec
     assert manifest.read_text() == exp_manifest
     # assert cfn_patch.read_text() == exp_cfn_patch
+
+
+def test_pipeline_generate_with_http_repo_creates_the_pipeline_configuration(tmp_path):
+    pass
+
+
+def test_pipeline_generate_with_no_repo_fails_with_a_message(tmp_path):
+    pass
