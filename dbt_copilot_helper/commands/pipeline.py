@@ -11,6 +11,7 @@ from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.files import PIPELINES_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
@@ -29,17 +30,18 @@ def generate(directory="."):
     templates = setup_templates()
     app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
     app_name = app_config["app"]
-    pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
+    try:
+        pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
+    except FileNotFoundError:
+        abort_with_error("There is no pipelines.yml")
 
     git_repo = get_git_remote()
     if not git_repo:
-        click.secho("Error: The current directory is not a git repository", fg="red")
-        exit(1)
+        abort_with_error("The current directory is not a git repository")
 
     codestar_connection_arn = get_codestar_connection_arn(app_name)
     if codestar_connection_arn is None:
-        click.secho("Error: There is no CodeStar Connection to use", fg="red")
-        exit(1)
+        abort_with_error("There is no CodeStar Connection to use")
 
     base_path = Path(directory)
     pipelines_environments_dir = base_path / f"copilot/pipelines/{ app_config['app'] }-environments"

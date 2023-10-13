@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
+from _pytest.fixtures import fixture
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.pipeline import generate
@@ -14,10 +15,9 @@ from tests.conftest import mock_codestar_connections_boto_client
 
 @patch("boto3.client")
 def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
-    mocked_boto3_client, tmp_path
+    mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
-    switch_to_tmp_dir_and_copy_fixtures(tmp_path)
     setup_git_respository()
     buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
 
@@ -33,10 +33,9 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
 @patch("boto3.client")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_message(
-    mocked_boto3_client, tmp_path
+    mocked_boto3_client, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, [])
-    switch_to_tmp_dir_and_copy_fixtures(tmp_path)
     setup_git_respository()
 
     result = CliRunner().invoke(generate)
@@ -45,23 +44,30 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_messag
     assert "Error: There is no CodeStar Connection to use" in result.output
 
 
-def test_pipeline_generate_with_no_repo_fails_with_a_message(tmp_path):
-    switch_to_tmp_dir_and_copy_fixtures(tmp_path)
-
+def test_pipeline_generate_with_no_repo_fails_with_a_message(switch_to_tmp_dir_and_copy_fixtures):
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
     assert "Error: The current directory is not a git repository" in result.output
 
 
-def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(tmp_path):
-    switch_to_tmp_dir_and_copy_fixtures(tmp_path)
+def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(
+    switch_to_tmp_dir_and_copy_fixtures,
+):
     os.remove("pipelines.yml")
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
     assert "Error: There is no pipelines.yml" in result.output
+
+
+def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(tmp_path):
+    pass
+
+
+def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(tmp_path):
+    pass
 
 
 def assert_file_created_in_stdout(output_file, result, tmp_path):
@@ -86,7 +92,10 @@ def setup_git_respository():
     subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
 
+@fixture
 def switch_to_tmp_dir_and_copy_fixtures(tmp_path):
     os.chdir(tmp_path)
     shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
     shutil.copy(FIXTURES_DIR / "pipeline/pipelines.yml", "pipelines.yml")
+
+    return tmp_path
