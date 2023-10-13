@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import boto3
 import pytest
 from moto import mock_ssm
@@ -216,3 +218,26 @@ def test_set_ssm_param_tags_with_existing_secret():
             "TagList"
         ]
     )
+
+
+@patch("boto3.client")
+def test_get_codestar_connection_arn(mocked_client):
+    app_name = "test-app-name"
+    arn = "arn:aws:codestar-connections:eu-west-2:1234567:connection/blah613-blah-4a66-b4f-blahe054blah"
+    mocked_client.list_connections.return_value = {
+        "Connections": [
+            {
+                "ConnectionName": app_name,
+                "ConnectionArn": arn,
+                "ProviderType": "GitHub",
+                "OwnerAccountId": "not-interesting",
+                "ConnectionStatus": "AVAILABLE",
+                "HostArn": "not-interesting",
+            },
+        ],
+        "NextToken": "not-interesting",
+    }
+
+    result = get_codestar_connection_arn(app_name)
+
+    assert result == arn
