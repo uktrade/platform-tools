@@ -71,7 +71,7 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: There is no pipelines.yml" in result.output
+    assert "Error: The pipelines.yml file is invalid" in result.output
 
 
 def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(tmp_path):

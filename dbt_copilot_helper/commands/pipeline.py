@@ -4,6 +4,7 @@ from os import makedirs
 from pathlib import Path
 
 import click
+from yaml.parser import ParserError
 
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
@@ -34,6 +35,8 @@ def generate(directory="."):
         pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
     except FileNotFoundError:
         abort_with_error("There is no pipelines.yml")
+    except ParserError:
+        abort_with_error("The pipelines.yml file is invalid")
 
     git_repo = get_git_remote()
     if not git_repo:
