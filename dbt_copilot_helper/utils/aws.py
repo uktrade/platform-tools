@@ -166,4 +166,9 @@ def check_response(response):
 
 
 def get_codestar_connection_arn(app_name):
-    return "arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name"
+    client = boto3.client("codestar-connections")
+    response = client.list_connections()
+
+    for connection in response["Connections"]:
+        if connection["ConnectionName"] == app_name:
+            return connection["ConnectionArn"]

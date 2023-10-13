@@ -255,6 +255,7 @@ def mock_connection_response(app_name):
     ],
 )
 def test_get_codestar_connection_arn(mocked_client, connection_names, app_name, expected_arn):
+    mocked_client.return_value = mocked_client
     mocked_client.list_connections.return_value = {
         "Connections": [mock_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
