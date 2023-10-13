@@ -62,8 +62,16 @@ def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(
     assert "Error: There is no pipelines.yml" in result.output
 
 
-def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(tmp_path):
-    pass
+def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
+    switch_to_tmp_dir_and_copy_fixtures,
+):
+    with open("pipelines.yml", "w") as fh:
+        print("{invalid data", file=fh)
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert "Error: There is no pipelines.yml" in result.output
 
 
 def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(tmp_path):
