@@ -36,19 +36,14 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_message(
     mocked_boto3_client, tmp_path
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(mocked_boto3_client, [])
     switch_to_tmp_dir_and_copy_fixtures(tmp_path)
     setup_git_respository()
-    buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
 
     result = CliRunner().invoke(generate)
 
-    assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
-    assert_output_file_contents_match_expected(manifest, "manifest.yml")
-    assert_output_file_contents_match_expected(cfn_patch, "overrides/cfn.patches.yml")
-    assert_file_created_in_stdout(buildspec, result, tmp_path)
-    assert_file_created_in_stdout(manifest, result, tmp_path)
-    assert_file_created_in_stdout(cfn_patch, result, tmp_path)
+    assert result.exit_code == 1
+    assert "Error: There is no CodeStar Connection to use" in result.output
 
 
 def assert_file_created_in_stdout(output_file, result, tmp_path):
