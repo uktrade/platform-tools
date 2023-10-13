@@ -50,16 +50,15 @@ def generate(directory="."):
     }
 
     contents = templates.get_template("pipeline/buildspec.yml").render(template_data)
-    # click.echo(
-    mkfile(base_path, pipelines_environments_dir / "buildspec.yml", contents)
+    click.echo(mkfile(base_path, pipelines_environments_dir / "buildspec.yml", contents))
 
     contents = templates.get_template("pipeline/manifest.yml").render(template_data)
-    # click.echo(
-    mkfile(base_path, pipelines_environments_dir / "manifest.yml", contents)
+    click.echo(mkfile(base_path, pipelines_environments_dir / "manifest.yml", contents))
 
     contents = templates.get_template("pipeline/overrides/cfn.patches.yml").render(template_data)
-    # click.echo(
-    mkfile(base_path, pipelines_environments_dir / "overrides/cfn.patches.yml", contents)
+    click.echo(
+        mkfile(base_path, pipelines_environments_dir / "overrides/cfn.patches.yml", contents)
+    )
 
 
 def get_git_remote():
