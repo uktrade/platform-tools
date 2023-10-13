@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from unittest import skip
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -46,6 +45,15 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_messag
     assert "Error: There is no CodeStar Connection to use" in result.output
 
 
+def test_pipeline_generate_with_no_repo_fails_with_a_message(tmp_path):
+    switch_to_tmp_dir_and_copy_fixtures(tmp_path)
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert "Error: The current directory is not a git repository" in result.output
+
+
 def assert_file_created_in_stdout(output_file, result, tmp_path):
     assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
 
@@ -72,13 +80,3 @@ def switch_to_tmp_dir_and_copy_fixtures(tmp_path):
     os.chdir(tmp_path)
     shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
     shutil.copy(FIXTURES_DIR / "pipeline/pipelines.yml", "pipelines.yml")
-
-
-@skip
-def test_pipeline_generate_with_http_repo_creates_the_pipeline_configuration(tmp_path):
-    pass
-
-
-@skip
-def test_pipeline_generate_with_no_repo_fails_with_a_message(tmp_path):
-    pass

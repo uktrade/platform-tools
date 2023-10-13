@@ -28,6 +28,11 @@ def generate(directory="."):
     config = load_and_validate_config("bootstrap.yml")
     app_name = config["app"]
 
+    git_repo = get_git_remote()
+    if not git_repo:
+        click.secho("Error: The current directory is not a git repository", fg="red")
+        exit(1)
+
     codestar_connection_arn = get_codestar_connection_arn(app_name)
     if codestar_connection_arn is None:
         click.secho("Error: There is no CodeStar Connection to use", fg="red")
@@ -39,16 +44,9 @@ def generate(directory="."):
 
     makedirs(overrides_dir)
 
-    git_repo = get_git_remote()
-    # git@github.com:uktrade/test-app.git
-    # https://github.com/uktrade/test-app.git
-
-    domain, repo = git_repo.split("@")[1].split(":")
-    http_repo = f"https://{domain}/{repo}"
-
     template_data = {
         "app_name": app_name,
-        "git_repo": http_repo,
+        "git_repo": git_repo,
         "codestar_connection_arn": codestar_connection_arn,
     }
 
@@ -65,6 +63,13 @@ def generate(directory="."):
 
 
 def get_git_remote():
-    return subprocess.run(
+    git_repo = subprocess.run(
         ["git", "remote", "get-url", "origin"], capture_output=True, text=True
     ).stdout.strip()
+
+    if not git_repo:
+        return
+
+    domain, repo = git_repo.split("@")[1].split(":")
+
+    return f"https://{domain}/{repo}"
