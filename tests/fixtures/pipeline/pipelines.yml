@@ -1,5 +1,4 @@
 environments:
   - name: dev
-  - name: staging
-  - name: training
+  - name: prod
     requires_approval: true

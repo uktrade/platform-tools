@@ -32,28 +32,3 @@ stages:
     # requires_approval: true
     # Optional: use test commands to validate this stage of your build.
     # test_commands: [echo 'running tests', make test]
-
-  - # The name of the environment.
-    name: staging
-    deployments:
-      deploy-env:
-        template_path: infrastructure/staging.env.yml
-        template_config: infrastructure/staging.env.params.json
-        stack_name: intranet-staging
-    # Optional: flag for manual approval action before deployment.
-    # requires_approval: true
-    # Optional: use test commands to validate this stage of your build.
-    # test_commands: [echo 'running tests', make test]
-
-  - # The name of the environment.
-    name: training
-    deployments:
-      deploy-env:
-        template_path: infrastructure/training.env.yml
-        template_config: infrastructure/training.env.params.json
-        stack_name: intranet-training
-    # Optional: flag for manual approval action before deployment.
-    requires_approval: true
-    # Optional: use test commands to validate this stage of your build.
-    # test_commands: [echo 'running tests', make test]
-

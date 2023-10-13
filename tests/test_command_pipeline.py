@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.pipeline import generate
@@ -52,6 +53,11 @@ def test_pipeline_generate_with_no_repo_fails_with_a_message(tmp_path):
 
     assert result.exit_code == 1
     assert "Error: The current directory is not a git repository" in result.output
+
+
+@pytest.mark.skip
+def test_pipeline_generate_with_no_pipeline_yml_fails_with_message():
+    pass
 
 
 def assert_file_created_in_stdout(output_file, result, tmp_path):
