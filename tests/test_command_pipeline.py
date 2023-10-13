@@ -47,7 +47,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_messag
 
 
 def assert_file_created_in_stdout(output_file, result, tmp_path):
-    assert f"File {os.path.relpath(output_file, tmp_path)} created" in result.stdout
+    assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
 
 
 def assert_output_file_contents_match_expected(output_file, expected_file):
