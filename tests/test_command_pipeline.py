@@ -10,6 +10,22 @@ from tests.conftest import EXPECTED_FILES_DIR
 from tests.conftest import FIXTURES_DIR
 
 
+def codestar_connection_output():
+    return """
+    {
+    "Connections": [
+        {
+            "ConnectionName": "Test-application",
+            "ConnectionArn": "arn:aws:codestar-connections:eu-west-2:123456789474:connection/blaha613-blah-blah-9f4f-blaheblah46d",
+            "ProviderType": "GitHub",
+            "OwnerAccountId": "123456789474",
+            "ConnectionStatus": "AVAILABLE"
+        }
+    ]
+}
+"""
+
+
 def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(tmp_path):
     """"""
     os.chdir(tmp_path)
@@ -32,11 +48,11 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(tmp_
     exp_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
     exp_buildspec = (exp_files_dir / "buildspec.yml").read_text()
     exp_manifest = (exp_files_dir / "manifest.yml").read_text()
-    (exp_files_dir / "overrides" / "cfn.patches.yml").read_text()
+    exp_cfn_patch = (exp_files_dir / "overrides" / "cfn.patches.yml").read_text()
 
     assert buildspec.read_text() == exp_buildspec
     assert manifest.read_text() == exp_manifest
-    # assert cfn_patch.read_text() == exp_cfn_patch
+    assert cfn_patch.read_text() == exp_cfn_patch
 
 
 def test_pipeline_generate_with_http_repo_creates_the_pipeline_configuration(tmp_path):
