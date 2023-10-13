@@ -252,6 +252,13 @@ def mock_connection_response(app_name):
             "test-app-name-2",
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name-2",
         ],
+        [
+            [
+                "test-app-name",
+            ],
+            "test-app-name-2",
+            None,
+        ],
     ],
 )
 def test_get_codestar_connection_arn(mocked_client, connection_names, app_name, expected_arn):
