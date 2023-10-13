@@ -6,6 +6,7 @@ from moto import mock_ssm
 
 from dbt_copilot_helper.exceptions import ValidationException
 from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 
@@ -220,24 +221,45 @@ def test_set_ssm_param_tags_with_existing_secret():
     )
 
 
+def mock_connection_response(app_name):
+    return {
+        "ConnectionName": app_name,
+        "ConnectionArn": f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}",
+        "ProviderType": "GitHub",
+        "OwnerAccountId": "not-interesting",
+        "ConnectionStatus": "AVAILABLE",
+        "HostArn": "not-interesting",
+    }
+
+
 @patch("boto3.client")
-def test_get_codestar_connection_arn(mocked_client):
-    app_name = "test-app-name"
-    arn = "arn:aws:codestar-connections:eu-west-2:1234567:connection/blah613-blah-4a66-b4f-blahe054blah"
-    mocked_client.list_connections.return_value = {
-        "Connections": [
-            {
-                "ConnectionName": app_name,
-                "ConnectionArn": arn,
-                "ProviderType": "GitHub",
-                "OwnerAccountId": "not-interesting",
-                "ConnectionStatus": "AVAILABLE",
-                "HostArn": "not-interesting",
-            },
+@pytest.mark.parametrize(
+    "connection_names, app_name, expected_arn",
+    [
+        [
+            [
+                "test-app-name",
+            ],
+            "test-app-name",
+            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name",
         ],
+        [
+            [
+                "test-app-name-1",
+                "test-app-name-2",
+                "test-app-name-3",
+            ],
+            "test-app-name-2",
+            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name-2",
+        ],
+    ],
+)
+def test_get_codestar_connection_arn(mocked_client, connection_names, app_name, expected_arn):
+    mocked_client.list_connections.return_value = {
+        "Connections": [mock_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
     }
 
     result = get_codestar_connection_arn(app_name)
 
-    assert result == arn
+    assert result == expected_arn

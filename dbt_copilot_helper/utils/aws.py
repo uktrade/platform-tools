@@ -163,3 +163,7 @@ def check_response(response):
             fg="red",
         )
         exit()
+
+
+def get_codestar_connection_arn(app_name):
+    return "arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name"
