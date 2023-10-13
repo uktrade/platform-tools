@@ -29,6 +29,9 @@ def generate(directory="."):
     app_name = config["app"]
 
     codestar_connection_arn = get_codestar_connection_arn(app_name)
+    if codestar_connection_arn is None:
+        click.secho("Error: There is no CodeStar Connection to use", fg="red")
+        exit(1)
 
     base_path = Path(directory)
     pipelines_environments_dir = base_path / f"copilot/pipelines/{ config['app'] }-environments"
