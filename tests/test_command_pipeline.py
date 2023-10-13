@@ -2,39 +2,29 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.pipeline import generate
 from tests.conftest import EXPECTED_FILES_DIR
 from tests.conftest import FIXTURES_DIR
+from tests.conftest import mock_codestar_connections_boto_client
 
 
-def codestar_connection_output():
-    return """
-    {
-    "Connections": [
-        {
-            "ConnectionName": "Test-application",
-            "ConnectionArn": "arn:aws:codestar-connections:eu-west-2:123456789474:connection/blaha613-blah-blah-9f4f-blaheblah46d",
-            "ProviderType": "GitHub",
-            "OwnerAccountId": "123456789474",
-            "ConnectionStatus": "AVAILABLE"
-        }
-    ]
-}
-"""
+@patch("boto3.client")
+def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
+    mocked_boto3_client, tmp_path
+):
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
 
-
-def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(tmp_path):
-    """"""
     os.chdir(tmp_path)
     shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
     shutil.copy(FIXTURES_DIR / "pipeline/pipelines.yml", "pipelines.yml")
     subprocess.run(["git", "init"])
     subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
-    CliRunner().invoke(generate, ["--codestar-connection", "Test-application"])
+    CliRunner().invoke(generate)
 
     output_dir = tmp_path / "copilot" / "pipelines" / "test-app-environments"
     buildspec = output_dir / "buildspec.yml"

@@ -20,7 +20,6 @@ FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
 EXPECTED_FILES_DIR = BASE_DIR / "tests" / "expected_files"
 UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
 
-
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)
 
@@ -191,3 +190,22 @@ def mock_tool_versions():
                 "dbt_copilot_helper.utils.versioning.get_copilot_versions"
             ) as get_copilot_versions:
                 yield get_app_versions, get_aws_versions, get_copilot_versions
+
+
+def mock_codestar_connection_response(app_name):
+    return {
+        "ConnectionName": app_name,
+        "ConnectionArn": f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}",
+        "ProviderType": "GitHub",
+        "OwnerAccountId": "not-interesting",
+        "ConnectionStatus": "AVAILABLE",
+        "HostArn": "not-interesting",
+    }
+
+
+def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names):
+    mocked_boto3_client.return_value = mocked_boto3_client
+    mocked_boto3_client.list_connections.return_value = {
+        "Connections": [mock_codestar_connection_response(name) for name in connection_names],
+        "NextToken": "not-interesting",
+    }

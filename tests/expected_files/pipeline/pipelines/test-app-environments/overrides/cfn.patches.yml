@@ -16,4 +16,4 @@
     Action:
       - codestar-connections:UseConnection
     Resource:
-      - arn:aws:codestar-connections:eu-west-2:1234567:connection/blah613-blah-4a66-b4f-blahe054blah
+      - arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app

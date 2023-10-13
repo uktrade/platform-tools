@@ -2,7 +2,7 @@
 # For more info: https://aws.github.io/copilot-cli/docs/manifest/pipeline/
 
 # The name of the pipeline.
-name: {{ app }}-environments
+name: {{ app_name }}-environments
 
 # The version of the schema used in this template.
 version: 1
@@ -17,7 +17,7 @@ source:
     branch: main
     repository: {{ git_repo }}
     # Optional: specify the name of an existing CodeStar Connections connection.
-    connection_name: {{ codestar_connection_name }}
+    connection_name: {{ app_name }}
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:

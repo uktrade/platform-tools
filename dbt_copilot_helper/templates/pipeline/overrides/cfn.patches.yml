@@ -16,4 +16,4 @@
     Action:
       - codestar-connections:UseConnection
     Resource:
-      - {{ codestar_connection }}
+      - {{ codestar_connection_arn }}

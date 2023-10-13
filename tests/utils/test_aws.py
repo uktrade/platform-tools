@@ -9,6 +9,7 @@ from dbt_copilot_helper.utils.aws import check_aws_conn
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
+from tests.conftest import mock_codestar_connections_boto_client
 
 
 def test_check_aws_conn_profile_not_configured(capsys):
@@ -221,17 +222,6 @@ def test_set_ssm_param_tags_with_existing_secret():
     )
 
 
-def mock_connection_response(app_name):
-    return {
-        "ConnectionName": app_name,
-        "ConnectionArn": f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}",
-        "ProviderType": "GitHub",
-        "OwnerAccountId": "not-interesting",
-        "ConnectionStatus": "AVAILABLE",
-        "HostArn": "not-interesting",
-    }
-
-
 @patch("boto3.client")
 @pytest.mark.parametrize(
     "connection_names, app_name, expected_arn",
@@ -261,12 +251,8 @@ def mock_connection_response(app_name):
         ],
     ],
 )
-def test_get_codestar_connection_arn(mocked_client, connection_names, app_name, expected_arn):
-    mocked_client.return_value = mocked_client
-    mocked_client.list_connections.return_value = {
-        "Connections": [mock_connection_response(name) for name in connection_names],
-        "NextToken": "not-interesting",
-    }
+def test_get_codestar_connection_arn(mocked_boto3_client, connection_names, app_name, expected_arn):
+    mock_codestar_connections_boto_client(mocked_boto3_client, connection_names)
 
     result = get_codestar_connection_arn(app_name)
 
