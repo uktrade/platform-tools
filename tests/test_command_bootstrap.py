@@ -20,6 +20,7 @@ from dbt_copilot_helper.commands.bootstrap import get_paas_env_vars
 from dbt_copilot_helper.commands.bootstrap import make_config
 from dbt_copilot_helper.commands.bootstrap import migrate_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
+from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from tests.conftest import FIXTURES_DIR
 from tests.conftest import TEST_APP_DIR
@@ -70,7 +71,7 @@ def test_load_and_validate_config_invalid_file():
     path = FIXTURES_DIR / "invalid_bootstrap_config.yml"
 
     with pytest.raises(SchemaError) as err:
-        load_and_validate_config(path)
+        load_and_validate_config(path, BOOTSTRAP_SCHEMA)
 
     assert (
         err.value.args[0]

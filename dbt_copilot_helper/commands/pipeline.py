@@ -7,6 +7,8 @@ import click
 
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
+from dbt_copilot_helper.utils.files import PIPELINES_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import setup_templates
@@ -25,8 +27,9 @@ def pipeline():
 @click.option("-d", "--directory", type=str, default=".")
 def generate(directory="."):
     templates = setup_templates()
-    config = load_and_validate_config("bootstrap.yml")
-    app_name = config["app"]
+    app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
+    app_name = app_config["app"]
+    pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
 
     git_repo = get_git_remote()
     if not git_repo:
@@ -39,7 +42,7 @@ def generate(directory="."):
         exit(1)
 
     base_path = Path(directory)
-    pipelines_environments_dir = base_path / f"copilot/pipelines/{ config['app'] }-environments"
+    pipelines_environments_dir = base_path / f"copilot/pipelines/{ app_config['app'] }-environments"
     overrides_dir = pipelines_environments_dir / "overrides"
 
     makedirs(overrides_dir)
@@ -48,6 +51,7 @@ def generate(directory="."):
         "app_name": app_name,
         "git_repo": git_repo,
         "codestar_connection_arn": codestar_connection_arn,
+        "pipeline_environments": pipeline_environments["environments"],
     }
 
     contents = templates.get_template("pipeline/buildspec.yml").render(template_data)

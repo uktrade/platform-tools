@@ -21,14 +21,17 @@ source:
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
+  {% for environment in pipeline_environments -%}
   - # The name of the environment.
-    name: dev
+    name: {{ environment.name }}
     deployments:
       deploy-env:
-        template_path: infrastructure/dev.env.yml
-        template_config: infrastructure/dev.env.params.json
-        stack_name: intranet-dev
+        template_path: infrastructure/{{ environment.name }}.env.yml
+        template_config: infrastructure/{{ environment.name }}.env.params.json
+        stack_name: {{ app_name }}-{{ environment.name }}
     # Optional: flag for manual approval action before deployment.
-    # requires_approval: true
+    {% if not environment.requires_approval %}# {% endif %}requires_approval: true
     # Optional: use test commands to validate this stage of your build.
     # test_commands: [echo 'running tests', make test]
+
+  {% endfor %}

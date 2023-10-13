@@ -66,7 +66,7 @@ def assert_file_created_in_stdout(output_file, result, tmp_path):
 
 def assert_output_file_contents_match_expected(output_file, expected_file):
     exp_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
-    assert output_file.read_text() == (exp_files_dir / expected_file).read_text()
+    assert output_file.read_text().rstrip() == (exp_files_dir / expected_file).read_text().rstrip()
 
 
 def setup_output_file_paths(tmp_path):

@@ -27,7 +27,7 @@ stages:
       deploy-env:
         template_path: infrastructure/dev.env.yml
         template_config: infrastructure/dev.env.params.json
-        stack_name: intranet-dev
+        stack_name: test-app-dev
     # Optional: flag for manual approval action before deployment.
     # requires_approval: true
     # Optional: use test commands to validate this stage of your build.
@@ -37,11 +37,12 @@ stages:
     name: prod
     deployments:
       deploy-env:
-        template_path: infrastructure/prod
-        template_config: infrastructure/prod
-        stack_name: intranet-prod
+        template_path: infrastructure/prod.env.yml
+        template_config: infrastructure/prod.env.params.json
+        stack_name: test-app-prod
     # Optional: flag for manual approval action before deployment.
     requires_approval: true
     # Optional: use test commands to validate this stage of your build.
     # test_commands: [echo 'running tests', make test]
+
 

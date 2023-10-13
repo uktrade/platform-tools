@@ -11,7 +11,7 @@ from dbt_copilot_helper.utils.validation import validate_string
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
 
-config_schema = Schema(
+BOOTSTRAP_SCHEMA = Schema(
     {
         "app": str,
         "environments": {str: {Optional("certificate_arns"): [str]}},
@@ -35,7 +35,8 @@ config_schema = Schema(
                         Optional("memory"): int,
                         Optional("count"): Or(
                             int,
-                            {  # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+                            {
+                                # https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
                                 "range": range_validator,  # e.g. 1-10
                                 Optional("cooldown"): {
                                     "in": seconds_validator,  # e.g 30s
@@ -90,13 +91,22 @@ config_schema = Schema(
     },
 )
 
+PIPELINES_SCHEMA = Schema(
+    {
+        "environments": [
+            {
+                "name": str,
+                Optional("requires_approval"): bool,
+            },
+        ],
+    },
+)
 
-def load_and_validate_config(path):
+
+def load_and_validate_config(path, schema):
     with open(path, "r") as fd:
         conf = yaml.safe_load(fd)
 
-    # validate the file
-    schema = Schema(config_schema)
     schema.validate(conf)
 
     return conf

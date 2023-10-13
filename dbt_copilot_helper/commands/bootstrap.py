@@ -13,6 +13,7 @@ from dbt_copilot_helper.utils.aws import get_ssm_secret_names
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
@@ -57,7 +58,7 @@ def make_config(directory="."):
     """Generate Copilot boilerplate code."""
 
     base_path = Path(directory)
-    config = load_and_validate_config("bootstrap.yml")
+    config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
 
     templates = setup_templates()
     templates.filters["to_yaml"] = to_yaml
@@ -141,7 +142,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 
     cf_client = CloudFoundryClient.build_from_cf_config()
     config_file = "bootstrap.yml"
-    config = load_and_validate_config(config_file)
+    config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
 
     if env and env not in config["environments"].keys():
         raise click.ClickException(f"{env} is not an environment in {config_file}")
@@ -239,7 +240,7 @@ def copy_secrets(project_profile, source_environment, target_environment):
         exit(1)
 
     config_file = "bootstrap.yml"
-    config = load_and_validate_config(config_file)
+    config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
     secrets = get_ssm_secrets(config["app"], source_environment)
 
     for secret in secrets:
