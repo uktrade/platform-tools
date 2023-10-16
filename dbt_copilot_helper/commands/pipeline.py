@@ -32,6 +32,8 @@ def generate(directory="."):
 
     try:
         app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
+    except FileNotFoundError:
+        abort_with_error("There is no bootstrap.yml")
     except ParserError:
         abort_with_error("The bootstrap.yml file is invalid")
     app_name = app_config["app"]
