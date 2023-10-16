@@ -116,14 +116,6 @@ def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
 
 
-def mkdir(base_path, directory_path):
-    if (base_path / directory_path).exists():
-        return f"Directory {directory_path} exists; doing nothing"
-
-    (base_path / directory_path).mkdir(parents=True)
-    return f"Directory {directory_path} created"
-
-
 def mkfile(base_path, file_path, contents, overwrite=False):
     file_exists = (base_path / file_path).exists()
 

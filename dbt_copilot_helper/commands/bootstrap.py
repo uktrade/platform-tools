@@ -15,7 +15,6 @@ from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
-from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.files import to_yaml
 from dbt_copilot_helper.utils.template import setup_templates
@@ -66,18 +65,18 @@ def make_config(directory="."):
     click.echo(">>> Generating Copilot configuration files\n")
 
     # create copilot directory
-    mkdir(base_path, "copilot")
+    (base_path / "copilot").mkdir(parents=True, exist_ok=True)
 
     # create copilot/.workspace file
     contents = f"application: {config['app']}"
     click.echo(mkfile(base_path, "copilot/.workspace", contents))
 
     # create copilot/environments directory
-    mkdir(base_path, "copilot/environments")
+    (base_path / "copilot/environments").mkdir(parents=True, exist_ok=True)
 
     # create each environment directory and manifest.yml
     for name, env in config["environments"].items():
-        mkdir(base_path, f"copilot/environments/{name}")
+        (base_path / f"copilot/environments/{name}").mkdir(parents=True, exist_ok=True)
         contents = templates.get_template("env/manifest.yml").render(
             {
                 "name": name,
@@ -92,7 +91,7 @@ def make_config(directory="."):
             env.get("ipfilter", False) for _, env in service["environments"].items()
         )
         name = service["name"]
-        mkdir(base_path, f"copilot/{name}/addons/")
+        (base_path / f"copilot/{name}/addons/").mkdir(parents=True, exist_ok=True)
 
         if "secrets_from" in service:
             # Copy secrets from the app referred to in the "secrets_from" key
