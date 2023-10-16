@@ -39,9 +39,9 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
     setup_git_respository()
     buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
     for path in [buildspec, cfn_patch, manifest]:
-        os.makedirs(path.parent)
+        os.makedirs(path.parent, exist_ok=True)
         with open(path, "w") as fh:
-            print("", file=fh)
+            print("Pre-existing file contents", file=fh)
 
     CliRunner().invoke(generate)
 

@@ -47,7 +47,7 @@ def generate(directory="."):
     pipelines_environments_dir = base_path / f"copilot/pipelines/{ app_config['app'] }-environments"
     overrides_dir = pipelines_environments_dir / "overrides"
 
-    makedirs(overrides_dir)
+    makedirs(overrides_dir, exist_ok=True)
 
     template_data = {
         "app_name": app_name,
@@ -57,14 +57,23 @@ def generate(directory="."):
     }
 
     contents = templates.get_template("pipeline/buildspec.yml").render(template_data)
-    click.echo(mkfile(base_path, pipelines_environments_dir / "buildspec.yml", contents))
+    click.echo(
+        mkfile(base_path, pipelines_environments_dir / "buildspec.yml", contents, overwrite=True)
+    )
 
     contents = templates.get_template("pipeline/manifest.yml").render(template_data)
-    click.echo(mkfile(base_path, pipelines_environments_dir / "manifest.yml", contents))
+    click.echo(
+        mkfile(base_path, pipelines_environments_dir / "manifest.yml", contents, overwrite=True)
+    )
 
     contents = templates.get_template("pipeline/overrides/cfn.patches.yml").render(template_data)
     click.echo(
-        mkfile(base_path, pipelines_environments_dir / "overrides/cfn.patches.yml", contents)
+        mkfile(
+            base_path,
+            pipelines_environments_dir / "overrides/cfn.patches.yml",
+            contents,
+            overwrite=True,
+        )
     )
 
 

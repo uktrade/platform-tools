@@ -124,13 +124,14 @@ def mkdir(base, path):
     return f"Directory {path} created"
 
 
+# Todo: Add tests for this method...
 def mkfile(base, path, contents, overwrite=False):
     file_exists = (base / path).exists()
 
     if file_exists and not overwrite:
         return f"File {path} exists; doing nothing"
 
-    action = "overwritten" if overwrite else "created"
+    action = "overwritten" if file_exists and overwrite else "created"
 
     with open(base / path, "w") as fd:
         fd.write(contents)
