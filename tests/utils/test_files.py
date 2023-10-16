@@ -42,14 +42,20 @@ def test_mkfile_creates_or_overrides_the_file(tmp_path, file_exists, overwrite, 
     if file_exists:
         file_path.touch()
 
-    content = "The content"
+    contents = "The content"
 
-    message = mkfile(tmp_path, filename, content, overwrite)
+    message = mkfile(tmp_path, filename, contents, overwrite)
 
     assert file_path.exists()
-    assert file_path.read_text() == content
+    assert file_path.read_text() == contents
     assert message == expected
 
 
-def test_mkfile_fails_with_exception_if_file_already_exists_but_override_is_false(tmp_path):
-    pass
+def test_mkfile_does_nothing_if_file_already_exists_but_override_is_false(tmp_path):
+    filename = "test_file.txt"
+    file_path = tmp_path / filename
+    file_path.touch()
+
+    message = mkfile(tmp_path, filename, contents="does not matter", overwrite=False)
+
+    assert message == f"File {filename} exists; doing nothing"

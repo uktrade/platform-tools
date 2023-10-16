@@ -116,27 +116,26 @@ def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
 
 
-def mkdir(base, path):
-    if (base / path).exists():
-        return f"Directory {path} exists; doing nothing"
+def mkdir(base_path, directory_path):
+    if (base_path / directory_path).exists():
+        return f"Directory {directory_path} exists; doing nothing"
 
-    (base / path).mkdir(parents=True)
-    return f"Directory {path} created"
+    (base_path / directory_path).mkdir(parents=True)
+    return f"Directory {directory_path} created"
 
 
-# Todo: Add tests for this method...
-def mkfile(base, path, contents, overwrite=False):
-    file_exists = (base / path).exists()
+def mkfile(base_path, file_path, contents, overwrite=False):
+    file_exists = (base_path / file_path).exists()
 
     if file_exists and not overwrite:
-        return f"File {path} exists; doing nothing"
+        return f"File {file_path} exists; doing nothing"
 
     action = "overwritten" if file_exists and overwrite else "created"
 
-    with open(base / path, "w") as fd:
+    with open(base_path / file_path, "w") as fd:
         fd.write(contents)
 
-    return f"File {path} {action}"
+    return f"File {file_path} {action}"
 
 
 def ensure_cwd_is_repo_root():
