@@ -29,8 +29,13 @@ def pipeline():
 @click.option("-d", "--directory", type=str, default=".")
 def generate(directory="."):
     templates = setup_templates()
-    app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
+
+    try:
+        app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
+    except ParserError:
+        abort_with_error("The bootstrap.yml file is invalid")
     app_name = app_config["app"]
+
     try:
         pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
     except FileNotFoundError:

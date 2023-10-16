@@ -32,7 +32,7 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
 
 @patch("boto3.client")
-def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_message(
+def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     mocked_boto3_client, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, [])
@@ -44,7 +44,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_failure_messag
     assert "Error: There is no CodeStar Connection to use" in result.output
 
 
-def test_pipeline_generate_with_no_repo_fails_with_a_message(switch_to_tmp_dir_and_copy_fixtures):
+def test_pipeline_generate_with_no_repo_fails_with_message(switch_to_tmp_dir_and_copy_fixtures):
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
@@ -74,8 +74,16 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
     assert "Error: The pipelines.yml file is invalid" in result.output
 
 
-def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(tmp_path):
-    pass
+def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(
+    switch_to_tmp_dir_and_copy_fixtures,
+):
+    with open("bootstrap.yml", "w") as fh:
+        print("{invalid data", file=fh)
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert "Error: The bootstrap.yml file is invalid" in result.output
 
 
 def assert_file_created_in_stdout(output_file, result, tmp_path):
