@@ -30,20 +30,10 @@ def pipeline():
 def generate(directory="."):
     templates = setup_templates()
 
-    try:
-        app_config = load_and_validate_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
-    except FileNotFoundError:
-        abort_with_error("There is no bootstrap.yml")
-    except ParserError:
-        abort_with_error("The bootstrap.yml file is invalid")
+    app_config = safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
     app_name = app_config["app"]
 
-    try:
-        pipeline_environments = load_and_validate_config("pipelines.yml", PIPELINES_SCHEMA)
-    except FileNotFoundError:
-        abort_with_error("There is no pipelines.yml")
-    except ParserError:
-        abort_with_error("The pipelines.yml file is invalid")
+    pipeline_environments = safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
     git_repo = get_git_remote()
     if not git_repo:
@@ -76,6 +66,16 @@ def generate(directory="."):
     click.echo(
         mkfile(base_path, pipelines_environments_dir / "overrides/cfn.patches.yml", contents)
     )
+
+
+def safe_load_config(filename, schema):
+    try:
+        app_config = load_and_validate_config(filename, schema)
+    except FileNotFoundError:
+        abort_with_error(f"There is no {filename}")
+    except ParserError:
+        abort_with_error(f"The {filename} file is invalid")
+    return app_config
 
 
 def get_git_remote():
