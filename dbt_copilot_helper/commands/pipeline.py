@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import re
 import subprocess
 from os import makedirs
 from pathlib import Path
@@ -97,4 +98,4 @@ def get_git_remote():
 
     domain, repo = git_repo.split("@")[1].split(":")
 
-    return f"https://{domain}/{repo}"
+    return f"https://{domain}/{re.sub(r'.git$', '' , repo)}"

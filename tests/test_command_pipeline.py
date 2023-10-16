@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
+import yaml
 from _pytest.fixtures import fixture
 from click.testing import CliRunner
 
@@ -18,7 +19,7 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
-    setup_git_respository()
+    setup_git_repository()
     buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
 
     result = CliRunner().invoke(generate)
@@ -36,7 +37,7 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
     mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
-    setup_git_respository()
+    setup_git_repository()
     buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
     for path in [buildspec, cfn_patch, manifest]:
         os.makedirs(path.parent, exist_ok=True)
@@ -55,7 +56,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     mocked_boto3_client, switch_to_tmp_dir_and_copy_fixtures
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, [])
-    setup_git_respository()
+    setup_git_repository()
 
     result = CliRunner().invoke(generate)
 
@@ -121,8 +122,11 @@ def assert_file_created_in_stdout(output_file, result, tmp_path):
 
 
 def assert_output_file_contents_match_expected(output_file, expected_file):
+    def get_yaml(file):
+        return yaml.safe_load(file.read_text())
+
     exp_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
-    assert output_file.read_text().rstrip() == (exp_files_dir / expected_file).read_text().rstrip()
+    assert get_yaml(output_file) == get_yaml((exp_files_dir / expected_file))
 
 
 def setup_output_file_paths(tmp_path):
@@ -133,7 +137,7 @@ def setup_output_file_paths(tmp_path):
     return buildspec, cfn_patch, manifest
 
 
-def setup_git_respository():
+def setup_git_repository():
     subprocess.run(["git", "init"])
     subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
