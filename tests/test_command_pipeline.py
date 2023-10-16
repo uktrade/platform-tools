@@ -32,6 +32,25 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
 
 @patch("boto3.client")
+def test_pipeline_generate_overwrites_any_existing_config_files(
+    mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
+):
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    setup_git_respository()
+    buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
+    for path in [buildspec, cfn_patch, manifest]:
+        os.makedirs(path.parent)
+        with open(path, "w") as fh:
+            print("", file=fh)
+
+    CliRunner().invoke(generate)
+
+    assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
+    assert_output_file_contents_match_expected(manifest, "manifest.yml")
+    assert_output_file_contents_match_expected(cfn_patch, "overrides/cfn.patches.yml")
+
+
+@patch("boto3.client")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     mocked_boto3_client, switch_to_tmp_dir_and_copy_fixtures
 ):
