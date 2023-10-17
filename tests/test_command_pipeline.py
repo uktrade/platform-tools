@@ -2,11 +2,13 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import yaml
 from _pytest.fixtures import fixture
 from click.testing import CliRunner
+from freezegun.api import freeze_time
 
 from dbt_copilot_helper.commands.pipeline import generate_config
 from tests.conftest import EXPECTED_FILES_DIR
@@ -14,6 +16,8 @@ from tests.conftest import FIXTURES_DIR
 from tests.conftest import mock_codestar_connections_boto_client
 
 
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("boto3.client")
 def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
@@ -32,6 +36,8 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_file_created_in_stdout(cfn_patch, result, tmp_path)
 
 
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("boto3.client")
 def test_pipeline_generate_overwrites_any_existing_config_files(
     mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
@@ -122,11 +128,15 @@ def assert_file_created_in_stdout(output_file, result, tmp_path):
 
 
 def assert_output_file_contents_match_expected(output_file, expected_file):
-    def get_yaml(file):
-        return yaml.safe_load(file.read_text())
+    def get_yaml(content):
+        return yaml.safe_load(content)
 
     exp_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
-    assert get_yaml(output_file) == get_yaml((exp_files_dir / expected_file))
+    actual_content = output_file.read_text()
+    expected_content = (exp_files_dir / expected_file).read_text()
+
+    assert actual_content.partition("\n")[0].strip() == expected_content.partition("\n")[0].strip()
+    assert get_yaml(actual_content) == get_yaml(expected_content)
 
 
 def setup_output_file_paths(tmp_path):
