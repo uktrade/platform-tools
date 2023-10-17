@@ -2,8 +2,17 @@ FROM public.ecr.aws/docker/library/debian:12-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y jq procps postgresql-client && \
-    apt-get clean
+    apt-get install -y jq procps postgresql-client
+
+# Install Clound Foundry CLI for data migrations
+RUN apt-get install -y apt-utils curl gnupg && \
+    curl -sS https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | gpg --dearmor > /etc/apt/trusted.gpg.d/cloudfoundry-cli.gpg && \
+    echo "deb https://packages.cloudfoundry.org/debian stable main" | tee /etc/apt/sources.list.d/cloudfoundry-cli.list && \
+    apt-get update && \
+    apt-get install -y cf8-cli && \
+    apt-get remove -y apt-utils curl gnupg
+
+RUN apt-get clean
 
 COPY shell-profile.sh /root/.bashrc
 COPY entrypoint.sh /entrypoint.sh
