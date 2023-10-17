@@ -10,6 +10,7 @@ RUN apt-get install -y apt-utils curl gnupg && \
     echo "deb https://packages.cloudfoundry.org/debian stable main" | tee /etc/apt/sources.list.d/cloudfoundry-cli.list && \
     apt-get update && \
     apt-get install -y cf8-cli && \
+    cf install-plugin -f https://github.com/alphagov/paas-cf-conduit/releases/download/v0.1.0/cf-conduit.linux.arm64 && \
     apt-get remove -y apt-utils curl gnupg
 
 RUN apt-get clean
