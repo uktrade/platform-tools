@@ -303,12 +303,7 @@ invalid-entry:
     def test_env_addons_parameters_file_included_with_different_addon_types(
         self, fakefs, addon_file_contents, addon_type, validate_version
     ):
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=addon_file_contents,
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
+        create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -322,12 +317,7 @@ invalid-entry:
     def test_env_addons_parameters_file_should_not_be_included_for_s3(
         self, fakefs, validate_version
     ):
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=(S3_STORAGE_CONTENTS),
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
+        create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -349,12 +339,7 @@ invalid-entry:
     def test_addon_instructions_with_postgres_addon_types(
         self, fakefs, addon_file_contents, addon_type, secret_name, validate_version
     ):
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=addon_file_contents,
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
+        create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -430,3 +415,12 @@ def test_get_secrets(validate_version):
     assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
     validate_version.assert_called_once()
     assert result.exit_code == 0
+
+
+def create_test_manifests(addon_file_contents, fakefs):
+    fakefs.create_file(
+        ADDON_CONFIG_FILENAME,
+        contents=addon_file_contents,
+    )
+    fakefs.create_file("copilot/web/manifest.yml")
+    fakefs.create_file("copilot/environments/development/manifest.yml")

@@ -31,12 +31,12 @@ def pipeline():
 def generate_config(directory="."):
     templates = setup_templates()
 
-    app_config = safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
+    app_config = _safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
     app_name = app_config["app"]
 
-    pipeline_environments = safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
+    pipeline_environments = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
-    git_repo = get_git_remote()
+    git_repo = _get_git_remote()
     if not git_repo:
         abort_with_error("The current directory is not a git repository")
 
@@ -57,38 +57,34 @@ def generate_config(directory="."):
         "pipeline_environments": pipeline_environments["environments"],
     }
 
-    contents = templates.get_template("pipeline/buildspec.yml").render(template_data)
-    click.echo(
-        mkfile(base_path, pipelines_environments_dir / "buildspec.yml", contents, overwrite=True)
+    _create_file_from_template(
+        base_path, "buildspec.yml", pipelines_environments_dir, template_data, templates
     )
-
-    contents = templates.get_template("pipeline/manifest.yml").render(template_data)
-    click.echo(
-        mkfile(base_path, pipelines_environments_dir / "manifest.yml", contents, overwrite=True)
+    _create_file_from_template(
+        base_path, "manifest.yml", pipelines_environments_dir, template_data, templates
     )
-
-    contents = templates.get_template("pipeline/overrides/cfn.patches.yml").render(template_data)
-    click.echo(
-        mkfile(
-            base_path,
-            pipelines_environments_dir / "overrides/cfn.patches.yml",
-            contents,
-            overwrite=True,
-        )
+    _create_file_from_template(
+        base_path, "overrides/cfn.patches.yml", pipelines_environments_dir, template_data, templates
     )
 
 
-def safe_load_config(filename, schema):
+def _create_file_from_template(
+    base_path, buildspec, pipelines_environments_dir, template_data, templates
+):
+    contents = templates.get_template(f"pipeline/{buildspec}").render(template_data)
+    click.echo(mkfile(base_path, pipelines_environments_dir / buildspec, contents, overwrite=True))
+
+
+def _safe_load_config(filename, schema):
     try:
-        app_config = load_and_validate_config(filename, schema)
+        return load_and_validate_config(filename, schema)
     except FileNotFoundError:
         abort_with_error(f"There is no {filename}")
     except ParserError:
         abort_with_error(f"The {filename} file is invalid")
-    return app_config
 
 
-def get_git_remote():
+def _get_git_remote():
     git_repo = subprocess.run(
         ["git", "remote", "get-url", "origin"], capture_output=True, text=True
     ).stdout.strip()

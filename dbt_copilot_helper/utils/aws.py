@@ -166,8 +166,7 @@ def check_response(response):
 
 
 def get_codestar_connection_arn(app_name):
-    client = boto3.client("codestar-connections")
-    response = client.list_connections()
+    response = boto3.client("codestar-connections").list_connections()
 
     for connection in response["Connections"]:
         if connection["ConnectionName"] == app_name:
