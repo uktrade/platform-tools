@@ -8,7 +8,7 @@ import yaml
 from _pytest.fixtures import fixture
 from click.testing import CliRunner
 
-from dbt_copilot_helper.commands.pipeline import generate
+from dbt_copilot_helper.commands.pipeline import generate_config
 from tests.conftest import EXPECTED_FILES_DIR
 from tests.conftest import FIXTURES_DIR
 from tests.conftest import mock_codestar_connections_boto_client
@@ -22,7 +22,7 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     setup_git_repository()
     buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
     assert_output_file_contents_match_expected(manifest, "manifest.yml")
@@ -44,7 +44,7 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
         with open(path, "w") as fh:
             print("Pre-existing file contents", file=fh)
 
-    CliRunner().invoke(generate)
+    CliRunner().invoke(generate_config)
 
     assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
     assert_output_file_contents_match_expected(manifest, "manifest.yml")
@@ -58,14 +58,14 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     mock_codestar_connections_boto_client(mocked_boto3_client, [])
     setup_git_repository()
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: There is no CodeStar Connection to use" in result.output
 
 
 def test_pipeline_generate_with_no_repo_fails_with_message(switch_to_tmp_dir_and_copy_fixtures):
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: The current directory is not a git repository" in result.output
@@ -76,7 +76,7 @@ def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(
 ):
     os.remove("pipelines.yml")
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: There is no pipelines.yml" in result.output
@@ -88,7 +88,7 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
     with open("pipelines.yml", "w") as fh:
         print("{invalid data", file=fh)
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: The pipelines.yml file is invalid" in result.output
@@ -99,7 +99,7 @@ def test_pipeline_generate_with_no_bootstrap_yml_fails_with_message(
 ):
     os.remove("bootstrap.yml")
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: There is no bootstrap.yml" in result.output
@@ -111,7 +111,7 @@ def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(
     with open("bootstrap.yml", "w") as fh:
         print("{invalid data", file=fh)
 
-    result = CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate_config)
 
     assert result.exit_code == 1
     assert "Error: The bootstrap.yml file is invalid" in result.output
