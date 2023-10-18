@@ -82,6 +82,27 @@ Resources:
         log_statement: ddl
         log_statement_sample_rate: '1.0'
 
+  {{ service.prefix }}KMSKey:
+    Type: "AWS::KMS::Key"
+    Properties: 
+      Description: "KMS Key for RDS encryption"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: !Sub '${App}-${Env}-cluster-key'
+        Statement:
+        - Sid: Enable IAM User Permissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+          Action: kms:*
+          Resource: '*'
+    
+  {{ service.prefix }}KeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/${App}-${Env}-cluster-key'
+      TargetKeyId: !Ref {{ service.prefix }}KMSKey
+
   # The cluster itself.
   {{ service.prefix }}DBInstance:
     Metadata:
@@ -104,6 +125,7 @@ Resources:
       AllowMajorVersionUpgrade: false
       BackupRetentionPeriod: 7
       DBName: !Ref {{ service.prefix }}DBName
+      KmsKeyId: !Ref {{ service.prefix }}KMSKey
       MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
@@ -111,6 +133,7 @@ Resources:
       DBSubnetGroupName: !Ref '{{ service.prefix }}DBSubnetGroup'
       VPCSecurityGroups:
         - !Ref {{ service.prefix }}SecurityGroup
+      StorageEncrypted: true
 
   {{ service.prefix }}RDSSecret:
     Metadata:
