@@ -18,7 +18,6 @@ source:
     # Todo: Allow for overriding this, but without risking deploying a branch to higher environments
     branch: main
     repository: {{ git_repo }}
-    # Optional: specify the name of an existing CodeStar Connections connection.
     connection_name: {{ app_name }}
 
 # This section defines the order of the environments your pipeline will deploy to.
