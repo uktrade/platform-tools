@@ -69,7 +69,7 @@ def generate_config(directory="."):
 
 
 def _create_file_from_template(
-    base_path, buildspec, pipelines_environments_dir, template_data, templates
+    base_path, file_name, pipelines_environments_dir, template_data, templates
 ):
     contents = templates.get_template(f"pipeline/{buildspec}").render(template_data)
     click.echo(mkfile(base_path, pipelines_environments_dir / buildspec, contents, overwrite=True))
