@@ -29,9 +29,14 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
     result = CliRunner().invoke(generate_config)
 
-    assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
-    assert_output_file_contents_match_expected(manifest, "manifest.yml")
-    assert_output_file_contents_match_expected(cfn_patch, "overrides/cfn.patches.yml")
+    expected_files_dir = (
+        Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
+    )
+    assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
+    assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
+    assert_yaml_in_output_file_matches_expected(
+        cfn_patch, expected_files_dir / "overrides/cfn.patches.yml"
+    )
     assert_file_created_in_stdout(buildspec, result, tmp_path)
     assert_file_created_in_stdout(manifest, result, tmp_path)
     assert_file_created_in_stdout(cfn_patch, result, tmp_path)
@@ -53,9 +58,14 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 
     CliRunner().invoke(generate_config)
 
-    assert_output_file_contents_match_expected(buildspec, "buildspec.yml")
-    assert_output_file_contents_match_expected(manifest, "manifest.yml")
-    assert_output_file_contents_match_expected(cfn_patch, "overrides/cfn.patches.yml")
+    expected_files_dir = (
+        Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
+    )
+    assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
+    assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
+    assert_yaml_in_output_file_matches_expected(
+        cfn_patch, expected_files_dir / "overrides/cfn.patches.yml"
+    )
 
 
 @patch("boto3.client")
@@ -124,13 +134,12 @@ def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(
     assert "Error: The bootstrap.yml file is invalid" in result.output
 
 
-def assert_output_file_contents_match_expected(output_file, expected_file):
+def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
     def get_yaml(content):
         return yaml.safe_load(content)
 
-    exp_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
     actual_content = output_file.read_text()
-    expected_content = (exp_files_dir / expected_file).read_text()
+    expected_content = expected_file.read_text()
 
     assert actual_content.partition("\n")[0].strip() == expected_content.partition("\n")[0].strip()
     assert get_yaml(actual_content) == get_yaml(expected_content)
