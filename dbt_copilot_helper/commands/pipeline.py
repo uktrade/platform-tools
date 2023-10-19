@@ -9,12 +9,12 @@ from yaml.parser import ParserError
 
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
-from dbt_copilot_helper.utils.files import BOOTSTRAP_SCHEMA
-from dbt_copilot_helper.utils.files import PIPELINES_SCHEMA
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
+from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
