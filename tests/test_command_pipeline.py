@@ -13,6 +13,7 @@ from freezegun.api import freeze_time
 from dbt_copilot_helper.commands.pipeline import generate_config
 from tests.conftest import EXPECTED_FILES_DIR
 from tests.conftest import FIXTURES_DIR
+from tests.conftest import assert_file_created_in_stdout
 from tests.conftest import mock_codestar_connections_boto_client
 
 
@@ -121,10 +122,6 @@ def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(
 
     assert result.exit_code == 1
     assert "Error: The bootstrap.yml file is invalid" in result.output
-
-
-def assert_file_created_in_stdout(output_file, result, tmp_path):
-    assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
 
 
 def assert_output_file_contents_match_expected(output_file, expected_file):

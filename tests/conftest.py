@@ -209,3 +209,7 @@ def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names)
         "Connections": [mock_codestar_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
     }
+
+
+def assert_file_created_in_stdout(output_file, result, tmp_path):
+    assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
