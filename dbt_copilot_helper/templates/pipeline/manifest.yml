@@ -23,7 +23,7 @@ source:
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
-  {% for environment in pipeline_environments -%}
+{% for environment in pipeline_environments -%}
   - # The name of the environment.
     name: {{ environment.name }}
     deployments:
@@ -36,4 +36,4 @@ stages:
     # Optional: use test commands to validate this stage of your build.
     # test_commands: [echo 'running tests', make test]
 
-  {% endfor %}
+{% endfor %}
