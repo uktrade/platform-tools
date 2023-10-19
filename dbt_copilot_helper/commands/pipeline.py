@@ -71,8 +71,8 @@ def generate_config(directory="."):
 def _create_file_from_template(
     base_path, file_name, pipelines_environments_dir, template_data, templates
 ):
-    contents = templates.get_template(f"pipeline/{buildspec}").render(template_data)
-    click.echo(mkfile(base_path, pipelines_environments_dir / buildspec, contents, overwrite=True))
+    contents = templates.get_template(f"pipeline/{file_name}").render(template_data)
+    click.echo(mkfile(base_path, pipelines_environments_dir / file_name, contents, overwrite=True))
 
 
 def _safe_load_config(filename, schema):
