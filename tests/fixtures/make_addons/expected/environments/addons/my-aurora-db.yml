@@ -98,7 +98,7 @@ Resources:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-cluster-key'
+        Id: !Sub '${App}-${Env}-myAuroraDb-cluster-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -110,7 +110,7 @@ Resources:
   myAuroraDbKeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-cluster-key'
+      AliasName: !Sub 'alias/${App}-${Env}-myAuroraDb-cluster-key'
       TargetKeyId: !Ref myAuroraDbKMSKey
 
   myAuroraDbDBCluster:

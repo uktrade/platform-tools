@@ -88,7 +88,7 @@ Resources:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-cluster-key'
+        Id: !Sub '${App}-${Env}-{{ service.prefix }}-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -100,7 +100,7 @@ Resources:
   {{ service.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-cluster-key'
+      AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
       TargetKeyId: !Ref {{ service.prefix }}KMSKey
 
   # The cluster itself.
