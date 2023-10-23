@@ -12,6 +12,7 @@ from dbt_copilot_helper.commands.check_cloudformation import (
 )
 from dbt_copilot_helper.commands.copilot import make_addons
 from tests.conftest import BASE_DIR
+from tests.conftest import TEST_APP_DIR
 
 
 def prepare_fake_cloudformation_templates(template: str) -> None:
@@ -38,7 +39,7 @@ def app_with_invalid_cf_template(application_under_test):
 
 @pytest.fixture
 def copilot_directory() -> Path:
-    return Path(f"{BASE_DIR}/tests/test-application-deploy/copilot")
+    return TEST_APP_DIR / "copilot"
 
 
 @pytest.fixture

@@ -297,33 +297,35 @@ invalid-entry:
             (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
             (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
-            (S3_STORAGE_CONTENTS, "s3"),
         ],
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_env_addons_parameters_file_with_different_addon_types(
+    def test_env_addons_parameters_file_included_with_different_addon_types(
         self, fakefs, addon_file_contents, addon_type, validate_version
     ):
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=addon_file_contents,
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
+        create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 0
         validate_version.assert_called_once()
-        if addon_type == "s3":
-            assert (
-                "File copilot/environments/addons/addons.parameters.yml" not in result.output
-            ), f"addons.parameters.yml should not be included for {addon_type}"
-        else:
-            assert (
-                "File copilot/environments/addons/addons.parameters.yml overwritten"
-                in result.output
-            ), f"addons.parameters.yml should be included for {addon_type}"
+        assert (
+            "File copilot/environments/addons/addons.parameters.yml created" in result.output
+        ), f"addons.parameters.yml should be included for {addon_type}"
+
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    def test_env_addons_parameters_file_should_not_be_included_for_s3(
+        self, fakefs, validate_version
+    ):
+        create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 0
+        validate_version.assert_called_once()
+        assert (
+            "File copilot/environments/addons/addons.parameters.yml" not in result.output
+        ), "addons.parameters.yml should not be included for s3"
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",
@@ -337,12 +339,7 @@ invalid-entry:
     def test_addon_instructions_with_postgres_addon_types(
         self, fakefs, addon_file_contents, addon_type, secret_name, validate_version
     ):
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=addon_file_contents,
-        )
-        fakefs.create_file("copilot/web/manifest.yml")
-        fakefs.create_file("copilot/environments/development/manifest.yml")
+        create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -418,3 +415,12 @@ def test_get_secrets(validate_version):
     assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
     validate_version.assert_called_once()
     assert result.exit_code == 0
+
+
+def create_test_manifests(addon_file_contents, fakefs):
+    fakefs.create_file(
+        ADDON_CONFIG_FILENAME,
+        contents=addon_file_contents,
+    )
+    fakefs.create_file("copilot/web/manifest.yml")
+    fakefs.create_file("copilot/environments/development/manifest.yml")
