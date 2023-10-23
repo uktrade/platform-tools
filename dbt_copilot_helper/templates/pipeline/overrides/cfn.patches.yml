@@ -4,7 +4,7 @@
   path: /Resources/Pipeline/Properties/Stages/0/Actions/0/Name
   value: DeployCodebase
 
-# Add git metadata to the
+# Add git metadata to the source output artefact
 - op: add
   path: /Resources/Pipeline/Properties/Stages/0/Actions/0/Configuration/OutputArtifactFormat
   value: CODEBUILD_CLONE_REF
