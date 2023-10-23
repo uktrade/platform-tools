@@ -19,11 +19,11 @@ phases:
     commands:
     - echo Pull started on `date`
     - echo Pulling the Builder Docker image...
-    - docker pull paketobuildpacks/builder:$BUILDER_IMAGE_TAG
-    - docker tag paketobuildpacks/builder:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:$BUILDER_IMAGE_TAG
-    - docker tag paketobuildpacks/builder:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:latest
+    - docker pull paketobuildpacks/builder-jammy-full:$BUILDER_IMAGE_TAG
+    - docker tag paketobuildpacks/builder-jammy-full:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:$BUILDER_IMAGE_TAG
+    - docker tag paketobuildpacks/builder-jammy-full:$BUILDER_IMAGE_TAG $BUILDER_REPOSITORY_URI:latest
     - echo Pulling the Lifecycle Docker image...
-    - LIFECYCLE_IMAGE_TAG=$(docker inspect paketobuildpacks/builder:$BUILDER_IMAGE_TAG | jq -r '.[].Config.Labels."io.buildpacks.builder.metadata"' | jq -r '.lifecycle.version')
+    - LIFECYCLE_IMAGE_TAG=$(docker inspect paketobuildpacks/builder-jammy-full:$BUILDER_IMAGE_TAG | jq -r '.[].Config.Labels."io.buildpacks.builder.metadata"' | jq -r '.lifecycle.version')
     - docker pull buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG
     - docker tag buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG $LIFECYCLE_REPOSITORY_URI:$LIFECYCLE_IMAGE_TAG
     - docker tag buildpacksio/lifecycle:$LIFECYCLE_IMAGE_TAG $LIFECYCLE_REPOSITORY_URI:latest
@@ -40,4 +40,4 @@ phases:
     - docker push $LIFECYCLE_REPOSITORY_URI:$LIFECYCLE_IMAGE_TAG
     - docker push $LIFECYCLE_REPOSITORY_URI:latest
     - echo Pushing Run image to ECR
-    - docker push $RUN_REPOSITORY_URI:full-cnb
+    - docker push $RUN_REPOSITORY_URI:latest
