@@ -101,11 +101,12 @@ copilot-helper bootstrap make-config [-d <directory>]
 
 [↩ Parent](#copilot-helper-bootstrap)
 
-    Migrate secrets from your gov paas application to AWS/copilot.
+    Migrate secrets from your GOV.UK PaaS application to DBT PaaS.
 
-    You need to be authenticated via cf cli and the AWS cli to use this commmand.
+    You need to be authenticated via Cloud Foundry CLI and the AWS CLI to use this command.
 
-    If you're using AWS profiles, use the AWS_PROFILE env var to indicate the which profile to use, e.g.:
+    If you're using AWS profiles, use the AWS_PROFILE environment variable to indicate the which
+    profile to use, e.g.:
 
     AWS_PROFILE=myaccount copilot-bootstrap.py ...
 
