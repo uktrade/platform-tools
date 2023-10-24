@@ -1,0 +1,4 @@
+environments:
+  - name: dev
+  - name: prod
+    requires_approval: true

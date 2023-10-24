@@ -25,7 +25,7 @@ Mappings:
       InstanceType: 't3.medium.search'
       InstanceCount: 1
       DedicatedMaster: false
-      VolumeSize: 200
+      VolumeSize: 40
     
 
   myOpensearchEngineVersionMap:

@@ -2,6 +2,8 @@
 
 import copy
 import json
+from os import listdir
+from os.path import isfile
 from pathlib import Path
 
 import boto3
@@ -12,7 +14,6 @@ from jsonschema import validate as validate_json
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
-from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
@@ -47,6 +48,11 @@ def _validate_and_normalise_config(config_file):
     def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
         conf = addon_plans[addon_type][plan] if plan else {}
+
+        # Make a copy of the addon plan config so subsequent
+        # calls do not override the root object
+        conf = conf.copy()
+
         conf.update(env_conf)
 
         return conf
@@ -161,7 +167,24 @@ def make_addons(directory="."):
     click.echo("\n>>> Generating addons CloudFormation\n")
 
     path = Path(f"copilot/environments/addons/")
-    mkdir(output_dir, path)
+    (output_dir / path).mkdir(parents=True, exist_ok=True)
+
+    custom_resources = {}
+    custom_resource_path = Path(f"{Path(__file__).parent}/../custom_resources/")
+
+    for file in listdir(custom_resource_path.resolve()):
+        file_path = custom_resource_path.joinpath(file)
+        if isfile(file_path) and file_path.name.endswith(".py") and file_path.name != "__init__.py":
+            custom_resource_contents = file_path.read_text()
+
+            def file_with_formatting_options(padding=0):
+                lines = [
+                    (" " * padding) + line if line.strip() else line.strip()
+                    for line in custom_resource_contents.splitlines(True)
+                ]
+                return "".join(lines)
+
+            custom_resources[file_path.name.rstrip(".py")] = file_with_formatting_options
 
     services = []
     for addon_name, addon_config in config.items():
@@ -175,6 +198,7 @@ def make_addons(directory="."):
             "environments": environments,
             "prefix": camel_case(addon_name),
             "addon_type": addon_type,
+            "custom_resources": custom_resources,
             **addon_config,
         }
 
@@ -210,7 +234,7 @@ def make_addons(directory="."):
 
                 filename = addon.get("filename", f"{addon_name}.yml")
 
-                mkdir(output_dir, service_path)
+                (output_dir / service_path).mkdir(parents=True, exist_ok=True)
                 click.echo(
                     mkfile(output_dir, service_path / filename, contents, overwrite=overwrite)
                 )

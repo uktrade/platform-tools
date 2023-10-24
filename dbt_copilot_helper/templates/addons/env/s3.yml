@@ -112,6 +112,64 @@ Resources:
                 "aws:SecureTransport": false
       Bucket: !Ref {{ service.prefix }}Bucket
 
+{% if 'objects' in service %}
+  {{ service.prefix }}S3ObjectUploader:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${App}-${Env}-object-uploader"
+      Handler: index.handler
+      Runtime: python3.11
+      MemorySize: 128
+      Timeout: 10
+      Role: !GetAtt {{ service.prefix }}S3ObjectUploaderRole.Arn
+      Code:
+        ZipFile: |
+{{ service.custom_resources.s3_object(10) }}
+
+  {{ service.prefix }}S3ObjectUploaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${App}-${Env}-object-uploader-role"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${App}-${Env}-object-uploader-policy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                Resource:
+                  - !Sub ${ dwS3BucketBucket.Arn }/*
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+
+{% for s3object in service.objects %}
+  {{ service.prefix }}S3Object{{ loop.index0 }}:
+    Type: 'Custom::S3ObjectUploader'
+    Properties:
+      ServiceToken: !GetAtt {{ service.prefix }}S3ObjectUploader.Arn
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      S3Bucket: !Ref {{ service.prefix }}Bucket
+      S3ObjectKey: {{ s3object.key }}
+      S3ObjectBody: {{ s3object.body }}
+{% endfor %}
+{% endif %}
+
 Outputs:
   {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."

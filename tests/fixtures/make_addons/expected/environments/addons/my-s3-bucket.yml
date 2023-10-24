@@ -112,6 +112,8 @@ Resources:
                 "aws:SecureTransport": false
       Bucket: !Ref myS3BucketBucket
 
+
+
 Outputs:
   myS3BucketName:
     Description: "The name of a user-defined bucket."
