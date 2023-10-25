@@ -221,7 +221,7 @@ Resources:
   {{ service.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-rds-create-application-user"
+      FunctionName: !Sub "${App}-${Env}-rds-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -403,7 +403,7 @@ Resources:
   {{ service.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-rds-application-user"
+      RoleName: !Sub "${App}-${Env}-rds-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -414,7 +414,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
       Policies:
-        - PolicyName: !Sub "${App}-${Env}-rds-application-user"
+        - PolicyName: !Sub "${App}-${Env}-rds-user"
           PolicyDocument:
             Version: '2012-10-17'
             Statement:

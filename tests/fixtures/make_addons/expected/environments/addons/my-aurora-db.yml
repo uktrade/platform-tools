@@ -238,7 +238,7 @@ Resources:
   myAuroraDbLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-aurora-create-application-user"
+      FunctionName: !Sub "${App}-${Env}-aurora-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -420,7 +420,7 @@ Resources:
   myAuroraDbLambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-aurora-application-user"
+      RoleName: !Sub "${App}-${Env}-aurora-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -431,7 +431,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
       Policies:
-        - PolicyName: !Sub "${App}-${Env}-aurora-application-user"
+        - PolicyName: !Sub "${App}-${Env}-aurora-user"
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
