@@ -262,7 +262,7 @@ Resources:
               conn.commit()
 
 
-          def create_or_update_application_user_secret(secrets_manager, application_user_secret_name,
+          def create_or_update_application_user_secret(ssm, application_user_secret_name,
                                                        application_user_secret_string, event):
               application_user_secret_description = event['ResourceProperties']['SecretDescription']
               copilot_application = event['ResourceProperties']['CopilotApplication']
@@ -271,10 +271,10 @@ Resources:
               application_user_secret = None
 
               try:
-                  application_user_secret = secrets_manager.create_secret(
+                  application_user_secret = ssm.put_parameter(
                       Name=application_user_secret_name,
                       Description=application_user_secret_description,
-                      SecretString=json.dumps(application_user_secret_string),
+                      Value=json.dumps(application_user_secret_string),
                       Tags=[
                           {'Key': 'custom:cloudformation:stack-name', 'Value': event["StackId"].split('/')[1]},
                           {'Key': 'custom:cloudformation:logical-id', 'Value': event["LogicalResourceId"]},
@@ -282,12 +282,15 @@ Resources:
                           {'Key': 'copilot-application', 'Value': copilot_application},
                           {'Key': 'copilot-environment', 'Value': copilot_environment},
                       ],
+                      Type="String",
                   )
               except ClientError as error:
-                  if error.response["Error"]["Code"] == "ResourceExistsException":
-                      application_user_secret = secrets_manager.update_secret(
-                          SecretId=application_user_secret_name,
-                          SecretString=json.dumps(application_user_secret_string),
+                  if error.response["Error"]["Code"] == "ParameterAlreadyExists":
+                      application_user_secret = ssm.put_parameter(
+                          Name=application_user_secret_name,
+                          Description=application_user_secret_description,
+                          Value=json.dumps(application_user_secret_string),
+                          Overwrite=True,
                       )
 
               return application_user_secret
@@ -303,6 +306,7 @@ Resources:
               copilot_environment = event['ResourceProperties']['CopilotEnvironment']
 
               secrets_manager = boto3.client("secretsmanager")
+              ssm = boto3.client("ssm")
 
               master_user = json.loads(secrets_manager.get_secret_value(SecretId=db_master_user_secret)["SecretString"])
 
@@ -343,8 +347,7 @@ Resources:
                           response = {
                               **response,
                               "Data": create_or_update_application_user_secret(
-                                  secrets_manager, application_user_secret_name,
-                                  application_user_secret_string, event
+                                  ssm, application_user_secret_name, application_user_secret_string, event
                               )
                           }
                       case "Update":
@@ -353,21 +356,15 @@ Resources:
                           response = {
                               **response,
                               "Data": create_or_update_application_user_secret(
-                                  secrets_manager, application_user_secret_name,
-                                  application_user_secret_string, event
+                                  ssm, application_user_secret_name, application_user_secret_string, event
                               )
                           }
                       case "Delete":
                           drop_user(cursor)
 
-                          data = secrets_manager.delete_secret(
-                              SecretId=application_user_secret_name,
-                              ForceDeleteWithoutRecovery=True,
-                          )
-
                           response = {
                               **response,
-                              "Data": data | { "DeletionDate": str(data["DeletionDate"]) }
+                              "Data": ssm.delete_parameter(Name=application_user_secret_name)
                           }
                       case _:
                           response = {"Status": "FAILED",
@@ -428,10 +425,14 @@ Resources:
                   - '*'
               - Effect: Allow
                 Action:
-                  - 'secretsmanager:CreateSecret'
-                  - 'secretsmanager:TagResource'
-                  - 'secretsmanager:UpdateSecret'
-                  - 'secretsmanager:DeleteSecret'
+                  - 'ssm:DeleteParameter'
+                  - 'ssm:PutParameter'
+                  - 'ssm:AddTagsToResource'
+                  - 'kms:Decrypt'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
                   - 'secretsmanager:DescribeSecret'
                   - 'secretsmanager:GetRandomPassword'
                   - 'secretsmanager:GetSecretValue'
