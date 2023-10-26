@@ -70,7 +70,12 @@ class TestMakeAddonCommand:
         [
             (
                 "s3_addons.yml",
-                ["my-s3-bucket.yml", "my-s3-bucket-with-an-object.yml"],
+                [
+                    "my-s3-bucket.yml",
+                    "my-s3-bucket-with-an-object.yml",
+                    "addons.parameters.yml",
+                    "vpc.yml",
+                ],
                 [
                     "appconfig-ipfilter.yml",
                     "my-s3-bucket.yml",
@@ -85,31 +90,32 @@ class TestMakeAddonCommand:
                     "my-opensearch.yml",
                     "my-opensearch-longer.yml",
                     "addons.parameters.yml",
+                    "vpc.yml",
                 ],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
-                ["my-rds-db.yml", "addons.parameters.yml"],
+                ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
-                ["my-redis.yml", "addons.parameters.yml"],
+                ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
-                ["my-aurora-db.yml", "addons.parameters.yml"],
+                ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
-                ["monitoring.yml", "addons.parameters.yml"],
+                ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml"],
                 False,
             ),
@@ -154,10 +160,25 @@ class TestMakeAddonCommand:
         ]
         all_expected_files = expected_env_files + expected_service_files
 
-        for f in all_expected_files:
-            expected = Path(addons_dir, "expected", f).read_text()
-            actual = Path(tmp_path, "copilot", f).read_text()
-            assert expected == actual, f"The file {f} did not have the expected content"
+        for file in all_expected_files:
+            expected_file = Path(addons_dir, "expected", file)
+            if file.name == "vpc.yml":
+                if addon_file == "rds_addons.yml":
+                    vpc_file = "rds-postgres"
+                elif addon_file == "aurora_addons.yml":
+                    vpc_file = "aurora-postgres"
+                else:
+                    vpc_file = "default"
+
+                expected_file = Path(
+                    addons_dir,
+                    "expected/environments/addons",
+                    f"vpc-{vpc_file}.yml",
+                )
+
+            expected = expected_file.read_text()
+            actual = Path(tmp_path, "copilot", file).read_text()
+            assert actual == expected, f"The file {file} did not have the expected content"
 
         copilot_dir = Path(tmp_path, "copilot")
         actual_files = [
@@ -166,9 +187,9 @@ class TestMakeAddonCommand:
             for f in files
         ]
 
-        assert len(all_expected_files) + 2 == len(
-            actual_files
-        ), "We expect the actual filecount to match the expected with the addition of the two initial manifest.yml files"
+        assert (
+            len(actual_files) == len(all_expected_files) + 2
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml files"
 
     def test_exit_if_no_copilot_directory(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
@@ -312,20 +333,6 @@ invalid-entry:
         assert (
             "File copilot/environments/addons/addons.parameters.yml created" in result.output
         ), f"addons.parameters.yml should be included for {addon_type}"
-
-    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_env_addons_parameters_file_should_not_be_included_for_s3(
-        self, fakefs, validate_version
-    ):
-        create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
-
-        result = CliRunner().invoke(copilot, ["make-addons"])
-
-        assert result.exit_code == 0
-        validate_version.assert_called_once()
-        assert (
-            "File copilot/environments/addons/addons.parameters.yml" not in result.output
-        ), "addons.parameters.yml should not be included for s3"
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",

@@ -103,7 +103,8 @@
                   "s3",
                   "s3-policy",
                   "appconfig-ipfilter",
-                  "monitoring"
+                  "monitoring",
+                  "vpc"
                ]
             }
          },

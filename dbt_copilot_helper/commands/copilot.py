@@ -215,7 +215,9 @@ def make_addons(directory="."):
         for addon in addon_template_map[addon_type].get("env", []):
             template = templates.get_template(addon["template"])
 
-            contents = template.render({"service": environment_addon_config})
+            contents = template.render(
+                {"service": environment_addon_config, "addons": config.items()}
+            )
 
             filename = addon.get("filename", f"{addon_name}.yml")
 
