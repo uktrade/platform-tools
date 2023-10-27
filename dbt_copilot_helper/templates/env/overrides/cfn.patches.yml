@@ -36,10 +36,31 @@
           {
             "Effect": "Allow",
             "Principal": {
+              "Service": ["delivery.logs.amazonaws.com"]
+            },
+            "Action": ["logs:CreateLogStream","logs:PutLogEvents"],
+            "Resource": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/elasticache/${AppName}/${EnvironmentName}/*",
+            "Condition": {
+              "StringEquals": {
+                "aws:SourceAccount": "${AWS::AccountId}"
+              },
+              "ArnLike": {
+                "aws:SourceArn": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+              }
+            }
+          },
+          {
+            "Effect": "Allow",
+            "Principal": {
               "Service": ["es.amazonaws.com"]
             },
             "Action": ["logs:PutLogEvents","logs:CreateLogStream"],
-            "Resource": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/opensearch/${AppName}/${EnvironmentName}/*"
+            "Resource": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/opensearch/${AppName}/${EnvironmentName}/*",
+            "Condition": {
+              "StringEquals": {
+                "aws:SourceAccount": "${AWS::AccountId}"
+              }
+            }
           }
         ]
       }
