@@ -180,6 +180,12 @@ class TestMakeAddonCommand:
             actual = Path(tmp_path, "copilot", file).read_text()
             assert actual == expected, f"The file {file} did not have the expected content"
 
+        expected_file = Path(addons_dir, "expected/environments/overrides/cfn.patches.yml")
+
+        expected = expected_file.read_text()
+        actual = Path(tmp_path, "copilot/environments/overrides/cfn.patches.yml").read_text()
+        assert actual == expected, f"The environment overrides did not have the expected content"
+
         copilot_dir = Path(tmp_path, "copilot")
         actual_files = [
             Path(d, f).relative_to(copilot_dir)
@@ -188,8 +194,8 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 2
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml files"
+            len(actual_files) == len(all_expected_files) + 3
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
 
     def test_exit_if_no_copilot_directory(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
