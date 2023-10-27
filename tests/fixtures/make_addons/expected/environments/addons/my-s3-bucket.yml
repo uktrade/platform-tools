@@ -19,6 +19,27 @@ Mappings:
     
 
 Resources:
+  myS3BucketKMSKey:
+    Type: "AWS::KMS::Key"
+    Properties: 
+      Description: "KMS Key for RDS encryption"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: !Sub '${App}-${Env}-myS3Bucket-key'
+        Statement:
+        - Sid: Enable IAM User Permissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+          Action: kms:*
+          Resource: '*'
+
+  myS3BucketKeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/${App}-${Env}-myS3Bucket-key'
+      TargetKeyId: !Ref myS3BucketKMSKey
+
   myS3BucketLoggingBucket:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store logs from myS3BucketBucket'
@@ -29,7 +50,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+            SSEAlgorithm: aws:kms
+            KMSMasterKeyID: !Ref myS3BucketKMSKey
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -74,7 +96,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+            SSEAlgorithm: aws:kms
+            KMSMasterKeyID: !Ref myS3BucketKMSKey
       VersioningConfiguration:
         Status: Enabled
       LoggingConfiguration:
@@ -118,3 +141,9 @@ Outputs:
   myS3BucketName:
     Description: "The name of a user-defined bucket."
     Value: !Ref myS3BucketBucket
+  
+  myS3BucketKMSKeyARN:
+    Description: "ARN of the KMS Key"
+    Value: !GetAtt myS3BucketKMSKey.Arn
+    Export:
+      Name: !Sub "${App}-${Env}-myS3Bucket-KMSKeyARN"
