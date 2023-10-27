@@ -1,4 +1,5 @@
 # {% version_info %}
+
 Parameters:
   # Copilot required Parameters...
   App:
@@ -173,3 +174,292 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
+
+  {{ service.prefix }}LambdaIngress:
+    Metadata:
+      'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB cluster'
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from Lambda Functions to DB
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+
+  {{ service.prefix }}SecretsManagerIngress:
+    Metadata:
+      'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from Lambda Functions to Secrets Manager
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+
+  {{ service.prefix }}LambdaEgress:
+    Metadata:
+      'aws:copilot:description': 'Allow egress from DB cluster in my application to the Lambda Function'
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Egress from DB to Lambda Functions
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+
+  {{ service.prefix }}SecretsManagerEgress:
+    Metadata:
+      'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Egress from Secrets Manager to Lambda Functions
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+
+  {{ service.prefix }}HTTPSEgress:
+    Metadata:
+      'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      CidrIp: 0.0.0.0/0
+      Description: Egress for HTTPS
+      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+
+  {{ service.prefix }}LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${App}-${Env}-aurora-create-user"
+      Handler: index.handler
+      Runtime: python3.11
+      Layers:
+        - arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:1
+      MemorySize: 128
+      Timeout: 10
+      Role: !GetAtt {{ service.prefix }}LambdaFunctionExecutionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref {{ service.prefix }}DBClusterSecurityGroup
+        SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+      Code:
+        ZipFile: |
+          import json
+
+          import boto3
+          import cfnresponse
+          import psycopg2
+          from botocore.exceptions import ClientError
+
+
+          def drop_user(cursor):
+              cursor.execute("SELECT * FROM pg_catalog.pg_user WHERE usename = 'application_user'")
+
+              if cursor.fetchone() is not None:
+                  cursor.execute("GRANT application_user TO postgres")
+                  cursor.execute("DROP OWNED BY application_user")
+                  cursor.execute("DROP USER application_user")
+
+
+          def create_db_user(conn, cursor, password):
+              drop_user(cursor)
+
+              cursor.execute("CREATE USER application_user WITH ENCRYPTED PASSWORD '%s'" % password)
+              cursor.execute(
+                  "GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON ALL TABLES IN SCHEMA public TO application_user;")
+              cursor.execute("GRANT application_user to postgres;")
+              cursor.execute(
+                  "ALTER DEFAULT PRIVILEGES FOR USER application_user IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON TABLES TO application_user;")
+              conn.commit()
+
+
+          def create_or_update_application_user_secret(ssm, application_user_secret_name,
+                                                       application_user_secret_string, event):
+              application_user_secret_description = event['ResourceProperties']['SecretDescription']
+              copilot_application = event['ResourceProperties']['CopilotApplication']
+              copilot_environment = event['ResourceProperties']['CopilotEnvironment']
+
+              application_user_secret = None
+
+              try:
+                  application_user_secret = ssm.put_parameter(
+                      Name=application_user_secret_name,
+                      Description=application_user_secret_description,
+                      Value=json.dumps(application_user_secret_string),
+                      Tags=[
+                          {'Key': 'custom:cloudformation:stack-name', 'Value': event["StackId"].split('/')[1]},
+                          {'Key': 'custom:cloudformation:logical-id', 'Value': event["LogicalResourceId"]},
+                          {'Key': 'custom:cloudformation:stack-d', 'Value': event["StackId"]},
+                          {'Key': 'copilot-application', 'Value': copilot_application},
+                          {'Key': 'copilot-environment', 'Value': copilot_environment},
+                      ],
+                      Type="String",
+                  )
+              except ClientError as error:
+                  if error.response["Error"]["Code"] == "ParameterAlreadyExists":
+                      application_user_secret = ssm.put_parameter(
+                          Name=application_user_secret_name,
+                          Description=application_user_secret_description,
+                          Value=json.dumps(application_user_secret_string),
+                          Overwrite=True,
+                      )
+
+              return application_user_secret
+
+
+          def handler(event, context):
+              print("REQUEST RECEIVED:\n" + json.dumps(event))
+
+              db_master_user_secret = event['ResourceProperties']['MasterUserSecret']
+              application_user_secret_name = event['ResourceProperties']['SecretName']
+              application_user_secret_description = event['ResourceProperties']['SecretDescription']
+              copilot_application = event['ResourceProperties']['CopilotApplication']
+              copilot_environment = event['ResourceProperties']['CopilotEnvironment']
+
+              secrets_manager = boto3.client("secretsmanager")
+              ssm = boto3.client("ssm")
+
+              master_user = json.loads(secrets_manager.get_secret_value(SecretId=db_master_user_secret)["SecretString"])
+
+              application_user_password = secrets_manager.get_random_password(
+                  PasswordLength=16,
+                  ExcludeCharacters='[]{}()"@/\;=?&`><:|#',
+                  ExcludePunctuation=True,
+                  IncludeSpace=False,
+              )["RandomPassword"]
+
+              application_user_secret_string = {
+                  "username": "application_user",
+                  "password": application_user_password,
+                  "engine": master_user["engine"],
+                  "port": master_user["port"],
+                  "dbname": master_user["dbname"],
+                  "host": master_user["host"],
+                  "dbClusterIdentifier": master_user["dbClusterIdentifier"]
+              }
+
+              conn = psycopg2.connect(
+                  dbname=master_user["dbname"],
+                  user=master_user["username"],
+                  password=master_user["password"],
+                  host=master_user["host"],
+                  port=master_user["port"]
+              )
+
+              cursor = conn.cursor()
+
+              response = {"Status": "SUCCESS"}
+
+              try:
+                  match event["RequestType"]:
+                      case "Create":
+                          create_db_user(conn, cursor, application_user_password)
+
+                          response = {
+                              **response,
+                              "Data": create_or_update_application_user_secret(
+                                  ssm, application_user_secret_name, application_user_secret_string, event
+                              )
+                          }
+                      case "Update":
+                          create_db_user(conn, cursor, application_user_password)
+
+                          response = {
+                              **response,
+                              "Data": create_or_update_application_user_secret(
+                                  ssm, application_user_secret_name, application_user_secret_string, event
+                              )
+                          }
+                      case "Delete":
+                          drop_user(cursor)
+
+                          response = {
+                              **response,
+                              "Data": ssm.delete_parameter(Name=application_user_secret_name)
+                          }
+                      case _:
+                          response = {"Status": "FAILED",
+                                      "Data": {"Error": f"""Invalid requestType of '${event["RequestType"]}'"""}}
+              except Exception as e:
+                  response = {"Status": "FAILED", "Data": {"Error": str(e)}}
+
+              cursor.close()
+              conn.close()
+
+              print(json.dumps(response, default=str))
+              cfnresponse.send(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
+
+  {{ service.prefix }}ApplicationUser:
+    Type: 'Custom::{{ service.prefix }}ApplicationUser'
+    Properties:
+      ServiceToken: !GetAtt '{{ service.prefix }}LambdaFunction.Arn'
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      MasterUserSecret: !Ref {{ service.prefix }}AuroraSecret
+      SecretDescription: !Sub Aurora application user secret for ${AWS::StackName}
+      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}_APPLICATION_USER'
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E3005
+    DependsOn:
+      - VpcEndpoint
+      - {{ service.prefix }}DBWriterInstance
+
+  {{ service.prefix }}LambdaFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${App}-${Env}-aurora-user"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${App}-${Env}-aurora-user"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DeleteNetworkInterface'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - 'ssm:DeleteParameter'
+                  - 'ssm:PutParameter'
+                  - 'ssm:AddTagsToResource'
+                  - 'kms:Decrypt'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:DescribeSecret'
+                  - 'secretsmanager:GetRandomPassword'
+                  - 'secretsmanager:GetSecretValue'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
