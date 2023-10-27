@@ -269,3 +269,9 @@ Outputs:
   myS3BucketWithAnObjectName:
     Description: "The name of a user-defined bucket."
     Value: !Ref myS3BucketWithAnObjectBucket
+  
+  myS3BucketWithAnObjectKMSKeyARN:
+    Description: "ARN of the KMS Key"
+    Value: !GetAtt myS3BucketWithAnObjectKMSKey.Arn
+    Export:
+      Name: !Sub "${App}-${Env}-myS3BucketWithAnObject-KMSKeyARN"

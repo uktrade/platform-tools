@@ -35,6 +35,14 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
+          - Sid: KMSDecryptAndGenerate
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource:
+              Fn::ImportValue:
+                !Sub "${App}-${Env}-myS3BucketBucketAccess-KMSKeyARN"
           - Sid: S3ObjectActions
             Effect: Allow
             Action:
