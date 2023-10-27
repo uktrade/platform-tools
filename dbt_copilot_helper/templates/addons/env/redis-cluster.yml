@@ -115,6 +115,28 @@ Resources:
       # UpdatePolicy:
       #   UseOnlineResharding: true
 
+  {{ service.prefix }}RedisSlowLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ service.prefix }}/slow'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  {{ service.prefix }}RedisEngineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ service.prefix }}/engine'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
   # Redis endpoint stored in SSM so that other `services` can retrieve the endpoint.
   {{ service.prefix }}EndpointAddressParam:
     Type: AWS::SSM::Parameter
