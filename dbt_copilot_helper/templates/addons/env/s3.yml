@@ -203,4 +203,3 @@ Outputs:
     Value: !GetAtt {{ service.prefix }}KMSKey.Arn
     Export:
       Name: !Sub "${App}-${Env}-{{ service.prefix }}-KMSKeyARN"
-
