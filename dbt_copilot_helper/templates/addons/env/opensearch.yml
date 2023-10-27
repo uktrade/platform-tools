@@ -135,6 +135,19 @@ Resources:
           - !Select [0, !Split [ ',', !Ref PrivateSubnets ] ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
+      LogPublishingOptions:
+        AUDIT_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchAuditLogGroup.Arn
+          Enabled: true
+        ES_APPLICATION_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchApplicationLogGroup.Arn
+          Enabled: true
+        SEARCH_SLOW_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowSearchLogGroup.Arn
+          Enabled: true
+        INDEX_SLOW_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowIndexLogGroup.Arn
+          Enabled: true
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
@@ -194,6 +207,19 @@ Resources:
         SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
+      LogPublishingOptions:
+        AUDIT_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchAuditLogGroup.Arn
+          Enabled: true
+        ES_APPLICATION_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchApplicationLogGroup.Arn
+          Enabled: true
+        SEARCH_SLOW_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowSearchLogGroup.Arn
+          Enabled: true
+        INDEX_SLOW_LOGS:
+          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowIndexLogGroup.Arn
+          Enabled: true
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
@@ -215,3 +241,47 @@ Resources:
             - !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
           username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+
+  {{ service.prefix }}OpenSearchAuditLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/audit'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  {{ service.prefix }}OpenSearchApplicationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/application'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  {{ service.prefix }}OpenSearchSlowSearchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/slow-search'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  {{ service.prefix }}OpenSearchSlowIndexLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/slow-index'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
