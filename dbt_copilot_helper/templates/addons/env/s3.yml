@@ -18,6 +18,27 @@ Mappings:
     {% endfor %}
 
 Resources:
+  {{ service.prefix }}KMSKey:
+    Type: "AWS::KMS::Key"
+    Properties: 
+      Description: "KMS Key for RDS encryption"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: !Sub '${App}-${Env}-{{ service.prefix }}-key'
+        Statement:
+        - Sid: Enable IAM User Permissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+          Action: kms:*
+          Resource: '*'
+
+  {{ service.prefix }}KeyAlias:
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
+      TargetKeyId: !Ref {{ service.prefix }}KMSKey
+
   {{ service.prefix }}LoggingBucket:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store logs from {{ service.prefix }}Bucket'
@@ -28,7 +49,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+            SSEAlgorithm: aws:kms
+            KMSMasterKeyID: !Ref {{ service.prefix }}KMSKey
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -73,7 +95,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+            SSEAlgorithm: aws:kms
+            KMSMasterKeyID: !Ref {{ service.prefix }}KMSKey
       VersioningConfiguration:
         Status: Enabled
       LoggingConfiguration:
@@ -173,3 +196,10 @@ Outputs:
   {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."
     Value: !Ref {{ service.prefix }}Bucket
+  
+  {{ service.prefix }}KMSKeyARN:
+    Description: "ARN of the KMS Key"
+    Value: !GetAtt {{ service.prefix }}KMSKey.Arn
+    Export:
+      Name: !Sub "${App}-${Env}-{{ service.prefix }}-KMSKeyARN"
+
