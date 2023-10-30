@@ -1,4 +1,4 @@
-repository: test_codebase_prepare_generate0
+repository: test-app
 builder:
   name: paketobuildpacks/builder-jammy-base
   version: 0.5.678

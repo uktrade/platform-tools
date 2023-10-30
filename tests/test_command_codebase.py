@@ -33,20 +33,23 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
     def mocked_response():
         r = requests.Response()
         r.status_code = 200
-        type(r).content = PropertyMock(return_value=mocked_response_content.encode("utf-8"))
+        type(r).content = PropertyMock(
+            return_value=mocked_response_content.encode("utf-8")
+        )
 
         return r
 
     mocked_requests_get.return_value = mocked_response()
 
     os.chdir(tmp_path)
+    Path.cwd().rename(Path.cwd().parent / "test-app")
 
     subprocess.run(["git", "init"])
 
     result = CliRunner().invoke(prepare)
 
     expected_files_dir = Path(EXPECTED_FILES_DIR) / ".copilot"
-    copilot_dir = tmp_path / ".copilot"
+    copilot_dir = Path.cwd() / ".copilot"
 
     compare_directories = filecmp.dircmp(str(expected_files_dir), str(copilot_dir))
 
@@ -57,7 +60,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
     assert is_same_files(compare_directories) is True
 
 
-def test_codebase_prepare_does_not_generate_files_in_an_unexpected_repo(tmp_path):
+def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(tmp_path):
     os.chdir(tmp_path)
     Path.cwd().rename(Path.cwd().parent / "test-app-deploy")
 
