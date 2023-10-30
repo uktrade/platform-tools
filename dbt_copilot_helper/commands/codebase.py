@@ -1,3 +1,4 @@
+import stat
 import subprocess
 from pathlib import Path
 
@@ -61,6 +62,10 @@ def prepare():
     click.echo(
         mkfile(Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True)
     )
+
+    image_build_run_file = Path(".copilot/image_build_run.sh")
+    image_build_run_file.chmod(image_build_run_file.stat().st_mode | stat.S_IEXEC)
+
     click.echo(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
 
     for phase in ["build", "install", "post_build", "pre_build"]:
