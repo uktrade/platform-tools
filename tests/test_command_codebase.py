@@ -42,7 +42,6 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
     os.chdir(tmp_path)
 
     subprocess.run(["git", "init"])
-    subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
     result = CliRunner().invoke(prepare)
 
@@ -56,6 +55,21 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     assert result.exit_code == 0
     assert is_same_files(compare_directories) is True
+
+
+def test_codebase_prepare_does_not_generate_files_in_an_unexpected_repo(tmp_path):
+    os.chdir(tmp_path)
+    Path.cwd().rename(Path.cwd().parent / "test-app-deploy")
+
+    subprocess.run(["git", "init"])
+
+    result = CliRunner().invoke(prepare)
+
+    assert (
+        "You are in the deploy repository; make sure you are in the application codebase repository."
+        in result.stdout
+    )
+    assert result.exit_code == 1
 
 
 def is_same_files(compare_directories):

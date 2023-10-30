@@ -23,6 +23,19 @@ def codebase():
 def prepare():
     templates = setup_templates()
 
+    repository = (
+        subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        .stdout.split("/")[-1]
+        .strip()
+    )
+
+    if "deploy" in repository:
+        click.secho(
+            "You are in the deploy repository; make sure you are in the application codebase repository.",
+            fg="red",
+        )
+        exit(1)
+
     builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
     builder_configuration_response = requests.get(builder_configuration_url)
     builder_configuration_content = yaml.safe_load(
@@ -37,12 +50,6 @@ def prepare():
         None,
     )
     builder_version = max(x["version"] for x in builder_versions["versions"])
-
-    repository = (
-        subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
-        .stdout.split("/")[-1]
-        .strip()
-    )
 
     config_contents = templates.get_template(f".copilot/config.yml").render(
         repository=repository, builder_version=builder_version
