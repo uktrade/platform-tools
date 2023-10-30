@@ -164,6 +164,14 @@ def make_addons(directory="."):
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
+    click.echo("\n>>> Generating Environment overrides\n")
+
+    overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
+    overrides_path.mkdir(parents=True, exist_ok=True)
+    overrides_file = overrides_path.joinpath("cfn.patches.yml")
+
+    overrides_file.write_text(templates.get_template("env/overrides/cfn.patches.yml").render())
+
     click.echo("\n>>> Generating addons CloudFormation\n")
 
     path = Path(f"copilot/environments/addons/")

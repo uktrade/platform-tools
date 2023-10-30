@@ -95,12 +95,47 @@ Resources:
       NumNodeGroups: 1   # run in non clustered mode with 1 master and 0-5 replicas
       ReplicasPerNodeGroup: !FindInMap [myRedisEnvScalingConfigurationMap, !Ref Env, NumReplicas]
       PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
+      LogDeliveryConfigurations:
+        - DestinationDetails:
+            CloudWatchLogsDetails:
+              LogGroup: !Sub '/aws/elasticache/${App}/${Env}/myRedis/slow'
+          DestinationType: cloudwatch-logs
+          LogFormat: json
+          LogType: slow-log
+        - DestinationDetails:
+            CloudWatchLogsDetails:
+              LogGroup: !Sub '/aws/elasticache/${App}/${Env}/myRedis/engine'
+          DestinationType: cloudwatch-logs
+          LogFormat: json
+          LogType: engine-log
       SecurityGroupIds:
       - !Ref myRedisSecurityGroup
 
       TransitEncryptionEnabled: true
       # UpdatePolicy:
       #   UseOnlineResharding: true
+
+  myRedisRedisSlowLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/slow'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
+
+  myRedisRedisEngineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/engine'
+      RetentionInDays: 7
+      Tags:
+        - Key: 'Copilot-Application'
+          Value: !Sub ${App}
+        - Key: 'Copilot-Environment'
+          Value: !Sub ${Env}
 
   # Redis endpoint stored in SSM so that other `services` can retrieve the endpoint.
   myRedisEndpointAddressParam:
