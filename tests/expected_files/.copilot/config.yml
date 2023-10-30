@@ -1,0 +1,7 @@
+repository: test_codebase_prepare_generate0
+builder:
+  name: paketobuildpacks/builder-jammy-base
+  version: 0.5.678
+packages:
+  - libpq-dev
+  - libsqlite3-dev
