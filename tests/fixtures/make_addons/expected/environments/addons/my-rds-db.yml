@@ -143,7 +143,7 @@ Resources:
 
   myRdsDbKMSKey:
     Type: "AWS::KMS::Key"
-    Properties: 
+    Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
@@ -155,7 +155,7 @@ Resources:
             AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
           Action: kms:*
           Resource: '*'
-    
+
   myRdsDbKeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
@@ -168,7 +168,9 @@ Resources:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
     Properties:
+      AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 8
       EnablePerformanceInsights: true
       EnableCloudwatchLogsExports:
         - postgresql
@@ -181,8 +183,6 @@ Resources:
       StorageType: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
-      AllowMajorVersionUpgrade: false
-      BackupRetentionPeriod: 7
       DBName: !Ref myRdsDbDBName
       KmsKeyId: !Ref myRdsDbKMSKey
       MasterUsername:
