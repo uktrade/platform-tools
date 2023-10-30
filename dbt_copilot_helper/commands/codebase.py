@@ -51,12 +51,16 @@ def prepare():
     )
     builder_version = max(x["version"] for x in builder_versions["versions"])
 
+    Path("./.copilot/phases").mkdir(parents=True, exist_ok=True)
+    image_build_run_contents = templates.get_template(f".copilot/image_build_run.sh").render()
+
     config_contents = templates.get_template(f".copilot/config.yml").render(
         repository=repository, builder_version=builder_version
     )
 
-    Path("./.copilot/phases").mkdir(parents=True, exist_ok=True)
-
+    click.echo(
+        mkfile(Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True)
+    )
     click.echo(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
 
     for phase in ["build", "install", "post_build", "pre_build"]:
