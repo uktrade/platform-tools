@@ -95,7 +95,7 @@ Resources:
 
   {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
-    Properties: 
+    Properties:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
         Version: '2012-10-17'
@@ -120,6 +120,7 @@ Resources:
     Type: 'AWS::RDS::DBCluster'
     Properties:
       AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 8
       MasterUsername:
         !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
