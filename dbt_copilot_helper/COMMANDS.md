@@ -235,7 +235,7 @@ copilot-helper codebase prepare
 
 [↩ Parent](#copilot-helper-codebase)
 
-    Sets up the application codebase for a CodeBuild project.
+    Sets up an application codebase for use within a DBT platform project.
 
 ## Usage
 
