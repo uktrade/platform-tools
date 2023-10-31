@@ -74,6 +74,22 @@ def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(tmp_path):
     assert result.exit_code == 1
 
 
+def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
+    os.chdir(tmp_path)
+    Path(tmp_path / "copilot").mkdir()
+
+    subprocess.run(["git", "init"])
+    subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"])
+
+    result = CliRunner().invoke(prepare)
+
+    assert (
+        "You are in the deploy repository; make sure you are in the application codebase repository."
+        in result.stdout
+    )
+    assert result.exit_code == 1
+
+
 def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):
     os.chdir(tmp_path)
 

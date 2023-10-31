@@ -32,7 +32,7 @@ def prepare():
         .removesuffix(".git")
     )
 
-    if repository.endswith("-deploy"):
+    if repository.endswith("-deploy") or Path("./copilot").exists():
         click.secho(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
             fg="red",
