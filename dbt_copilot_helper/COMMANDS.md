@@ -235,6 +235,8 @@ copilot-helper codebase prepare
 
 [↩ Parent](#copilot-helper-codebase)
 
+    Sets up the application codebase for a CodeBuild project.
+
 ## Usage
 
 ```

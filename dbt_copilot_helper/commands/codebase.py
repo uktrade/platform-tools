@@ -22,6 +22,7 @@ def codebase():
 
 @codebase.command()
 def prepare():
+    """Sets up the application codebase for a CodeBuild project."""
     templates = setup_templates()
 
     repository = (
