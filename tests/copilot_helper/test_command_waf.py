@@ -19,7 +19,7 @@ from moto import mock_wafv2
 from dbt_copilot_helper.commands.waf import attach_waf
 from dbt_copilot_helper.commands.waf import check_waf
 from dbt_copilot_helper.commands.waf import custom_waf
-from tests.conftest import TEST_APP_DIR
+from tests.copilot_helper.conftest import TEST_APP_DIR
 
 
 @pytest.fixture

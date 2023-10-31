@@ -11,14 +11,14 @@ from dbt_copilot_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
 from dbt_copilot_helper.commands.copilot import make_addons
-from tests.conftest import BASE_DIR
-from tests.conftest import TEST_APP_DIR
+from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import TEST_APP_DIR
 
 
 def prepare_fake_cloudformation_templates(template: str) -> None:
-    addons_directory = Path(f"{BASE_DIR}/tests/test-application-deploy/copilot/environments/addons")
+    addons_directory = Path(f"{TEST_APP_DIR}/copilot/environments/addons")
     addons_directory.mkdir(parents=True, exist_ok=True)
-    copyfile(f"{BASE_DIR}/tests/fixtures/{template}", f"{addons_directory}/{template}")
+    copyfile(f"{FIXTURES_DIR}/{template}", f"{addons_directory}/{template}")
 
 
 def ensure_directory_does_not_exist(copilot_directory: Path) -> None:
@@ -55,6 +55,7 @@ def application_under_test(copilot_directory):
 def test_check_cloudformation_with_no_args_summarises_all_successes(
     app_with_valid_cf_template, copilot_directory: Path
 ) -> None:
+    print(copilot_directory)
     result = CliRunner().invoke(
         check_cloudformation_command, args=["--directory", copilot_directory]
     )

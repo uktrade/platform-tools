@@ -14,11 +14,12 @@ from moto import mock_route53
 from moto import mock_secretsmanager
 from moto.ec2 import utils as ec2_utils
 
-BASE_DIR = Path(__file__).parent.parent
-TEST_APP_DIR = BASE_DIR / "tests" / "test-application-deploy"
-FIXTURES_DIR = BASE_DIR / "tests" / "fixtures"
-EXPECTED_FILES_DIR = BASE_DIR / "tests" / "expected_files"
-UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "utils" / "fixtures"
+BASE_DIR = Path(__file__).parent.parent.parent
+TEST_APP_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-application-deploy"
+FIXTURES_DIR = BASE_DIR / "tests" / "copilot_helper" / "fixtures"
+EXPECTED_FILES_DIR = BASE_DIR / "tests" / "copilot_helper" / "expected_files"
+UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "copilot_helper" / "utils" / "fixtures"
+DOCS_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-docs"
 
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)

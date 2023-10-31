@@ -12,7 +12,7 @@ from moto import mock_ssm
 
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.utils.aws import SSM_PATH
-from tests.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
 redis:

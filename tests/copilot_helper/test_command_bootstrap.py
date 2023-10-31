@@ -22,8 +22,8 @@ from dbt_copilot_helper.commands.bootstrap import migrate_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
-from tests.conftest import FIXTURES_DIR
-from tests.conftest import TEST_APP_DIR
+from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import TEST_APP_DIR
 
 
 class MockEntity(JsonObject):

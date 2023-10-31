@@ -6,7 +6,7 @@ import pytest
 import yaml
 from jsonschema import validate
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 with open(PROJECT_ROOT / "dbt_copilot_helper/addon-plans.yml") as fd:
     plans = yaml.safe_load(fd)
