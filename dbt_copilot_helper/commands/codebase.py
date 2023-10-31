@@ -25,9 +25,10 @@ def prepare():
     templates = setup_templates()
 
     repository = (
-        subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True)
         .stdout.split("/")[-1]
         .strip()
+        .removesuffix(".git")
     )
 
     if "deploy" in repository:

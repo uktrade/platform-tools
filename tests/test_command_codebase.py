@@ -34,18 +34,16 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
     def mocked_response():
         r = requests.Response()
         r.status_code = 200
-        type(r).content = PropertyMock(
-            return_value=mocked_response_content.encode("utf-8")
-        )
+        type(r).content = PropertyMock(return_value=mocked_response_content.encode("utf-8"))
 
         return r
 
     mocked_requests_get.return_value = mocked_response()
 
     os.chdir(tmp_path)
-    Path.cwd().rename(Path.cwd().parent / "test-app")
 
     subprocess.run(["git", "init"])
+    subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
 
     result = CliRunner().invoke(prepare)
 
@@ -63,9 +61,9 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
 def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(tmp_path):
     os.chdir(tmp_path)
-    Path.cwd().rename(Path.cwd().parent / "test-app-deploy")
 
     subprocess.run(["git", "init"])
+    subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app-deploy.git"])
 
     result = CliRunner().invoke(prepare)
 
@@ -78,17 +76,16 @@ def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(tmp_path):
 
 def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):
     os.chdir(tmp_path)
-    Path.cwd().rename(Path.cwd().parent / "another-test-app")
 
     subprocess.run(["git", "init"])
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/another-test-app.git"]
+    )
 
     result = CliRunner().invoke(prepare)
 
     assert result.exit_code == 0
-    assert (
-        stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode)
-        == "-rwxr--r--"
-    )
+    assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
 
 
 def is_same_files(compare_directories):
