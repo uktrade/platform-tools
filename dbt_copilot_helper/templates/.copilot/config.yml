@@ -1,0 +1,7 @@
+repository: {{ repository }}
+builder:
+  name: paketobuildpacks/builder-jammy-base
+  version: {{ builder_version }}
+packages:
+  - libpq-dev
+  - libsqlite3-dev
