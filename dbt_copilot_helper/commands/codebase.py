@@ -32,7 +32,7 @@ def prepare():
         .removesuffix(".git")
     )
 
-    if "deploy" in repository:
+    if repository.endswith("-deploy"):
         click.secho(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
             fg="red",
