@@ -1,5 +1,4 @@
 import json
-import os
 from unittest.mock import patch
 
 import boto3
@@ -17,6 +16,7 @@ from dbt_copilot_helper.commands.codebuild import create_codedeploy_role
 from dbt_copilot_helper.commands.codebuild import link_github
 from dbt_copilot_helper.commands.codebuild import slackcreds
 from dbt_copilot_helper.commands.codebuild import update_parameter
+from tests.copilot_helper.conftest import BASE_DIR
 
 # Not much value in testing these while moto doesn't support `import_source_credentials`` or `list_source_credentials`
 # def test_import_pat():
@@ -142,10 +142,7 @@ def test_create_codedeploy_role_returns_200(alias_session):
 
 @mock_sts
 def test_create_codedeploy_role_policy_already_exists(alias_session):
-    current_filepath = os.path.dirname(os.path.realpath(__file__))
-    with open(
-        f"{current_filepath}/../dbt_copilot_helper/templates/ci-codebuild-role-policy.json"
-    ) as f:
+    with open(f"{BASE_DIR}/dbt_copilot_helper/templates/ci-codebuild-role-policy.json") as f:
         policy_doc = json.load(f)
     alias_session.client("iam", region_name=AWS_REGION).create_policy(
         PolicyName="ci-CodeBuild-policy",

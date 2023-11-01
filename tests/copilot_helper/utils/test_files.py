@@ -5,7 +5,7 @@ from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
-from tests.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import FIXTURES_DIR
 
 
 @pytest.mark.parametrize(

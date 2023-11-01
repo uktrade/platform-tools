@@ -9,7 +9,7 @@ import botocore.errorfactory
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.svc import deploy
-from tests.conftest import UTILS_FIXTURES_DIR
+from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
 
 
 @patch("boto3.client")

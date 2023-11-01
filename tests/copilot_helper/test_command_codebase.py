@@ -10,7 +10,7 @@ import requests
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.codebase import prepare
-from tests.conftest import EXPECTED_FILES_DIR
+from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
 
 
 @patch("dbt_copilot_helper.commands.codebase.requests.get")

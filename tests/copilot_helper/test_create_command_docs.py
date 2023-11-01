@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from click.testing import CliRunner
 
-from tests.conftest import BASE_DIR
+from tests.copilot_helper.conftest import DOCS_DIR
 from utils.create_command_docs import docs
 
 
@@ -13,8 +13,8 @@ class TestCreateCommandDocsCli(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        Path(f"{BASE_DIR}/tests/test-docs/test-docs.md").unlink()
-        Path(f"{BASE_DIR}/tests/test-docs/example.md").unlink()
+        Path(f"{DOCS_DIR}/test-docs.md").unlink(missing_ok=True)
+        Path(f"{DOCS_DIR}/example.md").unlink(missing_ok=True)
 
     def test_check_required_module_option(self):
         result = self.runner.invoke(docs, ["--cmd", "bar", "--output", "baz"])
@@ -59,7 +59,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Error: Could not find command bar in copilot_helper module" in output
 
     def test_create_command_docs(self):
-        output_path = f"{BASE_DIR}/tests/test-docs/test-docs.md"
+        output_path = f"{DOCS_DIR}/test-docs.md"
 
         assert not Path(output_path).is_file()
 
@@ -81,8 +81,8 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Markdown docs have been successfully saved to " + output_path in output
 
     def test_create_command_docs_template_output(self):
-        output_path = f"{BASE_DIR}/tests/test-docs/example.md"
-        expected_output_path = f"{BASE_DIR}/tests/test-docs/expected_output.md"
+        output_path = f"{DOCS_DIR}/example.md"
+        expected_output_path = f"{DOCS_DIR}/expected_output.md"
 
         assert not Path(output_path).is_file()
 
@@ -90,7 +90,7 @@ class TestCreateCommandDocsCli(TestCase):
             docs,
             [
                 "--module",
-                "tests.test-docs.example",
+                "tests.copilot_helper.test-docs.example",
                 "--cmd",
                 "cli",
                 "--output",

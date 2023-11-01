@@ -11,10 +11,10 @@ from click.testing import CliRunner
 from freezegun.api import freeze_time
 
 from dbt_copilot_helper.commands.pipeline import generate_config
-from tests.conftest import EXPECTED_FILES_DIR
-from tests.conftest import FIXTURES_DIR
-from tests.conftest import assert_file_created_in_stdout
-from tests.conftest import mock_codestar_connections_boto_client
+from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
+from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import assert_file_created_in_stdout
+from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
 
 
 @freeze_time("2023-08-22 16:00:00")
