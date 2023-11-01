@@ -29,9 +29,7 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
     result = CliRunner().invoke(generate_config)
 
-    expected_files_dir = (
-        Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
-    )
+    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "environments"
     assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
     assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
     assert_yaml_in_output_file_matches_expected(
@@ -58,9 +56,7 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 
     CliRunner().invoke(generate_config)
 
-    expected_files_dir = (
-        Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "test-app-environments"
-    )
+    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "environments"
     assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
     assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
     assert_yaml_in_output_file_matches_expected(
@@ -146,7 +142,7 @@ def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
 
 
 def setup_output_file_paths(tmp_path):
-    output_dir = tmp_path / "copilot/pipelines/test-app-environments"
+    output_dir = tmp_path / "copilot/pipelines/environments"
     buildspec = output_dir / "buildspec.yml"
     manifest = output_dir / "manifest.yml"
     cfn_patch = output_dir / "overrides" / "cfn.patches.yml"
