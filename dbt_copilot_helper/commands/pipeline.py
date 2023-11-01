@@ -45,7 +45,7 @@ def generate_config(directory="."):
         abort_with_error("There is no CodeStar Connection to use")
 
     base_path = Path(directory)
-    pipelines_environments_dir = base_path / f"copilot/pipelines/{ app_config['app'] }-environments"
+    pipelines_environments_dir = base_path / f"copilot/pipelines/environments"
     overrides_dir = pipelines_environments_dir / "overrides"
 
     makedirs(overrides_dir, exist_ok=True)
@@ -71,7 +71,7 @@ def generate_config(directory="."):
 def _create_file_from_template(
     base_path, file_name, pipelines_environments_dir, template_data, templates
 ):
-    contents = templates.get_template(f"pipeline/{file_name}").render(template_data)
+    contents = templates.get_template(f"pipeline/environments/{file_name}").render(template_data)
     click.echo(mkfile(base_path, pipelines_environments_dir / file_name, contents, overwrite=True))
 
 
