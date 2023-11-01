@@ -7,6 +7,8 @@
 - [copilot-helper bootstrap copy-secrets](#copilot-helper-bootstrap-copy-secrets)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
+- [copilot-helper codebase](#copilot-helper-codebase)
+- [copilot-helper codebase prepare](#copilot-helper-codebase-prepare)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
 - [copilot-helper codebuild link-github](#copilot-helper-codebuild-link-github)
 - [copilot-helper codebuild create-codedeploy-role](#copilot-helper-codebuild-create-codedeploy-role)
@@ -50,6 +52,7 @@ copilot-helper <command> [--version]
 
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
+- [`codebase` ↪](#copilot-helper-codebase)
 - [`codebuild` ↪](#copilot-helper-codebuild)
 - [`conduit` ↪](#copilot-helper-conduit)
 - [`config` ↪](#copilot-helper-config)
@@ -203,6 +206,44 @@ copilot-helper check-cloudformation lint [-d <directory>]
 
 - `-d
 --directory <text>` _Defaults to copilot._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper codebase
+
+[↩ Parent](#copilot-helper)
+
+    Codebase commands.
+
+## Usage
+
+```
+copilot-helper codebase prepare 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`prepare` ↪](#copilot-helper-codebase-prepare)
+
+# copilot-helper codebase prepare
+
+[↩ Parent](#copilot-helper-codebase)
+
+    Sets up an application codebase for use within a DBT platform project.
+
+## Usage
+
+```
+copilot-helper codebase prepare 
+```
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
