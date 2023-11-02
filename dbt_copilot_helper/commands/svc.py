@@ -28,17 +28,21 @@ def svc():
 def deploy(env, name, image_tag):
     """Deploy image tag to a service, defaults to image tagged latest."""
 
+    deploy_command = f"copilot svc deploy --env {env} --name {name}"
+
     repository_name = validate_service_manifest_and_return_repository(name)
 
-    image_tags = get_all_tags_for_image(image_tag, repository_name)
+    if repository_name != "uktrade/copilot-bootstrap":
+        image_tags = get_all_tags_for_image(image_tag, repository_name)
 
-    if image_tag == "latest":
-        image_tag = get_commit_tag_for_latest_image(image_tags)
+        if image_tag == "latest":
+            image_tag = get_commit_tag_for_latest_image(image_tags)
 
-    command = f"IMAGE_TAG={image_tag} copilot svc deploy --env {env} --name {name}"
-    click.echo(f"Running: {command}")
+        deploy_command = f"IMAGE_TAG={image_tag} {deploy_command}"
+
+    click.echo(f"Running: {deploy_command}")
     subprocess.call(
-        command,
+        deploy_command,
         shell=True,
     )
 
