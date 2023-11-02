@@ -43,19 +43,24 @@ def generate():
     if codestar_connection_arn is None:
         abort_with_error("There is no CodeStar Connection to use")
 
+    _generate_environments_pipeline(
+        app_name, codestar_connection_arn, git_repo, pipeline_environments, templates
+    )
+
+
+def _generate_environments_pipeline(
+    app_name, codestar_connection_arn, git_repo, pipeline_environments, templates
+):
     base_path = Path(".")
     pipelines_environments_dir = base_path / f"copilot/pipelines/environments"
     overrides_dir = pipelines_environments_dir / "overrides"
-
     makedirs(overrides_dir, exist_ok=True)
-
     template_data = {
         "app_name": app_name,
         "git_repo": git_repo,
         "codestar_connection_arn": codestar_connection_arn,
         "pipeline_environments": pipeline_environments["environments"],
     }
-
     _create_file_from_template(
         base_path, "buildspec.yml", pipelines_environments_dir, template_data, templates
     )
@@ -93,4 +98,4 @@ def _get_git_remote():
 
     domain, repo = git_repo.split("@")[1].split(":")
 
-    return f"https://{domain}/{re.sub(r'.git$', '' , repo)}"
+    return f"https://{domain}/{re.sub(r'.git$', '', repo)}"
