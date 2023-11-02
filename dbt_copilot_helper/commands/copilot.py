@@ -219,6 +219,11 @@ def make_addons(directory="."):
             **addon_config,
         }
 
+        if addon_type in ["s3", "s3-policy"]:
+            service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
+                "BucketAccess", 1
+            )[0]
+
         # generate env addons
         for addon in addon_template_map[addon_type].get("env", []):
             template = templates.get_template(addon["template"])
