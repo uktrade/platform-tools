@@ -12,7 +12,19 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  DefaultPublicRoute:
+    Type: String
+  InternetGateway:
+    Type: String
+  InternetGatewayAttachment:
+    Type: String
   PrivateSubnets:
+    Type: String
+  PublicRouteTable:
+    Type: String
+  PublicSubnet1RouteTableAssociation:
+    Type: String
+  PublicSubnet2RouteTableAssociation:
     Type: String
   VpcId:
     Type: String
@@ -389,6 +401,12 @@ Resources:
       MasterUserSecret: !Ref {{ service.prefix }}RDSSecret
       SecretDescription: !Sub RDS application user secret for ${AWS::StackName}
       SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}_APPLICATION_USER'
+      DefaultPublicRoute: !Ref DefaultPublicRoute
+      InternetGateway: !Ref InternetGateway
+      InternetGatewayAttachment: !Ref InternetGatewayAttachment
+      PublicRouteTable: !Ref PublicRouteTable
+      PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation
+      PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:
@@ -399,6 +417,22 @@ Resources:
     DependsOn:
       - VpcEndpoint
       - {{ service.prefix }}DBInstance
+      - AdditionalNatGateway1
+      - AdditionalNatGateway2
+      - AdditionalPrivateRoute1
+      - AdditionalPrivateRouteTable1
+      - AdditionalPrivateRouteTable1Association
+      - AdditionalPrivateRoute2
+      - AdditionalPrivateRouteTable2
+      - AdditionalPrivateRouteTable2Association
+      - {{ service.prefix }}SecretRDSAttachment
+      - {{ service.prefix }}DBIngress
+      - {{ service.prefix }}SecretsManagerIngress
+      - {{ service.prefix }}LambdaIngress
+      - {{ service.prefix }}SecretsManagerEgress
+      - {{ service.prefix }}LambdaEgress
+      - {{ service.prefix }}HTTPSEgress
+      - {{ service.prefix }}KeyAlias
 
   {{ service.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
