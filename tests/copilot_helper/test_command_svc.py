@@ -245,6 +245,42 @@ def test_svc_deploy_with_service_name_not_in_image_location_fails_with_message(
     )
 
 
+@patch("boto3.client")
+@patch("subprocess.call")
+def test_svc_deploy_with_copilot_bootstrap_image_does_not_change_the_tag(
+    subprocess_call, mock_boto_client, tmp_path
+):
+    """Test that when we specify `...copilot-bootstrap:latest`, the image
+    location is left as is."""
+
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
+
+    os.chdir(tmp_path)
+    manifest_dir = Path("copilot") / name
+    os.makedirs(manifest_dir)
+    shutil.copy(
+        UTILS_FIXTURES_DIR / "test_service_manifest_with_copilot_bootstrap_image.yml",
+        manifest_dir / "manifest.yml",
+    )
+
+    result = CliRunner().invoke(
+        deploy,
+        [
+            "--env",
+            env,
+            "--name",
+            name,
+        ],
+    )
+
+    mock_boto_client.describe_images.assert_not_called()
+    subprocess_call.assert_called_once_with(
+        f"copilot svc deploy --env {env} --name {name}",
+        shell=True,
+    )
+
+
 def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client):
     mock_boto_client.return_value = mock_boto_client
     image_tags = [
