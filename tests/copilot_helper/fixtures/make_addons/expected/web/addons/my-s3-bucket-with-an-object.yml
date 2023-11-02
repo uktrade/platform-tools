@@ -20,10 +20,10 @@ Parameters:
 Mappings:
   myS3BucketWithAnObjectBucketNameMap:
     # Create an entry for each environment
-    
+
     development:
       BucketName: 'my-bucket-dev'
-    
+
 
 Resources:
   myS3BucketWithAnObjectS3AccessPolicy:

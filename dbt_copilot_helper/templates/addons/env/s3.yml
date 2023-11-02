@@ -12,16 +12,16 @@ Parameters:
 Mappings:
   {{ service.prefix }}BucketNameMap:
     # Create an entry for each environment
-    {% for env_name, config in service.environments.items() %}
+{% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
       LoggingBucketName: '{{ config.bucket_name }}-logs'
-    {% endfor %}
+{% endfor %}
 
 Resources:
   {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
-    Properties: 
+    Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
@@ -197,7 +197,7 @@ Outputs:
   {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."
     Value: !Ref {{ service.prefix }}Bucket
-  
+
   {{ service.prefix }}KMSKeyARN:
     Description: "ARN of the KMS Key"
     Value: !GetAtt {{ service.prefix }}KMSKey.Arn
