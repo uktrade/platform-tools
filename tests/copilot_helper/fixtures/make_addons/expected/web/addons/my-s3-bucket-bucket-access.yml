@@ -20,10 +20,10 @@ Parameters:
 Mappings:
   myS3BucketBucketAccessBucketNameMap:
     # Create an entry for each environment
-    
+
     development:
       BucketName: 'my-bucket'
-    
+
 
 Resources:
   myS3BucketBucketAccessS3AccessPolicy:
@@ -42,7 +42,7 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               Fn::ImportValue:
-                !Sub "${App}-${Env}-myS3BucketBucketAccess-KMSKeyARN"
+                !Sub "${App}-${Env}-myS3Bucket-KMSKeyARN"
           - Sid: S3ObjectActions
             Effect: Allow
             Action:
