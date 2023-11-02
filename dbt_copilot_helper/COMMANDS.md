@@ -26,7 +26,7 @@
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
-- [copilot-helper pipeline generate-config](#copilot-helper-pipeline-generate-config)
+- [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper svc](#copilot-helper-svc)
 - [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
@@ -646,7 +646,7 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
 ## Usage
 
 ```
-copilot-helper pipeline generate-config 
+copilot-helper pipeline generate 
 ```
 
 ## Options
@@ -656,16 +656,16 @@ copilot-helper pipeline generate-config
 
 ## Commands
 
-- [`generate-config` ↪](#copilot-helper-pipeline-generate-config)
+- [`generate` ↪](#copilot-helper-pipeline-generate)
 
-# copilot-helper pipeline generate-config
+# copilot-helper pipeline generate
 
 [↩ Parent](#copilot-helper-pipeline)
 
 ## Usage
 
 ```
-copilot-helper pipeline generate-config [-d <directory>] 
+copilot-helper pipeline generate [-d <directory>] 
 ```
 
 ## Options

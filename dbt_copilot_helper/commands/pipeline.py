@@ -28,7 +28,7 @@ def pipeline():
 
 @pipeline.command()
 @click.option("-d", "--directory", type=str, default=".")
-def generate_config(directory="."):
+def generate(directory="."):
     templates = setup_templates()
 
     app_config = _safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
