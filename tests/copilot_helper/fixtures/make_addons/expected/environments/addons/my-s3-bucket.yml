@@ -12,16 +12,16 @@ Parameters:
 Mappings:
   myS3BucketBucketNameMap:
     # Create an entry for each environment
-    
+
     development:
       BucketName: 'my-bucket-dev'
       LoggingBucketName: 'my-bucket-dev-logs'
-    
+
 
 Resources:
   myS3BucketKMSKey:
     Type: "AWS::KMS::Key"
-    Properties: 
+    Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
@@ -141,7 +141,7 @@ Outputs:
   myS3BucketName:
     Description: "The name of a user-defined bucket."
     Value: !Ref myS3BucketBucket
-  
+
   myS3BucketKMSKeyARN:
     Description: "ARN of the KMS Key"
     Value: !GetAtt myS3BucketKMSKey.Arn

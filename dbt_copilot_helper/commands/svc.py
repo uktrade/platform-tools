@@ -95,12 +95,4 @@ def validate_service_manifest_and_return_repository(name):
         )
         exit(1)
 
-    repository_name = get_repository_name_from_manifest(service_manifest)
-    if service_name_in_manifest not in repository_name:
-        click.secho(
-            f"The image location does not contain the service name ({name}) in the service manifest.",
-            fg="red",
-        )
-        exit(1)
-
-    return repository_name
+    return get_repository_name_from_manifest(service_manifest)
