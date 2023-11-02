@@ -102,11 +102,13 @@ BOOTSTRAP_SCHEMA = Schema(
 
 PIPELINES_SCHEMA = Schema(
     {
-        "environments": [
-            {
-                "name": str,
-                Optional("requires_approval"): bool,
-            },
-        ],
+        "environments": Optional(
+            [
+                {
+                    "name": str,
+                    Optional("requires_approval"): bool,
+                },
+            ]
+        ),
     },
 )

@@ -33,7 +33,7 @@ def generate():
     app_config = _safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
     app_name = app_config["app"]
 
-    pipeline_environments = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
+    pipeline_config = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
     git_repo = _get_git_remote()
     if not git_repo:
@@ -43,13 +43,14 @@ def generate():
     if codestar_connection_arn is None:
         abort_with_error("There is no CodeStar Connection to use")
 
-    _generate_environments_pipeline(
-        app_name, codestar_connection_arn, git_repo, pipeline_environments, templates
-    )
+    if "environments" in pipeline_config:
+        _generate_environments_pipeline(
+            app_name, codestar_connection_arn, git_repo, pipeline_config["environments"], templates
+        )
 
 
 def _generate_environments_pipeline(
-    app_name, codestar_connection_arn, git_repo, pipeline_environments, templates
+    app_name, codestar_connection_arn, git_repo, configuration, templates
 ):
     base_path = Path(".")
     pipelines_environments_dir = base_path / f"copilot/pipelines/environments"
@@ -59,7 +60,7 @@ def _generate_environments_pipeline(
         "app_name": app_name,
         "git_repo": git_repo,
         "codestar_connection_arn": codestar_connection_arn,
-        "pipeline_environments": pipeline_environments["environments"],
+        "pipeline_environments": configuration,
     }
     _create_file_from_template(
         base_path, "buildspec.yml", pipelines_environments_dir, template_data, templates
