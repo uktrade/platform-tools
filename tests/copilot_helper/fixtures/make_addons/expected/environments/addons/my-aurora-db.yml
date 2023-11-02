@@ -12,7 +12,19 @@ Parameters:
   # Parameters from the parent stack brought in via addons.parameters.yml...
   EnvironmentSecurityGroup:
     Type: String
+  DefaultPublicRoute:
+    Type: String
+  InternetGateway:
+    Type: String
+  InternetGatewayAttachment:
+    Type: String
   PrivateSubnets:
+    Type: String
+  PublicRouteTable:
+    Type: String
+  PublicSubnet1RouteTableAssociation:
+    Type: String
+  PublicSubnet2RouteTableAssociation:
     Type: String
   VpcId:
     Type: String
@@ -407,6 +419,12 @@ Resources:
       MasterUserSecret: !Ref myAuroraDbAuroraSecret
       SecretDescription: !Sub Aurora application user secret for ${AWS::StackName}
       SecretName: !Sub '/copilot/${App}/${Env}/secrets/MY_AURORA_DB_APPLICATION_USER'
+      DefaultPublicRoute: !Ref DefaultPublicRoute
+      InternetGateway: !Ref InternetGateway
+      InternetGatewayAttachment: !Ref InternetGatewayAttachment
+      PublicRouteTable: !Ref PublicRouteTable
+      PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation
+      PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:
@@ -417,6 +435,22 @@ Resources:
     DependsOn:
       - VpcEndpoint
       - myAuroraDbDBWriterInstance
+      - AdditionalNatGateway1
+      - AdditionalNatGateway2
+      - AdditionalPrivateRoute1
+      - AdditionalPrivateRouteTable1
+      - AdditionalPrivateRouteTable1Association
+      - AdditionalPrivateRoute2
+      - AdditionalPrivateRouteTable2
+      - AdditionalPrivateRouteTable2Association
+      - myAuroraDbSecretAuroraClusterAttachment
+      - myAuroraDbEnvironmentIngress
+      - myAuroraDbSecretsManagerIngress
+      - myAuroraDbLambdaIngress
+      - myAuroraDbSecretsManagerEgress
+      - myAuroraDbLambdaEgress
+      - myAuroraDbHTTPSEgress
+      - myAuroraDbKeyAlias
 
   myAuroraDbLambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
