@@ -27,8 +27,7 @@ def pipeline():
 
 
 @pipeline.command()
-@click.option("-d", "--directory", type=str, default=".")
-def generate(directory="."):
+def generate():
     templates = setup_templates()
 
     app_config = _safe_load_config("bootstrap.yml", BOOTSTRAP_SCHEMA)
@@ -44,7 +43,7 @@ def generate(directory="."):
     if codestar_connection_arn is None:
         abort_with_error("There is no CodeStar Connection to use")
 
-    base_path = Path(directory)
+    base_path = Path(".")
     pipelines_environments_dir = base_path / f"copilot/pipelines/environments"
     overrides_dir = pipelines_environments_dir / "overrides"
 

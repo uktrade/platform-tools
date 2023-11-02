@@ -665,13 +665,10 @@ copilot-helper pipeline generate
 ## Usage
 
 ```
-copilot-helper pipeline generate [-d <directory>] 
+copilot-helper pipeline generate 
 ```
 
 ## Options
-
-- `-d
---directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
