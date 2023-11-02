@@ -20,10 +20,10 @@ Parameters:
 Mappings:
   {{ service.prefix }}BucketNameMap:
     # Create an entry for each environment
-    {% for env_name, config in service.environments.items() %}
+{% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
-    {% endfor %}
+{% endfor %}
 
 Resources:
   {{ service.prefix }}S3AccessPolicy:
@@ -35,6 +35,14 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
+          - Sid: KMSDecryptAndGenerate
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource:
+              Fn::ImportValue:
+                !Sub "${App}-${Env}-{{ service.kms_key_reference }}-KMSKeyARN"
           - Sid: S3ObjectActions
             Effect: Allow
             Action:

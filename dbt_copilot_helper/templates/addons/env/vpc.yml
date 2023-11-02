@@ -1,0 +1,119 @@
+# {% version_info %}
+
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+  EnvironmentSecurityGroup:
+    Type: String
+  PrivateSubnets:
+    Type: String
+  PublicSubnets:
+    Type: String
+  VpcId:
+    Type: String
+
+Resources:
+  # Secrets Manager VPC endpoint
+  VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E1010
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+    {%- for addon, config in addons -%}
+      {%- set prefix = addon.split('-')|first|lower ~ addon.split('-')[1:]|map('capitalize')|join -%}
+      {%- if config.type == "aurora-postgres" %}
+        - !GetAtt {{ prefix }}DBClusterSecurityGroup.GroupId
+      {%- endif -%}
+      {%- if config.type == "rds-postgres" %}
+        - !GetAtt {{ prefix }}SecurityGroup.GroupId
+      {%- endif -%}
+    {%- endfor %}
+        - !Ref EnvironmentSecurityGroup
+      ServiceName: 'com.amazonaws.eu-west-2.secretsmanager'
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+      VpcEndpointType: Interface
+      VpcId: !Ref VpcId
+
+  AdditionalNatGatewayAttachment1:
+    Metadata:
+      'aws:copilot:description': 'An Elastic IP for an additional NAT Gateway 1'
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AdditionalNatGatewayAttachment2:
+    Metadata:
+      'aws:copilot:description': 'An Elastic IP for an additional NAT Gateway 2'
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  AdditionalNatGateway1:
+    Metadata:
+      'aws:copilot:description': 'Additional NAT Gateway 1'
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt AdditionalNatGatewayAttachment1.AllocationId
+      SubnetId: !Select [ 0, !Split [ ",", !Ref PublicSubnets ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-Additional-NAT-Gateway-1'
+
+  AdditionalNatGateway2:
+    Metadata:
+      'aws:copilot:description': 'Additional NAT Gateway 2'
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt AdditionalNatGatewayAttachment2.AllocationId
+      SubnetId: !Select [ 1, !Split [ ",", !Ref PublicSubnets ] ]
+      Tags:
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}-Additional-NAT-Gateway-2'
+
+  AdditionalPrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  AdditionalPrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+
+  AdditionalPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AdditionalNatGateway1
+
+  AdditionalPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref AdditionalNatGateway2
+
+  AdditionalPrivateRouteTable1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable1
+      SubnetId: !Select [ 0, !Split [ ",", !Ref PrivateSubnets ] ]
+
+  AdditionalPrivateRouteTable2Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AdditionalPrivateRouteTable2
+      SubnetId: !Select [ 1, !Split [ ",", !Ref PrivateSubnets ] ]

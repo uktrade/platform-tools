@@ -7,6 +7,8 @@
 - [copilot-helper bootstrap copy-secrets](#copilot-helper-bootstrap-copy-secrets)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
+- [copilot-helper codebase](#copilot-helper-codebase)
+- [copilot-helper codebase prepare](#copilot-helper-codebase-prepare)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
 - [copilot-helper codebuild link-github](#copilot-helper-codebuild-link-github)
 - [copilot-helper codebuild create-codedeploy-role](#copilot-helper-codebuild-create-codedeploy-role)
@@ -23,6 +25,8 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper pipeline](#copilot-helper-pipeline)
+- [copilot-helper pipeline generate-config](#copilot-helper-pipeline-generate-config)
 - [copilot-helper svc](#copilot-helper-svc)
 - [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
@@ -48,11 +52,13 @@ copilot-helper <command> [--version]
 
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
+- [`codebase` ↪](#copilot-helper-codebase)
 - [`codebuild` ↪](#copilot-helper-codebuild)
 - [`conduit` ↪](#copilot-helper-conduit)
 - [`config` ↪](#copilot-helper-config)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
+- [`pipeline` ↪](#copilot-helper-pipeline)
 - [`svc` ↪](#copilot-helper-svc)
 - [`waf` ↪](#copilot-helper-waf)
 
@@ -200,6 +206,44 @@ copilot-helper check-cloudformation lint [-d <directory>]
 
 - `-d
 --directory <text>` _Defaults to copilot._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper codebase
+
+[↩ Parent](#copilot-helper)
+
+    Codebase commands.
+
+## Usage
+
+```
+copilot-helper codebase prepare 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`prepare` ↪](#copilot-helper-codebase-prepare)
+
+# copilot-helper codebase prepare
+
+[↩ Parent](#copilot-helper-codebase)
+
+    Sets up an application codebase for use within a DBT platform project.
+
+## Usage
+
+```
+copilot-helper codebase prepare 
+```
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -590,6 +634,45 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper pipeline
+
+[↩ Parent](#copilot-helper)
+
+    Pipeline commands.
+
+## Usage
+
+```
+copilot-helper pipeline generate-config 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`generate-config` ↪](#copilot-helper-pipeline-generate-config)
+
+# copilot-helper pipeline generate-config
+
+[↩ Parent](#copilot-helper-pipeline)
+
+## Usage
+
+```
+copilot-helper pipeline generate-config [-d <directory>] 
+```
+
+## Options
+
+- `-d
+--directory <text>` _Defaults to .._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

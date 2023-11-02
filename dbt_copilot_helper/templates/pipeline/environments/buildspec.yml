@@ -1,0 +1,65 @@
+# {% version_info %}
+# Buildspec runs in the build stage of your environment pipeline to generate the environment CloudFormation stack config.
+version: 0.2
+env:
+  variables:
+    COPILOT_VERSION: 1.31.0
+    DYFF_VERSION: 1.5.8
+phases:
+  install:
+    commands:
+      - cd $CODEBUILD_SRC_DIR
+      - mkdir ./build-tools
+      - cd ./build-tools
+      # Download the copilot linux binary. You can update this version.
+      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v$COPILOT_VERSION"
+      - mv "./copilot-linux-v$COPILOT_VERSION" ./copilot
+      - chmod +x ./copilot
+      # Install dbt-copilot-tools
+      - pip install dbt-copilot-tools
+      # Install dyff - yaml differ
+      - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
+      - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
+      - chmod +x ./dyff
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR
+      - cp -r copilot/ current-copilot/
+      - copilot-helper copilot make-addons
+      - >
+        for FILE in $(ls copilot/**/addons/*.yml); do
+          ./build-tools/dyff between --omit-header $FILE current-$FILE >> ./build-tools/file-differences
+        done;
+      - |
+        if [[ "$(cat ./build-tools/file-differences)" = *[![:space:]]* ]]; then
+          echo 'Changes are introduced with the latest version of copilot-helper:'
+          echo
+          for FILE in $(ls copilot/**/addons/*.yml); do
+            echo "Changes in $FILE:"
+            ./build-tools/dyff between --omit-header $FILE current-$FILE
+          done;
+          echo
+          echo 'Upgrade to the latest version with pip install --upgrade dbt-copilot-tools'
+          echo 'And run copilot-helper copilot make-addons to regenerate your addons templates'
+          exit 1
+        fi
+  post_build:
+    commands:
+      - git checkout -- .
+      - export COLOR="false"
+      - export CI="true"
+      - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/environments/manifest.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
+      - stages=$(echo $pipeline | jq -r '.stages[].name')
+      # Generate the cloudformation templates.
+      - >
+        for env in $stages; do
+          ./build-tools/copilot env package -n $env --output-dir './infrastructure' --upload-assets --force;
+          if [ $? -ne 0 ]; then
+            echo "Cloudformation stack and config files were not generated. Please check build logs to see if there was a manifest validation error." 1>&2;
+            exit 1;
+          fi
+        done;
+      - ls -lah ./infrastructure
+artifacts:
+  files:
+    - "infrastructure/*"

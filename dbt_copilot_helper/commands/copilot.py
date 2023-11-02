@@ -14,7 +14,6 @@ from jsonschema import validate as validate_json
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
-from dbt_copilot_helper.utils.files import mkdir
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
@@ -165,10 +164,18 @@ def make_addons(directory="."):
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
+    click.echo("\n>>> Generating Environment overrides\n")
+
+    overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
+    overrides_path.mkdir(parents=True, exist_ok=True)
+    overrides_file = overrides_path.joinpath("cfn.patches.yml")
+
+    overrides_file.write_text(templates.get_template("env/overrides/cfn.patches.yml").render())
+
     click.echo("\n>>> Generating addons CloudFormation\n")
 
     path = Path(f"copilot/environments/addons/")
-    mkdir(output_dir, path)
+    (output_dir / path).mkdir(parents=True, exist_ok=True)
 
     custom_resources = {}
     custom_resource_path = Path(f"{Path(__file__).parent}/../custom_resources/")
@@ -212,11 +219,18 @@ def make_addons(directory="."):
             **addon_config,
         }
 
+        if addon_type in ["s3", "s3-policy"]:
+            service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
+                "BucketAccess", 1
+            )[0]
+
         # generate env addons
         for addon in addon_template_map[addon_type].get("env", []):
             template = templates.get_template(addon["template"])
 
-            contents = template.render({"service": environment_addon_config})
+            contents = template.render(
+                {"service": environment_addon_config, "addons": config.items()}
+            )
 
             filename = addon.get("filename", f"{addon_name}.yml")
 
@@ -233,7 +247,7 @@ def make_addons(directory="."):
 
                 filename = addon.get("filename", f"{addon_name}.yml")
 
-                mkdir(output_dir, service_path)
+                (output_dir / service_path).mkdir(parents=True, exist_ok=True)
                 click.echo(
                     mkfile(output_dir, service_path / filename, contents, overwrite=overwrite)
                 )
