@@ -15,7 +15,6 @@ Mappings:
 
     development:
       BucketName: 'my-bucket-dev'
-      LoggingBucketName: 'my-bucket-dev-logs'
 
 
 Resources:
@@ -40,52 +39,6 @@ Resources:
       AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithAnObject-key'
       TargetKeyId: !Ref myS3BucketWithAnObjectKMSKey
 
-  myS3BucketWithAnObjectLoggingBucket:
-    Metadata:
-      'aws:copilot:description': 'An Amazon S3 bucket to store logs from myS3BucketWithAnObjectBucket'
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !FindInMap [myS3BucketWithAnObjectBucketNameMap, !Ref Env, LoggingBucketName]
-      AccessControl: Private
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: aws:kms
-            KMSMasterKeyID: !Ref myS3BucketWithAnObjectKMSKey
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-      Tags:
-        - Key: Copilot-application
-          Value: !Ref App
-        - Key: Copilot-environment
-          Value: !Ref Env
-
-  myS3BucketWithAnObjectLoggingBucketPolicy:
-    Metadata:
-      'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: S3ServerAccessLogsPolicy
-            Effect: Allow
-            Principal:
-              Service: logging.s3.amazonaws.com
-            Action: 's3:PutObject'
-            Resource:
-              - !Sub ${ myS3BucketWithAnObjectLoggingBucket.Arn}/*
-              - !Sub ${ myS3BucketWithAnObjectLoggingBucket.Arn}
-            Condition:
-              ArnLike:
-                'aws:SourceArn': !Sub ${ myS3BucketWithAnObjectBucket.Arn}
-              StringEquals:
-                'aws:SourceAccount': !Sub ${AWS::AccountId}
-      Bucket: !Ref myS3BucketWithAnObjectLoggingBucket
-
   myS3BucketWithAnObjectBucket:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithAnObject'
@@ -100,8 +53,6 @@ Resources:
             KMSMasterKeyID: !Ref myS3BucketWithAnObjectKMSKey
       VersioningConfiguration:
         Status: Enabled
-      LoggingConfiguration:
-        DestinationBucketName: !FindInMap [myS3BucketWithAnObjectBucketNameMap, !Ref Env, LoggingBucketName]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true

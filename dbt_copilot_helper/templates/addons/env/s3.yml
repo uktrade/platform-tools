@@ -15,7 +15,6 @@ Mappings:
 {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
-      LoggingBucketName: '{{ config.bucket_name }}-logs'
 {% endfor %}
 
 Resources:
@@ -40,52 +39,6 @@ Resources:
       AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
       TargetKeyId: !Ref {{ service.prefix }}KMSKey
 
-  {{ service.prefix }}LoggingBucket:
-    Metadata:
-      'aws:copilot:description': 'An Amazon S3 bucket to store logs from {{ service.prefix }}Bucket'
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
-      AccessControl: Private
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: aws:kms
-            KMSMasterKeyID: !Ref {{ service.prefix }}KMSKey
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-      Tags:
-        - Key: Copilot-application
-          Value: !Ref App
-        - Key: Copilot-environment
-          Value: !Ref Env
-
-  {{ service.prefix }}LoggingBucketPolicy:
-    Metadata:
-      'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: S3ServerAccessLogsPolicy
-            Effect: Allow
-            Principal:
-              Service: logging.s3.amazonaws.com
-            Action: 's3:PutObject'
-            Resource:
-              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}/*
-              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}
-            Condition:
-              ArnLike:
-                'aws:SourceArn': !Sub ${ {{ service.prefix }}Bucket.Arn}
-              StringEquals:
-                'aws:SourceAccount': !Sub ${AWS::AccountId}
-      Bucket: !Ref {{ service.prefix }}LoggingBucket
-
   {{ service.prefix }}Bucket:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
@@ -100,8 +53,6 @@ Resources:
             KMSMasterKeyID: !Ref {{ service.prefix }}KMSKey
       VersioningConfiguration:
         Status: Enabled
-      LoggingConfiguration:
-        DestinationBucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
