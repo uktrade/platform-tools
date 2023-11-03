@@ -25,15 +25,20 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
     setup_git_repository()
-    buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
+    buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments(tmp_path)
 
     result = CliRunner().invoke(generate)
 
-    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "environments"
-    assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
-    assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
+    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines"
+    # Environments
     assert_yaml_in_output_file_matches_expected(
-        cfn_patch, expected_files_dir / "overrides/cfn.patches.yml"
+        buildspec, expected_files_dir / "environments" / "buildspec.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        manifest, expected_files_dir / "environments" / "manifest.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        cfn_patch, expected_files_dir / "environments" / "overrides/cfn.patches.yml"
     )
     assert_file_created_in_stdout(buildspec, result, tmp_path)
     assert_file_created_in_stdout(manifest, result, tmp_path)
@@ -48,7 +53,7 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
     setup_git_repository()
-    buildspec, cfn_patch, manifest = setup_output_file_paths(tmp_path)
+    buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments(tmp_path)
     for path in [buildspec, cfn_patch, manifest]:
         os.makedirs(path.parent, exist_ok=True)
         with open(path, "w") as fh:
@@ -160,7 +165,7 @@ def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
     assert get_yaml(actual_content) == get_yaml(expected_content)
 
 
-def setup_output_file_paths(tmp_path):
+def setup_output_file_paths_for_environments(tmp_path):
     output_dir = tmp_path / "copilot/pipelines/environments"
     buildspec = output_dir / "buildspec.yml"
     manifest = output_dir / "manifest.yml"
