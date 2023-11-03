@@ -48,6 +48,30 @@ def generate():
             app_name, codestar_connection_arn, git_repo, pipeline_config["environments"], templates
         )
 
+    if "codebases" in pipeline_config:
+        for codebase in pipeline_config["codebases"]:
+            _generate_codebase_pipeline(
+                app_name, codestar_connection_arn, git_repo, codebase, templates
+            )
+
+
+def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, codebase, templates):
+    base_path = Path(".")
+    pipelines_dir = base_path / f"copilot/pipelines"
+    makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
+    template_data = {
+        "app_name": app_name,
+        "codebase": codebase,
+    }
+    _create_file_from_template(
+        base_path,
+        f"{codebase['name']}/manifest.yml",
+        pipelines_dir,
+        template_data,
+        templates,
+        "codebase/manifest.yml",
+    )
+
 
 def _generate_environments_pipeline(
     app_name, codestar_connection_arn, git_repo, configuration, templates
@@ -74,8 +98,12 @@ def _generate_environments_pipeline(
     )
 
 
-def _create_file_from_template(base_path, file_name, pipelines_dir, template_data, templates):
-    contents = templates.get_template(f"pipelines/{file_name}").render(template_data)
+def _create_file_from_template(
+    base_path, file_name, pipelines_dir, template_data, templates, template_name=None
+):
+    contents = templates.get_template(
+        f"pipelines/{file_name if template_name is None else template_name}"
+    ).render(template_data)
     click.echo(mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True))
 
 

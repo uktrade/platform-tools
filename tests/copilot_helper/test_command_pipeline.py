@@ -44,6 +44,12 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_file_created_in_stdout(manifest, result, tmp_path)
     assert_file_created_in_stdout(cfn_patch, result, tmp_path)
 
+    # Codebases
+    cfn_patch, manifest = setup_output_file_paths_for_codebases(tmp_path)
+    assert_yaml_in_output_file_matches_expected(
+        manifest, expected_files_dir / "application" / "manifest.yml"
+    )
+
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -171,6 +177,13 @@ def setup_output_file_paths_for_environments(tmp_path):
     manifest = output_dir / "manifest.yml"
     cfn_patch = output_dir / "overrides" / "cfn.patches.yml"
     return buildspec, cfn_patch, manifest
+
+
+def setup_output_file_paths_for_codebases(tmp_path):
+    output_dir = tmp_path / "copilot/pipelines/application"
+    manifest = output_dir / "manifest.yml"
+    cfn_patch = output_dir / "overrides" / "cfn.patches.yml"
+    return cfn_patch, manifest
 
 
 def setup_git_repository():
