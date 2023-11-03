@@ -64,6 +64,22 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
     )
 
 
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("boto3.client")
+def test_pipeline_generate_with_no_bootstrap_yml_succeeds(
+    mocked_boto3_client,
+    switch_to_tmp_dir_and_copy_fixtures,
+):
+    os.remove("bootstrap.yml")
+    setup_git_repository()
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 0
+
+
 @patch("boto3.client")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     mocked_boto3_client, switch_to_tmp_dir_and_copy_fixtures
@@ -90,6 +106,7 @@ def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(
     os.remove("pipelines.yml")
 
     result = CliRunner().invoke(generate)
+    print(result.exception)
 
     assert result.exit_code == 1
     assert "Error: There is no pipelines.yml" in result.output
@@ -107,27 +124,29 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
     assert "Error: The pipelines.yml file is invalid" in result.output
 
 
-def test_pipeline_generate_with_no_bootstrap_yml_fails_with_message(
+def test_pipeline_generate_with_no_bootstrap_yml_or_workspace_fails_with_message(
     switch_to_tmp_dir_and_copy_fixtures,
 ):
     os.remove("bootstrap.yml")
+    os.remove("copilot/.workspace")
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: There is no bootstrap.yml" in result.output
+    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
 
 
-def test_pipeline_generate_bootstrap_yml_invalid_fails_with_message(
+def test_pipeline_generate_with_invalid_bootstrap_yml_and_no_workspace_fails_with_message(
     switch_to_tmp_dir_and_copy_fixtures,
 ):
     with open("bootstrap.yml", "w") as fh:
         print("{invalid data", file=fh)
+    os.remove("copilot/.workspace")
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: The bootstrap.yml file is invalid" in result.output
+    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
@@ -150,14 +169,19 @@ def setup_output_file_paths(tmp_path):
 
 
 def setup_git_repository():
-    subprocess.run(["git", "init"])
-    subprocess.run(["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"])
+    subprocess.run(["git", "init", "--initial-branch", "main"], stdout=subprocess.PIPE)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"],
+        stdout=subprocess.PIPE,
+    )
 
 
 @fixture
 def switch_to_tmp_dir_and_copy_fixtures(tmp_path):
     os.chdir(tmp_path)
     shutil.copy(FIXTURES_DIR / "valid_bootstrap_config.yml", "bootstrap.yml")
+    os.mkdir("copilot")
+    shutil.copy(FIXTURES_DIR / "valid_workspace.yml", "copilot/.workspace")
     shutil.copy(FIXTURES_DIR / "pipeline/pipelines.yml", "pipelines.yml")
 
     return tmp_path
