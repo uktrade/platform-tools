@@ -59,9 +59,13 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
     base_path = Path(".")
     pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
+
     template_data = {
         "app_name": app_name,
+        "deploy_repo": git_repo,
         "codebase": codebase,
+        "codestar_connection_arn": codestar_connection_arn,
+        "codestar_connection_id": codestar_connection_arn.split("/")[-1],
     }
     _create_file_from_template(
         base_path,
@@ -70,6 +74,14 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
         template_data,
         templates,
         "codebase/manifest.yml",
+    )
+    _create_file_from_template(
+        base_path,
+        f"{codebase['name']}/overrides/cfn.patches.yml",
+        pipelines_dir,
+        template_data,
+        templates,
+        "codebase/overrides/cfn.patches.yml",
     )
 
 
@@ -124,9 +136,9 @@ def _get_git_remote():
     if not git_repo:
         return
 
-    domain, repo = git_repo.split("@")[1].split(":")
+    _, repo = git_repo.split("@")[1].split(":")
 
-    return f"https://{domain}/{re.sub(r'.git$', '', repo)}"
+    return re.sub(r".git$", "", repo)
 
 
 def _get_application_name():

@@ -16,7 +16,7 @@ source:
   # Additional properties that further specify the location of the artifacts.
   properties:
     branch: main
-    repository: https://github.com/uktrade/test-app
+    repository: https://github.com/uktrade/test-app-deploy
     # Optional: specify the name of an existing CodeStar Connections connection.
     connection_name: test-app
 

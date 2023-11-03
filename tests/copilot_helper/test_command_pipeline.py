@@ -49,6 +49,11 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_yaml_in_output_file_matches_expected(
         manifest, expected_files_dir / "application" / "manifest.yml"
     )
+    assert_yaml_in_output_file_matches_expected(
+        cfn_patch, expected_files_dir / "application" / "overrides" / "cfn.patches.yml"
+    )
+    assert_file_created_in_stdout(manifest, result, tmp_path)
+    assert_file_created_in_stdout(cfn_patch, result, tmp_path)
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -189,7 +194,7 @@ def setup_output_file_paths_for_codebases(tmp_path):
 def setup_git_repository():
     subprocess.run(["git", "init", "--initial-branch", "main"], stdout=subprocess.PIPE)
     subprocess.run(
-        ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"],
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app-deploy.git"],
         stdout=subprocess.PIPE,
     )
 
