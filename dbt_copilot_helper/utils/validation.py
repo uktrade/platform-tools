@@ -110,5 +110,21 @@ PIPELINES_SCHEMA = Schema(
                 },
             ]
         ),
+        "codebases": Optional(
+            [
+                {
+                    "name": str,
+                    "repository": str,
+                    "branch": str,
+                    "services": list[str],
+                    "environments": [
+                        {
+                            "name": str,
+                            Optional("requires_approval"): bool,
+                        }
+                    ],
+                },
+            ]
+        ),
     },
 )
