@@ -53,31 +53,30 @@ def _generate_environments_pipeline(
     app_name, codestar_connection_arn, git_repo, configuration, templates
 ):
     base_path = Path(".")
-    pipelines_environments_dir = base_path / f"copilot/pipelines/environments"
-    overrides_dir = pipelines_environments_dir / "overrides"
-    makedirs(overrides_dir, exist_ok=True)
+    pipelines_dir = base_path / f"copilot/pipelines"
+    makedirs(pipelines_dir / "environments/overrides", exist_ok=True)
+
     template_data = {
         "app_name": app_name,
         "git_repo": git_repo,
         "codestar_connection_arn": codestar_connection_arn,
         "pipeline_environments": configuration,
     }
+
     _create_file_from_template(
-        base_path, "buildspec.yml", pipelines_environments_dir, template_data, templates
+        base_path, "environments/buildspec.yml", pipelines_dir, template_data, templates
     )
     _create_file_from_template(
-        base_path, "manifest.yml", pipelines_environments_dir, template_data, templates
+        base_path, "environments/manifest.yml", pipelines_dir, template_data, templates
     )
     _create_file_from_template(
-        base_path, "overrides/cfn.patches.yml", pipelines_environments_dir, template_data, templates
+        base_path, "environments/overrides/cfn.patches.yml", pipelines_dir, template_data, templates
     )
 
 
-def _create_file_from_template(
-    base_path, file_name, pipelines_environments_dir, template_data, templates
-):
-    contents = templates.get_template(f"pipeline/environments/{file_name}").render(template_data)
-    click.echo(mkfile(base_path, pipelines_environments_dir / file_name, contents, overwrite=True))
+def _create_file_from_template(base_path, file_name, pipelines_dir, template_data, templates):
+    contents = templates.get_template(f"pipelines/{file_name}").render(template_data)
+    click.echo(mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True))
 
 
 def _safe_load_config(filename, schema):
