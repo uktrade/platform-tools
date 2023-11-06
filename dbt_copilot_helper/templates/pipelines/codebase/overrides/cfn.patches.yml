@@ -79,6 +79,7 @@
         Webhook: true
       Visibility: PRIVATE
 
+# Create an ECR repository for application images
 - op: add
   path: /Resources/ECRRepository
   value:
@@ -90,6 +91,7 @@
         ScanOnPush: true
       ImageTagMutability: MUTABLE
 
+#  Allow the pipeline to describe ECR repository images
 - op: add
   path: /Resources/PipelineRolePolicy/Properties/PolicyDocument/Statement/0/Action/-
   value: ecr:DescribeImages
