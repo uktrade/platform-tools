@@ -122,6 +122,9 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 
 def check_copilot_helper_version_needs_update():
+    if not running_as_installed_package():
+        return
+
     app_version, app_released_version = get_app_versions()
     message = (
         f"You are running copilot-helper v{string_version(app_version)}, upgrade to "
@@ -142,3 +145,7 @@ def check_copilot_helper_version_needs_update():
         continue_confirmation = click.confirm("Do you wish to continue executing?", default=False)
         if not continue_confirmation:
             exit(1)
+
+
+def running_as_installed_package():
+    return "site-packages" in __file__

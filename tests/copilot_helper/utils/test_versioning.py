@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Tuple
 from typing import Type
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -127,6 +128,9 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 @patch("click.secho")
 @patch("click.confirm")
 @patch("dbt_copilot_helper.utils.versioning.get_app_versions")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch("dbt_copilot_helper.utils.versioning.validate_version_compatibility")
 def test_check_copilot_helper_version_needs_update(
     version_compatibility, get_app_versions, confirm, secho, suite
@@ -159,3 +163,13 @@ def test_check_copilot_helper_version_needs_update(
             "Do you wish to continue executing?",
             default=False,
         )
+
+
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
+)
+@patch("dbt_copilot_helper.utils.versioning.validate_version_compatibility")
+def test_check_copilot_helper_version_skips_when_running_local_version(version_compatibility):
+    check_copilot_helper_version_needs_update()
+
+    version_compatibility.assert_not_called()
