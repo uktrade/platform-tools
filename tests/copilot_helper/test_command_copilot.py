@@ -73,6 +73,8 @@ class TestMakeAddonCommand:
                 [
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
+                    "my-s3-bucket-with-retain-on-stack-deletion.yml",
+                    "my-s3-bucket-with-delete-on-stack-deletion.yml",
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
@@ -80,6 +82,8 @@ class TestMakeAddonCommand:
                     "appconfig-ipfilter.yml",
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
+                    "my-s3-bucket-with-retain-on-stack-deletion.yml",
+                    "my-s3-bucket-with-delete-on-stack-deletion.yml",
                     "my-s3-bucket-bucket-access.yml",
                 ],
                 False,

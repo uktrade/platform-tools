@@ -135,7 +135,7 @@
               "type" : "string",
               "pattern" : "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             },
-            "retain_on_stack_deletion" : {
+            "retain-on-stack-deletion" : {
               "type" : "boolean"
             },
             "services" : {
@@ -187,7 +187,7 @@
               "type" : "string",
               "pattern" : "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             },
-            "retain_on_stack_deletion" : {
+            "retain-on-stack-deletion" : {
               "type" : "boolean"
             },
             "readonly" : {
