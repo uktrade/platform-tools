@@ -20,6 +20,7 @@ Mappings:
 Resources:
   myS3BucketWithAnObjectKMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: Delete
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -35,6 +36,7 @@ Resources:
 
   myS3BucketWithAnObjectKeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: Delete
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithAnObject-key'
       TargetKeyId: !Ref myS3BucketWithAnObjectKMSKey
@@ -43,6 +45,7 @@ Resources:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithAnObject'
     Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
     Properties:
       BucketName: !FindInMap [myS3BucketWithAnObjectBucketNameMap, !Ref Env, BucketName]
       AccessControl: Private

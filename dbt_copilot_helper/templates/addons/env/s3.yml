@@ -20,6 +20,7 @@ Mappings:
 Resources:
   {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: Delete
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -35,6 +36,7 @@ Resources:
 
   {{ service.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: Delete
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
       TargetKeyId: !Ref {{ service.prefix }}KMSKey
@@ -43,6 +45,7 @@ Resources:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
     Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
     Properties:
       BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
       AccessControl: Private
