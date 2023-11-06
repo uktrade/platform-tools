@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
@@ -543,11 +544,14 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command(start_conduit, addon_type, validate_version):
     """Test that given an addon type, app and env strings, the conduit command
     calls start_conduit with app, env, addon type and no addon name."""
-    output = CliRunner().invoke(
+    CliRunner().invoke(
         conduit,
         [
             addon_type,
@@ -565,6 +569,9 @@ def test_conduit_command(start_conduit, addon_type, validate_version):
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
+)
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_with_addon_name(start_conduit, addon_type, validate_version):
@@ -595,6 +602,9 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type, validate_ver
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch("dbt_copilot_helper.commands.conduit.start_conduit", side_effect=NoClusterConduitError)
 def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type, validate_version):
     """Test that given an addon type, app and env strings, when there is no ECS
@@ -623,6 +633,9 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists(
     start_conduit, secho, addon_type, validate_version
@@ -656,6 +669,9 @@ def test_conduit_command_when_no_connection_secret_exists(
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     start_conduit, secho, addon_type, validate_version
@@ -691,6 +707,9 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     ["postgres", "redis", "opensearch"],
 )
 @patch("click.secho")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 @patch(
     "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=CreateTaskTimeoutConduitError
 )

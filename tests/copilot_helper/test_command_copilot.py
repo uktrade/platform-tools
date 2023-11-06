@@ -122,6 +122,10 @@ class TestMakeAddonCommand:
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_success(
         self,
@@ -197,6 +201,10 @@ class TestMakeAddonCommand:
             len(actual_files) == len(all_expected_files) + 3
         ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_if_no_copilot_directory(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
@@ -210,6 +218,10 @@ class TestMakeAddonCommand:
         )
         validate_version.assert_called_once()
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_if_no_local_copilot_services(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
@@ -221,6 +233,10 @@ class TestMakeAddonCommand:
         validate_version.assert_called_once()
         assert result.output == "No services found in ./copilot/; exiting\n"
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_with_error_if_invalid_services(self, fakefs, validate_version):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -249,6 +265,10 @@ invalid-entry:
             == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
         )
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_with_error_if_invalid_environments(self, fakefs, validate_version):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -274,6 +294,10 @@ invalid-environment:
             == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
         )
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_if_services_key_invalid(self, fakefs, validate_version):
         """
         The services key can be set to a list of services, or '__all__' which
@@ -306,6 +330,10 @@ invalid-entry:
             result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
         )
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_exit_if_no_local_copilot_environments(self, fakefs, validate_version):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
@@ -325,6 +353,10 @@ invalid-entry:
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
             (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
         ],
+    )
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_env_addons_parameters_file_included_with_different_addon_types(
@@ -349,6 +381,10 @@ invalid-entry:
         ],
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     def test_addon_instructions_with_postgres_addon_types(
         self, fakefs, addon_file_contents, addon_type, secret_name, validate_version
     ):
@@ -371,6 +407,10 @@ invalid-entry:
                 f"{secret_name}" in result.output
             )
 
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
         self, fakefs, validate_version
@@ -399,6 +439,9 @@ invalid-entry:
 
 
 @mock_ssm
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
 def test_get_secrets(validate_version):
     def _put_ssm_param(client, app, env, name, value):
         path = SSM_PATH.format(app=app, env=env, name=name)
