@@ -26,7 +26,7 @@
 - [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
-- [copilot-helper pipeline generate-config](#copilot-helper-pipeline-generate-config)
+- [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper svc](#copilot-helper-svc)
 - [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
@@ -646,7 +646,7 @@ copilot-helper domain assign-domain --app <app> --env <env> --svc <svc>
 ## Usage
 
 ```
-copilot-helper pipeline generate-config 
+copilot-helper pipeline generate 
 ```
 
 ## Options
@@ -656,22 +656,22 @@ copilot-helper pipeline generate-config
 
 ## Commands
 
-- [`generate-config` ↪](#copilot-helper-pipeline-generate-config)
+- [`generate` ↪](#copilot-helper-pipeline-generate)
 
-# copilot-helper pipeline generate-config
+# copilot-helper pipeline generate
 
 [↩ Parent](#copilot-helper-pipeline)
+
+    Given a pipelines.yml file, generate environment and service deployment
+    pipelines.
 
 ## Usage
 
 ```
-copilot-helper pipeline generate-config [-d <directory>] 
+copilot-helper pipeline generate 
 ```
 
 ## Options
-
-- `-d
---directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -2,3 +2,16 @@ environments:
   - name: dev
   - name: prod
     requires_approval: true
+
+codebases:
+  - name: application
+    repository: organisation/repository
+    branch: main
+    services:
+      - web
+      - worker
+    environments:
+      - name: dev
+      - name: staging
+      - name: prod
+        requires_approval: true
