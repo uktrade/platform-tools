@@ -662,6 +662,9 @@ copilot-helper pipeline generate
 
 [↩ Parent](#copilot-helper-pipeline)
 
+    Given a pipelines.yml file, generate environment and service deployment
+    pipelines.
+
 ## Usage
 
 ```

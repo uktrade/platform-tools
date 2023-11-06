@@ -29,6 +29,8 @@ def pipeline():
 
 @pipeline.command()
 def generate():
+    """Given a pipelines.yml file, generate environment and service deployment
+    pipelines."""
     templates = setup_templates()
 
     app_name = _get_application_name()
