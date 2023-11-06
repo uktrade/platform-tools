@@ -1,5 +1,4 @@
 server {
-    #listen       ${PORT};
     listen       8080;
     server_name  localhost;
 
