@@ -40,8 +40,8 @@
           version: 0.2
           env:
             parameter-store:
-              SLACK_CHANNEL_ID: "/codebuild/slack_oauth_channel"
-              SLACK_TOKEN: "/codebuild/slack_oauth_token"
+              SLACK_CHANNEL_ID: "/notifications/slack_channel_id"
+              SLACK_TOKEN: "/notifications/slack_oauth_token"
           phases:
             install:
               commands:
