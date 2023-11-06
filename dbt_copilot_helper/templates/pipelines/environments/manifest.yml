@@ -17,7 +17,7 @@ source:
   properties:
     # Todo: Allow for overriding this, but without risking deploying a branch to higher environments
     branch: main
-    repository: {{ git_repo }}
+    repository: https://github.com/{{ git_repo }}
     connection_name: {{ app_name }}
 
 # This section defines the order of the environments your pipeline will deploy to.
