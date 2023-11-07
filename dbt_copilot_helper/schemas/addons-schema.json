@@ -1,511 +1,522 @@
 {
-   "$schema": "http://json-schema.org/draft-07/schema#",
-   "$id": "http://github.com/uktrade/copilot-tools/addons-schema.json",
-   "title": " Storage schema validation",
-   "type": "object",
-   "patternProperties": {
-      "^[a-zA-Z]{1}[A-Za-z0-9-]*$": {
-         "type": "object",
-         "allOf": [
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "s3"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/s3"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "s3-policy"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/s3"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "redis"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/redis"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "rds-postgres"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/rds-postgres"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "aurora-postgres"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/aurora-postgres"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "opensearch"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/opensearch"
-               }
-            },
-            {
-               "if": {
-                  "properties": {
-                     "type": {
-                        "const": "monitoring"
-                     }
-                  }
-               },
-               "then": {
-                  "$ref": "#/definitions/monitoring"
-               }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://github.com/uktrade/copilot-tools/addons-schema.json",
+  "title": " Storage schema validation",
+  "type": "object",
+  "patternProperties": {
+    "^[a-zA-Z]{1}[A-Za-z0-9-]*$": {
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "s3"
+              }
             }
-         ],
-         "properties": {
+          },
+          "then": {
+            "$ref": "#/definitions/s3"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "s3-policy"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/s3"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "redis"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/redis"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "rds-postgres"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/rds-postgres"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "aurora-postgres"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/aurora-postgres"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "opensearch"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/opensearch"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "monitoring"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/monitoring"
+          }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "rds-postgres",
+            "aurora-postgres",
+            "redis",
+            "opensearch",
+            "s3",
+            "s3-policy",
+            "appconfig-ipfilter",
+            "monitoring",
+            "vpc"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true,
+      "uniqueItems": true
+    },
+    "additionalProperties": false
+  },
+  "definitions": {
+    "s3": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
             "type": {
-               "type": "string",
-               "enum": [
-                  "rds-postgres",
-                  "aurora-postgres",
-                  "redis",
-                  "opensearch",
-                  "s3",
-                  "s3-policy",
-                  "appconfig-ipfilter",
-                  "monitoring",
-                  "vpc"
-               ]
+              "type": "string",
+              "enum": [
+                "s3-policy"
+              ]
+            },
+            "bucket-name": {
+              "type": "string",
+              "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+            },
+            "readonly": {
+              "type": "boolean"
+            },
+            "services": {
+              "type": [
+                "array",
+                "string"
+              ]
+            },
+            "environments": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-zA-Z0-9]*$": {
+                  "$ref": "#/definitions/s3-environment"
+                }
+              },
+              "additionalProperties": false
             }
-         },
-         "required": [
-            "type"
-         ],
-         "additionalProperties": true,
-         "uniqueItems": true
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "s3"
+              ]
+            },
+            "bucket-name": {
+              "type": "string",
+              "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+            },
+            "readonly": {
+              "type": "boolean"
+            },
+            "services": {
+              "type": [
+                "array",
+                "string"
+              ]
+            },
+            "environments": {
+              "type": "object",
+              "patternProperties": {
+                "^[a-zA-Z0-9]*$": {
+                  "$ref": "#/definitions/s3-environment"
+                }
+              },
+              "additionalProperties": false
+            },
+            "objects": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "environments": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9]*$": {
+              "$ref": "#/definitions/redis-environment"
+            }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
-   },
-   "definitions": {
-      "s3": {
-        "oneOf": [
-           {
-              "type": "object",
-               "properties": {
-                  "type": {
-                     "type": "string",
-                     "enum": [
-                          "s3-policy"
-                     ]
-                  },
-                  "bucket-name": {
-                     "type": "string",
-                     "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-                  },
-                  "readonly": {
-                     "type": "boolean"
-                  },
-                  "services": {
-                     "type": ["array", "string"]
-                  },
-                  "environments": {
-                     "type": "object",
-                     "patternProperties": {
-                        "^[a-zA-Z0-9]*$": {
-                           "$ref": "#/definitions/s3-environment"
-                        }
-                     },
-                     "additionalProperties": false
-                  }
-               },
-               "required": [],
-               "additionalProperties": false
-           }, {
-              "type": "object",
-               "properties": {
-                  "type": {
-                     "type": "string",
-                     "enum": ["s3"]
-                  },
-                  "bucket-name": {
-                     "type": "string",
-                     "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-                  },
-                  "readonly": {
-                     "type": "boolean"
-                  },
-                  "services": {
-                     "type": ["array", "string"]
-                  },
-                  "environments": {
-                     "type": "object",
-                     "patternProperties": {
-                        "^[a-zA-Z0-9]*$": {
-                           "$ref": "#/definitions/s3-environment"
-                        }
-                     },
-                     "additionalProperties": false
-                  },
-                  "objects": {
-                     "type": "array",
-                     "items": {
-                        "type": "object",
-                        "properties": {
-                           "key": {
-                              "type": "string"
-                           },
-                           "body": {
-                              "type": "string"
-                           }
-                        },
-                        "required": ["key"]
-                     }
-                  }
-               },
-               "required": [],
-               "additionalProperties": false
-           }
-        ]
-      },
-      "redis": {
-         "type": "object",
-         "properties": {
-            "type": {
-               "type": "string"
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/redis-environment"
-                  }
-               },
-               "additionalProperties": false
+    },
+    "opensearch": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "environments": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9]*$": {
+              "$ref": "#/definitions/opensearch-environment"
             }
-         },
-         "additionalProperties": false
+          },
+          "additionalProperties": false
+        }
       },
-      "opensearch": {
-         "type": "object",
-         "properties": {
-            "type": {
-               "type": "string"
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/opensearch-environment"
-                  }
-               },
-               "additionalProperties": false
+      "additionalProperties": false
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "environments": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9]*$": {
+              "$ref": "#/definitions/monitoring-environment"
             }
-         },
-         "additionalProperties": false
+          },
+          "additionalProperties": false
+        }
       },
-      "monitoring": {
-         "type": "object",
-         "properties": {
-            "type": {
-               "type": "string"
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/monitoring-environment"
-                  }
-               },
-               "additionalProperties": false
+      "additionalProperties": false
+    },
+    "rds-postgres": {
+      "type": "object",
+      "patternProperties": {
+        "type": {
+          "type": "string"
+        },
+        "environments": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9]*$": {
+              "$ref": "#/definitions/rds-postgres-environment"
             }
-         },
-         "additionalProperties": false
+          },
+          "additionalProperties": false
+        }
       },
-      "rds-postgres": {
-         "type": "object",
-         "patternProperties": {
-            "type": {
-               "type": "string"
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/rds-postgres-environment"
-                  }
-               },
-               "additionalProperties": false
+      "additionalProperties": false
+    },
+    "aurora-postgres": {
+      "type": "object",
+      "patternProperties": {
+        "type": {
+          "type": "string"
+        },
+        "version": {
+          "type": "number"
+        },
+        "environments": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9]*$": {
+              "$ref": "#/definitions/aurora-postgres-environment"
             }
-         },
-         "additionalProperties": false
+          },
+          "additionalProperties": false
+        }
       },
-      "aurora-postgres": {
-         "type": "object",
-         "patternProperties": {
-            "type": {
-               "type": "string"
-            },
-            "version": {
-               "type": "number"
-            },
-            "environments": {
-               "type": "object",
-               "patternProperties": {
-                  "^[a-zA-Z0-9]*$": {
-                     "$ref": "#/definitions/aurora-postgres-environment"
-                  }
-               },
-               "additionalProperties": false
-            }
-         },
-         "required": [
-            "version"
-         ],
-         "additionalProperties": false
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "s3-environment": {
+      "type": "object",
+      "properties": {
+        "bucket-name": {
+          "type": "string",
+          "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+        }
       },
-      "s3-environment": {
-         "type": "object",
-         "properties": {
-            "bucket-name": {
-               "type": "string",
-               "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-            }
-         },
-         "additionalProperties": false
+      "additionalProperties": false
+    },
+    "redis-environment": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "$ref": "#/definitions/redis-plans"
+        },
+        "engine": {
+          "$ref": "#/definitions/redis-engine-versions"
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "instance": {
+          "$ref": "#/definitions/redis-instance-types"
+        }
       },
-      "redis-environment": {
-         "type": "object",
-         "properties": {
-            "plan": {
-               "$ref": "#/definitions/redis-plans"
-            },
-            "engine": {
-               "$ref": "#/definitions/redis-engine-versions"
-            },
-            "replicas": {
-               "type": "integer",
-               "minimum": 0,
-               "maximum": 5
-            },
-            "instance": {
-               "$ref": "#/definitions/redis-instance-types"
-            }
-         },
-         "additionalProperties": false
+      "additionalProperties": false
+    },
+    "opensearch-environment": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "$ref": "#/definitions/opensearch-plans"
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "instance": {
+          "$ref": "#/definitions/opensearch-instance-types"
+        },
+        "engine": {
+          "$ref": "#/definitions/opensearch-engine-versions"
+        },
+        "volume_size": {
+          "type": "integer",
+          "minimum": 10,
+          "exclusiveMaximum": 512
+        }
       },
-      "opensearch-environment": {
-         "type": "object",
-         "properties": {
-            "plan": {
-               "$ref": "#/definitions/opensearch-plans"
-            },
-            "replicas": {
-               "type": "integer",
-               "minimum": 0,
-               "maximum": 5
-            },
-            "instance": {
-               "$ref": "#/definitions/opensearch-instance-types"
-            },
-            "engine": {
-               "$ref": "#/definitions/opensearch-engine-versions"
-            },
-            "volume_size": {
-               "type": "integer",
-               "minimum": 10,
-               "exclusiveMaximum": 512
-            }
-         },
-         "additionalProperties": false
+      "additionalProperties": false
+    },
+    "monitoring-environment": {
+      "type": "object",
+      "properties": {
+        "enable-ops-center": {
+          "type": "boolean"
+        }
       },
-      "monitoring-environment": {
-         "type": "object",
-         "properties": {
-            "enable-ops-center": {
-               "type": "boolean"
-            }
-         },
-         "additionalProperties": false
+      "additionalProperties": false
+    },
+    "rds-postgres-environment": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "$ref": "#/definitions/rds-postgres-plans"
+        },
+        "instance": {
+          "$ref": "#/definitions/rds-postgres-instance-types"
+        },
+        "volume-size": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 10000
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        }
       },
-      "rds-postgres-environment": {
-         "type": "object",
-         "properties": {
-            "plan": {
-               "$ref": "#/definitions/rds-postgres-plans"
-            },
-            "instance": {
-               "$ref": "#/definitions/rds-postgres-instance-types"
-            },
-            "volume-size": {
-               "type": "integer",
-               "minimum": 5,
-               "maximum": 10000
-            },
-            "replicas": {
-               "type": "integer",
-               "minimum": 0,
-               "maximum": 5
-            }
-         },
-         "additionalProperties": false
+      "additionalProperties": false
+    },
+    "aurora-postgres-environment": {
+      "type": "object",
+      "properties": {
+        "min-capacity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max-capacity": {
+          "type": "number",
+          "minimum": 0.5
+        }
       },
-      "aurora-postgres-environment": {
-         "type": "object",
-         "properties": {
-            "min-capacity": {
-               "type": "number",
-               "minimum": 0
-            },
-            "max-capacity": {
-               "type": "number",
-               "minimum": 0.5
-            }
-         },
-         "additionalProperties": false
-      },
-      "redis-plans": {
-         "type": "string",
-         "enum": [
-            "micro",
-            "micro-ha",
-            "tiny",
-            "tiny-ha",
-            "small",
-            "small-ha",
-            "medium",
-            "medium-ha",
-            "large",
-            "large-ha",
-            "x-large",
-            "x-large-ha"
-         ]
-      },
-      "redis-instance-types": {
-         "type": "string",
-         "enum": [
-            "cache.m6g.2xlarge",
-            "cache.m6g.large",
-            "cache.m6g.xlarge",
-            "cache.t4g.medium",
-            "cache.t4g.micro"
-         ]
-      },
-      "redis-engine-versions": {
-         "type": "string",
-         "enum": [
-            "3.2.6",
-            "4.0.10",
-            "5.0.0",
-            "5.0.3",
-            "5.0.4",
-            "5.0.6",
-            "6.0",
-            "6.2"
-         ]
-      },
-      "opensearch-plans": {
-         "type": "string",
-         "enum": [
-            "tiny",
-            "small",
-            "small-ha",
-            "medium",
-            "medium-ha",
-            "large",
-            "large-ha",
-            "x-large",
-            "x-large-ha"
-         ]
-      },
-      "opensearch-instance-types": {
-         "type": "string",
-         "enum": [
-            "m6g.2xlarge.search",
-            "m6g.large.search",
-            "m6g.xlarge.search",
-            "t2.medium.search",
-            "t3.medium.search"
-         ]
-      },
-      "opensearch-engine-versions": {
-         "type": "string",
-         "enum": [
-            "2.5",
-            "2.3",
-            "1.3",
-            "1.2",
-            "1.1",
-            "1.0"
-         ]
-      },
-      "rds-postgres-plans": {
-         "type": "string",
-         "enum": [
-            "tiny-13",
-            "small-13",
-            "small-13-ha",
-            "medium-13",
-            "medium-13-ha",
-            "large-13",
-            "large-13-ha",
-            "xlarge-13",
-            "xlarge-13-ha"
-         ]
-      },
-      "rds-postgres-instance-types": {
-         "type": "string",
-         "enum": [
-            "db.m5.2xlarge",
-            "db.m5.4xlarge",
-            "db.m5.large",
-            "db.t3.micro",
-            "db.t3.small"
-         ]
-      },
-      "environment-names": {
-         "enum": [
-            "default",
-            "prod",
-            "staging",
-            "dev"
-         ]
-      },
-      "service-names": {
-         "enum": [
-            "web",
-            "web-celery"
-         ]
-      }
-   },
-   "additionalProperties": false
+      "additionalProperties": false
+    },
+    "redis-plans": {
+      "type": "string",
+      "enum": [
+        "micro",
+        "micro-ha",
+        "tiny",
+        "tiny-ha",
+        "small",
+        "small-ha",
+        "medium",
+        "medium-ha",
+        "large",
+        "large-ha",
+        "x-large",
+        "x-large-ha"
+      ]
+    },
+    "redis-instance-types": {
+      "type": "string",
+      "enum": [
+        "cache.m6g.2xlarge",
+        "cache.m6g.large",
+        "cache.m6g.xlarge",
+        "cache.t4g.medium",
+        "cache.t4g.micro"
+      ]
+    },
+    "redis-engine-versions": {
+      "type": "string",
+      "enum": [
+        "3.2.6",
+        "4.0.10",
+        "5.0.0",
+        "5.0.3",
+        "5.0.4",
+        "5.0.6",
+        "6.0",
+        "6.2"
+      ]
+    },
+    "opensearch-plans": {
+      "type": "string",
+      "enum": [
+        "tiny",
+        "small",
+        "small-ha",
+        "medium",
+        "medium-ha",
+        "large",
+        "large-ha",
+        "x-large",
+        "x-large-ha"
+      ]
+    },
+    "opensearch-instance-types": {
+      "type": "string",
+      "enum": [
+        "m6g.2xlarge.search",
+        "m6g.large.search",
+        "m6g.xlarge.search",
+        "t2.medium.search",
+        "t3.medium.search"
+      ]
+    },
+    "opensearch-engine-versions": {
+      "type": "string",
+      "enum": [
+        "2.5",
+        "2.3",
+        "1.3",
+        "1.2",
+        "1.1",
+        "1.0"
+      ]
+    },
+    "rds-postgres-plans": {
+      "type": "string",
+      "enum": [
+        "tiny-13",
+        "small-13",
+        "small-13-ha",
+        "medium-13",
+        "medium-13-ha",
+        "large-13",
+        "large-13-ha",
+        "xlarge-13",
+        "xlarge-13-ha"
+      ]
+    },
+    "rds-postgres-instance-types": {
+      "type": "string",
+      "enum": [
+        "db.m5.2xlarge",
+        "db.m5.4xlarge",
+        "db.m5.large",
+        "db.t3.micro",
+        "db.t3.small"
+      ]
+    },
+    "environment-names": {
+      "enum": [
+        "default",
+        "prod",
+        "staging",
+        "dev"
+      ]
+    },
+    "service-names": {
+      "enum": [
+        "web",
+        "web-celery"
+      ]
+    }
+  },
+  "additionalProperties": false
 }
