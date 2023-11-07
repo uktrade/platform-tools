@@ -47,7 +47,8 @@ my-s3-bucket:
 ##### s3-policy example:
 
 my-s3-bucket-bucket-access:
-  type: s3-policy  # gives the listed services permissions to access an existing bucket
+  type: s3-policy  # Gives the listed services permissions to access a bucket created and managed outside of your DBT Platform configuration.
+                   # If the bucket is not in the same account as your service, see https://repost.aws/knowledge-center/cross-account-access-s3
 
   services:  # services that require access to the bucket.
     - "web"
