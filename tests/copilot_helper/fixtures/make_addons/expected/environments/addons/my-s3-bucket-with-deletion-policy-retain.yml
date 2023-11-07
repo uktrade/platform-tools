@@ -10,7 +10,7 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  myS3BucketWithRetainOnStackDeletionBucketNameMap:
+  myS3BucketWithDeletionPolicyRetainBucketNameMap:
     # Create an entry for each environment
 
     development:
@@ -18,14 +18,14 @@ Mappings:
 
 
 Resources:
-  myS3BucketWithRetainOnStackDeletionKMSKey:
+  myS3BucketWithDeletionPolicyRetainKMSKey:
     Type: "AWS::KMS::Key"
     DeletionPolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-myS3BucketWithRetainOnStackDeletion-key'
+        Id: !Sub '${App}-${Env}-myS3BucketWithDeletionPolicyRetain-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -34,26 +34,26 @@ Resources:
           Action: kms:*
           Resource: '*'
 
-  myS3BucketWithRetainOnStackDeletionKeyAlias:
+  myS3BucketWithDeletionPolicyRetainKeyAlias:
     Type: 'AWS::KMS::Alias'
     DeletionPolicy: Retain
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithRetainOnStackDeletion-key'
-      TargetKeyId: !Ref myS3BucketWithRetainOnStackDeletionKMSKey
+      AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithDeletionPolicyRetain-key'
+      TargetKeyId: !Ref myS3BucketWithDeletionPolicyRetainKMSKey
 
-  myS3BucketWithRetainOnStackDeletionBucket:
+  myS3BucketWithDeletionPolicyRetainBucket:
     Metadata:
-      'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithRetainOnStackDeletion'
+      'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithDeletionPolicyRetain'
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
-      BucketName: !FindInMap [myS3BucketWithRetainOnStackDeletionBucketNameMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [myS3BucketWithDeletionPolicyRetainBucketNameMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: aws:kms
-            KMSMasterKeyID: !Ref myS3BucketWithRetainOnStackDeletionKMSKey
+            KMSMasterKeyID: !Ref myS3BucketWithDeletionPolicyRetainKMSKey
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -67,7 +67,7 @@ Resources:
         - Key: Copilot-environment
           Value: !Ref Env
 
-  myS3BucketWithRetainOnStackDeletionBucketPolicy:
+  myS3BucketWithDeletionPolicyRetainBucketPolicy:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
@@ -82,22 +82,22 @@ Resources:
             Principal: '*'
             Action: 's3:*'
             Resource:
-              - !Sub ${ myS3BucketWithRetainOnStackDeletionBucket.Arn}/*
-              - !Sub ${ myS3BucketWithRetainOnStackDeletionBucket.Arn}
+              - !Sub ${ myS3BucketWithDeletionPolicyRetainBucket.Arn}/*
+              - !Sub ${ myS3BucketWithDeletionPolicyRetainBucket.Arn}
             Condition:
               Bool:
                 "aws:SecureTransport": false
-      Bucket: !Ref myS3BucketWithRetainOnStackDeletionBucket
+      Bucket: !Ref myS3BucketWithDeletionPolicyRetainBucket
 
 
 
 Outputs:
-  myS3BucketWithRetainOnStackDeletionName:
+  myS3BucketWithDeletionPolicyRetainName:
     Description: "The name of a user-defined bucket."
-    Value: !Ref myS3BucketWithRetainOnStackDeletionBucket
+    Value: !Ref myS3BucketWithDeletionPolicyRetainBucket
 
-  myS3BucketWithRetainOnStackDeletionKMSKeyARN:
+  myS3BucketWithDeletionPolicyRetainKMSKeyARN:
     Description: "ARN of the KMS Key"
-    Value: !GetAtt myS3BucketWithRetainOnStackDeletionKMSKey.Arn
+    Value: !GetAtt myS3BucketWithDeletionPolicyRetainKMSKey.Arn
     Export:
-      Name: !Sub "${App}-${Env}-myS3BucketWithRetainOnStackDeletion-KMSKeyARN"
+      Name: !Sub "${App}-${Env}-myS3BucketWithDeletionPolicyRetain-KMSKeyARN"

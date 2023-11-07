@@ -201,12 +201,13 @@ def make_addons(directory="."):
         environments = addon_config.pop("environments")
 
         environment_addon_config = {
-            "secret_name": addon_name.upper().replace("-", "_"),
-            "name": addon_config.get("name", None) or addon_name,
-            "environments": environments,
-            "prefix": camel_case(addon_name),
             "addon_type": addon_type,
             "custom_resources": custom_resources,
+            "deletion_policy": addon_config.get("deletion-policy", "Delete"),
+            "environments": environments,
+            "name": addon_config.get("name", None) or addon_name,
+            "prefix": camel_case(addon_name),
+            "secret_name": addon_name.upper().replace("-", "_"),
             **addon_config,
         }
 

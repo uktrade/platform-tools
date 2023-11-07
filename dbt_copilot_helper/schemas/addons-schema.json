@@ -135,8 +135,12 @@
               "type" : "string",
               "pattern" : "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             },
-            "retain-on-stack-deletion" : {
-              "type" : "boolean"
+            "deletion-policy" : {
+              "type" : "string",
+              "enum" : [
+                "Delete",
+                "Retain"
+              ]
             },
             "services" : {
               "type" : [
@@ -187,7 +191,7 @@
               "type" : "string",
               "pattern" : "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             },
-            "retain-on-stack-deletion" : {
+            "deletion-policy-retain" : {
               "type" : "boolean"
             },
             "readonly" : {
