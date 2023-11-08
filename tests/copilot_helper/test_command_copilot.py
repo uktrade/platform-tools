@@ -9,6 +9,7 @@ import pytest
 from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_ssm
+from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.utils.aws import SSM_PATH
@@ -206,6 +207,43 @@ class TestMakeAddonCommand:
         assert (
             len(actual_files) == len(all_expected_files) + 3
         ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
+
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    def test_make_addons_s3_deletion_policy(self, fakefs):
+        """???"""
+        fakefs.create_file(
+            ADDON_CONFIG_FILENAME,
+            contents=dump(
+                {
+                    "my-s3-bucket-with-deletion-policy-retain": {
+                        "type": "s3",
+                        "readonly": "true",
+                        "deletion-policy": "Retain",
+                        "services": [
+                            "web",
+                        ],
+                        "environments": {
+                            "development": {
+                                "bucket-name": "my-bucket-dev",
+                            },
+                        },
+                    }
+                }
+            ),
+        )
+        print(Path(ADDON_CONFIG_FILENAME).read_text())
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert (
+            result.exit_code == 0
+        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
+        # Todo: the other assertions
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
