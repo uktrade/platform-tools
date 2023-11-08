@@ -71,7 +71,7 @@ Resources:
         - Key: Copilot-environment
           Value: !Ref Env
         - Key: Copilot-deletion-policy
-          Value: !FindInMap [myS3BucketEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+          Value: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
 
   {{ service.prefix }}BucketPolicy:
     Metadata:
