@@ -10,7 +10,7 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  myS3BucketWithAnObjectBucketNameMap:
+  myS3BucketWithAnObjectEnvironmentConfigMap:
     # Create an entry for each environment
 
     development:
@@ -44,7 +44,7 @@ Resources:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithAnObject'
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !FindInMap [myS3BucketWithAnObjectBucketNameMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:

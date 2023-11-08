@@ -10,7 +10,7 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  {{ service.prefix }}BucketNameMap:
+  {{ service.prefix }}EnvironmentConfigMap:
     # Create an entry for each environment
 {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
@@ -44,7 +44,7 @@ Resources:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
