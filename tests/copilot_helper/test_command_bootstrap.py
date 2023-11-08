@@ -344,11 +344,14 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
     assert """Target environment manifest for "newenv" does not exist.""" in result.output
 
 
+@pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
-def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
+def test_copy_secrets(
+    set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
+):
     get_ssm_secrets.return_value = [
         (
             "/copilot/test-application/development/secrets/ALLOWED_HOSTS",
@@ -358,7 +361,7 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
     ]
 
     runner = CliRunner()
-    setup_newenv_environment(tmp_path, runner)
+    setup_newenv_environment(tmp_path, runner, bootstrap_exists)
 
     result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
 
@@ -388,12 +391,13 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
     assert "/copilot/test-application/newenv/secrets/TEST_SECRET" in result.output
 
 
+@pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
 def test_copy_secrets_skips_aws_secrets(
-    set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
+    set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
     get_ssm_secrets.return_value = [
         ("/copilot/test-application/development/secrets/GOOD_SECRET", "good value"),
@@ -401,7 +405,7 @@ def test_copy_secrets_skips_aws_secrets(
     ]
 
     runner = CliRunner()
-    setup_newenv_environment(tmp_path, runner)
+    setup_newenv_environment(tmp_path, runner, bootstrap_exists)
 
     result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
 
@@ -423,12 +427,13 @@ def test_copy_secrets_skips_aws_secrets(
     assert "/copilot/test-application/newenv/secrets/AWS_BAD_SECRET" not in result.output
 
 
+@pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_copilot_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
 def test_copy_secrets_with_existing_secret(
-    set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
+    set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
     set_ssm_param.side_effect = alias_session.client("ssm").exceptions.ParameterAlreadyExists(
         {
@@ -445,7 +450,7 @@ def test_copy_secrets_with_existing_secret(
     ]
 
     runner = CliRunner()
-    setup_newenv_environment(tmp_path, runner)
+    setup_newenv_environment(tmp_path, runner, bootstrap_exists)
 
     result = runner.invoke(copy_secrets, ["development", "newenv", "--project-profile", "foo"])
 
@@ -455,15 +460,23 @@ def test_copy_secrets_with_existing_secret(
     )
 
 
-def setup_newenv_environment(tmp_path, runner):
+def setup_newenv_environment(tmp_path, runner, bootstrap_exists):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, TEST_APP_DIR / "bootstrap.yml")
-    os.mkdir(f"{tmp_path}/copilot")
+    copilot_dir = tmp_path / "copilot"
+    copilot_dir.mkdir()
+
+    with open(copilot_dir / ".workspace", "w") as fh:
+        fh.write("application: test-application\n")
 
     runner.invoke(make_config)
 
-    my_file = Path(FIXTURES_DIR, "newenv_environment_manifest.yml")
-    os.mkdir(f"{tmp_path}/copilot/environments/newenv")
-    to_file = Path(tmp_path / "copilot/environments/newenv/manifest.yml")
+    if not bootstrap_exists:
+        Path("bootstrap.yml").unlink()
+
+    my_file = FIXTURES_DIR / "newenv_environment_manifest.yml"
+    envdir = copilot_dir / "environments/newenv"
+    envdir.mkdir(parents=True)
+    to_file = envdir / "manifest.yml"
     shutil.copy(my_file, to_file)
 
 
