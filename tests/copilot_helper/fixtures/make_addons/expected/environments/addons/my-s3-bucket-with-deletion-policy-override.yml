@@ -10,7 +10,7 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  myS3BucketWithDeletionPolicyOverrideBucketNameMap:
+  myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap:
     # Create an entry for each environment
 
     development:
@@ -21,7 +21,7 @@ Mappings:
 Resources:
   myS3BucketWithDeletionPolicyOverrideKMSKey:
     Type: "AWS::KMS::Key"
-    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideBucketNameMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
@@ -38,7 +38,7 @@ Resources:
 
   myS3BucketWithDeletionPolicyOverrideKeyAlias:
     Type: 'AWS::KMS::Alias'
-    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideBucketNameMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithDeletionPolicyOverride-key'
@@ -48,10 +48,10 @@ Resources:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithDeletionPolicyOverride'
     Type: AWS::S3::Bucket
-    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideBucketNameMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !FindInMap [myS3BucketWithDeletionPolicyOverrideBucketNameMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
@@ -75,7 +75,7 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
-    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideBucketNameMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyOverrideEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       PolicyDocument:
