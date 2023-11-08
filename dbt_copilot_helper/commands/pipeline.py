@@ -61,10 +61,15 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
     pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
 
+    environments = []
+    for pipelines in codebase["pipelines"]:
+        environments += pipelines["environments"]
+
     template_data = {
         "app_name": app_name,
         "deploy_repo": git_repo,
         "codebase": codebase,
+        "environments": environments,
         "codestar_connection_arn": codestar_connection_arn,
         "codestar_connection_id": codestar_connection_arn.split("/")[-1],
     }
@@ -76,14 +81,21 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
         templates,
         "codebase/manifest.yml",
     )
-    _create_file_from_template(
-        base_path,
-        f"{codebase['name']}/overrides/cfn.patches.yml",
-        pipelines_dir,
-        template_data,
-        templates,
-        "codebase/overrides/cfn.patches.yml",
-    )
+
+    overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
+
+    for file in overrides_path.rglob("**/*"):
+        if file.is_file():
+            contents = file.read_text()
+            file_name = str(file).removeprefix(f"{overrides_path}/")
+            print(
+                mkfile(
+                    base_path,
+                    pipelines_dir / codebase["name"] / "overrides" / file_name,
+                    contents,
+                    overwrite=True,
+                )
+            )
 
 
 def _generate_environments_pipeline(

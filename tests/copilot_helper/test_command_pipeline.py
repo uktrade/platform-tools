@@ -14,6 +14,7 @@ from dbt_copilot_helper.commands.pipeline import generate
 from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
 from tests.copilot_helper.conftest import FIXTURES_DIR
 from tests.copilot_helper.conftest import assert_file_created_in_stdout
+from tests.copilot_helper.conftest import assert_file_overwritten_in_stdout
 from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
 
 
@@ -45,15 +46,13 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_file_created_in_stdout(cfn_patch, result, tmp_path)
 
     # Codebases
-    cfn_patch, manifest = setup_output_file_paths_for_codebases(tmp_path)
+    output_files = setup_output_file_paths_for_codebases(tmp_path)
     assert_yaml_in_output_file_matches_expected(
-        manifest, expected_files_dir / "application" / "manifest.yml"
+        output_files[0], expected_files_dir / "application" / "manifest.yml"
     )
-    assert_yaml_in_output_file_matches_expected(
-        cfn_patch, expected_files_dir / "application" / "overrides" / "cfn.patches.yml"
-    )
-    assert_file_created_in_stdout(manifest, result, tmp_path)
-    assert_file_created_in_stdout(cfn_patch, result, tmp_path)
+
+    for file in output_files:
+        assert_file_created_in_stdout(file, result, tmp_path)
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -64,20 +63,17 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 ):
     mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
     setup_git_repository()
-    buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments(tmp_path)
-    for path in [buildspec, cfn_patch, manifest]:
-        os.makedirs(path.parent, exist_ok=True)
-        with open(path, "w") as fh:
-            print("Pre-existing file contents", file=fh)
+    environments_files = setup_output_file_paths_for_environments(tmp_path)
+    codebases_files = setup_output_file_paths_for_codebases(tmp_path)
 
-    CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate)
+    for file in environments_files + codebases_files:
+        assert_file_created_in_stdout(file, result, tmp_path)
 
-    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines" / "environments"
-    assert_yaml_in_output_file_matches_expected(buildspec, expected_files_dir / "buildspec.yml")
-    assert_yaml_in_output_file_matches_expected(manifest, expected_files_dir / "manifest.yml")
-    assert_yaml_in_output_file_matches_expected(
-        cfn_patch, expected_files_dir / "overrides/cfn.patches.yml"
-    )
+    result = CliRunner().invoke(generate)
+
+    for file in environments_files + codebases_files:
+        assert_file_overwritten_in_stdout(file, result, tmp_path)
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -186,9 +182,33 @@ def setup_output_file_paths_for_environments(tmp_path):
 
 def setup_output_file_paths_for_codebases(tmp_path):
     output_dir = tmp_path / "copilot/pipelines/application"
+    overrides_dir = output_dir / "overrides"
+
     manifest = output_dir / "manifest.yml"
-    cfn_patch = output_dir / "overrides" / "cfn.patches.yml"
-    return cfn_patch, manifest
+    override = overrides_dir / "bin" / "override.ts"
+    gitignore = overrides_dir / ".gitignore"
+    buildspec_deploy = overrides_dir / "buildspec.deploy.yml"
+    buildspec_image = overrides_dir / "buildspec.image.yml"
+    cdk_json = overrides_dir / "cdk.json"
+    package_lock = overrides_dir / "package-lock.json"
+    package = overrides_dir / "package.json"
+    stack = overrides_dir / "stack.ts"
+    tsconfig = overrides_dir / "tsconfig.json"
+    types = overrides_dir / "types.ts"
+
+    return (
+        manifest,
+        override,
+        gitignore,
+        buildspec_deploy,
+        buildspec_image,
+        cdk_json,
+        package_lock,
+        package,
+        stack,
+        tsconfig,
+        types,
+    )
 
 
 def setup_git_repository():

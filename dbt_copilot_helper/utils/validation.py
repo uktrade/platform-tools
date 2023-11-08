@@ -117,11 +117,29 @@ PIPELINES_SCHEMA = Schema(
                     "repository": str,
                     "branch": str,
                     "services": list[str],
-                    "environments": [
-                        {
-                            "name": str,
-                            Optional("requires_approval"): bool,
-                        }
+                    "pipelines": [
+                        Or(
+                            {
+                                "name": str,
+                                "branch": str,
+                                "environments": [
+                                    {
+                                        "name": str,
+                                        Optional("requires_approval"): bool,
+                                    }
+                                ],
+                            },
+                            {
+                                "name": str,
+                                "tag": bool,
+                                "environments": [
+                                    {
+                                        "name": str,
+                                        Optional("requires_approval"): bool,
+                                    }
+                                ],
+                            },
+                        ),
                     ],
                 },
             ]
