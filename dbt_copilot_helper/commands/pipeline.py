@@ -36,7 +36,7 @@ def generate():
 
     pipeline_config = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
-    _validate_pipelines_yml(pipeline_config)
+    _validate_pipelines_configuration(pipeline_config)
 
     git_repo = _get_git_remote()
     if not git_repo:
@@ -58,7 +58,7 @@ def generate():
             )
 
 
-def _validate_pipelines_yml(pipeline_config):
+def _validate_pipelines_configuration(pipeline_config):
     for codebase in pipeline_config["codebases"]:
         codebase_environments = []
 
