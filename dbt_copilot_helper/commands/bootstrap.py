@@ -7,6 +7,7 @@ import click
 from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 
+from dbt_copilot_helper.utils.application import get_application_name
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from dbt_copilot_helper.utils.aws import check_aws_conn
 from dbt_copilot_helper.utils.aws import get_ssm_secret_names
@@ -238,9 +239,8 @@ def copy_secrets(project_profile, source_environment, target_environment):
         click.echo(f"""Target environment manifest for "{target_environment}" does not exist.""")
         exit(1)
 
-    config_file = "bootstrap.yml"
-    config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
-    secrets = get_ssm_secrets(config["app"], source_environment)
+    app_name = get_application_name()
+    secrets = get_ssm_secrets(app_name, source_environment)
 
     for secret in secrets:
         secret_name = secret[0].replace(f"/{source_environment}/", f"/{target_environment}/")
@@ -252,7 +252,7 @@ def copy_secrets(project_profile, source_environment, target_environment):
 
         try:
             set_ssm_param(
-                config["app"],
+                app_name,
                 target_environment,
                 secret_name,
                 secret[1],
