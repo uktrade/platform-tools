@@ -58,6 +58,67 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("boto3.client")
+def test_pipeline_generate_with_only_environments_creates_the_pipeline_configuration(
+    mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
+):
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    setup_git_repository()
+
+    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    del pipelines["codebases"]
+    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+
+    CliRunner().invoke(generate)
+
+    environments_files = setup_output_file_paths_for_environments(tmp_path)
+    for file in environments_files:
+        assert Path(file).exists()
+
+    codebase_files = setup_output_file_paths_for_codebases(tmp_path)
+    for file in codebase_files:
+        assert not Path(file).exists()
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("boto3.client")
+def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuration(
+    mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
+):
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    setup_git_repository()
+
+    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    del pipelines["environments"]
+    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+
+    CliRunner().invoke(generate)
+
+    environments_files = setup_output_file_paths_for_environments(tmp_path)
+    for file in environments_files:
+        assert not Path(file).exists()
+
+    codebase_files = setup_output_file_paths_for_codebases(tmp_path)
+    for file in codebase_files:
+        assert Path(file).exists()
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("boto3.client")
+def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
+    mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
+):
+    Path("pipelines.yml").write_text(yaml.dump({}))
+
+    result = CliRunner().invoke(generate)
+
+    assert "Error: No environment or codebase pipelines defined in pipelines.yml" in result.output
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("boto3.client")
 def test_pipeline_generate_overwrites_any_existing_config_files(
     mocked_boto3_client, tmp_path, switch_to_tmp_dir_and_copy_fixtures
 ):
@@ -118,7 +179,6 @@ def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(
     os.remove("pipelines.yml")
 
     result = CliRunner().invoke(generate)
-    print(result.exception)
 
     assert result.exit_code == 1
     assert "Error: There is no pipelines.yml" in result.output

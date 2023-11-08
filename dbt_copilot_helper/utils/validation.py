@@ -102,46 +102,42 @@ BOOTSTRAP_SCHEMA = Schema(
 
 PIPELINES_SCHEMA = Schema(
     {
-        "environments": Optional(
-            [
-                {
-                    "name": str,
-                    Optional("requires_approval"): bool,
-                },
-            ]
-        ),
-        "codebases": Optional(
-            [
-                {
-                    "name": str,
-                    "repository": str,
-                    "services": list[str],
-                    "pipelines": [
-                        Or(
-                            {
-                                "name": str,
-                                "branch": str,
-                                "environments": [
-                                    {
-                                        "name": str,
-                                        Optional("requires_approval"): bool,
-                                    }
-                                ],
-                            },
-                            {
-                                "name": str,
-                                "tag": bool,
-                                "environments": [
-                                    {
-                                        "name": str,
-                                        Optional("requires_approval"): bool,
-                                    }
-                                ],
-                            },
-                        ),
-                    ],
-                },
-            ]
-        ),
+        Optional("environments"): [
+            {
+                "name": str,
+                Optional("requires_approval"): bool,
+            },
+        ],
+        Optional("codebases"): [
+            {
+                "name": str,
+                "repository": str,
+                "services": list[str],
+                "pipelines": [
+                    Or(
+                        {
+                            "name": str,
+                            "branch": str,
+                            "environments": [
+                                {
+                                    "name": str,
+                                    Optional("requires_approval"): bool,
+                                }
+                            ],
+                        },
+                        {
+                            "name": str,
+                            "tag": bool,
+                            "environments": [
+                                {
+                                    "name": str,
+                                    Optional("requires_approval"): bool,
+                                }
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ],
     },
 )

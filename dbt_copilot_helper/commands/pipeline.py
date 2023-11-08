@@ -59,19 +59,23 @@ def generate():
 
 
 def _validate_pipelines_configuration(pipeline_config):
-    for codebase in pipeline_config["codebases"]:
-        codebase_environments = []
+    if not ("codebases" in pipeline_config or "environments" in pipeline_config):
+        abort_with_error("No environment or codebase pipelines defined in pipelines.yml")
 
-        for pipeline in codebase["pipelines"]:
-            codebase_environments += [e["name"] for e in pipeline["environments"]]
+    if "codebases" in pipeline_config:
+        for codebase in pipeline_config["codebases"]:
+            codebase_environments = []
 
-        unique_codebase_environments = sorted(list(set(codebase_environments)))
+            for pipeline in codebase["pipelines"]:
+                codebase_environments += [e["name"] for e in pipeline["environments"]]
 
-        if sorted(codebase_environments) != sorted(unique_codebase_environments):
-            abort_with_error(
-                "The pipelines.yml file is invalid, each environment can only be "
-                "listed in a single pipeline per codebase"
-            )
+            unique_codebase_environments = sorted(list(set(codebase_environments)))
+
+            if sorted(codebase_environments) != sorted(unique_codebase_environments):
+                abort_with_error(
+                    "The pipelines.yml file is invalid, each environment can only be "
+                    "listed in a single pipeline per codebase"
+                )
 
 
 def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, codebase, templates):
@@ -106,7 +110,7 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
         if file.is_file():
             contents = file.read_text()
             file_name = str(file).removeprefix(f"{overrides_path}/")
-            print(
+            click.echo(
                 mkfile(
                     base_path,
                     pipelines_dir / codebase["name"] / "overrides" / file_name,
