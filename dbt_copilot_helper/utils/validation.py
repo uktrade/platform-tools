@@ -115,7 +115,6 @@ PIPELINES_SCHEMA = Schema(
                 {
                     "name": str,
                     "repository": str,
-                    "branch": str,
                     "services": list[str],
                     "pipelines": [
                         Or(

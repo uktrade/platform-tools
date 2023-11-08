@@ -6,7 +6,6 @@ environments:
 codebases:
   - name: application
     repository: organisation/repository
-    branch: main
     services:
       - web
     pipelines:
