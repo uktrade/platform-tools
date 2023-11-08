@@ -136,11 +136,7 @@
               "type": "boolean"
             },
             "deletion-policy": {
-              "type": "string",
-              "enum": [
-                "Delete",
-                "Retain"
-              ]
+              "$ref": "#/definitions/deletion-policy"
             },
             "services": {
               "type": [
@@ -178,11 +174,7 @@
               "type": "boolean"
             },
             "deletion-policy": {
-              "type": "string",
-              "enum": [
-                "Delete",
-                "Retain"
-              ]
+              "$ref": "#/definitions/deletion-policy"
             },
             "services": {
               "type": [
@@ -324,6 +316,9 @@
         "bucket-name": {
           "type": "string",
           "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -515,6 +510,13 @@
         "db.m5.large",
         "db.t3.micro",
         "db.t3.small"
+      ]
+    },
+    "deletion-policy": {
+      "type": "string",
+      "enum": [
+        "Delete",
+        "Retain"
       ]
     },
     "environment-names": {
