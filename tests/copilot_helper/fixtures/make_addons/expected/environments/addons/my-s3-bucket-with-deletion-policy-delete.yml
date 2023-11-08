@@ -15,12 +15,14 @@ Mappings:
 
     development:
       BucketName: 'my-bucket-dev'
+      DeletionPolicy: Delete
 
 
 Resources:
   myS3BucketWithDeletionPolicyDeleteKMSKey:
     Type: "AWS::KMS::Key"
-    DeletionPolicy: Delete
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyDeleteBucketNameMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -36,7 +38,8 @@ Resources:
 
   myS3BucketWithDeletionPolicyDeleteKeyAlias:
     Type: 'AWS::KMS::Alias'
-    DeletionPolicy: Delete
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyDeleteBucketNameMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-myS3BucketWithDeletionPolicyDelete-key'
       TargetKeyId: !Ref myS3BucketWithDeletionPolicyDeleteKMSKey
@@ -45,7 +48,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for myS3BucketWithDeletionPolicyDelete'
     Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyDeleteBucketNameMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       BucketName: !FindInMap [myS3BucketWithDeletionPolicyDeleteBucketNameMap, !Ref Env, BucketName]
       AccessControl: Private
@@ -71,7 +75,7 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
-    DeletionPolicy: Delete
+    DeletionPolicy: !FindInMap [myS3BucketWithDeletionPolicyDeleteBucketNameMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       PolicyDocument:
