@@ -36,6 +36,8 @@ def generate():
 
     pipeline_config = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
+    _validate_pipelines_yml(pipeline_config)
+
     git_repo = _get_git_remote()
     if not git_repo:
         abort_with_error("The current directory is not a git repository")
@@ -53,6 +55,22 @@ def generate():
         for codebase in pipeline_config["codebases"]:
             _generate_codebase_pipeline(
                 app_name, codestar_connection_arn, git_repo, codebase, templates
+            )
+
+
+def _validate_pipelines_yml(pipeline_config):
+    for codebase in pipeline_config["codebases"]:
+        codebase_environments = []
+
+        for pipeline in codebase["pipelines"]:
+            codebase_environments += [e["name"] for e in pipeline["environments"]]
+
+        unique_codebase_environments = sorted(list(set(codebase_environments)))
+
+        if sorted(codebase_environments) != sorted(unique_codebase_environments):
+            abort_with_error(
+                "The pipelines.yml file is invalid, each environment can only be "
+                "listed in a single pipeline per codebase"
             )
 
 

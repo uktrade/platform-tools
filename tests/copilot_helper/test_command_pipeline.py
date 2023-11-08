@@ -136,6 +136,24 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(
     assert "Error: The pipelines.yml file is invalid" in result.output
 
 
+def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(
+    switch_to_tmp_dir_and_copy_fixtures,
+):
+    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    pipelines["codebases"][0]["pipelines"][1]["environments"] = [{"name": "dev"}] + pipelines[
+        "codebases"
+    ][0]["pipelines"][1]["environments"]
+    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert (
+        "Error: The pipelines.yml file is invalid, each environment can only be listed in a "
+        "single pipeline"
+    ) in result.output
+
+
 def test_pipeline_generate_with_no_bootstrap_yml_or_workspace_fails_with_message(
     switch_to_tmp_dir_and_copy_fixtures,
 ):
