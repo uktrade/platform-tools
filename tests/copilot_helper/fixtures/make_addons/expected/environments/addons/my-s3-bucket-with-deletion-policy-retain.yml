@@ -70,6 +70,8 @@ Resources:
           Value: !Ref App
         - Key: Copilot-environment
           Value: !Ref Env
+        - Key: Copilot-deletion-policy
+          Value: !FindInMap [myS3BucketEnvironmentConfigMap, !Ref Env, DeletionPolicy]
 
   myS3BucketWithDeletionPolicyRetainBucketPolicy:
     Metadata:
