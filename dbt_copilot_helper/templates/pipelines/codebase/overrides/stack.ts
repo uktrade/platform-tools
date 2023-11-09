@@ -35,6 +35,7 @@ export class TransformedStack extends cdk.Stack {
         // Alter cloudformation template
         this.createImageBuildProject();
         this.createECRRepository();
+        this.createEventRuleRole();
         this.updatePipelineBuildProject();
         this.updatePipelines();
         this.allowBuildProjectToUseCodestarConnection();
@@ -264,6 +265,7 @@ export class TransformedStack extends cdk.Stack {
 
             (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).push(environmentStage);
         }
+        this.createEventRule(pipeline, pipelineConfig, (index + 1).toString());
     }
 
     private updateExistingPipeline(pipeline: cdk.aws_codepipeline.CfnPipeline, pipelineConfig: typeof this.codebaseConfiguration['pipelines'][0]) {
@@ -329,6 +331,56 @@ export class TransformedStack extends cdk.Stack {
         }
 
         pipeline.stages = (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).filter(s => !!s);
+        this.createEventRule(pipeline, pipelineConfig);
+    }
+
+    private createEventRuleRole() {
+        new cdk.aws_iam.CfnRole(this, 'EventRole', {
+            roleName: `${this.appName}-${this.codebaseConfiguration.name}-pipeline-trigger-role`,
+            assumeRolePolicyDocument: {
+                Statement: [{
+                    Effect: "Allow",
+                    Principal: {
+                        Service: "events.amazonaws.com"
+                    },
+                    Action: "sts:AssumeRole"
+                }],
+            },
+            policies: [{
+                policyName: `${this.appName}-${this.codebaseConfiguration.name}-pipeline-trigger-policy`,
+                policyDocument: {
+                    Statement: [{
+                        Effect: 'Allow',
+                        Action: ["codepipeline:StartPipelineExecution"],
+                        Resource: ["*"],
+                    }],
+                }
+            }]
+        });
+    }
+
+    private createEventRule(pipeline: cdk.aws_codepipeline.CfnPipeline, pipelineConfig: PipelinesConfiguration['codebases'][0]['pipelines'][0], suffix: string = '') {
+        const watchImageTag = pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`;
+        const ecrRepository = `${this.appName}/${this.codebaseConfiguration.name}`;
+
+        new cdk.aws_events.CfnRule(this, `EventRule${suffix}`, {
+            name: `trigger-${pipeline.name}`,
+            description: `Trigger the ${pipeline.name} pipeline when a tag called '${watchImageTag}' is pushed to the repo '${ecrRepository}'`,
+            eventPattern: {
+                source: ["aws.ecr"],
+                detail: {
+                    'action-type': ["PUSH"],
+                    'image-tag': [watchImageTag],
+                    'repository-name': [ecrRepository],
+                    result: ["SUCCESS"],
+                },
+            },
+            targets: [{
+                id: `${pipeline.name}`,
+                arn: `arn:aws:codepipeline:${this.region}:${this.account}:${pipeline.name}`,
+                roleArn: cdk.Fn.getAtt('EventRole', 'Arn').toString(),
+            }]
+        });
     }
 
     private allowBuildProjectToUseCodestarConnection() {
