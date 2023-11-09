@@ -127,56 +127,56 @@ opensearch:
 
 # RDS/Postgres Instances
 rds-postgres:
-  # 5GB Storage, Postgres Version 13, DB Instance Class: db.t3.micro
-  tiny-13:
+  # 5GB Storage, DB Instance Class: db.t3.micro
+  tiny:
     volume-size: 5
     replicas: 0
     instance: db.t3.micro
 
-  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
-  small-13:
+  # 100GB Storage, DB Instance Class: db.t3.small
+  small:
     volume-size: 100
     replicas: 0
     instance: db.t3.small
 
-  # 100GB Storage, Postgres Version 13. DB Instance Class: db.t3.small
-  small-13-ha:
+  # 100GB Storage, DB Instance Class: db.t3.small
+  small-ha:
     volume-size: 100
     replicas: 2
     instance: db.t3.small
 
-  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
-  medium-13:
+  # 100GB Storage, DB Instance Class: db.m5.large
+  medium:
     volume-size: 100
     replicas: 0
     instance: db.m5.large
 
-  # 100GB Storage, Postgres Version 13. DB Instance Class: db.m5.large
-  medium-13-ha:
+  # 100GB Storage, DB Instance Class: db.m5.large
+  medium-ha:
     volume-size: 100
     replicas: 2
     instance: db.m5.large
 
-  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
-  large-13:
+  # 564GB Storage, DB Instance Class: db.m5.2xlarge
+  large:
     volume-size: 564
     replicas: 0
     instance: db.m5.2xlarge
 
-  # 564GB Storage, Postgres Version 13. DB Instance Class: db.m5.2xlarge
-  large-13-ha:
+  # 564GB Storage, DB Instance Class: db.m5.2xlarge
+  large-ha:
     volume-size: 564
     replicas: 2
     instance: db.m5.2xlarge
 
-  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
-  xlarge-13:
+  # 2TB Storage, DB Instance Class: db.m5.4xlarge
+  xlarge:
     volume-size: 2000
     replicas: 0
     instance: db.m5.4xlarge
 
-  # 2TB Storage, Postgres Version 13. DB Instance Class: db.m5.4xlarge
-  xlarge-13-ha:
+  # 2TB Storage, DB Instance Class: db.m5.4xlarge
+  xlarge-ha:
     volume-size: 2000
     replicas: 2
     instance: db.m5.4xlarge

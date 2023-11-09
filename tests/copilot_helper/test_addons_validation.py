@@ -76,7 +76,6 @@ mys3bucket:
         ),
         ("redis", None),
         ("opensearch", None),
-        ("rds-postgres", None),
         ("monitoring", None),
     ],
 )
@@ -96,6 +95,27 @@ addonitem:
         == "Additional properties are not allowed ('an-extra-key' was unexpected)"
         if message is None
         else message
+    )
+
+
+@pytest.mark.parametrize("addon_type", ["rds-postgres", "aurora-postgres"])
+def test_postgres_environment_extrakeys_not_allowed(
+    addon_type,
+):
+    addon = yaml.safe_load(
+        f"""
+addonitem:
+    type: {addon_type}
+    version: 14.4
+    environments:
+        default:
+            an-extra-key: "something"
+""",
+    )
+
+    assert (
+        expect_jsonschema_validation_error(addon)
+        == "Additional properties are not allowed ('an-extra-key' was unexpected)"
     )
 
 
@@ -179,6 +199,7 @@ def test_redis_invalid_input(addon_yaml, validation_message):
             """
 mypostgres:
     type: rds-postgres
+    version: 14.4
     environments:
         prod:
             instance: invalid-instance
@@ -189,6 +210,7 @@ mypostgres:
             """
 mypostgres:
     type: rds-postgres
+    version: 14.4
     environments:
         prod:
             plan: invalid-plan
@@ -199,6 +221,7 @@ mypostgres:
             """
 mypostgres:
     type: rds-postgres
+    version: 14.4
     environments:
         prod:
             replicas: 6
@@ -209,6 +232,7 @@ mypostgres:
             """
 mypostgres:
     type: rds-postgres
+    version: 14.4
     environments:
         prod:
             volume-size: 100001
@@ -420,9 +444,10 @@ def test_postgres_valid_example():
         """
 mypostgres:
     type: rds-postgres
+    version: 14.4
     environments:
         default:
-            plan: medium-13-ha
+            plan: medium-ha
 
         prod:
             instance: db.m5.4xlarge
