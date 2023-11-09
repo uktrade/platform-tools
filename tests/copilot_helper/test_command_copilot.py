@@ -75,9 +75,6 @@ class TestMakeAddonCommand:
                 [
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
-                    "my-s3-bucket-with-deletion-policy-retain.yml",
-                    "my-s3-bucket-with-deletion-policy-delete.yml",
-                    "my-s3-bucket-with-deletion-policy-override.yml",
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
@@ -85,9 +82,6 @@ class TestMakeAddonCommand:
                     "appconfig-ipfilter.yml",
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
-                    "my-s3-bucket-with-deletion-policy-retain.yml",
-                    "my-s3-bucket-with-deletion-policy-delete.yml",
-                    "my-s3-bucket-with-deletion-policy-override.yml",
                     "my-s3-bucket-bucket-access.yml",
                 ],
                 False,
@@ -218,12 +212,13 @@ class TestMakeAddonCommand:
             ("Retain", None, "Retain"),
             (None, "Retain", "Retain"),
             ("Delete", "Retain", "Retain"),
+            ("Retain", "Delete", "Delete"),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_s3_deletion_policy(
@@ -257,6 +252,7 @@ class TestMakeAddonCommand:
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
+        print(result)
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"

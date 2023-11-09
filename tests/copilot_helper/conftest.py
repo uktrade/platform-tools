@@ -28,6 +28,7 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
+    print("fakefs setup")
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources")
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates")
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas")
@@ -42,7 +43,7 @@ def fakefs(fs):
     fs.add_real_file(BASE_DIR / "venv/lib/python3.11/site-packages/certifi/cacert.pem")
     # PackageNotFoundError('dbt-copilot-tools')
     fs.add_real_directory(
-        BASE_DIR / "venv/lib/python3.11/site-packages/dbt_copilot_tools-0.1.78.dist-info"
+        BASE_DIR / "venv/lib/python3.11/site-packages/dbt_copilot_tools-0.1.79.dist-info"
     )
 
     return fs

@@ -16,61 +16,6 @@ my-s3-bucket:
     development:
       bucket-name: my-bucket-dev
 
-my-s3-bucket-with-deletion-policy-retain:
-  # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
-
-  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-
-  readonly: true  # services are granted read only access to the bucket
-
-  deletion-policy: Retain # Defaults to Delete if unset
-
-  services:  # services that require access to the bucket.
-    - "web"
-
-  environments:
-    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
-
-    development:
-      bucket-name: my-bucket-dev
-
-my-s3-bucket-with-deletion-policy-delete:
-  # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
-
-  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-
-  readonly: true  # services are granted read only access to the bucket
-
-  deletion-policy: Delete # Defaults to Delete if unset
-
-  services:  # services that require access to the bucket.
-    - "web"
-
-  environments:
-    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
-
-    development:
-      bucket-name: my-bucket-dev
-
-my-s3-bucket-with-deletion-policy-override:
-  # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
-
-  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-
-  readonly: true  # services are granted read only access to the bucket
-
-  deletion-policy: Delete # Defaults to Delete if unset
-
-  services:  # services that require access to the bucket.
-    - "web"
-
-  environments:
-    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
-
-    development:
-      bucket-name: my-bucket-dev
-      deletion-policy: Retain
-
 my-s3-bucket-with-an-object:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
 
