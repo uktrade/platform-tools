@@ -216,29 +216,28 @@ class TestMakeAddonCommand:
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_s3_deletion_policy(self, fakefs):
         """???"""
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents=dump(
-                {
-                    "my-s3-bucket-with-deletion-policy-retain": {
-                        "type": "s3",
-                        "readonly": "true",
-                        "deletion-policy": "Retain",
-                        "services": [
-                            "web",
-                        ],
-                        "environments": {
-                            "development": {
-                                "bucket-name": "my-bucket-dev",
-                            },
+        addon_file_contents = dump(
+            {
+                "my-s3-bucket-with-deletion-policy-retain": {
+                    "type": "s3",
+                    "readonly": True,
+                    "deletion-policy": "Retain",
+                    "services": [
+                        "web",
+                    ],
+                    "environments": {
+                        "development": {
+                            "bucket-name": "my-bucket-dev",
                         },
-                    }
+                    },
                 }
-            ),
+            }
         )
+        create_test_manifests(addon_file_contents, fakefs)
         print(Path(ADDON_CONFIG_FILENAME).read_text())
 
         result = CliRunner().invoke(copilot, ["make-addons"])
+        print(result.output)
 
         assert (
             result.exit_code == 0
