@@ -234,10 +234,10 @@ def codebuild():
 
 
 @codebuild.command()
-@click.option("--pat", help="PAT Token", required=True)
 @click.option("--project-profile", help="AWS account profile name", required=True)
-def link_github(pat: str, project_profile: str) -> None:
+def link_github(project_profile: str) -> None:
     """Links CodeDeploy to Github via users PAT."""
+    pat = click.prompt("Enter your Github personal access token (PAT):", hide_input=True)
     project_session = check_aws_conn(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
     import_pat(pat, client)
@@ -398,10 +398,11 @@ def delete_project(name, project_profile):
 @codebuild.command()
 @click.option("--workspace", help="Slack Workspace id", required=True)
 @click.option("--channel", help="Slack channel id", required=True)
-@click.option("--token", help="Slack api token", required=True)
 @click.option("--project-profile", help="AWS account profile name", required=True)
-def slackcreds(workspace, channel, token, project_profile):
+def slackcreds(workspace, channel, project_profile):
     """Add Slack credentials into AWS Parameter Store."""
+    token = click.prompt("Enter your Slack API token", hide_input=True)
+
     project_session = check_aws_conn(project_profile)
 
     SLACK = {

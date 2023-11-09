@@ -117,8 +117,10 @@ def test_check_git_url_invalid(url, capfd):
 def test_link_github(import_pat, alias_session):
     """Test that link_github calls import_pat."""
     runner = CliRunner()
-    runner.invoke(link_github, ["--pat", "123", "--project-profile", "foo"])
+    result = runner.invoke(link_github, ["--project-profile", "foo"], input="pat-token-value")
 
+    assert "Enter your Github personal access token (PAT):" in result.output
+    assert "pat-token-value" not in result.output
     import_pat.assert_called_once()
 
 
@@ -212,14 +214,14 @@ def test_slackcreds(alias_session):
             "workspace",
             "--channel",
             "channel",
-            "--token",
-            "token",
             "--project-profile",
             "foo",
         ],
-        input="y",
+        input="token-value-123\ny",
     )
 
+    assert "Enter your Slack API token:" in result.output
+    assert "token-value-123" not in result.output
     assert "Paramater Store updated" in result.output
 
     SLACK = {
@@ -236,7 +238,7 @@ def test_slackcreds(alias_session):
         "token": {
             "name": "/codebuild/slack_api_token",
             "description": "Slack API Token",
-            "value": "token",
+            "value": "token-value-123",
         },
     }
     for item, value in SLACK.items():
