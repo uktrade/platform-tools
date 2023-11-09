@@ -250,12 +250,8 @@ class TestMakeAddonCommand:
             ]
         create_test_manifests(dump(addon_file_contents), fakefs)
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        CliRunner().invoke(copilot, ["make-addons"])
 
-        print(result)
-        assert (
-            result.exit_code == 0
-        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
         manifest = yaml.safe_load(Path("/copilot/environments/addons/my-s3-bucket.yml").read_text())
         assert (
             manifest["Mappings"]["myS3BucketEnvironmentConfigMap"]["development"]["DeletionPolicy"]

@@ -36,7 +36,7 @@ def fakefs(fs):
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
 
-    # To avoid 'Could not find a suitable TLS CA certificate bundle...,' error
+    # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(BASE_DIR / "venv/lib/python3.11/site-packages/certifi/cacert.pem")
 
     return fs
