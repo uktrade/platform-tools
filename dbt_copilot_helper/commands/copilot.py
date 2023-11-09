@@ -200,13 +200,19 @@ def make_addons(directory="."):
         addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
 
+        for environment_name, environment_config in environments.items():
+            if not environment_config.get("deletion_policy"):
+                environments[environment_name]["deletion_policy"] = addon_config.get(
+                    "deletion-policy", "Delete"
+                )
+
         environment_addon_config = {
-            "secret_name": addon_name.upper().replace("-", "_"),
-            "name": addon_config.get("name", None) or addon_name,
-            "environments": environments,
-            "prefix": camel_case(addon_name),
             "addon_type": addon_type,
             "custom_resources": custom_resources,
+            "environments": environments,
+            "name": addon_config.get("name", None) or addon_name,
+            "prefix": camel_case(addon_name),
+            "secret_name": addon_name.upper().replace("-", "_"),
             **addon_config,
         }
 

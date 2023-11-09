@@ -10,16 +10,19 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  {{ service.prefix }}BucketNameMap:
+  {{ service.prefix }}EnvironmentConfigMap:
     # Create an entry for each environment
 {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
+      DeletionPolicy: {{ config.deletion_policy }}
 {% endfor %}
 
 Resources:
   {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -35,6 +38,8 @@ Resources:
 
   {{ service.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
       TargetKeyId: !Ref {{ service.prefix }}KMSKey
@@ -43,8 +48,10 @@ Resources:
     Metadata:
       'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
     Type: AWS::S3::Bucket
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
@@ -63,12 +70,14 @@ Resources:
           Value: !Ref App
         - Key: Copilot-environment
           Value: !Ref Env
+        - Key: Copilot-deletion-policy
+          Value: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
 
   {{ service.prefix }}BucketPolicy:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
-    DeletionPolicy: Retain
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       PolicyDocument:

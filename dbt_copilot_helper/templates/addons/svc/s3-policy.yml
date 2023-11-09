@@ -18,7 +18,7 @@ Parameters:
     Description: The name of the service, job, or workflow being deployed.
 
 Mappings:
-  {{ service.prefix }}BucketNameMap:
+  {{ service.prefix }}EnvironmentConfigMap:
     # Create an entry for each environment
 {% for env_name, config in service.environments.items() %}
     {{ env_name }}:
@@ -53,13 +53,13 @@ Resources:
 {% endif %}
             Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }/*"
-              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+              - bucket_name: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
           - Sid: S3ListAction
             Effect: Allow
             Action: s3:ListBucket
             Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }"
-              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+              - bucket_name: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
 Outputs:
   {{ service.prefix }}AccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
