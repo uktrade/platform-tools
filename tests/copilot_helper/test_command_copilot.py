@@ -1,5 +1,4 @@
 import os
-import shutil
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -132,7 +131,7 @@ class TestMakeAddonCommand:
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_success(
         self,
-        tmp_path,
+        fakefs,
         addon_file,
         expected_env_addons,
         expected_service_addons,
@@ -143,11 +142,15 @@ class TestMakeAddonCommand:
         contents."""
         # Arrange
         addons_dir = FIXTURES_DIR / "make_addons"
-        shutil.copytree(addons_dir / "config", tmp_path, dirs_exist_ok=True)
-        shutil.copy2(addons_dir / addon_file, tmp_path / ADDON_CONFIG_FILENAME)
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        fakefs.add_real_file(
+            addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
+        )
+        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
         # Act
-        os.chdir(tmp_path)
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert (
@@ -167,9 +170,9 @@ class TestMakeAddonCommand:
         ]
         all_expected_files = expected_env_files + expected_service_files
 
-        for file in all_expected_files:
-            expected_file = Path(addons_dir, "expected", file)
-            if file.name == "vpc.yml":
+        for f in all_expected_files:
+            expected_file = Path("expected", f)
+            if f.name == "vpc.yml":
                 if addon_file == "rds_addons.yml":
                     vpc_file = "rds-postgres"
                 elif addon_file == "aurora_addons.yml":
@@ -178,22 +181,21 @@ class TestMakeAddonCommand:
                     vpc_file = "default"
 
                 expected_file = Path(
-                    addons_dir,
                     "expected/environments/addons",
                     f"vpc-{vpc_file}.yml",
                 )
 
             expected = expected_file.read_text()
-            actual = Path(tmp_path, "copilot", file).read_text()
-            assert actual == expected, f"The file {file} did not have the expected content"
+            actual = Path("copilot", f).read_text()
+            assert actual == expected, f"The file {f} did not have the expected content"
 
-        expected_file = Path(addons_dir, "expected/environments/overrides/cfn.patches.yml")
+        expected_file = Path("expected/environments/overrides/cfn.patches.yml")
 
         expected = expected_file.read_text()
-        actual = Path(tmp_path, "copilot/environments/overrides/cfn.patches.yml").read_text()
+        actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
         assert actual == expected, f"The environment overrides did not have the expected content"
 
-        copilot_dir = Path(tmp_path, "copilot")
+        copilot_dir = Path("copilot")
         actual_files = [
             Path(d, f).relative_to(copilot_dir)
             for d, _, files in os.walk(copilot_dir)
@@ -203,6 +205,67 @@ class TestMakeAddonCommand:
         assert (
             len(actual_files) == len(all_expected_files) + 3
         ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
+
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    def test_make_addons_removes_old_addons_files(
+        self,
+        fakefs,
+    ):
+        """Tests that old addons files are cleaned up before generating new
+        ones."""
+        # Arrange
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        fakefs.add_real_file(
+            addons_dir / "redis_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+        )
+        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
+
+        # Add some legacy addon files:
+        old_addon_files = [
+            "environments/addons/my-s3-bucket.yml",
+            "environments/addons/my-s3-bucket-with-an-object.yml",
+            "environments/addons/my-opensearch.yml",
+            "environments/addons/my-rds-db.yml",
+            "web/addons/my-s3-bucket.yml",
+            "web/addons/my-s3-bucket-with-an-object.yml",
+            "web/addons/my-s3-bucket-bucket-access.yml",
+        ]
+
+        for f in old_addon_files:
+            fakefs.add_real_file(
+                addons_dir / "expected" / f, read_only=False, target_path=Path("copilot", f)
+            )
+
+        # Act
+        CliRunner().invoke(copilot, ["make-addons"])
+
+        # Assert
+        expected_env_files = [
+            Path("environments/addons", f)
+            for f in ["my-redis.yml", "addons.parameters.yml", "vpc.yml"]
+        ]
+        expected_service_files = [Path("web/addons/appconfig-ipfilter.yml")]
+        all_expected_files = expected_env_files + expected_service_files
+
+        for f in all_expected_files:
+            expected_file = Path(
+                "expected", f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml"
+            )
+            expected = expected_file.read_text()
+            actual = Path("copilot", f).read_text()
+            assert actual == expected, f"The file {f} did not have the expected content"
+
+        for f in old_addon_files:
+            path = Path("copilot", f)
+            assert not path.exists()
 
     @pytest.mark.parametrize(
         "deletion_policy,deletion_policy_override,expected_deletion_policy",
