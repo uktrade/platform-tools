@@ -188,7 +188,7 @@ Resources:
         - postgresql
         - upgrade
       Engine: postgres
-      EngineVersion: '13'
+      EngineVersion: '14.4'
       DBInstanceClass: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
       AllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]

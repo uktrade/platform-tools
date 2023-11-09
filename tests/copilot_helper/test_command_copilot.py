@@ -28,9 +28,10 @@ redis:
 RDS_POSTGRES_STORAGE_CONTENTS = """
 rds:
   type: rds-postgres
+  version: 14.4
   environments:
     default:
-      plan: small-13-ha
+      plan: small-ha
 """
 
 AURORA_POSTGRES_STORAGE_CONTENTS = """

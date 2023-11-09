@@ -274,6 +274,9 @@
         "type": {
           "type": "string"
         },
+        "version": {
+          "type": "number"
+        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -284,6 +287,9 @@
           "additionalProperties": false
         }
       },
+      "required": [
+        "version"
+      ],
       "additionalProperties": false
     },
     "aurora-postgres": {
@@ -491,15 +497,15 @@
     "rds-postgres-plans": {
       "type": "string",
       "enum": [
-        "tiny-13",
-        "small-13",
-        "small-13-ha",
-        "medium-13",
-        "medium-13-ha",
-        "large-13",
-        "large-13-ha",
-        "xlarge-13",
-        "xlarge-13-ha"
+        "tiny",
+        "small",
+        "small-ha",
+        "medium",
+        "medium-ha",
+        "large",
+        "large-ha",
+        "xlarge",
+        "xlarge-ha"
       ]
     },
     "rds-postgres-instance-types": {
