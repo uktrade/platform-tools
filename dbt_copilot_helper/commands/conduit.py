@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 import time
@@ -92,17 +93,12 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
 
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str):
     connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
-    iam = boto3.client("iam")
-    task_role_arn = iam.get_role(RoleName=f"{app}-{env}-conduit-{addon_type}-TaskRole")["Role"][
-        "Arn"
-    ]
 
     subprocess.call(
         f"copilot task run --app {app} --env {env} "
         f"--task-group-name conduit-{app}-{env}-{normalise_string(addon_name)} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn} "
-        f"--task-role {task_role_arn} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -157,6 +153,33 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
         raise CreateTaskTimeoutConduitError
 
 
+def add_stack_delete_policy_to_task_role(app: str, env: str, addon_type: str):
+    conduit_stack_name = f"task-conduit-{app}-{env}-{app}-{addon_type}"
+    conduit_stack_resources = boto3.client("cloudformation").list_stack_resources(
+        StackName=conduit_stack_name
+    )["StackResourceSummaries"]
+
+    for resource in conduit_stack_resources:
+        if resource["LogicalResourceId"] == "DefaultTaskRole":
+            task_role_name = resource["PhysicalResourceId"]
+            boto3.client("iam").put_role_policy(
+                RoleName=task_role_name,
+                PolicyName="DeleteCloudFormationStack",
+                PolicyDocument=json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Action": ["cloudformation:DeleteStack"],
+                                "Effect": "Allow",
+                                "Resource": f"arn:aws:cloudformation:*:*:stack/{conduit_stack_name}/*",
+                            }
+                        ],
+                    }
+                ),
+            )
+
+
 def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     if addon_type not in CONDUIT_ADDON_TYPES:
         raise InvalidAddonTypeConduitError(addon_type)
@@ -166,6 +189,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 
     if not addon_client_is_running(app, env, cluster_arn, addon_name):
         create_addon_client_task(app, env, addon_type, addon_name)
+    add_stack_delete_policy_to_task_role(app, env, addon_type)
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 
 
