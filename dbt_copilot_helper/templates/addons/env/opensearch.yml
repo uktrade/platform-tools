@@ -285,3 +285,45 @@ Resources:
           Value: !Sub ${App}
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
+
+  {{ service.prefix }}ConduitTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${App}-${Env}-conduit-opensearch-TaskRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Policies:
+        - PolicyName: !Sub '${App}-${Env}-conduit-opensearch-TaskRole-ExecuteCommand'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenDataChannel'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                Resource: "*"
+        - PolicyName: !Sub '${App}-${Env}-conduit-opensearch-TaskRole-DeleteStack'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DeleteStack'
+                Resource:
+                  - !Sub "arn:aws:cloudformation:*:*:stack/task-conduit-${App}-${Env}-${App}-opensearch/*"

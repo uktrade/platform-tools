@@ -147,3 +147,45 @@ Resources:
         - 'rediss://${url}:${port}'
         - url: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
           port: !GetAtt '{{ service.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
+
+  {{ service.prefix }}ConduitTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${App}-${Env}-conduit-redis-TaskRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Policies:
+        - PolicyName: !Sub '${App}-${Env}-conduit-redis-TaskRole-ExecuteCommand'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenDataChannel'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                Resource: "*"
+        - PolicyName: !Sub '${App}-${Env}-conduit-redis-TaskRole-DeleteStack'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DeleteStack'
+                Resource:
+                  - !Sub "arn:aws:cloudformation:*:*:stack/task-conduit-${App}-${Env}-${App}-redis/*"

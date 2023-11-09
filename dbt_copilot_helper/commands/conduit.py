@@ -92,12 +92,17 @@ def get_connection_secret_arn(app: str, env: str, name: str) -> str:
 
 def create_addon_client_task(app: str, env: str, addon_type: str, addon_name: str):
     connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
+    iam = boto3.client("iam")
+    task_role_arn = iam.get_role(RoleName=f"{app}-{env}-conduit-{addon_type}-TaskRole")["Role"][
+        "Arn"
+    ]
 
     subprocess.call(
         f"copilot task run --app {app} --env {env} "
         f"--task-group-name conduit-{app}-{env}-{normalise_string(addon_name)} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        f"--task-role {task_role_arn} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,

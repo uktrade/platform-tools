@@ -498,3 +498,45 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
+
+  {{ service.prefix }}ConduitTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${App}-${Env}-conduit-postgres-TaskRole'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Policies:
+        - PolicyName: !Sub '${App}-${Env}-conduit-postgres-TaskRole-ExecuteCommand'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenDataChannel'
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                Resource: "*"
+        - PolicyName: !Sub '${App}-${Env}-conduit-postgres-TaskRole-DeleteStack'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DeleteStack'
+                Resource:
+                  - !Sub "arn:aws:cloudformation:*:*:stack/task-conduit-${App}-${Env}-${App}-postgres/*"
