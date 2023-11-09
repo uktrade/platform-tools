@@ -209,48 +209,61 @@ class TestMakeAddonCommand:
             len(actual_files) == len(all_expected_files) + 3
         ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
 
+    @pytest.mark.parametrize(
+        "deletion_policy,deletion_policy_override,expected_deletion_policy",
+        [
+            (None, None, "Delete"),
+            ("Delete", None, "Delete"),
+            (None, "Delete", "Delete"),
+            ("Retain", None, "Retain"),
+            (None, "Retain", "Retain"),
+            ("Delete", "Retain", "Retain"),
+        ],
+    )
     @freeze_time("2023-08-22 16:00:00")
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=True),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_make_addons_s3_deletion_policy(self, fakefs):
-        """Todo: Write this"""
-        addon_file_contents = dump(
-            {
-                "my-s3-bucket-with-deletion-policy-retain": {
-                    "type": "s3",
-                    "readonly": True,
-                    "deletion-policy": "Retain",
-                    "services": [
-                        "web",
-                    ],
-                    "environments": {
-                        "development": {
-                            "bucket-name": "my-bucket-dev",
-                        },
+    def test_make_addons_s3_deletion_policy(
+        self, fakefs, deletion_policy, deletion_policy_override, expected_deletion_policy
+    ):
+        """Test that deletion policy defaults and overrides are applied
+        correctly."""
+        addon_file_contents = {
+            "my-s3-bucket": {
+                "type": "s3",
+                "readonly": True,
+                "deletion-policy": deletion_policy,
+                "services": [
+                    "web",
+                ],
+                "environments": {
+                    "development": {
+                        "bucket-name": "my-bucket-dev",
+                        "deletion-policy": deletion_policy_override,
                     },
-                }
+                },
             }
-        )
-        create_test_manifests(addon_file_contents, fakefs)
+        }
+        if not deletion_policy:
+            del addon_file_contents["my-s3-bucket"]["deletion-policy"]
+        if not deletion_policy_override:
+            del addon_file_contents["my-s3-bucket"]["environments"]["development"][
+                "deletion-policy"
+            ]
+        create_test_manifests(dump(addon_file_contents), fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-        manifest = yaml.safe_load(
-            Path(
-                "/copilot/environments/addons/my-s3-bucket-with-deletion-policy-retain.yml"
-            ).read_text()
-        )
+        manifest = yaml.safe_load(Path("/copilot/environments/addons/my-s3-bucket.yml").read_text())
         assert (
-            manifest["Mappings"]["myS3BucketWithDeletionPolicyRetainEnvironmentConfigMap"][
-                "development"
-            ]["DeletionPolicy"]
-            == "Retain"
+            manifest["Mappings"]["myS3BucketEnvironmentConfigMap"]["development"]["DeletionPolicy"]
+            == expected_deletion_policy
         )
 
     @patch(
