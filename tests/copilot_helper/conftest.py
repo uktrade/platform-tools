@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import boto3
+import certifi
 import jsonschema
 import pytest
 import yaml
@@ -37,7 +38,7 @@ def fakefs(fs):
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
-    fs.add_real_file(BASE_DIR / "venv/lib/python3.11/site-packages/certifi/cacert.pem")
+    fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
 
     return fs
 
