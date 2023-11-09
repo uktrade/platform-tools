@@ -6,8 +6,7 @@ import yaml
 
 
 def load_and_validate_config(path, schema):
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
+    conf = yaml.safe_load(Path(path).read_text())
 
     schema.validate(conf)
 

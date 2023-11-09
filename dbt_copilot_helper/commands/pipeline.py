@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import re
-import subprocess
 from os import makedirs
 from pathlib import Path
 
@@ -12,6 +10,7 @@ from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.git import git_remote
 from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
@@ -38,7 +37,7 @@ def generate():
 
     _validate_pipelines_configuration(pipeline_config)
 
-    git_repo = _get_git_remote()
+    git_repo = git_remote()
     if not git_repo:
         abort_with_error("The current directory is not a git repository")
 
@@ -161,16 +160,3 @@ def _safe_load_config(filename, schema):
         abort_with_error(f"There is no {filename}")
     except ParserError:
         abort_with_error(f"The {filename} file is invalid")
-
-
-def _get_git_remote():
-    git_repo = subprocess.run(
-        ["git", "remote", "get-url", "origin"], capture_output=True, text=True
-    ).stdout.strip()
-
-    if not git_repo:
-        return
-
-    _, repo = git_repo.split("@")[1].split(":")
-
-    return re.sub(r".git$", "", repo)
