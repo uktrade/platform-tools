@@ -1,0 +1,40 @@
+version: 0.2
+
+env:
+  git-credential-helper: yes
+  variables:
+    COLOR: false
+    CI: true
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com"
+      - git clone "https://codestar-connections.$AWS_REGION.amazonaws.com/git-http/$AWS_ACCOUNT_ID/$AWS_REGION/$CODESTAR_CONNECTION_ID/$DEPLOY_REPOSITORY.git" deploy
+
+  build:
+    commands:
+      - >
+        if [ -z "$IMAGE_TAG" ]; then
+          echo "Automatic Deployment Detected"
+          IMAGE_DATA="$(jq -rc < "$CODEBUILD_SRC_DIR/imageDetail.json")"
+          MATCHING_IMAGE_TAG="$(echo "$IMAGE_DATA" | jq -rc --arg TAG_PATTERN "$ECR_TAG_PATTERN" '.ImageTags[] | select(. | startswith($TAG_PATTERN))')"
+          if [ -z "$MATCHING_IMAGE_TAG" ]; then
+            echo "Not tagged with matching pattern, no deployment needed, skipping release."
+            SKIP_DEPLOYMENT="TRUE"
+          fi
+          IMAGE_TAG="$(echo "$IMAGE_DATA" | jq -rc '.ImageTags[] | select(. | startswith("commit-"))')"
+          regctl image config "$(jq -rc '.ImageURI' < imageDetail.json)"
+        else
+          echo "Manual Deployment Detected for $IMAGE_TAG"
+        fi
+      - >
+        if [ -z "$SKIP_DEPLOYMENT" ]; then
+          echo "Releasing tag $IMAGE_TAG to services \${COPILOT_SERVICES/ /, } in environment '$COPILOT_ENVIRONMENT'..."
+          cd deploy
+          DEPLOY_COMMAND="copilot deploy --env $COPILOT_ENVIRONMENT --deploy-env=false --force "
+          for COPILOT_SERVICE in $COPILOT_SERVICES; do
+            DEPLOY_COMMAND="$DEPLOY_COMMAND --name $COPILOT_SERVICE/1"
+          done
+          $DEPLOY_COMMAND
+        fi

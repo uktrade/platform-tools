@@ -22,7 +22,7 @@ source:
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
-{% for environment in codebase.environments -%}
+{% for environment in environments -%}
   - # The name of the environment.
     name: {{ environment.name }}
     # Optional: flag for manual approval action before deployment.

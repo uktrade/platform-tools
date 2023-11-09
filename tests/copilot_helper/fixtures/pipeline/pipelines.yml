@@ -6,12 +6,16 @@ environments:
 codebases:
   - name: application
     repository: organisation/repository
-    branch: main
     services:
       - web
-      - worker
-    environments:
-      - name: dev
-      - name: staging
-      - name: prod
-        requires_approval: true
+    pipelines:
+      - name: main
+        branch: main
+        environments:
+          - name: dev
+      - name: tagged
+        tag: true
+        environments:
+          - name: staging
+          - name: prod
+            requires_approval: true

@@ -212,5 +212,9 @@ def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names)
     }
 
 
-def assert_file_created_in_stdout(output_file, result, tmp_path):
-    assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
+def assert_file_created_in_stdout(output_file, result):
+    assert f"File {output_file.relative_to('.')} created" in result.stdout
+
+
+def assert_file_overwritten_in_stdout(output_file, result):
+    assert f"File {output_file.relative_to('.')} overwritten" in result.stdout
