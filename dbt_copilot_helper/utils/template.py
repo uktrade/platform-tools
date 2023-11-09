@@ -1,5 +1,4 @@
 import re
-from pathlib import Path
 
 import jinja2
 
@@ -12,7 +11,6 @@ def camel_case(s):
 
 
 def setup_templates() -> jinja2.Environment:
-    Path(__file__).parent.parent / Path("templates")
     templateLoader = jinja2.PackageLoader("dbt_copilot_helper")
     templateEnv = jinja2.Environment(loader=templateLoader, keep_trailing_newline=True)
     templateEnv.add_extension(VersionTag)

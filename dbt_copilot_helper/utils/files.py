@@ -1,3 +1,4 @@
+from os import makedirs
 from pathlib import Path
 
 import click
@@ -5,8 +6,7 @@ import yaml
 
 
 def load_and_validate_config(path, schema):
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
+    conf = yaml.safe_load(Path(path).read_text())
 
     schema.validate(conf)
 
@@ -18,15 +18,19 @@ def to_yaml(value):
 
 
 def mkfile(base_path, file_path, contents, overwrite=False):
-    file_exists = (base_path / file_path).exists()
+    file_path = Path(file_path)
+    file = Path(base_path).joinpath(file_path)
+    file_exists = file.exists()
+
+    if not file_path.parent.exists():
+        makedirs(file_path.parent)
 
     if file_exists and not overwrite:
         return f"File {file_path} exists; doing nothing"
 
     action = "overwritten" if file_exists and overwrite else "created"
 
-    with open(base_path / file_path, "w") as fd:
-        fd.write(contents)
+    file.write_text(contents)
 
     return f"File {file_path} {action}"
 
