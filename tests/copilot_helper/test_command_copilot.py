@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+import yaml
 from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_ssm
@@ -215,7 +216,7 @@ class TestMakeAddonCommand:
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_s3_deletion_policy(self, fakefs):
-        """???"""
+        """Todo: Write this"""
         addon_file_contents = dump(
             {
                 "my-s3-bucket-with-deletion-policy-retain": {
@@ -234,15 +235,23 @@ class TestMakeAddonCommand:
             }
         )
         create_test_manifests(addon_file_contents, fakefs)
-        print(Path(ADDON_CONFIG_FILENAME).read_text())
 
         result = CliRunner().invoke(copilot, ["make-addons"])
-        print(result.output)
 
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-        # Todo: the other assertions
+        manifest = yaml.safe_load(
+            Path(
+                "/copilot/environments/addons/my-s3-bucket-with-deletion-policy-retain.yml"
+            ).read_text()
+        )
+        assert (
+            manifest["Mappings"]["myS3BucketWithDeletionPolicyRetainEnvironmentConfigMap"][
+                "development"
+            ]["DeletionPolicy"]
+            == "Retain"
+        )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
