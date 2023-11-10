@@ -13,8 +13,6 @@ from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.utils.aws import SSM_PATH
-from tests.copilot_helper.conftest import FIXTURES_DIR
-from tests.copilot_helper.conftest import load_cloudformation_yaml
 
 REDIS_STORAGE_CONTENTS = """
 redis:
@@ -483,33 +481,35 @@ invalid-entry:
             "File copilot/environments/addons/addons.parameters.yml created" in result.output
         ), f"addons.parameters.yml should be included for {addon_type}"
         contents = Path("/copilot/environments/addons/addons.parameters.yml").read_text()
-        addons_parameters = load_cloudformation_yaml(contents)["Parameters"]
-        assert addons_parameters["EnvironmentSecurityGroup"] == "!Ref EnvironmentSecurityGroup"
-        # assert addons_parameters["PrivateSubnets"] == "!Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]"
-        # assert addons_parameters["PublicSubnets"] == "!Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]"
-        assert addons_parameters["VpcId"] == "!Ref VPC"
+        assert "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup" in contents
+        assert (
+            "PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]"
+            in contents
+        )
+        assert (
+            "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]" in contents
+        )
+        assert "VpcId: !Ref VPC" in contents
         if is_postgres:
-            assert addons_parameters["DefaultPublicRoute"] == "!Ref DefaultPublicRoute"
-            assert addons_parameters["InternetGateway"] == "!Ref InternetGateway"
+            assert "DefaultPublicRoute: !Ref DefaultPublicRoute" in contents
+            assert "InternetGateway: !Ref InternetGateway" in contents
+            assert "InternetGatewayAttachment: !Ref InternetGatewayAttachment" in contents
+            assert "PublicRouteTable: !Ref PublicRouteTable" in contents
             assert (
-                addons_parameters["InternetGatewayAttachment"] == "!Ref InternetGatewayAttachment"
-            )
-            assert addons_parameters["PublicRouteTable"] == "!Ref PublicRouteTable"
-            assert (
-                addons_parameters["PublicSubnet1RouteTableAssociation"]
-                == "!Ref PublicSubnet1RouteTableAssociation"
+                "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation"
+                in contents
             )
             assert (
-                addons_parameters["PublicSubnet2RouteTableAssociation"]
-                == "!Ref PublicSubnet2RouteTableAssociation"
+                "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation"
+                in contents
             )
         else:
-            assert "DefaultPublicRoute" not in addons_parameters
-            assert "InternetGateway" not in addons_parameters
-            assert "InternetGatewayAttachment" not in addons_parameters
-            assert "PublicRouteTable" not in addons_parameters
-            assert "PublicSubnet1RouteTableAssociation" not in addons_parameters
-            assert "PublicSubnet2RouteTableAssociation" not in addons_parameters
+            assert "DefaultPublicRoute:" not in contents
+            assert "InternetGateway:" not in contents
+            assert "InternetGatewayAttachment:" not in contents
+            assert "PublicRouteTable:" not in contents
+            assert "PublicSubnet1RouteTableAssociation:" not in contents
+            assert "PublicSubnet2RouteTableAssociation:" not in contents
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",
