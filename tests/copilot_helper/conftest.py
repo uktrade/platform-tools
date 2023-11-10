@@ -222,3 +222,14 @@ def assert_file_created_in_stdout(output_file, result):
 
 def assert_file_overwritten_in_stdout(output_file, result):
     assert f"File {output_file.relative_to('.')} overwritten" in result.stdout
+
+
+def load_cloudformation_yaml(yaml_string):
+    def ref_constructor(loader: yaml.SafeLoader, node: yaml.nodes.ScalarNode) -> str:
+        """Construct the ref as a string."""
+        return f"{node.tag} {node.value}"
+
+    cloudformation_yaml_loader = yaml.SafeLoader
+    cloudformation_yaml_loader.add_constructor("!Ref", ref_constructor)
+
+    return yaml.load(yaml_string, Loader=cloudformation_yaml_loader)
