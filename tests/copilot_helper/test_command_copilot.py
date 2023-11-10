@@ -298,28 +298,13 @@ class TestMakeAddonCommand:
     ):
         """Test that deletion policy defaults and overrides are applied
         correctly."""
-        addon_file_contents = {
-            "my-s3-bucket": {
-                "type": "s3",
-                "readonly": True,
-                "deletion-policy": deletion_policy,
-                "services": [
-                    "web",
-                ],
-                "environments": {
-                    "development": {
-                        "bucket-name": "my-bucket-dev",
-                        "deletion-policy": deletion_policy_override,
-                    },
-                },
-            }
-        }
-        if not deletion_policy:
-            del addon_file_contents["my-s3-bucket"]["deletion-policy"]
-        if not deletion_policy_override:
-            del addon_file_contents["my-s3-bucket"]["environments"]["development"][
+        addon_file_contents = yaml.safe_load(S3_STORAGE_CONTENTS)
+        if deletion_policy:
+            addon_file_contents["my-s3-bucket"]["deletion-policy"] = deletion_policy
+        if deletion_policy_override:
+            addon_file_contents["my-s3-bucket"]["environments"]["development"][
                 "deletion-policy"
-            ]
+            ] = deletion_policy_override
         create_test_manifests(dump(addon_file_contents), fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
