@@ -478,23 +478,7 @@ def check_domain(domain_profile, project_profile, base_domain, env):
         click.secho("Please check path, manifest file not found", fg="red")
         exit()
 
-    if path.split(".")[-1] == "yml" or path.split(".")[-1] == "yaml":
-        click.secho("Please do not include the filename in the path", fg="red")
-        exit()
-
     cert_list = {}
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if file == "manifest.yml" or file == "manifest.yaml":
-                # Need to check that the manifest file is correctly configured.
-                with open(os.path.join(root, file), "r") as fd:
-                    conf = yaml.safe_load(fd)
-                    if "environments" in conf:
-                        click.echo(
-                            click.style("Checking file: ", fg="cyan")
-                            + click.style(os.path.join(root, file), fg="white"),
-                        )
-                        click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
                         environments = conf["environments"].items()
 
@@ -509,20 +493,33 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
                         if env:
                             environments = [e for e in environments if e[0] == env]
+    for manifest in manifest_iterator(path):
+        # Need to check that the manifest file is correctly configured.
+        with open(manifest, "r") as fd:
+            conf = yaml.safe_load(fd)
+            if "environments" in conf:
+                click.echo(
+                    click.style("Checking file: ", fg="cyan") + click.style(manifest, fg="white"),
+                )
+                click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                        for env, domain in environments:
-                            click.secho(
-                                "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
-                                fg="yellow",
-                                bold=True,
-                            )
-                            cert_arn = check_r53(
-                                domain_session,
-                                project_session,
-                                domain["http"]["alias"],
-                                base_domain,
-                            )
-                            cert_list.update({domain["http"]["alias"]: cert_arn})
+                environments = conf["environments"].items()
+                if env:
+                    environments = [e for e in environments if e[0] == env]
+
+                for env, domain in environments:
+                    click.secho(
+                        "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
+                        fg="yellow",
+                        bold=True,
+                    )
+                    cert_arn = check_r53(
+                        domain_session,
+                        project_session,
+                        domain["http"]["alias"],
+                        base_domain,
+                    )
+                    cert_list.update({domain["http"]["alias"]: cert_arn})
 
     if cert_list:
         click.secho("\nHere are your Certificate ARNs:", fg="cyan")
@@ -530,6 +527,13 @@ def check_domain(domain_profile, project_profile, base_domain, env):
             click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
     else:
         click.secho("No domains found, please check the manifest file", fg="red")
+
+
+def manifest_iterator(path):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file == "manifest.yml" or file == "manifest.yaml":
+                yield os.path.join(root, file)
 
 
 @domain.command()

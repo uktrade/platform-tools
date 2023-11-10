@@ -207,7 +207,18 @@ environments:
 
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\n"
 
+    # Check calls to check_r53
+    # Check calls to check_aws_conn
+
     assert result.output == expected
+
+
+def test_check_domain_copilot_dir_does_not_exist_exits_with_error():
+    pass
+
+
+def test_check_domain_no_manifests_exits_with_error():
+    pass
 
 
 @patch(

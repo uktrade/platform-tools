@@ -1,4 +1,5 @@
 import pytest
+import semver
 
 from tests.copilot_helper.conftest import BASE_DIR
 from utils.bump_version import bump_version_if_required
@@ -31,7 +32,7 @@ def test_get_pyproject_version(fs):
     ],
 )
 def test_bump_version_if_required(
-    version, bump_version, expected_version, expected_return_code, fs
+    version, bump_version, expected_version, expected_return_code, fs, capsys
 ):
     versions = ["1.1.1", "1.1.2", "1.2.3", "1.2.4"]
     fs.create_file(f"{BASE_DIR}/pyproject.toml", contents=PYPROJECT_CONTENT % version)
@@ -39,7 +40,14 @@ def test_bump_version_if_required(
     return_code = bump_version_if_required(versions, bump_version)
 
     assert return_code == expected_return_code
-    assert get_pyproject_version() == expected_version
+    assert get_pyproject_version() == semver.Version.parse(expected_version)
+
+    out = capsys.readouterr().out
+    if return_code == 0:
+        assert "" == out
+    else:
+        assert f"project version to {expected_version}" in out
+        assert out.startswith("Bumping" if bump_version else "Setting")
 
 
 @pytest.mark.parametrize(

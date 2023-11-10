@@ -35,6 +35,7 @@ def bump_version_if_required(versions, bump_version):
     with open(root_dir / "pyproject.toml", "rb") as fh:
         project = tomlkit.load(fh)
 
+    print(f"{'Bumping' if bump_version else 'Setting'} the project version to {correct_version}")
     project["tool"]["poetry"]["version"] = correct_version
 
     with open(root_dir / "pyproject.toml", "w") as fh:
