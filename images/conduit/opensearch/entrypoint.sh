@@ -37,4 +37,9 @@ while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
   fi
 done
 
+# Trigger CloudFormation stack delete before shutting down
+if [[ ! -z $ECS_CONTAINER_METADATA_URI_V4 ]]; then
+  aws cloudformation delete-stack --stack-name task-$(curl $ECS_CONTAINER_METADATA_URI_V4 -s | jq -r ".Name")
+fi
+
 echo "Shutting down"

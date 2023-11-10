@@ -497,6 +497,16 @@ def check_domain(domain_profile, project_profile, base_domain, env):
                         click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
                         environments = conf["environments"].items()
+
+                        if domain_profile == "live":
+                            environments = [
+                                e for e in environments if e[0] in ["prod", "production"]
+                            ]
+                        else:
+                            environments = [
+                                e for e in environments if e[0] not in ["prod", "production"]
+                            ]
+
                         if env:
                             environments = [e for e in environments if e[0] == env]
 

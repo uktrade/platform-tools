@@ -183,6 +183,10 @@ environments:
   staging:
     http:
       alias: v2.app.staging.test.12345
+      
+  prod:
+    http:
+      alias: v2.app.prod.test.12345
 """,
     )
 
@@ -202,6 +206,38 @@ environments:
     )
 
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\n"
+
+    assert result.output == expected
+
+
+@patch(
+    "dbt_copilot_helper.commands.dns.check_aws_conn",
+)
+@patch(
+    "dbt_copilot_helper.commands.dns.check_r53",
+    return_value="arn:1234",
+)
+def test_check_domain_live_domain_profile(check_aws_conn, check_r53, fakefs):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+environments:
+  dev:
+    http:
+      alias: v2.app.dev.test.1234
+
+  prod:
+    http:
+      alias: v2.app.prod.test.12345
+""",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        check_domain,
+        ["--domain-profile", "live", "--project-profile", "foo", "--base-domain", "test.1234"],
+    )
+    expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: prod => Domain: v2.app.prod.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.prod.test.12345\t => Cert ARN: arn:1234\n"
 
     assert result.output == expected
 
