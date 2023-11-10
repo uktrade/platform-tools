@@ -133,13 +133,13 @@ def test_check_r53(create_cert, route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain(check_aws_conn, check_r53, fakefs):
+def test_check_domain(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -165,13 +165,13 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain_env_flag(check_aws_conn, check_r53, fakefs):
+def test_check_domain_env_flag(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -208,13 +208,32 @@ environments:
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\n"
 
     # Check calls to check_r53
-    # Check calls to check_aws_conn
+    # Check calls to check_and_return_aws_session
 
     assert result.output == expected
 
 
-def test_check_domain_copilot_dir_does_not_exist_exits_with_error():
-    pass
+@patch(
+    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
+)
+def test_check_domain_copilot_dir_does_not_exist_exits_with_error(fakefs):
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        check_domain,
+        [
+            "--domain-profile",
+            "dev",
+            "--project-profile",
+            "foo",
+            "--base-domain",
+            "test.1234",
+            "--env",
+            "dev",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "manifest file not found" in result.stderr
 
 
 def test_check_domain_no_manifests_exits_with_error():
@@ -222,13 +241,13 @@ def test_check_domain_no_manifests_exits_with_error():
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain_live_domain_profile(check_aws_conn, check_r53, fakefs):
+def test_check_domain_live_domain_profile(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -254,13 +273,13 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
 )
 @patch("dbt_copilot_helper.commands.dns.check_response", return_value="{}")
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
+def test_assign_domain(check_and_return_aws_session, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
     result = runner.invoke(
         assign_domain,

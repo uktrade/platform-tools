@@ -5,16 +5,16 @@ import pytest
 from moto import mock_ssm
 
 from dbt_copilot_helper.exceptions import ValidationException
-from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_and_return_aws_session
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
 
 
-def test_check_aws_conn_profile_not_configured(capsys):
+def test_check_and_return_aws_session_profile_not_configured(capsys):
     with pytest.raises(SystemExit):
-        check_aws_conn("foo")
+        check_and_return_aws_session("foo")
 
     captured = capsys.readouterr()
 

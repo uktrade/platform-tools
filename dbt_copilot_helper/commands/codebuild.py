@@ -8,7 +8,7 @@ import click
 from boto3.session import Session
 from mypy_boto3_codebuild.client import CodeBuildClient
 
-from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_and_return_aws_session
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
@@ -238,7 +238,7 @@ def codebuild():
 def link_github(project_profile: str) -> None:
     """Links CodeDeploy to Github via users PAT."""
     pat = click.prompt("Enter your Github personal access token (PAT):", hide_input=True)
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
     import_pat(pat, client)
 
@@ -251,7 +251,7 @@ def link_github(project_profile: str) -> None:
 def create_codedeploy_role(project_profile: str, type) -> None:
     """Add AWS Role needed for codedeploy."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     account_id = project_session.client("sts").get_caller_identity().get("Account")
 
     current_filepath = Path(os.path.realpath(__file__)).parent.parent
@@ -332,7 +332,7 @@ def create_codedeploy_role(project_profile: str, type) -> None:
 def codedeploy(update, name, desc, git, branch, buildspec, project_profile, release):
     """Builds Code build boilerplate."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     modify_project(
         project_session,
         update,
@@ -360,7 +360,7 @@ def codedeploy(update, name, desc, git, branch, buildspec, project_profile, rele
 def buildproject(update, name, desc, git, branch, buildspec, builderimage, project_profile):
     """Builds Code build for ad hoc projects."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     modify_project(
         project_session,
         update,
@@ -381,7 +381,7 @@ def buildproject(update, name, desc, git, branch, buildspec, builderimage, proje
 def delete_project(name, project_profile):
     """Delete CodeBuild projects."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     client = project_session.client("codebuild", region_name=AWS_REGION)
 
     if not click.confirm(
@@ -403,7 +403,7 @@ def slackcreds(workspace, channel, project_profile):
     """Add Slack credentials into AWS Parameter Store."""
     token = click.prompt("Enter your Slack API token", hide_input=True)
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
 
     SLACK = {
         "workspace": {

@@ -8,10 +8,11 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_and_return_aws_session
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -471,16 +472,15 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
     path = "copilot"
 
-    domain_session = check_aws_conn(domain_profile)
-    project_session = check_aws_conn(project_profile)
+    domain_session = check_and_return_aws_session(domain_profile)
+    project_session = check_and_return_aws_session(project_profile)
 
     if not os.path.exists(path):
-        click.secho("Please check path, manifest file not found", fg="red")
-        exit()
+        abort_with_error("Please check path, manifest file not found")
 
     cert_list = {}
 
-    for manifest in manifest_iterator(path):
+    for manifest in _manifest_iterator(path):
         # Need to check that the manifest file is correctly configured.
         with open(manifest, "r") as fd:
             conf = yaml.safe_load(fd)
@@ -490,15 +490,7 @@ def check_domain(domain_profile, project_profile, base_domain, env):
                 )
                 click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                environments = conf["environments"].items()
-
-                if domain_profile == "live":
-                    environments = [e for e in environments if e[0] in ["prod", "production"]]
-                else:
-                    environments = [e for e in environments if e[0] not in ["prod", "production"]]
-
-                if env:
-                    environments = [e for e in environments if e[0] == env]
+                environments = _get_environments(conf, domain_profile, env)
 
                 for env, domain in environments:
                     click.secho(
@@ -522,7 +514,18 @@ def check_domain(domain_profile, project_profile, base_domain, env):
         click.secho("No domains found, please check the manifest file", fg="red")
 
 
-def manifest_iterator(path):
+def _get_environments(conf, domain_profile, env):
+    environments = conf["environments"].items()
+    if domain_profile == "live":
+        environments = [e for e in environments if e[0] in ["prod", "production"]]
+    else:
+        environments = [e for e in environments if e[0] not in ["prod", "production"]]
+    if env:
+        environments = [e for e in environments if e[0] == env]
+    return environments
+
+
+def _manifest_iterator(path):
     for root, dirs, files in os.walk(path):
         for file in files:
             if file == "manifest.yml" or file == "manifest.yaml":
@@ -544,8 +547,8 @@ def manifest_iterator(path):
 )
 def assign_domain(app, domain_profile, project_profile, svc, env):
     """Check Route53 domain is pointing to the correct ECS Load Balancer."""
-    domain_session = check_aws_conn(domain_profile)
-    project_session = check_aws_conn(project_profile)
+    domain_session = check_and_return_aws_session(domain_profile)
+    project_session = check_and_return_aws_session(project_profile)
 
     ensure_cwd_is_repo_root()
 

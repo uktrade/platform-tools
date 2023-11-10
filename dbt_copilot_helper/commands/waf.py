@@ -11,7 +11,7 @@ import yaml
 from cfn_tools import load_yaml
 
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
-from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import check_and_return_aws_session
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.cloudformation import get_lint_result
@@ -51,7 +51,7 @@ def waf():
 def attach_waf(app, project_profile, svc, env):
     """Attach default WAF rule to ECS Load Balancer."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     waf_arn = check_waf(project_session)
     if not waf_arn:
         click.secho(
@@ -104,7 +104,7 @@ def create_stack(cf_client, app, svc, env, raw):
 def custom_waf(app, project_profile, svc, env, waf_path):
     """Attach custom WAF to ECS Load Balancer."""
 
-    project_session = check_aws_conn(project_profile)
+    project_session = check_and_return_aws_session(project_profile)
     ensure_cwd_is_repo_root()
     path = Path().resolve() / waf_path
 
