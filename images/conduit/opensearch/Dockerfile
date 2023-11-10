@@ -11,8 +11,8 @@ ADD https://artifacts.opensearch.org/opensearch-clients/opensearch-cli/opensearc
 RUN cd /root && unzip /opensearch-cli.zip
 
 # AWS CLI
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
+ADD https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip /awscliv2.zip
+RUN unzip awscliv2.zip && \
     ./aws/install && \
     rm -rf aws && rm awscliv2.zip
 

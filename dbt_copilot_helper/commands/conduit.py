@@ -173,9 +173,9 @@ def add_stack_delete_policy_to_task_role(app: str, env: str, addon_type: str):
                                 "Action": ["cloudformation:DeleteStack"],
                                 "Effect": "Allow",
                                 "Resource": f"arn:aws:cloudformation:*:*:stack/{conduit_stack_name}/*",
-                            }
+                            },
                         ],
-                    }
+                    },
                 ),
             )
 

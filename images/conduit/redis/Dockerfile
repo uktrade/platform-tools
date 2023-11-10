@@ -11,8 +11,8 @@ RUN echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://
 RUN apt-get update && apt-get install -y redis && apt-get clean
 
 # AWS CLI
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
+ADD https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip /awscliv2.zip
+RUN unzip awscliv2.zip && \
     ./aws/install && \
     rm -rf aws && rm awscliv2.zip && \
     apt-get remove -y unzip && \

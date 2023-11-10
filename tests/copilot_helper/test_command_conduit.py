@@ -251,7 +251,7 @@ def test_add_stack_delete_policy_to_task_role(mock_stack, addon_type):
                 "Action": ["cloudformation:DeleteStack"],
                 "Effect": "Allow",
                 "Resource": f"arn:aws:cloudformation:*:*:stack/{stack_name}/*",
-            }
+            },
         ],
     }
 
@@ -260,13 +260,19 @@ def test_add_stack_delete_policy_to_task_role(mock_stack, addon_type):
     stack_resources = boto3.client("cloudformation").list_stack_resources(StackName=stack_name)[
         "StackResourceSummaries"
     ]
+
+    policy_name = None
+    policy_document = None
     for resource in stack_resources:
         if resource["LogicalResourceId"] == "DefaultTaskRole":
             policy = boto3.client("iam").get_role_policy(
                 RoleName=resource["PhysicalResourceId"], PolicyName="DeleteCloudFormationStack"
             )
-            assert policy["PolicyName"] == "DeleteCloudFormationStack"
-            assert policy["PolicyDocument"] == mock_policy
+            policy_name = policy["PolicyName"]
+            policy_document = policy["PolicyDocument"]
+
+    assert policy_name == "DeleteCloudFormationStack"
+    assert policy_document == mock_policy
 
 
 @pytest.mark.parametrize(
