@@ -105,7 +105,20 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
 
     overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
 
-    for file in overrides_path.rglob("**/*"):
+    for file in overrides_path.glob("*"):
+        if file.is_file():
+            contents = file.read_text()
+            file_name = str(file).removeprefix(f"{overrides_path}/")
+            click.echo(
+                mkfile(
+                    base_path,
+                    pipelines_dir / codebase["name"] / "overrides" / file_name,
+                    contents,
+                    overwrite=True,
+                )
+            )
+
+    for file in overrides_path.glob("bin/*"):
         if file.is_file():
             contents = file.read_text()
             file_name = str(file).removeprefix(f"{overrides_path}/")

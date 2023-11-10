@@ -40,6 +40,7 @@ export class TransformedStack extends cdk.Stack {
         this.updatePipelines();
         this.allowBuildProjectToUseCodestarConnection();
         this.allowPipelineToDescribeECRImages();
+        this.uploadPipelineConfiguration();
     }
 
     private createImageBuildProject() {
@@ -444,5 +445,13 @@ export class TransformedStack extends cdk.Stack {
         if (!deployRepository) throw new Error("Could not find Git remote.");
 
         this.deployRepository = deployRepository;
+    }
+
+    private uploadPipelineConfiguration() {
+        new cdk.aws_ssm.CfnParameter(this, 'PipelineConfiguration', {
+            name: `/copilot/pipeline/${this.codebaseConfiguration.name}`,
+            type: "String",
+            value: JSON.stringify(this.codebaseConfiguration),
+        });
     }
 }
