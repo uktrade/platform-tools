@@ -14,6 +14,7 @@ from yaml import dump
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import load_cloudformation_yaml
 
 REDIS_STORAGE_CONTENTS = """
 redis:
@@ -78,7 +79,7 @@ class TestMakeAddonCommand:
         validate_version.assert_called_once()
 
     @pytest.mark.parametrize(
-        "addon_file,expected_env_addons,expected_service_addons,expect_db_warning",
+        "addon_file, expected_env_addons, expected_service_addons, expect_db_warning",
         [
             (
                 "s3_addons.yml",
@@ -276,7 +277,7 @@ class TestMakeAddonCommand:
             assert not path.exists()
 
     @pytest.mark.parametrize(
-        "deletion_policy,deletion_policy_override,expected_deletion_policy",
+        "deletion_policy, deletion_policy_override, expected_deletion_policy",
         [
             (None, None, "Delete"),
             ("Delete", None, "Delete"),
@@ -457,12 +458,12 @@ invalid-entry:
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
     @pytest.mark.parametrize(
-        "addon_file_contents, addon_type",
+        "addon_file_contents, addon_type, is_postgres",
         [
-            (REDIS_STORAGE_CONTENTS, "redis"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
-            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
+            (REDIS_STORAGE_CONTENTS, "redis", False),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres", True),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", True),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch", False),
         ],
     )
     @patch(
@@ -471,7 +472,7 @@ invalid-entry:
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
-        self, fakefs, addon_file_contents, addon_type
+        self, fakefs, addon_file_contents, addon_type, is_postgres
     ):
         create_test_manifests(addon_file_contents, fakefs)
 
@@ -481,6 +482,34 @@ invalid-entry:
         assert (
             "File copilot/environments/addons/addons.parameters.yml created" in result.output
         ), f"addons.parameters.yml should be included for {addon_type}"
+        contents = Path("/copilot/environments/addons/addons.parameters.yml").read_text()
+        addons_parameters = load_cloudformation_yaml(contents)["Parameters"]
+        assert addons_parameters["EnvironmentSecurityGroup"] == "!Ref EnvironmentSecurityGroup"
+        # assert addons_parameters["PrivateSubnets"] == "!Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]"
+        # assert addons_parameters["PublicSubnets"] == "!Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]"
+        assert addons_parameters["VpcId"] == "!Ref VPC"
+        if is_postgres:
+            assert addons_parameters["DefaultPublicRoute"] == "!Ref DefaultPublicRoute"
+            assert addons_parameters["InternetGateway"] == "!Ref InternetGateway"
+            assert (
+                addons_parameters["InternetGatewayAttachment"] == "!Ref InternetGatewayAttachment"
+            )
+            assert addons_parameters["PublicRouteTable"] == "!Ref PublicRouteTable"
+            assert (
+                addons_parameters["PublicSubnet1RouteTableAssociation"]
+                == "!Ref PublicSubnet1RouteTableAssociation"
+            )
+            assert (
+                addons_parameters["PublicSubnet2RouteTableAssociation"]
+                == "!Ref PublicSubnet2RouteTableAssociation"
+            )
+        else:
+            assert "DefaultPublicRoute" not in addons_parameters
+            assert "InternetGateway" not in addons_parameters
+            assert "InternetGatewayAttachment" not in addons_parameters
+            assert "PublicRouteTable" not in addons_parameters
+            assert "PublicSubnet1RouteTableAssociation" not in addons_parameters
+            assert "PublicSubnet2RouteTableAssociation" not in addons_parameters
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",

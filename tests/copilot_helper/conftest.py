@@ -225,11 +225,14 @@ def assert_file_overwritten_in_stdout(output_file, result):
 
 
 def load_cloudformation_yaml(yaml_string):
+    def join_constructor(loader: yaml.SafeLoader, node: yaml.nodes.ScalarNode) -> str:
+        return f"{node.tag} {node.value}"
+
     def ref_constructor(loader: yaml.SafeLoader, node: yaml.nodes.ScalarNode) -> str:
-        """Construct the ref as a string."""
         return f"{node.tag} {node.value}"
 
     cloudformation_yaml_loader = yaml.SafeLoader
     cloudformation_yaml_loader.add_constructor("!Ref", ref_constructor)
+    cloudformation_yaml_loader.add_constructor("!Join", join_constructor)
 
     return yaml.load(yaml_string, Loader=cloudformation_yaml_loader)
