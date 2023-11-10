@@ -190,7 +190,7 @@ Resources:
         - postgresql
         - upgrade
       Engine: postgres
-      EngineVersion: '13'
+      EngineVersion: '{{ service.version }}'
       DBInstanceClass: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
       AllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]

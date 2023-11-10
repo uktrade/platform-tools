@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import re
-import subprocess
 from os import makedirs
 from pathlib import Path
 
@@ -12,6 +10,7 @@ from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
+from dbt_copilot_helper.utils.git import git_remote
 from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
@@ -36,7 +35,9 @@ def generate():
 
     pipeline_config = _safe_load_config("pipelines.yml", PIPELINES_SCHEMA)
 
-    git_repo = _get_git_remote()
+    _validate_pipelines_configuration(pipeline_config)
+
+    git_repo = git_remote()
     if not git_repo:
         abort_with_error("The current directory is not a git repository")
 
@@ -56,15 +57,40 @@ def generate():
             )
 
 
+def _validate_pipelines_configuration(pipeline_config):
+    if not ("codebases" in pipeline_config or "environments" in pipeline_config):
+        abort_with_error("No environment or codebase pipelines defined in pipelines.yml")
+
+    if "codebases" in pipeline_config:
+        for codebase in pipeline_config["codebases"]:
+            codebase_environments = []
+
+            for pipeline in codebase["pipelines"]:
+                codebase_environments += [e["name"] for e in pipeline["environments"]]
+
+            unique_codebase_environments = sorted(list(set(codebase_environments)))
+
+            if sorted(codebase_environments) != sorted(unique_codebase_environments):
+                abort_with_error(
+                    "The pipelines.yml file is invalid, each environment can only be "
+                    "listed in a single pipeline per codebase"
+                )
+
+
 def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, codebase, templates):
     base_path = Path(".")
     pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
 
+    environments = []
+    for pipelines in codebase["pipelines"]:
+        environments += pipelines["environments"]
+
     template_data = {
         "app_name": app_name,
         "deploy_repo": git_repo,
         "codebase": codebase,
+        "environments": environments,
         "codestar_connection_arn": codestar_connection_arn,
         "codestar_connection_id": codestar_connection_arn.split("/")[-1],
     }
@@ -76,14 +102,21 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
         templates,
         "codebase/manifest.yml",
     )
-    _create_file_from_template(
-        base_path,
-        f"{codebase['name']}/overrides/cfn.patches.yml",
-        pipelines_dir,
-        template_data,
-        templates,
-        "codebase/overrides/cfn.patches.yml",
-    )
+
+    overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
+
+    for file in overrides_path.rglob("**/*"):
+        if file.is_file():
+            contents = file.read_text()
+            file_name = str(file).removeprefix(f"{overrides_path}/")
+            click.echo(
+                mkfile(
+                    base_path,
+                    pipelines_dir / codebase["name"] / "overrides" / file_name,
+                    contents,
+                    overwrite=True,
+                )
+            )
 
 
 def _generate_environments_pipeline(
@@ -127,16 +160,3 @@ def _safe_load_config(filename, schema):
         abort_with_error(f"There is no {filename}")
     except ParserError:
         abort_with_error(f"The {filename} file is invalid")
-
-
-def _get_git_remote():
-    git_repo = subprocess.run(
-        ["git", "remote", "get-url", "origin"], capture_output=True, text=True
-    ).stdout.strip()
-
-    if not git_repo:
-        return
-
-    _, repo = git_repo.split("@")[1].split(":")
-
-    return re.sub(r".git$", "", repo)

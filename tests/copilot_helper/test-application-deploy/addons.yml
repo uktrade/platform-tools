@@ -58,10 +58,11 @@ my-redis:
 
 my-rds-db:
   type: rds-postgres
+  version: 14.4
 
   environments:
     default:
-      plan: small-13-ha
+      plan: small-ha
 
 
 ##### Aurora serverless v2 example:

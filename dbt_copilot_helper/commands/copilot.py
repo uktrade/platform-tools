@@ -149,64 +149,45 @@ def _validate_and_normalise_config(config_file):
 @click.option("-d", "--directory", type=str, default=".")
 def make_addons(directory="."):
     """Generate addons CloudFormation for each environment."""
-
-    overwrite = True
     output_dir = Path(directory).absolute()
 
     ensure_cwd_is_repo_root()
-
     templates = setup_templates()
-
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
-    project_config = _validate_and_normalise_config("addons.yml")
-    config.update(project_config)
+    config = _get_config()
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    click.echo("\n>>> Generating Environment overrides\n")
-
-    overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
-    overrides_path.mkdir(parents=True, exist_ok=True)
-    overrides_file = overrides_path.joinpath("cfn.patches.yml")
-
-    overrides_file.write_text(templates.get_template("env/overrides/cfn.patches.yml").render())
+    _generate_env_overrides(output_dir, templates)
 
     click.echo("\n>>> Generating addons CloudFormation\n")
 
-    path = Path(f"copilot/environments/addons/")
-    (output_dir / path).mkdir(parents=True, exist_ok=True)
+    env_addons_path = Path(f"copilot/environments/addons/")
+    (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
 
-    custom_resources = {}
-    custom_resource_path = Path(f"{Path(__file__).parent}/../custom_resources/")
-
-    for file in listdir(custom_resource_path.resolve()):
-        file_path = custom_resource_path.joinpath(file)
-        if isfile(file_path) and file_path.name.endswith(".py") and file_path.name != "__init__.py":
-            custom_resource_contents = file_path.read_text()
-
-            def file_with_formatting_options(padding=0):
-                lines = [
-                    (" " * padding) + line if line.strip() else line.strip()
-                    for line in custom_resource_contents.splitlines(True)
-                ]
-                return "".join(lines)
-
-            custom_resources[file_path.name.rstrip(".py")] = file_with_formatting_options
+    _cleanup_old_files(config, output_dir, env_addons_path)
+    custom_resources = _get_custom_resources()
 
     services = []
+
     for addon_name, addon_config in config.items():
         print(f">>>>>>>>> {addon_name}")
         addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
 
+        for environment_name, environment_config in environments.items():
+            if not environment_config.get("deletion_policy"):
+                environments[environment_name]["deletion_policy"] = addon_config.get(
+                    "deletion-policy", "Delete"
+                )
+
         environment_addon_config = {
-            "secret_name": addon_name.upper().replace("-", "_"),
-            "name": addon_config.get("name", None) or addon_name,
-            "environments": environments,
-            "prefix": camel_case(addon_name),
             "addon_type": addon_type,
             "custom_resources": custom_resources,
+            "environments": environments,
+            "name": addon_config.get("name", None) or addon_name,
+            "prefix": camel_case(addon_name),
+            "secret_name": addon_name.upper().replace("-", "_"),
             **addon_config,
         }
 
@@ -224,33 +205,24 @@ def make_addons(directory="."):
                 "BucketAccess", 1
             )[0]
 
-        # generate env addons
-        for addon in addon_template_map[addon_type].get("env", []):
-            template = templates.get_template(addon["template"])
-
-            contents = template.render(
-                {"service": environment_addon_config, "addons": config.items()}
-            )
-
-            filename = addon.get("filename", f"{addon_name}.yml")
-
-            click.echo(mkfile(output_dir, path / filename, contents, overwrite=overwrite))
-
-        # generate svc addons
-        for addon in addon_template_map[addon_type].get("svc", []):
-            template = templates.get_template(addon["template"])
-
-            for svc in addon_config.get("services", []):
-                service_path = Path(f"copilot/{svc}/addons/")
-
-                contents = template.render({"service": service_addon_config})
-
-                filename = addon.get("filename", f"{addon_name}.yml")
-
-                (output_dir / service_path).mkdir(parents=True, exist_ok=True)
-                click.echo(
-                    mkfile(output_dir, service_path / filename, contents, overwrite=overwrite)
-                )
+        _generate_env_addons(
+            addon_name,
+            addon_template_map,
+            config.items(),
+            env_addons_path,
+            environment_addon_config,
+            output_dir,
+            templates,
+        )
+        _generate_service_addons(
+            addon_config,
+            addon_name,
+            addon_template_map,
+            addon_type,
+            output_dir,
+            service_addon_config,
+            templates,
+        )
 
         if addon_type in ["aurora-postgres", "rds-postgres"]:
             click.secho(
@@ -259,6 +231,103 @@ def make_addons(directory="."):
             )
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
+
+
+def _get_config():
+    config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
+    project_config = _validate_and_normalise_config("addons.yml")
+    config.update(project_config)
+    return config
+
+
+def _generate_env_overrides(output_dir, templates):
+    click.echo("\n>>> Generating Environment overrides\n")
+    overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
+    overrides_path.mkdir(parents=True, exist_ok=True)
+    overrides_file = overrides_path.joinpath("cfn.patches.yml")
+    overrides_file.write_text(templates.get_template("env/overrides/cfn.patches.yml").render())
+
+
+def _generate_env_addons(
+    addon_name,
+    addon_template_map,
+    addons,
+    env_addons_path,
+    environment_addon_config,
+    output_dir,
+    templates,
+):
+    # generate env addons
+    addon_type = environment_addon_config["addon_type"]
+    for addon in addon_template_map[addon_type].get("env", []):
+        template = templates.get_template(addon["template"])
+
+        contents = template.render({"service": environment_addon_config, "addons": addons})
+
+        filename = addon.get("filename", f"{addon_name}.yml")
+
+        click.echo(mkfile(output_dir, env_addons_path / filename, contents, overwrite=True))
+
+
+def _generate_service_addons(
+    addon_config,
+    addon_name,
+    addon_template_map,
+    addon_type,
+    output_dir,
+    service_addon_config,
+    templates,
+):
+    # generate svc addons
+    for addon in addon_template_map[addon_type].get("svc", []):
+        template = templates.get_template(addon["template"])
+
+        for svc in addon_config.get("services", []):
+            service_path = Path(f"copilot/{svc}/addons/")
+
+            contents = template.render({"service": service_addon_config})
+
+            filename = addon.get("filename", f"{addon_name}.yml")
+
+            (output_dir / service_path).mkdir(parents=True, exist_ok=True)
+            click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=True))
+
+
+def _get_custom_resources():
+    custom_resources = {}
+    custom_resource_path = (Path(__file__).parent / "../custom_resources/").resolve()
+    for file in listdir(custom_resource_path):
+        file_path = custom_resource_path / file
+        if isfile(file_path) and file_path.name.endswith(".py") and file_path.name != "__init__.py":
+            custom_resource_contents = file_path.read_text()
+
+            def file_with_formatting_options(padding=0):
+                lines = [
+                    (" " * padding) + line if line.strip() else line.strip()
+                    for line in custom_resource_contents.splitlines(True)
+                ]
+                return "".join(lines)
+
+            custom_resources[file_path.name.rstrip(".py")] = file_with_formatting_options
+    return custom_resources
+
+
+def _cleanup_old_files(config, output_dir, env_addons_path):
+    for f in (output_dir / env_addons_path).iterdir():
+        if f.is_file():
+            f.unlink()
+
+    all_services = set()
+    for services in [v["services"] for v in config.values() if "services" in v]:
+        all_services.update(services)
+
+    for service in all_services:
+        svc_addons_dir = Path(output_dir, "copilot", service, "addons")
+        if not svc_addons_dir.exists():
+            continue
+        for f in svc_addons_dir.iterdir():
+            if f.is_file():
+                f.unlink()
 
 
 @copilot.command()

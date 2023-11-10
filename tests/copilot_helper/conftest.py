@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import boto3
+import certifi
 import jsonschema
 import pytest
 import yaml
@@ -36,6 +37,9 @@ def fakefs(fs):
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
     fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
+
+    # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
+    fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
 
     return fs
 
@@ -228,5 +232,9 @@ def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names)
     }
 
 
-def assert_file_created_in_stdout(output_file, result, tmp_path):
-    assert f"File {output_file.relative_to(tmp_path)} created" in result.stdout
+def assert_file_created_in_stdout(output_file, result):
+    assert f"File {output_file.relative_to('.')} created" in result.stdout
+
+
+def assert_file_overwritten_in_stdout(output_file, result):
+    assert f"File {output_file.relative_to('.')} overwritten" in result.stdout

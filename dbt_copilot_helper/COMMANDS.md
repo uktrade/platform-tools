@@ -281,13 +281,11 @@ copilot-helper codebuild <command>
 ## Usage
 
 ```
-copilot-helper codebuild link-github --pat <pat> --project-profile <project_profile> 
+copilot-helper codebuild link-github --project-profile <project_profile> 
 ```
 
 ## Options
 
-- `--pat <text>`
-  - PAT Token
 - `--project-profile <text>`
   - AWS account profile name
 - `--help <boolean>` _Defaults to False._
@@ -418,7 +416,7 @@ copilot-helper codebuild delete-project --name <name> --project-profile <project
 
 ```
 copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel> 
-                                    --token <token> --project-profile <project_profile> 
+                                    --project-profile <project_profile> 
 ```
 
 ## Options
@@ -427,8 +425,6 @@ copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel>
   - Slack Workspace id
 - `--channel <text>`
   - Slack channel id
-- `--token <text>`
-  - Slack api token
 - `--project-profile <text>`
   - AWS account profile name
 - `--help <boolean>` _Defaults to False._
