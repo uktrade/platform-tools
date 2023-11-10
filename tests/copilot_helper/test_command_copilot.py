@@ -67,6 +67,16 @@ ADDON_CONFIG_FILENAME = "addons.yml"
 
 
 class TestMakeAddonCommand:
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=True),
+    )
+    def test_validate_version_called_once(self, validate_version):
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 1
+        validate_version.assert_called_once()
+
     @pytest.mark.parametrize(
         "addon_file,expected_env_addons,expected_service_addons,expect_db_warning",
         [
@@ -126,7 +136,7 @@ class TestMakeAddonCommand:
     @freeze_time("2023-08-22 16:00:00")
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_make_addons_success(
@@ -136,7 +146,6 @@ class TestMakeAddonCommand:
         expected_env_addons,
         expected_service_addons,
         expect_db_warning,
-        validate_version,
     ):
         """Test that make_addons generates the expected directories and file
         contents."""
@@ -156,7 +165,6 @@ class TestMakeAddonCommand:
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-        validate_version.assert_called_once()
         db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
         assert (
             db_warning in result.stdout
@@ -324,9 +332,9 @@ class TestMakeAddonCommand:
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_if_no_copilot_directory(self, fakefs, validate_version):
+    def test_exit_if_no_copilot_directory(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -337,13 +345,12 @@ class TestMakeAddonCommand:
             == "Cannot find copilot directory. Run this command in the root of the deployment "
             "repository.\n"
         )
-        validate_version.assert_called_once()
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_if_no_local_copilot_services(self, fakefs, validate_version):
+    def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
@@ -351,14 +358,13 @@ class TestMakeAddonCommand:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        validate_version.assert_called_once()
         assert result.output == "No services found in ./copilot/; exiting\n"
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_with_error_if_invalid_services(self, fakefs, validate_version):
+    def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -380,7 +386,6 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        validate_version.assert_called_once()
         assert (
             result.output
             == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
@@ -388,9 +393,12 @@ invalid-entry:
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_with_error_if_invalid_environments(self, fakefs, validate_version):
+    def test_exit_with_error_if_invalid_environments(
+        self,
+        fakefs,
+    ):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -409,7 +417,6 @@ invalid-environment:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        validate_version.assert_called_once()
         assert (
             result.output
             == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
@@ -417,9 +424,9 @@ invalid-environment:
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_if_services_key_invalid(self, fakefs, validate_version):
+    def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which
         denotes that it should be applied to all services.
@@ -446,16 +453,15 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        validate_version.assert_called_once()
         assert (
             result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
         )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
-    def test_exit_if_no_local_copilot_environments(self, fakefs, validate_version):
+    def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
         fakefs.create_file("copilot/web/manifest.yml")
@@ -463,7 +469,6 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        validate_version.assert_called_once()
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
     @pytest.mark.parametrize(
@@ -477,18 +482,17 @@ invalid-entry:
     )
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_env_addons_parameters_file_included_with_different_addon_types(
-        self, fakefs, addon_file_contents, addon_type, validate_version
+    def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
+        self, fakefs, addon_file_contents, addon_type
     ):
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 0
-        validate_version.assert_called_once()
         assert (
             "File copilot/environments/addons/addons.parameters.yml created" in result.output
         ), f"addons.parameters.yml should be included for {addon_type}"
@@ -504,17 +508,16 @@ invalid-entry:
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
     def test_addon_instructions_with_postgres_addon_types(
-        self, fakefs, addon_file_contents, addon_type, secret_name, validate_version
+        self, fakefs, addon_file_contents, addon_type, secret_name
     ):
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 0
-        validate_version.assert_called_once()
         if addon_type == "redis":
             assert (
                 "DATABASE_CREDENTIALS" not in result.output
@@ -530,12 +533,10 @@ invalid-entry:
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
+        new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
-        self, fakefs, validate_version
-    ):
+    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
 
         fakefs.create_file(ADDON_CONFIG_FILENAME)
@@ -556,14 +557,13 @@ invalid-entry:
             assert path.exists()
 
         assert result.exit_code == 0
-        validate_version.assert_called_once()
 
 
 @mock_ssm
 @patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
 )
-def test_get_secrets(validate_version):
+def test_get_secrets():
     def _put_ssm_param(client, app, env, name, value):
         path = SSM_PATH.format(app=app, env=env, name=name)
         client.put_parameter(Name=path, Value=value, Type="String")
@@ -590,7 +590,6 @@ def test_get_secrets(validate_version):
         assert line in result.output
 
     assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
-    validate_version.assert_called_once()
     assert result.exit_code == 0
 
 
