@@ -213,9 +213,6 @@ environments:
     assert result.output == expected
 
 
-@patch(
-    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
-)
 def test_check_domain_copilot_dir_does_not_exist_exits_with_error(fakefs):
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
@@ -233,11 +230,28 @@ def test_check_domain_copilot_dir_does_not_exist_exits_with_error(fakefs):
     )
 
     assert result.exit_code == 1
-    assert "manifest file not found" in result.stderr
+    assert "copilot directory appears to be missing" in result.stderr
 
 
-def test_check_domain_no_manifests_exits_with_error():
-    pass
+def test_check_domain_no_manifests_exits_with_error(fakefs):
+    fakefs.create_dir("copilot")
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        check_domain,
+        [
+            "--domain-profile",
+            "dev",
+            "--project-profile",
+            "foo",
+            "--base-domain",
+            "test.1234",
+            "--env",
+            "dev",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "no manifest files were found" in result.stderr
 
 
 @patch(

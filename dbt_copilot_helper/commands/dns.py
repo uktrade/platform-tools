@@ -472,15 +472,20 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
     path = "copilot"
 
+    if not os.path.exists(path):
+        abort_with_error("Please check path, copilot directory appears to be missing.")
+
+    manifests = _get_manifests(path)
+
+    if not manifests:
+        abort_with_error("Please check path, no manifest files were found")
+
     domain_session = check_and_return_aws_session(domain_profile)
     project_session = check_and_return_aws_session(project_profile)
 
-    if not os.path.exists(path):
-        abort_with_error("Please check path, manifest file not found")
-
     cert_list = {}
 
-    for manifest in _manifest_iterator(path):
+    for manifest in manifests:
         # Need to check that the manifest file is correctly configured.
         with open(manifest, "r") as fd:
             conf = yaml.safe_load(fd)
@@ -493,18 +498,19 @@ def check_domain(domain_profile, project_profile, base_domain, env):
                 environments = _get_environments(conf, domain_profile, env)
 
                 for env, domain in environments:
+                    http_alias = domain["http"]["alias"]
                     click.secho(
-                        "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
+                        "\nEnvironment: " + env + " => Domain: " + http_alias,
                         fg="yellow",
                         bold=True,
                     )
                     cert_arn = check_r53(
                         domain_session,
                         project_session,
-                        domain["http"]["alias"],
+                        http_alias,
                         base_domain,
                     )
-                    cert_list.update({domain["http"]["alias"]: cert_arn})
+                    cert_list.update({http_alias: cert_arn})
 
     if cert_list:
         click.secho("\nHere are your Certificate ARNs:", fg="cyan")
@@ -525,11 +531,13 @@ def _get_environments(conf, domain_profile, env):
     return environments
 
 
-def _manifest_iterator(path):
+def _get_manifests(path):
+    manifests = []
     for root, dirs, files in os.walk(path):
         for file in files:
             if file == "manifest.yml" or file == "manifest.yaml":
-                yield os.path.join(root, file)
+                manifests.append(os.path.join(root, file))
+    return manifests
 
 
 @domain.command()
