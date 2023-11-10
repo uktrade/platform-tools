@@ -390,10 +390,7 @@ invalid-entry:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    def test_exit_with_error_if_invalid_environments(
-        self,
-        fakefs,
-    ):
+    def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -467,12 +464,12 @@ invalid-entry:
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
     @pytest.mark.parametrize(
-        "addon_file_contents, addon_type, is_postgres",
+        "addon_file_contents, addon_type",
         [
-            (REDIS_STORAGE_CONTENTS, "redis", False),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres", True),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", True),
-            (OPENSEARCH_STORAGE_CONTENTS, "opensearch", False),
+            (REDIS_STORAGE_CONTENTS, "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
         ],
     )
     @patch(
@@ -481,7 +478,7 @@ invalid-entry:
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
-        self, fakefs, addon_file_contents, addon_type, is_postgres
+        self, fakefs, addon_file_contents, addon_type
     ):
         create_test_manifests(addon_file_contents, fakefs)
 
@@ -501,17 +498,17 @@ invalid-entry:
             "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]" in contents
         )
         assert "VpcId: !Ref VPC" in contents
-        if is_postgres:
-            assert "  DefaultPublicRoute: !Ref DefaultPublicRoute" in contents
-            assert "  InternetGateway: !Ref InternetGateway" in contents
-            assert "  InternetGatewayAttachment: !Ref InternetGatewayAttachment" in contents
-            assert "  PublicRouteTable: !Ref PublicRouteTable" in contents
+        if "postgres" in addon_type:
+            assert "DefaultPublicRoute: !Ref DefaultPublicRoute" in contents
+            assert "InternetGateway: !Ref InternetGateway" in contents
+            assert "InternetGatewayAttachment: !Ref InternetGatewayAttachment" in contents
+            assert "PublicRouteTable: !Ref PublicRouteTable" in contents
             assert (
-                "  PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation"
+                "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation"
                 in contents
             )
             assert (
-                "  PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation"
+                "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation"
                 in contents
             )
         else:
