@@ -449,7 +449,7 @@ export class TransformedStack extends cdk.Stack {
 
     private uploadPipelineConfiguration() {
         new cdk.aws_ssm.CfnParameter(this, 'PipelineConfiguration', {
-            name: `/copilot/pipeline/${this.codebaseConfiguration.name}`,
+            name: `/copilot/applications/${this.appName}/pipelines/${this.codebaseConfiguration.name}`,
             type: "String",
             value: JSON.stringify(this.codebaseConfiguration),
         });
