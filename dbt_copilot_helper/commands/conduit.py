@@ -189,7 +189,8 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 
     if not addon_client_is_running(app, env, cluster_arn, addon_name):
         create_addon_client_task(app, env, addon_type, addon_name)
-    add_stack_delete_policy_to_task_role(app, env, addon_type)
+        add_stack_delete_policy_to_task_role(app, env, addon_type)
+
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 
 

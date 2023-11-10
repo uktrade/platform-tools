@@ -7,6 +7,7 @@ import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
+from moto import mock_cloudformation
 from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_iam
@@ -191,6 +192,21 @@ def mock_tool_versions():
                 "dbt_copilot_helper.utils.versioning.get_copilot_versions"
             ) as get_copilot_versions:
                 yield get_app_versions, get_aws_versions, get_copilot_versions
+
+
+@pytest.fixture(scope="function")
+def mock_stack():
+    def _create_stack(addon_type):
+        with mock_cloudformation():
+            with open(FIXTURES_DIR / "test_cloudformation_template_iam_role.json") as f:
+                template_json = json.load(f)
+            cf = boto3.client("cloudformation")
+            cf.create_stack(
+                StackName=f"task-conduit-test-application-development-test-application-{addon_type}",
+                TemplateBody=json.dumps(template_json),
+            )
+
+    return _create_stack
 
 
 def mock_codestar_connection_response(app_name):

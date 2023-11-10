@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y redis && apt-get clean
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
-    rm awscliv2.zip && \
+    rm -rf aws && rm awscliv2.zip && \
     apt-get remove -y unzip && \
     apt-get clean
 

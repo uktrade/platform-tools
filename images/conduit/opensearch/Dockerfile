@@ -14,8 +14,6 @@ RUN cd /root && unzip /opensearch-cli.zip
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
-    rm awscliv2.zip && \
-    apt-get remove -y unzip && \
-    apt-get clean
+    rm -rf aws && rm awscliv2.zip
 
 ENTRYPOINT ["bash", "/entrypoint.sh"]
