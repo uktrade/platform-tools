@@ -482,45 +482,48 @@ invalid-entry:
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_file_contents, has_postgres_addon
     ):
+        def assert_in_addons_parameters_as_required(content_checks, contents, should_include):
+            should_or_should_not_string = "should"
+            if not should_include:
+                should_or_should_not_string += " not"
+            for check in content_checks:
+                assert (
+                    check in contents
+                ) == should_include, (
+                    f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
+                )
+
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 0
-        if has_postgres_addon:
-            assert (
-                "File copilot/environments/addons/addons.parameters.yml created" in result.output
-            ), f"addons.parameters.yml should be included for Postgres addons"
+        assert (
+            "File copilot/environments/addons/addons.parameters.yml created" in result.output
+        ), "addons.parameters.yml should be included"
         contents = Path("/copilot/environments/addons/addons.parameters.yml").read_text()
-        assert "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup" in contents
-        assert (
-            "PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]"
-            in contents
+        assert_in_addons_parameters_as_required(
+            content_checks=[
+                "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup",
+                "PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]",
+                "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]",
+                "VpcId: !Ref VPC",
+            ],
+            contents=contents,
+            should_include=True,
         )
-        assert (
-            "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]" in contents
+        assert_in_addons_parameters_as_required(
+            content_checks=[
+                "DefaultPublicRoute: !Ref DefaultPublicRoute",
+                "InternetGateway: !Ref InternetGateway",
+                "InternetGatewayAttachment: !Ref InternetGatewayAttachment",
+                "PublicRouteTable: !Ref PublicRouteTable",
+                "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation",
+                "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation",
+            ],
+            contents=contents,
+            should_include=has_postgres_addon,
         )
-        assert "VpcId: !Ref VPC" in contents
-        if has_postgres_addon:
-            assert "DefaultPublicRoute: !Ref DefaultPublicRoute" in contents
-            assert "InternetGateway: !Ref InternetGateway" in contents
-            assert "InternetGatewayAttachment: !Ref InternetGatewayAttachment" in contents
-            assert "PublicRouteTable: !Ref PublicRouteTable" in contents
-            assert (
-                "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation"
-                in contents
-            )
-            assert (
-                "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation"
-                in contents
-            )
-        else:
-            assert "DefaultPublicRoute:" not in contents
-            assert "InternetGateway:" not in contents
-            assert "InternetGatewayAttachment:" not in contents
-            assert "PublicRouteTable:" not in contents
-            assert "PublicSubnet1RouteTableAssociation:" not in contents
-            assert "PublicSubnet2RouteTableAssociation:" not in contents
 
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",
