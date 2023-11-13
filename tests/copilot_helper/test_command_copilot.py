@@ -464,12 +464,14 @@ invalid-entry:
         assert result.output == "No environments found in ./copilot/environments; exiting\n"
 
     @pytest.mark.parametrize(
-        "addon_file_contents, addon_type",
+        "addon_file_contents, has_postgres_addon",
         [
-            ([REDIS_STORAGE_CONTENTS], "redis"),
-            ([RDS_POSTGRES_STORAGE_CONTENTS], "rds-postgres"),
-            ([AURORA_POSTGRES_STORAGE_CONTENTS], "aurora-postgres"),
-            ([OPENSEARCH_STORAGE_CONTENTS], "opensearch"),
+            ([REDIS_STORAGE_CONTENTS], True),
+            ([RDS_POSTGRES_STORAGE_CONTENTS], True),
+            ([AURORA_POSTGRES_STORAGE_CONTENTS], True),
+            ([OPENSEARCH_STORAGE_CONTENTS], False),
+            # Check when we have a mix of addons...
+            ([RDS_POSTGRES_STORAGE_CONTENTS, S3_STORAGE_CONTENTS], True),
         ],
     )
     @patch(
@@ -478,16 +480,17 @@ invalid-entry:
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
-        self, fakefs, addon_file_contents, addon_type
+        self, fakefs, addon_file_contents, has_postgres_addon
     ):
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 0
-        assert (
-            "File copilot/environments/addons/addons.parameters.yml created" in result.output
-        ), f"addons.parameters.yml should be included for {addon_type}"
+        if has_postgres_addon:
+            assert (
+                "File copilot/environments/addons/addons.parameters.yml created" in result.output
+            ), f"addons.parameters.yml should be included for Postgres addons"
         contents = Path("/copilot/environments/addons/addons.parameters.yml").read_text()
         assert "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup" in contents
         assert (
@@ -498,7 +501,7 @@ invalid-entry:
             "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]" in contents
         )
         assert "VpcId: !Ref VPC" in contents
-        if "postgres" in addon_type:
+        if has_postgres_addon:
             assert "DefaultPublicRoute: !Ref DefaultPublicRoute" in contents
             assert "InternetGateway: !Ref InternetGateway" in contents
             assert "InternetGatewayAttachment: !Ref InternetGatewayAttachment" in contents
