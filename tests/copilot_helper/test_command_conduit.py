@@ -235,15 +235,15 @@ def test_addon_client_is_running_when_no_client_agent_running(
 @mock_iam
 @mock_cloudformation
 @pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
+    "addon_name",
+    ["postgres", "redis", "opensearch", "rds-postgres"],
 )
-def test_add_stack_delete_policy_to_task_role(mock_stack, addon_type):
-    """Test that, given app, env and addon type
+def test_add_stack_delete_policy_to_task_role(mock_stack, addon_name):
+    """Test that, given app, env and addon name
     add_stack_delete_policy_to_task_role adds a policy to the IAM role in a
     CloudFormation stack."""
-    stack_name = f"task-conduit-test-application-development-test-application-{addon_type}"
-    mock_stack(addon_type)
+    stack_name = f"task-conduit-test-application-development-{addon_name}"
+    mock_stack(addon_name)
     mock_policy = {
         "Version": "2012-10-17",
         "Statement": [
@@ -255,7 +255,7 @@ def test_add_stack_delete_policy_to_task_role(mock_stack, addon_type):
         ],
     }
 
-    add_stack_delete_policy_to_task_role("test-application", "development", addon_type)
+    add_stack_delete_policy_to_task_role("test-application", "development", addon_name)
 
     stack_resources = boto3.client("cloudformation").list_stack_resources(StackName=stack_name)[
         "StackResourceSummaries"
@@ -427,7 +427,7 @@ def test_start_conduit_with_custom_addon_name(
         "test-application", "development", addon_type, "custom-addon-name"
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
-        "test-application", "development", addon_type
+        "test-application", "development", "custom-addon-name"
     )
     connect_to_addon_client_task.assert_called_once_with(
         "test-application", "development", "test-arn", "custom-addon-name"
