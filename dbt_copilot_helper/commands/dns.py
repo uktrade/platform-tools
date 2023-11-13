@@ -289,7 +289,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
             ChangeBatch={
                 "Changes": [
                     {
-                        "Action": "CREATE",
+                        "Action": "UPSERT",
                         "ResourceRecordSet": {
                             "Name": subdom,
                             "Type": "NS",
@@ -305,28 +305,18 @@ def create_hosted_zone(client, domain, start_domain, base_len):
 
 
 def check_r53(domain_session, project_session, domain, base_domain):
+    # Sanitise base domain
+    base_domain = base_domain.rstrip(".") + "."
+
     # find the hosted zone
     domain_client = domain_session.client("route53")
     acm_client = project_session.client("acm", region_name=AWS_CERT_REGION)
 
     # create the certificate
     response = domain_client.list_hosted_zones_by_name()
+    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
 
-    hosted_zones = {}
-    for hz in response["HostedZones"]:
-        hosted_zones[hz["Name"]] = hz
-
-    # Check if base domain is valid
-    if base_domain[-1] != ".":
-        base_domain = base_domain + "."
-
-    if base_domain not in hosted_zones:
-        click.secho(
-            f"The base domain: {base_domain} does not exist in your AWS domain account \
-                {response['HostedZones']}",
-            fg="red",
-        )
-        exit()
+    abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
 
     base_len = len(base_domain.split(".")) - 1
     parts = domain.split(".")
@@ -354,6 +344,15 @@ def check_r53(domain_session, project_session, domain, base_domain):
     cert_arn = create_cert(acm_client, domain_client, domain, base_len)
 
     return cert_arn
+
+
+def abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
+    if base_domain not in hosted_zones:
+        click.secho(
+            f"The base domain: {base_domain} does not exist in your AWS domain account {hosted_zones}",
+            fg="red",
+        )
+        exit()
 
 
 def get_load_balancer_domain_and_configuration(
