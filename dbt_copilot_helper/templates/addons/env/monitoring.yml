@@ -9,14 +9,14 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  {{ service.prefix }}EnvConfiguration:
-{% for environment_name, config in service.environments.items() %}
+  {{ addon_config.prefix }}EnvConfiguration:
+{% for environment_name, config in addon_config.environments.items() %}
     {{ environment_name }}:
       EnableOpsCenter: {% if config.enable_ops_center %}true{% else %}false{% endif %}
 {% endfor %}
 
 Resources:
-  {{ service.prefix }}ResourceGroup:
+  {{ addon_config.prefix }}ResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
       Name: !Sub "${App}-${Env}-group"
@@ -32,9 +32,9 @@ Resources:
               Values:
                 - !Sub "${Env}"
 
-  {{ service.prefix }}ApplicationInsights:
+  {{ addon_config.prefix }}ApplicationInsights:
     Type: AWS::ApplicationInsights::Application
     Properties:
       AutoConfigurationEnabled: true
-      ResourceGroupName: !Ref {{ service.prefix }}ResourceGroup
-      OpsCenterEnabled: !FindInMap [{{ service.prefix }}EnvConfiguration, !Ref Env, EnableOpsCenter]
+      ResourceGroupName: !Ref {{ addon_config.prefix }}ResourceGroup
+      OpsCenterEnabled: !FindInMap [{{ addon_config.prefix }}EnvConfiguration, !Ref Env, EnableOpsCenter]
