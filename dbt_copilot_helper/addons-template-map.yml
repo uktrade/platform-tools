@@ -3,6 +3,7 @@
 # explanation:
 
 # {addons-type}:
+#   requires_addons_parameters: true|false - optional, boolean, defaults to false, if true addons.parameters.yml will be created
 #   env:
 #     - template: path/to/template.yml
 #       filename: some-fixed-name.yml  - optional, the file name will be the name of the addon item by default
@@ -10,25 +11,21 @@
 #     - template: path/to/template.yml
 
 redis:
+  requires_addons_parameters: true
   env:
     - template: addons/env/redis-cluster.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml
+      requires_addons_parameters: true
 aurora-postgres:
   env:
     - template: addons/env/aurora-postgres.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml
 rds-postgres:
+  requires_addons_parameters: true
   env:
     - template: addons/env/rds-postgres.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml
 opensearch:
+  requires_addons_parameters: true
   env:
     - template: addons/env/opensearch.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml
 s3:
   env:
     - template: addons/env/s3.yml
@@ -41,12 +38,10 @@ appconfig-ipfilter:
   svc:
     - template: addons/svc/appconfig-ipfilter.yml
 monitoring:
+  requires_addons_parameters: true
   env:
     - template: addons/env/monitoring.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml
 vpc:
+  requires_addons_parameters: true
   env:
     - template: addons/env/vpc.yml
-    - template: addons/env/addons.parameters.yml
-      filename: addons.parameters.yml

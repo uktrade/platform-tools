@@ -2,13 +2,13 @@
 
 Parameters:
   EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
-  {%- if service.addon_type == "aurora-postgres" or service.addon_type == "rds-postgres"  %}
+  {%- if has_postgres_addon  %}
   DefaultPublicRoute: !Ref DefaultPublicRoute
   InternetGateway: !Ref InternetGateway
   InternetGatewayAttachment: !Ref InternetGatewayAttachment
   {%- endif %}
   PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]
-  {%- if service.addon_type == "aurora-postgres" or service.addon_type == "rds-postgres"  %}
+  {%- if has_postgres_addon  %}
   PublicRouteTable: !Ref PublicRouteTable
   PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation
   PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation

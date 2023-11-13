@@ -31,7 +31,7 @@ Parameters:
 
   # Other parameters...
   # Customize your Aurora Postgres cluster by setting the default value of the following parameters.
-  {{ service.prefix }}DBName:
+  {{ addon_config.prefix }}DBName:
     Type: String
     Description: The name of the initial database to be created in the Aurora Serverless v2 cluster.
     Default: main
@@ -39,34 +39,34 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  {{ service.prefix }}EnvScalingConfigurationMap:
-{% for environment_name, config in service.environments.items() %}
+  {{ addon_config.prefix }}EnvScalingConfigurationMap:
+{% for environment_name, config in addon_config.environments.items() %}
     {{ environment_name }}:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
 {% endfor %}
 
 Resources:
-  {{ service.prefix }}DBSubnetGroup:
+  {{ addon_config.prefix }}DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
 
-  {{ service.prefix }}SecurityGroup:
+  {{ addon_config.prefix }}SecurityGroup:
     Metadata:
-      'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ service.prefix }}'
+      'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ addon_config.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: 'The Security Group for {{ service.name }} to access Aurora Serverless v2 cluster {{ service.prefix }}.'
+      GroupDescription: 'The Security Group for {{ addon_config.name }} to access Aurora Serverless v2 cluster {{ addon_config.prefix }}.'
       VpcId: !Ref VpcId
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-Aurora'
+          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-Aurora'
 
-  {{ service.prefix }}DBClusterSecurityGroup:
+  {{ addon_config.prefix }}DBClusterSecurityGroup:
     Metadata:
-      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ service.prefix }}'
+      'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ addon_config.prefix }}'
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
@@ -74,16 +74,16 @@ Resources:
         - ToPort: 5432
           FromPort: 5432
           IpProtocol: tcp
-          Description: 'From the Aurora Security Group of the workload {{ service.name }}.'
-          SourceSecurityGroupId: !Ref {{ service.prefix }}SecurityGroup
+          Description: 'From the Aurora Security Group of the workload {{ addon_config.name }}.'
+          SourceSecurityGroupId: !Ref {{ addon_config.prefix }}SecurityGroup
       VpcId: !Ref VpcId
 
-  {{ service.prefix }}AuroraSecret:
+  {{ addon_config.prefix }}AuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "postgres"}'
@@ -93,25 +93,25 @@ Resources:
         PasswordLength: 16
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
 
-  {{ service.prefix }}DBClusterParameterGroup:
+  {{ addon_config.prefix }}DBClusterParameterGroup:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
     Type: 'AWS::RDS::DBClusterParameterGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'aurora-postgresql{{ service.version|round(0, "floor")|int }}'
+      Family: 'aurora-postgresql{{ addon_config.version|round(0, "floor")|int }}'
       Parameters:
         client_encoding: 'UTF8'
         log_statement: ddl
         log_statement_sample_rate: '1.0'
 
-  {{ service.prefix }}KMSKey:
+  {{ addon_config.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
     Properties:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-{{ service.prefix }}-cluster-key'
+        Id: !Sub '${App}-${Env}-{{ addon_config.prefix }}-cluster-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -120,45 +120,45 @@ Resources:
           Action: kms:*
           Resource: '*'
 
-  {{ service.prefix }}KeyAlias:
+  {{ addon_config.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-cluster-key'
-      TargetKeyId: !Ref {{ service.prefix }}KMSKey
+      AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-cluster-key'
+      TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
 
-  {{ service.prefix }}DBCluster:
+  {{ addon_config.prefix }}DBCluster:
     Metadata:
-      'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 database cluster'
+      'aws:copilot:description': 'The {{ addon_config.prefix }} Aurora Serverless v2 database cluster'
     Type: 'AWS::RDS::DBCluster'
     Properties:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
       MasterUsername:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
-      DatabaseName: !Ref {{ service.prefix }}DBName
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+      DatabaseName: !Ref {{ addon_config.prefix }}DBName
       Engine: 'aurora-postgresql'
-      EngineVersion: '{{ service.version }}'
+      EngineVersion: '{{ addon_config.version }}'
       EnableCloudwatchLogsExports:
         - postgresql
-      DBClusterParameterGroupName: !Ref {{ service.prefix }}DBClusterParameterGroup
-      DBSubnetGroupName: !Ref {{ service.prefix }}DBSubnetGroup
-      KmsKeyId: !Ref {{ service.prefix }}KMSKey
+      DBClusterParameterGroupName: !Ref {{ addon_config.prefix }}DBClusterParameterGroup
+      DBSubnetGroupName: !Ref {{ addon_config.prefix }}DBSubnetGroup
+      KmsKeyId: !Ref {{ addon_config.prefix }}KMSKey
       Port: 5432
       VpcSecurityGroupIds:
-        - !Ref {{ service.prefix }}DBClusterSecurityGroup
+        - !Ref {{ addon_config.prefix }}DBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        MinCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
-        MaxCapacity: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+        MinCapacity: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
 
-  {{ service.prefix }}DBWriterInstance:
+  {{ addon_config.prefix }}DBWriterInstance:
     Metadata:
-      'aws:copilot:description': 'The {{ service.prefix }} Aurora Serverless v2 writer instance'
+      'aws:copilot:description': 'The {{ addon_config.prefix }} Aurora Serverless v2 writer instance'
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      DBClusterIdentifier: !Ref {{ service.prefix }}DBCluster
+      DBClusterIdentifier: !Ref {{ addon_config.prefix }}DBCluster
       DBInstanceClass: db.serverless
       EnablePerformanceInsights: true
       Engine: 'aurora-postgresql'
@@ -168,87 +168,87 @@ Resources:
         - !GetAZs
           Ref: AWS::Region
 
-  {{ service.prefix }}SecretAuroraClusterAttachment:
+  {{ addon_config.prefix }}SecretAuroraClusterAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: !Ref {{ service.prefix }}AuroraSecret
-      TargetId: !Ref {{ service.prefix }}DBCluster
+      SecretId: !Ref {{ addon_config.prefix }}AuroraSecret
+      TargetId: !Ref {{ addon_config.prefix }}DBCluster
       TargetType: AWS::RDS::DBCluster
 
   # Enable ingress from other ECS services created within the environment.
-  {{ service.prefix }}EnvironmentIngress:
+  {{ addon_config.prefix }}EnvironmentIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress Security Group from Fargate containers
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  {{ service.prefix }}LambdaIngress:
+  {{ addon_config.prefix }}LambdaIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from Lambda Functions to DB
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      SourceSecurityGroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
 
-  {{ service.prefix }}SecretsManagerIngress:
+  {{ addon_config.prefix }}SecretsManagerIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from Lambda Functions to Secrets Manager
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      SourceSecurityGroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
 
-  {{ service.prefix }}LambdaEgress:
+  {{ addon_config.prefix }}LambdaEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress from DB cluster in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       Description: Egress from DB to Lambda Functions
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      DestinationSecurityGroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
 
-  {{ service.prefix }}SecretsManagerEgress:
+  {{ addon_config.prefix }}SecretsManagerEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       Description: Egress from Secrets Manager to Lambda Functions
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      DestinationSecurityGroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      DestinationSecurityGroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
 
-  {{ service.prefix }}HTTPSEgress:
+  {{ addon_config.prefix }}HTTPSEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       CidrIp: 0.0.0.0/0
       Description: Egress for HTTPS
-      GroupId: !Ref '{{ service.prefix }}DBClusterSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
 
-  {{ service.prefix }}LambdaFunction:
+  {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${App}-${Env}-aurora-create-user"
@@ -258,10 +258,10 @@ Resources:
         - arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:1
       MemorySize: 128
       Timeout: 10
-      Role: !GetAtt {{ service.prefix }}LambdaFunctionExecutionRole.Arn
+      Role: !GetAtt {{ addon_config.prefix }}LambdaFunctionExecutionRole.Arn
       VpcConfig:
         SecurityGroupIds:
-          - !Ref {{ service.prefix }}DBClusterSecurityGroup
+          - !Ref {{ addon_config.prefix }}DBClusterSecurityGroup
         SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       Code:
         ZipFile: |
@@ -410,15 +410,15 @@ Resources:
               print(json.dumps(response, default=str))
               cfnresponse.send(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
 
-  {{ service.prefix }}ApplicationUser:
-    Type: 'Custom::{{ service.prefix }}ApplicationUser'
+  {{ addon_config.prefix }}ApplicationUser:
+    Type: 'Custom::{{ addon_config.prefix }}ApplicationUser'
     Properties:
-      ServiceToken: !GetAtt '{{ service.prefix }}LambdaFunction.Arn'
+      ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
       CopilotApplication: !Sub "${App}"
       CopilotEnvironment: !Sub "${Env}"
-      MasterUserSecret: !Ref {{ service.prefix }}AuroraSecret
+      MasterUserSecret: !Ref {{ addon_config.prefix }}AuroraSecret
       SecretDescription: !Sub Aurora application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}_APPLICATION_USER'
+      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}_APPLICATION_USER'
       DefaultPublicRoute: !Ref DefaultPublicRoute
       InternetGateway: !Ref InternetGateway
       InternetGatewayAttachment: !Ref InternetGatewayAttachment
@@ -434,7 +434,7 @@ Resources:
             - E3005
     DependsOn:
       - VpcEndpoint
-      - {{ service.prefix }}DBWriterInstance
+      - {{ addon_config.prefix }}DBWriterInstance
       - AdditionalNatGateway1
       - AdditionalNatGateway2
       - AdditionalPrivateRoute1
@@ -443,16 +443,16 @@ Resources:
       - AdditionalPrivateRoute2
       - AdditionalPrivateRouteTable2
       - AdditionalPrivateRouteTable2Association
-      - {{ service.prefix }}SecretAuroraClusterAttachment
-      - {{ service.prefix }}EnvironmentIngress
-      - {{ service.prefix }}SecretsManagerIngress
-      - {{ service.prefix }}LambdaIngress
-      - {{ service.prefix }}SecretsManagerEgress
-      - {{ service.prefix }}LambdaEgress
-      - {{ service.prefix }}HTTPSEgress
-      - {{ service.prefix }}KeyAlias
+      - {{ addon_config.prefix }}SecretAuroraClusterAttachment
+      - {{ addon_config.prefix }}EnvironmentIngress
+      - {{ addon_config.prefix }}SecretsManagerIngress
+      - {{ addon_config.prefix }}LambdaIngress
+      - {{ addon_config.prefix }}SecretsManagerEgress
+      - {{ addon_config.prefix }}LambdaEgress
+      - {{ addon_config.prefix }}HTTPSEgress
+      - {{ addon_config.prefix }}KeyAlias
 
-  {{ service.prefix }}LambdaFunctionExecutionRole:
+  {{ addon_config.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${App}-${Env}-aurora-user"
