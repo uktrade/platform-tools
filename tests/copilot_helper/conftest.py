@@ -200,13 +200,13 @@ def mock_tool_versions():
 
 @pytest.fixture(scope="function")
 def mock_stack():
-    def _create_stack(addon_type):
+    def _create_stack(addon_name):
         with mock_cloudformation():
             with open(FIXTURES_DIR / "test_cloudformation_template_iam_role.json") as f:
                 template_json = json.load(f)
             cf = boto3.client("cloudformation")
             cf.create_stack(
-                StackName=f"task-conduit-test-application-development-test-application-{addon_type}",
+                StackName=f"task-conduit-test-application-development-{addon_name}",
                 TemplateBody=json.dumps(template_json),
             )
 
