@@ -466,7 +466,7 @@ invalid-entry:
     @pytest.mark.parametrize(
         "addon_file_contents, has_postgres_addon",
         [
-            ([REDIS_STORAGE_CONTENTS], True),
+            ([REDIS_STORAGE_CONTENTS], False),
             ([RDS_POSTGRES_STORAGE_CONTENTS], True),
             ([AURORA_POSTGRES_STORAGE_CONTENTS], True),
             ([OPENSEARCH_STORAGE_CONTENTS], False),
