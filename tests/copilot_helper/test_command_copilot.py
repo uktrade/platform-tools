@@ -482,13 +482,15 @@ invalid-entry:
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_file_contents, has_postgres_addon
     ):
-        def assert_in_addons_parameters_as_required(content_checks, contents, should_include):
+        def assert_in_addons_parameters_as_required(
+            checks, addons_parameters_contents, should_include
+        ):
             should_or_should_not_string = "should"
             if not should_include:
                 should_or_should_not_string += " not"
-            for check in content_checks:
+            for check in checks:
                 assert (
-                    check in contents
+                    check in addons_parameters_contents
                 ) == should_include, (
                     f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
                 )
@@ -501,19 +503,21 @@ invalid-entry:
         assert (
             "File copilot/environments/addons/addons.parameters.yml created" in result.output
         ), "addons.parameters.yml should be included"
-        contents = Path("/copilot/environments/addons/addons.parameters.yml").read_text()
+        addons_parameters_contents = Path(
+            "/copilot/environments/addons/addons.parameters.yml"
+        ).read_text()
         assert_in_addons_parameters_as_required(
-            content_checks=[
+            checks=[
                 "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup",
                 "PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]",
                 "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]",
                 "VpcId: !Ref VPC",
             ],
-            contents=contents,
+            addons_parameters_contents=addons_parameters_contents,
             should_include=True,
         )
         assert_in_addons_parameters_as_required(
-            content_checks=[
+            checks=[
                 "DefaultPublicRoute: !Ref DefaultPublicRoute",
                 "InternetGateway: !Ref InternetGateway",
                 "InternetGatewayAttachment: !Ref InternetGatewayAttachment",
@@ -521,7 +525,7 @@ invalid-entry:
                 "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation",
                 "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation",
             ],
-            contents=contents,
+            addons_parameters_contents=addons_parameters_contents,
             should_include=has_postgres_addon,
         )
 
