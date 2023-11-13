@@ -153,8 +153,8 @@ def connect_to_addon_client_task(app: str, env: str, cluster_arn: str, addon_nam
         raise CreateTaskTimeoutConduitError
 
 
-def add_stack_delete_policy_to_task_role(app: str, env: str, addon_type: str):
-    conduit_stack_name = f"task-conduit-{app}-{env}-{app}-{addon_type}"
+def add_stack_delete_policy_to_task_role(app: str, env: str, addon_name: str):
+    conduit_stack_name = f"task-conduit-{app}-{env}-{normalise_string(addon_name)}"
     conduit_stack_resources = boto3.client("cloudformation").list_stack_resources(
         StackName=conduit_stack_name
     )["StackResourceSummaries"]
@@ -189,7 +189,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 
     if not addon_client_is_running(app, env, cluster_arn, addon_name):
         create_addon_client_task(app, env, addon_type, addon_name)
-        add_stack_delete_policy_to_task_role(app, env, addon_type)
+        add_stack_delete_policy_to_task_role(app, env, addon_name)
 
     connect_to_addon_client_task(app, env, cluster_arn, addon_name)
 
