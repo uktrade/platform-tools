@@ -274,7 +274,7 @@ def _generate_env_addons(
     for addon in addon_template_map[addon_type].get("env", []):
         template = templates.get_template(addon["template"])
 
-        contents = template.render({"addon_config": environment_addon_config, "addons": addons})
+        contents = template.render({"service": environment_addon_config, "addons": addons})
 
         filename = addon.get("filename", f"{addon_name}.yml")
 
@@ -297,7 +297,7 @@ def _generate_service_addons(
         for svc in addon_config.get("services", []):
             service_path = Path(f"copilot/{svc}/addons/")
 
-            contents = template.render({"addon_config": service_addon_config})
+            contents = template.render({"service": service_addon_config})
 
             filename = addon.get("filename", f"{addon_name}.yml")
 
