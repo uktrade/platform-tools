@@ -14,7 +14,6 @@ redis:
   requires_addons_parameters: true
   env:
     - template: addons/env/redis-cluster.yml
-      requires_addons_parameters: true
 aurora-postgres:
   env:
     - template: addons/env/aurora-postgres.yml

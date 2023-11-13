@@ -31,7 +31,7 @@ Parameters:
 
   # Other parameters...
   # Customize your RDS Postgres cluster by setting the default value of the following parameters.
-  {{ addon_config.prefix }}DBName:
+  {{ service.prefix }}DBName:
     Type: String
     Description: The name of the initial database to be created.
     Default: main
@@ -39,8 +39,8 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  {{ addon_config.prefix }}EnvScalingConfigurationMap:
-{%- for env_name, config in addon_config.environments.items() %}
+  {{ service.prefix }}EnvScalingConfigurationMap:
+{%- for env_name, config in service.environments.items() %}
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
       MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
@@ -51,7 +51,7 @@ Mappings:
 
 Resources:
   # Subnet group to control where the DB gets placed
-  {{ addon_config.prefix }}DBSubnetGroup:
+  {{ service.prefix }}DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
@@ -59,7 +59,7 @@ Resources:
 
   # Security group to add the DB to the VPC,
   # and to allow the Fargate containers to talk to DB
-  {{ addon_config.prefix }}SecurityGroup:
+  {{ service.prefix }}SecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group to access the DB cluster'
     Type: AWS::EC2::SecurityGroup
@@ -68,82 +68,82 @@ Resources:
       VpcId: !Ref VpcId
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-RDS-Postgres-SecurityGroup'
+          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-RDS-Postgres-SecurityGroup'
 
   # Enable ingress from other ECS services created within the environment.
-  {{ addon_config.prefix }}DBIngress:
+  {{ service.prefix }}DBIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from Fargate containers
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  {{ addon_config.prefix }}LambdaIngress:
+  {{ service.prefix }}LambdaIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from Lambda Functions to DB
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      SourceSecurityGroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      SourceSecurityGroupId: !Ref '{{ service.prefix }}SecurityGroup'
 
-  {{ addon_config.prefix }}SecretsManagerIngress:
+  {{ service.prefix }}SecretsManagerIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress from Lambda Functions to Secrets Manager
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      SourceSecurityGroupId: !Ref '{{ service.prefix }}SecurityGroup'
 
-  {{ addon_config.prefix }}LambdaEgress:
+  {{ service.prefix }}LambdaEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress from DB in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       Description: Egress from DB to Lambda Functions
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 5432
       ToPort: 5432
-      DestinationSecurityGroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      DestinationSecurityGroupId: !Ref '{{ service.prefix }}SecurityGroup'
 
-  {{ addon_config.prefix }}SecretsManagerEgress:
+  {{ service.prefix }}SecretsManagerEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       Description: Egress from Secrets Manager to Lambda Functions
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      DestinationSecurityGroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      DestinationSecurityGroupId: !Ref '{{ service.prefix }}SecurityGroup'
 
-  {{ addon_config.prefix }}HTTPSEgress:
+  {{ service.prefix }}HTTPSEgress:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       CidrIp: 0.0.0.0/0
       Description: Egress for HTTPS
-      GroupId: !Ref '{{ addon_config.prefix }}SecurityGroup'
+      GroupId: !Ref '{{ service.prefix }}SecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
 
-  {{ addon_config.prefix }}RDSDBParameterGroup:
+  {{ service.prefix }}RDSDBParameterGroup:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
     Type: 'AWS::RDS::DBParameterGroup'
@@ -155,13 +155,13 @@ Resources:
         log_statement: ddl
         log_statement_sample_rate: '1.0'
 
-  {{ addon_config.prefix }}KMSKey:
+  {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-{{ addon_config.prefix }}-key'
+        Id: !Sub '${App}-${Env}-{{ service.prefix }}-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -170,14 +170,14 @@ Resources:
           Action: kms:*
           Resource: '*'
 
-  {{ addon_config.prefix }}KeyAlias:
+  {{ service.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-key'
-      TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
+      AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
+      TargetKeyId: !Ref {{ service.prefix }}KMSKey
 
   # The cluster itself.
-  {{ addon_config.prefix }}DBInstance:
+  {{ service.prefix }}DBInstance:
     Metadata:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
@@ -190,30 +190,30 @@ Resources:
         - postgresql
         - upgrade
       Engine: postgres
-      EngineVersion: '{{ addon_config.version }}'
-      DBInstanceClass: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
-      AllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
-      MaxAllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
-      StorageType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, StorageType]
-      MultiAZ: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
-      DBParameterGroupName: !Ref {{ addon_config.prefix }}RDSDBParameterGroup
-      DBName: !Ref {{ addon_config.prefix }}DBName
-      KmsKeyId: !Ref {{ addon_config.prefix }}KMSKey
+      EngineVersion: '{{ service.version }}'
+      DBInstanceClass: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
+      AllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
+      MaxAllocatedStorage: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
+      StorageType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, StorageType]
+      MultiAZ: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBParameterGroupName: !Ref {{ service.prefix }}RDSDBParameterGroup
+      DBName: !Ref {{ service.prefix }}DBName
+      KmsKeyId: !Ref {{ service.prefix }}KMSKey
       MasterUsername:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
       MasterUserPassword:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
-      DBSubnetGroupName: !Ref '{{ addon_config.prefix }}DBSubnetGroup'
+        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ service.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+      DBSubnetGroupName: !Ref '{{ service.prefix }}DBSubnetGroup'
       VPCSecurityGroups:
-        - !Ref {{ addon_config.prefix }}SecurityGroup
+        - !Ref {{ service.prefix }}SecurityGroup
       StorageEncrypted: true
 
-  {{ addon_config.prefix }}RDSSecret:
+  {{ service.prefix }}RDSSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
       Description: !Sub RDS main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "postgres"}'
@@ -223,14 +223,14 @@ Resources:
         PasswordLength: 16
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
 
-  {{ addon_config.prefix }}SecretRDSAttachment:
+  {{ service.prefix }}SecretRDSAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: !Ref {{ addon_config.prefix }}RDSSecret
-      TargetId: !Ref {{ addon_config.prefix }}DBInstance
+      SecretId: !Ref {{ service.prefix }}RDSSecret
+      TargetId: !Ref {{ service.prefix }}DBInstance
       TargetType: AWS::RDS::DBInstance
 
-  {{ addon_config.prefix }}LambdaFunction:
+  {{ service.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${App}-${Env}-rds-create-user"
@@ -240,10 +240,10 @@ Resources:
         - arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:1
       MemorySize: 128
       Timeout: 10
-      Role: !GetAtt {{ addon_config.prefix }}LambdaFunctionExecutionRole.Arn
+      Role: !GetAtt {{ service.prefix }}LambdaFunctionExecutionRole.Arn
       VpcConfig:
         SecurityGroupIds:
-          - !Ref {{ addon_config.prefix }}SecurityGroup
+          - !Ref {{ service.prefix }}SecurityGroup
         SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       Code:
         ZipFile: |
@@ -392,15 +392,15 @@ Resources:
               print(json.dumps(response, default=str))
               cfnresponse.send(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
 
-  {{ addon_config.prefix }}ApplicationUser:
-    Type: 'Custom::{{ addon_config.prefix }}ApplicationUser'
+  {{ service.prefix }}ApplicationUser:
+    Type: 'Custom::{{ service.prefix }}ApplicationUser'
     Properties:
-      ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
+      ServiceToken: !GetAtt '{{ service.prefix }}LambdaFunction.Arn'
       CopilotApplication: !Sub "${App}"
       CopilotEnvironment: !Sub "${Env}"
-      MasterUserSecret: !Ref {{ addon_config.prefix }}RDSSecret
+      MasterUserSecret: !Ref {{ service.prefix }}RDSSecret
       SecretDescription: !Sub RDS application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}_APPLICATION_USER'
+      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}_APPLICATION_USER'
       DefaultPublicRoute: !Ref DefaultPublicRoute
       InternetGateway: !Ref InternetGateway
       InternetGatewayAttachment: !Ref InternetGatewayAttachment
@@ -416,7 +416,7 @@ Resources:
             - E3005
     DependsOn:
       - VpcEndpoint
-      - {{ addon_config.prefix }}DBInstance
+      - {{ service.prefix }}DBInstance
       - AdditionalNatGateway1
       - AdditionalNatGateway2
       - AdditionalPrivateRoute1
@@ -425,16 +425,16 @@ Resources:
       - AdditionalPrivateRoute2
       - AdditionalPrivateRouteTable2
       - AdditionalPrivateRouteTable2Association
-      - {{ addon_config.prefix }}SecretRDSAttachment
-      - {{ addon_config.prefix }}DBIngress
-      - {{ addon_config.prefix }}SecretsManagerIngress
-      - {{ addon_config.prefix }}LambdaIngress
-      - {{ addon_config.prefix }}SecretsManagerEgress
-      - {{ addon_config.prefix }}LambdaEgress
-      - {{ addon_config.prefix }}HTTPSEgress
-      - {{ addon_config.prefix }}KeyAlias
+      - {{ service.prefix }}SecretRDSAttachment
+      - {{ service.prefix }}DBIngress
+      - {{ service.prefix }}SecretsManagerIngress
+      - {{ service.prefix }}LambdaIngress
+      - {{ service.prefix }}SecretsManagerEgress
+      - {{ service.prefix }}LambdaEgress
+      - {{ service.prefix }}HTTPSEgress
+      - {{ service.prefix }}KeyAlias
 
-  {{ addon_config.prefix }}LambdaFunctionExecutionRole:
+  {{ service.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${App}-${Env}-rds-user"

@@ -10,24 +10,24 @@ Parameters:
     Description: The environment name your service, job, or workflow is being deployed to.
 
 Mappings:
-  {{ addon_config.prefix }}EnvironmentConfigMap:
+  {{ service.prefix }}EnvironmentConfigMap:
     # Create an entry for each environment
-{% for env_name, config in addon_config.environments.items() %}
+{% for env_name, config in service.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
       DeletionPolicy: {{ config.deletion_policy }}
 {% endfor %}
 
 Resources:
-  {{ addon_config.prefix }}KMSKey:
+  {{ service.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
         Version: '2012-10-17'
-        Id: !Sub '${App}-${Env}-{{ addon_config.prefix }}-key'
+        Id: !Sub '${App}-${Env}-{{ service.prefix }}-key'
         Statement:
         - Sid: Enable IAM User Permissions
           Effect: Allow
@@ -36,28 +36,28 @@ Resources:
           Action: kms:*
           Resource: '*'
 
-  {{ addon_config.prefix }}KeyAlias:
+  {{ service.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
-      AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-key'
-      TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
+      AliasName: !Sub 'alias/${App}-${Env}-{{ service.prefix }}-key'
+      TargetKeyId: !Ref {{ service.prefix }}KMSKey
 
-  {{ addon_config.prefix }}Bucket:
+  {{ service.prefix }}Bucket:
     Metadata:
-      'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ addon_config.prefix }}'
+      'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
     Type: AWS::S3::Bucket
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+      BucketName: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
       AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: aws:kms
-            KMSMasterKeyID: !Ref {{ addon_config.prefix }}KMSKey
+            KMSMasterKeyID: !Ref {{ service.prefix }}KMSKey
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -71,13 +71,13 @@ Resources:
         - Key: Copilot-environment
           Value: !Ref Env
         - Key: Copilot-deletion-policy
-          Value: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+          Value: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
 
-  {{ addon_config.prefix }}BucketPolicy:
+  {{ service.prefix }}BucketPolicy:
     Metadata:
       'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
     Type: AWS::S3::BucketPolicy
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       PolicyDocument:
@@ -88,15 +88,15 @@ Resources:
             Principal: '*'
             Action: 's3:*'
             Resource:
-              - !Sub ${ {{ addon_config.prefix }}Bucket.Arn}/*
-              - !Sub ${ {{ addon_config.prefix }}Bucket.Arn}
+              - !Sub ${ {{ service.prefix }}Bucket.Arn}/*
+              - !Sub ${ {{ service.prefix }}Bucket.Arn}
             Condition:
               Bool:
                 "aws:SecureTransport": false
-      Bucket: !Ref {{ addon_config.prefix }}Bucket
+      Bucket: !Ref {{ service.prefix }}Bucket
 
-{% if 'objects' in addon_config %}
-  {{ addon_config.prefix }}S3ObjectUploader:
+{% if 'objects' in service %}
+  {{ service.prefix }}S3ObjectUploader:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${App}-${Env}-object-uploader"
@@ -104,12 +104,12 @@ Resources:
       Runtime: python3.11
       MemorySize: 128
       Timeout: 10
-      Role: !GetAtt {{ addon_config.prefix }}S3ObjectUploaderRole.Arn
+      Role: !GetAtt {{ service.prefix }}S3ObjectUploaderRole.Arn
       Code:
         ZipFile: |
-{{ addon_config.custom_resources.s3_object(10) }}
+{{ service.custom_resources.s3_object(10) }}
 
-  {{ addon_config.prefix }}S3ObjectUploaderRole:
+  {{ service.prefix }}S3ObjectUploaderRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${App}-${Env}-object-uploader-role"
@@ -140,26 +140,26 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-{% for s3object in addon_config.objects %}
-  {{ addon_config.prefix }}S3Object{{ loop.index0 }}:
+{% for s3object in service.objects %}
+  {{ service.prefix }}S3Object{{ loop.index0 }}:
     Type: 'Custom::S3ObjectUploader'
     Properties:
-      ServiceToken: !GetAtt {{ addon_config.prefix }}S3ObjectUploader.Arn
+      ServiceToken: !GetAtt {{ service.prefix }}S3ObjectUploader.Arn
       CopilotApplication: !Sub "${App}"
       CopilotEnvironment: !Sub "${Env}"
-      S3Bucket: !Ref {{ addon_config.prefix }}Bucket
+      S3Bucket: !Ref {{ service.prefix }}Bucket
       S3ObjectKey: {{ s3object.key }}
       S3ObjectBody: {{ s3object.body }}
 {% endfor %}
 {% endif %}
 
 Outputs:
-  {{ addon_config.prefix }}Name:
+  {{ service.prefix }}Name:
     Description: "The name of a user-defined bucket."
-    Value: !Ref {{ addon_config.prefix }}Bucket
+    Value: !Ref {{ service.prefix }}Bucket
 
-  {{ addon_config.prefix }}KMSKeyARN:
+  {{ service.prefix }}KMSKeyARN:
     Description: "ARN of the KMS Key"
-    Value: !GetAtt {{ addon_config.prefix }}KMSKey.Arn
+    Value: !GetAtt {{ service.prefix }}KMSKey.Arn
     Export:
-      Name: !Sub "${App}-${Env}-{{ addon_config.prefix }}-KMSKeyARN"
+      Name: !Sub "${App}-${Env}-{{ service.prefix }}-KMSKeyARN"
