@@ -18,15 +18,15 @@ Parameters:
     Description: The name of the service, job, or workflow being deployed.
 
 Mappings:
-  {{ service.prefix }}EnvironmentConfigMap:
+  {{ addon_config.prefix }}EnvironmentConfigMap:
     # Create an entry for each environment
-{% for env_name, config in service.environments.items() %}
+{% for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
 {% endfor %}
 
 Resources:
-  {{ service.prefix }}S3AccessPolicy:
+  {{ addon_config.prefix }}S3AccessPolicy:
     Metadata:
       'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
     Type: AWS::IAM::ManagedPolicy
@@ -42,25 +42,25 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               Fn::ImportValue:
-                !Sub "${App}-${Env}-{{ service.kms_key_reference }}-KMSKeyARN"
+                !Sub "${App}-${Env}-{{ addon_config.kms_key_reference }}-KMSKeyARN"
           - Sid: S3ObjectActions
             Effect: Allow
             Action:
-{%- if service.readonly %}
+{%- if addon_config.readonly %}
               - s3:GetObject
 {% else %}
               - s3:*Object
 {% endif %}
             Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }/*"
-              - bucket_name: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+              - bucket_name: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
           - Sid: S3ListAction
             Effect: Allow
             Action: s3:ListBucket
             Resource: !Sub
               - "arn:aws:s3:::${ bucket_name }"
-              - bucket_name: !FindInMap [{{ service.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+              - bucket_name: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
 Outputs:
-  {{ service.prefix }}AccessPolicy:
+  {{ addon_config.prefix }}AccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
-    Value: !Ref {{ service.prefix }}S3AccessPolicy
+    Value: !Ref {{ addon_config.prefix }}S3AccessPolicy

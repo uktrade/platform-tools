@@ -18,8 +18,8 @@ Parameters:
     Type: String
 
 Mappings:
-  {{ service.prefix }}EnvScalingConfigurationMap:
-    {% for env_name, config in service.environments.items() %}
+  {{ addon_config.prefix }}EnvScalingConfigurationMap:
+    {% for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       EngineVersion: '{{ config.engine }}'
       InstanceType: '{{ config.instance }}'
@@ -28,7 +28,7 @@ Mappings:
       VolumeSize: {{ config.volume_size }}
     {% endfor %}
 
-  {{ service.prefix }}EngineVersionMap:
+  {{ addon_config.prefix }}EngineVersionMap:
     '1.0':
       EngineVersion: 'OpenSearch_1.0'
     '1.1':
@@ -41,16 +41,16 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  {{ service.prefix }}DisableHA: !Equals [!FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
-  {{ service.prefix }}EnableHA: !Not [Condition: {{ service.prefix }}DisableHA]
+  {{ addon_config.prefix }}DisableHA: !Equals [!FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
+  {{ addon_config.prefix }}EnableHA: !Not [Condition: {{ addon_config.prefix }}DisableHA]
 
 Resources:
-  {{ service.prefix }}OpenSearchSecret:
+  {{ addon_config.prefix }}OpenSearchSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ service.name|upper|replace("-", "_") }}'
+      Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "opensearch"}'
@@ -62,34 +62,34 @@ Resources:
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
-  {{ service.prefix }}OpenSearchSecurityGroup:
+  {{ addon_config.prefix }}OpenSearchSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: 'The Security Group for {{ service.name }} to access OpenSearch.'
+      GroupDescription: 'The Security Group for {{ addon_config.name }} to access OpenSearch.'
       VpcId: !Ref VpcId
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-SecurityGroup'
+          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-OpenSearch-SecurityGroup'
 
   # Enable ingress from other ECS services created within the environment.
-  {{ service.prefix }}OpenSearchIngress:
+  {{ addon_config.prefix }}OpenSearchIngress:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Ingress Security Group from Fargate containers
-      GroupId: !Ref '{{ service.prefix }}OpenSearchSecurityGroup'
+      GroupId: !Ref '{{ addon_config.prefix }}OpenSearchSecurityGroup'
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
   # Single opensearch instance
-  {{ service.prefix }}OpenSearchDomain:
+  {{ addon_config.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: {{ service.prefix }}DisableHA
+    Condition: {{ addon_config.prefix }}DisableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -99,21 +99,21 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ (service.name|replace("-", ""))[:15] }}*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ (addon_config.name|replace("-", ""))[:15] }}*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
         MasterUserOptions:
           MasterUserName:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           MasterUserPassword:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
-        - {{ service.prefix }}EngineVersionMap
-        - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - {{ addon_config.prefix }}EngineVersionMap
+        - !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -121,45 +121,45 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
         DedicatedMasterEnabled: false
-        InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
+        InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: false
       VPCOptions:
         SecurityGroupIds:
-          - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+          - !Ref {{ addon_config.prefix }}OpenSearchSecurityGroup
         SubnetIds:
           - !Select [0, !Split [ ',', !Ref PrivateSubnets ] ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
         AUDIT_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchAuditLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchAuditLogGroup.Arn
           Enabled: true
         ES_APPLICATION_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchApplicationLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchApplicationLogGroup.Arn
           Enabled: true
         SEARCH_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowSearchLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowSearchLogGroup.Arn
           Enabled: true
         INDEX_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowIndexLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowIndexLogGroup.Arn
           Enabled: true
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
+          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-OpenSearch-Domain'
         - Key: 'Copilot-Application'
           Value: !Sub ${App}
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
   # An opensearch cluster
-  {{ service.prefix }}OpenSearchDomainHA:
+  {{ addon_config.prefix }}OpenSearchDomainHA:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: {{ service.prefix }}EnableHA
+    Condition: {{ addon_config.prefix }}EnableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -169,21 +169,21 @@ Resources:
             AWS: '*'
           Action:
           - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ (service.name|replace("-", ""))[:15] }}*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ (addon_config.name|replace("-", ""))[:15] }}*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
         MasterUserOptions:
           MasterUserName:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           MasterUserPassword:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
-        - {{ service.prefix }}EngineVersionMap
-        - !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - {{ addon_config.prefix }}EngineVersionMap
+        - !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -191,61 +191,61 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
-        InstanceCount: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [{{ service.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
+        InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: true
         ZoneAwarenessConfig:
           AvailabilityZoneCount: 2
           #Fn::length always resolves to 1 despite there being subnets.
       VPCOptions:
         SecurityGroupIds:
-          - !Ref {{ service.prefix }}OpenSearchSecurityGroup
+          - !Ref {{ addon_config.prefix }}OpenSearchSecurityGroup
         SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
         AUDIT_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchAuditLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchAuditLogGroup.Arn
           Enabled: true
         ES_APPLICATION_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchApplicationLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchApplicationLogGroup.Arn
           Enabled: true
         SEARCH_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowSearchLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowSearchLogGroup.Arn
           Enabled: true
         INDEX_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ service.prefix }}OpenSearchSlowIndexLogGroup.Arn
+          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowIndexLogGroup.Arn
           Enabled: true
       Tags:
         - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ service.name }}-OpenSearch-Domain'
+          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-OpenSearch-Domain'
         - Key: 'Copilot-Application'
           Value: !Sub ${App}
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  {{ service.prefix }}OpenSearchEndpointConfigParam:
+  {{ addon_config.prefix }}OpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ service.secret_name }}"
+      Name: !Sub "/copilot/${App}/${Env}/secrets/{{ addon_config.secret_name }}"
       Type: String
       Value: !Sub
         - "https://${username}:${password}@${url}"
         - url: !If
-            - {{ service.prefix }}EnableHA
-            - !GetAtt {{ service.prefix }}OpenSearchDomainHA.DomainEndpoint
-            - !GetAtt {{ service.prefix }}OpenSearchDomain.DomainEndpoint
-          username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
-          password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ service.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
+            - {{ addon_config.prefix }}EnableHA
+            - !GetAtt {{ addon_config.prefix }}OpenSearchDomainHA.DomainEndpoint
+            - !GetAtt {{ addon_config.prefix }}OpenSearchDomain.DomainEndpoint
+          username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
+          password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
 
-  {{ service.prefix }}OpenSearchAuditLogGroup:
+  {{ addon_config.prefix }}OpenSearchAuditLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/audit'
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/audit'
       RetentionInDays: 7
       Tags:
         - Key: 'Copilot-Application'
@@ -253,10 +253,10 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  {{ service.prefix }}OpenSearchApplicationLogGroup:
+  {{ addon_config.prefix }}OpenSearchApplicationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/application'
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/application'
       RetentionInDays: 7
       Tags:
         - Key: 'Copilot-Application'
@@ -264,10 +264,10 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  {{ service.prefix }}OpenSearchSlowSearchLogGroup:
+  {{ addon_config.prefix }}OpenSearchSlowSearchLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/slow-search'
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/slow-search'
       RetentionInDays: 7
       Tags:
         - Key: 'Copilot-Application'
@@ -275,10 +275,10 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  {{ service.prefix }}OpenSearchSlowIndexLogGroup:
+  {{ addon_config.prefix }}OpenSearchSlowIndexLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ service.prefix }}/slow-index'
+      LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/slow-index'
       RetentionInDays: 7
       Tags:
         - Key: 'Copilot-Application'
