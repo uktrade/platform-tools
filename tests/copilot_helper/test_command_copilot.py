@@ -315,7 +315,7 @@ class TestMakeAddonCommand:
             addon_file_contents["my-s3-bucket"]["environments"]["development"][
                 "deletion-policy"
             ] = deletion_policy_override
-        create_test_manifests(dump(addon_file_contents), fakefs)
+        create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
 
@@ -466,10 +466,10 @@ invalid-entry:
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type",
         [
-            (REDIS_STORAGE_CONTENTS, "redis"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres"),
-            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
+            ([REDIS_STORAGE_CONTENTS], "redis"),
+            ([RDS_POSTGRES_STORAGE_CONTENTS], "rds-postgres"),
+            ([AURORA_POSTGRES_STORAGE_CONTENTS], "aurora-postgres"),
+            ([OPENSEARCH_STORAGE_CONTENTS], "opensearch"),
         ],
     )
     @patch(
@@ -522,9 +522,9 @@ invalid-entry:
     @pytest.mark.parametrize(
         "addon_file_contents, addon_type, secret_name",
         [
-            (REDIS_STORAGE_CONTENTS, "redis", "REDIS"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds-postgres", "RDS"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
+            ([REDIS_STORAGE_CONTENTS], "redis", "REDIS"),
+            ([RDS_POSTGRES_STORAGE_CONTENTS], "rds-postgres", "RDS"),
+            ([AURORA_POSTGRES_STORAGE_CONTENTS], "aurora-postgres", "AURORA"),
         ],
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -618,7 +618,7 @@ def test_get_secrets():
 def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file(
         ADDON_CONFIG_FILENAME,
-        contents=addon_file_contents,
+        contents=" ".join(addon_file_contents),
     )
     fakefs.create_file("copilot/web/manifest.yml")
     fakefs.create_file("copilot/environments/development/manifest.yml")
