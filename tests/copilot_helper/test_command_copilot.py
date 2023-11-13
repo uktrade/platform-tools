@@ -471,7 +471,10 @@ invalid-entry:
             ([AURORA_POSTGRES_STORAGE_CONTENTS], True),
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
-            ([RDS_POSTGRES_STORAGE_CONTENTS, S3_STORAGE_CONTENTS], True),
+            (
+                [RDS_POSTGRES_STORAGE_CONTENTS, OPENSEARCH_STORAGE_CONTENTS, S3_STORAGE_CONTENTS],
+                True,
+            ),
         ],
     )
     @patch(

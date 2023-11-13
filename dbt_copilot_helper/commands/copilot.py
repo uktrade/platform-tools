@@ -169,11 +169,16 @@ def make_addons(directory="."):
     custom_resources = _get_custom_resources()
 
     services = []
-
+    has_addons_parameters = False
+    has_postgres_addon = False
     for addon_name, addon_config in config.items():
         print(f">>>>>>>>> {addon_name}")
         addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
+        if addon_template_map[addon_type].get("requires_addons_parameters", False):
+            has_addons_parameters = True
+        if addon_type in ["aurora-postgres", "rds-postgres"]:
+            has_postgres_addon = True
 
         for environment_name, environment_config in environments.items():
             if not environment_config.get("deletion_policy"):
@@ -229,6 +234,13 @@ def make_addons(directory="."):
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",
             )
+
+    if has_addons_parameters:
+        template = templates.get_template("addons/env/addons.parameters.yml")
+        contents = template.render({"has_postgres_addon": has_postgres_addon})
+        click.echo(
+            mkfile(output_dir, env_addons_path / "addons.parameters.yml", contents, overwrite=True)
+        )
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
