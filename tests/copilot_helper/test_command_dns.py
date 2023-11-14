@@ -94,16 +94,17 @@ def test_create_cert_returns_existing_cert_if_it_is_issued(
     return_value="arn:1234",
 )
 @patch("click.confirm")
-def test_create_cert_creates_a_new_cert_if_existing_one_is_pending(
+def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_pending(
     wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
     domain = "test.1234"
+    old_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf"
     response_cert_list = {
         "CertificateSummaryList": [
             {
-                "CertificateArn": "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf",
+                "CertificateArn": old_cert_arn,
                 "DomainName": domain,
                 "SubjectAlternativeNameSummaries": ["v2.demodjango.john.uktrade.digital"],
                 "Status": "PENDING_VALIDATION",
@@ -135,6 +136,11 @@ def test_create_cert_creates_a_new_cert_if_existing_one_is_pending(
             "list_certificates",
             response_cert_list,
             {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+        )
+        acm_stub.add_response(
+            "delete_certificate",
+            {},
+            {"CertificateArn": old_cert_arn},
         )
         acm_stub.add_response(
             "request_certificate",

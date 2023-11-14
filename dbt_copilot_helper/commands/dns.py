@@ -80,7 +80,11 @@ def create_cert(client, domain_client, domain, base_len):
                 click.secho("Certificate already exists, do not need to create.", fg="green")
                 return cert["CertificateArn"]
             else:
-                pass
+                click.secho(
+                    f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
+                    fg="yellow",
+                )
+                client.delete_certificate(CertificateArn=cert["CertificateArn"])
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
