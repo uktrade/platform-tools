@@ -71,5 +71,5 @@ def test_bump_version_if_required(
         ),
     ],
 )
-def test_bump_version(files, bump_expected):
+def test_version_should_be_bumped(files, bump_expected):
     assert version_should_be_bumped(files) == bump_expected

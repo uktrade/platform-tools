@@ -49,9 +49,10 @@ def version_should_be_bumped(files):
         filepath = Path(f)
         if filepath.name == "README.md":
             continue
-        parents = filepath.parents
-        # parents[-1] is always "." and the list is in the reverse order from what you'd expect.
-        if len(parents) > 1 and parents[-2].name == "tests":
+        parents = list(str(p) for p in filepath.parents)
+        # Each parent is the full path from the root.
+        # We don't need to bump if it is just tests that have changed:
+        if "tests" in parents:
             continue
 
         return True
