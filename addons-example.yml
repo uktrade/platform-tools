@@ -27,6 +27,8 @@ my-s3-bucket:
 
   readonly: true  # services are granted read only access to the bucket
 
+  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+
   services:  # services that require access to the bucket.
     - "web"
     - "web-celery"
@@ -36,6 +38,7 @@ my-s3-bucket:
 
     production:
       bucket-name: my-bucket-prod
+      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting for the bucket
 
     staging:
       bucket-name: my-bucket-staging
