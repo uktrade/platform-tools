@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore import stub
 from botocore.stub import Stubber
 from click.testing import CliRunner
 from moto import mock_ec2
@@ -47,35 +48,105 @@ def test_check_for_records(route53_session):
     return_value="arn:1234",
 )
 @patch("click.confirm")
-def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, route53_session):
-    stubber = Stubber(acm_session)
+def test_create_cert_with_no_existing_cert_creates_a_cert(
+    wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
-    response_desc = {
+    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
+
+
+@patch(
+    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+@patch("click.confirm")
+def test_create_cert_returns_existing_cert_if_it_is_issued(
+    wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
+    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+
+    existing_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf"
+    response_cert_list = {
+        "CertificateSummaryList": [
+            {
+                "CertificateArn": existing_cert_arn,
+                "DomainName": "test.1234",
+                "SubjectAlternativeNameSummaries": ["v2.demodjango.john.uktrade.digital"],
+                "Status": "ISSUED",
+                "InUse": True,
+                "RenewalEligibility": "ELIGIBLE",
+            }
+        ]
+    }
+
+    with Stubber(acm_session) as acm_stub:
+        acm_stub.add_response(
+            "list_certificates",
+            response_cert_list,
+            {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+        )
+        assert existing_cert_arn == create_cert(acm_session, route53_session, "test.1234", 1)
+
+
+@patch(
+    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+@patch("click.confirm")
+def test_create_cert_creates_a_new_cert_if_existing_one_is_pending(
+    wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
+    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+
+    domain = "test.1234"
+    response_cert_list = {
+        "CertificateSummaryList": [
+            {
+                "CertificateArn": "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf",
+                "DomainName": domain,
+                "SubjectAlternativeNameSummaries": ["v2.demodjango.john.uktrade.digital"],
+                "Status": "PENDING_VALIDATION",
+                "InUse": True,
+                "RenewalEligibility": "ELIGIBLE",
+            }
+        ]
+    }
+
+    cert_desc_response = {
         "Certificate": {
-            "CertificateArn": "arn:1234567890123456789",
-            "DomainName": "test.domain",
             "DomainValidationOptions": [
                 {
-                    "DomainName": "test.domain",
-                    "ValidationStatus": "SUCCESS",
+                    "DomainName": domain,
                     "ResourceRecord": {
-                        "Name": "test.record",
+                        "Name": "some-acm-name.1234",
+                        "Value": "some-acm-value",
                         "Type": "CNAME",
-                        "Value": "pointing.to.this",
                     },
-                    "ValidationMethod": "DNS",
                 },
             ],
         }
     }
-    expected_params = {"CertificateArn": "arn:1234567890123456789"}
 
-    stubber.add_response("describe_certificate", response_desc, expected_params)
-    with stubber:
-        acm_session.describe_certificate(CertificateArn="arn:1234567890123456789")
+    new_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/something-n3w"
 
-    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
+    with Stubber(acm_session) as acm_stub:
+        acm_stub.add_response(
+            "list_certificates",
+            response_cert_list,
+            {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+        )
+        acm_stub.add_response(
+            "request_certificate",
+            {"CertificateArn": new_cert_arn},
+            {"DomainName": domain, "ValidationMethod": "DNS"},
+        )
+        acm_stub.add_response(
+            "describe_certificate", cert_desc_response, {"CertificateArn": new_cert_arn}
+        )
+        actual_cert_arn = create_cert(acm_session, route53_session, domain, 1)
+
+        assert new_cert_arn == actual_cert_arn
 
 
 def test_add_records(route53_session):

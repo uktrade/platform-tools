@@ -60,8 +60,7 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, 
 
 def create_cert(client, domain_client, domain, base_len):
     # Check if cert is present.
-    arn = ""
-    resp = client.list_certificates(
+    cert_list = client.list_certificates(
         CertificateStatuses=[
             "PENDING_VALIDATION",
             "ISSUED",
@@ -72,13 +71,16 @@ def create_cert(client, domain_client, domain, base_len):
             "FAILED",
         ],
         MaxItems=500,
-    )
+    )["CertificateSummaryList"]
 
     # Need to check if cert status is issued, if pending need to update dns
-    for cert in resp["CertificateSummaryList"]:
+    for cert in cert_list:
         if domain == cert["DomainName"]:
-            click.secho("Certificate already exists, do not need to create.", fg="green")
-            return cert["CertificateArn"]
+            if cert["Status"] == "ISSUED":
+                click.secho("Certificate already exists, do not need to create.", fg="green")
+                return cert["CertificateArn"]
+            else:
+                pass
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
@@ -93,28 +95,16 @@ def create_cert(client, domain_client, domain, base_len):
     parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
     domain_to_create = ".".join(parts[parts_to_remove:]) + "."
     click.secho(domain_to_create, fg="yellow")
-    # cert_client = DNSValidatedACMCertClient(domain=domain, profile='intranet')
-    response = client.request_certificate(DomainName=domain, ValidationMethod="DNS")
 
-    arn = response["CertificateArn"]
+    arn = _request_cert(client, domain)
 
     # Create DNS validation records
-    # Need a pause for it to populate the DNS resource records
-    response = client.describe_certificate(CertificateArn=arn)
-    while (
-        response["Certificate"].get("DomainValidationOptions") is None
-        or response["Certificate"]["DomainValidationOptions"][0].get("ResourceRecord") is None
-    ):
-        click.secho("Waiting for DNS records...", fg="yellow")
-        time.sleep(2)
-        response = client.describe_certificate(CertificateArn=arn)
-
-    cert_record = response["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
+    cert_record = _get_certificate_record(arn, client)
 
     click.secho(f"Looking fo ID of domain {domain_to_create}...", fg="yellow")
     domain_id = False
-    response = domain_client.list_hosted_zones_by_name()
-    for hz in response["HostedZones"]:
+    hosted_zones = domain_client.list_hosted_zones_by_name()["HostedZones"]
+    for hz in hosted_zones:
         if hz["Name"] == domain_to_create:
             domain_id = hz["Id"]
             break
@@ -139,7 +129,7 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    response = domain_client.change_resource_record_sets(
+    domain_client.change_resource_record_sets(
         HostedZoneId=domain_id,
         ChangeBatch={
             "Changes": [
@@ -163,6 +153,26 @@ def create_cert(client, domain_client, domain, base_len):
     # and wants to give it a chance to take longer in case that's all that's wrong.
     wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
 
+    return arn
+
+
+def _get_certificate_record(arn, client):
+    # Need a pause for it to populate the DNS resource records
+    cert_description = client.describe_certificate(CertificateArn=arn)
+    while (
+        cert_description["Certificate"].get("DomainValidationOptions") is None
+        or cert_description["Certificate"]["DomainValidationOptions"][0].get("ResourceRecord")
+        is None
+    ):
+        click.secho("Waiting for DNS records...", fg="yellow")
+        time.sleep(2)
+        cert_description = client.describe_certificate(CertificateArn=arn)
+    return cert_description["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
+
+
+def _request_cert(client, domain):
+    cert_response = client.request_certificate(DomainName=domain, ValidationMethod="DNS")
+    arn = cert_response["CertificateArn"]
     return arn
 
 
