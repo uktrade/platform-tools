@@ -28,7 +28,7 @@ MAX_DOMAIN_DEPTH = 2
 AWS_CERT_REGION = "eu-west-2"
 
 
-def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
+def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
     click.secho(f"Waiting up to {timeout} seconds for certificate to be validated...", fg="yellow")
     status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"][
         "Status"
@@ -59,32 +59,16 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, 
 
 
 def create_cert(client, domain_client, domain, base_len):
-    # Check if cert is present.
-    cert_list = client.list_certificates(
-        CertificateStatuses=[
-            "PENDING_VALIDATION",
-            "ISSUED",
-            "INACTIVE",
-            "EXPIRED",
-            "VALIDATION_TIMED_OUT",
-            "REVOKED",
-            "FAILED",
-        ],
-        MaxItems=500,
-    )["CertificateSummaryList"]
-
-    # Need to check if cert status is issued, if pending need to update dns
-    for cert in cert_list:
-        if domain == cert["DomainName"]:
-            if cert["Status"] == "ISSUED":
-                click.secho("Certificate already exists, do not need to create.", fg="green")
-                return cert["CertificateArn"]
-            else:
-                click.secho(
-                    f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
-                    fg="yellow",
-                )
-                client.delete_certificate(CertificateArn=cert["CertificateArn"])
+    for cert in _certs_for_domain(client, domain):
+        if cert["Status"] == "ISSUED":
+            click.secho("Certificate already exists, do not need to create.", fg="green")
+            return cert["CertificateArn"]
+        else:
+            click.secho(
+                f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
+                fg="yellow",
+            )
+            client.delete_certificate(CertificateArn=cert["CertificateArn"])
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
@@ -93,25 +77,14 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    parts = domain.split(".")
-
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
-    click.secho(domain_to_create, fg="yellow")
+    domain_to_create = _get_domain_to_create(base_len, domain)
 
     arn = _request_cert(client, domain)
 
     # Create DNS validation records
     cert_record = _get_certificate_record(arn, client)
+    domain_id = _get_domain_id(domain_client, domain_to_create)
 
-    click.secho(f"Looking fo ID of domain {domain_to_create}...", fg="yellow")
-    domain_id = False
-    hosted_zones = domain_client.list_hosted_zones_by_name()["HostedZones"]
-    for hz in hosted_zones:
-        if hz["Name"] == domain_to_create:
-            domain_id = hz["Id"]
-            break
     if not domain_id:
         # Will got here more than once during manual testing, it might be a race condition we need to handle better
         click.secho(
@@ -133,6 +106,17 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
+    _create_resource_records(cert_record, domain_client, domain_id)
+
+    # Wait for certificate to get to validation state before continuing.
+    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
+    # and wants to give it a chance to take longer in case that's all that's wrong.
+    _wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
+
+    return arn
+
+
+def _create_resource_records(cert_record, domain_client, domain_id):
     domain_client.change_resource_record_sets(
         HostedZoneId=domain_id,
         ChangeBatch={
@@ -152,12 +136,41 @@ def create_cert(client, domain_client, domain, base_len):
         },
     )
 
-    # Wait for certificate to get to validation state before continuing.
-    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
-    # and wants to give it a chance to take longer in case that's all that's wrong.
-    wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
 
-    return arn
+def _get_domain_id(domain_client, domain_to_create):
+    click.secho(f"Looking for ID of domain {domain_to_create}...", fg="yellow")
+    hosted_zones = domain_client.list_hosted_zones_by_name()["HostedZones"]
+
+    for hz in hosted_zones:
+        if hz["Name"] == domain_to_create:
+            return hz["Id"]
+
+
+def _get_domain_to_create(base_len, domain):
+    parts = domain.split(".")
+    # We only want to create domains max 2 deep so remove all sub domains in excess
+    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
+    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
+    click.secho(domain_to_create, fg="yellow")
+    return domain_to_create
+
+
+def _certs_for_domain(client, domain):
+    # Check if cert is present.
+    cert_list = client.list_certificates(
+        CertificateStatuses=[
+            "PENDING_VALIDATION",
+            "ISSUED",
+            "INACTIVE",
+            "EXPIRED",
+            "VALIDATION_TIMED_OUT",
+            "REVOKED",
+            "FAILED",
+        ],
+        MaxItems=500,
+    )["CertificateSummaryList"]
+    certs_for_domain = [cert for cert in cert_list if cert["DomainName"] == domain]
+    return certs_for_domain
 
 
 def _get_certificate_record(arn, client):

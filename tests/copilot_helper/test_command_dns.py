@@ -28,11 +28,6 @@ CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 
 
-# Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
-def test_wait_for_certificate_validation():
-    ...
-
-
 def test_check_for_records(route53_session):
     response = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
     assert (
@@ -44,12 +39,12 @@ def test_check_for_records(route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
 )
 @patch("click.confirm")
 def test_create_cert_with_no_existing_cert_creates_a_cert(
-    wait_for_certificate_validation, mock_click, acm_session, route53_session
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
@@ -57,12 +52,12 @@ def test_create_cert_with_no_existing_cert_creates_a_cert(
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
 )
 @patch("click.confirm")
 def test_create_cert_returns_existing_cert_if_it_is_issued(
-    wait_for_certificate_validation, mock_click, acm_session, route53_session
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
@@ -90,12 +85,12 @@ def test_create_cert_returns_existing_cert_if_it_is_issued(
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
 )
 @patch("click.confirm")
 def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_pending(
-    wait_for_certificate_validation, mock_click, acm_session, route53_session
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
