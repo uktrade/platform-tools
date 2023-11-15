@@ -8,7 +8,7 @@ SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
 
-def check_and_return_aws_session(aws_profile: str) -> boto3.session.Session:
+def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
     # Check that the aws profile exists and is set.
     click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
 

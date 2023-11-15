@@ -229,13 +229,13 @@ def test_check_r53(create_cert, route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure(check_and_return_aws_session, check_r53, fakefs):
+def test_configure(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -261,13 +261,13 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure_env_flag(check_and_return_aws_session, check_r53, fakefs):
+def test_configure_env_flag(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -348,13 +348,13 @@ def test_configure_with_no_manifests_exits_with_error(fakefs):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure_live_domain_profile(check_and_return_aws_session, check_r53, fakefs):
+def test_configure_live_domain_profile(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -380,13 +380,13 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_and_return_aws_session",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch("dbt_copilot_helper.commands.dns.check_response", return_value="{}")
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign(check_and_return_aws_session, check_response, ensure_cwd_is_repo_root):
+def test_assign(get_aws_session_or_abort, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
     result = runner.invoke(
         assign,

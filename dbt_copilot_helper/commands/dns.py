@@ -8,8 +8,8 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_copilot_helper.utils.aws import check_and_return_aws_session
 from dbt_copilot_helper.utils.aws import check_response
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.messages import abort_with_error
@@ -508,8 +508,8 @@ def configure(domain_profile, project_profile, base_domain, env):
     if not manifests:
         abort_with_error("Please check path, no manifest files were found")
 
-    domain_session = check_and_return_aws_session(domain_profile)
-    project_session = check_and_return_aws_session(project_profile)
+    domain_session = get_aws_session_or_abort(domain_profile)
+    project_session = get_aws_session_or_abort(project_profile)
 
     cert_list = {}
 
@@ -583,8 +583,8 @@ def _get_manifests(path):
 )
 def assign(app, domain_profile, project_profile, svc, env):
     """Assigns the load balancer for a service to its domain name."""
-    domain_session = check_and_return_aws_session(domain_profile)
-    project_session = check_and_return_aws_session(project_profile)
+    domain_session = get_aws_session_or_abort(domain_profile)
+    project_session = get_aws_session_or_abort(project_profile)
 
     ensure_cwd_is_repo_root()
 

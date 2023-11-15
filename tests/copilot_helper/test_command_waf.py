@@ -203,12 +203,12 @@ def test_custom_waf_invalid_yml(alias_session, setup_test_directory):
 # No Moto CloudFormation support for AWS::WAFv2::WebACL
 @mock_cloudformation
 @mock_sts
-@patch("dbt_copilot_helper.commands.waf.check_and_return_aws_session")
+@patch("dbt_copilot_helper.commands.waf.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.waf.create_stack")
 def test_custom_waf_cf_stack_already_exists(
-    create_stack, check_and_return_aws_session, alias_session, setup_test_directory
+    create_stack, get_aws_session_or_abort, alias_session, setup_test_directory
 ):
-    check_and_return_aws_session.return_value = alias_session
+    get_aws_session_or_abort.return_value = alias_session
     create_stack.side_effect = alias_session.client(
         "cloudformation"
     ).exceptions.AlreadyExistsException({"Error": {"Code": 666, "Message": ""}}, "operation name")
@@ -243,11 +243,11 @@ def test_custom_waf_cf_stack_already_exists(
     "dbt_copilot_helper.commands.waf.create_stack",
     return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
 )
-@patch("dbt_copilot_helper.commands.waf.check_and_return_aws_session")
+@patch("dbt_copilot_helper.commands.waf.get_aws_session_or_abort")
 def test_custom_waf_delete_in_progress(
-    check_and_return_aws_session, create_stack, describe_stacks, alias_session, setup_test_directory
+    get_aws_session_or_abort, create_stack, describe_stacks, alias_session, setup_test_directory
 ):
-    check_and_return_aws_session.return_value = alias_session
+    get_aws_session_or_abort.return_value = alias_session
     runner = CliRunner()
     result = runner.invoke(
         custom_waf,
@@ -280,9 +280,9 @@ def test_custom_waf_delete_in_progress(
     "dbt_copilot_helper.commands.waf.create_stack",
     return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
 )
-@patch("dbt_copilot_helper.commands.waf.check_and_return_aws_session")
+@patch("dbt_copilot_helper.commands.waf.get_aws_session_or_abort")
 def test_custom_waf(
-    check_and_return_aws_session,
+    get_aws_session_or_abort,
     create_stack,
     get_elastic_load_balancer_domain_and_configuration,
     alias_session,
@@ -299,7 +299,7 @@ def test_custom_waf(
             return boto3.Session().client(service_name)
 
     alias_session.client = client
-    check_and_return_aws_session.return_value = alias_session
+    get_aws_session_or_abort.return_value = alias_session
     vpc_id = alias_session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     subnet_id = alias_session.client("ec2").create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/16")[
         "Subnet"
