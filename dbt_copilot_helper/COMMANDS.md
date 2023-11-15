@@ -23,8 +23,8 @@
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
-- [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
-- [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper domain configure](#copilot-helper-domain-configure)
+- [copilot-helper domain assign](#copilot-helper-domain-assign)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper svc](#copilot-helper-svc)
@@ -565,7 +565,7 @@ copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-copilot-helper domain (check-domain|assign-domain) 
+copilot-helper domain (configure|assign) 
 ```
 
 ## Options
@@ -575,20 +575,21 @@ copilot-helper domain (check-domain|assign-domain)
 
 ## Commands
 
-- [`assign-domain` ↪](#copilot-helper-domain-assign-domain)
-- [`check-domain` ↪](#copilot-helper-domain-check-domain)
+- [`assign` ↪](#copilot-helper-domain-assign)
+- [`configure` ↪](#copilot-helper-domain-configure)
 
-# copilot-helper domain check-domain
+# copilot-helper domain configure
 
 [↩ Parent](#copilot-helper-domain)
 
-    Scans to see if Domain exists.
+    Creates missing subdomains (up to 2 levels deep) if they do not already
+    exist and creates certificates for those subdomains.
 
 ## Usage
 
 ```
-copilot-helper domain check-domain --domain-profile (dev|live) --project-profile <project_profile> 
-                                   --base-domain <base_domain> [--env <env>] 
+copilot-helper domain configure --domain-profile (dev|live) --project-profile <project_profile> 
+                                --base-domain <base_domain> [--env <env>] 
 ```
 
 ## Options
@@ -604,18 +605,17 @@ copilot-helper domain check-domain --domain-profile (dev|live) --project-profile
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# copilot-helper domain assign-domain
+# copilot-helper domain assign
 
 [↩ Parent](#copilot-helper-domain)
 
-    Check Route53 domain is pointing to the correct ECS Load Balancer.
+    Assigns the load balancer for a service to its domain name.
 
 ## Usage
 
 ```
-copilot-helper domain assign-domain --app <app> --env <env> --svc <svc> 
-                                    --domain-profile (dev|live) 
-                                    --project-profile <project_profile> 
+copilot-helper domain assign --app <app> --env <env> --svc <svc> 
+                             --domain-profile (dev|live) --project-profile <project_profile> 
 ```
 
 ## Options

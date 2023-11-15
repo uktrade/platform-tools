@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore import stub
 from botocore.stub import Stubber
 from click.testing import CliRunner
 from moto import mock_ec2
@@ -11,10 +12,10 @@ from moto import mock_ecs
 from moto import mock_elbv2
 
 from dbt_copilot_helper.commands.dns import add_records
-from dbt_copilot_helper.commands.dns import assign_domain
-from dbt_copilot_helper.commands.dns import check_domain
+from dbt_copilot_helper.commands.dns import assign
 from dbt_copilot_helper.commands.dns import check_for_records
 from dbt_copilot_helper.commands.dns import check_r53
+from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
@@ -25,11 +26,6 @@ ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
 CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
-
-
-# Not much value in testing these while moto doesn't support `describe_certificate`, `list_certificates`
-def test_wait_for_certificate_validation():
-    ...
 
 
 def test_check_for_records(route53_session):
@@ -43,39 +39,114 @@ def test_check_for_records(route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.wait_for_certificate_validation",
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
 )
 @patch("click.confirm")
-def test_create_cert(wait_for_certificate_validation, mock_click, acm_session, route53_session):
-    stubber = Stubber(acm_session)
+def test_create_cert_with_no_existing_cert_creates_a_cert(
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
-    response_desc = {
+    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
+
+
+@patch(
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+def test_create_cert_returns_existing_cert_if_it_is_issued(
+    _wait_for_certificate_validation, acm_session, route53_session
+):
+    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+
+    existing_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf"
+    response_cert_list = {
+        "CertificateSummaryList": [
+            {
+                "CertificateArn": existing_cert_arn,
+                "DomainName": "test.1234",
+                "SubjectAlternativeNameSummaries": ["v2.demodjango.john.uktrade.digital"],
+                "Status": "ISSUED",
+                "InUse": True,
+                "RenewalEligibility": "ELIGIBLE",
+            }
+        ]
+    }
+
+    with Stubber(acm_session) as acm_stub:
+        acm_stub.add_response(
+            "list_certificates",
+            response_cert_list,
+            {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+        )
+        assert existing_cert_arn == create_cert(acm_session, route53_session, "test.1234", 1)
+
+
+@patch(
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+@patch("click.confirm")
+def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_pending(
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
+    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+
+    domain = "test.1234"
+    old_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf"
+    response_cert_list = {
+        "CertificateSummaryList": [
+            {
+                "CertificateArn": old_cert_arn,
+                "DomainName": domain,
+                "SubjectAlternativeNameSummaries": ["v2.demodjango.john.uktrade.digital"],
+                "Status": "PENDING_VALIDATION",
+                "InUse": True,
+                "RenewalEligibility": "ELIGIBLE",
+            }
+        ]
+    }
+
+    cert_desc_response = {
         "Certificate": {
-            "CertificateArn": "arn:1234567890123456789",
-            "DomainName": "test.domain",
             "DomainValidationOptions": [
                 {
-                    "DomainName": "test.domain",
-                    "ValidationStatus": "SUCCESS",
+                    "DomainName": domain,
                     "ResourceRecord": {
-                        "Name": "test.record",
+                        "Name": "some-acm-name.1234",
+                        "Value": "some-acm-value",
                         "Type": "CNAME",
-                        "Value": "pointing.to.this",
                     },
-                    "ValidationMethod": "DNS",
                 },
             ],
         }
     }
-    expected_params = {"CertificateArn": "arn:1234567890123456789"}
 
-    stubber.add_response("describe_certificate", response_desc, expected_params)
-    with stubber:
-        acm_session.describe_certificate(CertificateArn="arn:1234567890123456789")
+    new_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/something-n3w"
 
-    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
+    with Stubber(acm_session) as acm_stub:
+        acm_stub.add_response(
+            "list_certificates",
+            response_cert_list,
+            {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+        )
+        acm_stub.add_response(
+            "delete_certificate",
+            {},
+            {"CertificateArn": old_cert_arn},
+        )
+        acm_stub.add_response(
+            "request_certificate",
+            {"CertificateArn": new_cert_arn},
+            {"DomainName": domain, "ValidationMethod": "DNS"},
+        )
+        acm_stub.add_response(
+            "describe_certificate", cert_desc_response, {"CertificateArn": new_cert_arn}
+        )
+        actual_cert_arn = create_cert(acm_session, route53_session, domain, 1)
+
+        assert new_cert_arn == actual_cert_arn
 
 
 def test_add_records(route53_session):
@@ -120,6 +191,31 @@ def test_create_hosted_zone(mock_click, route53_session):
     assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
 
 
+@pytest.mark.parametrize(
+    "zones_to_delete",
+    [
+        ["test.1234."],
+        ["test.test.1234."],
+        ["test.1234.", "test.test.1234."],
+    ],
+)
+@patch("click.confirm")
+def test_create_records_works_when_base_zone_already_has_records(
+    mock_click, route53_session, zones_to_delete
+):
+    route53_session.create_hosted_zone(Name="1234.", CallerReference="1234")
+    create_hosted_zone(route53_session, "test.test.test.1234", "test.1234", 1)
+    zones = {
+        hz["Name"]: hz["Id"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]
+    }
+    for zone in zones_to_delete:
+        route53_session.delete_hosted_zone(Id=(zones[zone]))
+
+    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
+    zones = [hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]]
+    assert {"test.test.1234.", "test.1234.", "1234."} == set(zones)
+
+
 # Listcertificates is not implementaed in moto acm. Neeed to patch it
 @patch(
     "dbt_copilot_helper.commands.dns.create_cert",
@@ -133,13 +229,13 @@ def test_check_r53(create_cert, route53_session):
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain(check_aws_conn, check_r53, fakefs):
+def test_configure(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -156,7 +252,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        check_domain,
+        configure,
         ["--domain-profile", "dev", "--project-profile", "foo", "--base-domain", "test.1234"],
     )
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nEnvironment: staging => Domain: v2.app.staging.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\nDomain: v2.app.staging.test.12345\t => Cert ARN: arn:1234\n"
@@ -165,13 +261,13 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain_env_flag(check_aws_conn, check_r53, fakefs):
+def test_configure_env_flag(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -192,7 +288,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        check_domain,
+        configure,
         [
             "--domain-profile",
             "dev",
@@ -210,14 +306,55 @@ environments:
     assert result.output == expected
 
 
+def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        configure,
+        [
+            "--domain-profile",
+            "dev",
+            "--project-profile",
+            "foo",
+            "--base-domain",
+            "test.1234",
+            "--env",
+            "dev",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "copilot directory appears to be missing" in result.stderr
+
+
+def test_configure_with_no_manifests_exits_with_error(fakefs):
+    fakefs.create_dir("copilot")
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        configure,
+        [
+            "--domain-profile",
+            "dev",
+            "--project-profile",
+            "foo",
+            "--base-domain",
+            "test.1234",
+            "--env",
+            "dev",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "no manifest files were found" in result.stderr
+
+
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_check_domain_live_domain_profile(check_aws_conn, check_r53, fakefs):
+def test_configure_live_domain_profile(get_aws_session_or_abort, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -234,7 +371,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        check_domain,
+        configure,
         ["--domain-profile", "live", "--project-profile", "foo", "--base-domain", "test.1234"],
     )
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: prod => Domain: v2.app.prod.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.prod.test.12345\t => Cert ARN: arn:1234\n"
@@ -243,16 +380,16 @@ environments:
 
 
 @patch(
-    "dbt_copilot_helper.commands.dns.check_aws_conn",
+    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch("dbt_copilot_helper.commands.dns.check_response", return_value="{}")
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign_domain(check_aws_conn, check_response, ensure_cwd_is_repo_root):
+def test_assign(get_aws_session_or_abort, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
     result = runner.invoke(
-        assign_domain,
+        assign,
         [
             "--app",
             "some-app",

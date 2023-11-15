@@ -8,10 +8,11 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_copilot_helper.utils.aws import check_aws_conn
 from dbt_copilot_helper.utils.aws import check_response
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -27,7 +28,7 @@ MAX_DOMAIN_DEPTH = 2
 AWS_CERT_REGION = "eu-west-2"
 
 
-def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
+def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
     click.secho(f"Waiting up to {timeout} seconds for certificate to be validated...", fg="yellow")
     status = acm_client.describe_certificate(CertificateArn=certificate_arn)["Certificate"][
         "Status"
@@ -58,26 +59,16 @@ def wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, 
 
 
 def create_cert(client, domain_client, domain, base_len):
-    # Check if cert is present.
-    arn = ""
-    resp = client.list_certificates(
-        CertificateStatuses=[
-            "PENDING_VALIDATION",
-            "ISSUED",
-            "INACTIVE",
-            "EXPIRED",
-            "VALIDATION_TIMED_OUT",
-            "REVOKED",
-            "FAILED",
-        ],
-        MaxItems=500,
-    )
-
-    # Need to check if cert status is issued, if pending need to update dns
-    for cert in resp["CertificateSummaryList"]:
-        if domain == cert["DomainName"]:
+    for cert in _certs_for_domain(client, domain):
+        if cert["Status"] == "ISSUED":
             click.secho("Certificate already exists, do not need to create.", fg="green")
             return cert["CertificateArn"]
+        else:
+            click.secho(
+                f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
+                fg="yellow",
+            )
+            client.delete_certificate(CertificateArn=cert["CertificateArn"])
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
@@ -86,39 +77,17 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    parts = domain.split(".")
+    domain_to_create = _get_domain_to_create(base_len, domain)
 
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
-    click.secho(domain_to_create, fg="yellow")
-    # cert_client = DNSValidatedACMCertClient(domain=domain, profile='intranet')
-    response = client.request_certificate(DomainName=domain, ValidationMethod="DNS")
-
-    arn = response["CertificateArn"]
+    arn = _request_cert(client, domain)
 
     # Create DNS validation records
-    # Need a pause for it to populate the DNS resource records
-    response = client.describe_certificate(CertificateArn=arn)
-    while (
-        response["Certificate"].get("DomainValidationOptions") is None
-        or response["Certificate"]["DomainValidationOptions"][0].get("ResourceRecord") is None
-    ):
-        click.secho("Waiting for DNS records...", fg="yellow")
-        time.sleep(2)
-        response = client.describe_certificate(CertificateArn=arn)
+    cert_record = _get_certificate_record(arn, client)
+    domain_id = _get_domain_id(domain_client, domain_to_create)
 
-    cert_record = response["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
-
-    click.secho(f"Looking fo ID of domain {domain_to_create}...", fg="yellow")
-    domain_id = False
-    response = domain_client.list_hosted_zones_by_name()
-    for hz in response["HostedZones"]:
-        if hz["Name"] == domain_to_create:
-            domain_id = hz["Id"]
-            break
     if not domain_id:
-        # Will got here more than once during manual testing, it might be a race condition we need to handle better
+        # Will got here more than once during manual testing,
+        # it might be a race condition we need to handle better
         click.secho(
             f"Unable to find Domain ID for {domain_to_create} in the hosted zones",
             fg="red",
@@ -138,7 +107,18 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    response = domain_client.change_resource_record_sets(
+    _create_resource_records(cert_record, domain_client, domain_id)
+
+    # Wait for certificate to get to validation state before continuing.
+    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
+    # and wants to give it a chance to take longer in case that's all that's wrong.
+    _wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
+
+    return arn
+
+
+def _create_resource_records(cert_record, domain_client, domain_id):
+    domain_client.change_resource_record_sets(
         HostedZoneId=domain_id,
         ChangeBatch={
             "Changes": [
@@ -157,11 +137,60 @@ def create_cert(client, domain_client, domain, base_len):
         },
     )
 
-    # Wait for certificate to get to validation state before continuing.
-    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
-    # and wants to give it a chance to take longer in case that's all that's wrong.
-    wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
 
+def _get_domain_id(domain_client, domain_to_create):
+    click.secho(f"Looking for ID of domain {domain_to_create}...", fg="yellow")
+    hosted_zones = domain_client.list_hosted_zones_by_name()["HostedZones"]
+
+    for hz in hosted_zones:
+        if hz["Name"] == domain_to_create:
+            return hz["Id"]
+
+
+def _get_domain_to_create(base_len, domain):
+    parts = domain.split(".")
+    # We only want to create domains max 2 deep so remove all sub domains in excess
+    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
+    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
+    click.secho(domain_to_create, fg="yellow")
+    return domain_to_create
+
+
+def _certs_for_domain(client, domain):
+    # Check if cert is present.
+    cert_list = client.list_certificates(
+        CertificateStatuses=[
+            "PENDING_VALIDATION",
+            "ISSUED",
+            "INACTIVE",
+            "EXPIRED",
+            "VALIDATION_TIMED_OUT",
+            "REVOKED",
+            "FAILED",
+        ],
+        MaxItems=500,
+    )["CertificateSummaryList"]
+    certs_for_domain = [cert for cert in cert_list if cert["DomainName"] == domain]
+    return certs_for_domain
+
+
+def _get_certificate_record(arn, client):
+    # Need a pause for it to populate the DNS resource records
+    cert_description = client.describe_certificate(CertificateArn=arn)
+    while (
+        cert_description["Certificate"].get("DomainValidationOptions") is None
+        or cert_description["Certificate"]["DomainValidationOptions"][0].get("ResourceRecord")
+        is None
+    ):
+        click.secho("Waiting for DNS records...", fg="yellow")
+        time.sleep(2)
+        cert_description = client.describe_certificate(CertificateArn=arn)
+    return cert_description["Certificate"]["DomainValidationOptions"][0]["ResourceRecord"]
+
+
+def _request_cert(client, domain):
+    cert_response = client.request_certificate(DomainName=domain, ValidationMethod="DNS")
+    arn = cert_response["CertificateArn"]
     return arn
 
 
@@ -288,7 +317,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
             ChangeBatch={
                 "Changes": [
                     {
-                        "Action": "CREATE",
+                        "Action": "UPSERT",
                         "ResourceRecordSet": {
                             "Name": subdom,
                             "Type": "NS",
@@ -304,28 +333,18 @@ def create_hosted_zone(client, domain, start_domain, base_len):
 
 
 def check_r53(domain_session, project_session, domain, base_domain):
+    # Sanitise base domain
+    base_domain = base_domain.rstrip(".") + "."
+
     # find the hosted zone
     domain_client = domain_session.client("route53")
     acm_client = project_session.client("acm", region_name=AWS_CERT_REGION)
 
     # create the certificate
     response = domain_client.list_hosted_zones_by_name()
+    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
 
-    hosted_zones = {}
-    for hz in response["HostedZones"]:
-        hosted_zones[hz["Name"]] = hz
-
-    # Check if base domain is valid
-    if base_domain[-1] != ".":
-        base_domain = base_domain + "."
-
-    if base_domain not in hosted_zones:
-        click.secho(
-            f"The base domain: {base_domain} does not exist in your AWS domain account \
-                {response['HostedZones']}",
-            fg="red",
-        )
-        exit()
+    abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
 
     base_len = len(base_domain.split(".")) - 1
     parts = domain.split(".")
@@ -353,6 +372,15 @@ def check_r53(domain_session, project_session, domain, base_domain):
     cert_arn = create_cert(acm_client, domain_client, domain, base_len)
 
     return cert_arn
+
+
+def abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
+    if base_domain not in hosted_zones:
+        click.secho(
+            f"The base domain: {base_domain} does not exist in your AWS domain account {hosted_zones}",
+            fg="red",
+        )
+        exit()
 
 
 def get_load_balancer_domain_and_configuration(
@@ -460,8 +488,9 @@ def domain():
 )
 @click.option("--base-domain", help="root domain", required=True)
 @click.option("--env", help="AWS Copilot environment name", required=False)
-def check_domain(domain_profile, project_profile, base_domain, env):
-    """Scans to see if Domain exists."""
+def configure(domain_profile, project_profile, base_domain, env):
+    """Creates missing subdomains (up to 2 levels deep) if they do not already
+    exist and creates certificates for those subdomains."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
     # which have been created:
@@ -471,58 +500,45 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 
     path = "copilot"
 
-    domain_session = check_aws_conn(domain_profile)
-    project_session = check_aws_conn(project_profile)
-
     if not os.path.exists(path):
-        click.secho("Please check path, manifest file not found", fg="red")
-        exit()
+        abort_with_error("Please check path, copilot directory appears to be missing.")
 
-    if path.split(".")[-1] == "yml" or path.split(".")[-1] == "yaml":
-        click.secho("Please do not include the filename in the path", fg="red")
-        exit()
+    manifests = _get_manifests(path)
+
+    if not manifests:
+        abort_with_error("Please check path, no manifest files were found")
+
+    domain_session = get_aws_session_or_abort(domain_profile)
+    project_session = get_aws_session_or_abort(project_profile)
 
     cert_list = {}
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if file == "manifest.yml" or file == "manifest.yaml":
-                # Need to check that the manifest file is correctly configured.
-                with open(os.path.join(root, file), "r") as fd:
-                    conf = yaml.safe_load(fd)
-                    if "environments" in conf:
-                        click.echo(
-                            click.style("Checking file: ", fg="cyan")
-                            + click.style(os.path.join(root, file), fg="white"),
-                        )
-                        click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                        environments = conf["environments"].items()
+    for manifest in manifests:
+        # Need to check that the manifest file is correctly configured.
+        with open(manifest, "r") as fd:
+            conf = yaml.safe_load(fd)
+            if "environments" in conf:
+                click.echo(
+                    click.style("Checking file: ", fg="cyan") + click.style(manifest, fg="white"),
+                )
+                click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                        if domain_profile == "live":
-                            environments = [
-                                e for e in environments if e[0] in ["prod", "production"]
-                            ]
-                        else:
-                            environments = [
-                                e for e in environments if e[0] not in ["prod", "production"]
-                            ]
+                environments = _get_environments(conf, domain_profile, env)
 
-                        if env:
-                            environments = [e for e in environments if e[0] == env]
-
-                        for env, domain in environments:
-                            click.secho(
-                                "\nEnvironment: " + env + " => Domain: " + domain["http"]["alias"],
-                                fg="yellow",
-                                bold=True,
-                            )
-                            cert_arn = check_r53(
-                                domain_session,
-                                project_session,
-                                domain["http"]["alias"],
-                                base_domain,
-                            )
-                            cert_list.update({domain["http"]["alias"]: cert_arn})
+                for env, domain in environments:
+                    http_alias = domain["http"]["alias"]
+                    click.secho(
+                        "\nEnvironment: " + env + " => Domain: " + http_alias,
+                        fg="yellow",
+                        bold=True,
+                    )
+                    cert_arn = check_r53(
+                        domain_session,
+                        project_session,
+                        http_alias,
+                        base_domain,
+                    )
+                    cert_list.update({http_alias: cert_arn})
 
     if cert_list:
         click.secho("\nHere are your Certificate ARNs:", fg="cyan")
@@ -530,6 +546,26 @@ def check_domain(domain_profile, project_profile, base_domain, env):
             click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
     else:
         click.secho("No domains found, please check the manifest file", fg="red")
+
+
+def _get_environments(conf, domain_profile, env):
+    environments = conf["environments"].items()
+    if domain_profile == "live":
+        environments = [e for e in environments if e[0] in ["prod", "production"]]
+    else:
+        environments = [e for e in environments if e[0] not in ["prod", "production"]]
+    if env:
+        environments = [e for e in environments if e[0] == env]
+    return environments
+
+
+def _get_manifests(path):
+    manifests = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file == "manifest.yml" or file == "manifest.yaml":
+                manifests.append(os.path.join(root, file))
+    return manifests
 
 
 @domain.command()
@@ -545,10 +581,10 @@ def check_domain(domain_profile, project_profile, base_domain, env):
 @click.option(
     "--project-profile", help="AWS account profile name for application account", required=True
 )
-def assign_domain(app, domain_profile, project_profile, svc, env):
-    """Check Route53 domain is pointing to the correct ECS Load Balancer."""
-    domain_session = check_aws_conn(domain_profile)
-    project_session = check_aws_conn(project_profile)
+def assign(app, domain_profile, project_profile, svc, env):
+    """Assigns the load balancer for a service to its domain name."""
+    domain_session = get_aws_session_or_abort(domain_profile)
+    project_session = get_aws_session_or_abort(project_profile)
 
     ensure_cwd_is_repo_root()
 

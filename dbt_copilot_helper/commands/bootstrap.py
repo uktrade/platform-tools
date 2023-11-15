@@ -9,7 +9,7 @@ from cloudfoundry_client.client import CloudFoundryClient
 
 from dbt_copilot_helper.utils.application import get_application_name
 from dbt_copilot_helper.utils.aws import SSM_PATH
-from dbt_copilot_helper.utils.aws import check_aws_conn
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.aws import get_ssm_secret_names
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
@@ -137,7 +137,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     AWS_PROFILE=myaccount copilot-bootstrap.py ...
     """
 
-    check_aws_conn(project_profile)
+    get_aws_session_or_abort(project_profile)
     # TODO: optional SSM or secret manager
 
     cf_client = CloudFoundryClient.build_from_cf_config()
@@ -233,7 +233,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
 @click.option("--project-profile", required=True, help="AWS account profile name")
 def copy_secrets(project_profile, source_environment, target_environment):
     """Copy secrets from one environment to a new environment."""
-    check_aws_conn(project_profile)
+    get_aws_session_or_abort(project_profile)
 
     if not Path(f"copilot/environments/{target_environment}").exists():
         click.echo(f"""Target environment manifest for "{target_environment}" does not exist.""")
