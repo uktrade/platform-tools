@@ -12,10 +12,10 @@ from moto import mock_ecs
 from moto import mock_elbv2
 
 from dbt_copilot_helper.commands.dns import add_records
-from dbt_copilot_helper.commands.dns import assign_domain
+from dbt_copilot_helper.commands.dns import assign
 from dbt_copilot_helper.commands.dns import check_for_records
 from dbt_copilot_helper.commands.dns import check_r53
-from dbt_copilot_helper.commands.dns import configure_domain
+from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
@@ -237,7 +237,7 @@ def test_check_r53(create_cert, route53_session):
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure_domain(check_and_return_aws_session, check_r53, fakefs):
+def test_configure(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -254,7 +254,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        configure_domain,
+        configure,
         ["--domain-profile", "dev", "--project-profile", "foo", "--base-domain", "test.1234"],
     )
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nEnvironment: staging => Domain: v2.app.staging.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\nDomain: v2.app.staging.test.12345\t => Cert ARN: arn:1234\n"
@@ -269,7 +269,7 @@ environments:
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure_domain_env_flag(check_and_return_aws_session, check_r53, fakefs):
+def test_configure_env_flag(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -290,7 +290,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        configure_domain,
+        configure,
         [
             "--domain-profile",
             "dev",
@@ -311,10 +311,10 @@ environments:
     assert result.output == expected
 
 
-def test_configure_domain_copilot_dir_does_not_exist_exits_with_error(fakefs):
+def test_configure_copilot_dir_does_not_exist_exits_with_error(fakefs):
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
-        configure_domain,
+        configure,
         [
             "--domain-profile",
             "dev",
@@ -331,11 +331,11 @@ def test_configure_domain_copilot_dir_does_not_exist_exits_with_error(fakefs):
     assert "copilot directory appears to be missing" in result.stderr
 
 
-def test_configure_domain_no_manifests_exits_with_error(fakefs):
+def test_configure_no_manifests_exits_with_error(fakefs):
     fakefs.create_dir("copilot")
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
-        configure_domain,
+        configure,
         [
             "--domain-profile",
             "dev",
@@ -359,7 +359,7 @@ def test_configure_domain_no_manifests_exits_with_error(fakefs):
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure_domain_live_domain_profile(check_and_return_aws_session, check_r53, fakefs):
+def test_configure_live_domain_profile(check_and_return_aws_session, check_r53, fakefs):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
@@ -376,7 +376,7 @@ environments:
 
     runner = CliRunner()
     result = runner.invoke(
-        configure_domain,
+        configure,
         ["--domain-profile", "live", "--project-profile", "foo", "--base-domain", "test.1234"],
     )
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: prod => Domain: v2.app.prod.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.prod.test.12345\t => Cert ARN: arn:1234\n"
@@ -391,10 +391,10 @@ environments:
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign_domain(check_and_return_aws_session, check_response, ensure_cwd_is_repo_root):
+def test_assign(check_and_return_aws_session, check_response, ensure_cwd_is_repo_root):
     runner = CliRunner()
     result = runner.invoke(
-        assign_domain,
+        assign,
         [
             "--app",
             "some-app",

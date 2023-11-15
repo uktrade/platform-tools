@@ -487,7 +487,7 @@ def domain():
 )
 @click.option("--base-domain", help="root domain", required=True)
 @click.option("--env", help="AWS Copilot environment name", required=False)
-def configure_domain(domain_profile, project_profile, base_domain, env):
+def configure(domain_profile, project_profile, base_domain, env):
     """Scans to see if Domain exists."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
@@ -579,7 +579,7 @@ def _get_manifests(path):
 @click.option(
     "--project-profile", help="AWS account profile name for application account", required=True
 )
-def assign_domain(app, domain_profile, project_profile, svc, env):
+def assign(app, domain_profile, project_profile, svc, env):
     """Check Route53 domain is pointing to the correct ECS Load Balancer."""
     domain_session = check_and_return_aws_session(domain_profile)
     project_session = check_and_return_aws_session(project_profile)

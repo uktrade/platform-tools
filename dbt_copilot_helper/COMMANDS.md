@@ -23,8 +23,8 @@
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
-- [copilot-helper domain configure-domain](#copilot-helper-domain-configure-domain)
-- [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
+- [copilot-helper domain configure](#copilot-helper-domain-configure)
+- [copilot-helper domain assign](#copilot-helper-domain-assign)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper svc](#copilot-helper-svc)
@@ -565,7 +565,7 @@ copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-copilot-helper domain (configure-domain|assign-domain) 
+copilot-helper domain (configure|assign) 
 ```
 
 ## Options
@@ -575,10 +575,10 @@ copilot-helper domain (configure-domain|assign-domain)
 
 ## Commands
 
-- [`assign-domain` ↪](#copilot-helper-domain-assign-domain)
-- [`configure-domain` ↪](#copilot-helper-domain-configure-domain)
+- [`assign` ↪](#copilot-helper-domain-assign)
+- [`configure` ↪](#copilot-helper-domain-configure)
 
-# copilot-helper domain configure-domain
+# copilot-helper domain configure
 
 [↩ Parent](#copilot-helper-domain)
 
@@ -587,10 +587,8 @@ copilot-helper domain (configure-domain|assign-domain)
 ## Usage
 
 ```
-copilot-helper domain configure-domain --domain-profile (dev|live) 
-                                       --project-profile <project_profile> 
-                                       --base-domain <base_domain> 
-                                       [--env <env>] 
+copilot-helper domain configure --domain-profile (dev|live) --project-profile <project_profile> 
+                                --base-domain <base_domain> [--env <env>] 
 ```
 
 ## Options
@@ -606,7 +604,7 @@ copilot-helper domain configure-domain --domain-profile (dev|live)
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# copilot-helper domain assign-domain
+# copilot-helper domain assign
 
 [↩ Parent](#copilot-helper-domain)
 
@@ -615,9 +613,8 @@ copilot-helper domain configure-domain --domain-profile (dev|live)
 ## Usage
 
 ```
-copilot-helper domain assign-domain --app <app> --env <env> --svc <svc> 
-                                    --domain-profile (dev|live) 
-                                    --project-profile <project_profile> 
+copilot-helper domain assign --app <app> --env <env> --svc <svc> 
+                             --domain-profile (dev|live) --project-profile <project_profile> 
 ```
 
 ## Options
