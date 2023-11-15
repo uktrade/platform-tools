@@ -487,7 +487,7 @@ def domain():
 )
 @click.option("--base-domain", help="root domain", required=True)
 @click.option("--env", help="AWS Copilot environment name", required=False)
-def check_domain(domain_profile, project_profile, base_domain, env):
+def configure_domain(domain_profile, project_profile, base_domain, env):
     """Scans to see if Domain exists."""
 
     # If you need to reset to debug this command, you will need to delete any of the following

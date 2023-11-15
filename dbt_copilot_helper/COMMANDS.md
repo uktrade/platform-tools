@@ -23,7 +23,7 @@
 - [copilot-helper copilot make-addons](#copilot-helper-copilot-make-addons)
 - [copilot-helper copilot get-env-secrets](#copilot-helper-copilot-get-env-secrets)
 - [copilot-helper domain](#copilot-helper-domain)
-- [copilot-helper domain check-domain](#copilot-helper-domain-check-domain)
+- [copilot-helper domain configure-domain](#copilot-helper-domain-configure-domain)
 - [copilot-helper domain assign-domain](#copilot-helper-domain-assign-domain)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
@@ -565,7 +565,7 @@ copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-copilot-helper domain (check-domain|assign-domain) 
+copilot-helper domain (configure-domain|assign-domain) 
 ```
 
 ## Options
@@ -576,9 +576,9 @@ copilot-helper domain (check-domain|assign-domain)
 ## Commands
 
 - [`assign-domain` ↪](#copilot-helper-domain-assign-domain)
-- [`check-domain` ↪](#copilot-helper-domain-check-domain)
+- [`configure-domain` ↪](#copilot-helper-domain-configure-domain)
 
-# copilot-helper domain check-domain
+# copilot-helper domain configure-domain
 
 [↩ Parent](#copilot-helper-domain)
 
@@ -587,8 +587,10 @@ copilot-helper domain (check-domain|assign-domain)
 ## Usage
 
 ```
-copilot-helper domain check-domain --domain-profile (dev|live) --project-profile <project_profile> 
-                                   --base-domain <base_domain> [--env <env>] 
+copilot-helper domain configure-domain --domain-profile (dev|live) 
+                                       --project-profile <project_profile> 
+                                       --base-domain <base_domain> 
+                                       [--env <env>] 
 ```
 
 ## Options
