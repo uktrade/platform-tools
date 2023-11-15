@@ -204,7 +204,7 @@ def test_create_records_works_when_base_zone_already_has_records(
     mock_click, route53_session, zones_to_delete
 ):
     route53_session.create_hosted_zone(Name="1234.", CallerReference="1234")
-    create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
+    create_hosted_zone(route53_session, "test.test.test.1234", "test.1234", 1)
     zones = {
         hz["Name"]: hz["Id"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]
     }
@@ -213,8 +213,7 @@ def test_create_records_works_when_base_zone_already_has_records(
 
     assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
     zones = [hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]]
-    assert "test.test.1234." in zones
-    assert "test.1234." in zones
+    assert {"test.test.1234.", "test.1234.", "1234."} == set(zones)
 
 
 # Listcertificates is not implementaed in moto acm. Neeed to patch it

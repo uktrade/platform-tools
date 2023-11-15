@@ -86,7 +86,8 @@ def create_cert(client, domain_client, domain, base_len):
     domain_id = _get_domain_id(domain_client, domain_to_create)
 
     if not domain_id:
-        # Will got here more than once during manual testing, it might be a race condition we need to handle better
+        # Will got here more than once during manual testing,
+        # it might be a race condition we need to handle better
         click.secho(
             f"Unable to find Domain ID for {domain_to_create} in the hosted zones",
             fg="red",
