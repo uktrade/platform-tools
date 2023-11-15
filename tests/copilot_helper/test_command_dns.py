@@ -55,9 +55,8 @@ def test_create_cert_with_no_existing_cert_creates_a_cert(
     "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
 )
-@patch("click.confirm")
 def test_create_cert_returns_existing_cert_if_it_is_issued(
-    _wait_for_certificate_validation, mock_click, acm_session, route53_session
+    _wait_for_certificate_validation, acm_session, route53_session
 ):
     route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
