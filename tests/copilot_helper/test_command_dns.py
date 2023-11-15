@@ -304,13 +304,10 @@ environments:
 
     expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\n"
 
-    # Check calls to check_r53
-    # Check calls to check_and_return_aws_session
-
     assert result.output == expected
 
 
-def test_configure_copilot_dir_does_not_exist_exits_with_error(fakefs):
+def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         configure,
@@ -330,7 +327,7 @@ def test_configure_copilot_dir_does_not_exist_exits_with_error(fakefs):
     assert "copilot directory appears to be missing" in result.stderr
 
 
-def test_configure_no_manifests_exits_with_error(fakefs):
+def test_configure_with_no_manifests_exits_with_error(fakefs):
     fakefs.create_dir("copilot")
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
