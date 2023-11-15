@@ -60,7 +60,7 @@ def version_should_be_bumped(files):
     return False
 
 
-def get_changed_files():
+def _get_changed_files():
     merge_base = subprocess.run(
         ["git", "merge-base", "HEAD", "main"], capture_output=True, text=True
     ).stdout.strip()
@@ -72,5 +72,5 @@ def get_changed_files():
 
 
 if __name__ == "__main__":
-    bump_required = version_should_be_bumped(get_changed_files())
+    bump_required = version_should_be_bumped(_get_changed_files())
     exit(bump_version_if_required(get_releases(), bump_required))

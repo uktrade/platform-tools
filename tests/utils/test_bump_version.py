@@ -21,7 +21,7 @@ def test_get_pyproject_version(fs):
 
 
 @pytest.mark.parametrize(
-    "version, bump_version, expected_version,expected_return_code",
+    "version, bump_version, expected_version, expected_return_code",
     [
         ("1.2.3", True, "1.2.5", 1),
         ("1.2.3", False, "1.2.4", 1),
@@ -34,10 +34,10 @@ def test_get_pyproject_version(fs):
 def test_bump_version_if_required(
     version, bump_version, expected_version, expected_return_code, fs, capsys
 ):
-    versions = ["1.1.1", "1.1.2", "1.2.3", "1.2.4"]
+    published_versions = ["1.1.1", "1.1.2", "1.2.3", "1.2.4"]
     fs.create_file(f"{BASE_DIR}/pyproject.toml", contents=PYPROJECT_CONTENT % version)
 
-    return_code = bump_version_if_required(versions, bump_version)
+    return_code = bump_version_if_required(published_versions, bump_version)
 
     assert return_code == expected_return_code
     assert get_pyproject_version() == semver.Version.parse(expected_version)
@@ -71,5 +71,5 @@ def test_bump_version_if_required(
         ),
     ],
 )
-def test_version_should_be_bumped(files, bump_expected):
+def test_version_should_be_bumped_based_on_modified_files(files, bump_expected):
     assert version_should_be_bumped(files) == bump_expected
