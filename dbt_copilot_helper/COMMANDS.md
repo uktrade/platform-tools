@@ -582,7 +582,8 @@ copilot-helper domain (configure|assign)
 
 [↩ Parent](#copilot-helper-domain)
 
-    Scans to see if Domain exists.
+    Creates missing subdomains (up to 2 levels deep) if they do not already
+    exist and creates certificates for those subdomains.
 
 ## Usage
 
@@ -608,7 +609,7 @@ copilot-helper domain configure --domain-profile (dev|live) --project-profile <p
 
 [↩ Parent](#copilot-helper-domain)
 
-    Check Route53 domain is pointing to the correct ECS Load Balancer.
+    Assigns the load balancer for a service to its domain name.
 
 ## Usage
 

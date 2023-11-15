@@ -44,18 +44,25 @@ def bump_version_if_required(versions, bump_version):
     return 1
 
 
+def _is_in(filepath: Path, directories: list[str]):
+    for d in directories:
+        try:
+            filepath.relative_to(Path(d))
+            return True
+        except ValueError:
+            # File is not in the directory
+            pass
+
+
 def version_should_be_bumped(files):
     for f in files:
         filepath = Path(f)
         if filepath.name == "README.md":
             continue
-        parents = list(str(p) for p in filepath.parents)
-        # Each parent is the full path from the root.
-        # We don't need to bump if it is just tests that have changed:
-        if "tests" in parents:
-            continue
-
-        return True
+        if _is_in(filepath, ["dbt_copilot_helper", "utils"]):
+            return True
+        if str(filepath) in ["copilot_helper.py", "pyproject.toml", "poetry.lock"]:
+            return True
 
     return False
 

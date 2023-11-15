@@ -60,6 +60,10 @@ def test_bump_version_if_required(
         (["README.md"], False),
         (["pyproject.toml"], True),
         (["tests/utils/test_check_pypi.py"], False),
+        (["utils/check_pypi.py"], True),
+        (["copilot_helper.py"], True),
+        (["pyproject.toml"], True),
+        (["poetry.lock"], True),
         (
             [
                 "dbt_copilot_helper/utils/aws.py",
@@ -68,6 +72,17 @@ def test_bump_version_if_required(
                 "tests/utils/test_check_pypi.py",
             ],
             True,
+        ),
+        (
+            [
+                "pytest.ini",
+                "addons-example.yml",
+                ".tool-versions",
+                "migration-tools/combine-ci-paas-config.py",
+                "images/conduit/opensearch/Dockerfile",
+                "images/conduit/README.md",
+            ],
+            False,
         ),
     ],
 )
