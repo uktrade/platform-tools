@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import time
 from typing import Tuple
 
@@ -330,6 +331,45 @@ def create_hosted_zone(client, domain, start_domain, base_len):
         )
 
     return True
+
+
+class InvalidDomainException(Exception):
+    pass
+
+
+def _get_subdomains_from_base(base: list[str], subdomain: list[str]):
+    if base == subdomain:
+        return []
+    return [subdomain] + _get_subdomains_from_base(base, subdomain[1:])
+
+
+def get_required_subdomains(base_domain: str, subdomain: str):
+    _validate_subdomain(base_domain, subdomain)
+    domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
+
+    domains = [".".join(domain) for domain in domains_as_lists]
+    domains.reverse()
+    return domains
+
+
+def _validate_subdomain(base_domain, subdomain):
+    errors = []
+    if not subdomain.endswith("." + base_domain):
+        errors.append(f"{subdomain} is not a subdomain of {base_domain}")
+
+    errors.extend(_validate_basic_domain_syntax("Domain", base_domain))
+    errors.extend(_validate_basic_domain_syntax("Subdomain", subdomain))
+
+    if errors:
+        raise InvalidDomainException("\n".join(errors))
+
+
+def _validate_basic_domain_syntax(type, domain):
+    errors = []
+    if ".." in domain or not re.match(r"^[0-9a-zA-Z-.]+$", domain):
+        errors.append(f"{type} {domain} is not a valid domain")
+
+    return errors
 
 
 def check_r53(domain_session, project_session, domain, base_domain):

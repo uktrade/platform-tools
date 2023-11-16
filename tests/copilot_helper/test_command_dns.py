@@ -11,6 +11,7 @@ from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_elbv2
 
+from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
 from dbt_copilot_helper.commands.dns import check_for_records
@@ -19,6 +20,7 @@ from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
+from dbt_copilot_helper.commands.dns import get_required_subdomains
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
 ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
@@ -494,3 +496,72 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
     assert load_balancer_configuration["LoadBalancerName"] == "foo"
     assert load_balancer_configuration["VpcId"] == mocked_vpc_id
     assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
+
+
+def test_get_required_subdomains_returns_the_expected_subdomains():
+    base_domain = "uktrade.digital"
+    subdomain = "v2.url-protection-checker.uktrade.digital"
+
+    domains = get_required_subdomains(base_domain, subdomain)
+
+    assert [
+        "url-protection-checker.uktrade.digital",
+        "v2.url-protection-checker.uktrade.digital",
+    ] == domains
+
+
+@pytest.mark.parametrize(
+    "domain, subdomain",
+    [
+        ("xyz.com", "www.google.com"),
+        ("uktrade.digital", "www.google.com"),
+        ("uktrade.digital", "one.two.uktrade"),
+        ("uktrade.digital", "one.two.digital"),
+        ("uktrade.digital", "one.two.uktrade.digital.gov.uk"),
+        ("uktrade.digital", "one.two-uktrade.digital"),
+    ],
+)
+def test_get_required_subdomains_throws_exception_if_subdomain_and_base_domain_do_not_match(
+    domain, subdomain
+):
+    with pytest.raises(InvalidDomainException, match=f"{subdomain} is not a subdomain of {domain}"):
+        get_required_subdomains(domain, subdomain)
+
+
+@pytest.mark.parametrize(
+    "domain",
+    [
+        "uk_trade.digital",
+        "uktrade..digital",
+    ],
+)
+def test_get_required_subdomains_throws_exception_if_base_domain_is_invalid(domain):
+    with pytest.raises(InvalidDomainException, match=f"Domain {domain} is not a valid domain"):
+        get_required_subdomains(domain, f"web.{domain}")
+
+
+@pytest.mark.parametrize(
+    "subdomain",
+    [
+        "web_site.uktrade.digital",
+        "web..uktrade.digital",
+    ],
+)
+def test_get_required_subdomains_throws_exception_if_subdomain_is_invalid(subdomain):
+    with pytest.raises(
+        InvalidDomainException, match=f"Subdomain {subdomain} is not a valid domain"
+    ):
+        get_required_subdomains("uktrade.digital", subdomain)
+
+
+def test_get_required_subdomains_throws_exception_with_multiple_errors():
+    base_domain = "uk!trade.digital"
+    subdomain = "subdom..uktrade.digital"
+
+    with pytest.raises(InvalidDomainException) as exc_info:
+        get_required_subdomains(base_domain, subdomain)
+
+    message = exc_info.value.args[0]
+    assert f"Domain {base_domain} is not a valid domain" in message
+    assert f"Subdomain {subdomain} is not a valid domain" in message
+    assert f"{subdomain} is not a subdomain of {base_domain}" in message
