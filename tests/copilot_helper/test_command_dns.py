@@ -21,6 +21,7 @@ from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
+from dbt_copilot_helper.commands.dns import validate_subdomains
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
 ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
@@ -188,9 +189,9 @@ def test_add_records(route53_session):
 
 @patch("click.confirm")
 def test_create_hosted_zone(mock_click, route53_session):
-    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    route53_session.create_hosted_zone(Name="digital", CallerReference="digital")
 
-    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
+    assert create_hosted_zone(route53_session, "web.dev.uktrade.digital", "uktrade.digital", 1)
 
 
 @pytest.mark.parametrize(
@@ -223,13 +224,15 @@ def test_create_records_works_when_base_zone_already_has_records(
     "dbt_copilot_helper.commands.dns.create_cert",
     return_value="arn:1234",
 )
-def test_check_r53(create_cert, route53_session):
+@patch("click.confirm")
+def test_check_r53(mock_create_cert, mock_click, route53_session):
     session = boto3.session.Session(profile_name="foo")
-    route53_session.create_hosted_zone(Name="test.1234", CallerReference="1234")
+    route53_session.create_hosted_zone(Name="uktrade.digital", CallerReference="digital")
 
-    assert check_r53(session, session, "test.test.1234", "test.1234") == "arn:1234"
+    assert check_r53(session, session, "web.dev.uktrade.digital", "uktrade.digital") == "arn:1234"
 
 
+@pytest.mark.parametrize("env", ["dev", "staging"])
 @patch(
     "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
@@ -237,54 +240,18 @@ def test_check_r53(create_cert, route53_session):
     "dbt_copilot_helper.commands.dns.check_r53",
     return_value="arn:1234",
 )
-def test_configure(get_aws_session_or_abort, check_r53, fakefs):
+def test_configure_success(get_aws_session_or_abort, check_r53, fakefs, env):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
 environments:
   dev:
     http:
-      alias: v2.app.dev.test.1234
+      alias: v2.app.dev.uktrade.digital
 
   staging:
     http:
-      alias: v2.app.staging.test.12345
-""",
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(
-        configure,
-        ["--domain-profile", "dev", "--project-profile", "foo", "--base-domain", "test.1234"],
-    )
-    expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nEnvironment: staging => Domain: v2.app.staging.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\nDomain: v2.app.staging.test.12345\t => Cert ARN: arn:1234\n"
-
-    assert result.output == expected
-
-
-@patch(
-    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
-)
-@patch(
-    "dbt_copilot_helper.commands.dns.check_r53",
-    return_value="arn:1234",
-)
-def test_configure_env_flag(get_aws_session_or_abort, check_r53, fakefs):
-    fakefs.create_file(
-        "copilot/manifest.yml",
-        contents="""
-environments:
-  dev:
-    http:
-      alias: v2.app.dev.test.1234
-
-  staging:
-    http:
-      alias: v2.app.staging.test.12345
-      
-  prod:
-    http:
-      alias: v2.app.prod.test.12345
+      alias: v2.app.staging.uktrade.digital
 """,
     )
 
@@ -297,15 +264,22 @@ environments:
             "--project-profile",
             "foo",
             "--base-domain",
-            "test.1234",
+            "uktrade.digital",
             "--env",
-            "dev",
+            env,
         ],
     )
 
-    expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: dev => Domain: v2.app.dev.test.1234\n\nHere are your Certificate ARNs:\nDomain: v2.app.dev.test.1234\t => Cert ARN: arn:1234\n"
+    expected = [
+        "Checking file: copilot/manifest.yml",
+        "Domains listed in manifest file",
+        f"v2.app.{env}.uktrade.digital",
+        "Here are your Certificate ARNs:",
+        f"Domain: v2.app.{env}.uktrade.digital => Cert ARN: arn:1234",
+    ]
+    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
 
-    assert result.output == expected
+    assert actual == expected
 
 
 def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
@@ -347,38 +321,6 @@ def test_configure_with_no_manifests_exits_with_error(fakefs):
 
     assert result.exit_code == 1
     assert "no manifest files were found" in result.stderr
-
-
-@patch(
-    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
-)
-@patch(
-    "dbt_copilot_helper.commands.dns.check_r53",
-    return_value="arn:1234",
-)
-def test_configure_live_domain_profile(get_aws_session_or_abort, check_r53, fakefs):
-    fakefs.create_file(
-        "copilot/manifest.yml",
-        contents="""
-environments:
-  dev:
-    http:
-      alias: v2.app.dev.test.1234
-
-  prod:
-    http:
-      alias: v2.app.prod.test.12345
-""",
-    )
-
-    runner = CliRunner()
-    result = runner.invoke(
-        configure,
-        ["--domain-profile", "live", "--project-profile", "foo", "--base-domain", "test.1234"],
-    )
-    expected = "Checking file: copilot/manifest.yml\nDomains listed in manifest file\n\nEnvironment: prod => Domain: v2.app.prod.test.12345\n\nHere are your Certificate ARNs:\nDomain: v2.app.prod.test.12345\t => Cert ARN: arn:1234\n"
-
-    assert result.output == expected
 
 
 @patch(
@@ -505,8 +447,8 @@ def test_get_required_subdomains_returns_the_expected_subdomains():
     domains = get_required_subdomains(base_domain, subdomain)
 
     assert [
-        "url-protection-checker.uktrade.digital",
         "v2.url-protection-checker.uktrade.digital",
+        "url-protection-checker.uktrade.digital",
     ] == domains
 
 
@@ -529,15 +471,30 @@ def test_get_required_subdomains_throws_exception_if_subdomain_and_base_domain_d
 
 
 @pytest.mark.parametrize(
-    "domain",
+    "subdomains, bad_domains",
     [
-        "uk_trade.digital",
-        "uktrade..digital",
+        (["web.dev.xyz.com"], "web.dev.xyz.com"),
+        (
+            [
+                "web.uktrade.digital",
+                "web.dev.xyz.com",
+                "v2.web.great.gov.uk",
+                "v2.web.trade.gov.uk",
+                "v2.web.prod.uktrade.digital",
+                "web.dev.bad.url",
+            ],
+            "web.dev.xyz.com, web.dev.bad.url",
+        ),
     ],
 )
-def test_get_required_subdomains_throws_exception_if_base_domain_is_invalid(domain):
-    with pytest.raises(InvalidDomainException, match=f"Domain {domain} is not a valid domain"):
-        get_required_subdomains(domain, f"web.{domain}")
+def test_validate_subdomains_throws_exception_if_its_base_domain_is_not_in_allowed_list(
+    subdomains, bad_domains
+):
+    with pytest.raises(
+        InvalidDomainException,
+        match=f"The following subdomains do not have one of the allowed base domains: {bad_domains}",
+    ):
+        validate_subdomains(subdomains)
 
 
 @pytest.mark.parametrize(
@@ -555,13 +512,12 @@ def test_get_required_subdomains_throws_exception_if_subdomain_is_invalid(subdom
 
 
 def test_get_required_subdomains_throws_exception_with_multiple_errors():
-    base_domain = "uk!trade.digital"
-    subdomain = "subdom..uktrade.digital"
+    base_domain = "uktrade.digital"
+    subdomain = "subdom..uuktrade.digital"
 
     with pytest.raises(InvalidDomainException) as exc_info:
         get_required_subdomains(base_domain, subdomain)
 
     message = exc_info.value.args[0]
-    assert f"Domain {base_domain} is not a valid domain" in message
     assert f"Subdomain {subdomain} is not a valid domain" in message
     assert f"{subdomain} is not a subdomain of {base_domain}" in message

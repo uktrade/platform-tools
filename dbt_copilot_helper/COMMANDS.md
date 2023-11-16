@@ -589,7 +589,7 @@ copilot-helper domain (configure|assign)
 
 ```
 copilot-helper domain configure --domain-profile (dev|live) --project-profile <project_profile> 
-                                --base-domain <base_domain> [--env <env>] 
+                                --base-domain <base_domain> --env <env> 
 ```
 
 ## Options

@@ -273,6 +273,8 @@ def create_hosted_zone(client, domain, start_domain, base_len):
     for x in reversed(range(len(domain_to_create) - (len(start_domain.split(".")) - 1))):
         subdom = ".".join(domain_to_create[(x):]) + "."
 
+        with open(".loggerty", "a") as fh:
+            print(f"Creating {subdom}", file=fh)
         if not click.confirm(
             click.style("About to create domain: ", fg="cyan")
             + click.style(f"{subdom}\n", fg="white", bold=True)
@@ -347,9 +349,7 @@ def get_required_subdomains(base_domain: str, subdomain: str):
     _validate_subdomain(base_domain, subdomain)
     domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
 
-    domains = [".".join(domain) for domain in domains_as_lists]
-    domains.reverse()
-    return domains
+    return [".".join(domain) for domain in domains_as_lists]
 
 
 def _validate_subdomain(base_domain, subdomain):
@@ -372,7 +372,32 @@ def _validate_basic_domain_syntax(type, domain):
     return errors
 
 
-def check_r53(domain_session, project_session, domain, base_domain):
+AVAILABLE_DOMAINS = {
+    "great.gov.uk": "live",
+    "trade.gov.uk": "live",
+    "prod.uktrade.digital": "live",
+    "uktrade.digital": "dev",
+}
+
+
+def validate_subdomains(subdomains):
+    bad_domains = []
+    for subdomain in subdomains:
+        is_valid = False
+        for key in AVAILABLE_DOMAINS:
+            if subdomain.endswith(key):
+                is_valid = True
+                break
+        if not is_valid:
+            bad_domains.append(subdomain)
+    if bad_domains:
+        csv_domains = ", ".join(bad_domains)
+        raise InvalidDomainException(
+            f"The following subdomains do not have one of the allowed base domains: {csv_domains}"
+        )
+
+
+def check_r53(domain_session, project_session, subdomain, base_domain):
     # Sanitise base domain
     base_domain = base_domain.rstrip(".") + "."
 
@@ -384,10 +409,10 @@ def check_r53(domain_session, project_session, domain, base_domain):
     response = domain_client.list_hosted_zones_by_name()
     hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
 
-    abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
+    _abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
 
     base_len = len(base_domain.split(".")) - 1
-    parts = domain.split(".")
+    parts = subdomain.split(".")
 
     for _ in range(len(parts) - 1):
         subdom = ".".join(parts) + "."
@@ -398,23 +423,23 @@ def check_r53(domain_session, project_session, domain, base_domain):
             # We only want to go 2 subdomains deep in Route53
             if (len(parts) - base_len) < MAX_DOMAIN_DEPTH:
                 click.secho("Creating Hosted Zone", fg="magenta")
-                create_hosted_zone(domain_client, domain, subdom, base_len)
+                create_hosted_zone(domain_client, subdomain, subdom, base_len)
 
             break
 
         parts.pop(0)
     else:
         # This should only occur when base domain this needs is not found
-        click.secho(f"Root Domain not found for {domain}", fg="red")
+        click.secho(f"Root Domain not found for {subdomain}", fg="red")
         return
 
     # add records to hosted zone to validate certificate
-    cert_arn = create_cert(acm_client, domain_client, domain, base_len)
+    cert_arn = create_cert(acm_client, domain_client, subdomain, base_len)
 
     return cert_arn
 
 
-def abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
+def _abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
     if base_domain not in hosted_zones:
         click.secho(
             f"The base domain: {base_domain} does not exist in your AWS domain account {hosted_zones}",
@@ -527,7 +552,7 @@ def domain():
     "--project-profile", help="AWS account profile name for certificates account", required=True
 )
 @click.option("--base-domain", help="root domain", required=True)
-@click.option("--env", help="AWS Copilot environment name", required=False)
+@click.option("--env", help="AWS Copilot environment name", required=True)
 def configure(domain_profile, project_profile, base_domain, env):
     """Creates missing subdomains (up to 2 levels deep) if they do not already
     exist and creates certificates for those subdomains."""
@@ -548,11 +573,33 @@ def configure(domain_profile, project_profile, base_domain, env):
     if not manifests:
         abort_with_error("Please check path, no manifest files were found")
 
+    subdomains = _get_subdomains_from_env_manifests(env, manifests)
+    validate_subdomains(subdomains)
+
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
 
     cert_list = {}
 
+    for subdomain in subdomains:
+        cert_arn = check_r53(
+            domain_session,
+            project_session,
+            subdomain,
+            base_domain,
+        )
+        cert_list.update({subdomain: cert_arn})
+
+    if cert_list:
+        click.secho("\nHere are your Certificate ARNs:", fg="cyan")
+        for domain, cert in cert_list.items():
+            click.secho(f"Domain: {domain} => Cert ARN: {cert}", fg="white", bold=True)
+    else:
+        click.secho("No domains found, please check the manifest file", fg="red")
+
+
+def _get_subdomains_from_env_manifests(environment, manifests):
+    subdomains = []
     for manifest in manifests:
         # Need to check that the manifest file is correctly configured.
         with open(manifest, "r") as fd:
@@ -563,40 +610,19 @@ def configure(domain_profile, project_profile, base_domain, env):
                 )
                 click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                environments = _get_environments(conf, domain_profile, env)
+                aliases = [
+                    domain["http"]["alias"]
+                    for env, domain in conf["environments"].items()
+                    if env == environment
+                ]
 
-                for env, domain in environments:
-                    http_alias = domain["http"]["alias"]
-                    click.secho(
-                        "\nEnvironment: " + env + " => Domain: " + http_alias,
-                        fg="yellow",
-                        bold=True,
-                    )
-                    cert_arn = check_r53(
-                        domain_session,
-                        project_session,
-                        http_alias,
-                        base_domain,
-                    )
-                    cert_list.update({http_alias: cert_arn})
-
-    if cert_list:
-        click.secho("\nHere are your Certificate ARNs:", fg="cyan")
-        for domain, cert in cert_list.items():
-            click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
-    else:
-        click.secho("No domains found, please check the manifest file", fg="red")
-
-
-def _get_environments(conf, domain_profile, env):
-    environments = conf["environments"].items()
-    if domain_profile == "live":
-        environments = [e for e in environments if e[0] in ["prod", "production"]]
-    else:
-        environments = [e for e in environments if e[0] not in ["prod", "production"]]
-    if env:
-        environments = [e for e in environments if e[0] == env]
-    return environments
+                click.secho(
+                    "  " + "\n  ".join(aliases),
+                    fg="yellow",
+                    bold=True,
+                )
+                subdomains.extend(aliases)
+    return subdomains
 
 
 def _get_manifests(path):
