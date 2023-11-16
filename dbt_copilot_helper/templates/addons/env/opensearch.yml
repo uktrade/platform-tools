@@ -41,8 +41,7 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  {{ addon_config.prefix }}DisableHA: !Equals [!FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
-  {{ addon_config.prefix }}EnableHA: !Not [Condition: {{ addon_config.prefix }}DisableHA]
+  {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]]
 
 Resources:
   {{ addon_config.prefix }}OpenSearchSecret:
@@ -86,10 +85,9 @@ Resources:
       ToPort: 443
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  # Single opensearch instance
+  # Opensearch
   {{ addon_config.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: {{ addon_config.prefix }}DisableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -124,87 +122,21 @@ Resources:
         VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: false
+        DedicatedMasterEnabled: !If [{{ addon_config.prefix }}EnableHA, !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster], false]
         InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
         InstanceType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
-        ZoneAwarenessEnabled: false
+        ZoneAwarenessEnabled: !If [{{ addon_config.prefix }}EnableHA, true, false]
+        ZoneAwarenessConfig: !If
+          - {{ addon_config.prefix }}EnableHA
+          - AvailabilityZoneCount: 2 #Fn::length always resolves to 1 despite there being subnets.
+          - !Ref "AWS::NoValue"
       VPCOptions:
         SecurityGroupIds:
           - !Ref {{ addon_config.prefix }}OpenSearchSecurityGroup
-        SubnetIds:
-          - !Select [0, !Split [ ',', !Ref PrivateSubnets ] ]
-      SoftwareUpdateOptions:
-        AutoSoftwareUpdateEnabled: true
-      LogPublishingOptions:
-        AUDIT_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchAuditLogGroup.Arn
-          Enabled: true
-        ES_APPLICATION_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchApplicationLogGroup.Arn
-          Enabled: true
-        SEARCH_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowSearchLogGroup.Arn
-          Enabled: true
-        INDEX_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt {{ addon_config.prefix }}OpenSearchSlowIndexLogGroup.Arn
-          Enabled: true
-      Tags:
-        - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-{{ addon_config.name }}-OpenSearch-Domain'
-        - Key: 'Copilot-Application'
-          Value: !Sub ${App}
-        - Key: 'Copilot-Environment'
-          Value: !Sub ${Env}
-
-  # An opensearch cluster
-  {{ addon_config.prefix }}OpenSearchDomainHA:
-    Type: 'AWS::OpenSearchService::Domain'
-    Condition: {{ addon_config.prefix }}EnableHA
-    Properties:
-      AccessPolicies:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/{{ (addon_config.name|replace("-", ""))[:15] }}*'
-      AdvancedSecurityOptions:
-        Enabled: true
-        InternalUserDatabaseEnabled: true
-        MasterUserOptions:
-          MasterUserName:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
-          MasterUserPassword:
-            !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
-      DomainEndpointOptions:
-        EnforceHTTPS: true
-        TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
-      EngineVersion: !FindInMap
-        - {{ addon_config.prefix }}EngineVersionMap
-        - !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
-        - EngineVersion
-      NodeToNodeEncryptionOptions:
-        Enabled: true
-      EncryptionAtRestOptions:
-        Enabled: true
-      EBSOptions:
-        EBSEnabled: true
-        VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
-        VolumeType: gp2
-      ClusterConfig:
-        DedicatedMasterEnabled: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
-        InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
-        ZoneAwarenessEnabled: true
-        ZoneAwarenessConfig:
-          AvailabilityZoneCount: 2
-          #Fn::length always resolves to 1 despite there being subnets.
-      VPCOptions:
-        SecurityGroupIds:
-          - !Ref {{ addon_config.prefix }}OpenSearchSecurityGroup
-        SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+        SubnetIds: !If
+          - {{ addon_config.prefix }}EnableHA
+          - !Split [ ",", !Ref PrivateSubnets ]
+          - - !Select [ 0, !Split [ ',', !Ref PrivateSubnets ] ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
@@ -235,10 +167,7 @@ Resources:
       Type: String
       Value: !Sub
         - "https://${username}:${password}@${url}"
-        - url: !If
-            - {{ addon_config.prefix }}EnableHA
-            - !GetAtt {{ addon_config.prefix }}OpenSearchDomainHA.DomainEndpoint
-            - !GetAtt {{ addon_config.prefix }}OpenSearchDomain.DomainEndpoint
+        - url: !GetAtt {{ addon_config.prefix }}OpenSearchDomain.DomainEndpoint
           username: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:username}}{% endraw %}" ]]
           password: !Join [ "",  [ '{% raw %}{{resolve:secretsmanager:{% endraw %}', !Ref {{ addon_config.prefix }}OpenSearchSecret, "{% raw %}:SecretString:password}}{% endraw %}" ]]
 
