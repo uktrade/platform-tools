@@ -19,6 +19,7 @@ export class TransformedStack extends cdk.Stack {
     private codestarConnection: { arn: string; id: string; };
     private deployRepository: string;
     private codebaseConfiguration: PipelinesConfiguration['codebases'][0];
+    private pipelinesFile: PipelinesConfiguration;
 
     constructor(scope: cdk.App, id: string, props: TransformedStackProps) {
         super(scope, id, props);
@@ -133,6 +134,25 @@ export class TransformedStack extends cdk.Stack {
                     ],
                 }),
             },
+            repositoryPolicyText: {
+                Statement: [
+                    {
+                        Effect: "Allow",
+                        Principal: {
+                            AWS: this.pipelinesFile.accounts?.map(a => `arn:aws:iam::${a}:root`) || [],
+                        },
+                        Action: [
+                            "ecr:BatchCheckLayerAvailability",
+                            "ecr:BatchGetImage",
+                            "ecr:CompleteLayerUpload",
+                            "ecr:GetDownloadUrlForLayer",
+                            "ecr:InitiateLayerUpload",
+                            "ecr:PutImage",
+                            "ecr:UploadLayerPart"
+                        ]
+                    }
+                ]
+            }
         });
     }
 
@@ -417,11 +437,11 @@ export class TransformedStack extends cdk.Stack {
         ).toString('utf-8')) as PipelineManifest;
 
         // Load dbt-copilot-tools pipelines configurations
-        const pipelinesConfigProperties = parse(readFileSync(
+        this.pipelinesFile = parse(readFileSync(
             path.join(deployRepoRoot, 'pipelines.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
 
-        const codebaseConfiguration = pipelinesConfigProperties.codebases.find(c => c.name === this.pipelineManifest.name);
+        const codebaseConfiguration = this.pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
 
         if (!codebaseConfiguration) {
             throw new Error(`Could not find a codebase configuration for ${this.pipelineManifest.name}, ensure ./pipelines.yml is up to date`);
