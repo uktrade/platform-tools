@@ -260,12 +260,8 @@ environments:
     result = runner.invoke(
         configure,
         [
-            "--domain-profile",
-            "dev",
             "--project-profile",
             "foo",
-            "--base-domain",
-            "uktrade.digital",
             "--env",
             env,
         ],
@@ -287,16 +283,7 @@ def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         configure,
-        [
-            "--domain-profile",
-            "dev",
-            "--project-profile",
-            "foo",
-            "--base-domain",
-            "test.1234",
-            "--env",
-            "dev",
-        ],
+        ["--project-profile", "foo", "--env", "dev"],
     )
 
     assert result.exit_code == 1
@@ -306,19 +293,7 @@ def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
 def test_configure_with_no_manifests_exits_with_error(fakefs):
     fakefs.create_dir("copilot")
     runner = CliRunner(mix_stderr=False)
-    result = runner.invoke(
-        configure,
-        [
-            "--domain-profile",
-            "dev",
-            "--project-profile",
-            "foo",
-            "--base-domain",
-            "test.1234",
-            "--env",
-            "dev",
-        ],
-    )
+    result = runner.invoke(configure, ["--project-profile", "foo", "--env", "dev"])
 
     assert result.exit_code == 1
     assert "no manifest files were found" in result.stderr
@@ -441,16 +416,31 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
     assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
 
 
-def test_get_required_subdomains_returns_the_expected_subdomains():
-    base_domain = "uktrade.digital"
-    subdomain = "v2.url-protection-checker.uktrade.digital"
+@pytest.mark.parametrize(
+    "base_domain, subdomain, exp_subdoms",
+    [
+        (
+            "uktrade.digital",
+            "web.dev.uktrade.digital",
+            {"dev.uktrade.digital", "web.dev.uktrade.digital"},
+        ),
+        (
+            "uktrade.digital",
+            "v2.web.dev.uktrade.digital",
+            {"dev.uktrade.digital", "web.dev.uktrade.digital"},
+        ),
+        ("prod.uktrade.digital", "web.prod.uktrade.digital", {"web.prod.uktrade.digital"}),
+        ("prod.uktrade.digital", "v2.web.prod.uktrade.digital", {"web.prod.uktrade.digital"}),
+        ("great.gov.uk", "web.great.gov.uk", {"web.great.gov.uk"}),
+        ("great.gov.uk", "v2.web.great.gov.uk", {"web.great.gov.uk"}),
+    ],
+)
+def test_get_required_subdomains_returns_the_expected_subdomains(
+    base_domain, subdomain, exp_subdoms
+):
+    subdoms = get_required_subdomains(base_domain, subdomain)
 
-    domains = get_required_subdomains(base_domain, subdomain)
-
-    assert [
-        "v2.url-protection-checker.uktrade.digital",
-        "url-protection-checker.uktrade.digital",
-    ] == domains
+    assert set(subdoms) == exp_subdoms
 
 
 @pytest.mark.parametrize(

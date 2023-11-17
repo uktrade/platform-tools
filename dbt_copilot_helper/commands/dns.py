@@ -346,10 +346,18 @@ def _get_subdomains_from_base(base: list[str], subdomain: list[str]):
 
 
 def get_required_subdomains(base_domain: str, subdomain: str):
+    """
+    We only want to get subdomains up to 4 levels deep.
+
+    Prod base domains should be 3 levels deep so we should create up to one
+    additional subdomain. Dev base domain is always "uktrade.digital" and should
+    have the app and env subdomains created, so 4 levels in either case.
+    """
+    max_domain_levels = 4
     _validate_subdomain(base_domain, subdomain)
     domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
 
-    return [".".join(domain) for domain in domains_as_lists]
+    return [".".join(domain) for domain in domains_as_lists if len(domain) <= max_domain_levels]
 
 
 def _validate_subdomain(base_domain, subdomain):
@@ -565,17 +573,10 @@ def domain():
 
 @domain.command()
 @click.option(
-    "--domain-profile",
-    help="AWS account profile name for Route53 domains account",
-    required=True,
-    type=click.Choice(["dev", "live"]),
-)
-@click.option(
     "--project-profile", help="AWS account profile name for certificates account", required=True
 )
-@click.option("--base-domain", help="root domain", required=True)
 @click.option("--env", help="AWS Copilot environment name", required=True)
-def configure(domain_profile, project_profile, base_domain, env):
+def configure(project_profile, env):
     """Creates missing subdomains (up to 2 levels deep) if they do not already
     exist and creates certificates for those subdomains."""
 
@@ -597,7 +598,8 @@ def configure(domain_profile, project_profile, base_domain, env):
 
     subdomains = _get_subdomains_from_env_manifests(env, manifests)
     validate_subdomains(subdomains)
-    get_base_domain(subdomains)
+    base_domain = get_base_domain(subdomains)
+    domain_profile = AVAILABLE_DOMAINS[base_domain]
 
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
