@@ -41,8 +41,7 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  myOpensearchDisableHA: !Equals [!FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]
-  myOpensearchEnableHA: !Not [Condition: myOpensearchDisableHA]
+  myOpensearchEnableHA: !Not [!Equals [!FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]]
 
 Resources:
   myOpensearchOpenSearchSecret:
@@ -86,10 +85,8 @@ Resources:
       ToPort: 443
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  # Single opensearch instance
   myOpensearchOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    Condition: myOpensearchDisableHA
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -124,87 +121,21 @@ Resources:
         VolumeSize: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: false
+        DedicatedMasterEnabled: !If [myOpensearchEnableHA, !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, DedicatedMaster], false]
         InstanceCount: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount]
         InstanceType: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceType]
-        ZoneAwarenessEnabled: false
+        ZoneAwarenessEnabled: !If [myOpensearchEnableHA, true, false]
+        ZoneAwarenessConfig: !If
+          - myOpensearchEnableHA
+          - AvailabilityZoneCount: 2 #Fn::length always resolves to 1 despite there being subnets.
+          - !Ref "AWS::NoValue"
       VPCOptions:
         SecurityGroupIds:
           - !Ref myOpensearchOpenSearchSecurityGroup
-        SubnetIds:
-          - !Select [0, !Split [ ',', !Ref PrivateSubnets ] ]
-      SoftwareUpdateOptions:
-        AutoSoftwareUpdateEnabled: true
-      LogPublishingOptions:
-        AUDIT_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt myOpensearchOpenSearchAuditLogGroup.Arn
-          Enabled: true
-        ES_APPLICATION_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt myOpensearchOpenSearchApplicationLogGroup.Arn
-          Enabled: true
-        SEARCH_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt myOpensearchOpenSearchSlowSearchLogGroup.Arn
-          Enabled: true
-        INDEX_SLOW_LOGS:
-          CloudWatchLogsLogGroupArn: !GetAtt myOpensearchOpenSearchSlowIndexLogGroup.Arn
-          Enabled: true
-      Tags:
-        - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-my-opensearch-OpenSearch-Domain'
-        - Key: 'Copilot-Application'
-          Value: !Sub ${App}
-        - Key: 'Copilot-Environment'
-          Value: !Sub ${Env}
-
-  # An opensearch cluster
-  myOpensearchOpenSearchDomainHA:
-    Type: 'AWS::OpenSearchService::Domain'
-    Condition: myOpensearchEnableHA
-    Properties:
-      AccessPolicies:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/myopensearch*'
-      AdvancedSecurityOptions:
-        Enabled: true
-        InternalUserDatabaseEnabled: true
-        MasterUserOptions:
-          MasterUserName:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:username}}" ]]
-          MasterUserPassword:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:password}}" ]]
-      DomainEndpointOptions:
-        EnforceHTTPS: true
-        TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
-      EngineVersion: !FindInMap
-        - myOpensearchEngineVersionMap
-        - !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, EngineVersion]
-        - EngineVersion
-      NodeToNodeEncryptionOptions:
-        Enabled: true
-      EncryptionAtRestOptions:
-        Enabled: true
-      EBSOptions:
-        EBSEnabled: true
-        VolumeSize: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, VolumeSize]
-        VolumeType: gp2
-      ClusterConfig:
-        DedicatedMasterEnabled: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, DedicatedMaster]
-        InstanceCount: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceType]
-        ZoneAwarenessEnabled: true
-        ZoneAwarenessConfig:
-          AvailabilityZoneCount: 2
-          #Fn::length always resolves to 1 despite there being subnets.
-      VPCOptions:
-        SecurityGroupIds:
-          - !Ref myOpensearchOpenSearchSecurityGroup
-        SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+        SubnetIds: !If
+          - myOpensearchEnableHA
+          - !Split [ ",", !Ref PrivateSubnets ]
+          - - !Select [ 0, !Split [ ',', !Ref PrivateSubnets ] ]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
@@ -235,10 +166,7 @@ Resources:
       Type: String
       Value: !Sub
         - "https://${username}:${password}@${url}"
-        - url: !If
-            - myOpensearchEnableHA
-            - !GetAtt myOpensearchOpenSearchDomainHA.DomainEndpoint
-            - !GetAtt myOpensearchOpenSearchDomain.DomainEndpoint
+        - url: !GetAtt myOpensearchOpenSearchDomain.DomainEndpoint
           username: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:username}}" ]]
           password: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:password}}" ]]
 
