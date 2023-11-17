@@ -22,6 +22,7 @@ export interface PipelineManifest {
 }
 
 export interface PipelinesConfiguration {
+    accounts?: Array<string>;
     codebases: Array<{
         name: string;
         repository: string;
