@@ -339,17 +339,17 @@ class InvalidDomainException(Exception):
     pass
 
 
-def _get_subdomains_from_base(base: list[str], subdomain: list[str]):
+def _get_subdomains_from_base(base: list[str], subdomain: list[str]) -> list[list[str]]:
     if base == subdomain:
         return []
     return [subdomain] + _get_subdomains_from_base(base, subdomain[1:])
 
 
-def get_required_subdomains(base_domain: str, subdomain: str):
+def get_required_subdomains(base_domain: str, subdomain: str) -> list[str]:
     """
     We only want to get subdomains up to 4 levels deep.
 
-    Prod base domains should be 3 levels deep so we should create up to one
+    Prod base domains should be 3 levels deep, so we should create up to one
     additional subdomain. Dev base domain is always "uktrade.digital" and should
     have the app and env subdomains created, so 4 levels in either case.
     """
