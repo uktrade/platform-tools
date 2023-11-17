@@ -85,7 +85,6 @@ Resources:
       ToPort: 443
       SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
 
-  # Opensearch
   myOpensearchLongerOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
     Properties:
