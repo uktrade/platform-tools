@@ -19,6 +19,7 @@ from dbt_copilot_helper.commands.dns import check_r53
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
+from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
 from dbt_copilot_helper.commands.dns import validate_subdomains
@@ -495,6 +496,36 @@ def test_validate_subdomains_throws_exception_if_its_base_domain_is_not_in_allow
         match=f"The following subdomains do not have one of the allowed base domains: {bad_domains}",
     ):
         validate_subdomains(subdomains)
+
+
+@pytest.mark.parametrize(
+    "subdomains, exp_base_domain",
+    [
+        (["web.uktrade.digital"], "uktrade.digital"),
+        (["v2.web.great.gov.uk"], "great.gov.uk"),
+        (["v2.web.trade.gov.uk"], "trade.gov.uk"),
+        (["v2.web.prod.uktrade.digital"], "prod.uktrade.digital"),
+    ],
+)
+def test_get_base_domain_success(subdomains, exp_base_domain):
+    base_domain = get_base_domain(subdomains)
+
+    assert base_domain == exp_base_domain
+
+
+def test_get_base_domain_raises_exception_when_multiple_base_domains_found():
+    with pytest.raises(
+        InvalidDomainException, match="Multiple base domains were found: great.gov.uk, trade.gov.uk"
+    ):
+        get_base_domain(["v2.web.trade.gov.uk", "v2.web.great.gov.uk"])
+
+
+def test_get_base_domain_raises_exception_when_no_base_domains_found():
+    with pytest.raises(
+        InvalidDomainException,
+        match="No base domains were found for subdomains: v2.web.abc.gov.uk, v2.web.xyz.gov.uk",
+    ):
+        get_base_domain(["v2.web.xyz.gov.uk", "v2.web.abc.gov.uk"])
 
 
 @pytest.mark.parametrize(

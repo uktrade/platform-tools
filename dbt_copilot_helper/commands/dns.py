@@ -380,7 +380,7 @@ AVAILABLE_DOMAINS = {
 }
 
 
-def validate_subdomains(subdomains):
+def validate_subdomains(subdomains: list[str]) -> None:
     bad_domains = []
     for subdomain in subdomains:
         is_valid = False
@@ -395,6 +395,28 @@ def validate_subdomains(subdomains):
         raise InvalidDomainException(
             f"The following subdomains do not have one of the allowed base domains: {csv_domains}"
         )
+
+
+def get_base_domain(subdomains: list[str]) -> str:
+    matching_domains = []
+    domains_by_length = sorted(AVAILABLE_DOMAINS.keys(), key=lambda dom: len(dom), reverse=True)
+    for subdomain in subdomains:
+        for dom in domains_by_length:
+            if subdomain.endswith(f".{dom}"):
+                matching_domains.append(dom)
+                break
+
+    if len(matching_domains) > 1:
+        ordered_subdomains = ", ".join(sorted(matching_domains))
+        raise InvalidDomainException(f"Multiple base domains were found: {ordered_subdomains}")
+
+    if not matching_domains:
+        ordered_subdomains = ", ".join(sorted(subdomains))
+        raise InvalidDomainException(
+            f"No base domains were found for subdomains: {ordered_subdomains}"
+        )
+
+    return matching_domains[0]
 
 
 def check_r53(domain_session, project_session, subdomain, base_domain):
@@ -575,6 +597,7 @@ def configure(domain_profile, project_profile, base_domain, env):
 
     subdomains = _get_subdomains_from_env_manifests(env, manifests)
     validate_subdomains(subdomains)
+    get_base_domain(subdomains)
 
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
