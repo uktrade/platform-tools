@@ -291,48 +291,56 @@ export class TransformedStack extends cdk.Stack {
             },
         };
 
-        // Remove build stage
-        (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).splice(1, 1);
+        // Remove all other stages
+        (pipeline.stages as Array<unknown>).splice(1, (pipeline.stages as Array<unknown>).length - 1);
 
-        // Replace the deployment action in each deploy stage with our custom build script
-        const pipelineEnvironments = pipelineConfig.environments.map(e => e.name);
-        for (const [index, stage] of (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).entries()) {
-            if (stage.name == 'Source') continue;
+        for (const environment of pipelineConfig.environments) {
+            const environmentStage: {
+                name: string;
+                actions: Array<cdk.aws_codepipeline.CfnPipeline.ActionDeclarationProperty>;
+            } = {name: `DeployTo-${environment.name}`, actions: []};
 
-            const environment = stage.name.replace('DeployTo-', '');
-
-            if (pipelineEnvironments.includes(environment)) {
-                pipeline.stages[index].actions[pipeline.stages[index].actions.length - 1] = {
-                    name: 'Deploy',
-                    //
-                    runOrder: pipeline.stages[index].actions.length,
-                    inputArtifacts: [
-                        {name: 'ECRMetadata'},
-                    ],
+            if (environment.requires_approval) {
+                environmentStage.actions.push({
                     actionTypeId: {
-                        category: 'Build',
-                        owner: 'AWS',
-                        version: '1',
-                        provider: 'CodeBuild',
+                        category: "Approval",
+                        owner: "AWS",
+                        provider: "Manual",
+                        version: "1"
                     },
-                    configuration: {
-                        ProjectName: cdk.Fn.ref('BuildProject'),
-                        PrimarySource: 'ECRMetadata',
-                        EnvironmentVariables: JSON.stringify([
-                            {name: 'COPILOT_ENVIRONMENT', value: environment},
-                            {
-                                name: 'ECR_TAG_PATTERN',
-                                value: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`,
-                            },
-                        ]),
-                    },
-                };
-            } else {
-                pipeline.stages[index] = undefined;
+                    name: `ApprovePromotionTo-${environment.name}`,
+                    runOrder: 1
+                });
             }
+
+            environmentStage.actions.push({
+                name: 'Deploy',
+                runOrder: environment.requires_approval ? 2 : 1,
+                inputArtifacts: [
+                    {name: 'ECRMetadata'},
+                ],
+                actionTypeId: {
+                    category: 'Build',
+                    owner: 'AWS',
+                    version: '1',
+                    provider: 'CodeBuild',
+                },
+                configuration: {
+                    ProjectName: cdk.Fn.ref('BuildProject'),
+                    PrimarySource: 'ECRMetadata',
+                    EnvironmentVariables: JSON.stringify([
+                        {name: 'COPILOT_ENVIRONMENT', value: environment.name},
+                        {
+                            name: 'ECR_TAG_PATTERN',
+                            value: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`
+                        },
+                    ]),
+                },
+            });
+
+            (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).push(environmentStage);
         }
 
-        pipeline.stages = (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).filter(s => !!s);
         this.createEventRule(pipeline, pipelineConfig);
     }
 
