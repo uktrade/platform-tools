@@ -248,41 +248,121 @@ def add_records(client, records, subdom_id, action):
     return response["ChangeInfo"]["Status"]
 
 
-def check_for_records(client, parent_id, subdom, subdom_id):
-    records_to_add = []
-    response = client.list_resource_record_sets(
-        HostedZoneId=parent_id,
-    )
+def copy_records_from_parent_to_subdomain(client, parent_id, subdom, subdom_id):
+    resource_record_sets = client.list_resource_record_sets(HostedZoneId=parent_id)[
+        "ResourceRecordSets"
+    ]
 
-    for records in response["ResourceRecordSets"]:
+    for records in resource_record_sets:
         if subdom in records["Name"]:
             click.secho(records["Name"] + " found", fg="green")
-            records_to_add.append(records)
             add_records(client, records, subdom_id, "UPSERT")
     return True
 
 
-def create_hosted_zone(client, domain, start_domain, base_len):
-    parts = domain.split(".")
+def create_hosted_zone_2(client, base_domain, subdomain):
+    domains_to_create = get_required_subdomains(base_domain, subdomain)
+
+    response = client.list_hosted_zones_by_name()
+    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
+    parent_zone = f"{base_domain}."
+
+    for dom in reversed(domains_to_create):
+        dom_zone = f"{dom}."
+        if dom_zone in hosted_zones:
+            parent_zone = dom_zone
+            break
+
+    click.secho(f"Found hosted zone {parent_zone}", fg="green")
+
+    current_parent = parent_zone
+
+    for domain in domains_to_create:
+        if f"{domain}." == parent_zone:
+            continue
+
+        if not click.confirm(
+            click.style("About to create domain: ", fg="cyan")
+            + click.style(f"{domain}\n", fg="white", bold=True)
+            + click.style("Do you want to continue?", fg="cyan"),
+        ):
+            exit()
+
+        response = client.list_hosted_zones_by_name()
+
+        for hz in response["HostedZones"]:
+            if hz["Name"] == current_parent:
+                parent_id = hz["Id"]
+                break
+
+        # if not parent_id: Do something....
+
+        click.secho(f"Creating hosted zone for {domain}...", fg="yellow")
+
+        response = client.create_hosted_zone(
+            Name=domain,
+            # Timestamp is on the end because CallerReference must be unique for every call
+            CallerReference=f"{domain}_from_code_{int(time.time())}",
+        )
+        ns_records = response["DelegationSet"]
+        subdom_id = response["HostedZone"]["Id"]
+
+        # Check if records existed in the parent domain, if so they need to be copied to sub domain.
+        copy_records_from_parent_to_subdomain(client, parent_id, domain, subdom_id)
+
+        if not click.confirm(
+            click.style(f"Updating parent {current_parent} domain with records: ", fg="cyan")
+            + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
+            + click.style("Do you want to continue?", fg="cyan"),
+        ):
+            exit()
+
+        # Add NS records of subdomain to parent
+        nameservers = ns_records["NameServers"]
+        # append  . to make fqdn
+        nameservers = [f"{nameserver}." for nameserver in nameservers]
+        nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
+
+        client.change_resource_record_sets(
+            HostedZoneId=parent_id,
+            ChangeBatch={
+                "Changes": [
+                    {
+                        "Action": "UPSERT",
+                        "ResourceRecordSet": {
+                            "Name": domain,
+                            "Type": "NS",
+                            "TTL": 300,
+                            "ResourceRecords": nameserver_resource_records,
+                        },
+                    },
+                ],
+            },
+        )
+
+        # Set current_parent to this domain ready for the next iteration
+        current_parent = domain
+
+
+def create_hosted_zone(client, subdomain, ancestor_hz, base_len):
+    parts = subdomain.split(".")
 
     # We only want to create domains max 2 deep so remove all sub domains in excess
     parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
     domain_to_create = parts[parts_to_remove:]
 
     # Walk back domain name
-    for x in reversed(range(len(domain_to_create) - (len(start_domain.split(".")) - 1))):
-        subdom = ".".join(domain_to_create[(x):]) + "."
+    for x in reversed(range(len(domain_to_create) - (len(ancestor_hz.split(".")) - 1))):
+        ancestor_hz = ".".join(domain_to_create[(x):]) + "."
 
-        with open(".loggerty", "a") as fh:
-            print(f"Creating {subdom}", file=fh)
         if not click.confirm(
             click.style("About to create domain: ", fg="cyan")
-            + click.style(f"{subdom}\n", fg="white", bold=True)
+            + click.style(f"{ancestor_hz}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
 
-        parent = ".".join(subdom.split(".")[1:])
+        parent = ".".join(ancestor_hz.split(".")[1:])
         response = client.list_hosted_zones_by_name()
 
         for hz in response["HostedZones"]:
@@ -290,17 +370,18 @@ def create_hosted_zone(client, domain, start_domain, base_len):
                 parent_id = hz["Id"]
                 break
 
-        click.secho(f"Creating hosted zone for {subdom}...", fg="yellow")
+        click.secho(f"Creating hosted zone for {ancestor_hz}...", fg="yellow")
+
         response = client.create_hosted_zone(
-            Name=subdom,
+            Name=ancestor_hz,
             # Timestamp is on the end because CallerReference must be unique for every call
-            CallerReference=f"{subdom}_from_code_{int(time.time())}",
+            CallerReference=f"{ancestor_hz}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
         subdom_id = response["HostedZone"]["Id"]
 
         # Check if records existed in the parent domain, if so they need to be copied to sub domain.
-        check_for_records(client, parent_id, subdom, subdom_id)
+        copy_records_from_parent_to_subdomain(client, parent_id, ancestor_hz, subdom_id)
 
         if not click.confirm(
             click.style(f"Updating parent {parent} domain with records: ", fg="cyan")
@@ -322,7 +403,7 @@ def create_hosted_zone(client, domain, start_domain, base_len):
                     {
                         "Action": "UPSERT",
                         "ResourceRecordSet": {
-                            "Name": subdom,
+                            "Name": ancestor_hz,
                             "Type": "NS",
                             "TTL": 300,
                             "ResourceRecords": nameserver_resource_records,
@@ -340,9 +421,15 @@ class InvalidDomainException(Exception):
 
 
 def _get_subdomains_from_base(base: list[str], subdomain: list[str]) -> list[list[str]]:
+    """
+    Recurse over domain to get a list of subdomains.
+
+    Note these are ordered smallest to largest so the domains can be created in
+    the correct order.
+    """
     if base == subdomain:
         return []
-    return [subdomain] + _get_subdomains_from_base(base, subdomain[1:])
+    return _get_subdomains_from_base(base, subdomain[1:]) + [subdomain]
 
 
 def get_required_subdomains(base_domain: str, subdomain: str) -> list[str]:
@@ -429,6 +516,7 @@ def get_base_domain(subdomains: list[str]) -> str:
 
 def check_r53(domain_session, project_session, subdomain, base_domain):
     # Sanitise base domain
+    _base_domain = base_domain
     base_domain = base_domain.rstrip(".") + "."
 
     # find the hosted zone
@@ -441,27 +529,9 @@ def check_r53(domain_session, project_session, subdomain, base_domain):
 
     _abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
 
+    create_hosted_zone_2(domain_client, _base_domain, subdomain)
+
     base_len = len(base_domain.split(".")) - 1
-    parts = subdomain.split(".")
-
-    for _ in range(len(parts) - 1):
-        subdom = ".".join(parts) + "."
-        click.secho(f"Searching for {subdom}... ", fg="yellow")
-        if subdom in hosted_zones:
-            click.secho("Found hosted zone " + hosted_zones[subdom]["Name"], fg="green")
-
-            # We only want to go 2 subdomains deep in Route53
-            if (len(parts) - base_len) < MAX_DOMAIN_DEPTH:
-                click.secho("Creating Hosted Zone", fg="magenta")
-                create_hosted_zone(domain_client, subdomain, subdom, base_len)
-
-            break
-
-        parts.pop(0)
-    else:
-        # This should only occur when base domain this needs is not found
-        click.secho(f"Root Domain not found for {subdomain}", fg="red")
-        return
 
     # add records to hosted zone to validate certificate
     cert_arn = create_cert(acm_client, domain_client, subdomain, base_len)

@@ -14,11 +14,12 @@ from moto import mock_elbv2
 from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
-from dbt_copilot_helper.commands.dns import check_for_records
 from dbt_copilot_helper.commands.dns import check_r53
 from dbt_copilot_helper.commands.dns import configure
+from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zone
+from dbt_copilot_helper.commands.dns import create_hosted_zone_2
 from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
@@ -32,10 +33,11 @@ CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 
 
-def test_check_for_records(route53_session):
+# TODO: This test doesn't really test anything. Expand.
+def test_copy_records_from_parent_to_subdomain(route53_session):
     response = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
     assert (
-        check_for_records(
+        copy_records_from_parent_to_subdomain(
             route53_session, response["HostedZone"]["Id"], "test.1234", response["HostedZone"]["Id"]
         )
         == True
@@ -204,7 +206,7 @@ def test_create_hosted_zone(mock_click, route53_session):
     ],
 )
 @patch("click.confirm")
-def test_create_records_works_when_base_zone_already_has_records(
+def test_create_hosted_zone_works_when_base_zone_already_has_records(
     mock_click, route53_session, zones_to_delete
 ):
     route53_session.create_hosted_zone(Name="1234.", CallerReference="1234")
@@ -220,7 +222,77 @@ def test_create_records_works_when_base_zone_already_has_records(
     assert {"test.test.1234.", "test.1234.", "1234."} == set(zones)
 
 
-# Listcertificates is not implementaed in moto acm. Neeed to patch it
+@pytest.mark.parametrize(
+    "hz, base_domain, subdomain, expected_zones",
+    [
+        (
+            "uktrade.digital.",
+            "uktrade.digital",
+            "dev.uktrade.digital",
+            {"uktrade.digital.", "dev.uktrade.digital."},
+        ),
+        (
+            "uktrade.digital.",
+            "uktrade.digital",
+            "test.dev.uktrade.digital",
+            {"uktrade.digital.", "dev.uktrade.digital.", "test.dev.uktrade.digital."},
+        ),
+        (
+            "dev.uktrade.digital.",
+            "uktrade.digital",
+            "test.dev.uktrade.digital",
+            {"dev.uktrade.digital.", "test.dev.uktrade.digital."},
+        ),
+        # Expand these tests with some prod variants.
+    ],
+)
+@patch("click.confirm")
+def test_create_hosted_zone2_creates_the_correct_hosted_zones(
+    mock_click, route53_session, hz, base_domain, subdomain, expected_zones
+):
+    route53_session.create_hosted_zone(Name=hz, CallerReference="uktrade")
+
+    create_hosted_zone_2(route53_session, base_domain, subdomain)
+
+    zones = {hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]}
+
+    assert zones == expected_zones
+
+
+@pytest.mark.parametrize(
+    "hz, subdomain, expected_zones",
+    [
+        ("uktrade.digital.", "dev.uktrade.digital", {"uktrade.digital.", "dev.uktrade.digital."}),
+        (
+            "uktrade.digital.",
+            "test.dev.uktrade.digital",
+            {"uktrade.digital.", "dev.uktrade.digital."},
+        ),
+        (
+            "digital.",
+            "dev.uktrade.digital",
+            {"digital.", "uktrade.digital.", "dev.uktrade.digital."},
+        ),
+        (
+            "digital.",
+            "test.dev.uktrade.digital",
+            {"digital.", "uktrade.digital.", "dev.uktrade.digital."},
+        ),
+    ],
+)
+@patch("click.confirm")
+def test_create_hosted_zone_creates_the_correct_hosted_zones(
+    mock_click, route53_session, hz, subdomain, expected_zones
+):
+    route53_session.create_hosted_zone(Name=hz, CallerReference="uktrade")
+
+    assert create_hosted_zone(route53_session, subdomain, hz, 1)
+
+    zones = {hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]}
+
+    assert zones == expected_zones
+
+
 @patch(
     "dbt_copilot_helper.commands.dns.create_cert",
     return_value="arn:1234",
@@ -422,17 +494,17 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
         (
             "uktrade.digital",
             "web.dev.uktrade.digital",
-            {"dev.uktrade.digital", "web.dev.uktrade.digital"},
+            ["dev.uktrade.digital", "web.dev.uktrade.digital"],
         ),
         (
             "uktrade.digital",
             "v2.web.dev.uktrade.digital",
-            {"dev.uktrade.digital", "web.dev.uktrade.digital"},
+            ["dev.uktrade.digital", "web.dev.uktrade.digital"],
         ),
-        ("prod.uktrade.digital", "web.prod.uktrade.digital", {"web.prod.uktrade.digital"}),
-        ("prod.uktrade.digital", "v2.web.prod.uktrade.digital", {"web.prod.uktrade.digital"}),
-        ("great.gov.uk", "web.great.gov.uk", {"web.great.gov.uk"}),
-        ("great.gov.uk", "v2.web.great.gov.uk", {"web.great.gov.uk"}),
+        ("prod.uktrade.digital", "web.prod.uktrade.digital", ["web.prod.uktrade.digital"]),
+        ("prod.uktrade.digital", "v2.web.prod.uktrade.digital", ["web.prod.uktrade.digital"]),
+        ("great.gov.uk", "web.great.gov.uk", ["web.great.gov.uk"]),
+        ("great.gov.uk", "v2.web.great.gov.uk", ["web.great.gov.uk"]),
     ],
 )
 def test_get_required_subdomains_returns_the_expected_subdomains(
@@ -440,7 +512,7 @@ def test_get_required_subdomains_returns_the_expected_subdomains(
 ):
     subdoms = get_required_subdomains(base_domain, subdomain)
 
-    assert set(subdoms) == exp_subdoms
+    assert subdoms == exp_subdoms
 
 
 @pytest.mark.parametrize(
