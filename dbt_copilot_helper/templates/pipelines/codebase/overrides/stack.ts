@@ -91,6 +91,7 @@ export class TransformedStack extends cdk.Stack {
                 image: 'public.ecr.aws/uktrade/ci-image-builder',
                 environmentVariables: [
                     {name: 'AWS_ACCOUNT_ID', value: this.account},
+                    {name: 'ECR_REPOSITORY', value: cdk.Fn.ref('ECRRepository')},
                 ],
             },
             source: {
