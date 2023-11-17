@@ -39,7 +39,7 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  {{ addon_config.prefix }}EnvScalingConfigurationMap:
+  {{ addon_config.prefix }}EnvironmentConfigMap:
 {%- for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
@@ -47,6 +47,7 @@ Mappings:
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}
+      DeletionPolicy: {{ config.deletion_policy }}
 {%- endfor %}
 
 Resources:
@@ -157,6 +158,8 @@ Resources:
 
   {{ addon_config.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -172,6 +175,8 @@ Resources:
 
   {{ addon_config.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-key'
       TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
@@ -181,6 +186,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
@@ -191,11 +198,11 @@ Resources:
         - upgrade
       Engine: postgres
       EngineVersion: '{{ addon_config.version }}'
-      DBInstanceClass: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
-      AllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
-      MaxAllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
-      StorageType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, StorageType]
-      MultiAZ: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBInstanceClass: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBInstanceClass]
+      AllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, AllocatedStorage]
+      MaxAllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
+      StorageType: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, StorageType]
+      MultiAZ: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref {{ addon_config.prefix }}RDSDBParameterGroup
       DBName: !Ref {{ addon_config.prefix }}DBName
       KmsKeyId: !Ref {{ addon_config.prefix }}KMSKey
@@ -212,6 +219,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub RDS main user secret for ${AWS::StackName}
@@ -225,6 +234,8 @@ Resources:
 
   {{ addon_config.prefix }}SecretRDSAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       SecretId: !Ref {{ addon_config.prefix }}RDSSecret
       TargetId: !Ref {{ addon_config.prefix }}DBInstance

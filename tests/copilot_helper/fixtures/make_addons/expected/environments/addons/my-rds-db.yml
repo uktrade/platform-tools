@@ -39,13 +39,14 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  myRdsDbEnvScalingConfigurationMap:
+  myRdsDbEnvironmentConfigMap:
     development:
       DBInstanceClass: 'db.t3.small'
       MultiAZ: true
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
       StorageType: gp3
+      DeletionPolicy: Delete
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -155,6 +156,8 @@ Resources:
 
   myRdsDbKMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -170,6 +173,8 @@ Resources:
 
   myRdsDbKeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-myRdsDb-key'
       TargetKeyId: !Ref myRdsDbKMSKey
@@ -179,6 +184,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
@@ -189,11 +196,11 @@ Resources:
         - upgrade
       Engine: postgres
       EngineVersion: '14.4'
-      DBInstanceClass: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
-      AllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
-      MaxAllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
-      StorageType: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, StorageType]
-      MultiAZ: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBInstanceClass: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DBInstanceClass]
+      AllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, AllocatedStorage]
+      MaxAllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
+      StorageType: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, StorageType]
+      MultiAZ: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
       DBName: !Ref myRdsDbDBName
       KmsKeyId: !Ref myRdsDbKMSKey
@@ -210,6 +217,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/MY_RDS_DB'
       Description: !Sub RDS main user secret for ${AWS::StackName}
@@ -223,6 +232,8 @@ Resources:
 
   myRdsDbSecretRDSAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       SecretId: !Ref myRdsDbRDSSecret
       TargetId: !Ref myRdsDbDBInstance

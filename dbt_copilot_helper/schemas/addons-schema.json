@@ -277,6 +277,9 @@
         "version": {
           "type": "number"
         },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
+        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -401,6 +404,9 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 5
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -522,7 +528,8 @@
       "type": "string",
       "enum": [
         "Delete",
-        "Retain"
+        "Retain",
+        "Snapshot"
       ]
     },
     "environment-names": {
