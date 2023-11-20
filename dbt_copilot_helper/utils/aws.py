@@ -29,8 +29,12 @@ def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
         exit()
 
     sts = session.client("sts")
+    account_id = None
+    user_id = None
     try:
-        sts.get_caller_identity()
+        response = sts.get_caller_identity()
+        account_id = response["Account"]
+        user_id = response["UserId"]
         click.secho("Credentials are valid.", fg="green")
     except botocore.exceptions.SSOTokenLoadError:
         click.secho(
@@ -51,20 +55,16 @@ def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(
-                f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True
-            ),
+            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True),
         )
     else:
         click.echo(
             click.style("Logged in with AWS account id: ", fg="yellow")
-            + click.style(f"{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+            + click.style(f"{account_id}", fg="white", bold=True),
         )
     click.echo(
         click.style("User: ", fg="yellow")
-        + click.style(
-            f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True
-        ),
+        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
     )
 
     return session
