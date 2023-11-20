@@ -18,15 +18,14 @@ Parameters:
     Type: String
 
 Mappings:
-  myOpensearchLongerEnvScalingConfigurationMap:
-    
+  myOpensearchLongerEnvironmentConfigMap:
     development:
       EngineVersion: '2.3'
       InstanceType: 't3.medium.search'
       InstanceCount: 1
       DedicatedMaster: false
       VolumeSize: 200
-    
+      DeletionPolicy: Delete
 
   myOpensearchLongerEngineVersionMap:
     '1.0':
@@ -41,13 +40,15 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  myOpensearchLongerEnableHA: !Not [!Equals [!FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]]
+  myOpensearchLongerEnableHA: !Not [!Equals [!FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
 
 Resources:
   myOpensearchLongerOpenSearchSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/MY_OPENSEARCH_LONGER'
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
@@ -59,6 +60,7 @@ Resources:
         IncludeSpace: false
         PasswordLength: 20
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
+
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   myOpensearchLongerOpenSearchSecurityGroup:
@@ -87,6 +89,8 @@ Resources:
 
   myOpensearchLongerOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
+    DeletionPolicy: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -110,7 +114,7 @@ Resources:
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
         - myOpensearchLongerEngineVersionMap
-        - !FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, EngineVersion]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -118,12 +122,12 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !If [myOpensearchLongerEnableHA, !FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, DedicatedMaster], false]
-        InstanceCount: !FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [myOpensearchLongerEnvScalingConfigurationMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled: !If [myOpensearchLongerEnableHA, !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DedicatedMaster], false]
+        InstanceCount: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: !If [myOpensearchLongerEnableHA, true, false]
         ZoneAwarenessConfig: !If
           - myOpensearchLongerEnableHA

@@ -39,12 +39,11 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  myAuroraDbEnvScalingConfigurationMap:
-
+  myAuroraDbEnvironmentConfigMap:
     development:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
-
+      DeletionPolicy: Delete
 
 Resources:
   myAuroraDbDBSubnetGroup:
@@ -82,6 +81,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/MY_AURORA_DB'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
@@ -107,6 +108,8 @@ Resources:
 
   myAuroraDbKMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
@@ -122,6 +125,8 @@ Resources:
 
   myAuroraDbKeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-myAuroraDb-cluster-key'
       TargetKeyId: !Ref myAuroraDbKMSKey
@@ -130,6 +135,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 database cluster'
     Type: 'AWS::RDS::DBCluster'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
@@ -149,14 +156,16 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref myAuroraDbDBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        MinCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
-        MaxCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+        MinCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
 
   myAuroraDbDBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 writer instance'
     Type: 'AWS::RDS::DBInstance'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBClusterIdentifier: !Ref myAuroraDbDBCluster
       DBInstanceClass: db.serverless
@@ -170,6 +179,8 @@ Resources:
 
   myAuroraDbSecretAuroraClusterAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       SecretId: !Ref myAuroraDbAuroraSecret
       TargetId: !Ref myAuroraDbDBCluster

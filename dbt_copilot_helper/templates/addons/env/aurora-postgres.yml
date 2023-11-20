@@ -39,12 +39,13 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  {{ addon_config.prefix }}EnvScalingConfigurationMap:
-{% for environment_name, config in addon_config.environments.items() %}
+  {{ addon_config.prefix }}EnvironmentConfigMap:
+{%- for environment_name, config in addon_config.environments.items() %}
     {{ environment_name }}:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
-{% endfor %}
+      DeletionPolicy: {{ config.deletion_policy }}
+{%- endfor %}
 
 Resources:
   {{ addon_config.prefix }}DBSubnetGroup:
@@ -82,6 +83,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
@@ -107,6 +110,8 @@ Resources:
 
   {{ addon_config.prefix }}KMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
@@ -122,6 +127,8 @@ Resources:
 
   {{ addon_config.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-cluster-key'
       TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
@@ -130,6 +137,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'The {{ addon_config.prefix }} Aurora Serverless v2 database cluster'
     Type: 'AWS::RDS::DBCluster'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
@@ -149,14 +158,16 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref {{ addon_config.prefix }}DBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        MinCapacity: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
-        MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+        MinCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
 
   {{ addon_config.prefix }}DBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The {{ addon_config.prefix }} Aurora Serverless v2 writer instance'
     Type: 'AWS::RDS::DBInstance'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBClusterIdentifier: !Ref {{ addon_config.prefix }}DBCluster
       DBInstanceClass: db.serverless
@@ -170,6 +181,8 @@ Resources:
 
   {{ addon_config.prefix }}SecretAuroraClusterAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       SecretId: !Ref {{ addon_config.prefix }}AuroraSecret
       TargetId: !Ref {{ addon_config.prefix }}DBCluster

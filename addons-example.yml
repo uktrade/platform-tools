@@ -66,6 +66,7 @@ my-s3-bucket-bucket-access:
 
 my-redis:
   type: redis
+  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
@@ -76,6 +77,7 @@ my-redis:
 
     production:
       plan: medium-ha
+      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
 
 
 ##### RDS postgres example:
@@ -83,10 +85,12 @@ my-redis:
 my-rds-db:
   type: rds-postgres
   version: 14.4
+  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
       plan: small-ha
+      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
 
 
 ##### Aurora serverless v2 example:
@@ -94,17 +98,20 @@ my-rds-db:
 my-aurora-db:
   type: aurora-postgres
   version: 14.4
+  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
       min-capacity: 0.5 # AllowedValues: from 0.5 through 128
       max-capacity: 8   # AllowedValues: from 0.5 through 128
+      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
 
 
 ##### Opensearch example:
 
 my-opensearch:
   type: opensearch
+  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
@@ -115,3 +122,4 @@ my-opensearch:
 
     production:
       plan: large-ha
+      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting

@@ -18,15 +18,16 @@ Parameters:
     Type: String
 
 Mappings:
-  {{ addon_config.prefix }}EnvScalingConfigurationMap:
-    {% for env_name, config in addon_config.environments.items() %}
+  {{ addon_config.prefix }}EnvironmentConfigMap:
+{%- for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       EngineVersion: '{{ config.engine }}'
       InstanceType: '{{ config.instance }}'
       InstanceCount: {{ config.instances }}
       DedicatedMaster: {{ config.master|lower }}
       VolumeSize: {{ config.volume_size }}
-    {% endfor %}
+      DeletionPolicy: {{ config.deletion_policy }}
+{%- endfor %}
 
   {{ addon_config.prefix }}EngineVersionMap:
     '1.0':
@@ -41,13 +42,15 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]]
+  {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
 
 Resources:
   {{ addon_config.prefix }}OpenSearchSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
@@ -59,6 +62,7 @@ Resources:
         IncludeSpace: false
         PasswordLength: 20
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
+
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   {{ addon_config.prefix }}OpenSearchSecurityGroup:
@@ -87,6 +91,8 @@ Resources:
 
   {{ addon_config.prefix }}OpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -110,7 +116,7 @@ Resources:
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
         - {{ addon_config.prefix }}EngineVersionMap
-        - !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, EngineVersion]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -118,12 +124,12 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !If [{{ addon_config.prefix }}EnableHA, !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, DedicatedMaster], false]
-        InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [{{ addon_config.prefix }}EnvScalingConfigurationMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled: !If [{{ addon_config.prefix }}EnableHA, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DedicatedMaster], false]
+        InstanceCount: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: !If [{{ addon_config.prefix }}EnableHA, true, false]
         ZoneAwarenessConfig: !If
           - {{ addon_config.prefix }}EnableHA
