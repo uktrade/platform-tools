@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import boto3
+import botocore
 import certifi
 import jsonschema
 import pytest
@@ -30,16 +31,28 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources")
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates")
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas")
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True)
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates", lazy_read=True)
+    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas", lazy_read=True)
+    fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
-    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies")
+
+    # JSON Schema compatibility
+    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True)
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
+
+    # For fakefs compatibility with moto
+    fs.add_real_directory(Path(boto3.__file__).parent.joinpath("data"), lazy_read=True)
+    fs.add_real_directory(Path(botocore.__file__).parent.joinpath("data"), lazy_read=True)
+
+    # Add fake aws config file
+    fs.add_real_file(
+        FIXTURES_DIR / "dummy_aws_config.ini", True, Path.home().joinpath(".aws/config")
+    )
 
     return fs
 
