@@ -5,8 +5,10 @@ import pytest
 from moto import mock_ssm
 
 from dbt_copilot_helper.exceptions import ValidationException
+from dbt_copilot_helper.utils.aws import NoProfileForAccountIdError
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
+from dbt_copilot_helper.utils.aws import get_profile_name_from_account_id
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
@@ -257,3 +259,16 @@ def test_get_codestar_connection_arn(mocked_boto3_client, connection_names, app_
     result = get_codestar_connection_arn(app_name)
 
     assert result == expected_arn
+
+
+def test_get_profile_name_from_account_id(fakefs):
+    assert get_profile_name_from_account_id("000000000") == "development"
+    assert get_profile_name_from_account_id("111111111") == "staging"
+    assert get_profile_name_from_account_id("222222222") == "production"
+
+
+def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):
+    with pytest.raises(NoProfileForAccountIdError) as error:
+        get_profile_name_from_account_id("999999999")
+
+    assert str(error.value) == "No profile found for account 999999999"
