@@ -57,6 +57,27 @@ def fakefs(fs):
     return fs
 
 
+@pytest.fixture(scope="function", autouse=True)
+def mock_application():
+    with patch("dbt_copilot_helper.utils.application.load_application") as app_patch:
+        from dbt_copilot_helper.utils.application import Application
+        from dbt_copilot_helper.utils.application import Environment
+
+        sessions = {
+            "000000000": boto3,
+            "111111111": boto3,
+            "222222222": boto3,
+        }
+        application = Application("test-application")
+        application.environments["development"] = Environment("development", "000000000", sessions)
+        application.environments["staging"] = Environment("staging", "111111111", sessions)
+        application.environments["production"] = Environment("production", "222222222", sessions)
+
+        app_patch.return_value = application
+
+        yield application
+
+
 @pytest.fixture(scope="function")
 def aws_credentials(monkeypatch):
     """Mocked AWS Credentials for moto."""
