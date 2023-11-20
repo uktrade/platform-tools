@@ -4,18 +4,18 @@
 
 # my-thing: # the name of addon item
 #   type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
+#   deletion-policy: X # options: Delete, Retain, Snapshot (redis, rds-postgres and aurora-postgres only). Optional. Defaults to Delete. Can be overriden per environment
 #
 #   environments:  # per environment configuration is defined here.
 #     default:   # the optional default key is used to apply a default value to all environments
 #       some-setting: x
 #       another-setting: y
-#
 #       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
 #
 #     production:  # you can override defaults on a per environment basis
-#
 #       plan: some-other-plan  # Any of the keys defined in a addon plan can also be overridden
 #       volume-size: 200
+#       deletion-policy: Retain
 
 
 ##### s3 bucket example:
@@ -66,7 +66,7 @@ my-s3-bucket-bucket-access:
 
 my-redis:
   type: redis
-  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
@@ -77,7 +77,7 @@ my-redis:
 
     production:
       plan: medium-ha
-      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
+      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
 
 ##### RDS postgres example:
@@ -85,12 +85,12 @@ my-redis:
 my-rds-db:
   type: rds-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
       plan: small-ha
-      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
+      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
 
 ##### Aurora serverless v2 example:
@@ -98,13 +98,13 @@ my-rds-db:
 my-aurora-db:
   type: aurora-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
   environments:
     default:
       min-capacity: 0.5 # AllowedValues: from 0.5 through 128
       max-capacity: 8   # AllowedValues: from 0.5 through 128
-      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
+      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
 
 
 ##### Opensearch example:
@@ -122,4 +122,4 @@ my-opensearch:
 
     production:
       plan: large-ha
-      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting
+      deletion-policy: Retain # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment

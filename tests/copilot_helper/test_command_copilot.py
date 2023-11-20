@@ -286,6 +286,16 @@ class TestMakeAddonCommand:
             assert not path.exists()
 
     @pytest.mark.parametrize(
+        "addon_file, file_name, addon_name",
+        [
+            (S3_STORAGE_CONTENTS, "my-s3-bucket", "myS3Bucket"),
+            (REDIS_STORAGE_CONTENTS, "redis", "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds", "rds"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora", "aurora"),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch", "opensearch"),
+        ],
+    )
+    @pytest.mark.parametrize(
         "deletion_policy, deletion_policy_override, expected_deletion_policy",
         [
             (None, None, "Delete"),
@@ -303,25 +313,34 @@ class TestMakeAddonCommand:
         new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    def test_make_addons_s3_deletion_policy(
-        self, fakefs, deletion_policy, deletion_policy_override, expected_deletion_policy
+    def test_make_addons_deletion_policy(
+        self,
+        fakefs,
+        addon_file,
+        file_name,
+        addon_name,
+        deletion_policy,
+        deletion_policy_override,
+        expected_deletion_policy,
     ):
         """Test that deletion policy defaults and overrides are applied
         correctly."""
-        addon_file_contents = yaml.safe_load(S3_STORAGE_CONTENTS)
+        addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy:
-            addon_file_contents["my-s3-bucket"]["deletion-policy"] = deletion_policy
+            addon_file_contents[file_name]["deletion-policy"] = deletion_policy
         if deletion_policy_override:
-            addon_file_contents["my-s3-bucket"]["environments"]["development"][
-                "deletion-policy"
-            ] = deletion_policy_override
+            addon_file_contents[file_name]["environments"]["development"] = {
+                "deletion-policy": deletion_policy_override
+            }
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
 
-        manifest = yaml.safe_load(Path("/copilot/environments/addons/my-s3-bucket.yml").read_text())
+        manifest = yaml.safe_load(Path(f"/copilot/environments/addons/{file_name}.yml").read_text())
         assert (
-            manifest["Mappings"]["myS3BucketEnvironmentConfigMap"]["development"]["DeletionPolicy"]
+            manifest["Mappings"][f"{addon_name}EnvironmentConfigMap"]["development"][
+                "DeletionPolicy"
+            ]
             == expected_deletion_policy
         )
 
