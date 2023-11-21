@@ -85,12 +85,12 @@ my-redis:
 my-rds-db:
   type: rds-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot
 
   environments:
     default:
       plan: small-ha
-      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+      deletion-policy: Retain # Delete|Retain|Snapshot
 
 
 ##### Aurora serverless v2 example:
@@ -98,20 +98,20 @@ my-rds-db:
 my-aurora-db:
   type: aurora-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot
 
   environments:
     default:
       min-capacity: 0.5 # AllowedValues: from 0.5 through 128
       max-capacity: 8   # AllowedValues: from 0.5 through 128
-      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+      deletion-policy: Retain # Delete|Retain|Snapshot
 
 
 ##### Opensearch example:
 
 my-opensearch:
   type: opensearch
-  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain
 
   environments:
     default:
@@ -122,4 +122,4 @@ my-opensearch:
 
     production:
       plan: large-ha
-      deletion-policy: Retain # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
+      deletion-policy: Retain # Delete|Retain
