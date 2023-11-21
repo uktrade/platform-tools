@@ -18,8 +18,7 @@ from dbt_copilot_helper.commands.dns import check_r53
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
-from dbt_copilot_helper.commands.dns import create_hosted_zone
-from dbt_copilot_helper.commands.dns import create_hosted_zone_2
+from dbt_copilot_helper.commands.dns import create_hosted_zones
 from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
@@ -190,103 +189,66 @@ def test_add_records(route53_session):
     assert add_records(route53_session, record, response["HostedZone"]["Id"], "CREATE") == "INSYNC"
 
 
-@patch("click.confirm")
-def test_create_hosted_zone(mock_click, route53_session):
-    route53_session.create_hosted_zone(Name="digital", CallerReference="digital")
-
-    assert create_hosted_zone(route53_session, "web.dev.uktrade.digital", "uktrade.digital", 1)
-
-
 @pytest.mark.parametrize(
     "zones_to_delete",
     [
-        ["test.1234."],
-        ["test.test.1234."],
-        ["test.1234.", "test.test.1234."],
+        ["dev.uktrade.digital."],
+        ["test.dev.uktrade.digital."],
+        ["dev.uktrade.digital.", "test.dev.uktrade.digital."],
     ],
 )
 @patch("click.confirm")
-def test_create_hosted_zone_works_when_base_zone_already_has_records(
+def test_create_hosted_zones_works_when_base_zone_already_has_records(
     mock_click, route53_session, zones_to_delete
 ):
-    route53_session.create_hosted_zone(Name="1234.", CallerReference="1234")
-    create_hosted_zone(route53_session, "test.test.test.1234", "test.1234", 1)
+    base_domain = "uktrade.digital"
+    hz = f"{base_domain}."
+    subdomain = "test.dev.uktrade.digital"
+    route53_session.create_hosted_zone(Name=hz, CallerReference="base_domain")
+    create_hosted_zones(route53_session, base_domain, subdomain)
     zones = {
         hz["Name"]: hz["Id"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]
     }
     for zone in zones_to_delete:
         route53_session.delete_hosted_zone(Id=(zones[zone]))
 
-    assert create_hosted_zone(route53_session, "test.test.1234", "test.1234", 1)
+    create_hosted_zones(route53_session, base_domain, subdomain)
     zones = [hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]]
-    assert {"test.test.1234.", "test.1234.", "1234."} == set(zones)
+    assert {"uktrade.digital.", "dev.uktrade.digital.", "test.dev.uktrade.digital."} == set(zones)
 
 
 @pytest.mark.parametrize(
-    "hz, base_domain, subdomain, expected_zones",
+    "hzs, base_domain, subdomain, expected_zones",
     [
         (
-            "uktrade.digital.",
+            ["uktrade.digital."],
             "uktrade.digital",
             "dev.uktrade.digital",
             {"uktrade.digital.", "dev.uktrade.digital."},
         ),
         (
-            "uktrade.digital.",
+            ["uktrade.digital."],
             "uktrade.digital",
             "test.dev.uktrade.digital",
             {"uktrade.digital.", "dev.uktrade.digital.", "test.dev.uktrade.digital."},
         ),
         (
-            "dev.uktrade.digital.",
+            ["uktrade.digital.", "dev.uktrade.digital."],
             "uktrade.digital",
             "test.dev.uktrade.digital",
-            {"dev.uktrade.digital.", "test.dev.uktrade.digital."},
+            {"uktrade.digital.", "dev.uktrade.digital.", "test.dev.uktrade.digital."},
         ),
         # Expand these tests with some prod variants.
     ],
 )
 @patch("click.confirm")
-def test_create_hosted_zone2_creates_the_correct_hosted_zones(
-    mock_click, route53_session, hz, base_domain, subdomain, expected_zones
+def test_create_hosted_zones_creates_the_correct_hosted_zones(
+    mock_click, route53_session, hzs, base_domain, subdomain, expected_zones
 ):
-    route53_session.create_hosted_zone(Name=hz, CallerReference="uktrade")
+    for hz in hzs:
+        route53_session.create_hosted_zone(Name=hz, CallerReference="uktrade")
 
-    create_hosted_zone_2(route53_session, base_domain, subdomain)
-
-    zones = {hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]}
-
-    assert zones == expected_zones
-
-
-@pytest.mark.parametrize(
-    "hz, subdomain, expected_zones",
-    [
-        ("uktrade.digital.", "dev.uktrade.digital", {"uktrade.digital.", "dev.uktrade.digital."}),
-        (
-            "uktrade.digital.",
-            "test.dev.uktrade.digital",
-            {"uktrade.digital.", "dev.uktrade.digital."},
-        ),
-        (
-            "digital.",
-            "dev.uktrade.digital",
-            {"digital.", "uktrade.digital.", "dev.uktrade.digital."},
-        ),
-        (
-            "digital.",
-            "test.dev.uktrade.digital",
-            {"digital.", "uktrade.digital.", "dev.uktrade.digital."},
-        ),
-    ],
-)
-@patch("click.confirm")
-def test_create_hosted_zone_creates_the_correct_hosted_zones(
-    mock_click, route53_session, hz, subdomain, expected_zones
-):
-    route53_session.create_hosted_zone(Name=hz, CallerReference="uktrade")
-
-    assert create_hosted_zone(route53_session, subdomain, hz, 1)
+    create_hosted_zones(route53_session, base_domain, subdomain)
 
     zones = {hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]}
 

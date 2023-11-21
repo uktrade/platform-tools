@@ -266,160 +266,66 @@ def copy_records_from_parent_to_subdomain(client, parent_id, subdom, subdom_id):
     return True
 
 
-def create_hosted_zone_2(client, base_domain, subdomain):
+def create_hosted_zones(client, base_domain, subdomain):
     domains_to_create = get_required_subdomains(base_domain, subdomain)
 
-    response = client.list_hosted_zones_by_name()
-    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
-    parent_zone = f"{base_domain}."
-
-    for dom in reversed(domains_to_create):
-        dom_zone = f"{dom}."
-        if dom_zone in hosted_zones:
-            parent_zone = dom_zone
-            break
-
-    click.secho(f"Found hosted zone {parent_zone}", fg="green")
-
-    current_parent = parent_zone
-
-    for domain in domains_to_create:
-        if f"{domain}." == parent_zone:
-            continue
+    for dom in domains_to_create:
+        parent_domain = dom.split(".", maxsplit=1)[1]
+        parent_zone = f"{parent_domain}."
+        parent_id = _get_zone_id_or_abort(client, parent_zone)
 
         if not click.confirm(
             click.style("About to create domain: ", fg="cyan")
-            + click.style(f"{domain}\n", fg="white", bold=True)
+            + click.style(f"{dom}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
 
-        response = client.list_hosted_zones_by_name()
-
-        for hz in response["HostedZones"]:
-            if hz["Name"] == current_parent:
-                parent_id = hz["Id"]
-                break
-
-        # if not parent_id: Do something....
-
-        click.secho(f"Creating hosted zone for {domain}...", fg="yellow")
+        click.secho(f"Creating hosted zone for {dom}...", fg="yellow")
 
         response = client.create_hosted_zone(
-            Name=domain,
+            Name=dom,
             # Timestamp is on the end because CallerReference must be unique for every call
-            CallerReference=f"{domain}_from_code_{int(time.time())}",
+            CallerReference=f"{dom}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
         subdom_id = response["HostedZone"]["Id"]
 
         # Check if records existed in the parent domain, if so they need to be copied to sub domain.
-        copy_records_from_parent_to_subdomain(client, parent_id, domain, subdom_id)
+        copy_records_from_parent_to_subdomain(client, parent_id, dom, subdom_id)
 
         if not click.confirm(
-            click.style(f"Updating parent {current_parent} domain with records: ", fg="cyan")
+            click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
             + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
 
-        # Add NS records of subdomain to parent
-        nameservers = ns_records["NameServers"]
-        # append  . to make fqdn
-        nameservers = [f"{nameserver}." for nameserver in nameservers]
-        nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
+        _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id)
 
-        client.change_resource_record_sets(
-            HostedZoneId=parent_id,
-            ChangeBatch={
-                "Changes": [
-                    {
-                        "Action": "UPSERT",
-                        "ResourceRecordSet": {
-                            "Name": domain,
-                            "Type": "NS",
-                            "TTL": 300,
-                            "ResourceRecords": nameserver_resource_records,
-                        },
+
+def _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id):
+    # Add NS records of subdomain to parent
+    nameservers = ns_records["NameServers"]
+    # append  . to make fqdn
+    nameservers = [f"{nameserver}." for nameserver in nameservers]
+    nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
+    client.change_resource_record_sets(
+        HostedZoneId=parent_id,
+        ChangeBatch={
+            "Changes": [
+                {
+                    "Action": "UPSERT",
+                    "ResourceRecordSet": {
+                        "Name": dom,
+                        "Type": "NS",
+                        "TTL": 300,
+                        "ResourceRecords": nameserver_resource_records,
                     },
-                ],
-            },
-        )
-
-        # Set current_parent to this domain ready for the next iteration
-        current_parent = domain
-
-
-def create_hosted_zone(client, subdomain, ancestor_hz, base_len):
-    parts = subdomain.split(".")
-
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = parts[parts_to_remove:]
-
-    # Walk back domain name
-    for x in reversed(range(len(domain_to_create) - (len(ancestor_hz.split(".")) - 1))):
-        ancestor_hz = ".".join(domain_to_create[(x):]) + "."
-
-        if not click.confirm(
-            click.style("About to create domain: ", fg="cyan")
-            + click.style(f"{ancestor_hz}\n", fg="white", bold=True)
-            + click.style("Do you want to continue?", fg="cyan"),
-        ):
-            exit()
-
-        parent = ".".join(ancestor_hz.split(".")[1:])
-        response = client.list_hosted_zones_by_name()
-
-        for hz in response["HostedZones"]:
-            if hz["Name"] == parent:
-                parent_id = hz["Id"]
-                break
-
-        click.secho(f"Creating hosted zone for {ancestor_hz}...", fg="yellow")
-
-        response = client.create_hosted_zone(
-            Name=ancestor_hz,
-            # Timestamp is on the end because CallerReference must be unique for every call
-            CallerReference=f"{ancestor_hz}_from_code_{int(time.time())}",
-        )
-        ns_records = response["DelegationSet"]
-        subdom_id = response["HostedZone"]["Id"]
-
-        # Check if records existed in the parent domain, if so they need to be copied to sub domain.
-        copy_records_from_parent_to_subdomain(client, parent_id, ancestor_hz, subdom_id)
-
-        if not click.confirm(
-            click.style(f"Updating parent {parent} domain with records: ", fg="cyan")
-            + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
-            + click.style("Do you want to continue?", fg="cyan"),
-        ):
-            exit()
-
-        # Add NS records of subdomain to parent
-        nameservers = ns_records["NameServers"]
-        # append  . to make fqdn
-        nameservers = [f"{nameserver}." for nameserver in nameservers]
-        nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
-
-        client.change_resource_record_sets(
-            HostedZoneId=parent_id,
-            ChangeBatch={
-                "Changes": [
-                    {
-                        "Action": "UPSERT",
-                        "ResourceRecordSet": {
-                            "Name": ancestor_hz,
-                            "Type": "NS",
-                            "TTL": 300,
-                            "ResourceRecords": nameserver_resource_records,
-                        },
-                    },
-                ],
-            },
-        )
-
-    return True
+                },
+            ],
+        },
+    )
 
 
 class InvalidDomainException(Exception):
@@ -514,22 +420,17 @@ def get_base_domain(subdomains: list[str]) -> str:
 
 
 def check_r53(domain_session, project_session, subdomain, base_domain):
-    # Sanitise base domain
     _base_domain = base_domain
-    base_domain = base_domain.rstrip(".") + "."
 
     # find the hosted zone
     domain_client = domain_session.client("route53")
     acm_client = project_session.client("acm", region_name=AWS_CERT_REGION)
 
     # create the certificate
-    response = domain_client.list_hosted_zones_by_name()
-    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
+    create_hosted_zones(domain_client, _base_domain, subdomain)
 
-    _abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
-
-    create_hosted_zone_2(domain_client, _base_domain, subdomain)
-
+    # Sanitise base domain
+    base_domain = base_domain.rstrip(".") + "."
     base_len = len(base_domain.split(".")) - 1
 
     # add records to hosted zone to validate certificate
@@ -538,13 +439,18 @@ def check_r53(domain_session, project_session, subdomain, base_domain):
     return cert_arn
 
 
-def _abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
-    if base_domain not in hosted_zones:
+def _get_zone_id_or_abort(client, zone):
+    """Zones have the '.' suffix."""
+    response = client.list_hosted_zones_by_name()
+    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
+    if zone not in hosted_zones:
         click.secho(
-            f"The base domain: {base_domain} does not exist in your AWS domain account {hosted_zones}",
+            f"The base domain: {zone} does not exist in your AWS domain account {hosted_zones}",
             fg="red",
         )
         exit()
+    click.secho(f"Found hosted zone {zone}", fg="green")
+    return hosted_zones[zone]["Id"]
 
 
 def get_load_balancer_domain_and_configuration(
