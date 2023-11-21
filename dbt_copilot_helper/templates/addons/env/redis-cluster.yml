@@ -52,6 +52,8 @@ Resources:
 
   {{ addon_config.prefix }}CacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       CacheParameterGroupFamily: !FindInMap
         - {{ addon_config.prefix }}EngineVersionMap
@@ -62,12 +64,16 @@ Resources:
 
   {{ addon_config.prefix }}CacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
 
   {{ addon_config.prefix }}SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: !Ref VpcId

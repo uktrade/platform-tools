@@ -50,6 +50,8 @@ Resources:
 
   myRedisCacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'
+    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       CacheParameterGroupFamily: !FindInMap
         - myRedisEngineVersionMap
@@ -60,12 +62,16 @@ Resources:
 
   myRedisCacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
+    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
 
   myRedisSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: !Ref VpcId

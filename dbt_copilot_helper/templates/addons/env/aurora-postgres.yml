@@ -50,6 +50,8 @@ Mappings:
 Resources:
   {{ addon_config.prefix }}DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
@@ -58,6 +60,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster {{ addon_config.prefix }}'
     Type: 'AWS::EC2::SecurityGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for {{ addon_config.name }} to access Aurora Serverless v2 cluster {{ addon_config.prefix }}.'
       VpcId: !Ref VpcId
@@ -69,6 +73,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster {{ addon_config.prefix }}'
     Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
       SecurityGroupIngress:
@@ -83,8 +89,6 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
     Type: AWS::SecretsManager::Secret
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub Aurora main user secret for ${AWS::StackName}
@@ -100,6 +104,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
     Type: 'AWS::RDS::DBClusterParameterGroup'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
       Family: 'aurora-postgresql{{ addon_config.version|round(0, "floor")|int }}'
@@ -127,8 +133,6 @@ Resources:
 
   {{ addon_config.prefix }}KeyAlias:
     Type: 'AWS::KMS::Alias'
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    UpdateReplacePolicy: Retain
     Properties:
       AliasName: !Sub 'alias/${App}-${Env}-{{ addon_config.prefix }}-cluster-key'
       TargetKeyId: !Ref {{ addon_config.prefix }}KMSKey
@@ -181,8 +185,6 @@ Resources:
 
   {{ addon_config.prefix }}SecretAuroraClusterAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    UpdateReplacePolicy: Retain
     Properties:
       SecretId: !Ref {{ addon_config.prefix }}AuroraSecret
       TargetId: !Ref {{ addon_config.prefix }}DBCluster
@@ -193,6 +195,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
       GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
@@ -205,6 +209,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to DB
       GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
@@ -217,6 +223,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to Secrets Manager
       GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
@@ -229,6 +237,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from DB cluster in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from DB to Lambda Functions
       GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
@@ -241,6 +251,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from Secrets Manager to Lambda Functions
       GroupId: !Ref '{{ addon_config.prefix }}DBClusterSecurityGroup'
@@ -253,6 +265,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       CidrIp: 0.0.0.0/0
       Description: Egress for HTTPS
@@ -425,6 +439,8 @@ Resources:
 
   {{ addon_config.prefix }}ApplicationUser:
     Type: 'Custom::{{ addon_config.prefix }}ApplicationUser'
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
       CopilotApplication: !Sub "${App}"

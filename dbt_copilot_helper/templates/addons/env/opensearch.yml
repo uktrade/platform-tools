@@ -49,8 +49,6 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your OS credentials'
     Type: AWS::SecretsManager::Secret
-    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    UpdateReplacePolicy: Retain
     Properties:
       Name: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}'
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
@@ -69,6 +67,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for {{ addon_config.name }} to access OpenSearch.'
       VpcId: !Ref VpcId
@@ -81,6 +81,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
       GroupId: !Ref '{{ addon_config.prefix }}OpenSearchSecurityGroup'
