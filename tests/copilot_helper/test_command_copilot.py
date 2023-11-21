@@ -53,7 +53,7 @@ opensearch:
 """
 
 S3_STORAGE_CONTENTS = """
-my-s3-bucket:
+s3:
   type: s3
   readonly: true
   services:
@@ -286,13 +286,13 @@ class TestMakeAddonCommand:
             assert not path.exists()
 
     @pytest.mark.parametrize(
-        "addon_file, file_name, addon_name",
+        "addon_file, addon_name",
         [
-            (S3_STORAGE_CONTENTS, "my-s3-bucket", "myS3Bucket"),
-            (REDIS_STORAGE_CONTENTS, "redis", "redis"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds", "rds"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora", "aurora"),
-            (OPENSEARCH_STORAGE_CONTENTS, "opensearch", "opensearch"),
+            (S3_STORAGE_CONTENTS, "s3"),
+            (REDIS_STORAGE_CONTENTS, "redis"),
+            (RDS_POSTGRES_STORAGE_CONTENTS, "rds"),
+            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora"),
+            (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
         ],
     )
     @pytest.mark.parametrize(
@@ -317,7 +317,6 @@ class TestMakeAddonCommand:
         self,
         fakefs,
         addon_file,
-        file_name,
         addon_name,
         deletion_policy,
         deletion_policy_override,
@@ -327,16 +326,18 @@ class TestMakeAddonCommand:
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy:
-            addon_file_contents[file_name]["deletion-policy"] = deletion_policy
+            addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
         if deletion_policy_override:
-            addon_file_contents[file_name]["environments"]["development"] = {
+            addon_file_contents[addon_name]["environments"]["development"] = {
                 "deletion-policy": deletion_policy_override
             }
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
 
-        manifest = yaml.safe_load(Path(f"/copilot/environments/addons/{file_name}.yml").read_text())
+        manifest = yaml.safe_load(
+            Path(f"/copilot/environments/addons/{addon_name}.yml").read_text()
+        )
         assert (
             manifest["Mappings"][f"{addon_name}EnvironmentConfigMap"]["development"][
                 "DeletionPolicy"
