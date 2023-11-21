@@ -20,6 +20,7 @@ from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomai
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zones
 from dbt_copilot_helper.commands.dns import get_base_domain
+from dbt_copilot_helper.commands.dns import get_certificate_zone_id
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
 from dbt_copilot_helper.commands.dns import validate_subdomains
@@ -51,9 +52,12 @@ def test_copy_records_from_parent_to_subdomain(route53_session):
 def test_create_cert_with_no_existing_cert_creates_a_cert(
     _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
-    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    resp = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    zone_id = resp["HostedZone"]["Id"]
 
-    assert create_cert(acm_session, route53_session, "test.1234", 1).startswith("arn:aws:acm:")
+    assert create_cert(acm_session, route53_session, "test.1234", zone_id).startswith(
+        "arn:aws:acm:"
+    )
 
 
 @patch(
@@ -88,6 +92,24 @@ def test_create_cert_returns_existing_cert_if_it_is_issued(
         assert existing_cert_arn == create_cert(acm_session, route53_session, "test.1234", 1)
 
 
+@pytest.mark.parametrize(
+    "zones, expected_id",
+    [
+        (
+            {
+                "web.dev.uktrade.digital": "wdud",
+                "uktrade.digital": "ud",
+                "dev.uktrade.digital": "dud",
+            },
+            "wdud",
+        ),
+        ({"prod.uktrade.digital": "pud", "web.prod.uktrade.digital": "wpud"}, "wpud"),
+    ],
+)
+def test_get_certificate_zone_id(zones, expected_id):
+    assert get_certificate_zone_id(zones) == expected_id
+
+
 @patch(
     "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
     return_value="arn:1234",
@@ -96,7 +118,8 @@ def test_create_cert_returns_existing_cert_if_it_is_issued(
 def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_pending(
     _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
-    route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    resp = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    zone_id = resp["HostedZone"]["Id"]
 
     domain = "test.1234"
     old_cert_arn = "arn:aws:acm:eu-west-2:abc1234:certificate/ca88age-f10a-1eaf"
@@ -149,7 +172,7 @@ def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_p
         acm_stub.add_response(
             "describe_certificate", cert_desc_response, {"CertificateArn": new_cert_arn}
         )
-        actual_cert_arn = create_cert(acm_session, route53_session, domain, 1)
+        actual_cert_arn = create_cert(acm_session, route53_session, domain, zone_id)
 
         assert new_cert_arn == actual_cert_arn
 
@@ -255,16 +278,41 @@ def test_create_hosted_zones_creates_the_correct_hosted_zones(
     assert zones == expected_zones
 
 
+@pytest.mark.parametrize(
+    "base_domain, domain, zone_dict",
+    [
+        ("uktrade.digital", "web.dev.uktrade.digital", {"web.dev.uktrade.digital": "wdud"}),
+        ("uktrade.digital", "other.web.dev.uktrade.digital", {"web.dev.uktrade.digital": "wdud"}),
+        ("prod.uktrade.digital", "web.prod.uktrade.digital", {"web.prod.uktrade.digital": "wpud"}),
+        (
+            "prod.uktrade.digital",
+            "v2.web.prod.uktrade.digital",
+            {"web.prod.uktrade.digital": "wpud"},
+        ),
+    ],
+)
 @patch(
     "dbt_copilot_helper.commands.dns.create_cert",
     return_value="arn:1234",
 )
 @patch("click.confirm")
-def test_check_r53(mock_create_cert, mock_click, route53_session):
-    session = boto3.session.Session(profile_name="foo")
-    route53_session.create_hosted_zone(Name="uktrade.digital", CallerReference="digital")
+def test_check_r53(
+    mock_create_cert, mock_click, acm_session, route53_session, base_domain, domain, zone_dict
+):
+    with patch("dbt_copilot_helper.commands.dns.create_hosted_zones") as mock_create_hosted_zones:
+        mock_create_hosted_zones.return_value = zone_dict
 
-    assert check_r53(session, session, "web.dev.uktrade.digital", "uktrade.digital") == "arn:1234"
+        route53_session.create_hosted_zone(Name=base_domain, CallerReference="digital")
+
+        response_cert_list = {"CertificateSummaryList": []}
+
+        with Stubber(acm_session) as acm_stub:
+            acm_stub.add_response(
+                "list_certificates",
+                response_cert_list,
+                {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
+            )
+            assert check_r53(route53_session, acm_session, domain, base_domain) == "arn:1234"
 
 
 @pytest.mark.parametrize("env", ["dev", "staging"])

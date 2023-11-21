@@ -65,7 +65,7 @@ def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10,
         raise Exception(f"""Certificate validation failed with the status "{status}".""")
 
 
-def create_cert(client, domain_client, domain, base_len):
+def create_cert(client, domain_client, domain, zone_id):
     for cert in _certs_for_domain(client, domain):
         if cert["Status"] == "ISSUED":
             click.secho("Certificate already exists, do not need to create.", fg="green")
@@ -84,26 +84,10 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    domain_to_create = _get_domain_to_create(base_len, domain)
-
     arn = _request_cert(client, domain)
 
     # Create DNS validation records
     cert_record = _get_certificate_record(arn, client)
-    domain_id = _get_domain_id(domain_client, domain_to_create)
-
-    if not domain_id:
-        # Will got here more than once during manual testing,
-        # it might be a race condition we need to handle better
-        click.secho(
-            f"Unable to find Domain ID for {domain_to_create} in the hosted zones",
-            fg="red",
-            bold=True,
-        )
-        exit(1)
-
-    # Add NS records of subdomain to parent
-    click.secho(domain_id, fg="yellow")
 
     if not click.confirm(
         click.style("Updating DNS record for certificate ", fg="yellow")
@@ -114,7 +98,7 @@ def create_cert(client, domain_client, domain, base_len):
     ):
         exit()
 
-    _create_resource_records(cert_record, domain_client, domain_id)
+    _create_resource_records(cert_record, domain_client, zone_id)
 
     # Wait for certificate to get to validation state before continuing.
     # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
@@ -268,6 +252,7 @@ def copy_records_from_parent_to_subdomain(client, parent_id, subdom, subdom_id):
 
 def create_hosted_zones(client, base_domain, subdomain):
     domains_to_create = get_required_subdomains(base_domain, subdomain)
+    zone_ids = {}
 
     for dom in domains_to_create:
         parent_domain = dom.split(".", maxsplit=1)[1]
@@ -290,6 +275,7 @@ def create_hosted_zones(client, base_domain, subdomain):
         )
         ns_records = response["DelegationSet"]
         subdom_id = response["HostedZone"]["Id"]
+        zone_ids[dom] = subdom_id
 
         # Check if records existed in the parent domain, if so they need to be copied to sub domain.
         copy_records_from_parent_to_subdomain(client, parent_id, dom, subdom_id)
@@ -302,6 +288,8 @@ def create_hosted_zones(client, base_domain, subdomain):
             exit()
 
         _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id)
+
+    return zone_ids
 
 
 def _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id):
@@ -419,22 +407,21 @@ def get_base_domain(subdomains: list[str]) -> str:
     return matching_domains[0]
 
 
-def check_r53(domain_session, project_session, subdomain, base_domain):
-    _base_domain = base_domain
+def get_certificate_zone_id(hosted_zones):
+    hosted_zone_names = sorted([zone for zone in hosted_zones], key=lambda z: len(z))
+    longest_hosted_zone = hosted_zone_names[-1]
 
-    # find the hosted zone
-    domain_client = domain_session.client("route53")
-    acm_client = project_session.client("acm", region_name=AWS_CERT_REGION)
+    return hosted_zones[longest_hosted_zone]
 
+
+def check_r53(domain_client, project_client, subdomain, base_domain):
     # create the certificate
-    create_hosted_zones(domain_client, _base_domain, subdomain)
+    hosted_zones = create_hosted_zones(domain_client, base_domain, subdomain)
 
-    # Sanitise base domain
-    base_domain = base_domain.rstrip(".") + "."
-    base_len = len(base_domain.split(".")) - 1
+    cert_zone_id = get_certificate_zone_id(hosted_zones)
 
     # add records to hosted zone to validate certificate
-    cert_arn = create_cert(acm_client, domain_client, subdomain, base_len)
+    cert_arn = create_cert(project_client, domain_client, subdomain, cert_zone_id)
 
     return cert_arn
 
@@ -578,13 +565,15 @@ def configure(project_profile, env):
 
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
+    domain_client = domain_session.client("route53")
+    project_client = project_session.client("acm", region_name=AWS_CERT_REGION)
 
     cert_list = {}
 
     for subdomain in subdomains:
         cert_arn = check_r53(
-            domain_session,
-            project_session,
+            domain_client,
+            project_client,
             subdomain,
             base_domain,
         )
