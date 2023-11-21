@@ -399,13 +399,23 @@ export class TransformedStack extends cdk.Stack {
             path.join(deployRepoRoot, 'pipelines.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
 
-        const codebaseConfiguration = this.pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
+        this.codebaseConfiguration = this.getFullCodebaseConfiguration();
+    }
+
+    private getFullCodebaseConfiguration() {
+        const pipelineRoot = path.join(process.cwd(), '..');
+        const deployRepoRoot = path.join(pipelineRoot, '..', '..', '..');
+        const pipelinesFile = parse(readFileSync(
+            path.join(deployRepoRoot, 'pipelines.yml'),
+        ).toString('utf-8')) as PipelinesConfiguration;
+
+        const codebaseConfiguration = pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
 
         if (!codebaseConfiguration) {
             throw new Error(`Could not find a codebase configuration for ${this.pipelineManifest.name}, ensure ./pipelines.yml is up to date`);
         }
 
-        this.codebaseConfiguration = codebaseConfiguration;
+        return codebaseConfiguration
     }
 
     private loadCodestarConnection() {
@@ -435,10 +445,10 @@ export class TransformedStack extends cdk.Stack {
     }
 
     private uploadPipelineConfiguration() {
-        new cdk.aws_ssm.CfnParameter(this, 'PipelineConfiguration', {
-            name: `/copilot/applications/${this.appName}/pipelines/${this.codebaseConfiguration.name}`,
+        new cdk.aws_ssm.CfnParameter(this, 'CodebaseConfiguration', {
+            name: `/copilot/applications/${this.appName}/codebases/${this.codebaseConfiguration.name}`,
             type: "String",
-            value: JSON.stringify(this.codebaseConfiguration),
+            value: JSON.stringify(this.getFullCodebaseConfiguration()),
         });
     }
 }
