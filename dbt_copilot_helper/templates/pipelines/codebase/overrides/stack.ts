@@ -134,7 +134,7 @@ export class TransformedStack extends cdk.Stack {
                     ],
                 }),
             },
-            repositoryPolicyText: {
+            repositoryPolicyText: this.pipelinesFile.accounts ? {
                 Statement: [
                     {
                         Effect: "Allow",
@@ -152,7 +152,7 @@ export class TransformedStack extends cdk.Stack {
                         ]
                     }
                 ]
-            }
+            } : undefined,
         });
     }
 
