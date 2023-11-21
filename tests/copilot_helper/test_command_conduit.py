@@ -11,20 +11,6 @@ from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
 from moto import mock_ssm
 
-from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
-from dbt_copilot_helper.commands.conduit import InvalidAddonTypeConduitError
-from dbt_copilot_helper.commands.conduit import NoClusterConduitError
-from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
-from dbt_copilot_helper.commands.conduit import add_stack_delete_policy_to_task_role
-from dbt_copilot_helper.commands.conduit import addon_client_is_running
-from dbt_copilot_helper.commands.conduit import conduit
-from dbt_copilot_helper.commands.conduit import connect_to_addon_client_task
-from dbt_copilot_helper.commands.conduit import create_addon_client_task
-from dbt_copilot_helper.commands.conduit import get_cluster_arn
-from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
-from dbt_copilot_helper.commands.conduit import normalise_string
-from dbt_copilot_helper.commands.conduit import start_conduit
-
 
 @pytest.mark.parametrize(
     "test_instance",
@@ -38,41 +24,49 @@ from dbt_copilot_helper.commands.conduit import start_conduit
 def test_normalise_string(test_instance):
     """Test that given a set of strings, normalise_string produces the expected
     result."""
+    from dbt_copilot_helper.commands.conduit import load_application
+    from dbt_copilot_helper.commands.conduit import normalise_string
+
+    print(load_application)
     assert normalise_string(test_instance[0]) == test_instance[1]
 
 
 @mock_resourcegroupstaggingapi
-def test_get_cluster_arn(mocked_cluster):
+def test_get_cluster_arn(mocked_cluster, mock_application):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
+    from dbt_copilot_helper.commands.conduit import get_cluster_arn
 
     assert (
-        get_cluster_arn("test-application", "development")
-        == mocked_cluster["cluster"]["clusterArn"]
+        get_cluster_arn(mock_application, "development") == mocked_cluster["cluster"]["clusterArn"]
     )
 
 
 @mock_ecs
-def test_get_cluster_arn_when_there_is_no_cluster():
+def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
     """Test that, given app and environment strings, get_cluster_arn raises an
     exception when no cluster tagged with these strings exists."""
+    from dbt_copilot_helper.commands.conduit import NoClusterConduitError
+    from dbt_copilot_helper.commands.conduit import get_cluster_arn
 
     with pytest.raises(NoClusterConduitError):
-        get_cluster_arn("test-application", "nope")
+        get_cluster_arn(mock_application, "staging")
 
 
 @mock_secretsmanager
 @mock_ssm
-def test_get_connection_secret_arn_from_secrets_manager():
+def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn returns an ARN from secrets manager."""
+    from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
+
     mock_secretsmanager = boto3.client("secretsmanager")
     mock_secretsmanager.create_secret(
         Name="/copilot/test-application/development/secrets/POSTGRES",
         SecretString="something-secret",
     )
 
-    arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
+    arn = get_connection_secret_arn(mock_application, "development", "POSTGRES")
 
     assert arn.startswith(
         "arn:aws:secretsmanager:eu-west-2:123456789012:secret:"
@@ -81,9 +75,11 @@ def test_get_connection_secret_arn_from_secrets_manager():
 
 
 @mock_ssm
-def test_get_connection_secret_arn_from_parameter_store():
+def test_get_connection_secret_arn_from_parameter_store(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn returns an ARN from parameter store."""
+    from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
+
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
         Name="/copilot/test-application/development/secrets/POSTGRES",
@@ -91,7 +87,7 @@ def test_get_connection_secret_arn_from_parameter_store():
         Type="SecureString",
     )
 
-    arn = get_connection_secret_arn("test-application", "development", "POSTGRES")
+    arn = get_connection_secret_arn(mock_application, "development", "POSTGRES")
 
     assert (
         arn
@@ -101,23 +97,28 @@ def test_get_connection_secret_arn_from_parameter_store():
 
 @mock_secretsmanager
 @mock_ssm
-def test_get_connection_secret_arn_when_secret_does_not_exist():
+def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn raises an exception when no matching secret exists
     in secrets manager or parameter store."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
+
     with pytest.raises(SecretNotFoundConduitError):
-        get_connection_secret_arn("test-application", "development", "POSTGRES")
+        get_connection_secret_arn(mock_application, "development", "POSTGRES")
 
 
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
+def test_create_addon_client_task(get_connection_secret_arn, subprocess_call, mock_application):
     """Test that, given app and environment strings, create_addon_client_task
     calls get_connection_secret_arn with the default secret name and
     subsequently subprocess.call with the correct secret ARN."""
-    create_addon_client_task("test-application", "development", "postgres", "postgres")
+    from dbt_copilot_helper.commands.conduit import create_addon_client_task
 
-    get_connection_secret_arn.assert_called_once_with("test-application", "development", "POSTGRES")
+    create_addon_client_task(mock_application, "development", "postgres", "postgres")
+
+    get_connection_secret_arn.assert_called_once_with(mock_application, "development", "POSTGRES")
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
         "--task-group-name conduit-test-application-development-postgres "
@@ -133,14 +134,18 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call):
 @patch(
     "dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-named-arn"
 )
-def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, subprocess_call):
+def test_create_addon_client_task_with_addon_name(
+    get_connection_secret_arn, subprocess_call, mock_application
+):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task calls get_connection_secret_arn with the custom
     secret name and subsequently subprocess.call with the correct secret ARN."""
-    create_addon_client_task("test-application", "development", "postgres", "named_postgres")
+    from dbt_copilot_helper.commands.conduit import create_addon_client_task
+
+    create_addon_client_task(mock_application, "development", "postgres", "named_postgres")
 
     get_connection_secret_arn.assert_called_once_with(
-        "test-application", "development", "NAMED_POSTGRES"
+        mock_application, "development", "NAMED_POSTGRES"
     )
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
@@ -154,16 +159,20 @@ def test_create_addon_client_task_with_addon_name(get_connection_secret_arn, sub
 
 
 @patch("subprocess.call")
-@patch(
-    "dbt_copilot_helper.commands.conduit.get_connection_secret_arn",
-    side_effect=SecretNotFoundConduitError,
-)
-def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
+@patch("dbt_copilot_helper.commands.conduit.get_connection_secret_arn")
+def test_create_addon_client_task_when_no_secret_found(
+    get_connection_secret_arn, subprocess_call, mock_application
+):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import create_addon_client_task
+
+    get_connection_secret_arn.side_effect = SecretNotFoundConduitError
+
     with pytest.raises(SecretNotFoundConduitError):
-        create_addon_client_task("test-application", "development", "postgres", "named-postgres")
+        create_addon_client_task(mock_application, "development", "postgres", "named-postgres")
 
         subprocess_call.assert_not_called()
 
@@ -172,17 +181,21 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon_type):
+def test_addon_client_is_running(
+    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
+):
     """Test that, given cluster ARN, addon type and with a running agent,
     addon_client_is_running returns True."""
+    from dbt_copilot_helper.commands.conduit import addon_client_is_running
+
     mocked_cluster_for_client = mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert addon_client_is_running(
-            "test-application", "development", mocked_cluster_arn, addon_type
+            mock_application, "development", mocked_cluster_arn, addon_type
         )
 
 
@@ -191,20 +204,20 @@ def test_addon_client_is_running(mock_cluster_client_task, mocked_cluster, addon
     ["postgres", "redis", "opensearch"],
 )
 def test_addon_client_is_running_when_no_client_task_running(
-    mock_cluster_client_task, mocked_cluster, addon_type
+    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
 ):
     """Test that, given cluster ARN, addon type and without a running client
     task, addon_client_is_running returns False."""
+    from dbt_copilot_helper.commands.conduit import addon_client_is_running
+
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, task_running=False)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert (
-            addon_client_is_running(
-                "test-application", "development", mocked_cluster_arn, addon_type
-            )
+            addon_client_is_running(mock_application, "development", mocked_cluster_arn, addon_type)
             is False
         )
 
@@ -214,20 +227,20 @@ def test_addon_client_is_running_when_no_client_task_running(
     ["postgres", "redis", "opensearch"],
 )
 def test_addon_client_is_running_when_no_client_agent_running(
-    mock_cluster_client_task, mocked_cluster, addon_type
+    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
 ):
     """Test that, given cluster ARN, addon type and without a running agent,
     addon_client_is_running returns False."""
+    from dbt_copilot_helper.commands.conduit import addon_client_is_running
+
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, "ACTIVATING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with patch(
-        "dbt_copilot_helper.commands.conduit.boto3.client", return_value=mocked_cluster_for_client
+        "dbt_copilot_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
     ):
         assert (
-            addon_client_is_running(
-                "test-application", "development", mocked_cluster_arn, addon_type
-            )
+            addon_client_is_running(mock_application, "development", mocked_cluster_arn, addon_type)
             is False
         )
 
@@ -238,11 +251,16 @@ def test_addon_client_is_running_when_no_client_agent_running(
     "addon_name",
     ["postgres", "redis", "opensearch", "rds-postgres"],
 )
-def test_add_stack_delete_policy_to_task_role(mock_stack, addon_name):
+@patch("time.sleep", return_value=None)
+def test_add_stack_delete_policy_to_task_role(
+    sleep, mock_stack, addon_name, mock_application, fakefs
+):
     """Test that, given app, env and addon name
     add_stack_delete_policy_to_task_role adds a policy to the IAM role in a
     CloudFormation stack."""
     stack_name = f"task-conduit-test-application-development-{addon_name}"
+    from dbt_copilot_helper.commands.conduit import add_stack_delete_policy_to_task_role
+
     mock_stack(addon_name)
     mock_policy = {
         "Version": "2012-10-17",
@@ -255,7 +273,7 @@ def test_add_stack_delete_policy_to_task_role(mock_stack, addon_name):
         ],
     }
 
-    add_stack_delete_policy_to_task_role("test-application", "development", addon_name)
+    add_stack_delete_policy_to_task_role(mock_application, "development", addon_name)
 
     stack_resources = boto3.client("cloudformation").list_stack_resources(StackName=stack_name)[
         "StackResourceSummaries"
@@ -281,7 +299,9 @@ def test_add_stack_delete_policy_to_task_role(mock_stack, addon_name):
 )
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=True)
-def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, addon_type):
+def test_connect_to_addon_client_task(
+    addon_client_is_running, subprocess_call, addon_type, mock_application
+):
     """
     Test that, given app, env, ECS cluster ARN and addon type,
     connect_to_addon_client_task calls addon_client_is_running with cluster ARN
@@ -290,10 +310,13 @@ def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, 
     It then subsequently calls subprocess.call with the correct app, env and
     addon type.
     """
-    connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
+    from dbt_copilot_helper.commands.conduit import addon_client_is_running
+    from dbt_copilot_helper.commands.conduit import connect_to_addon_client_task
+
+    connect_to_addon_client_task(mock_application, "development", "test-arn", addon_type)
 
     addon_client_is_running.assert_called_once_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     subprocess_call.assert_called_once_with(
         f"copilot task exec --app test-application --env development "
@@ -307,21 +330,24 @@ def test_connect_to_addon_client_task(addon_client_is_running, subprocess_call, 
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("time.sleep")
+@patch("time.sleep", return_value=None)
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 def test_connect_to_addon_client_task_when_timeout_reached(
-    addon_client_is_running, subprocess_call, sleep, addon_type
+    addon_client_is_running, subprocess_call, sleep, addon_type, mock_application
 ):
     """Test that, given app, env, ECS cluster ARN and addon type, when the
     client agent fails to start, connect_to_addon_client_task calls
     addon_client_is_running with cluster ARN and addon type 15 times, but does
     not call subprocess.call."""
+    from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
+    from dbt_copilot_helper.commands.conduit import connect_to_addon_client_task
+
     with pytest.raises(CreateTaskTimeoutConduitError):
-        connect_to_addon_client_task("test-application", "development", "test-arn", addon_type)
+        connect_to_addon_client_task(mock_application, "development", "test-arn", addon_type)
 
     addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     assert addon_client_is_running.call_count == 15
     subprocess_call.assert_not_called()
@@ -343,30 +369,31 @@ def test_start_conduit(
     addon_client_is_running,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """Test that given app, env and addon type strings, start_conduit calls
     get_cluster_arn, addon_client_is_running, created_addon_client_task,
     add_stack_delete_policy_to_task_role and connect_to_addon_client_task."""
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
     start_conduit("test-application", "development", addon_type, None)
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     create_addon_client_task.assert_called_once_with(
-        "test-application", "development", addon_type, addon_type
+        mock_application, "development", addon_type, addon_type
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
-        "test-application", "development", addon_type
+        mock_application, "development", addon_type
     )
     connect_to_addon_client_task.assert_called_once_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
 
 
-@patch(
-    "dbt_copilot_helper.commands.conduit.get_cluster_arn",
-)
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running")
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
@@ -386,6 +413,9 @@ def test_start_conduit_when_addon_type_is_invalid(
     add_stack_delete_policy_to_task_role or connect_to_addon_client_task are
     called.
     """
+    from dbt_copilot_helper.commands.conduit import InvalidAddonTypeConduitError
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
     with pytest.raises(InvalidAddonTypeConduitError):
         start_conduit("test-application", "development", "nope")
 
@@ -412,25 +442,28 @@ def test_start_conduit_with_custom_addon_name(
     addon_client_is_running,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """Test that given app, env, addon type and addon name strings,
     start_conduit calls get_cluster_arn, addon_client_is_running,
     created_addon_client_task, connect_to_addon_client_task and
     add_stack_delete_policy_to_task_role."""
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
     start_conduit("test-application", "development", addon_type, "custom-addon-name")
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", "custom-addon-name"
+        mock_application, "development", "test-arn", "custom-addon-name"
     )
     create_addon_client_task.assert_called_once_with(
-        "test-application", "development", addon_type, "custom-addon-name"
+        mock_application, "development", addon_type, "custom-addon-name"
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
-        "test-application", "development", "custom-addon-name"
+        mock_application, "development", "custom-addon-name"
     )
     connect_to_addon_client_task.assert_called_once_with(
-        "test-application", "development", "test-arn", "custom-addon-name"
+        mock_application, "development", "test-arn", "custom-addon-name"
     )
 
 
@@ -438,7 +471,7 @@ def test_start_conduit_with_custom_addon_name(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", side_effect=NoClusterConduitError)
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
@@ -450,6 +483,7 @@ def test_start_conduit_when_no_cluster_present(
     addon_client_is_running,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """
     Test that given app, env, addon type and no available ecs cluster,
@@ -459,10 +493,15 @@ def test_start_conduit_when_no_cluster_present(
     connect_to_addon_client_task or add_stack_delete_policy_to_task_role are
     called.
     """
+    from dbt_copilot_helper.commands.conduit import NoClusterConduitError
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
+    get_cluster_arn.side_effect = NoClusterConduitError
+
     with pytest.raises(NoClusterConduitError):
         start_conduit("test-application", "development", addon_type, "custom-addon-name")
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_not_called()
     create_addon_client_task.assert_not_called()
     add_stack_delete_policy_to_task_role.assert_not_called()
@@ -475,10 +514,7 @@ def test_start_conduit_when_no_cluster_present(
 )
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
-@patch(
-    "dbt_copilot_helper.commands.conduit.create_addon_client_task",
-    side_effect=SecretNotFoundConduitError,
-)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
 def test_start_conduit_when_no_secret_exists(
@@ -488,60 +524,27 @@ def test_start_conduit_when_no_secret_exists(
     addon_client_is_running,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """Test that given app, env, addon type and no available secret,
     start_conduit calls get_cluster_arn, then addon_client_is_running and
     create_addon_client_task and the NoConnectionSecretError is raised and
     add_stack_delete_policy_to_task_role and connect_to_addon_client_task are
     not called."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
+    create_addon_client_task.side_effect = SecretNotFoundConduitError
+
     with pytest.raises(SecretNotFoundConduitError):
         start_conduit("test-application", "development", addon_type)
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     create_addon_client_task.assert_called_once_with(
-        "test-application", "development", addon_type, addon_type
-    )
-    add_stack_delete_policy_to_task_role.assert_not_called()
-    connect_to_addon_client_task.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
-@patch(
-    "dbt_copilot_helper.commands.conduit.create_addon_client_task",
-    side_effect=SecretNotFoundConduitError,
-)
-@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
-@patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
-def test_start_conduit_when_no_custom_addon_secret_exists(
-    add_stack_delete_policy_to_task_role,
-    connect_to_addon_client_task,
-    create_addon_client_task,
-    addon_client_is_running,
-    get_cluster_arn,
-    addon_type,
-):
-    """Test that given app, env, addon type, addon name and no available custom
-    addon secret, start_conduit calls get_cluster_arn, then
-    addon_client_is_running, create_addon_client_task and the
-    NoConnectionSecretError is raised and add_stack_delete_policy_to_task_role
-    and connect_to_addon_client_task are not called."""
-    with pytest.raises(SecretNotFoundConduitError):
-        start_conduit("test-application", "development", addon_type, "custom-addon-name")
-
-    get_cluster_arn.assert_called_once_with("test-application", "development")
-    addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", "custom-addon-name"
-    )
-    create_addon_client_task.assert_called_once_with(
-        "test-application", "development", addon_type, "custom-addon-name"
+        mock_application, "development", addon_type, addon_type
     )
     add_stack_delete_policy_to_task_role.assert_not_called()
     connect_to_addon_client_task.assert_not_called()
@@ -554,10 +557,48 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
-@patch(
-    "dbt_copilot_helper.commands.conduit.connect_to_addon_client_task",
-    side_effect=CreateTaskTimeoutConduitError,
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
+def test_start_conduit_when_no_custom_addon_secret_exists(
+    add_stack_delete_policy_to_task_role,
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_cluster_arn,
+    addon_type,
+    mock_application,
+):
+    """Test that given app, env, addon type, addon name and no available custom
+    addon secret, start_conduit calls get_cluster_arn, then
+    addon_client_is_running, create_addon_client_task and the
+    NoConnectionSecretError is raised and add_stack_delete_policy_to_task_role
+    and connect_to_addon_client_task are not called."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
+    create_addon_client_task.side_effect = SecretNotFoundConduitError
+    with pytest.raises(SecretNotFoundConduitError):
+        start_conduit("test-application", "development", addon_type, "custom-addon-name")
+
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
+    addon_client_is_running.assert_called_with(
+        mock_application, "development", "test-arn", "custom-addon-name"
+    )
+    create_addon_client_task.assert_called_once_with(
+        mock_application, "development", addon_type, "custom-addon-name"
+    )
+    add_stack_delete_policy_to_task_role.assert_not_called()
+    connect_to_addon_client_task.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
 )
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
 def test_start_conduit_when_addon_client_task_fails_to_start(
     add_stack_delete_policy_to_task_role,
@@ -566,27 +607,33 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     addon_client_is_running,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """Test that given app, env, and addon type strings when the client task
     fails to start, start_conduit calls get_cluster_arn,
     addon_client_is_running, create_addon_client_task,
     add_stack_delete_policy_to_task_role and connect_to_addon_client_task then
     the NoConnectionSecretError is raised."""
+    from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
+    connect_to_addon_client_task.side_effect = CreateTaskTimeoutConduitError
+
     with pytest.raises(CreateTaskTimeoutConduitError):
         start_conduit("test-application", "development", addon_type)
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_called_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     create_addon_client_task.assert_called_once_with(
-        "test-application", "development", addon_type, addon_type
+        mock_application, "development", addon_type, addon_type
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
-        "test-application", "development", addon_type
+        mock_application, "development", addon_type
     )
     connect_to_addon_client_task.assert_called_once_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
 
 
@@ -606,22 +653,25 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     create_addon_client_task,
     get_cluster_arn,
     addon_type,
+    mock_application,
 ):
     """Test that given app, env, and addon type strings when the client task is
     already running, start_conduit calls get_cluster_arn,
     addon_client_is_running and connect_to_addon_client_task then the
     create_addon_client_task and add_stack_delete_policy_to_task_role are not
     called."""
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
     start_conduit("test-application", "development", addon_type)
 
-    get_cluster_arn.assert_called_once_with("test-application", "development")
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
     addon_client_is_running.assert_called_once_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
     create_addon_client_task.assert_not_called()
     add_stack_delete_policy_to_task_role.assert_not_called()
     connect_to_addon_client_task.assert_called_once_with(
-        "test-application", "development", "test-arn", addon_type
+        mock_application, "development", "test-arn", addon_type
     )
 
 
@@ -636,6 +686,8 @@ def test_start_conduit_when_addon_client_task_is_already_running(
 def test_conduit_command(start_conduit, addon_type, validate_version):
     """Test that given an addon type, app and env strings, the conduit command
     calls start_conduit with app, env, addon type and no addon name."""
+    from dbt_copilot_helper.commands.conduit import conduit
+
     CliRunner().invoke(
         conduit,
         [
@@ -663,6 +715,8 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type, validate_ver
     """Test that given an addon type, app, env and addon name strings, the
     conduit command calls start_conduit with app, env, addon type and custom
     addon name."""
+    from dbt_copilot_helper.commands.conduit import conduit
+
     CliRunner().invoke(
         conduit,
         [
@@ -690,11 +744,16 @@ def test_conduit_command_with_addon_name(start_conduit, addon_type, validate_ver
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-@patch("dbt_copilot_helper.commands.conduit.start_conduit", side_effect=NoClusterConduitError)
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_type, validate_version):
     """Test that given an addon type, app and env strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
     exception."""
+    from dbt_copilot_helper.commands.conduit import NoClusterConduitError
+    from dbt_copilot_helper.commands.conduit import conduit
+
+    start_conduit.side_effect = NoClusterConduitError
+
     result = CliRunner().invoke(
         conduit,
         [
@@ -728,6 +787,9 @@ def test_conduit_command_when_no_connection_secret_exists(
     """Test that given an addon type, app and env strings, when there is no
     connection secret available, the conduit command handles the
     NoConnectionSecretError exception."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import conduit
+
     start_conduit.side_effect = SecretNotFoundConduitError(addon_type)
 
     result = CliRunner().invoke(
@@ -764,7 +826,11 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
     """Test that given an addon type, app, env and addon name strings, when
     there is no connection secret available, the conduit command handles the
     NoConnectionSecretError exception with addon name."""
+    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
+
     start_conduit.side_effect = SecretNotFoundConduitError(addon_type)
+
+    from dbt_copilot_helper.commands.conduit import conduit
 
     result = CliRunner().invoke(
         conduit,
@@ -795,15 +861,18 @@ def test_conduit_command_when_no_connection_secret_exists_with_addon_name(
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-@patch(
-    "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=CreateTaskTimeoutConduitError
-)
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_client_task_fails_to_start(
     start_conduit, secho, addon_type, validate_version
 ):
     """Test that given an addon type, app and env strings, when the ECS client
     task fails to start, the conduit command handles the
     TaskConnectionTimeoutError exception."""
+    from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
+    from dbt_copilot_helper.commands.conduit import conduit
+
+    start_conduit.side_effect = CreateTaskTimeoutConduitError
+
     result = CliRunner().invoke(
         conduit,
         [
@@ -824,12 +893,15 @@ def test_conduit_command_when_client_task_fails_to_start(
 
 
 @patch("click.secho")
-@patch(
-    "dbt_copilot_helper.commands.conduit.start_conduit", side_effect=InvalidAddonTypeConduitError
-)
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, validate_version):
     """Test that given an invalid addon type, app and env strings, the conduit
     command handles the InvalidAddonTypeConduitError exception."""
+    from dbt_copilot_helper.commands.conduit import InvalidAddonTypeConduitError
+    from dbt_copilot_helper.commands.conduit import conduit
+
+    start_conduit.side_effect = InvalidAddonTypeConduitError
+
     result = CliRunner().invoke(
         conduit,
         [
