@@ -25,8 +25,14 @@ from dbt_copilot_helper.utils.versioning import (
 # (run a test before removing)
 
 # Base domain depth
-MAX_DOMAIN_DEPTH = 2
+AVAILABLE_DOMAINS = {
+    "great.gov.uk": "live",
+    "trade.gov.uk": "live",
+    "prod.uktrade.digital": "live",
+    "uktrade.digital": "dev",
+}
 AWS_CERT_REGION = "eu-west-2"
+MAX_DOMAIN_DEPTH = 2
 
 
 def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
@@ -440,10 +446,12 @@ def get_required_subdomains(base_domain: str, subdomain: str) -> list[str]:
     additional subdomain. Dev base domain is always "uktrade.digital" and should
     have the app and env subdomains created, so 4 levels in either case.
     """
-    max_domain_levels = 4
+    if base_domain not in AVAILABLE_DOMAINS:
+        raise InvalidDomainException(f"{base_domain} is not a supported base domain")
     _validate_subdomain(base_domain, subdomain)
     domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
 
+    max_domain_levels = 4
     return [".".join(domain) for domain in domains_as_lists if len(domain) <= max_domain_levels]
 
 
@@ -452,27 +460,18 @@ def _validate_subdomain(base_domain, subdomain):
     if not subdomain.endswith("." + base_domain):
         errors.append(f"{subdomain} is not a subdomain of {base_domain}")
 
-    errors.extend(_validate_basic_domain_syntax("Domain", base_domain))
-    errors.extend(_validate_basic_domain_syntax("Subdomain", subdomain))
+    errors.extend(_validate_basic_domain_syntax(subdomain))
 
     if errors:
         raise InvalidDomainException("\n".join(errors))
 
 
-def _validate_basic_domain_syntax(type, domain):
+def _validate_basic_domain_syntax(domain):
     errors = []
     if ".." in domain or not re.match(r"^[0-9a-zA-Z-.]+$", domain):
-        errors.append(f"{type} {domain} is not a valid domain")
+        errors.append(f"Subdomain {domain} is not a valid domain")
 
     return errors
-
-
-AVAILABLE_DOMAINS = {
-    "great.gov.uk": "live",
-    "trade.gov.uk": "live",
-    "prod.uktrade.digital": "live",
-    "uktrade.digital": "dev",
-}
 
 
 def validate_subdomains(subdomains: list[str]) -> None:

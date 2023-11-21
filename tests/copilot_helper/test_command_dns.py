@@ -518,7 +518,6 @@ def test_get_required_subdomains_returns_the_expected_subdomains(
 @pytest.mark.parametrize(
     "domain, subdomain",
     [
-        ("xyz.com", "www.google.com"),
         ("uktrade.digital", "www.google.com"),
         ("uktrade.digital", "one.two.uktrade"),
         ("uktrade.digital", "one.two.digital"),
@@ -531,6 +530,11 @@ def test_get_required_subdomains_throws_exception_if_subdomain_and_base_domain_d
 ):
     with pytest.raises(InvalidDomainException, match=f"{subdomain} is not a subdomain of {domain}"):
         get_required_subdomains(domain, subdomain)
+
+
+def test_get_required_subdomains_throws_exception_if_base_domain_is_not_supported():
+    with pytest.raises(InvalidDomainException, match="xyz.com is not a supported base domain"):
+        get_required_subdomains("xyz.com", "myapp.xyz.com")
 
 
 @pytest.mark.parametrize(
