@@ -55,7 +55,6 @@ def application_under_test(copilot_directory):
 def test_check_cloudformation_with_no_args_summarises_all_successes(
     app_with_valid_cf_template, copilot_directory: Path
 ) -> None:
-    print(copilot_directory)
     result = CliRunner().invoke(
         check_cloudformation_command, args=["--directory", copilot_directory]
     )

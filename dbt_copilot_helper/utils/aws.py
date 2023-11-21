@@ -1,3 +1,7 @@
+import os
+from configparser import ConfigParser
+from pathlib import Path
+
 import boto3
 import botocore
 import click
@@ -8,7 +12,9 @@ SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 
 
-def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
+def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
+    aws_profile = aws_profile if aws_profile else os.getenv("AWS_PROFILE")
+
     # Check that the aws profile exists and is set.
     click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
 
@@ -26,8 +32,12 @@ def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
         exit()
 
     sts = session.client("sts")
+    account_id = None
+    user_id = None
     try:
-        sts.get_caller_identity()
+        response = sts.get_caller_identity()
+        account_id = response["Account"]
+        user_id = response["UserId"]
         click.secho("Credentials are valid.", fg="green")
     except botocore.exceptions.SSOTokenLoadError:
         click.secho(
@@ -48,23 +58,35 @@ def get_aws_session_or_abort(aws_profile: str) -> boto3.session.Session:
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(
-                f"{account_name[0]}/{sts.get_caller_identity()['Account']}", fg="white", bold=True
-            ),
+            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True),
         )
     else:
         click.echo(
             click.style("Logged in with AWS account id: ", fg="yellow")
-            + click.style(f"{sts.get_caller_identity()['Account']}", fg="white", bold=True),
+            + click.style(f"{account_id}", fg="white", bold=True),
         )
     click.echo(
         click.style("User: ", fg="yellow")
-        + click.style(
-            f"{(sts.get_caller_identity()['UserId']).split(':')[-1]}\n", fg="white", bold=True
-        ),
+        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
     )
 
     return session
+
+
+class NoProfileForAccountIdError(Exception):
+    def __init__(self, account_id):
+        super().__init__(f"No profile found for account {account_id}")
+
+
+def get_profile_name_from_account_id(account_id: str):
+    aws_config = ConfigParser()
+    aws_config.read(Path.home().joinpath(".aws/config"))
+    for section in aws_config.sections():
+        found_account_id = aws_config[section].get("sso_account_id", None)
+        if account_id == found_account_id:
+            return section.removeprefix("profile ")
+
+    raise NoProfileForAccountIdError(account_id)
 
 
 def get_ssm_secret_names(app, env):
