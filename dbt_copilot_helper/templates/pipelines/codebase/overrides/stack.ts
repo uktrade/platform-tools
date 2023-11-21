@@ -134,7 +134,7 @@ export class TransformedStack extends cdk.Stack {
                     ],
                 }),
             },
-            repositoryPolicyText: {
+            repositoryPolicyText: this.pipelinesFile.accounts ? {
                 Statement: [
                     {
                         Effect: "Allow",
@@ -152,7 +152,7 @@ export class TransformedStack extends cdk.Stack {
                         ]
                     }
                 ]
-            }
+            } : undefined,
         });
     }
 
@@ -241,52 +241,7 @@ export class TransformedStack extends cdk.Stack {
             ],
         });
 
-        for (const environment of pipelineConfig.environments) {
-            const environmentStage: {
-                name: string;
-                actions: Array<cdk.aws_codepipeline.CfnPipeline.ActionDeclarationProperty>;
-            } = {name: `DeployTo-${environment.name}`, actions: []};
-
-            if (environment.requires_approval) {
-                environmentStage.actions.push({
-                    actionTypeId: {
-                        category: "Approval",
-                        owner: "AWS",
-                        provider: "Manual",
-                        version: "1"
-                    },
-                    name: `ApprovePromotionTo-${environment.name}`,
-                    runOrder: 1
-                });
-            }
-
-            environmentStage.actions.push({
-                name: 'Deploy',
-                runOrder: environment.requires_approval ? 2 : 1,
-                inputArtifacts: [
-                    {name: 'ECRMetadata'},
-                ],
-                actionTypeId: {
-                    category: 'Build',
-                    owner: 'AWS',
-                    version: '1',
-                    provider: 'CodeBuild',
-                },
-                configuration: {
-                    ProjectName: cdk.Fn.ref('BuildProject'),
-                    PrimarySource: 'ECRMetadata',
-                    EnvironmentVariables: JSON.stringify([
-                        {name: 'COPILOT_ENVIRONMENT', value: environment.name},
-                        {
-                            name: 'ECR_TAG_PATTERN',
-                            value: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`
-                        },
-                    ]),
-                },
-            });
-
-            (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).push(environmentStage);
-        }
+        this.addPipelineStages(pipelineConfig, pipeline);
         this.createEventRule(pipeline, pipelineConfig, (index + 1).toString());
     }
 
@@ -314,6 +269,11 @@ export class TransformedStack extends cdk.Stack {
         // Remove all other stages
         (pipeline.stages as Array<unknown>).splice(1, (pipeline.stages as Array<unknown>).length - 1);
 
+        this.addPipelineStages(pipelineConfig, pipeline);
+        this.createEventRule(pipeline, pipelineConfig);
+    }
+
+    private addPipelineStages(pipelineConfig: typeof this.codebaseConfiguration['pipelines'][0], pipeline: cdk.aws_codepipeline.CfnPipeline) {
         for (const environment of pipelineConfig.environments) {
             const environmentStage: {
                 name: string;
@@ -360,8 +320,6 @@ export class TransformedStack extends cdk.Stack {
 
             (pipeline.stages as Array<cdk.aws_codepipeline.CfnPipeline.StageDeclarationProperty>).push(environmentStage);
         }
-
-        this.createEventRule(pipeline, pipelineConfig);
     }
 
     private createEventRuleRole() {
@@ -441,13 +399,23 @@ export class TransformedStack extends cdk.Stack {
             path.join(deployRepoRoot, 'pipelines.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
 
-        const codebaseConfiguration = this.pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
+        this.codebaseConfiguration = this.getFullCodebaseConfiguration();
+    }
+
+    private getFullCodebaseConfiguration() {
+        const pipelineRoot = path.join(process.cwd(), '..');
+        const deployRepoRoot = path.join(pipelineRoot, '..', '..', '..');
+        const pipelinesFile = parse(readFileSync(
+            path.join(deployRepoRoot, 'pipelines.yml'),
+        ).toString('utf-8')) as PipelinesConfiguration;
+
+        const codebaseConfiguration = pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
 
         if (!codebaseConfiguration) {
             throw new Error(`Could not find a codebase configuration for ${this.pipelineManifest.name}, ensure ./pipelines.yml is up to date`);
         }
 
-        this.codebaseConfiguration = codebaseConfiguration;
+        return codebaseConfiguration
     }
 
     private loadCodestarConnection() {
@@ -477,10 +445,10 @@ export class TransformedStack extends cdk.Stack {
     }
 
     private uploadPipelineConfiguration() {
-        new cdk.aws_ssm.CfnParameter(this, 'PipelineConfiguration', {
-            name: `/copilot/applications/${this.appName}/pipelines/${this.codebaseConfiguration.name}`,
+        new cdk.aws_ssm.CfnParameter(this, 'CodebaseConfiguration', {
+            name: `/copilot/applications/${this.appName}/codebases/${this.codebaseConfiguration.name}`,
             type: "String",
-            value: JSON.stringify(this.codebaseConfiguration),
+            value: JSON.stringify(this.getFullCodebaseConfiguration()),
         });
     }
 }
