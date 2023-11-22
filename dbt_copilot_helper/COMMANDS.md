@@ -582,8 +582,8 @@ copilot-helper domain (configure|assign)
 
 [↩ Parent](#copilot-helper-domain)
 
-    Creates missing subdomains (up to 2 levels deep) if they do not already
-    exist and creates certificates for those subdomains.
+    Creates missing subdomains if they do not already exist and creates
+    certificates for those subdomains.
 
 ## Usage
 

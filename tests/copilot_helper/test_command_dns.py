@@ -1,4 +1,5 @@
 import json
+from unittest.mock import ANY
 from unittest.mock import mock_open
 from unittest.mock import patch
 
@@ -14,11 +15,11 @@ from moto import mock_elbv2
 from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
-from dbt_copilot_helper.commands.dns import check_r53
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
 from dbt_copilot_helper.commands.dns import create_hosted_zones
+from dbt_copilot_helper.commands.dns import create_required_zones_and_certs
 from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_certificate_zone_id
 from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
@@ -33,15 +34,66 @@ CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 
 
-# TODO: This test doesn't really test anything. Expand.
-def test_copy_records_from_parent_to_subdomain(route53_session):
-    response = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
-    assert (
-        copy_records_from_parent_to_subdomain(
-            route53_session, response["HostedZone"]["Id"], "test.1234", response["HostedZone"]["Id"]
+def setup_resource_records(route53_session, hosted_zone_id):
+    for name, ip in [
+        ("dev.uktrade.digital", "192.0.2.10"),
+        ("test.dev.uktrade.digital", "192.0.2.20"),
+        ("staging.uktrade.digital", "192.0.2.30"),
+    ]:
+        route53_session.change_resource_record_sets(
+            HostedZoneId=hosted_zone_id,
+            ChangeBatch={
+                "Comment": "test",
+                "Changes": [
+                    {
+                        "Action": "CREATE",
+                        "ResourceRecordSet": {
+                            "Name": name,
+                            "Type": "A",
+                            "ResourceRecords": [{"Value": ip}],
+                            "TTL": 60,
+                        },
+                    }
+                ],
+            },
         )
-        == True
-    )
+
+
+@pytest.mark.parametrize(
+    "subdomain, expected_ips, expected_domains",
+    [
+        ("staging", {"192.0.2.30"}, {"staging.uktrade.digital."}),
+        (
+            "dev",
+            {"192.0.2.10", "192.0.2.20"},
+            {"dev.uktrade.digital.", "test.dev.uktrade.digital."},
+        ),
+    ],
+)
+def test_copy_records_from_parent_to_subdomain(
+    route53_session, subdomain, expected_ips, expected_domains
+):
+    parent = "uktrade.digital"
+    parent_zone_id = route53_session.create_hosted_zone(Name=parent, CallerReference=parent)[
+        "HostedZone"
+    ]["Id"]
+    subdomain = f"{subdomain}.{parent}"
+    subdomain_zone_id = route53_session.create_hosted_zone(
+        Name=subdomain, CallerReference=subdomain
+    )["HostedZone"]["Id"]
+    setup_resource_records(route53_session, parent_zone_id)
+
+    with patch("dbt_copilot_helper.commands.dns.add_records") as mock_add_records:
+        copy_records_from_parent_to_subdomain(
+            route53_session, parent_zone_id, subdomain, subdomain_zone_id
+        )
+
+        mock_add_records.assert_called_with(route53_session, ANY, subdomain_zone_id, "UPSERT")
+        records_added = [call.args[1] for call in mock_add_records.call_args_list]
+        record_ips = {record["ResourceRecords"][0]["Value"] for record in records_added}
+
+        assert {record["Name"] for record in records_added} == expected_domains
+        assert record_ips == expected_ips
 
 
 @patch(
@@ -261,7 +313,18 @@ def test_create_hosted_zones_works_when_base_zone_already_has_records(
             "test.dev.uktrade.digital",
             {"uktrade.digital.", "dev.uktrade.digital.", "test.dev.uktrade.digital."},
         ),
-        # Expand these tests with some prod variants.
+        (
+            ["uktrade.digital", "prod.uktrade.digital."],
+            "prod.uktrade.digital",
+            "web.prod.uktrade.digital",
+            {"uktrade.digital.", "prod.uktrade.digital.", "web.prod.uktrade.digital."},
+        ),
+        (
+            ["uktrade.digital", "prod.uktrade.digital."],
+            "prod.uktrade.digital",
+            "v2.web.prod.uktrade.digital",
+            {"uktrade.digital.", "prod.uktrade.digital.", "web.prod.uktrade.digital."},
+        ),
     ],
 )
 @patch("click.confirm")
@@ -296,7 +359,7 @@ def test_create_hosted_zones_creates_the_correct_hosted_zones(
     return_value="arn:1234",
 )
 @patch("click.confirm")
-def test_check_r53(
+def test_create_required_zones_and_certs(
     mock_create_cert, mock_click, acm_session, route53_session, base_domain, domain, zone_dict
 ):
     with patch("dbt_copilot_helper.commands.dns.create_hosted_zones") as mock_create_hosted_zones:
@@ -312,7 +375,10 @@ def test_check_r53(
                 response_cert_list,
                 {"CertificateStatuses": stub.ANY, "MaxItems": stub.ANY},
             )
-            assert check_r53(route53_session, acm_session, domain, base_domain) == "arn:1234"
+            assert (
+                create_required_zones_and_certs(route53_session, acm_session, domain, base_domain)
+                == "arn:1234"
+            )
 
 
 @pytest.mark.parametrize("env", ["dev", "staging"])
@@ -320,10 +386,12 @@ def test_check_r53(
     "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
 @patch(
-    "dbt_copilot_helper.commands.dns.check_r53",
+    "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
     return_value="arn:1234",
 )
-def test_configure_success(get_aws_session_or_abort, check_r53, fakefs, env):
+def test_configure_success(
+    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, fakefs, env
+):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""

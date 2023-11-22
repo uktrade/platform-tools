@@ -32,7 +32,7 @@ AVAILABLE_DOMAINS = {
     "uktrade.digital": "dev",
 }
 AWS_CERT_REGION = "eu-west-2"
-MAX_DOMAIN_DEPTH = 2
+COPILOT_DIR = "copilot"
 
 
 def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
@@ -66,16 +66,10 @@ def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10,
 
 
 def create_cert(client, domain_client, domain, zone_id):
-    for cert in _certs_for_domain(client, domain):
-        if cert["Status"] == "ISSUED":
-            click.secho("Certificate already exists, do not need to create.", fg="green")
-            return cert["CertificateArn"]
-        else:
-            click.secho(
-                f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
-                fg="yellow",
-            )
-            client.delete_certificate(CertificateArn=cert["CertificateArn"])
+    certificate_arn = _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain)
+
+    if certificate_arn:
+        return certificate_arn
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
@@ -108,6 +102,20 @@ def create_cert(client, domain_client, domain, zone_id):
     return arn
 
 
+def _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain):
+    for cert in _certs_for_domain(client, domain):
+        if cert["Status"] == "ISSUED":
+            click.secho("Certificate already exists, do not need to create.", fg="green")
+            return cert["CertificateArn"]
+        else:
+            click.secho(
+                f"Certificate already exists but appears to be invalid (in status '{cert['Status']}'), deleting the old cert.",
+                fg="yellow",
+            )
+            client.delete_certificate(CertificateArn=cert["CertificateArn"])
+    return None
+
+
 def _create_resource_records(cert_record, domain_client, domain_id):
     domain_client.change_resource_record_sets(
         HostedZoneId=domain_id,
@@ -136,15 +144,6 @@ def _get_domain_id(domain_client, domain_to_create):
     for hz in hosted_zones:
         if hz["Name"] == domain_to_create:
             return hz["Id"]
-
-
-def _get_domain_to_create(base_len, domain):
-    parts = domain.split(".")
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
-    click.secho(domain_to_create, fg="yellow")
-    return domain_to_create
 
 
 def _certs_for_domain(client, domain):
@@ -247,7 +246,6 @@ def copy_records_from_parent_to_subdomain(client, parent_id, subdom, subdom_id):
         if subdom in records["Name"]:
             click.secho(records["Name"] + " found", fg="green")
             add_records(client, records, subdom_id, "UPSERT")
-    return True
 
 
 def create_hosted_zones(client, base_domain, subdomain):
@@ -277,7 +275,6 @@ def create_hosted_zones(client, base_domain, subdomain):
         subdom_id = response["HostedZone"]["Id"]
         zone_ids[dom] = subdom_id
 
-        # Check if records existed in the parent domain, if so they need to be copied to sub domain.
         copy_records_from_parent_to_subdomain(client, parent_id, dom, subdom_id)
 
         if not click.confirm(
@@ -414,16 +411,12 @@ def get_certificate_zone_id(hosted_zones):
     return hosted_zones[longest_hosted_zone]
 
 
-def check_r53(domain_client, project_client, subdomain, base_domain):
-    # create the certificate
+def create_required_zones_and_certs(domain_client, project_client, subdomain, base_domain):
     hosted_zones = create_hosted_zones(domain_client, base_domain, subdomain)
 
     cert_zone_id = get_certificate_zone_id(hosted_zones)
 
-    # add records to hosted zone to validate certificate
-    cert_arn = create_cert(project_client, domain_client, subdomain, cert_zone_id)
-
-    return cert_arn
+    return create_cert(project_client, domain_client, subdomain, cert_zone_id)
 
 
 def _get_zone_id_or_abort(client, zone):
@@ -539,8 +532,8 @@ def domain():
 )
 @click.option("--env", help="AWS Copilot environment name", required=True)
 def configure(project_profile, env):
-    """Creates missing subdomains (up to 2 levels deep) if they do not already
-    exist and creates certificates for those subdomains."""
+    """Creates missing subdomains if they do not already exist and creates
+    certificates for those subdomains."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
     # which have been created:
@@ -548,15 +541,7 @@ def configure(project_profile, env):
     # the hosted zone for the application environment in the dev AWS account,
     # and the applications records on the hosted zone for the environment in the dev AWS account.
 
-    path = "copilot"
-
-    if not os.path.exists(path):
-        abort_with_error("Please check path, copilot directory appears to be missing.")
-
-    manifests = _get_manifests(path)
-
-    if not manifests:
-        abort_with_error("Please check path, no manifest files were found")
+    manifests = _get_manifests_or_abort()
 
     subdomains = _get_subdomains_from_env_manifests(env, manifests)
     validate_subdomains(subdomains)
@@ -571,7 +556,7 @@ def configure(project_profile, env):
     cert_list = {}
 
     for subdomain in subdomains:
-        cert_arn = check_r53(
+        cert_arn = create_required_zones_and_certs(
             domain_client,
             project_client,
             subdomain,
@@ -614,12 +599,19 @@ def _get_subdomains_from_env_manifests(environment, manifests):
     return subdomains
 
 
-def _get_manifests(path):
+def _get_manifests_or_abort():
+    if not os.path.exists(COPILOT_DIR):
+        abort_with_error("Please check path, copilot directory appears to be missing.")
+
     manifests = []
-    for root, dirs, files in os.walk(path):
+    for root, dirs, files in os.walk(COPILOT_DIR):
         for file in files:
             if file == "manifest.yml" or file == "manifest.yaml":
                 manifests.append(os.path.join(root, file))
+
+    if not manifests:
+        abort_with_error("Please check path, no manifest files were found")
+
     return manifests
 
 
