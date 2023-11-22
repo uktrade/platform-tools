@@ -65,27 +65,27 @@ def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10,
         raise Exception(f"""Certificate validation failed with the status "{status}".""")
 
 
-def create_cert(client, domain_client, domain, zone_id):
-    certificate_arn = _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain)
+def create_cert(client, domain_client, dom, zone_id):
+    certificate_arn = _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, dom)
 
     if certificate_arn:
         return certificate_arn
 
     if not click.confirm(
         click.style("Creating Certificate for ", fg="yellow")
-        + click.style(f"{domain}\n", fg="white", bold=True)
+        + click.style(f"{dom}\n", fg="white", bold=True)
         + click.style("Do you want to continue?", fg="yellow"),
     ):
         exit()
 
-    arn = _request_cert(client, domain)
+    arn = _request_cert(client, dom)
 
     # Create DNS validation records
     cert_record = _get_certificate_record(arn, client)
 
     if not click.confirm(
         click.style("Updating DNS record for certificate ", fg="yellow")
-        + click.style(f"{domain}", fg="white", bold=True)
+        + click.style(f"{dom}", fg="white", bold=True)
         + click.style(" with value ", fg="yellow")
         + click.style(f"""{cert_record["Value"]}\n""", fg="white", bold=True)
         + click.style("Do you want to continue?", fg="yellow"),
@@ -116,9 +116,9 @@ def _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain):
     return None
 
 
-def _create_resource_records(cert_record, domain_client, domain_id):
+def _create_resource_records(cert_record, domain_client, zone_id):
     domain_client.change_resource_record_sets(
-        HostedZoneId=domain_id,
+        HostedZoneId=zone_id,
         ChangeBatch={
             "Changes": [
                 {
@@ -237,15 +237,13 @@ def add_records(client, records, subdom_id, action):
     return response["ChangeInfo"]["Status"]
 
 
-def copy_records_from_parent_to_subdomain(client, parent_id, subdom, subdom_id):
-    resource_record_sets = client.list_resource_record_sets(HostedZoneId=parent_id)[
-        "ResourceRecordSets"
-    ]
+def copy_records_from_parent_to_subdomain(client, parent_zone_id, subdom, zone_id):
+    response = client.list_resource_record_sets(HostedZoneId=parent_zone_id)
 
-    for records in resource_record_sets:
+    for records in response["ResourceRecordSets"]:
         if subdom in records["Name"]:
             click.secho(records["Name"] + " found", fg="green")
-            add_records(client, records, subdom_id, "UPSERT")
+            add_records(client, records, zone_id, "UPSERT")
 
 
 def create_hosted_zones(client, base_domain, subdomain):
@@ -255,7 +253,7 @@ def create_hosted_zones(client, base_domain, subdomain):
     for dom in domains_to_create:
         parent_domain = dom.split(".", maxsplit=1)[1]
         parent_zone = f"{parent_domain}."
-        parent_id = _get_zone_id_or_abort(client, parent_zone)
+        parent_zone_id = _get_zone_id_or_abort(client, parent_zone)
 
         if not click.confirm(
             click.style("About to create domain: ", fg="cyan")
@@ -272,10 +270,10 @@ def create_hosted_zones(client, base_domain, subdomain):
             CallerReference=f"{dom}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
-        subdom_id = response["HostedZone"]["Id"]
-        zone_ids[dom] = subdom_id
+        dom_zone_id = response["HostedZone"]["Id"]
+        zone_ids[dom] = dom_zone_id
 
-        copy_records_from_parent_to_subdomain(client, parent_id, dom, subdom_id)
+        copy_records_from_parent_to_subdomain(client, parent_zone_id, dom, dom_zone_id)
 
         if not click.confirm(
             click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
@@ -284,19 +282,19 @@ def create_hosted_zones(client, base_domain, subdomain):
         ):
             exit()
 
-        _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id)
+        _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_zone_id)
 
     return zone_ids
 
 
-def _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_id):
+def _add_subdomain_ns_records_to_parent(client, dom, ns_records, parent_zone_id):
     # Add NS records of subdomain to parent
     nameservers = ns_records["NameServers"]
     # append  . to make fqdn
     nameservers = [f"{nameserver}." for nameserver in nameservers]
     nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
     client.change_resource_record_sets(
-        HostedZoneId=parent_id,
+        HostedZoneId=parent_zone_id,
         ChangeBatch={
             "Changes": [
                 {
@@ -343,7 +341,7 @@ def get_required_subdomains(base_domain: str, subdomain: str) -> list[str]:
     domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
 
     max_domain_levels = 4
-    return [".".join(domain) for domain in domains_as_lists if len(domain) <= max_domain_levels]
+    return [".".join(dom) for dom in domains_as_lists if len(dom) <= max_domain_levels]
 
 
 def _validate_subdomain(base_domain, subdomain):
