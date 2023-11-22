@@ -1,3 +1,7 @@
+accounts:
+  - 111111111
+  - 222222222
+
 environments:
   - name: dev
   - name: prod
