@@ -236,6 +236,32 @@ def test_pipeline_generate_with_invalid_bootstrap_yml_and_no_workspace_fails_wit
     assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
 
 
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("boto3.client")
+@patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
+    git_remote, mocked_boto3_client, fakefs
+):
+    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    setup_fixtures(fakefs)
+
+    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    del pipelines["accounts"]
+    print(pipelines)
+    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+
+    CliRunner().invoke(generate)
+
+    environments_files = setup_output_file_paths_for_environments()
+    for file in environments_files:
+        assert Path(file).exists()
+
+    codebase_files = setup_output_file_paths_for_codebases()
+    for file in codebase_files:
+        assert Path(file).exists(), f"File {file} does not exist"
+
+
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
     def get_yaml(content):
         return yaml.safe_load(content)

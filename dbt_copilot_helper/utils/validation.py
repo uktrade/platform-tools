@@ -102,6 +102,7 @@ BOOTSTRAP_SCHEMA = Schema(
 
 PIPELINES_SCHEMA = Schema(
     {
+        Optional("accounts"): list[str],
         Optional("environments"): [
             {
                 "name": str,
