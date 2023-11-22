@@ -1,9 +1,13 @@
 import json
+import random
 import re
+import string
 import subprocess
 import time
 
 import click
+from cfn_tools import dump_yaml
+from cfn_tools import load_yaml
 
 from dbt_copilot_helper.utils.application import Application
 from dbt_copilot_helper.utils.application import load_application
@@ -44,6 +48,11 @@ CONDUIT_ADDON_TYPES = [
 def normalise_string(to_normalise: str) -> str:
     output = re.sub("[^0-9a-zA-Z]+", "-", to_normalise)
     return output.lower()
+
+
+def create_unique_task_name(app: Application, env: str, addon_name: str) -> str:
+    random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+    return f"conduit-{app.name}-{env}-{normalise_string(addon_name)}-{random_id}"
 
 
 def get_cluster_arn(app: Application, env: str) -> str:
@@ -92,12 +101,14 @@ def get_connection_secret_arn(app: Application, env: str, name: str) -> str:
     raise SecretNotFoundConduitError(name)
 
 
-def create_addon_client_task(app: Application, env: str, addon_type: str, addon_name: str):
+def create_addon_client_task(
+    app: Application, env: str, addon_type: str, addon_name: str, task_name: str
+):
     connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
-        f"--task-group-name conduit-{app.name}-{env}-{normalise_string(addon_name)} "
+        f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={connection_secret_arn} "
         "--platform-os linux "
@@ -106,13 +117,13 @@ def create_addon_client_task(app: Application, env: str, addon_type: str, addon_
     )
 
 
-def addon_client_is_running(app: Application, env: str, cluster_arn: str, addon_name: str) -> bool:
+def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_name: str) -> bool:
     ecs_client = app.environments[env].session.client("ecs")
 
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
-        family=f"copilot-conduit-{app.name}-{env}-{normalise_string(addon_name)}",
+        family=f"copilot-{task_name}",
     )
 
     if not tasks["taskArns"]:
@@ -131,19 +142,19 @@ def addon_client_is_running(app: Application, env: str, cluster_arn: str, addon_
     return False
 
 
-def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, addon_name: str):
+def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, task_name: str):
     tries = 0
     running = False
 
     while tries < 15 and not running:
         tries += 1
 
-        if addon_client_is_running(app, env, cluster_arn, addon_name):
+        if addon_client_is_running(app, env, cluster_arn, task_name):
             running = True
             subprocess.call(
                 "copilot task exec "
                 f"--app {app.name} --env {env} "
-                f"--name conduit-{app.name}-{env}-{normalise_string(addon_name)} "
+                f"--name {task_name} "
                 f"--command bash",
                 shell=True,
             )
@@ -154,12 +165,12 @@ def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, a
         raise CreateTaskTimeoutConduitError
 
 
-def add_stack_delete_policy_to_task_role(app: Application, env: str, addon_name: str):
+def add_stack_delete_policy_to_task_role(app: Application, env: str, task_name: str):
     session = app.environments[env].session
     cloudformation_client = session.client("cloudformation")
     iam_client = session.client("iam")
 
-    conduit_stack_name = f"task-conduit-{app.name}-{env}-{normalise_string(addon_name)}"
+    conduit_stack_name = f"task-{task_name}"
     conduit_stack_resources = cloudformation_client.list_stack_resources(
         StackName=conduit_stack_name
     )["StackResourceSummaries"]
@@ -185,6 +196,27 @@ def add_stack_delete_policy_to_task_role(app: Application, env: str, addon_name:
             )
 
 
+def add_deletion_policy_to_log_group(app: Application, env: str, task_name: str):
+    session = app.environments[env].session
+    cloudformation_client = session.client("cloudformation")
+
+    conduit_stack_name = f"task-{task_name}"
+    template = cloudformation_client.get_template(StackName=conduit_stack_name)
+    template_yml = load_yaml(template["TemplateBody"])
+    template_yml["Resources"]["LogGroup"]["DeletionPolicy"] = "Retain"
+
+    params = []
+    for param in template_yml["Parameters"]:
+        params.append({"ParameterKey": param, "UsePreviousValue": True})
+
+    cloudformation_client.update_stack(
+        StackName=conduit_stack_name,
+        TemplateBody=dump_yaml(template_yml),
+        Parameters=params,
+        Capabilities=["CAPABILITY_IAM"],
+    )
+
+
 def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     if addon_type not in CONDUIT_ADDON_TYPES:
         raise InvalidAddonTypeConduitError(addon_type)
@@ -192,12 +224,14 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, env)
     addon_name = addon_name or addon_type
+    task_name = create_unique_task_name(application, env, addon_name)
 
-    if not addon_client_is_running(application, env, cluster_arn, addon_name):
-        create_addon_client_task(application, env, addon_type, addon_name)
-        add_stack_delete_policy_to_task_role(application, env, addon_name)
+    if not addon_client_is_running(application, env, cluster_arn, task_name):
+        create_addon_client_task(application, env, addon_type, addon_name, task_name)
+        add_stack_delete_policy_to_task_role(application, env, task_name)
+        add_deletion_policy_to_log_group(application, env, task_name)
 
-    connect_to_addon_client_task(application, env, cluster_arn, addon_name)
+    connect_to_addon_client_task(application, env, cluster_arn, task_name)
 
 
 @click.command(cls=ClickDocOptCommand)
