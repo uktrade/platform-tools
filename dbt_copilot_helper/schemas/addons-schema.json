@@ -221,6 +221,9 @@
         "type": {
           "type": "string"
         },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
+        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -238,6 +241,9 @@
       "properties": {
         "type": {
           "type": "string"
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         },
         "environments": {
           "type": "object",
@@ -278,6 +284,9 @@
         "version": {
           "type": "number"
         },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
+        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -301,6 +310,9 @@
         },
         "version": {
           "type": "number"
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         },
         "environments": {
           "type": "object",
@@ -346,6 +358,9 @@
         },
         "instance": {
           "$ref": "#/definitions/redis-instance-types"
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -371,6 +386,9 @@
           "type": "integer",
           "minimum": 10,
           "exclusiveMaximum": 512
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -402,6 +420,9 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 5
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -416,6 +437,9 @@
         "max-capacity": {
           "type": "number",
           "minimum": 0.5
+        },
+        "deletion-policy": {
+          "$ref": "#/definitions/deletion-policy"
         }
       },
       "additionalProperties": false
@@ -523,7 +547,8 @@
       "type": "string",
       "enum": [
         "Delete",
-        "Retain"
+        "Retain",
+        "Snapshot"
       ]
     },
     "environment-names": {
