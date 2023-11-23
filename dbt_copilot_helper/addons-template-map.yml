@@ -36,6 +36,9 @@ s3-policy:
 appconfig-ipfilter:
   svc:
     - template: addons/svc/appconfig-ipfilter.yml
+subscription-filter:
+  svc:
+    - template: addons/svc/subscription-filter.yml
 monitoring:
   requires_addons_parameters: true
   env:

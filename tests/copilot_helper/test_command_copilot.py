@@ -90,6 +90,7 @@ class TestMakeAddonCommand:
                 ],
                 [
                     "appconfig-ipfilter.yml",
+                    "subscription-filter.yml",
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "my-s3-bucket-bucket-access.yml",
@@ -104,31 +105,31 @@ class TestMakeAddonCommand:
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
-                ["appconfig-ipfilter.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
                 ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
                 ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
                 ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
                 ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
         ],
@@ -270,7 +271,9 @@ class TestMakeAddonCommand:
             Path("environments/addons", f)
             for f in ["my-redis.yml", "addons.parameters.yml", "vpc.yml"]
         ]
-        expected_service_files = [Path("web/addons/appconfig-ipfilter.yml")]
+        expected_service_files = [
+            Path("web/addons", f) for f in ["appconfig-ipfilter.yml", "subscription-filter.yml"]
+        ]
         all_expected_files = expected_env_files + expected_service_files
 
         for f in all_expected_files:
@@ -588,8 +591,9 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         for service in services:
-            path = Path(f"copilot/{service}/addons/appconfig-ipfilter.yml")
-            assert path.exists()
+            for custom_addon in ["appconfig-ipfilter.yml", "subscription-filter.yml"]:
+                path = Path(f"copilot/{service}/addons/{custom_addon}")
+                assert path.exists()
 
         assert result.exit_code == 0
 
