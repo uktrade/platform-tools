@@ -1,4 +1,6 @@
+# {% version_info %}
 # SubscriptionFilter requires the Destination ARN of the CloudWatch Logs in the main archive logs account.
+
 Parameters:
   App:
     Type: String
