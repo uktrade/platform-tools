@@ -1,6 +1,4 @@
 # {% version_info %}
-# SubscriptionFilter requires the Destination ARN of the CloudWatch Logs in the main archive logs account.
-
 Parameters:
   App:
     Type: String
@@ -19,4 +17,5 @@ Resources:
       LogGroupName: !Sub "/copilot/${App}/${Env}/${Name}"
       FilterName: !Sub "${App}-${Env}-stream"
       FilterPattern: ""
+      # SubscriptionFilter requires the Destination ARN of the CloudWatch Logs in the main archive logs account.
       DestinationArn: "arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination"
