@@ -382,30 +382,14 @@ def test_create_required_zones_and_certs(
 
 
 @pytest.mark.parametrize("env", ["dev", "staging"])
-@patch(
-    "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
-)
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
 @patch(
     "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
     return_value="arn:1234",
 )
 def test_configure_success(
-    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, fakefs, env
+    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, create_test_manifest, env
 ):
-    fakefs.create_file(
-        "copilot/manifest.yml",
-        contents="""
-environments:
-  dev:
-    http:
-      alias: v2.app.dev.uktrade.digital
-
-  staging:
-    http:
-      alias: v2.app.staging.uktrade.digital
-""",
-    )
-
     runner = CliRunner()
     result = runner.invoke(
         configure,
@@ -427,6 +411,43 @@ environments:
     actual = [line.strip() for line in result.output.split("\n") if line.strip()]
 
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "env, expected_domain_profile",
+    [
+        ("dev", "dev"),
+        ("staging", "dev"),
+        ("prod1", "dev"),
+        ("prod2", "live"),
+        ("prod3", "live"),
+    ],
+)
+@patch(
+    "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
+    return_value="arn:1234",
+)
+def test_configure_gets_the_correct_domain_profile(
+    mock_create_required_zones_and_certs, create_test_manifest, env, expected_domain_profile
+):
+    with patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort") as mock_get_session:
+        runner = CliRunner()
+        result = runner.invoke(
+            configure,
+            [
+                "--project-profile",
+                "foo",
+                "--env",
+                env,
+            ],
+        )
+
+        actual = [line.strip() for line in result.output.split("\n") if line.strip()]
+        mock_get_session.assert_called()
+        calls = [call.args[0] for call in mock_get_session.call_args_list]
+        assert len(calls) == 2
+        assert "foo" in calls
+        assert expected_domain_profile in calls
 
 
 def test_configure_when_copilot_dir_does_not_exist_exits_with_error(fakefs):
