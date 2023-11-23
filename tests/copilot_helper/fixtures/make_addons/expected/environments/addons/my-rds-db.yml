@@ -39,18 +39,21 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  myRdsDbEnvScalingConfigurationMap:
+  myRdsDbEnvironmentConfigMap:
     development:
       DBInstanceClass: 'db.t3.small'
       MultiAZ: true
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
       StorageType: gp3
+      DeletionPolicy: Delete
 
 Resources:
   # Subnet group to control where the DB gets placed
   myRdsDbDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBSubnetGroupDescription: Group of subnets to place DB into
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
@@ -61,6 +64,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group to access the DB cluster'
     Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: "DB Security Group"
       VpcId: !Ref VpcId
@@ -73,6 +78,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Fargate containers
       GroupId: !Ref 'myRdsDbSecurityGroup'
@@ -85,6 +92,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to DB
       GroupId: !Ref 'myRdsDbSecurityGroup'
@@ -97,6 +106,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to Secrets Manager
       GroupId: !Ref 'myRdsDbSecurityGroup'
@@ -109,6 +120,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from DB in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from DB to Lambda Functions
       GroupId: !Ref 'myRdsDbSecurityGroup'
@@ -121,6 +134,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from Secrets Manager to Lambda Functions
       GroupId: !Ref 'myRdsDbSecurityGroup'
@@ -133,6 +148,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       CidrIp: 0.0.0.0/0
       Description: Egress for HTTPS
@@ -145,6 +162,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
     Type: 'AWS::RDS::DBParameterGroup'
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
       Family: 'postgres13'
@@ -155,6 +174,8 @@ Resources:
 
   myRdsDbKMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for RDS encryption"
       KeyPolicy:
@@ -179,6 +200,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'DB cluster'
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
@@ -189,11 +212,11 @@ Resources:
         - upgrade
       Engine: postgres
       EngineVersion: '14.4'
-      DBInstanceClass: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, DBInstanceClass]
-      AllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, AllocatedStorage]
-      MaxAllocatedStorage: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MaxAllocatedStorage]
-      StorageType: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, StorageType]
-      MultiAZ: !FindInMap [myRdsDbEnvScalingConfigurationMap, !Ref Env, MultiAZ]
+      DBInstanceClass: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DBInstanceClass]
+      AllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, AllocatedStorage]
+      MaxAllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
+      StorageType: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, StorageType]
+      MultiAZ: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
       DBName: !Ref myRdsDbDBName
       KmsKeyId: !Ref myRdsDbKMSKey
@@ -392,6 +415,8 @@ Resources:
 
   myRdsDbApplicationUser:
     Type: 'Custom::myRdsDbApplicationUser'
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myRdsDbLambdaFunction.Arn'
       CopilotApplication: !Sub "${App}"

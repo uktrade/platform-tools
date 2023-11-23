@@ -18,15 +18,14 @@ Parameters:
     Type: String
 
 Mappings:
-  myOpensearchEnvScalingConfigurationMap:
-    
+  myOpensearchEnvironmentConfigMap:
     development:
       EngineVersion: '2.3'
       InstanceType: 't3.medium.search'
       InstanceCount: 1
       DedicatedMaster: false
       VolumeSize: 40
-    
+      DeletionPolicy: Delete
 
   myOpensearchEngineVersionMap:
     '1.0':
@@ -41,7 +40,7 @@ Mappings:
       EngineVersion: 'OpenSearch_2.3'
 
 Conditions:
-  myOpensearchEnableHA: !Not [!Equals [!FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount], 1]]
+  myOpensearchEnableHA: !Not [!Equals [!FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
 
 Resources:
   myOpensearchOpenSearchSecret:
@@ -59,12 +58,15 @@ Resources:
         IncludeSpace: false
         PasswordLength: 20
         ExcludeCharacters: '[]{}()"@/\;=?&`><:|#'
+
   # Security group to add OS to the VPC,
   # and to allow the Fargate containers to talk to OS
   myOpensearchOpenSearchSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for my-opensearch to access OpenSearch.'
       VpcId: !Ref VpcId
@@ -77,6 +79,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
       GroupId: !Ref 'myOpensearchOpenSearchSecurityGroup'
@@ -87,6 +91,8 @@ Resources:
 
   myOpensearchOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
+    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
@@ -110,7 +116,7 @@ Resources:
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
         - myOpensearchEngineVersionMap
-        - !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, EngineVersion]
+        - !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, EngineVersion]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -118,12 +124,12 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, VolumeSize]
+        VolumeSize: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !If [myOpensearchEnableHA, !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, DedicatedMaster], false]
-        InstanceCount: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [myOpensearchEnvScalingConfigurationMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled: !If [myOpensearchEnableHA, !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DedicatedMaster], false]
+        InstanceCount: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount]
+        InstanceType: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: !If [myOpensearchEnableHA, true, false]
         ZoneAwarenessConfig: !If
           - myOpensearchEnableHA
