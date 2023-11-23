@@ -50,9 +50,8 @@ def normalise_string(to_normalise: str) -> str:
     return output.lower()
 
 
-def create_unique_task_name(app: Application, env: str, addon_name: str) -> str:
-    random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
-    return f"conduit-{app.name}-{env}-{normalise_string(addon_name)}-{random_id}"
+def create_task_id() -> str:
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
 
 def get_cluster_arn(app: Application, env: str) -> str:
@@ -206,8 +205,9 @@ def add_deletion_policy_to_log_group(app: Application, env: str, task_name: str)
     template_yml["Resources"]["LogGroup"]["DeletionPolicy"] = "Retain"
 
     params = []
-    for param in template_yml["Parameters"]:
-        params.append({"ParameterKey": param, "UsePreviousValue": True})
+    if "Parameters" in template_yml:
+        for param in template_yml["Parameters"]:
+            params.append({"ParameterKey": param, "UsePreviousValue": True})
 
     cloudformation_client.update_stack(
         StackName=conduit_stack_name,
@@ -224,7 +224,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, env)
     addon_name = addon_name or addon_type
-    task_name = create_unique_task_name(application, env, addon_name)
+    task_name = f"conduit-{app}-{env}-{normalise_string(addon_name)}-{create_task_id()}"
 
     if not addon_client_is_running(application, env, cluster_arn, task_name):
         create_addon_client_task(application, env, addon_type, addon_name, task_name)
