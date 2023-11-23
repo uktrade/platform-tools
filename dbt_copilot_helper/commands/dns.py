@@ -78,10 +78,10 @@ def create_cert(client, domain_client, domain_name, zone_id):
     ):
         exit()
 
-    arn = _request_cert(client, domain_name)
+    certificate_arn = _request_cert(client, domain_name)
 
     # Create DNS validation records
-    cert_record = _get_certificate_record(arn, client)
+    cert_record = _get_certificate_record(certificate_arn, client)
 
     if not click.confirm(
         click.style("Updating DNS record for certificate ", fg="yellow")
@@ -97,9 +97,9 @@ def create_cert(client, domain_client, domain_name, zone_id):
     # Wait for certificate to get to validation state before continuing.
     # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
     # and wants to give it a chance to take longer in case that's all that's wrong.
-    _wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
+    _wait_for_certificate_validation(client, certificate_arn=certificate_arn, timeout=1200)
 
-    return arn
+    return certificate_arn
 
 
 def _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain):
@@ -184,10 +184,10 @@ def _request_cert(client, domain):
     return arn
 
 
-def add_records(client, records, subdom_id, action):
+def add_records(client, records, subdomain_id, action):
     if records["Type"] == "A":
         response = client.change_resource_record_sets(
-            HostedZoneId=subdom_id,
+            HostedZoneId=subdomain_id,
             ChangeBatch={
                 "Comment": "Record created for copilot",
                 "Changes": [
@@ -210,7 +210,7 @@ def add_records(client, records, subdom_id, action):
         )
     else:
         response = client.change_resource_record_sets(
-            HostedZoneId=subdom_id,
+            HostedZoneId=subdomain_id,
             ChangeBatch={
                 "Comment": "Record created for copilot",
                 "Changes": [
@@ -270,10 +270,12 @@ def create_hosted_zones(client, base_domain, subdomain):
             CallerReference=f"{domain_name}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
-        dom_zone_id = response["HostedZone"]["Id"]
-        zone_ids[domain_name] = dom_zone_id
+        subdomain_zone_id = response["HostedZone"]["Id"]
+        zone_ids[domain_name] = subdomain_zone_id
 
-        copy_records_from_parent_to_subdomain(client, parent_zone_id, domain_name, dom_zone_id)
+        copy_records_from_parent_to_subdomain(
+            client, parent_zone_id, domain_name, subdomain_zone_id
+        )
 
         if not click.confirm(
             click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
