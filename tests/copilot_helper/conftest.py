@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,13 +26,17 @@ UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "copilot_helper" / "utils" / "fixtures
 DOCS_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-docs"
 
 # tell yaml to ignore CFN ! function prefixes
-yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)
+yaml.add_multi_constructor(
+    "!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader
+)
 
 
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True)
+    fs.add_real_directory(
+        BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True
+    )
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
@@ -40,14 +45,18 @@ def fakefs(fs):
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
 
     # JSON Schema compatibility
-    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True)
+    fs.add_real_directory(
+        Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True
+    )
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
 
     # For fakefs compatibility with moto
     fs.add_real_directory(Path(boto3.__file__).parent.joinpath("data"), lazy_read=True)
-    fs.add_real_directory(Path(botocore.__file__).parent.joinpath("data"), lazy_read=True)
+    fs.add_real_directory(
+        Path(botocore.__file__).parent.joinpath("data"), lazy_read=True
+    )
 
     # Add fake aws config file
     fs.add_real_file(
@@ -59,7 +68,11 @@ def fakefs(fs):
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
-    with patch("dbt_copilot_helper.utils.application.load_application") as app_patch:
+    with patch(
+        "dbt_copilot_helper.utils.application.load_application",
+    ) as app_patch:
+        os.environ.pop("AWS_PROFILE", None)
+
         from dbt_copilot_helper.utils.application import Application
         from dbt_copilot_helper.utils.application import Environment
 
@@ -69,9 +82,15 @@ def mock_application():
             "222222222": boto3,
         }
         application = Application("test-application")
-        application.environments["development"] = Environment("development", "000000000", sessions)
-        application.environments["staging"] = Environment("staging", "111111111", sessions)
-        application.environments["production"] = Environment("production", "222222222", sessions)
+        application.environments["development"] = Environment(
+            "development", "000000000", sessions
+        )
+        application.environments["staging"] = Environment(
+            "staging", "111111111", sessions
+        )
+        application.environments["production"] = Environment(
+            "production", "222222222", sessions
+        )
 
         app_patch.return_value = application
 
@@ -81,7 +100,9 @@ def mock_application():
 @pytest.fixture(scope="function")
 def aws_credentials(monkeypatch):
     """Mocked AWS Credentials for moto."""
-    moto_credentials_file_path = Path(__file__).parent.absolute() / "dummy_aws_credentials"
+    moto_credentials_file_path = (
+        Path(__file__).parent.absolute() / "dummy_aws_credentials"
+    )
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(moto_credentials_file_path))
 
 
@@ -128,16 +149,18 @@ def mock_cluster_client_task(mocked_cluster):
             mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
             mocked_ec2_client = boto3.client("ec2")
-            mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
+            mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])[
+                "Images"
+            ]
             mocked_ec2_client.run_instances(
                 ImageId=mocked_ec2_images[0]["ImageId"],
                 MinCount=1,
                 MaxCount=1,
             )
             mocked_ec2_instances = boto3.client("ec2").describe_instances()
-            mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0][
-                "InstanceId"
-            ]
+            mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0][
+                "Instances"
+            ][0]["InstanceId"]
 
             mocked_ec2 = boto3.resource("ec2")
             mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
@@ -212,7 +235,9 @@ def mocked_pg_secret():
 
 @pytest.fixture(scope="function")
 def validate_version():
-    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
+    with patch(
+        "dbt_copilot_helper.utils.versioning.get_app_versions"
+    ) as get_app_versions:
         get_app_versions.return_value = ((1, 0, 0), (1, 0, 0))
         with patch(
             "dbt_copilot_helper.utils.versioning.validate_version_compatibility",
@@ -224,8 +249,12 @@ def validate_version():
 
 @pytest.fixture(scope="function")
 def mock_tool_versions():
-    with patch("dbt_copilot_helper.utils.versioning.get_app_versions") as get_app_versions:
-        with patch("dbt_copilot_helper.utils.versioning.get_aws_versions") as get_aws_versions:
+    with patch(
+        "dbt_copilot_helper.utils.versioning.get_app_versions"
+    ) as get_app_versions:
+        with patch(
+            "dbt_copilot_helper.utils.versioning.get_aws_versions"
+        ) as get_aws_versions:
             with patch(
                 "dbt_copilot_helper.utils.versioning.get_copilot_versions"
             ) as get_copilot_versions:
@@ -261,7 +290,9 @@ def mock_codestar_connection_response(app_name):
 def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names):
     mocked_boto3_client.return_value = mocked_boto3_client
     mocked_boto3_client.list_connections.return_value = {
-        "Connections": [mock_codestar_connection_response(name) for name in connection_names],
+        "Connections": [
+            mock_codestar_connection_response(name) for name in connection_names
+        ],
         "NextToken": "not-interesting",
     }
 

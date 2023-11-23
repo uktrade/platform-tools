@@ -39,16 +39,17 @@ Parameters:
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
 
 Mappings:
-  myAuroraDbEnvScalingConfigurationMap:
-
+  myAuroraDbEnvironmentConfigMap:
     development:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
-
+      DeletionPolicy: Delete
 
 Resources:
   myAuroraDbDBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora Serverless v2 cluster.
       SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
@@ -57,6 +58,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group for your workload to access the Aurora Serverless v2 cluster myAuroraDb'
     Type: 'AWS::EC2::SecurityGroup'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for my-aurora-db to access Aurora Serverless v2 cluster myAuroraDb.'
       VpcId: !Ref VpcId
@@ -68,6 +71,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group for your Aurora Serverless v2 cluster myAuroraDb'
     Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: The Security Group for the Aurora Serverless v2 cluster.
       SecurityGroupIngress:
@@ -97,6 +102,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
     Type: 'AWS::RDS::DBClusterParameterGroup'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
       Family: 'aurora-postgresql14'
@@ -107,6 +114,8 @@ Resources:
 
   myAuroraDbKMSKey:
     Type: "AWS::KMS::Key"
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: "KMS Key for Aurora encryption"
       KeyPolicy:
@@ -130,6 +139,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 database cluster'
     Type: 'AWS::RDS::DBCluster'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
@@ -149,14 +160,16 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref myAuroraDbDBClusterSecurityGroup
       ServerlessV2ScalingConfiguration:
-        MinCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMinCapacity]
-        MaxCapacity: !FindInMap [myAuroraDbEnvScalingConfigurationMap, !Ref Env, DBMaxCapacity]
+        MinCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMinCapacity]
+        MaxCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMaxCapacity]
       StorageEncrypted: true
 
   myAuroraDbDBWriterInstance:
     Metadata:
       'aws:copilot:description': 'The myAuroraDb Aurora Serverless v2 writer instance'
     Type: 'AWS::RDS::DBInstance'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       DBClusterIdentifier: !Ref myAuroraDbDBCluster
       DBInstanceClass: db.serverless
@@ -180,6 +193,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
       GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
@@ -192,6 +207,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the DB cluster'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to DB
       GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
@@ -204,6 +221,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from Lambda Functions in my application to the Secrets Manager'
     Type: AWS::EC2::SecurityGroupIngress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress from Lambda Functions to Secrets Manager
       GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
@@ -216,6 +235,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from DB cluster in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from DB to Lambda Functions
       GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
@@ -228,6 +249,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress from Secrets Manager in my application to the Lambda Function'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       Description: Egress from Secrets Manager to Lambda Functions
       GroupId: !Ref 'myAuroraDbDBClusterSecurityGroup'
@@ -240,6 +263,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow egress for HTTPS (so the Lambda Function can post a success response back to the Custom Resource)'
     Type: AWS::EC2::SecurityGroupEgress
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       CidrIp: 0.0.0.0/0
       Description: Egress for HTTPS
@@ -412,6 +437,8 @@ Resources:
 
   myAuroraDbApplicationUser:
     Type: 'Custom::myAuroraDbApplicationUser'
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
       CopilotApplication: !Sub "${App}"
