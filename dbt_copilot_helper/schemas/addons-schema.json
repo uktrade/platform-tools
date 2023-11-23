@@ -103,6 +103,7 @@
             "s3",
             "s3-policy",
             "appconfig-ipfilter",
+            "subscription-filter",
             "monitoring",
             "vpc"
           ]
