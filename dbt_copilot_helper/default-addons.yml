@@ -5,5 +5,9 @@ appconfig-ipfilter:
   type: appconfig-ipfilter
   services: __all__
 
+subscription-filter:
+  type: subscription-filter
+  services: __all__
+
 vpc:
   type: vpc
