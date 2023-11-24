@@ -137,15 +137,6 @@ def _create_resource_records(cert_record, domain_client, zone_id):
     )
 
 
-def _get_domain_id(domain_client, domain_to_create):
-    click.secho(f"Looking for ID of domain {domain_to_create}...", fg="yellow")
-    hosted_zones = domain_client.list_hosted_zones_by_name()["HostedZones"]
-
-    for hz in hosted_zones:
-        if hz["Name"] == domain_to_create:
-            return hz["Id"]
-
-
 def _certs_for_domain(client, domain):
     # Check if cert is present.
     cert_list = client.list_certificates(
@@ -251,42 +242,49 @@ def create_hosted_zones(client, base_domain, subdomain):
     zone_ids = {}
 
     for domain_name in domains_to_create:
+        domain_zone = f"{domain_name}."
         parent_domain = domain_name.split(".", maxsplit=1)[1]
         parent_zone = f"{parent_domain}."
-        parent_zone_id = _get_zone_id_or_abort(client, parent_zone)
+        hosted_zone_response = client.list_hosted_zones_by_name()
+        hosted_zones = {hz["Name"]: hz for hz in hosted_zone_response["HostedZones"]}
+        parent_zone_id = _get_zone_id_or_abort(hosted_zones, parent_zone)
 
-        if not click.confirm(
-            click.style("About to create domain: ", fg="cyan")
-            + click.style(f"{domain_name}\n", fg="white", bold=True)
-            + click.style("Do you want to continue?", fg="cyan"),
-        ):
-            exit()
-
-        click.secho(f"Creating hosted zone for {domain_name}...", fg="yellow")
-
-        response = client.create_hosted_zone(
-            Name=domain_name,
-            # Timestamp is on the end because CallerReference must be unique for every call
-            CallerReference=f"{domain_name}_from_code_{int(time.time())}",
-        )
-        ns_records = response["DelegationSet"]
-        subdomain_zone_id = response["HostedZone"]["Id"]
-        zone_ids[domain_name] = subdomain_zone_id
-
-        copy_records_from_parent_to_subdomain(
-            client, parent_zone_id, domain_name, subdomain_zone_id
-        )
-
-        if not click.confirm(
-            click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
-            + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
-            + click.style("Do you want to continue?", fg="cyan"),
-        ):
-            exit()
-
-        _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id)
+        if domain_zone in hosted_zones:
+            click.secho(f"Hosted zone '{domain_zone}' already exists", fg="yellow")
+            zone_ids[domain_name] = hosted_zones[domain_zone]["Id"]
+        else:
+            subdomain_zone_id = _create_hosted_zone(
+                client, domain_name, parent_zone, parent_zone_id
+            )
+            zone_ids[domain_name] = subdomain_zone_id
 
     return zone_ids
+
+
+def _create_hosted_zone(client, domain_name, parent_zone, parent_zone_id):
+    if not click.confirm(
+        click.style("About to create domain: ", fg="cyan")
+        + click.style(f"{domain_name}\n", fg="white", bold=True)
+        + click.style("Do you want to continue?", fg="cyan"),
+    ):
+        exit()
+    response = client.create_hosted_zone(
+        Name=domain_name,
+        # Timestamp is on the end because CallerReference must be unique for every call
+        CallerReference=f"{domain_name}_from_code_{int(time.time())}",
+    )
+    ns_records = response["DelegationSet"]
+    subdomain_zone_id = response["HostedZone"]["Id"]
+    copy_records_from_parent_to_subdomain(client, parent_zone_id, domain_name, subdomain_zone_id)
+    if not click.confirm(
+        click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
+        + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
+        + click.style("Do you want to continue?", fg="cyan"),
+    ):
+        exit()
+    _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id)
+
+    return subdomain_zone_id
 
 
 def _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id):
@@ -423,17 +421,14 @@ def create_required_zones_and_certs(domain_client, project_client, subdomain, ba
     return create_cert(project_client, domain_client, subdomain, cert_zone_id)
 
 
-def _get_zone_id_or_abort(client, zone):
+def _get_zone_id_or_abort(hosted_zones, zone):
     """Zones have the '.' suffix."""
-    response = client.list_hosted_zones_by_name()
-    hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
     if zone not in hosted_zones:
         click.secho(
-            f"The base domain: {zone} does not exist in your AWS domain account {hosted_zones}",
+            f"The hosted zone: {zone} does not exist in your AWS domain account {hosted_zones}",
             fg="red",
         )
         exit()
-    click.secho(f"Found hosted zone {zone}", fg="green")
     return hosted_zones[zone]["Id"]
 
 
