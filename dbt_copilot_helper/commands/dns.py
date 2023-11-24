@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import time
 from typing import Tuple
 
@@ -24,8 +25,14 @@ from dbt_copilot_helper.utils.versioning import (
 # (run a test before removing)
 
 # Base domain depth
-MAX_DOMAIN_DEPTH = 2
+AVAILABLE_DOMAINS = {
+    "great.gov.uk": "live",
+    "trade.gov.uk": "live",
+    "prod.uktrade.digital": "dev",
+    "uktrade.digital": "dev",
+}
 AWS_CERT_REGION = "eu-west-2"
+COPILOT_DIR = "copilot"
 
 
 def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10, timeout=600):
@@ -58,7 +65,44 @@ def _wait_for_certificate_validation(acm_client, certificate_arn, sleep_time=10,
         raise Exception(f"""Certificate validation failed with the status "{status}".""")
 
 
-def create_cert(client, domain_client, domain, base_len):
+def create_cert(client, domain_client, domain_name, zone_id):
+    certificate_arn = _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain_name)
+
+    if certificate_arn:
+        return certificate_arn
+
+    if not click.confirm(
+        click.style("Creating Certificate for ", fg="yellow")
+        + click.style(f"{domain_name}\n", fg="white", bold=True)
+        + click.style("Do you want to continue?", fg="yellow"),
+    ):
+        exit()
+
+    certificate_arn = _request_cert(client, domain_name)
+
+    # Create DNS validation records
+    cert_record = _get_certificate_record(certificate_arn, client)
+
+    if not click.confirm(
+        click.style("Updating DNS record for certificate ", fg="yellow")
+        + click.style(f"{domain_name}", fg="white", bold=True)
+        + click.style(" with value ", fg="yellow")
+        + click.style(f"""{cert_record["Value"]}\n""", fg="white", bold=True)
+        + click.style("Do you want to continue?", fg="yellow"),
+    ):
+        exit()
+
+    _create_resource_records(cert_record, domain_client, zone_id)
+
+    # Wait for certificate to get to validation state before continuing.
+    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
+    # and wants to give it a chance to take longer in case that's all that's wrong.
+    _wait_for_certificate_validation(client, certificate_arn=certificate_arn, timeout=1200)
+
+    return certificate_arn
+
+
+def _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain):
     for cert in _certs_for_domain(client, domain):
         if cert["Status"] == "ISSUED":
             click.secho("Certificate already exists, do not need to create.", fg="green")
@@ -69,57 +113,12 @@ def create_cert(client, domain_client, domain, base_len):
                 fg="yellow",
             )
             client.delete_certificate(CertificateArn=cert["CertificateArn"])
-
-    if not click.confirm(
-        click.style("Creating Certificate for ", fg="yellow")
-        + click.style(f"{domain}\n", fg="white", bold=True)
-        + click.style("Do you want to continue?", fg="yellow"),
-    ):
-        exit()
-
-    domain_to_create = _get_domain_to_create(base_len, domain)
-
-    arn = _request_cert(client, domain)
-
-    # Create DNS validation records
-    cert_record = _get_certificate_record(arn, client)
-    domain_id = _get_domain_id(domain_client, domain_to_create)
-
-    if not domain_id:
-        # Will got here more than once during manual testing,
-        # it might be a race condition we need to handle better
-        click.secho(
-            f"Unable to find Domain ID for {domain_to_create} in the hosted zones",
-            fg="red",
-            bold=True,
-        )
-        exit(1)
-
-    # Add NS records of subdomain to parent
-    click.secho(domain_id, fg="yellow")
-
-    if not click.confirm(
-        click.style("Updating DNS record for certificate ", fg="yellow")
-        + click.style(f"{domain}", fg="white", bold=True)
-        + click.style(" with value ", fg="yellow")
-        + click.style(f"""{cert_record["Value"]}\n""", fg="white", bold=True)
-        + click.style("Do you want to continue?", fg="yellow"),
-    ):
-        exit()
-
-    _create_resource_records(cert_record, domain_client, domain_id)
-
-    # Wait for certificate to get to validation state before continuing.
-    # Will upped the timeout from 600 to 1200 because he repeatedly saw it timeout at 600
-    # and wants to give it a chance to take longer in case that's all that's wrong.
-    _wait_for_certificate_validation(client, certificate_arn=arn, timeout=1200)
-
-    return arn
+    return None
 
 
-def _create_resource_records(cert_record, domain_client, domain_id):
+def _create_resource_records(cert_record, domain_client, zone_id):
     domain_client.change_resource_record_sets(
-        HostedZoneId=domain_id,
+        HostedZoneId=zone_id,
         ChangeBatch={
             "Changes": [
                 {
@@ -145,15 +144,6 @@ def _get_domain_id(domain_client, domain_to_create):
     for hz in hosted_zones:
         if hz["Name"] == domain_to_create:
             return hz["Id"]
-
-
-def _get_domain_to_create(base_len, domain):
-    parts = domain.split(".")
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = ".".join(parts[parts_to_remove:]) + "."
-    click.secho(domain_to_create, fg="yellow")
-    return domain_to_create
 
 
 def _certs_for_domain(client, domain):
@@ -194,10 +184,10 @@ def _request_cert(client, domain):
     return arn
 
 
-def add_records(client, records, subdom_id, action):
+def add_records(client, records, subdomain_id, action):
     if records["Type"] == "A":
         response = client.change_resource_record_sets(
-            HostedZoneId=subdom_id,
+            HostedZoneId=subdomain_id,
             ChangeBatch={
                 "Comment": "Record created for copilot",
                 "Changes": [
@@ -220,7 +210,7 @@ def add_records(client, records, subdom_id, action):
         )
     else:
         response = client.change_resource_record_sets(
-            HostedZoneId=subdom_id,
+            HostedZoneId=subdomain_id,
             ChangeBatch={
                 "Comment": "Record created for copilot",
                 "Changes": [
@@ -247,140 +237,204 @@ def add_records(client, records, subdom_id, action):
     return response["ChangeInfo"]["Status"]
 
 
-def check_for_records(client, parent_id, subdom, subdom_id):
-    records_to_add = []
-    response = client.list_resource_record_sets(
-        HostedZoneId=parent_id,
-    )
+def copy_records_from_parent_to_subdomain(client, parent_zone_id, subdomain, zone_id):
+    response = client.list_resource_record_sets(HostedZoneId=parent_zone_id)
 
     for records in response["ResourceRecordSets"]:
-        if subdom in records["Name"]:
+        if subdomain in records["Name"]:
             click.secho(records["Name"] + " found", fg="green")
-            records_to_add.append(records)
-            add_records(client, records, subdom_id, "UPSERT")
-    return True
+            add_records(client, records, zone_id, "UPSERT")
 
 
-def create_hosted_zone(client, domain, start_domain, base_len):
-    parts = domain.split(".")
+def create_hosted_zones(client, base_domain, subdomain):
+    domains_to_create = get_required_subdomains(base_domain, subdomain)
+    zone_ids = {}
 
-    # We only want to create domains max 2 deep so remove all sub domains in excess
-    parts_to_remove = len(parts) - base_len - MAX_DOMAIN_DEPTH
-    domain_to_create = parts[parts_to_remove:]
-
-    # Walk back domain name
-    for x in reversed(range(len(domain_to_create) - (len(start_domain.split(".")) - 1))):
-        subdom = ".".join(domain_to_create[(x):]) + "."
+    for domain_name in domains_to_create:
+        parent_domain = domain_name.split(".", maxsplit=1)[1]
+        parent_zone = f"{parent_domain}."
+        parent_zone_id = _get_zone_id_or_abort(client, parent_zone)
 
         if not click.confirm(
             click.style("About to create domain: ", fg="cyan")
-            + click.style(f"{subdom}\n", fg="white", bold=True)
+            + click.style(f"{domain_name}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
 
-        parent = ".".join(subdom.split(".")[1:])
-        response = client.list_hosted_zones_by_name()
+        click.secho(f"Creating hosted zone for {domain_name}...", fg="yellow")
 
-        for hz in response["HostedZones"]:
-            if hz["Name"] == parent:
-                parent_id = hz["Id"]
-                break
-
-        click.secho(f"Creating hosted zone for {subdom}...", fg="yellow")
         response = client.create_hosted_zone(
-            Name=subdom,
+            Name=domain_name,
             # Timestamp is on the end because CallerReference must be unique for every call
-            CallerReference=f"{subdom}_from_code_{int(time.time())}",
+            CallerReference=f"{domain_name}_from_code_{int(time.time())}",
         )
         ns_records = response["DelegationSet"]
-        subdom_id = response["HostedZone"]["Id"]
+        subdomain_zone_id = response["HostedZone"]["Id"]
+        zone_ids[domain_name] = subdomain_zone_id
 
-        # Check if records existed in the parent domain, if so they need to be copied to sub domain.
-        check_for_records(client, parent_id, subdom, subdom_id)
+        copy_records_from_parent_to_subdomain(
+            client, parent_zone_id, domain_name, subdomain_zone_id
+        )
 
         if not click.confirm(
-            click.style(f"Updating parent {parent} domain with records: ", fg="cyan")
+            click.style(f"Updating parent {parent_zone} domain with records: ", fg="cyan")
             + click.style(f"{ns_records['NameServers']}\n", fg="white", bold=True)
             + click.style("Do you want to continue?", fg="cyan"),
         ):
             exit()
 
-        # Add NS records of subdomain to parent
-        nameservers = ns_records["NameServers"]
-        # append  . to make fqdn
-        nameservers = [f"{nameserver}." for nameserver in nameservers]
-        nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
+        _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id)
 
-        client.change_resource_record_sets(
-            HostedZoneId=parent_id,
-            ChangeBatch={
-                "Changes": [
-                    {
-                        "Action": "UPSERT",
-                        "ResourceRecordSet": {
-                            "Name": subdom,
-                            "Type": "NS",
-                            "TTL": 300,
-                            "ResourceRecords": nameserver_resource_records,
-                        },
+    return zone_ids
+
+
+def _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id):
+    # Add nameserver records of subdomain to parent
+    nameservers = ns_records["NameServers"]
+    # append . to make fully qualified domain name
+    nameservers = [f"{nameserver}." for nameserver in nameservers]
+    nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
+    client.change_resource_record_sets(
+        HostedZoneId=parent_zone_id,
+        ChangeBatch={
+            "Changes": [
+                {
+                    "Action": "UPSERT",
+                    "ResourceRecordSet": {
+                        "Name": domain_name,
+                        "Type": "NS",
+                        "TTL": 300,
+                        "ResourceRecords": nameserver_resource_records,
                     },
-                ],
-            },
+                },
+            ],
+        },
+    )
+
+
+class InvalidDomainException(Exception):
+    pass
+
+
+def _get_subdomains_from_base(base: list[str], subdomain: list[str]) -> list[list[str]]:
+    """
+    Recurse over domain to get a list of subdomains.
+
+    These are ordered from smallest to largest, so the domains can be created in
+    the correct order.
+    """
+    if base == subdomain:
+        return []
+    return _get_subdomains_from_base(base, subdomain[1:]) + [subdomain]
+
+
+def get_required_subdomains(base_domain: str, subdomain: str) -> list[str]:
+    """
+    We only want to get subdomains up to 4 levels deep.
+
+    Prod base domains should be 3 levels deep, so we should create up to one
+    additional subdomain. Dev base domain is always "uktrade.digital" and should
+    have the app and env subdomains created, so 4 levels in either case.
+    """
+    if base_domain not in AVAILABLE_DOMAINS:
+        raise InvalidDomainException(f"{base_domain} is not a supported base domain")
+    _validate_subdomain(base_domain, subdomain)
+    domains_as_lists = _get_subdomains_from_base(base_domain.split("."), subdomain.split("."))
+
+    max_domain_levels = 4
+    return [
+        ".".join(domain_parts)
+        for domain_parts in domains_as_lists
+        if len(domain_parts) <= max_domain_levels
+    ]
+
+
+def _validate_subdomain(base_domain, subdomain):
+    errors = []
+    if not subdomain.endswith("." + base_domain):
+        errors.append(f"{subdomain} is not a subdomain of {base_domain}")
+
+    errors.extend(_validate_basic_domain_syntax(subdomain))
+
+    if errors:
+        raise InvalidDomainException("\n".join(errors))
+
+
+def _validate_basic_domain_syntax(domain):
+    errors = []
+    if ".." in domain or not re.match(r"^[0-9a-zA-Z-.]+$", domain):
+        errors.append(f"Subdomain {domain} is not a valid domain")
+
+    return errors
+
+
+def validate_subdomains(subdomains: list[str]) -> None:
+    bad_domains = []
+    for subdomain in subdomains:
+        is_valid = False
+        for key in AVAILABLE_DOMAINS:
+            if subdomain.endswith(key):
+                is_valid = True
+                break
+        if not is_valid:
+            bad_domains.append(subdomain)
+    if bad_domains:
+        csv_domains = ", ".join(bad_domains)
+        raise InvalidDomainException(
+            f"The following subdomains do not have one of the allowed base domains: {csv_domains}"
         )
 
-    return True
+
+def get_base_domain(subdomains: list[str]) -> str:
+    matching_domains = []
+    domains_by_length = sorted(AVAILABLE_DOMAINS.keys(), key=lambda d: len(d), reverse=True)
+    for subdomain in subdomains:
+        for domain_name in domains_by_length:
+            if subdomain.endswith(f".{domain_name}"):
+                matching_domains.append(domain_name)
+                break
+
+    if len(matching_domains) > 1:
+        ordered_subdomains = ", ".join(sorted(matching_domains))
+        raise InvalidDomainException(f"Multiple base domains were found: {ordered_subdomains}")
+
+    if not matching_domains:
+        ordered_subdomains = ", ".join(sorted(subdomains))
+        raise InvalidDomainException(
+            f"No base domains were found for subdomains: {ordered_subdomains}"
+        )
+
+    return matching_domains[0]
 
 
-def check_r53(domain_session, project_session, domain, base_domain):
-    # Sanitise base domain
-    base_domain = base_domain.rstrip(".") + "."
+def get_certificate_zone_id(hosted_zones):
+    hosted_zone_names = sorted([zone for zone in hosted_zones], key=lambda z: len(z))
+    longest_hosted_zone = hosted_zone_names[-1]
 
-    # find the hosted zone
-    domain_client = domain_session.client("route53")
-    acm_client = project_session.client("acm", region_name=AWS_CERT_REGION)
+    return hosted_zones[longest_hosted_zone]
 
-    # create the certificate
-    response = domain_client.list_hosted_zones_by_name()
+
+def create_required_zones_and_certs(domain_client, project_client, subdomain, base_domain):
+    hosted_zones = create_hosted_zones(domain_client, base_domain, subdomain)
+
+    cert_zone_id = get_certificate_zone_id(hosted_zones)
+
+    return create_cert(project_client, domain_client, subdomain, cert_zone_id)
+
+
+def _get_zone_id_or_abort(client, zone):
+    """Zones have the '.' suffix."""
+    response = client.list_hosted_zones_by_name()
     hosted_zones = {hz["Name"]: hz for hz in response["HostedZones"]}
-
-    abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones)
-
-    base_len = len(base_domain.split(".")) - 1
-    parts = domain.split(".")
-
-    for _ in range(len(parts) - 1):
-        subdom = ".".join(parts) + "."
-        click.secho(f"Searching for {subdom}... ", fg="yellow")
-        if subdom in hosted_zones:
-            click.secho("Found hosted zone " + hosted_zones[subdom]["Name"], fg="green")
-
-            # We only want to go 2 subdomains deep in Route53
-            if (len(parts) - base_len) < MAX_DOMAIN_DEPTH:
-                click.secho("Creating Hosted Zone", fg="magenta")
-                create_hosted_zone(domain_client, domain, subdom, base_len)
-
-            break
-
-        parts.pop(0)
-    else:
-        # This should only occur when base domain this needs is not found
-        click.secho(f"Root Domain not found for {domain}", fg="red")
-        return
-
-    # add records to hosted zone to validate certificate
-    cert_arn = create_cert(acm_client, domain_client, domain, base_len)
-
-    return cert_arn
-
-
-def abort_if_base_domain_is_not_in_route53(base_domain, hosted_zones):
-    if base_domain not in hosted_zones:
+    if zone not in hosted_zones:
         click.secho(
-            f"The base domain: {base_domain} does not exist in your AWS domain account {hosted_zones}",
+            f"The base domain: {zone} does not exist in your AWS domain account {hosted_zones}",
             fg="red",
         )
         exit()
+    click.secho(f"Found hosted zone {zone}", fg="green")
+    return hosted_zones[zone]["Id"]
 
 
 def get_load_balancer_domain_and_configuration(
@@ -478,19 +532,12 @@ def domain():
 
 @domain.command()
 @click.option(
-    "--domain-profile",
-    help="AWS account profile name for Route53 domains account",
-    required=True,
-    type=click.Choice(["dev", "live"]),
-)
-@click.option(
     "--project-profile", help="AWS account profile name for certificates account", required=True
 )
-@click.option("--base-domain", help="root domain", required=True)
-@click.option("--env", help="AWS Copilot environment name", required=False)
-def configure(domain_profile, project_profile, base_domain, env):
-    """Creates missing subdomains (up to 2 levels deep) if they do not already
-    exist and creates certificates for those subdomains."""
+@click.option("--env", help="AWS Copilot environment name", required=True)
+def configure(project_profile, env):
+    """Creates subdomains if they do not exist and then creates certificates for
+    them."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
     # which have been created:
@@ -498,21 +545,39 @@ def configure(domain_profile, project_profile, base_domain, env):
     # the hosted zone for the application environment in the dev AWS account,
     # and the applications records on the hosted zone for the environment in the dev AWS account.
 
-    path = "copilot"
+    manifests = _get_manifests_or_abort()
 
-    if not os.path.exists(path):
-        abort_with_error("Please check path, copilot directory appears to be missing.")
-
-    manifests = _get_manifests(path)
-
-    if not manifests:
-        abort_with_error("Please check path, no manifest files were found")
+    subdomains = _get_subdomains_from_env_manifests(env, manifests)
+    validate_subdomains(subdomains)
+    base_domain = get_base_domain(subdomains)
+    domain_profile = AVAILABLE_DOMAINS[base_domain]
 
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
+    domain_client = domain_session.client("route53")
+    project_client = project_session.client("acm", region_name=AWS_CERT_REGION)
 
     cert_list = {}
 
+    for subdomain in subdomains:
+        cert_arn = create_required_zones_and_certs(
+            domain_client,
+            project_client,
+            subdomain,
+            base_domain,
+        )
+        cert_list.update({subdomain: cert_arn})
+
+    if cert_list:
+        click.secho("\nHere are your Certificate ARNs:", fg="cyan")
+        for domain, cert in cert_list.items():
+            click.secho(f"Domain: {domain} => Cert ARN: {cert}", fg="white", bold=True)
+    else:
+        click.secho("No domains found, please check the manifest file", fg="red")
+
+
+def _get_subdomains_from_env_manifests(environment, manifests):
+    subdomains = []
     for manifest in manifests:
         # Need to check that the manifest file is correctly configured.
         with open(manifest, "r") as fd:
@@ -523,48 +588,34 @@ def configure(domain_profile, project_profile, base_domain, env):
                 )
                 click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                environments = _get_environments(conf, domain_profile, env)
+                aliases = [
+                    domain["http"]["alias"]
+                    for env, domain in conf["environments"].items()
+                    if env == environment
+                ]
 
-                for env, domain in environments:
-                    http_alias = domain["http"]["alias"]
-                    click.secho(
-                        "\nEnvironment: " + env + " => Domain: " + http_alias,
-                        fg="yellow",
-                        bold=True,
-                    )
-                    cert_arn = check_r53(
-                        domain_session,
-                        project_session,
-                        http_alias,
-                        base_domain,
-                    )
-                    cert_list.update({http_alias: cert_arn})
-
-    if cert_list:
-        click.secho("\nHere are your Certificate ARNs:", fg="cyan")
-        for domain, cert in cert_list.items():
-            click.secho(f"Domain: {domain}\t => Cert ARN: {cert}", fg="white", bold=True)
-    else:
-        click.secho("No domains found, please check the manifest file", fg="red")
+                click.secho(
+                    "  " + "\n  ".join(aliases),
+                    fg="yellow",
+                    bold=True,
+                )
+                subdomains.extend(aliases)
+    return subdomains
 
 
-def _get_environments(conf, domain_profile, env):
-    environments = conf["environments"].items()
-    if domain_profile == "live":
-        environments = [e for e in environments if e[0] in ["prod", "production"]]
-    else:
-        environments = [e for e in environments if e[0] not in ["prod", "production"]]
-    if env:
-        environments = [e for e in environments if e[0] == env]
-    return environments
+def _get_manifests_or_abort():
+    if not os.path.exists(COPILOT_DIR):
+        abort_with_error("Please check path, copilot directory appears to be missing.")
 
-
-def _get_manifests(path):
     manifests = []
-    for root, dirs, files in os.walk(path):
+    for root, dirs, files in os.walk(COPILOT_DIR):
         for file in files:
             if file == "manifest.yml" or file == "manifest.yaml":
                 manifests.append(os.path.join(root, file))
+
+    if not manifests:
+        abort_with_error("Please check path, no manifest files were found")
+
     return manifests
 
 
@@ -613,18 +664,18 @@ def assign(app, domain_profile, project_profile, svc, env):
 
     parts = domain_name.split(".")
     for _ in range(len(parts) - 1):
-        subdom = ".".join(parts) + "."
+        subdomain = ".".join(parts) + "."
         click.echo(
             click.style("Searching for ", fg="yellow")
-            + click.style(f"{subdom}..", fg="white", bold=True)
+            + click.style(f"{subdomain}..", fg="white", bold=True)
         )
 
-        if subdom in hosted_zones:
+        if subdomain in hosted_zones:
             click.echo(
                 click.style("Found hosted zone ", fg="yellow")
-                + click.style(hosted_zones[subdom]["Name"], fg="white", bold=True),
+                + click.style(hosted_zones[subdomain]["Name"], fg="white", bold=True),
             )
-            hosted_zone_id = hosted_zones[subdom]["Id"]
+            hosted_zone_id = hosted_zones[subdomain]["Id"]
 
             # Does record existing
             response = domain_client.list_resource_record_sets(
@@ -676,7 +727,7 @@ def assign(app, domain_profile, project_profile, svc, env):
                     bold=True,
                 )
                 + click.style("In Domain: ", fg="yellow")
-                + click.style(f"{subdom}", fg="white", bold=True)
+                + click.style(f"{subdomain}", fg="white", bold=True)
                 + click.style("\tZone ID: ", fg="yellow")
                 + click.style(f"{hosted_zone_id}\n", fg="white", bold=True)
                 + click.style("Do you want to continue?", fg="yellow"),

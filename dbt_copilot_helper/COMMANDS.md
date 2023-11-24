@@ -582,24 +582,20 @@ copilot-helper domain (configure|assign)
 
 [↩ Parent](#copilot-helper-domain)
 
-    Creates missing subdomains (up to 2 levels deep) if they do not already
-    exist and creates certificates for those subdomains.
+    Creates subdomains if they do not exist and then creates certificates for
+    them.
 
 ## Usage
 
 ```
-copilot-helper domain configure --domain-profile (dev|live) --project-profile <project_profile> 
-                                --base-domain <base_domain> [--env <env>] 
+copilot-helper domain configure --project-profile <project_profile> 
+                                --env <env> 
 ```
 
 ## Options
 
-- `--domain-profile <choice>`
-  - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for certificates account
-- `--base-domain <text>`
-  - root domain
 - `--env <text>`
   - AWS Copilot environment name
 - `--help <boolean>` _Defaults to False._
