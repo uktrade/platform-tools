@@ -290,9 +290,9 @@ def create_hosted_zones(client, base_domain, subdomain):
 
 
 def _add_subdomain_ns_records_to_parent(client, domain_name, ns_records, parent_zone_id):
-    # Add NS records of subdomain to parent
+    # Add nameserver records of subdomain to parent
     nameservers = ns_records["NameServers"]
-    # append  . to make fqdn
+    # append . to make fully qualified domain name
     nameservers = [f"{nameserver}." for nameserver in nameservers]
     nameserver_resource_records = [{"Value": nameserver} for nameserver in nameservers]
     client.change_resource_record_sets(
@@ -536,8 +536,8 @@ def domain():
 )
 @click.option("--env", help="AWS Copilot environment name", required=True)
 def configure(project_profile, env):
-    """Creates missing subdomains if they do not already exist and creates
-    certificates for those subdomains."""
+    """Creates subdomains if they do not exist and then creates certificates for
+    them."""
 
     # If you need to reset to debug this command, you will need to delete any of the following
     # which have been created:
