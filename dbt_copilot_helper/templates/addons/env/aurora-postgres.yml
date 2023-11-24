@@ -1,5 +1,6 @@
 # {% version_info %}
 
+Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
@@ -46,6 +47,9 @@ Mappings:
       DBMaxCapacity: {{ config.max_capacity }}
       DeletionPolicy: {{ config.deletion_policy }}
 {%- endfor %}
+
+Conditions:
+  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   {{ addon_config.prefix }}DBSubnetGroup:
@@ -527,3 +531,12 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
+
+  SubscriptionFilterAurora:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
+      LogGroupName: !Sub '/aws/rds/cluster/${{ '{' }}{{ addon_config.prefix }}DBCluster}/postgresql'
+      FilterName: !Sub '${App}-${Env}-stream'
+      FilterPattern: ''
+      DestinationArn: !If [CreateProdSubFilter, 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination_prod', 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination']

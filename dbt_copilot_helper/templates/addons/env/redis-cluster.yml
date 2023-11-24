@@ -1,5 +1,6 @@
 # {% version_info %}
 
+Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
@@ -47,6 +48,7 @@ Mappings:
 
 Conditions:
   {{ addon_config.prefix }}HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, NumReplicas], 0]]
+    CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
 
@@ -155,3 +157,15 @@ Resources:
         - 'rediss://${url}:${port}'
         - url: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
           port: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
+
+  'Fn::ForEach::SubLgName':
+    - LgName
+    - [engine, slow]
+    - 'SubscriptionFilter${LgName}':
+        Type: AWS::Logs::SubscriptionFilter
+        Properties:
+          RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
+          LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'
+          FilterName: !Sub '${App}-${Env}-stream'
+          FilterPattern: ''
+          DestinationArn: !If [CreateProdSubFilter, 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination_prod', 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination']
