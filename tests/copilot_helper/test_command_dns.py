@@ -341,6 +341,22 @@ def test_create_hosted_zones_creates_the_correct_hosted_zones(
     assert zones == expected_zones
 
 
+@patch("click.confirm")
+def test_create_hosted_zones_does_not_create_duplicate_zones(mock_click, route53_session):
+    base_domain = "uktrade.digital"
+    subdomain = "dev.uktrade.digital"
+    route53_session.create_hosted_zone(Name="uktrade.digital.", CallerReference="uktrade-one")
+    route53_session.create_hosted_zone(Name="dev.uktrade.digital.", CallerReference="uktrade-two")
+
+    create_hosted_zones(route53_session, base_domain, subdomain)
+
+    zones = [hz["Name"] for hz in route53_session.list_hosted_zones_by_name()["HostedZones"]]
+
+    assert len(zones) == 2
+    assert f"{base_domain}." in zones
+    assert f"{subdomain}." in zones
+
+
 @pytest.mark.parametrize(
     "base_domain, domain, zone_dict",
     [
