@@ -58,6 +58,35 @@ def fakefs(fs):
     return fs
 
 
+@pytest.fixture(scope="function")
+def create_test_manifest(fakefs):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+environments:
+  dev:
+    http:
+      alias: v2.app.dev.uktrade.digital
+
+  staging:
+    http:
+      alias: v2.app.staging.uktrade.digital
+
+  prod1:
+    http:
+      alias: v2.app.prod.uktrade.digital
+
+  prod2:
+    http:
+      alias: v2.app.great.gov.uk
+
+  prod3:
+    http:
+      alias: app.trade.gov.uk
+""",
+    )
+
+
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
     with patch(
