@@ -50,8 +50,15 @@ def normalise_string(to_normalise: str) -> str:
     return output.lower()
 
 
-def create_task_id() -> str:
-    return "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
+    ssm = app.environments[env].session.client("ssm")
+    task_name_parameter = f"/copilot/{app.name}/{env}/secrets/{addon_name}_CONDUIT_TASK_NAME"
+
+    try:
+        return ssm.get_parameter(Name=task_name_parameter)["Parameter"]["Value"]
+    except ssm.exceptions.ParameterNotFound:
+        random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+        return f"conduit-{app.name}-{env}-{normalise_string(addon_name)}-{random_id}"
 
 
 def get_cluster_arn(app: Application, env: str) -> str:
@@ -195,7 +202,7 @@ def add_stack_delete_policy_to_task_role(app: Application, env: str, task_name: 
             )
 
 
-def add_deletion_policy_to_log_group(app: Application, env: str, task_name: str):
+def update_conduit_stack_resources(app: Application, env: str, addon_name: str, task_name: str):
     session = app.environments[env].session
     cloudformation_client = session.client("cloudformation")
 
@@ -203,6 +210,15 @@ def add_deletion_policy_to_log_group(app: Application, env: str, task_name: str)
     template = cloudformation_client.get_template(StackName=conduit_stack_name)
     template_yml = load_yaml(template["TemplateBody"])
     template_yml["Resources"]["LogGroup"]["DeletionPolicy"] = "Retain"
+    template_yml["Resources"]["TaskNameParameter"] = load_yaml(
+        f"""
+        Type: AWS::SSM::Parameter
+        Properties:
+          Name: /copilot/{app.name}/{env}/secrets/{addon_name}_CONDUIT_TASK_NAME
+          Type: String
+          Value: {task_name}
+        """
+    )
 
     params = []
     if "Parameters" in template_yml:
@@ -224,12 +240,12 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, env)
     addon_name = addon_name or addon_type
-    task_name = f"conduit-{app}-{env}-{normalise_string(addon_name)}-{create_task_id()}"
+    task_name = get_or_create_task_name(application, env, addon_name)
 
     if not addon_client_is_running(application, env, cluster_arn, task_name):
         create_addon_client_task(application, env, addon_type, addon_name, task_name)
         add_stack_delete_policy_to_task_role(application, env, task_name)
-        add_deletion_policy_to_log_group(application, env, task_name)
+        update_conduit_stack_resources(application, env, addon_name, task_name)
 
     connect_to_addon_client_task(application, env, cluster_arn, task_name)
 
