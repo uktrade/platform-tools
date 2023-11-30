@@ -8,6 +8,7 @@ from moto import mock_ssm
 from moto import mock_sts
 
 from dbt_copilot_helper.utils.application import Application
+from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from dbt_copilot_helper.utils.application import Environment
 from dbt_copilot_helper.utils.application import get_application_name
 from dbt_copilot_helper.utils.application import load_application
@@ -87,6 +88,16 @@ class ApplicationTest(TestCase):
     ):
         ssm_client = boto3.client("ssm")
         ssm_client.put_parameter(
+            Name=f"/copilot/applications/test",
+            Value=json.dumps(
+                {
+                    "name": "test",
+                    "account": "111111111",
+                }
+            ),
+            Type="String",
+        )
+        ssm_client.put_parameter(
             Name=f"/copilot/applications/test/environments/one",
             Value=json.dumps(
                 {
@@ -122,7 +133,38 @@ class ApplicationTest(TestCase):
     def test_loading_an_empty_application(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
     ):
+        ssm_client = boto3.client("ssm")
+        ssm_client.put_parameter(
+            Name=f"/copilot/applications/test",
+            Value=json.dumps(
+                {
+                    "name": "test",
+                    "account": "111111111",
+                }
+            ),
+            Type="String",
+        )
+
         application = load_application()
 
         self.assertEqual(application.name, "test")
         self.assertEqual(str(application), "Application test with no environments")
+
+    @mock_ssm
+    @patch("dbt_copilot_helper.utils.application.get_application_name", return_value="test")
+    def test_loading_an_application_in_a_different_account(
+        self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
+    ):
+        ssm_client = boto3.client("ssm")
+        ssm_client.put_parameter(
+            Name=f"/copilot/applications/test",
+            Value=json.dumps(
+                {
+                    "name": "test",
+                    "account": "111111111",
+                }
+            ),
+            Type="String",
+        )
+
+        self.assertRaises(ApplicationNotFoundError, load_application, "sample")
