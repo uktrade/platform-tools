@@ -13,6 +13,10 @@ yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
 maybe = "\033[93m?\033[0m"
 
+# Destination ARNs for log groups in the central logging account (for sending logs to Sentinal).
+PROD_LOG_GROUP_ARN = "cwl_log_destination_prod_to_be_updated_once_created"
+DEV_LOG_GROUP_ARN = "arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination"
+
 RECOMMENDATIONS = {
     "dbt-copilot-tools-upgrade": (
         "Upgrade dbt-copilot-tools to version {version} `pip install "

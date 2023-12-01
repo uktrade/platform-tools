@@ -539,4 +539,4 @@ Resources:
       LogGroupName: !Sub '/aws/rds/cluster/${{ '{' }}{{ addon_config.prefix }}DBCluster}/postgresql'
       FilterName: !Sub '${App}-${Env}-stream'
       FilterPattern: ''
-      DestinationArn: !If [CreateProdSubFilter, 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination_prod', 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination']
+      DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

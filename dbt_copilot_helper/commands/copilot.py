@@ -11,6 +11,8 @@ import click
 import yaml
 from jsonschema import validate as validate_json
 
+from dbt_copilot_helper.commands.config import DEV_LOG_GROUP_ARN
+from dbt_copilot_helper.commands.config import PROD_LOG_GROUP_ARN
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
@@ -273,8 +275,13 @@ def _generate_env_addons(
     addon_type = environment_addon_config["addon_type"]
     for addon in addon_template_map[addon_type].get("env", []):
         template = templates.get_template(addon["template"])
-
-        contents = template.render({"addon_config": environment_addon_config, "addons": addons})
+        contents = template.render(
+            {
+                "addon_config": environment_addon_config,
+                "addons": addons,
+                "log_destination": {"prod": PROD_LOG_GROUP_ARN, "dev": DEV_LOG_GROUP_ARN},
+            }
+        )
 
         filename = addon.get("filename", f"{addon_name}.yml")
 
@@ -297,7 +304,12 @@ def _generate_service_addons(
         for svc in addon_config.get("services", []):
             service_path = Path(f"copilot/{svc}/addons/")
 
-            contents = template.render({"addon_config": service_addon_config})
+            contents = template.render(
+                {
+                    "addon_config": service_addon_config,
+                    "log_destination": {"prod": PROD_LOG_GROUP_ARN, "dev": DEV_LOG_GROUP_ARN},
+                }
+            )
 
             filename = addon.get("filename", f"{addon_name}.yml")
 
