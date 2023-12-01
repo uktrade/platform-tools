@@ -6,9 +6,12 @@ from pathlib import Path
 from unittest.mock import PropertyMock
 from unittest.mock import patch
 
+import boto3
 import requests
 from click.testing import CliRunner
+from moto import mock_ssm
 
+from dbt_copilot_helper.commands.codebase import build
 from dbt_copilot_helper.commands.codebase import prepare
 from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
 
@@ -102,6 +105,116 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
 
     assert result.exit_code == 0
     assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
+
+
+@patch("boto3.client")
+@patch("click.confirm")
+@patch("subprocess.run")
+@patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+def test_codebase_build_successfully_triggers_a_pipeline_based_build(
+    get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm, mock_boto_client
+):
+    mock_subprocess_run.return_value.stderr = ""
+    mock_click_confirm.return_value = "y"
+
+    result = CliRunner().invoke(
+        build,
+        [
+            "--app",
+            "test-application",
+            "--codebase",
+            "application",
+            "--commit",
+            "ee4a82c",
+        ],
+    )
+
+    mock_boto_client.return_value.start_build.assert_called_with(
+        projectName="codebuild-test-application-application",
+        artifactsOverride={"type": "NO_ARTIFACTS"},
+        sourceVersion="ee4a82c",
+    )
+
+    assert (
+        "Your build has been triggered. Check your build progress in the AWS Console."
+        in result.output
+    )
+
+
+@patch("boto3.client")
+@patch("subprocess.run")
+@patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
+    get_aws_session_or_abort, mock_subprocess_run, mock_boto_client
+):
+    mock_subprocess_run.return_value.stderr = "malformed"
+
+    result = CliRunner().invoke(
+        build,
+        [
+            "--app",
+            "test-application",
+            "--codebase",
+            "application",
+            "--commit",
+            "nonexistent-commit-hash",
+        ],
+    )
+
+    assert (
+        """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
+        in result.output
+    )
+
+
+@patch("boto3.client")
+@patch("click.confirm")
+@patch("subprocess.run")
+@patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+def test_codebase_build_does_not_trigger_build_without_confirmation(
+    get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm, mock_boto_client
+):
+    mock_subprocess_run.return_value.stderr = ""
+    mock_click_confirm.return_value = False
+
+    result = CliRunner().invoke(
+        build,
+        [
+            "--app",
+            "test-application",
+            "--codebase",
+            "application",
+            "--commit",
+            "ab1c23d",
+        ],
+    )
+
+    assert """Your build was not triggered.""" in result.output
+
+
+@mock_ssm
+@patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+def test_codebase_build_does_not_trigger_build_without_an_application(
+    get_aws_session_or_abort, aws_credentials
+):
+    os.environ["AWS_PROFILE"] = "foo"
+
+    result = CliRunner().invoke(
+        build,
+        [
+            "--app",
+            "not-an-application",
+            "--codebase",
+            "application",
+            "--commit",
+            "ab1c23d",
+        ],
+    )
+
+    assert (
+        """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        in result.output
+    )
 
 
 def is_same_files(compare_directories):
