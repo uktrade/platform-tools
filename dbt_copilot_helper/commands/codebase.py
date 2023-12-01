@@ -10,7 +10,6 @@ import yaml
 
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from dbt_copilot_helper.utils.application import load_application
-from dbt_copilot_helper.utils.click import ClickDocOptCommand
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import setup_templates
@@ -81,7 +80,7 @@ def prepare():
         click.echo(mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True))
 
 
-@codebase.command(cls=ClickDocOptCommand)
+@codebase.command()
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--codebase", help="GitHub codebase name", required=True)
 @click.option("--commit", help="GitHub commit hash", required=True)
