@@ -136,7 +136,7 @@ def test_codebase_build_successfully_triggers_a_pipeline_based_build(
     )
 
     assert (
-        "Your build has been triggered and you can check your build progress in the AWS Console."
+        "Your build has been triggered. Check your build progress in the AWS Console."
         in result.output
     )
 
@@ -162,7 +162,7 @@ def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
     )
 
     assert (
-        """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git pull`."""
+        """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
         in result.output
     )
 

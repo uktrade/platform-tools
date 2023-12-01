@@ -101,7 +101,7 @@ def build(app, codebase, commit):
 
     if check_if_commit_exists.stderr:
         click.secho(
-            f"""The commit hash "{commit}" either does not exist or you need to run `git pull`.""",
+            f"""The commit hash "{commit}" either does not exist or you need to run `git fetch`.""",
             fg="red",
         )
         raise click.Abort
@@ -116,7 +116,7 @@ def build(app, codebase, commit):
         )
 
         return click.echo(
-            "Your build has been triggered and you can check your build progress in the AWS Console."
+            "Your build has been triggered. Check your build progress in the AWS Console."
         )
 
     return click.echo("Your build was not triggered.")
