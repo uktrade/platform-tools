@@ -1,4 +1,5 @@
 import filecmp
+import json
 import os
 import stat
 import subprocess
@@ -6,9 +7,11 @@ from pathlib import Path
 from unittest.mock import PropertyMock
 from unittest.mock import patch
 
+import boto3
 import requests
 from click.testing import CliRunner
 
+from dbt_copilot_helper.commands.codebase import build
 from dbt_copilot_helper.commands.codebase import prepare
 from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
 
@@ -102,6 +105,52 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
 
     assert result.exit_code == 0
     assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
+
+
+@patch("boto3.client")
+@patch("click.confirm")
+@patch("subprocess.run")
+@patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+def test_codebase_build(
+    get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm, mock_boto_client
+):
+    mock_subprocess_run.return_value.stderr = ""
+    mock_click_confirm.return_value = "y"
+    ssm_client = boto3.client("ssm")
+
+    ssm_client.put_parameter(
+        Name=f"/copilot/applications/test-application",
+        Value=json.dumps(
+            {
+                "name": "test-application",
+                "account": "111111111",
+            },
+        ),
+        Type="String",
+    )
+
+    result = CliRunner().invoke(
+        build,
+        [
+            "--app",
+            "test-application",
+            "--codebase",
+            "application",
+            "--commit",
+            "ee4a82c",
+        ],
+    )
+
+    mock_boto_client.return_value.start_build.assert_called_with(
+        projectName="codebuild-test-application-application",
+        artifactsOverride={"type": "NO_ARTIFACTS"},
+        sourceVersion="ee4a82c",
+    )
+
+    assert (
+        "Your build has been triggered and you can check your build progress in the AWS Console."
+        in result.output
+    )
 
 
 def is_same_files(compare_directories):

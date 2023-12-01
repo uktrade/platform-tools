@@ -1,11 +1,16 @@
+import os
 import stat
 import subprocess
 from pathlib import Path
 
+import boto3
 import click
 import requests
 import yaml
 
+from dbt_copilot_helper.utils.application import ApplicationNotFoundError
+from dbt_copilot_helper.utils.application import load_application
+from dbt_copilot_helper.utils.click import ClickDocOptCommand
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import setup_templates
@@ -74,3 +79,46 @@ def prepare():
         phase_contents = templates.get_template(f".copilot/phases/{phase}.sh").render()
 
         click.echo(mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True))
+
+
+@codebase.command(cls=ClickDocOptCommand)
+@click.option("--app", help="AWS application name", required=True)
+@click.option("--codebase", help="GitHub codebase name", required=True)
+@click.option("--commit", help="GitHub commit hash", required=True)
+def build(app, codebase, commit):
+    """Trigger a CodePipeline pipeline based build."""
+    try:
+        load_application(app)
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; 
+            ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
+
+    check_if_commit_exists = subprocess.run(
+        ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
+    )
+
+    if check_if_commit_exists.stderr:
+        click.secho(
+            f"""The commit hash "{commit}" either does not exist or you need to run `git pull`.""",
+            fg="red",
+        )
+        raise click.Abort
+
+    if click.confirm(
+        f"""You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?"""
+    ):
+        boto3.client("codebuild").start_build(
+            projectName=f"codebuild-{app}-{codebase}",
+            artifactsOverride={"type": "NO_ARTIFACTS"},
+            sourceVersion=commit,
+        )
+
+        return click.echo(
+            "Your build has been triggered and you can check your build progress in the AWS Console."
+        )
+
+    return click.echo("Your build was not triggered.")
