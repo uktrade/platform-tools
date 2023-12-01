@@ -91,8 +91,7 @@ def build(app, codebase, commit):
         load_application(app)
     except ApplicationNotFoundError:
         click.secho(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; 
-            ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
             fg="red",
         )
         raise click.Abort
