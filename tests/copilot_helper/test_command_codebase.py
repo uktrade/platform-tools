@@ -116,6 +116,11 @@ def test_codebase_build_successfully_triggers_a_pipeline_based_build(
 ):
     mock_subprocess_run.return_value.stderr = ""
     mock_click_confirm.return_value = "y"
+    mock_boto_client.return_value.start_build.return_value = {
+        'build': {
+            'arn': "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
+        }
+    }
 
     result = CliRunner().invoke(
         build,
@@ -136,7 +141,9 @@ def test_codebase_build_successfully_triggers_a_pipeline_based_build(
     )
 
     assert (
-        "Your build has been triggered. Check your build progress in the AWS Console."
+        "Your build has been triggered. Check your build progress in the AWS Console: "
+        "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
+        "-project/build/build-project%3Abuild-id"
         in result.output
     )
 

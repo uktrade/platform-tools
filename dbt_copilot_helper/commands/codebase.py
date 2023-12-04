@@ -109,14 +109,23 @@ def build(app, codebase, commit):
     if click.confirm(
         f"""You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?"""
     ):
-        boto3.client("codebuild").start_build(
+        response = boto3.client("codebuild").start_build(
             projectName=f"codebuild-{app}-{codebase}",
             artifactsOverride={"type": "NO_ARTIFACTS"},
             sourceVersion=commit,
         )
+        build_url = get_build_url_from_arn(response['build']['arn'])
 
         return click.echo(
-            "Your build has been triggered. Check your build progress in the AWS Console."
+            "Your build has been triggered. Check your build progress in the AWS Console: "
+            f"{build_url}",
         )
 
     return click.echo("Your build was not triggered.")
+
+
+def get_build_url_from_arn(build_arn: str) -> str:
+    _, _, _, region, account_id, project_name, build_id = build_arn.split(':')
+    project_name = project_name.removeprefix('build/')
+    return (f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
+            f"{project_name}/build/{project_name}%3A{build_id}")
