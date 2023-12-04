@@ -331,7 +331,7 @@ def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application
     assert template_yml["Resources"]["LogGroup"]["DeletionPolicy"] == "Retain"
     assert (
         template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"]
-        == f"/copilot/{mock_application.name}/development/secrets/{addon_name}_CONDUIT_TASK_NAME"
+        == f"/copilot/{mock_application.name}/development/conduits/{addon_name}_CONDUIT_TASK_NAME"
     )
 
 
@@ -343,7 +343,7 @@ def test_get_or_create_task_name(mock_application):
 
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
-        Name="/copilot/test-application/development/secrets/POSTGRES_CONDUIT_TASK_NAME",
+        Name="/copilot/test-application/development/conduits/POSTGRES_CONDUIT_TASK_NAME",
         Type="String",
         Value=mock_task_name("postgres"),
     )

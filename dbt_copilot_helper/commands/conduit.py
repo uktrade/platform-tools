@@ -52,7 +52,7 @@ def normalise_string(to_normalise: str) -> str:
 
 def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
     ssm = app.environments[env].session.client("ssm")
-    task_name_parameter = f"/copilot/{app.name}/{env}/secrets/{addon_name}_CONDUIT_TASK_NAME"
+    task_name_parameter = f"/copilot/{app.name}/{env}/conduits/{addon_name}_CONDUIT_TASK_NAME"
 
     try:
         return ssm.get_parameter(Name=task_name_parameter)["Parameter"]["Value"]
@@ -214,7 +214,7 @@ def update_conduit_stack_resources(app: Application, env: str, addon_name: str, 
         f"""
         Type: AWS::SSM::Parameter
         Properties:
-          Name: /copilot/{app.name}/{env}/secrets/{addon_name}_CONDUIT_TASK_NAME
+          Name: /copilot/{app.name}/{env}/conduits/{addon_name}_CONDUIT_TASK_NAME
           Type: String
           Value: {task_name}
         """
