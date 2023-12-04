@@ -140,6 +140,7 @@ class TestMakeAddonCommand:
         new=Mock(return_value=False),
     )
     @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_copilot_helper.commands.copilot.get_log_destination_arn", new=Mock(return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'))
     def test_make_addons_success(
         self,
         fakefs,

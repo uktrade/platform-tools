@@ -11,8 +11,6 @@ import click
 import yaml
 from jsonschema import validate as validate_json
 
-from dbt_copilot_helper.commands.config import DEV_LOG_GROUP_ARN
-from dbt_copilot_helper.commands.config import PROD_LOG_GROUP_ARN
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
@@ -147,6 +145,23 @@ def _validate_and_normalise_config(config_file):
     return normalised_config
 
 
+def get_log_destination_arn():
+    """Get destination arns stored in param store in projects aws account."""
+    client = boto3.client("ssm", region_name="eu-west-2")
+    response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
+
+    if not response['Parameters']:
+        click.echo(
+            click.style(
+                "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting",
+                fg="red")
+        )
+        exit(1)
+
+    destination_arns = json.loads(response['Parameters'][0]['Value'])
+    return destination_arns
+
+
 @copilot.command()
 @click.option("-d", "--directory", type=str, default=".")
 def make_addons(directory="."):
@@ -207,6 +222,10 @@ def make_addons(directory="."):
             **addon_config,
         }
 
+        log_destination_arns = get_log_destination_arn()
+        #log_destination_arns = {"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}
+
+
         if addon_type in ["s3", "s3-policy"]:
             service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
                 "BucketAccess", 1
@@ -220,6 +239,7 @@ def make_addons(directory="."):
             environment_addon_config,
             output_dir,
             templates,
+            log_destination_arns,
         )
         _generate_service_addons(
             addon_config,
@@ -229,6 +249,7 @@ def make_addons(directory="."):
             output_dir,
             service_addon_config,
             templates,
+            log_destination_arns,
         )
 
         if addon_type in ["aurora-postgres", "rds-postgres"]:
@@ -270,8 +291,10 @@ def _generate_env_addons(
     environment_addon_config,
     output_dir,
     templates,
+    log_destination_arns,
 ):
     # generate env addons
+    #log_destination_arns = {"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}
     addon_type = environment_addon_config["addon_type"]
     for addon in addon_template_map[addon_type].get("env", []):
         template = templates.get_template(addon["template"])
@@ -279,7 +302,7 @@ def _generate_env_addons(
             {
                 "addon_config": environment_addon_config,
                 "addons": addons,
-                "log_destination": {"prod": PROD_LOG_GROUP_ARN, "dev": DEV_LOG_GROUP_ARN},
+                "log_destination": log_destination_arns,
             }
         )
 
@@ -296,8 +319,10 @@ def _generate_service_addons(
     output_dir,
     service_addon_config,
     templates,
+    log_destination_arns,
 ):
     # generate svc addons
+    #log_destination_arns = {"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}
     for addon in addon_template_map[addon_type].get("svc", []):
         template = templates.get_template(addon["template"])
 
@@ -307,7 +332,7 @@ def _generate_service_addons(
             contents = template.render(
                 {
                     "addon_config": service_addon_config,
-                    "log_destination": {"prod": PROD_LOG_GROUP_ARN, "dev": DEV_LOG_GROUP_ARN},
+                    "log_destination": log_destination_arns,
                 }
             )
 

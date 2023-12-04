@@ -166,4 +166,4 @@ Resources:
           LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/${LgName}'
           FilterName: !Sub '${App}-${Env}-stream'
           FilterPattern: ''
-          DestinationArn: !If [CreateProdSubFilter, 'cwl_log_destination_prod_to_be_updated_once_created', 'arn:aws:logs:eu-west-2:812359060647:destination:cwl_log_destination']
+          DestinationArn: !If [CreateProdSubFilter, '', '']
