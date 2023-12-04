@@ -55,11 +55,25 @@ class Application:
         return str(self) == str(other)
 
 
+class ApplicationNotFoundError(Exception):
+    pass
+
+
 def load_application(app: str = None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = get_aws_session_or_abort()
 
-    response = current_session.client("ssm").get_parameters_by_path(
+    ssm_client = current_session.client("ssm")
+
+    try:
+        ssm_client.get_parameter(
+            Name=f"/copilot/applications/{application.name}",
+            WithDecryption=False,
+        )
+    except ssm_client.exceptions.ParameterNotFound:
+        raise ApplicationNotFoundError
+
+    response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/environments",
         Recursive=True,
         WithDecryption=False,
