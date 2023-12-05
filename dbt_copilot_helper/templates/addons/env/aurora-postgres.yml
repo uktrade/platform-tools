@@ -45,10 +45,16 @@ Mappings:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
       DeletionPolicy: {{ config.deletion_policy }}
+{%- if config.snapshot_id %}
+      SnapshotIdentifier: {{ config.snapshot_id }}
+{%- else %}
+      SnapshotIdentifier: ""
+{%- endif %}
 {%- endfor %}
 
 Conditions:
   {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  UseDBSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   {{ addon_config.prefix }}DBSubnetGroup:
@@ -150,9 +156,17 @@ Resources:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
       MasterUsername:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        !If [
+          UseDBSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        ]
       MasterUserPassword:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+        !If [
+          UseDBSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+        ]
       DatabaseName: !Ref {{ addon_config.prefix }}DBName
       Engine: 'aurora-postgresql'
       EngineVersion: '{{ addon_config.version }}'
@@ -167,6 +181,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMaxCapacity]
+      SnapshotIdentifier: !If [UseDBSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
 
   {{ addon_config.prefix }}DBWriterInstance:

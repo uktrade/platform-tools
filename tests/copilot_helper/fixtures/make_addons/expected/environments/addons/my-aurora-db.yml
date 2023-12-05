@@ -44,6 +44,10 @@ Mappings:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
       DeletionPolicy: Delete
+      SnapshotIdentifier: my-recent-snapshot
+
+Conditions:
+  UseDBSnapshot: !Not [!Equals [!FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Conditions:
   myAuroraDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
@@ -148,9 +152,17 @@ Resources:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
       MasterUsername:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
+        !If [
+          UseDBSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
+        ]
       MasterUserPassword:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
+        !If [
+          UseDBSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
+        ]
       DatabaseName: !Ref myAuroraDbDBName
       Engine: 'aurora-postgresql'
       EngineVersion: '14.4'
@@ -165,6 +177,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMaxCapacity]
+      SnapshotIdentifier: !If [UseDBSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
 
   myAuroraDbDBWriterInstance:
