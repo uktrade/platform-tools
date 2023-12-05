@@ -91,7 +91,7 @@ environments:
 def mock_application():
     with patch(
         "dbt_copilot_helper.utils.application.load_application",
-    ) as app_patch:
+    ) as load_application:
         os.environ.pop("AWS_PROFILE", None)
 
         from dbt_copilot_helper.utils.application import Application
@@ -107,7 +107,7 @@ def mock_application():
         application.environments["staging"] = Environment("staging", "111111111", sessions)
         application.environments["production"] = Environment("production", "222222222", sessions)
 
-        app_patch.return_value = application
+        load_application.return_value = application
 
         yield application
 

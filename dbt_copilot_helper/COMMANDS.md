@@ -10,6 +10,7 @@
 - [copilot-helper codebase](#copilot-helper-codebase)
 - [copilot-helper codebase prepare](#copilot-helper-codebase-prepare)
 - [copilot-helper codebase build](#copilot-helper-codebase-build)
+- [copilot-helper codebase deploy](#copilot-helper-codebase-deploy)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
 - [copilot-helper codebuild link-github](#copilot-helper-codebuild-link-github)
 - [copilot-helper codebuild create-codedeploy-role](#copilot-helper-codebuild-create-codedeploy-role)
@@ -220,7 +221,7 @@ copilot-helper check-cloudformation lint [-d <directory>]
 ## Usage
 
 ```
-copilot-helper codebase (prepare|build) 
+copilot-helper codebase (prepare|build|deploy) 
 ```
 
 ## Options
@@ -231,6 +232,7 @@ copilot-helper codebase (prepare|build)
 ## Commands
 
 - [`build` ↪](#copilot-helper-codebase-build)
+- [`deploy` ↪](#copilot-helper-codebase-deploy)
 - [`prepare` ↪](#copilot-helper-codebase-prepare)
 
 # copilot-helper codebase prepare
@@ -267,6 +269,32 @@ copilot-helper codebase build --app <app> --codebase <codebase>
 
 - `--app <text>`
   - AWS application name
+- `--codebase <text>`
+  - GitHub codebase name
+- `--commit <text>`
+  - GitHub commit hash
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper codebase deploy
+
+[↩ Parent](#copilot-helper-codebase)
+
+    Trigger a CodePipeline pipeline based deployment.
+
+## Usage
+
+```
+copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase> 
+                               --commit <commit> 
+```
+
+## Options
+
+- `--app <text>`
+  - AWS application name
+- `--env <text>`
+  - AWS Copilot environment
 - `--codebase <text>`
   - GitHub codebase name
 - `--commit <text>`
