@@ -255,7 +255,6 @@ class TestCodebaseBuild:
 
 class TestCodebaseDeploy:
     @patch("boto3.client")
-    # @patch("click.confirm")
     @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
         self, get_aws_session_or_abort, mock_boto_client
