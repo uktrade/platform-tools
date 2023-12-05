@@ -49,7 +49,7 @@ def application_under_test(copilot_directory):
     CliRunner().invoke(make_config)
     CliRunner().invoke(make_addons)
     yield
-    # ensure_directory_does_not_exist(copilot_directory)
+    ensure_directory_does_not_exist(copilot_directory)
 
 
 def test_check_cloudformation_with_no_args_summarises_all_successes(
