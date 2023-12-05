@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -310,16 +311,34 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
     assert policy_document == mock_policy
 
 
+@mock_iam
+@mock_ssm
 @mock_cloudformation
 @pytest.mark.parametrize(
     "addon_name",
     ["postgres", "redis", "opensearch", "rds-postgres"],
 )
 def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application):
-    """Test that, given app, env and addon name
-    update_conduit_stack_resources updates the conduit CloudFormation
-    stack to add DeletionPolicy: Retain to the LogGroup."""
+    """Test that, given app, env and addon name update_conduit_stack_resources
+    updates the conduit CloudFormation stack to add DeletionPolicy:Retain and
+    subscription filter to the LogGroup."""
     from dbt_copilot_helper.commands.conduit import update_conduit_stack_resources
+
+    boto3.client("iam").create_role(
+        RoleName="CWLtoSubscriptionFilterRole",
+        AssumeRolePolicyDocument="123",
+    )
+
+    boto3.client("ssm").put_parameter(
+        Name="/copilot/tools/central_log_groups",
+        Value=json.dumps(
+            {
+                "prod": "arn:aws:logs:eu-west-2:prod_account_id:destination:test_log_destination",
+                "dev": "arn:aws:logs:eu-west-2:dev_account_id:destination:test_log_destination",
+            }
+        ),
+        Type="String",
+    )
 
     mock_stack(addon_name)
     task_name = mock_task_name(addon_name)
@@ -332,6 +351,14 @@ def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application
     assert (
         template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"]
         == f"/copilot/{mock_application.name}/development/conduits/{addon_name}_CONDUIT_TASK_NAME"
+    )
+    assert (
+        template_yml["Resources"]["SubscriptionFilter"]["Properties"]["LogGroupName"]
+        == f"/copilot/{task_name}"
+    )
+    assert (
+        "dev_account_id"
+        in template_yml["Resources"]["SubscriptionFilter"]["Properties"]["DestinationArn"]
     )
 
 
