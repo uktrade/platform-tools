@@ -9,6 +9,7 @@ import click
 import requests
 import yaml
 
+from dbt_copilot_helper.utils.application import Application
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from dbt_copilot_helper.utils.application import load_application
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
@@ -135,55 +136,10 @@ def build(app, codebase, commit):
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
     """Trigger a CodePipeline pipeline based deployment."""
-    try:
-        application = load_application(app)
-    except ApplicationNotFoundError:
-        click.secho(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-            fg="red",
-        )
-        raise click.Abort
+    application = load_application_with_environment(app, env)
 
-    if not application.environments.get(env):
-        click.secho(
-            f"""The environment "{env}" either does not exist or has not been deployed.""",
-            fg="red",
-        )
-        raise click.Abort
-
-    ssm_client = boto3.client("ssm")
-    try:
-        codebase_configuration = json.loads(
-            ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application.name}/codebases/{codebase}",
-            )["Parameter"]["Value"]
-        )
-    except (KeyError, ValueError, json.JSONDecodeError, ssm_client.exceptions.ParameterNotFound):
-        click.secho(
-            f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
-            fg="red",
-        )
-        raise click.Abort
-
-    ecr_client = boto3.client("ecr")
-    try:
-        ecr_client.describe_images(
-            repositoryName=f"{application.name}/{codebase_configuration['name']}",
-            imageIds=[{"imageTag": f"commit-{commit}"}],
-        )
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        click.secho(
-            f'The ECR Repository for codebase "{codebase}" does not exist.',
-            fg="red",
-        )
-        raise click.Abort
-    except ecr_client.exceptions.ImageNotFoundException:
-        click.secho(
-            f'The commit hash "{commit}" has not been built into an image, try the '
-            "`copilot-helper codebase build` command first.",
-            fg="red",
-        )
-        raise click.Abort
+    check_codebase_exists(application, codebase)
+    check_image_exists(application, codebase, commit)
 
     codebuild_client = boto3.client("codebuild")
     build_url = start_build_with_confirmation(
@@ -207,6 +163,62 @@ def deploy(app, env, codebase, commit):
         )
 
     return click.echo("Your deployment was not triggered.")
+
+
+def check_image_exists(application: Application, codebase: str, commit: str):
+    ecr_client = boto3.client("ecr")
+    try:
+        ecr_client.describe_images(
+            repositoryName=f"{application.name}/{codebase}",
+            imageIds=[{"imageTag": f"commit-{commit}"}],
+        )
+    except ecr_client.exceptions.RepositoryNotFoundException:
+        click.secho(
+            f'The ECR Repository for codebase "{codebase}" does not exist.',
+            fg="red",
+        )
+        raise click.Abort
+    except ecr_client.exceptions.ImageNotFoundException:
+        click.secho(
+            f'The commit hash "{commit}" has not been built into an image, try the '
+            "`copilot-helper codebase build` command first.",
+            fg="red",
+        )
+        raise click.Abort
+
+
+def check_codebase_exists(application: Application, codebase: str):
+    ssm_client = boto3.client("ssm")
+    try:
+        json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}/codebases/{codebase}",
+            )["Parameter"]["Value"]
+        )
+    except (KeyError, ValueError, json.JSONDecodeError, ssm_client.exceptions.ParameterNotFound):
+        click.secho(
+            f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
+            fg="red",
+        )
+        raise click.Abort
+
+
+def load_application_with_environment(app, env):
+    try:
+        application = load_application(app)
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
+    if not application.environments.get(env):
+        click.secho(
+            f"""The environment "{env}" either does not exist or has not been deployed.""",
+            fg="red",
+        )
+        raise click.Abort
+    return application
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
