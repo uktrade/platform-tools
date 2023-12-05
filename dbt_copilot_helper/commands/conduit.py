@@ -239,6 +239,7 @@ def update_conduit_stack_resources(app: Application, env: str, addon_name: str, 
         Properties:
           RoleArn: {log_filter_role_arn}
           LogGroupName: /copilot/{task_name}
+          FilterName: task-{task_name}-SubscriptionFilter
           FilterPattern: ''
           DestinationArn: {destination_arn}
         """
