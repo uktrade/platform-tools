@@ -184,7 +184,7 @@ def mock_cluster_client_task(mocked_cluster):
                 instanceIdentityDocument=mocked_instance_id_document,
             )
             mocked_task_definition_arn = mocked_ecs_client.register_task_definition(
-                family=f"copilot-conduit-test-application-development-{addon_type}",
+                family=f"copilot-{mock_task_name(addon_type)}",
                 containerDefinitions=[
                     {
                         "name": "test_container",
@@ -270,15 +270,19 @@ def mock_tool_versions():
 def mock_stack():
     def _create_stack(addon_name):
         with mock_cloudformation():
-            with open(FIXTURES_DIR / "test_cloudformation_template_iam_role.json") as f:
-                template_json = json.load(f)
+            with open(FIXTURES_DIR / "test_cloudformation_template.yml") as f:
+                template = yaml.safe_load(f)
             cf = boto3.client("cloudformation")
             cf.create_stack(
-                StackName=f"task-conduit-test-application-development-{addon_name}",
-                TemplateBody=json.dumps(template_json),
+                StackName=f"task-{mock_task_name(addon_name)}",
+                TemplateBody=yaml.dump(template),
             )
 
     return _create_stack
+
+
+def mock_task_name(addon_name):
+    return f"conduit-test-application-development-{addon_name}-tq7vzeigl2vf"
 
 
 def mock_codestar_connection_response(app_name):
