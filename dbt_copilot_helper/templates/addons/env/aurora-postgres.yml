@@ -532,7 +532,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilterAurora:
+  SubscriptionFilter{{ addon_config.prefix }}:
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
