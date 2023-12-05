@@ -108,16 +108,18 @@ def build(app, codebase, commit):
         )
         raise click.Abort
 
-    if click.confirm(
-        f"""You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?"""
-    ):
-        response = boto3.client("codebuild").start_build(
-            projectName=f"codebuild-{app}-{codebase}",
-            artifactsOverride={"type": "NO_ARTIFACTS"},
-            sourceVersion=commit,
-        )
-        build_url = get_build_url_from_arn(response["build"]["arn"])
+    codebuild_client = boto3.client("codebuild")
+    build_url = start_build_with_confirmation(
+        codebuild_client,
+        f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
+        {
+            "projectName": f"codebuild-{app}-{codebase}",
+            "artifactsOverride": {"type": "NO_ARTIFACTS"},
+            "sourceVersion": commit,
+        },
+    )
 
+    if build_url:
         return click.echo(
             "Your build has been triggered. Check your build progress in the AWS Console: "
             f"{build_url}",
@@ -183,22 +185,22 @@ def deploy(app, env, codebase, commit):
         )
         raise click.Abort
 
-    if click.confirm(
-        f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the '
-        f'"{env}" environment. Do you want to continue?'
-    ):
-        codebuild_client = boto3.client("codebuild")
-        response = codebuild_client.start_build(
-            projectName=f"pipeline-{application.name}-{codebase}-BuildProject",
-            artifactsOverride={"type": "NO_ARTIFACTS"},
-            sourceTypeOverride="NO_SOURCE",
-            environmentVariablesOverride=[
+    codebuild_client = boto3.client("codebuild")
+    build_url = start_build_with_confirmation(
+        codebuild_client,
+        f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
+        {
+            "projectName": f"pipeline-{application.name}-{codebase}-BuildProject",
+            "artifactsOverride": {"type": "NO_ARTIFACTS"},
+            "sourceTypeOverride": "NO_SOURCE",
+            "environmentVariablesOverride": [
                 {"name": "COPILOT_ENVIRONMENT", "value": env},
                 {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
             ],
-        )
-        build_url = get_build_url_from_arn(response["build"]["arn"])
+        },
+    )
 
+    if build_url:
         return click.echo(
             "Your deployment has been triggered. Check your build progress in the AWS Console: "
             f"{build_url}",
@@ -214,3 +216,9 @@ def get_build_url_from_arn(build_arn: str) -> str:
         f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
         f"{project_name}/build/{project_name}%3A{build_id}"
     )
+
+
+def start_build_with_confirmation(codebuild_client, confirmation_message, build_options):
+    if click.confirm(confirmation_message):
+        response = codebuild_client.start_build(**build_options)
+        return get_build_url_from_arn(response["build"]["arn"])
