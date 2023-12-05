@@ -48,7 +48,7 @@ Mappings:
 
 Conditions:
   {{ addon_config.prefix }}HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, NumReplicas], 0]]
-  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
 
@@ -168,4 +168,4 @@ Resources:
           LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'
           FilterName: !Sub '${App}-${Env}-stream'
           FilterPattern: ''
-          DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
+          DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

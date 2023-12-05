@@ -52,7 +52,7 @@ Mappings:
 {%- endfor %}
 
 Conditions:
-    CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+    {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -510,11 +510,11 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilterRDS:
+  SubscriptionFilter{{ addon_config.prefix }}:
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/instance/${{ '{' }}{{ addon_config.prefix }}DBInstance}/postgresql'
       FilterName: !Sub '${App}-${Env}-stream'
       FilterPattern: ''
-      DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
+      DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

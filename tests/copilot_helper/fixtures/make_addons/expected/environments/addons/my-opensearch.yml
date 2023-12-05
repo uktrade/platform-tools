@@ -42,7 +42,7 @@ Mappings:
 
 Conditions:
   myOpensearchEnableHA: !Not [!Equals [!FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
-  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myOpensearchCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   myOpensearchOpenSearchSecret:
@@ -232,4 +232,4 @@ Resources:
           LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/myOpensearch/${LgName}'
           FilterName: !Sub '${App}-${Env}-stream'
           FilterPattern: ''
-          DestinationArn: !If [CreateProdSubFilter, '', '']
+          DestinationArn: !If [myOpensearchCreateProdSubFilter, '', '']

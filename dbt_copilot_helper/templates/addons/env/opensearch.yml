@@ -44,7 +44,7 @@ Mappings:
 
 Conditions:
   {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
-  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   {{ addon_config.prefix }}OpenSearchSecret:
@@ -234,4 +234,4 @@ Resources:
           LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'
           FilterName: !Sub '${App}-${Env}-stream'
           FilterPattern: ''
-          DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
+          DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

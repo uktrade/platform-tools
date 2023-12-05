@@ -50,7 +50,7 @@ Mappings:
       DeletionPolicy: Delete
 
 Conditions:
-    CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+    myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -508,11 +508,11 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilterRDS:
+  SubscriptionFiltermyRdsDb:
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/instance/${myRdsDbDBInstance}/postgresql'
       FilterName: !Sub '${App}-${Env}-stream'
       FilterPattern: ''
-      DestinationArn: !If [CreateProdSubFilter, '', '']
+      DestinationArn: !If [myRdsDbCreateProdSubFilter, '', '']

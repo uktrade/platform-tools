@@ -46,7 +46,7 @@ Mappings:
 
 Conditions:
   myRedisHasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [myRedisEnvironmentConfigMap, !Ref Env, NumReplicas], 0]]
-  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myRedisCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
 
@@ -166,4 +166,4 @@ Resources:
           LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/${LgName}'
           FilterName: !Sub '${App}-${Env}-stream'
           FilterPattern: ''
-          DestinationArn: !If [CreateProdSubFilter, '', '']
+          DestinationArn: !If [myRedisCreateProdSubFilter, '', '']

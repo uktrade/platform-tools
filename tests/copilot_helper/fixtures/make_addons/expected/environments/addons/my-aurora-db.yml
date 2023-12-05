@@ -47,7 +47,7 @@ Mappings:
       DeletionPolicy: Delete
 
 Conditions:
-  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myAuroraDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   myAuroraDbDBSubnetGroup:
@@ -530,11 +530,11 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilterAurora:
+  SubscriptionFiltermyAuroraDb:
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/cluster/${myAuroraDbDBCluster}/postgresql'
       FilterName: !Sub '${App}-${Env}-stream'
       FilterPattern: ''
-      DestinationArn: !If [CreateProdSubFilter, '', '']
+      DestinationArn: !If [myAuroraDbCreateProdSubFilter, '', '']
