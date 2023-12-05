@@ -9,6 +9,7 @@
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
 - [copilot-helper codebase](#copilot-helper-codebase)
 - [copilot-helper codebase prepare](#copilot-helper-codebase-prepare)
+- [copilot-helper codebase list](#copilot-helper-codebase-list)
 - [copilot-helper codebase build](#copilot-helper-codebase-build)
 - [copilot-helper codebase deploy](#copilot-helper-codebase-deploy)
 - [copilot-helper codebuild](#copilot-helper-codebuild)
@@ -221,7 +222,7 @@ copilot-helper check-cloudformation lint [-d <directory>]
 ## Usage
 
 ```
-copilot-helper codebase (prepare|build|deploy) 
+copilot-helper codebase (prepare|list|build|deploy) 
 ```
 
 ## Options
@@ -233,6 +234,7 @@ copilot-helper codebase (prepare|build|deploy)
 
 - [`build` ↪](#copilot-helper-codebase-build)
 - [`deploy` ↪](#copilot-helper-codebase-deploy)
+- [`list` ↪](#copilot-helper-codebase-list)
 - [`prepare` ↪](#copilot-helper-codebase-prepare)
 
 # copilot-helper codebase prepare
@@ -249,6 +251,25 @@ copilot-helper codebase prepare
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper codebase list
+
+[↩ Parent](#copilot-helper-codebase)
+
+    List available codebases for the application.
+
+## Usage
+
+```
+copilot-helper codebase list --app <app> 
+```
+
+## Options
+
+- `--app <text>`
+  - AWS application name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

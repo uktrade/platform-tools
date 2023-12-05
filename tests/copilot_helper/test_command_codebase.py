@@ -481,6 +481,46 @@ class TestCodebaseDeploy:
         )
 
 
+@patch("boto3.client")
+class TestCodebaseList:
+    def test_lists_codebases_successfully(self, mock_boto_client):
+        mock_boto_client.return_value.get_parameters_by_path.return_value = {
+            "Parameters": [
+                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+            ],
+        }
+        from dbt_copilot_helper.commands.codebase import list
+
+        result = CliRunner().invoke(list, ["--app", "test-application"])
+
+        assert "The following codebases are available:" in result.output
+        assert "- application (https://github.com/uktrade/example)" in result.output
+
+    @patch(
+        "dbt_copilot_helper.commands.codebase.load_application",
+        side_effect=ApplicationNotFoundError,
+    )
+    def test_aborts_when_application_does_not_exist(self, load_application, mock_boto_client):
+        from dbt_copilot_helper.commands.codebase import list
+
+        os.environ["AWS_PROFILE"] = "foo"
+        result = CliRunner().invoke(list, ["--app", "not-an-application"])
+
+        assert (
+            """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+            in result.output
+        )
+
+    def test_aborts_when_application_has_no_codebases(self, mock_boto_client):
+        from dbt_copilot_helper.commands.codebase import list
+
+        mock_boto_client.return_value.get_parameters_by_path.return_value = {"Parameters": []}
+
+        result = CliRunner().invoke(list, ["--app", "test-application"])
+
+        assert 'No codebases found for application "test-application"' in result.output
+
+
 def is_same_files(compare_directories):
     """
     Recursively compare two directories to check if the files are the same or
