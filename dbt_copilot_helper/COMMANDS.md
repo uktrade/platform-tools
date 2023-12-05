@@ -263,13 +263,15 @@ copilot-helper codebase prepare
 ## Usage
 
 ```
-copilot-helper codebase list --app <app> 
+copilot-helper codebase list --app <app> [--with-images] 
 ```
 
 ## Options
 
 - `--app <text>`
   - AWS application name
+- `--with-images <boolean>` _Defaults to False._
+  - List up to the last 10 images tagged for this codebase
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

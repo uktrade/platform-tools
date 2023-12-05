@@ -84,10 +84,17 @@ def prepare():
 
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
-def list(app):
+@click.option(
+    "--with-images",
+    help="List up to the last 10 images tagged for this codebase",
+    default=False,
+    is_flag=True,
+)
+def list(app, with_images):
     """List available codebases for the application."""
     application = load_application_or_abort(app)
     ssm_client = boto3.client("ssm")
+    ecr_client = boto3.client("ecr")
     parameters = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/codebases",
         Recursive=True,
@@ -103,6 +110,30 @@ def list(app):
 
     for codebase in codebases:
         click.echo(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
+        if with_images:
+            describe_images_response = ecr_client.describe_images(
+                repositoryName=f"{application.name}/{codebase['name']}",
+                maxResults=20,
+                filter={"tagStatus": "TAGGED"},
+            )
+            images = sorted(
+                describe_images_response["imageDetails"],
+                key=lambda i: i["imagePushedAt"],
+                reverse=True,
+            )
+
+            for image in images:
+                try:
+                    commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+                    if not commit_tag:
+                        continue
+
+                    commit_hash = commit_tag.replace("commit-", "")
+                    click.echo(
+                        f"  - https://github.com/{codebase['repository']}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+                    )
+                except StopIteration:
+                    continue
 
     click.echo("")
 
