@@ -34,7 +34,7 @@ network:
 http:
   public:
     access_logs:
-      bucket_name: dbt-alb-logs-production
+      bucket_name: dbt-alb-logs
       prefix: test-app/newenv
 
     certificates:

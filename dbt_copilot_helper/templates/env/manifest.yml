@@ -11,7 +11,7 @@ type: Environment
 http:
   public:
     access_logs:
-      bucket_name: dbt-alb-logs-production
+      bucket_name: dbt-alb-logs
       prefix: {{ app_name }}/{{ name }}
 {% if certificate_arn %}
     certificates:
