@@ -220,6 +220,31 @@ def update_conduit_stack_resources(app: Application, env: str, addon_name: str, 
         """
     )
 
+    iam_client = session.client("iam")
+    log_filter_role_arn = iam_client.get_role(RoleName="CWLtoSubscriptionFilterRole")["Role"]["Arn"]
+
+    ssm_client = session.client("ssm")
+    destination_log_group_arns = json.loads(
+        ssm_client.get_parameter(Name="/copilot/tools/central_log_groups")["Parameter"]["Value"]
+    )
+
+    destination_arn = destination_log_group_arns["dev"]
+    if env.lower() in ("prod", "production"):
+        destination_arn = destination_log_group_arns["prod"]
+
+    template_yml["Resources"]["SubscriptionFilter"] = load_yaml(
+        f"""
+        Type: AWS::Logs::SubscriptionFilter
+        DeletionPolicy: Retain
+        Properties:
+          RoleArn: {log_filter_role_arn}
+          LogGroupName: /copilot/{task_name}
+          FilterName: task-{task_name}-SubscriptionFilter
+          FilterPattern: ''
+          DestinationArn: {destination_arn}
+        """
+    )
+
     params = []
     if "Parameters" in template_yml:
         for param in template_yml["Parameters"]:
