@@ -8,17 +8,16 @@ name: {{ name }}
 type: Environment
 
 # Configure the load balancers in your environment, once created.
-{% if certificate_arn %}
 http:
   public:
+    access_logs:
+      bucket_name: dbt-alb-logs-production
+      prefix: {{ app_name }}/{{ name }}
+{% if certificate_arn %}
     certificates:
       - {{ certificate_arn }}
-#   private:
-{% else %}
-# http:
-#   public:
-#   private:
 {% endif %}
+#   private:
 
 # Configure observability for your environment resources.
 observability:

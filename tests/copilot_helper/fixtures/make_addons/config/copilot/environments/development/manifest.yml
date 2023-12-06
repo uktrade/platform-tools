@@ -8,13 +8,16 @@ name: development
 type: Environment
 
 # Configure the load balancers in your environment, once created.
-
 http:
   public:
+    access_logs:
+      bucket_name: dbt-alb-logs-production
+      prefix: test-app/development
+
     certificates:
       - ACM-ARN-FOR-static.test-application.dev.uktrade.digital
-#   private:
 
+#   private:
 
 # Configure observability for your environment resources.
 observability:

@@ -31,13 +31,16 @@ network:
           az: 'eu-west-2c'
 
 # Configure the load balancers in your environment, once created.
-
 http:
   public:
+    access_logs:
+      bucket_name: dbt-alb-logs-production
+      prefix: test-app/newenv
+
     certificates:
       - ACM-ARN-FOR-newenv.landan.cloudapps.digital
-#   private:
 
+#   private:
 
 # Configure observability for your environment resources.
 observability:
