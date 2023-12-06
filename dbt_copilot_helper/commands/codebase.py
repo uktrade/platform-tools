@@ -84,19 +84,68 @@ def prepare():
 
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
+@click.option(
+    "--with-images",
+    help="List up to the last 10 images tagged for this codebase",
+    default=False,
+    is_flag=True,
+)
+def list(app, with_images):
+    """List available codebases for the application."""
+    application = load_application_or_abort(app)
+    ssm_client = boto3.client("ssm")
+    ecr_client = boto3.client("ecr")
+    parameters = ssm_client.get_parameters_by_path(
+        Path=f"/copilot/applications/{application.name}/codebases",
+        Recursive=True,
+    )["Parameters"]
+
+    codebases = [json.loads(p["Value"]) for p in parameters]
+
+    if not codebases:
+        click.secho(f'No codebases found for application "{application.name}"', fg="red")
+        raise click.Abort
+
+    click.echo("The following codebases are available:")
+
+    for codebase in codebases:
+        click.echo(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
+        if with_images:
+            describe_images_response = ecr_client.describe_images(
+                repositoryName=f"{application.name}/{codebase['name']}",
+                maxResults=20,
+                filter={"tagStatus": "TAGGED"},
+            )
+            images = sorted(
+                describe_images_response["imageDetails"],
+                key=lambda i: i["imagePushedAt"],
+                reverse=True,
+            )
+
+            for image in images:
+                try:
+                    commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+                    if not commit_tag:
+                        continue
+
+                    commit_hash = commit_tag.replace("commit-", "")
+                    click.echo(
+                        f"  - https://github.com/{codebase['repository']}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+                    )
+                except StopIteration:
+                    continue
+
+    click.echo("")
+
+
+@codebase.command()
+@click.option("--app", help="AWS application name", required=True)
 @click.option("--codebase", help="GitHub codebase name", required=True)
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
     """Trigger a CodePipeline pipeline based build."""
 
-    try:
-        load_application(app)
-    except ApplicationNotFoundError:
-        click.secho(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-            fg="red",
-        )
-        raise click.Abort
+    load_application_or_abort(app)
 
     check_if_commit_exists = subprocess.run(
         ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
@@ -165,6 +214,17 @@ def deploy(app, env, codebase, commit):
     return click.echo("Your deployment was not triggered.")
 
 
+def load_application_or_abort(app: str) -> Application:
+    try:
+        return load_application(app)
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
+
+
 def check_image_exists(application: Application, codebase: str, commit: str):
     ecr_client = boto3.client("ecr")
     try:
@@ -204,14 +264,8 @@ def check_codebase_exists(application: Application, codebase: str):
 
 
 def load_application_with_environment(app, env):
-    try:
-        application = load_application(app)
-    except ApplicationNotFoundError:
-        click.secho(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-            fg="red",
-        )
-        raise click.Abort
+    application = load_application_or_abort(app)
+
     if not application.environments.get(env):
         click.secho(
             f"""The environment "{env}" either does not exist or has not been deployed.""",

@@ -145,6 +145,24 @@ def _validate_and_normalise_config(config_file):
     return normalised_config
 
 
+def get_log_destination_arn():
+    """Get destination arns stored in param store in projects aws account."""
+    client = boto3.client("ssm", region_name="eu-west-2")
+    response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
+
+    if not response["Parameters"]:
+        click.echo(
+            click.style(
+                "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting",
+                fg="red",
+            )
+        )
+        exit(1)
+
+    destination_arns = json.loads(response["Parameters"][0]["Value"])
+    return destination_arns
+
+
 @copilot.command()
 @click.option("-d", "--directory", type=str, default=".")
 def make_addons(directory="."):
@@ -205,6 +223,8 @@ def make_addons(directory="."):
             **addon_config,
         }
 
+        log_destination_arns = get_log_destination_arn()
+
         if addon_type in ["s3", "s3-policy"]:
             service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
                 "BucketAccess", 1
@@ -218,6 +238,7 @@ def make_addons(directory="."):
             environment_addon_config,
             output_dir,
             templates,
+            log_destination_arns,
         )
         _generate_service_addons(
             addon_config,
@@ -227,6 +248,7 @@ def make_addons(directory="."):
             output_dir,
             service_addon_config,
             templates,
+            log_destination_arns,
         )
 
         if addon_type in ["aurora-postgres", "rds-postgres"]:
@@ -268,13 +290,19 @@ def _generate_env_addons(
     environment_addon_config,
     output_dir,
     templates,
+    log_destination_arns,
 ):
     # generate env addons
     addon_type = environment_addon_config["addon_type"]
     for addon in addon_template_map[addon_type].get("env", []):
         template = templates.get_template(addon["template"])
-
-        contents = template.render({"addon_config": environment_addon_config, "addons": addons})
+        contents = template.render(
+            {
+                "addon_config": environment_addon_config,
+                "addons": addons,
+                "log_destination": log_destination_arns,
+            }
+        )
 
         filename = addon.get("filename", f"{addon_name}.yml")
 
@@ -289,6 +317,7 @@ def _generate_service_addons(
     output_dir,
     service_addon_config,
     templates,
+    log_destination_arns,
 ):
     # generate svc addons
     for addon in addon_template_map[addon_type].get("svc", []):
@@ -297,7 +326,12 @@ def _generate_service_addons(
         for svc in addon_config.get("services", []):
             service_path = Path(f"copilot/{svc}/addons/")
 
-            contents = template.render({"addon_config": service_addon_config})
+            contents = template.render(
+                {
+                    "addon_config": service_addon_config,
+                    "log_destination": log_destination_arns,
+                }
+            )
 
             filename = addon.get("filename", f"{addon_name}.yml")
 

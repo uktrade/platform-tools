@@ -3,6 +3,7 @@ import json
 import os
 import stat
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import PropertyMock
 from unittest.mock import patch
@@ -479,6 +480,91 @@ class TestCodebaseDeploy:
             'The environment "not-an-environment" either does not exist or has not been deployed.'
             in result.output
         )
+
+
+@patch("boto3.client")
+class TestCodebaseList:
+    def test_lists_codebases_successfully(self, mock_boto_client):
+        mock_boto_client.return_value.get_parameters_by_path.return_value = {
+            "Parameters": [
+                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+            ],
+        }
+        from dbt_copilot_helper.commands.codebase import list
+
+        result = CliRunner().invoke(list, ["--app", "test-application"])
+
+        assert "The following codebases are available:" in result.output
+        assert "- application (https://github.com/uktrade/example)" in result.output
+
+    def test_lists_codebases_with_images_successfully(self, mock_boto_client):
+        mock_boto_client.return_value.get_parameters_by_path.return_value = {
+            "Parameters": [
+                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+            ],
+        }
+        mock_boto_client.return_value.describe_images.return_value = {
+            "imageDetails": [
+                {
+                    "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
+                    "imagePushedAt": datetime(2023, 11, 8, 17, 55, 35),
+                },
+                {
+                    "imageTags": ["branch-main", "commit-d269d51"],
+                    "imagePushedAt": datetime(2023, 11, 8, 17, 20, 34),
+                },
+                {
+                    "imageTags": ["cache"],
+                    "imagePushedAt": datetime(2023, 11, 8, 10, 31, 8),
+                },
+                {
+                    "imageTags": ["commit-57c0a08"],
+                    "imagePushedAt": datetime(2023, 11, 1, 17, 37, 2),
+                },
+            ]
+        }
+        from dbt_copilot_helper.commands.codebase import list
+
+        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
+
+        assert "The following codebases are available:" in result.output
+        assert "- application (https://github.com/uktrade/example)" in result.output
+        assert (
+            "- https://github.com/uktrade/example/commit/ee4a82c - published: 2023-11-08 17:55:35"
+            in result.output
+        )
+        assert (
+            "- https://github.com/uktrade/example/commit/d269d51 - published: 2023-11-08 17:20:34"
+            in result.output
+        )
+        assert (
+            "- https://github.com/uktrade/example/commit/57c0a08 - published: 2023-11-01 17:37:02"
+            in result.output
+        )
+
+    @patch(
+        "dbt_copilot_helper.commands.codebase.load_application",
+        side_effect=ApplicationNotFoundError,
+    )
+    def test_aborts_when_application_does_not_exist(self, load_application, mock_boto_client):
+        from dbt_copilot_helper.commands.codebase import list
+
+        os.environ["AWS_PROFILE"] = "foo"
+        result = CliRunner().invoke(list, ["--app", "not-an-application"])
+
+        assert (
+            """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+            in result.output
+        )
+
+    def test_aborts_when_application_has_no_codebases(self, mock_boto_client):
+        from dbt_copilot_helper.commands.codebase import list
+
+        mock_boto_client.return_value.get_parameters_by_path.return_value = {"Parameters": []}
+
+        result = CliRunner().invoke(list, ["--app", "test-application"])
+
+        assert 'No codebases found for application "test-application"' in result.output
 
 
 def is_same_files(compare_directories):
