@@ -80,6 +80,7 @@ def make_config(directory="."):
         (base_path / f"copilot/environments/{name}").mkdir(parents=True, exist_ok=True)
         contents = templates.get_template("env/manifest.yml").render(
             {
+                "app_name": config["app"],
                 "name": name,
                 "certificate_arn": env["certificate_arns"][0] if "certificate_arns" in env else "",
             },
