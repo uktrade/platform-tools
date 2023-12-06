@@ -1,5 +1,6 @@
 # {% version_info %}
 
+Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
@@ -43,6 +44,7 @@ Mappings:
 
 Conditions:
   {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
+  {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
 
 Resources:
   {{ addon_config.prefix }}OpenSearchSecret:
@@ -221,3 +223,15 @@ Resources:
           Value: !Sub ${App}
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
+
+  'Fn::ForEach::SubOSLgName':
+    - LgName
+    - [application, audit]
+    - 'SubscriptionFilter${LgName}':
+        Type: AWS::Logs::SubscriptionFilter
+        Properties:
+          RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
+          LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'
+          FilterName: !Sub '${App}-${Env}-stream'
+          FilterPattern: ''
+          DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
