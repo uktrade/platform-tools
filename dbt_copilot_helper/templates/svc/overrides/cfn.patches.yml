@@ -1,0 +1,4 @@
+- op: replace
+  path: /Resources/LogGroup/Properties/LogGroupName
+  value: !Sub '/copilot/${AppName}/${EnvName}/${WorkloadName}'
+  
