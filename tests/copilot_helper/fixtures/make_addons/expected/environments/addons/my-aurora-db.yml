@@ -47,10 +47,8 @@ Mappings:
       SnapshotIdentifier: my-recent-snapshot
 
 Conditions:
-  UseAuroraDBSnapshot: !Not [!Equals [!FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
-
-Conditions:
   myAuroraDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myAuroraDbUseSnapshot: !Not [!Equals [!FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   myAuroraDbDBSubnetGroup:
@@ -153,13 +151,13 @@ Resources:
       BackupRetentionPeriod: 8
       MasterUsername:
         !If [
-          UseAuroraDBSnapshot,
+          myAuroraDbUseSnapshot,
           !Ref AWS::NoValue,
           !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
         ]
       MasterUserPassword:
         !If [
-          UseAuroraDBSnapshot,
+          myAuroraDbUseSnapshot,
           !Ref AWS::NoValue,
           !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
         ]
@@ -177,7 +175,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMaxCapacity]
-      SnapshotIdentifier: !If [UseAuroraDBSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
+      SnapshotIdentifier: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
 
   myAuroraDbDBWriterInstance:

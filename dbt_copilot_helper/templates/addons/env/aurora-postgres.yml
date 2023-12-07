@@ -54,7 +54,7 @@ Mappings:
 
 Conditions:
   {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
-  UseAuroraDBSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+  {{ addon_config.prefix }}UseSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   {{ addon_config.prefix }}DBSubnetGroup:
@@ -157,13 +157,13 @@ Resources:
       BackupRetentionPeriod: 8
       MasterUsername:
         !If [
-          UseAuroraDBSnapshot,
+          {{ addon_config.prefix }}UseSnapshot,
           !Ref AWS::NoValue,
           !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
         ]
       MasterUserPassword:
         !If [
-          UseAuroraDBSnapshot,
+          {{ addon_config.prefix }}UseSnapshot,
           !Ref AWS::NoValue,
           !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}AuroraSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
         ]
@@ -181,7 +181,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMaxCapacity]
-      SnapshotIdentifier: !If [UseAuroraDBSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
+      SnapshotIdentifier: !If [{{ addon_config.prefix }}UseSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
 
   {{ addon_config.prefix }}DBWriterInstance:
