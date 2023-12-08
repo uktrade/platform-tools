@@ -163,6 +163,9 @@ Resources:
     - [engine, slow]
     - 'SubscriptionFilter${LgName}':
         Type: AWS::Logs::SubscriptionFilter
+        DependsOn:
+          - {{ addon_config.prefix }}RedisEngineLogGroup
+          - {{ addon_config.prefix }}RedisSlowLogGroup
         Properties:
           RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
           LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'

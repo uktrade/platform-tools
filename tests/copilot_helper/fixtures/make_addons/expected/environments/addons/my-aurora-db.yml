@@ -532,6 +532,8 @@ Resources:
 
   SubscriptionFiltermyAuroraDb:
     Type: AWS::Logs::SubscriptionFilter
+    DependsOn:
+      - myAuroraDbDBWriterInstance
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/cluster/${myAuroraDbDBCluster}/postgresql'

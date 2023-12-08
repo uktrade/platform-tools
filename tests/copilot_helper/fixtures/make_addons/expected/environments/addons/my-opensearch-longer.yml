@@ -227,6 +227,9 @@ Resources:
     - [application, audit]
     - 'SubscriptionFilter${LgName}':
         Type: AWS::Logs::SubscriptionFilter
+        DependsOn:
+          - myOpensearchLongerOpenSearchAuditLogGroup
+          - myOpensearchLongerOpenSearchApplicationLogGroup
         Properties:
           RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
           LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/myOpensearchLonger/${LgName}'
