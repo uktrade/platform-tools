@@ -315,10 +315,14 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
 @mock_ssm
 @mock_cloudformation
 @pytest.mark.parametrize(
+    "addon_type",
+    ["postgres", "redis", "opensearch"],
+)
+@pytest.mark.parametrize(
     "addon_name",
     ["postgres", "redis", "opensearch", "rds-postgres"],
 )
-def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application):
+def test_update_conduit_stack_resources(mock_stack, addon_type, addon_name, mock_application):
     """Test that, given app, env and addon name update_conduit_stack_resources
     updates the conduit CloudFormation stack to add DeletionPolicy:Retain and
     subscription filter to the LogGroup."""
@@ -343,7 +347,9 @@ def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application
     mock_stack(addon_name)
     task_name = mock_task_name(addon_name)
 
-    update_conduit_stack_resources(mock_application, "development", addon_name, task_name)
+    update_conduit_stack_resources(
+        mock_application, "development", addon_type, addon_name, task_name
+    )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
     template_yml = load_yaml(template["TemplateBody"])
@@ -359,6 +365,10 @@ def test_update_conduit_stack_resources(mock_stack, addon_name, mock_application
     assert (
         "dev_account_id"
         in template_yml["Resources"]["SubscriptionFilter"]["Properties"]["DestinationArn"]
+    )
+    assert (
+        template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
+        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}"
     )
 
 
@@ -500,7 +510,7 @@ def test_start_conduit(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, task_name
+        mock_application, "development", addon_type, addon_type, task_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -593,7 +603,7 @@ def test_start_conduit_with_custom_addon_name(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", "custom-addon-name", task_name
+        mock_application, "development", addon_type, "custom-addon-name", task_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -798,7 +808,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, task_name
+        mock_application, "development", addon_type, addon_type, task_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
