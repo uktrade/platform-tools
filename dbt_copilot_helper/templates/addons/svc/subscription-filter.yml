@@ -1,6 +1,5 @@
 # {% version_info %}
 
-Transform: 'AWS::LanguageExtensions'
 Parameters:
   App:
     Type: String

@@ -1,6 +1,5 @@
 # {% version_info %}
 
-Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
