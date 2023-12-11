@@ -536,6 +536,6 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/cluster/${myAuroraDbDBCluster}/postgresql'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/rds/cluster/${App}/${Env}/${myAuroraDbDBCluster}/postgresql'
       FilterPattern: ''
       DestinationArn: !If [myAuroraDbCreateProdSubFilter, '', '']

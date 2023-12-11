@@ -162,7 +162,7 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/engine'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/elasticache/${App}/${Env}/${myRedisReplicationGroup}/engine'
       FilterPattern: ''
       DestinationArn: !If [myRedisCreateProdSubFilter, '', '']
 
@@ -173,6 +173,6 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/myRedis/slow'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/elasticache/${App}/${Env}/${myRedisReplicationGroup}/slow'
       FilterPattern: ''
       DestinationArn: !If [myRedisCreateProdSubFilter, '', '']

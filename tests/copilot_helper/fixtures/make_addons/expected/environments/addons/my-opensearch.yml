@@ -228,7 +228,7 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/myOpensearch/application'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/opensearch/${App}/${Env}/${myOpensearchOpenSearchDomain}/application'
       FilterPattern: ''
       DestinationArn: !If [myOpensearchCreateProdSubFilter, '', '']
 
@@ -239,6 +239,6 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/opensearch/${App}/${Env}/myOpensearch/audit'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/opensearch/${App}/${Env}/${myOpensearchOpenSearchDomain}/audit'
       FilterPattern: ''
       DestinationArn: !If [myOpensearchCreateProdSubFilter, '', '']

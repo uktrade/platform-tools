@@ -514,6 +514,6 @@ Resources:
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/instance/${myRdsDbDBInstance}/postgresql'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/rds/instance/${App}/${Env}/${myRdsDbDBInstance}/postgresql'
       FilterPattern: ''
       DestinationArn: !If [myRdsDbCreateProdSubFilter, '', '']
