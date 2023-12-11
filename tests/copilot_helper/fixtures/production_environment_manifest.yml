@@ -11,7 +11,7 @@ type: Environment
 http:
   public:
     access_logs:
-      bucket_name: dbt-alb-logs
+      bucket_name: dbt-access-logs
       prefix: test-app/production
 
     certificates:
