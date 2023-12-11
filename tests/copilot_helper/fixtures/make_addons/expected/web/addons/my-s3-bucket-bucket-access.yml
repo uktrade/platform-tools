@@ -49,13 +49,13 @@ Resources:
               - s3:*Object
 
             Resource: !Sub
-              - "arn:aws:s3:::${ bucket_name }/*"
+              - "arn:aws:s3:::${bucket_name}/*"
               - bucket_name: !FindInMap [myS3BucketBucketAccessEnvironmentConfigMap, !Ref Env, BucketName]
           - Sid: S3ListAction
             Effect: Allow
             Action: s3:ListBucket
             Resource: !Sub
-              - "arn:aws:s3:::${ bucket_name }"
+              - "arn:aws:s3:::${bucket_name}"
               - bucket_name: !FindInMap [myS3BucketBucketAccessEnvironmentConfigMap, !Ref Env, BucketName]
 Outputs:
   myS3BucketBucketAccessAccessPolicy:
