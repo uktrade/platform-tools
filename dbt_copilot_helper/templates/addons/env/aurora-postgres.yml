@@ -1,6 +1,5 @@
 # {% version_info %}
 
-Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
@@ -534,9 +533,11 @@ Resources:
 
   SubscriptionFilter{{ addon_config.prefix }}:
     Type: AWS::Logs::SubscriptionFilter
+    DependsOn:
+      - {{ addon_config.prefix }}DBWriterInstance
     Properties:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
       LogGroupName: !Sub '/aws/rds/cluster/${{ '{' }}{{ addon_config.prefix }}DBCluster}/postgresql'
-      FilterName: !Sub '${App}-${Env}-stream'
+      FilterName: !Sub '/aws/rds/cluster/${App}/${Env}/${{ '{' }}{{ addon_config.prefix }}DBCluster}/postgresql'
       FilterPattern: ''
       DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

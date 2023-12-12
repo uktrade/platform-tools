@@ -1,6 +1,5 @@
 # {% version_info %}
 
-Transform: 'AWS::LanguageExtensions'
 Parameters:
   App:
     Type: String
@@ -21,6 +20,6 @@ Resources:
     Properties:
       RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole"
       LogGroupName: !Sub "/copilot/${App}/${Env}/${Name}"
-      FilterName: !Sub "${App}-${Env}-stream"
+      FilterName: !Sub "/copilot/${App}/${Env}/${Name}"
       FilterPattern: ""
       DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

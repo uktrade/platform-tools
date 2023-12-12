@@ -1,6 +1,5 @@
 # {% version_info %}
 
-Transform: 'AWS::LanguageExtensions'
 Parameters:
   # Copilot required Parameters...
   App:
@@ -158,14 +157,24 @@ Resources:
         - url: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
           port: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
 
-  'Fn::ForEach::SubLgName':
-    - LgName
-    - [engine, slow]
-    - 'SubscriptionFilter${LgName}':
-        Type: AWS::Logs::SubscriptionFilter
-        Properties:
-          RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
-          LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/${LgName}'
-          FilterName: !Sub '${App}-${Env}-stream'
-          FilterPattern: ''
-          DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
+  SubscriptionFilterengine:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn:
+      - {{ addon_config.prefix }}RedisEngineLogGroup
+    Properties:
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/engine'
+      FilterName: !Sub '/aws/elasticache/${App}/${Env}/${{ '{' }}{{ addon_config.prefix }}ReplicationGroup}/engine'
+      FilterPattern: ''
+      DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
+
+  SubscriptionFilterslow:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn:
+      - {{ addon_config.prefix }}RedisSlowLogGroup
+    Properties:
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole'
+      LogGroupName: !Sub '/aws/elasticache/${App}/${Env}/{{ addon_config.prefix }}/slow'
+      FilterName: !Sub '/aws/elasticache/${App}/${Env}/${{ '{' }}{{ addon_config.prefix }}ReplicationGroup}/slow'
+      FilterPattern: ''
+      DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
