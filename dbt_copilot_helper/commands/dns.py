@@ -385,12 +385,12 @@ def validate_subdomains(subdomains: list[str]) -> None:
 
 
 def get_base_domain(subdomains: list[str]) -> str:
-    matching_domains = []
+    matching_domains = set()
     domains_by_length = sorted(AVAILABLE_DOMAINS.keys(), key=lambda d: len(d), reverse=True)
     for subdomain in subdomains:
         for domain_name in domains_by_length:
             if subdomain.endswith(f".{domain_name}"):
-                matching_domains.append(domain_name)
+                matching_domains.add(domain_name)
                 break
 
     if len(matching_domains) > 1:
@@ -403,7 +403,7 @@ def get_base_domain(subdomains: list[str]) -> str:
             f"No base domains were found for subdomains: {ordered_subdomains}"
         )
 
-    return matching_domains[0]
+    return matching_domains.pop()
 
 
 def get_certificate_zone_id(hosted_zones):
