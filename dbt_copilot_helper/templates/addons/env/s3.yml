@@ -132,13 +132,17 @@ Resources:
                   - 's3:PutObject'
                   - 's3:DeleteObject'
                 Resource:
-                  - !Sub ${ dwS3BucketBucket.Arn }/*
+                  - !Sub ${ {{ addon_config.prefix }}Bucket.Arn }/*
               - Effect: Allow
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - 'kms:GenerateDataKey'
+                Resource: !GetAtt {{ addon_config.prefix }}KMSKey.Arn
 
 {% for s3object in addon_config.objects %}
   {{ addon_config.prefix }}S3Object{{ loop.index0 }}:
