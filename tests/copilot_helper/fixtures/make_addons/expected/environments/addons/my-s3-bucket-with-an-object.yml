@@ -203,13 +203,17 @@ Resources:
                   - 's3:PutObject'
                   - 's3:DeleteObject'
                 Resource:
-                  - !Sub ${ dwS3BucketBucket.Arn }/*
+                  - !Sub ${ myS3BucketWithAnObjectBucket.Arn }/*
               - Effect: Allow
                 Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - 'kms:GenerateDataKey'
+                Resource: !GetAtt myS3BucketWithAnObjectKMSKey.Arn
 
 
   myS3BucketWithAnObjectS3Object0:
