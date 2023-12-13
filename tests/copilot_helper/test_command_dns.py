@@ -701,6 +701,12 @@ def test_get_base_domain_raises_exception_when_multiple_base_domains_found():
         get_base_domain(["v2.web.trade.gov.uk", "v2.web.great.gov.uk"])
 
 
+def test_get_base_domain_does_not_raise_exception_when_multiple_of_the_same_base_domains_found():
+    assert "trade.gov.uk" == get_base_domain(
+        ["static.web.trade.gov.uk", "internal.web.trade.gov.uk"]
+    )
+
+
 def test_get_base_domain_raises_exception_when_no_base_domains_found():
     with pytest.raises(
         InvalidDomainException,
