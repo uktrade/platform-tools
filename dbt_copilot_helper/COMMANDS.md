@@ -28,6 +28,9 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain configure](#copilot-helper-domain-configure)
 - [copilot-helper domain assign](#copilot-helper-domain-assign)
+- [copilot-helper environment](#copilot-helper-environment)
+- [copilot-helper environment offline](#copilot-helper-environment-offline)
+- [copilot-helper environment online](#copilot-helper-environment-online)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper svc](#copilot-helper-svc)
@@ -61,6 +64,7 @@ copilot-helper <command> [--version]
 - [`config` ↪](#copilot-helper-config)
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
+- [`environment` ↪](#copilot-helper-environment)
 - [`pipeline` ↪](#copilot-helper-pipeline)
 - [`svc` ↪](#copilot-helper-svc)
 - [`waf` ↪](#copilot-helper-waf)
@@ -703,6 +707,72 @@ copilot-helper domain assign --app <app> --env <env> --svc <svc>
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper environment
+
+[↩ Parent](#copilot-helper)
+
+    Commands affecting environments.
+
+## Usage
+
+```
+copilot-helper environment (offline|online) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`offline` ↪](#copilot-helper-environment-offline)
+- [`online` ↪](#copilot-helper-environment-online)
+
+# copilot-helper environment offline
+
+[↩ Parent](#copilot-helper-environment)
+
+    Take load-balanced web services offline with a maintenance page.
+
+## Usage
+
+```
+copilot-helper environment offline --app <app> --env <env> [--template (default|migration)] 
+```
+
+## Options
+
+- `--app <text>`
+
+- `--env <text>`
+
+- `--template <choice>` _Defaults to default._
+  - The maintenance page you wish to put up.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper environment online
+
+[↩ Parent](#copilot-helper-environment)
+
+    Remove a maintenance page from an environment.
+
+## Usage
+
+```
+copilot-helper environment online --app <app> --env <env> 
+```
+
+## Options
+
+- `--app <text>`
+
+- `--env <text>`
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

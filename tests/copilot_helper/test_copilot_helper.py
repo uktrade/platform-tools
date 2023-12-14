@@ -27,6 +27,7 @@ class TestCopilotHelperCli:
             "config",
             "copilot",
             "domain",
+            "environment",
             "pipeline",
             "svc",
             "waf",
