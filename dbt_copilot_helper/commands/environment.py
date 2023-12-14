@@ -20,7 +20,7 @@ def environment():
     check_copilot_helper_version_needs_update()
 
 
-@environment.command
+@environment.command()
 @click.option("--app", type=str, required=True)
 @click.option("--env", type=str, required=True)
 @click.option(
@@ -85,7 +85,7 @@ def offline(app, env, template):
         raise click.Abort
 
 
-@environment.command
+@environment.command()
 @click.option("--app", type=str, required=True)
 @click.option("--env", type=str, required=True)
 def online(app, env):
