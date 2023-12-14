@@ -434,7 +434,7 @@ def test_configure_success(
     [
         ("dev", "dev"),
         ("staging", "dev"),
-        ("prod1", "dev"),
+        ("prod1", "live"),
         ("prod2", "live"),
         ("prod3", "live"),
     ],
