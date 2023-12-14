@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Union
 
 import boto3
 import click
@@ -153,7 +154,7 @@ def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
     return load_balancer_arn
 
 
-def find_https_listener(session: boto3.Session, app: str, env: str):
+def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     load_balancer_arn = find_load_balancer(session, app, env)
     lb_client = session.client("elbv2")
     listeners = lb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)["Listeners"]
@@ -171,7 +172,7 @@ def find_https_listener(session: boto3.Session, app: str, env: str):
     return listener_arn
 
 
-def get_maintenance_page(session: boto3.Session, listener_arn: str) -> str | None:
+def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -234,7 +235,7 @@ def add_maintenance_page(session: boto3.Session, listener_arn: str, template: st
     )
 
 
-def get_maintenance_page_template(template):
+def get_maintenance_page_template(template) -> str:
     template_contents = (
         Path(__file__)
         .parent.parent.joinpath(
