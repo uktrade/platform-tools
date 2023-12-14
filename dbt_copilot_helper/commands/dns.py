@@ -28,7 +28,7 @@ from dbt_copilot_helper.utils.versioning import (
 AVAILABLE_DOMAINS = {
     "great.gov.uk": "live",
     "trade.gov.uk": "live",
-    "prod.uktrade.digital": "dev",
+    "prod.uktrade.digital": "live",
     "uktrade.digital": "dev",
 }
 AWS_CERT_REGION = "eu-west-2"
