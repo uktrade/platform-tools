@@ -28,6 +28,8 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain configure](#copilot-helper-domain-configure)
 - [copilot-helper domain assign](#copilot-helper-domain-assign)
+- [copilot-helper domain cdn](#copilot-helper-domain-cdn)
+- [copilot-helper domain cdn-list](#copilot-helper-domain-cdn-list)
 - [copilot-helper environment](#copilot-helper-environment)
 - [copilot-helper environment offline](#copilot-helper-environment-offline)
 - [copilot-helper environment online](#copilot-helper-environment-online)
@@ -646,7 +648,7 @@ copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-copilot-helper domain (configure|assign) 
+copilot-helper domain (configure|assign|cdn|cdn-list) 
 ```
 
 ## Options
@@ -657,6 +659,8 @@ copilot-helper domain (configure|assign)
 ## Commands
 
 - [`assign` ↪](#copilot-helper-domain-assign)
+- [`cdn` ↪](#copilot-helper-domain-cdn)
+- [`cdn-list` ↪](#copilot-helper-domain-cdn-list)
 - [`configure` ↪](#copilot-helper-domain-configure)
 
 # copilot-helper domain configure
@@ -707,6 +711,65 @@ copilot-helper domain assign --app <app> --env <env> --svc <svc>
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper domain cdn
+
+[↩ Parent](#copilot-helper-domain)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+copilot-helper domain cdn --project-profile <project_profile> --env <env> 
+                          --app <app> --svc <svc> --cdn-domain <cdn_domain> 
+                          [--delete] [--force] 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--cdn-domain <text>`
+  - CDN domain to add
+- `--delete <boolean>` _Defaults to False._
+  - Delete the CDN domain
+- `--force <boolean>` _Defaults to False._
+  - Force remove
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper domain cdn-list
+
+[↩ Parent](#copilot-helper-domain)
+
+    List CDN domain name attached to application loadbalancer.
+
+## Usage
+
+```
+copilot-helper domain cdn-list --project-profile <project_profile> 
+                               --env <env> --app <app> --svc <svc> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

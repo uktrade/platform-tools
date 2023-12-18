@@ -432,9 +432,7 @@ def _get_zone_id_or_abort(hosted_zones, zone):
     return hosted_zones[zone]["Id"]
 
 
-def get_load_balancer_domain_and_configuration(
-    project_session: Session, app: str, svc: str, env: str
-) -> Tuple[str, dict]:
+def get_load_balancer_configuration(project_session, app, svc, env):
     def separate_hyphenated_application_environment_and_service(
         hyphenated_string, number_of_items_of_interest, number_of_trailing_items
     ):
@@ -506,6 +504,13 @@ def get_load_balancer_domain_and_configuration(
 
     response = elb_client.describe_load_balancers(LoadBalancerArns=[elb_arn])
     check_response(response)
+    return response
+
+
+def get_load_balancer_domain_and_configuration(
+    project_session: Session, app: str, svc: str, env: str
+) -> Tuple[str, dict]:
+    response = get_load_balancer_configuration(project_session, app, svc, env)
 
     # Find the domain name
     with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
@@ -739,6 +744,176 @@ def assign(app, domain_profile, project_profile, svc, env):
             + click.style(f"{domain_name}", fg="white", bold=True),
         )
         return
+
+
+@domain.command()
+@click.option(
+    "--project-profile", help="AWS account profile name for certificates account", required=True
+)
+@click.option("--env", help="AWS Copilot environment name", required=True)
+@click.option("--app", help="Application Name", required=True)
+@click.option("--svc", help="Service Name", required=True)
+@click.option("--cdn-domain", help="CDN domain to add", required=True)
+@click.option("--delete", help="Delete the CDN domain", is_flag=True)
+@click.option("--force", help="Force remove", is_flag=True)
+def cdn(project_profile, env, app, svc, cdn_domain, delete, force):
+    """Assigns a CDN domain name to application loadbalancer."""
+    project_session = get_aws_session_or_abort(project_profile)
+
+    elb_client = project_session.client("elbv2")
+    acm_client = project_session.client("acm")
+
+    response = elb_client.describe_listeners(
+        LoadBalancerArn=get_load_balancer_configuration(project_session, app, svc, env)[
+            "LoadBalancers"
+        ][0]["LoadBalancerArn"],
+    )
+
+    for listener in response["Listeners"]:
+        if listener["Protocol"] == "HTTPS":
+            response = elb_client.describe_rules(
+                ListenerArn=listener["ListenerArn"],
+            )
+
+            # Get the current rule so we can update it with additional host
+            for rule in response["Rules"]:
+                rulearn = rule["RuleArn"]
+                conditions = rule["Conditions"]
+                # Only check if there are conditions set
+                if conditions:
+                    for cond in conditions:
+                        # remove unwanted config values
+                        if cond["Field"] == "host-header":
+                            click.echo(
+                                click.style("Domains currently configured: ", fg="yellow")
+                                + click.style(f"{cond['Values']}", fg="white", bold=True),
+                            )
+                            if delete:
+                                if click.confirm(
+                                    click.style(
+                                        f"Are you sure you wish to delete the domain {cdn_domain}?",
+                                        fg="yellow",
+                                    ),
+                                ):
+                                    if not cdn_domain in cond["Values"]:
+                                        click.echo(
+                                            click.style(
+                                                f"{cdn_domain} doesn't exists, exiting", fg="red"
+                                            ),
+                                        )
+                                        exit()
+
+                                    if len(cond["Values"]) == 1 and force != True:
+                                        click.echo(
+                                            click.style(
+                                                f"{cdn_domain} is the only domain configured on the LoadBalancer, if you are sure use --force, exiting",
+                                                fg="red",
+                                            ),
+                                        )
+                                        exit()
+
+                                    click.echo(
+                                        click.style(f"deleting {cdn_domain}", fg="green"),
+                                    )
+                                    cond["Values"].remove(cdn_domain)
+                                else:
+                                    exit()
+                            else:
+                                if cdn_domain in cond["Values"]:
+                                    click.echo(
+                                        click.style(
+                                            f"{cdn_domain} already exists, exiting", fg="red"
+                                        ),
+                                    )
+                                    exit()
+
+                                cond["Values"].append(cdn_domain)
+
+                            cond.pop("HostHeaderConfig")
+
+                        if cond["Field"] == "path-pattern":
+                            cond.pop("PathPatternConfig")
+
+                    # Update Rule
+                    response = elb_client.modify_rule(RuleArn=rulearn, Conditions=conditions)
+
+                    # Now Add/Delete domain ACN to LB
+                    base_domain = get_base_domain([cdn_domain])
+                    domain_profile = AVAILABLE_DOMAINS[base_domain]
+                    domain_session = get_aws_session_or_abort(domain_profile)
+                    r53_client = domain_session.client("route53")
+                    cert_arn = create_required_zones_and_certs(
+                        r53_client,
+                        acm_client,
+                        cdn_domain,
+                        base_domain,
+                    )
+                    # print(cert_arn)
+                    if delete:
+                        response = elb_client.remove_listener_certificates(
+                            ListenerArn=listener["ListenerArn"],
+                            Certificates=[
+                                {
+                                    "CertificateArn": cert_arn,
+                                },
+                            ],
+                        )
+                    else:
+                        # Add Cert to LB
+                        response = elb_client.add_listener_certificates(
+                            ListenerArn=listener["ListenerArn"],
+                            Certificates=[
+                                {
+                                    "CertificateArn": cert_arn,
+                                },
+                            ],
+                        )
+
+                    for cond in conditions:
+                        if cond["Field"] == "host-header":
+                            click.echo(
+                                click.style("Domains now configured: ", fg="green")
+                                + click.style(f"{cond['Values']}", fg="white", bold=True),
+                            )
+            break
+
+
+@domain.command()
+@click.option(
+    "--project-profile", help="AWS account profile name for certificates account", required=True
+)
+@click.option("--env", help="AWS Copilot environment name", required=True)
+@click.option("--app", help="Application Name", required=True)
+@click.option("--svc", help="Service Name", required=True)
+def cdn_list(project_profile, env, app, svc):
+    """List CDN domain name attached to application loadbalancer."""
+    project_session = get_aws_session_or_abort(project_profile)
+
+    elb_client = project_session.client("elbv2")
+
+    response = elb_client.describe_listeners(
+        LoadBalancerArn=get_load_balancer_configuration(project_session, app, svc, env)[
+            "LoadBalancers"
+        ][0]["LoadBalancerArn"],
+    )
+
+    for listener in response["Listeners"]:
+        if listener["Protocol"] == "HTTPS":
+            response = elb_client.describe_rules(
+                ListenerArn=listener["ListenerArn"],
+            )
+
+            # Get the current rule so we can update it with additional host
+            for rule in response["Rules"]:
+                conditions = rule["Conditions"]
+                # Only check if there are conditions set
+                if conditions:
+                    for cond in conditions:
+                        if cond["Field"] == "host-header":
+                            click.echo(
+                                click.style("Domains currently configured: ", fg="yellow")
+                                + click.style(f"{cond['Values']}", fg="white", bold=True),
+                            )
 
 
 if __name__ == "__main__":
