@@ -45,11 +45,7 @@ Mappings:
       DBMinCapacity: {{ config.min_capacity }}
       DBMaxCapacity: {{ config.max_capacity }}
       DeletionPolicy: {{ config.deletion_policy }}
-{%- if config.snapshot_id %}
-      SnapshotIdentifier: {{ config.snapshot_id }}
-{%- else %}
-      SnapshotIdentifier: ""
-{%- endif %}
+      SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
 {%- endfor %}
 
 Conditions:
