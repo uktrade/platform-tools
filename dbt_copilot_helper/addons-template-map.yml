@@ -47,3 +47,6 @@ vpc:
   requires_addons_parameters: true
   env:
     - template: addons/env/vpc.yml
+xray:
+  svc:
+    - template: addons/svc/xray.yml
