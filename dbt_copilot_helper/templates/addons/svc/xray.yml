@@ -1,3 +1,5 @@
+# {% version_info %}
+
 Parameters:
   App:
     Type: String
