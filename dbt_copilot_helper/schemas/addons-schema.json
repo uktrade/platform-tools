@@ -105,7 +105,8 @@
             "appconfig-ipfilter",
             "subscription-filter",
             "monitoring",
-            "vpc"
+            "vpc",
+            "xray-permissions"
           ]
         }
       },

@@ -9,5 +9,9 @@ subscription-filter:
   type: subscription-filter
   services: __all__
 
+xray-permissions:
+  type: xray-permissions
+  services: __all__
+
 vpc:
   type: vpc
