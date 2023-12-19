@@ -106,7 +106,7 @@
             "subscription-filter",
             "monitoring",
             "vpc",
-            "xray-permissions"
+            "xray"
           ]
         }
       },

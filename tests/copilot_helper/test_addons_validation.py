@@ -35,7 +35,7 @@ mys3bucket:
         expect_jsonschema_validation_error(addon)
         == "'not-valid' is not one of ['rds-postgres', 'aurora-postgres', 'redis', 'opensearch', "
         "'s3', 's3-policy', 'appconfig-ipfilter', 'subscription-filter', 'monitoring', 'vpc', "
-        "'xray-permissions']"
+        "'xray']"
     )
 
 
