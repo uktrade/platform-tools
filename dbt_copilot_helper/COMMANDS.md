@@ -724,8 +724,7 @@ copilot-helper domain assign --app <app> --env <env> --svc <svc>
 
 ```
 copilot-helper domain cdn --project-profile <project_profile> --env <env> 
-                          --app <app> --svc <svc> --cdn-domain <cdn_domain> 
-                          [--delete] [--force] 
+                          --app <app> --svc <svc> [--delete] 
 ```
 
 ## Options
@@ -738,12 +737,8 @@ copilot-helper domain cdn --project-profile <project_profile> --env <env>
   - Application Name
 - `--svc <text>`
   - Service Name
-- `--cdn-domain <text>`
-  - CDN domain to add
 - `--delete <boolean>` _Defaults to False._
   - Delete the CDN domain
-- `--force <boolean>` _Defaults to False._
-  - Force remove
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

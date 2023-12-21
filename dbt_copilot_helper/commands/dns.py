@@ -753,10 +753,10 @@ def assign(app, domain_profile, project_profile, svc, env):
 @click.option("--env", help="AWS Copilot environment name", required=True)
 @click.option("--app", help="Application Name", required=True)
 @click.option("--svc", help="Service Name", required=True)
-@click.option("--cdn-domain", help="CDN domain to add", required=True)
 @click.option("--delete", help="Delete the CDN domain", is_flag=True)
-@click.option("--force", help="Force remove", is_flag=True)
-def cdn(project_profile, env, app, svc, cdn_domain, delete, force):
+# Feature to be added at later date if needed, there shouldn't be a need to remove all domains
+# @click.option("--force", help="Force remove", is_flag=True)
+def cdn(project_profile, env, app, svc, delete, force=False):
     """Assigns a CDN domain name to application loadbalancer."""
     project_session = get_aws_session_or_abort(project_profile)
 
@@ -769,112 +769,146 @@ def cdn(project_profile, env, app, svc, cdn_domain, delete, force):
         ][0]["LoadBalancerArn"],
     )
 
+    # Certificates and domains only need to be configured on the https listener.
     for listener in response["Listeners"]:
         if listener["Protocol"] == "HTTPS":
             response = elb_client.describe_rules(
                 ListenerArn=listener["ListenerArn"],
             )
+            # If there are multiple services there will be more than one rule.
+            if len(response["Rules"]) > 2:
+                click.echo(
+                    click.style(
+                        f"Warning: Multiple Domains are configured on this Load Balancer.\n",
+                        fg="blue",
+                        bold=True,
+                    ),
+                )
 
-            # Get the current rule so we can update it with additional host
+            # Get the current rule so we can update host header with new domain.
             for rule in response["Rules"]:
+                save = True
                 rulearn = rule["RuleArn"]
                 conditions = rule["Conditions"]
-                # Only check if there are conditions set
+
                 if conditions:
                     for cond in conditions:
-                        # remove unwanted config values
+                        # Only check if the condition is using the host header
                         if cond["Field"] == "host-header":
                             click.echo(
                                 click.style("Domains currently configured: ", fg="yellow")
                                 + click.style(f"{cond['Values']}", fg="white", bold=True),
                             )
+
+                            action = "add"
+                            if delete:
+                                action = "remove"
+                            cdn_domain = input(
+                                f"Enter in domain you wish to {action} (or press Enter to skip): "
+                            )
+                            if not cdn_domain:
+                                save = False
+                                break
+
                             if delete:
                                 if click.confirm(
                                     click.style(
-                                        f"Are you sure you wish to delete the domain {cdn_domain}?",
-                                        fg="yellow",
-                                    ),
+                                        "Are you sure you wish to delete the domain ", fg="yellow"
+                                    )
+                                    + click.style(f"{cdn_domain}?", fg="white", bold=True),
                                 ):
+                                    # Exit if specified domain doesn't exist.
                                     if not cdn_domain in cond["Values"]:
                                         click.echo(
                                             click.style(
                                                 f"{cdn_domain} doesn't exists, exiting", fg="red"
                                             ),
                                         )
-                                        exit()
+                                        save = False
+                                        break
 
+                                    # At present at least 1 domain needs to be on the listener.
                                     if len(cond["Values"]) == 1 and force != True:
                                         click.echo(
                                             click.style(
-                                                f"{cdn_domain} is the only domain configured on the LoadBalancer, if you are sure use --force, exiting",
+                                                f"{cdn_domain} is the only domain configured on the "
+                                                + "LoadBalancer, exiting",
                                                 fg="red",
                                             ),
                                         )
-                                        exit()
+                                        save = False
+                                        break
 
                                     click.echo(
                                         click.style(f"deleting {cdn_domain}", fg="green"),
                                     )
                                     cond["Values"].remove(cdn_domain)
+                                # Exit if not sure.
                                 else:
-                                    exit()
+                                    save = False
+                                    break
                             else:
+                                # When adding exit if domain already exists.
                                 if cdn_domain in cond["Values"]:
                                     click.echo(
                                         click.style(
                                             f"{cdn_domain} already exists, exiting", fg="red"
                                         ),
                                     )
-                                    exit()
+                                    save = False
+                                    break
 
                                 cond["Values"].append(cdn_domain)
 
+                            # remove unwanted config values as not needed in update.
                             cond.pop("HostHeaderConfig")
 
                         if cond["Field"] == "path-pattern":
                             cond.pop("PathPatternConfig")
 
-                    # Update Rule
-                    response = elb_client.modify_rule(RuleArn=rulearn, Conditions=conditions)
+                    if save is True:
+                        # Update Rule
+                        response = elb_client.modify_rule(RuleArn=rulearn, Conditions=conditions)
 
-                    # Now Add/Delete domain ACN to LB
-                    base_domain = get_base_domain([cdn_domain])
-                    domain_profile = AVAILABLE_DOMAINS[base_domain]
-                    domain_session = get_aws_session_or_abort(domain_profile)
-                    r53_client = domain_session.client("route53")
-                    cert_arn = create_required_zones_and_certs(
-                        r53_client,
-                        acm_client,
-                        cdn_domain,
-                        base_domain,
-                    )
-                    # print(cert_arn)
-                    if delete:
-                        response = elb_client.remove_listener_certificates(
-                            ListenerArn=listener["ListenerArn"],
-                            Certificates=[
-                                {
-                                    "CertificateArn": cert_arn,
-                                },
-                            ],
-                        )
-                    else:
-                        # Add Cert to LB
-                        response = elb_client.add_listener_certificates(
-                            ListenerArn=listener["ListenerArn"],
-                            Certificates=[
-                                {
-                                    "CertificateArn": cert_arn,
-                                },
-                            ],
+                        # Create certificate if not already present.
+                        base_domain = get_base_domain([cdn_domain])
+                        domain_profile = AVAILABLE_DOMAINS[base_domain]
+                        domain_session = get_aws_session_or_abort(domain_profile)
+                        r53_client = domain_session.client("route53")
+                        cert_arn = create_required_zones_and_certs(
+                            r53_client,
+                            acm_client,
+                            cdn_domain,
+                            base_domain,
                         )
 
-                    for cond in conditions:
-                        if cond["Field"] == "host-header":
-                            click.echo(
-                                click.style("Domains now configured: ", fg="green")
-                                + click.style(f"{cond['Values']}", fg="white", bold=True),
+                        # Attach/Remove certificate from LB.
+                        if delete:
+                            response = elb_client.remove_listener_certificates(
+                                ListenerArn=listener["ListenerArn"],
+                                Certificates=[
+                                    {
+                                        "CertificateArn": cert_arn,
+                                    },
+                                ],
                             )
+                        else:
+                            response = elb_client.add_listener_certificates(
+                                ListenerArn=listener["ListenerArn"],
+                                Certificates=[
+                                    {
+                                        "CertificateArn": cert_arn,
+                                    },
+                                ],
+                            )
+
+                        # List newly configured domains.
+                        for cond in conditions:
+                            if cond["Field"] == "host-header":
+                                click.echo(
+                                    click.style("Domains now configured: ", fg="green")
+                                    + click.style(f"{cond['Values']}", fg="white", bold=True),
+                                )
             break
 
 
@@ -903,10 +937,9 @@ def cdn_list(project_profile, env, app, svc):
                 ListenerArn=listener["ListenerArn"],
             )
 
-            # Get the current rule so we can update it with additional host
+            # Get the current rule so we can list the configured domains.
             for rule in response["Rules"]:
                 conditions = rule["Conditions"]
-                # Only check if there are conditions set
                 if conditions:
                     for cond in conditions:
                         if cond["Field"] == "host-header":
