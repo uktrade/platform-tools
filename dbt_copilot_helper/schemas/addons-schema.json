@@ -439,6 +439,9 @@
           "type": "number",
           "minimum": 0.5
         },
+        "snapshot-id": {
+          "type": "string"
+        },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         }

@@ -44,9 +44,11 @@ Mappings:
       DBMinCapacity: 0.5
       DBMaxCapacity: 8
       DeletionPolicy: Delete
+      SnapshotIdentifier: my-recent-snapshot
 
 Conditions:
   myAuroraDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myAuroraDbUseSnapshot: !Not [!Equals [!FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   myAuroraDbDBSubnetGroup:
@@ -148,9 +150,17 @@ Resources:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
       MasterUsername:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
+        !If [
+          myAuroraDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:username}}" ]]
+        ]
       MasterUserPassword:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
+        !If [
+          myAuroraDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myAuroraDbAuroraSecret, ":SecretString:password}}" ]]
+        ]
       DatabaseName: !Ref myAuroraDbDBName
       Engine: 'aurora-postgresql'
       EngineVersion: '14.4'
@@ -165,6 +175,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MinCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMinCapacity]
         MaxCapacity: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DBMaxCapacity]
+      SnapshotIdentifier: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
 
   myAuroraDbDBWriterInstance:
@@ -455,6 +466,7 @@ Resources:
       PublicRouteTable: !Ref PublicRouteTable
       PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation
       PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation
+      Snapshot: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:
