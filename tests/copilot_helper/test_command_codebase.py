@@ -34,6 +34,7 @@ class TestCodebasePrepare:
               - name: paketobuildpacks/builder-jammy-base
                 versions:
                   - version: 0.1.234
+                  - version: 0.4.240
                   - version: 0.5.678
               - name: paketobuildpacks/builder
                 deprecated: true
