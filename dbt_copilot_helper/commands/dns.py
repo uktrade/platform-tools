@@ -862,10 +862,10 @@ def cdn(project_profile, env, app, svc, delete, force=False):
                                 cond["Values"].append(cdn_domain)
 
                             # remove unwanted config values as not needed in update.
-                            cond.pop("HostHeaderConfig")
+                            cond.pop("HostHeaderConfig", None)
 
                         if cond["Field"] == "path-pattern":
-                            cond.pop("PathPatternConfig")
+                            cond.pop("PathPatternConfig", None)
 
                     if save is True:
                         # Update Rule
