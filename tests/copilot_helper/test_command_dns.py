@@ -8,13 +8,16 @@ import pytest
 from botocore import stub
 from botocore.stub import Stubber
 from click.testing import CliRunner
+from moto import mock_acm
 from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_elbv2
+from moto import mock_sts
 
 from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
+from dbt_copilot_helper.commands.dns import cdn
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
@@ -739,3 +742,74 @@ def test_get_required_subdomains_throws_exception_with_multiple_errors():
     message = exc_info.value.args[0]
     assert f"Subdomain {subdomain} is not a valid domain" in message
     assert f"{subdomain} is not a subdomain of {base_domain}" in message
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
+    # TODO: extract shared logic used in test_get_load_balancer_domain_and_configuration into fixture or helper method
+    cluster_name = (
+        f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
+    )
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    session = boto3.Session()
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(
+        VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16"
+    )["Subnet"]["SubnetId"]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
+        Name="foo",
+        Subnets=[mocked_subnet_id],
+    )["LoadBalancers"][0]["LoadBalancerArn"]
+    target_group = mocked_elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
+    listener_arn = mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Protocol="HTTPS",
+    )["Listeners"][0]["ListenerArn"]
+    mocked_elbv2_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=1,
+        Conditions=[{"Field": "host-header", "Values": ["test.com"]}],
+        Actions=[{"Type": "forward"}],
+    )
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=service_name,
+        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="test.com",
+    )
+
+    assert "Domains currently configured: test.com" in result.output
+    assert "test.com already exists, exiting" in result.output
+
+
+def test_cdn_delete():
+    pass
+
+
+def test_cdn_list():
+    pass

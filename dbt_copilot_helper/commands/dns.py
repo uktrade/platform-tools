@@ -795,9 +795,10 @@ def cdn(project_profile, env, app, svc, delete, force=False):
                     for cond in conditions:
                         # Only check if the condition is using the host header
                         if cond["Field"] == "host-header":
+                            values_string = ";".join(cond["Values"])
                             click.echo(
                                 click.style("Domains currently configured: ", fg="yellow")
-                                + click.style(f"{cond['Values']}", fg="white", bold=True),
+                                + click.style(f"{values_string}", fg="white", bold=True),
                             )
 
                             action = "add"
