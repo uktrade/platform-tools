@@ -18,6 +18,7 @@ from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
 from dbt_copilot_helper.commands.dns import cdn
+from dbt_copilot_helper.commands.dns import cdn_list
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
@@ -812,6 +813,8 @@ def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
 @mock_ec2
 @mock_ecs
 @mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
 def test_cdn_add(alias_session, aws_credentials):
     cluster_name = (
         f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
@@ -838,11 +841,25 @@ def test_cdn_add(alias_session, aws_credentials):
     )["Listeners"][0]["ListenerArn"]
     mocked_elbv2_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=1,
+        Priority=50000,
         Conditions=[
-            {"HostHeaderConfig": {"Values": ["test.com", "new-domain.com"]}, "Field": "host-header"}
+            {
+                "Field": "host-header",
+                "Values": ["test.com"],
+                "HostHeaderConfig": {"Values": ["test.com"]},
+            }
         ],
-        Actions=[{"Type": "forward"}],
+        Actions=[
+            {
+                "Type": "forward",
+                "TargetGroupArn": target_group_arn,
+                "Order": 1,
+                "ForwardConfig": {
+                    "TargetGroups": [{"TargetGroupArn": target_group_arn, "Weight": 1}],
+                    "TargetGroupStickinessConfig": {"Enabled": False, "DurationSeconds": 3600},
+                },
+            }
+        ],
     )
     mocked_ecs_client = session.client("ecs")
     mocked_ecs_client.create_cluster(clusterName=cluster_name)
@@ -864,15 +881,160 @@ def test_cdn_add(alias_session, aws_credentials):
             "--svc",
             ALPHANUMERIC_SERVICE_NAME,
         ],
-        input="new-domain.com",
+        input="web.dev.uktrade.digital",
     )
-
-    assert "Domains currently configured: test.com" in result.output
-
-
-def test_cdn_delete():
-    pass
+    assert "Domains now configured:" in result.output
 
 
-def test_cdn_list():
-    pass
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
+def test_cdn_delete(alias_session, aws_credentials):
+    cluster_name = (
+        f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
+    )
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    session = boto3.Session()
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(
+        VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16"
+    )["Subnet"]["SubnetId"]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
+        Name="foo",
+        Subnets=[mocked_subnet_id],
+    )["LoadBalancers"][0]["LoadBalancerArn"]
+    target_group = mocked_elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
+    listener_arn = mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Protocol="HTTPS",
+    )["Listeners"][0]["ListenerArn"]
+    mocked_elbv2_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=50000,
+        Conditions=[
+            {
+                "Field": "host-header",
+                "Values": ["test.com", "web.dev.uktrade.digital"],
+                "HostHeaderConfig": {"Values": ["test.com", "web.dev.uktrade.digital"]},
+            }
+        ],
+        Actions=[
+            {
+                "Type": "forward",
+                "TargetGroupArn": target_group_arn,
+                "Order": 1,
+                "ForwardConfig": {
+                    "TargetGroups": [{"TargetGroupArn": target_group_arn, "Weight": 1}],
+                    "TargetGroupStickinessConfig": {"Enabled": False, "DurationSeconds": 3600},
+                },
+            }
+        ],
+    )
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=service_name,
+        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+            "--delete",
+        ],
+        input="web.dev.uktrade.digital\ny\n",
+    )
+    assert "deleting web.dev.uktrade.digital\nDomains now configured: ['test.com']" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+def test_cdn_list(alias_session, aws_credentials):
+    cluster_name = (
+        f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
+    )
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    session = boto3.Session()
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(
+        VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16"
+    )["Subnet"]["SubnetId"]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
+        Name="foo",
+        Subnets=[mocked_subnet_id],
+    )["LoadBalancers"][0]["LoadBalancerArn"]
+    target_group = mocked_elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
+    listener_arn = mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Protocol="HTTPS",
+    )["Listeners"][0]["ListenerArn"]
+    mocked_elbv2_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=50000,
+        Conditions=[
+            {
+                "Field": "host-header",
+                "Values": ["test.com", "web.dev.uktrade.digital"],
+                "HostHeaderConfig": {"Values": ["test.com", "web.dev.uktrade.digital"]},
+            }
+        ],
+        Actions=[
+            {
+                "Type": "forward",
+                "TargetGroupArn": target_group_arn,
+                "Order": 1,
+                "ForwardConfig": {
+                    "TargetGroups": [{"TargetGroupArn": target_group_arn, "Weight": 1}],
+                    "TargetGroupStickinessConfig": {"Enabled": False, "DurationSeconds": 3600},
+                },
+            }
+        ],
+    )
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=service_name,
+        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_list,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+    )
+    assert "Domains currently configured: ['test.com', 'web.dev.uktrade.digital']" in result.output

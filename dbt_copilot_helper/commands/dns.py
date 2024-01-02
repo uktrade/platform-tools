@@ -759,7 +759,6 @@ def assign(app, domain_profile, project_profile, svc, env):
 def cdn(project_profile, env, app, svc, delete, force=False):
     """Assigns a CDN domain name to application loadbalancer."""
     project_session = get_aws_session_or_abort(project_profile)
-
     elb_client = project_session.client("elbv2")
     acm_client = project_session.client("acm")
 
@@ -843,7 +842,7 @@ def cdn(project_profile, env, app, svc, delete, force=False):
                                     click.echo(
                                         click.style(f"deleting {cdn_domain}", fg="green"),
                                     )
-                                    cond["Values"].remove(cdn_domain)
+                                    cond["HostHeaderConfig"]["Values"].remove(cdn_domain)
                                 # Exit if not sure.
                                 else:
                                     save = False
@@ -859,10 +858,10 @@ def cdn(project_profile, env, app, svc, delete, force=False):
                                     save = False
                                     break
 
-                                cond["Values"].append(cdn_domain)
+                                cond["HostHeaderConfig"]["Values"].append(cdn_domain)
 
-                            # remove unwanted config values as not needed in update.
-                            cond.pop("HostHeaderConfig", None)
+                            # Remove unwanted config values as not needed in update.
+                            cond.pop("Values", None)
 
                         if cond["Field"] == "path-pattern":
                             cond.pop("PathPatternConfig", None)
@@ -908,7 +907,11 @@ def cdn(project_profile, env, app, svc, delete, force=False):
                             if cond["Field"] == "host-header":
                                 click.echo(
                                     click.style("Domains now configured: ", fg="green")
-                                    + click.style(f"{cond['Values']}", fg="white", bold=True),
+                                    + click.style(
+                                        f"{cond['HostHeaderConfig']['Values']}",
+                                        fg="white",
+                                        bold=True,
+                                    ),
                                 )
             break
 
