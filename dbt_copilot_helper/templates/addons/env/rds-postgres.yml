@@ -48,10 +48,12 @@ Mappings:
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}
       DeletionPolicy: {{ config.deletion_policy }}
+      SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
 {%- endfor %}
 
 Conditions:
     {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+    {{ addon_config.prefix }}UseSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -211,28 +213,57 @@ Resources:
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
-      EnablePerformanceInsights: true
+      EnablePerformanceInsights:
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          true
+        ]
       EnableCloudwatchLogsExports:
         - postgresql
         - upgrade
       Engine: postgres
       EngineVersion: '{{ addon_config.version }}'
       DBInstanceClass: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBInstanceClass]
+      DBSnapshotIdentifier: !If [{{ addon_config.prefix }}UseSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       AllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref {{ addon_config.prefix }}RDSDBParameterGroup
-      DBName: !Ref {{ addon_config.prefix }}DBName
-      KmsKeyId: !Ref {{ addon_config.prefix }}KMSKey
+      DBName:
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          !Ref {{ addon_config.prefix }}DBName
+        ]
+      KmsKeyId:
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          !Ref {{ addon_config.prefix }}KMSKey
+        ]
       MasterUsername:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:username{% raw %}}}{% endraw %}" ]]
+        ]
       MasterUserPassword:
-        !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{% raw %}{{{% endraw %}resolve:secretsmanager:', !Ref {{ addon_config.prefix }}RDSSecret, ":SecretString:password{% raw %}}}{% endraw %}" ]]
+        ]
       DBSubnetGroupName: !Ref '{{ addon_config.prefix }}DBSubnetGroup'
       VPCSecurityGroups:
         - !Ref {{ addon_config.prefix }}SecurityGroup
-      StorageEncrypted: true
+      StorageEncrypted:
+        !If [
+          {{ addon_config.prefix }}UseSnapshot,
+          !Ref AWS::NoValue,
+          true
+        ]
 
   {{ addon_config.prefix }}RDSSecret:
     Metadata:
