@@ -266,7 +266,6 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, env)
-    addon_name = addon_name or addon_type
     task_name = get_or_create_task_name(application, env, addon_name)
 
     if not addon_client_is_running(application, env, cluster_arn, task_name):
@@ -281,7 +280,7 @@ def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
 @click.argument("addon_type", type=click.Choice(CONDUIT_ADDON_TYPES))
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--addon-name", help="Name of custom addon", required=False)
+@click.option("--addon-name", help="Name of custom addon", required=True)
 def conduit(addon_type: str, app: str, env: str, addon_name: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
