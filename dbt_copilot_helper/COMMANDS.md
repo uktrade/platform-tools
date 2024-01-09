@@ -521,7 +521,7 @@ copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel>
 
 ```
 copilot-helper conduit (opensearch|postgres|redis) 
-                       --app <app> --env <env> [--addon-name <addon_name>] 
+                       --app <app> --env <env> --addon-name <addon_name> 
 ```
 
 ## Arguments
