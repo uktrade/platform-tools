@@ -422,6 +422,9 @@
           "minimum": 0,
           "maximum": 5
         },
+        "snapshot-id": {
+          "type": "string"
+        },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         }
