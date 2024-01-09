@@ -787,7 +787,7 @@ def cdn(project_profile, env, app, svc, delete, force=False):
             # Get the current rule so we can update host header with new domain.
             for rule in response["Rules"]:
                 save = True
-                rulearn = rule["RuleArn"]
+                rule_arn = rule["RuleArn"]
                 conditions = rule["Conditions"]
 
                 if conditions:
