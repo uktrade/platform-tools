@@ -868,7 +868,7 @@ def cdn(project_profile, env, app, svc, delete, force=False):
 
                     if save is True:
                         # Update Rule
-                        response = elb_client.modify_rule(RuleArn=rulearn, Conditions=conditions)
+                        response = elb_client.modify_rule(RuleArn=rule_arn, Conditions=conditions)
 
                         # Create certificate if not already present.
                         base_domain = get_base_domain([cdn_domain])
