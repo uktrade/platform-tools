@@ -768,7 +768,7 @@ def cdn(project_profile, env, app, svc, delete, force=False):
         ][0]["LoadBalancerArn"],
     )
 
-    # Certificates and domains only need to be configured on the https listener.
+    # Certificates and domains only need to be configured on the HTTPS listener.
     for listener in response["Listeners"]:
         if listener["Protocol"] == "HTTPS":
             response = elb_client.describe_rules(
