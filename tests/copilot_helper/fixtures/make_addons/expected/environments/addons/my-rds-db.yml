@@ -48,9 +48,11 @@ Mappings:
       StorageType: gp3
       DeletionPolicy: Delete
       DeletionProtection: False
+      SnapshotIdentifier: test-snapshot-id
 
 Conditions:
     myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+    myRdsDbUseSnapshot: !Not [!Equals [!FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -210,28 +212,57 @@ Resources:
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 8
-      EnablePerformanceInsights: true
+      EnablePerformanceInsights:
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          true
+        ]
       EnableCloudwatchLogsExports:
         - postgresql
         - upgrade
       Engine: postgres
       EngineVersion: '14.4'
       DBInstanceClass: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DBInstanceClass]
+      DBSnapshotIdentifier: !If [myRdsDbUseSnapshot, !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       AllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, StorageType]
       MultiAZ: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
-      DBName: !Ref myRdsDbDBName
-      KmsKeyId: !Ref myRdsDbKMSKey
+      DBName:
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Ref myRdsDbDBName
+        ]
+      KmsKeyId:
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Ref myRdsDbKMSKey
+        ]
       MasterUsername:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:username}}" ]]
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:username}}" ]]
+        ]
       MasterUserPassword:
-        !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:password}}" ]]
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myRdsDbRDSSecret, ":SecretString:password}}" ]]
+        ]
       DBSubnetGroupName: !Ref 'myRdsDbDBSubnetGroup'
       VPCSecurityGroups:
         - !Ref myRdsDbSecurityGroup
-      StorageEncrypted: true
+      StorageEncrypted:
+        !If [
+          myRdsDbUseSnapshot,
+          !Ref AWS::NoValue,
+          true
+        ]
       DeletionProtection: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionProtection]
 
   myRdsDbRDSSecret:
