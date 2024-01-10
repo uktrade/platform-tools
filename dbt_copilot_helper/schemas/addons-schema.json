@@ -288,6 +288,9 @@
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         },
+        "deletion-protection": {
+          "$ref": "#/definitions/deletion-protection"
+        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -314,6 +317,9 @@
         },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
+        },
+        "deletion-protection": {
+          "$ref": "#/definitions/deletion-protection"
         },
         "environments": {
           "type": "object",
@@ -424,6 +430,9 @@
         },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
+        },
+        "deletion-protection": {
+          "$ref": "#/definitions/deletion-protection"
         }
       },
       "additionalProperties": false
@@ -444,6 +453,9 @@
         },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
+        },
+        "deletion-protection": {
+          "$ref": "#/definitions/deletion-protection"
         }
       },
       "additionalProperties": false
@@ -554,6 +566,9 @@
         "Retain",
         "Snapshot"
       ]
+    },
+    "deletion-protection": {
+      "type": "boolean"
     },
     "environment-names": {
       "enum": [

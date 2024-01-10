@@ -47,6 +47,7 @@ Mappings:
       MaxAllocatedStorage: 126
       StorageType: gp3
       DeletionPolicy: Delete
+      DeletionProtection: False
 
 Conditions:
     myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
@@ -231,6 +232,7 @@ Resources:
       VPCSecurityGroups:
         - !Ref myRdsDbSecurityGroup
       StorageEncrypted: true
+      DeletionProtection: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionProtection]
 
   myRdsDbRDSSecret:
     Metadata:
