@@ -11,7 +11,7 @@
 #       some-setting: x
 #       another-setting: y
 #       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
-#       deletion-protection: X # true|false rds-postgres and aurora-postgres only
+#       deletion-protection: false # true|false rds-postgres and aurora-postgres only
 #
 #     production:  # you can override defaults on a per environment basis
 #       plan: some-other-plan  # Any of the keys defined in a addon plan can also be overridden
