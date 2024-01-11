@@ -47,6 +47,7 @@ Mappings:
       MaxAllocatedStorage: 126
       StorageType: gp3
       DeletionPolicy: Delete
+      DeletionProtection: False
       SnapshotIdentifier: test-snapshot-id
 
 Conditions:
@@ -262,6 +263,7 @@ Resources:
           !Ref AWS::NoValue,
           true
         ]
+      DeletionProtection: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionProtection]
 
   myRdsDbRDSSecret:
     Metadata:

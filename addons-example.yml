@@ -11,11 +11,13 @@
 #       some-setting: x
 #       another-setting: y
 #       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
+#       deletion-protection: false # true|false rds-postgres and aurora-postgres only
 #
 #     production:  # you can override defaults on a per environment basis
 #       plan: some-other-plan  # Any of the keys defined in a addon plan can also be overridden
 #       volume-size: 200
 #       deletion-policy: Retain
+#       deletion-protection: true
 
 
 ##### s3 bucket example:
@@ -90,8 +92,11 @@ my-rds-db:
   environments:
     default:
       plan: small-ha
-      deletion-policy: Retain # Delete|Retain|Snapshot
+      deletion-protection: false
 
+    production:
+      deletion-policy: Retain # Delete|Retain|Snapshot
+      deletion-protection: true
 
 ##### Aurora serverless v2 example:
 
@@ -104,8 +109,11 @@ my-aurora-db:
     default:
       min-capacity: 0.5 # AllowedValues: from 0.5 through 128
       max-capacity: 8   # AllowedValues: from 0.5 through 128
-      deletion-policy: Retain # Delete|Retain|Snapshot
+      deletion-protection: false
 
+    production:
+      deletion-policy: Retain # Delete|Retain|Snapshot
+      deletion-protection: true
 
 ##### Opensearch example:
 
