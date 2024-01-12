@@ -24,9 +24,16 @@ def svc():
 @svc.command()
 @click.option("--env", type=str, required=True)
 @click.option("--name", type=str, required=True)
-@click.option("--image-tag", type=str, required=False, show_default=True, default="latest")
+@click.option("--image-tag", type=str, required=False, show_default=True, default="tag-latest")
 def deploy(env, name, image_tag):
     """Deploy image tag to a service, defaults to image tagged latest."""
+
+    if image_tag == "latest":
+        click.secho(
+            f'Releasing tag "latest" is not supported. Use tag "tag-latest" instead.',
+            fg="red",
+        )
+        exit(1)
 
     deploy_command = f"copilot svc deploy --env {env} --name {name}"
 
@@ -35,8 +42,14 @@ def deploy(env, name, image_tag):
     if repository_name != "uktrade/copilot-bootstrap":
         image_tags = get_all_tags_for_image(image_tag, repository_name)
 
-        if image_tag == "latest":
-            image_tag = get_commit_tag_for_latest_image(image_tags)
+        if image_tag == "tag-latest":
+            image_tag = get_commit_tag_for_image(image_tags)
+            if not image_tag:
+                click.secho(
+                    'The image tagged "tag-latest" does not have a commit tag.',
+                    fg="red",
+                )
+                exit(1)
 
         deploy_command = f"IMAGE_TAG={image_tag} {deploy_command}"
 
@@ -67,16 +80,10 @@ def get_all_tags_for_image(image_tag_needle, repository_name):
         exit(1)
 
 
-def get_commit_tag_for_latest_image(image_tags_haystack):
-    try:
-        filtered = [tag for tag in image_tags_haystack if re.match("(commit-[a-f0-9]{7,32})", tag)]
-        return filtered[0]
-    except IndexError:
-        click.secho(
-            """The image tagged "latest" does not have a commit tag.""",
-            fg="red",
-        )
-        exit(1)
+def get_commit_tag_for_image(image_tags_haystack):
+    filtered = [tag for tag in image_tags_haystack if re.match("(commit-[a-f0-9]{7,32})", tag)]
+
+    return filtered[0] if filtered else None
 
 
 def validate_service_manifest_and_return_repository(name):
