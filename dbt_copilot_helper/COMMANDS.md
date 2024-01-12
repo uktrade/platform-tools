@@ -127,7 +127,7 @@ copilot-helper bootstrap make-config [-d <directory>]
 
 ```
 copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                         [--env <env>] [--svc <svc>] 
+                                         --env <env> [--svc <svc>] 
                                          [--overwrite] [--dry-run] 
 ```
 
