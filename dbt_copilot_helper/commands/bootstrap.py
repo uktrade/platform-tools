@@ -191,7 +191,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
 
-            click.echo("Transfering secrets ...")
+            click.echo("Transferring secrets ...")
             for app_secret_key, ssm_secret_key in secrets.items():
                 if secret_should_be_skipped(app_secret_key):
                     continue
@@ -208,7 +208,8 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
                     click.echo(
-                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'",
+                        f"Empty env var in paas app: {app_secret_key}; "
+                        f"SSM requires a non-empty string; setting to 'EMPTY'",
                     )
                 else:
                     param_value = env_vars[app_secret_key]
