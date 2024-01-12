@@ -29,11 +29,9 @@ def deploy(env, name, image_tag):
     """Deploy image tag to a service, defaults to image tagged latest."""
 
     if image_tag == "latest":
-        click.secho(
-            f'Releasing tag "latest" is not supported. Use tag "tag-latest" instead.',
-            fg="red",
+        abort_with_message(
+            f'Releasing tag "latest" is not supported. Use tag "tag-latest" instead.'
         )
-        exit(1)
 
     deploy_command = f"copilot svc deploy --env {env} --name {name}"
 
@@ -45,11 +43,7 @@ def deploy(env, name, image_tag):
         if image_tag == "tag-latest":
             image_tag = get_commit_tag_for_image(image_tags)
             if not image_tag:
-                click.secho(
-                    'The image tagged "tag-latest" does not have a commit tag.',
-                    fg="red",
-                )
-                exit(1)
+                abort_with_message('The image tagged "tag-latest" does not have a commit tag.')
 
         deploy_command = f"IMAGE_TAG={image_tag} {deploy_command}"
 
@@ -58,6 +52,14 @@ def deploy(env, name, image_tag):
         deploy_command,
         shell=True,
     )
+
+
+def abort_with_message(message):
+    click.secho(
+        message,
+        fg="red",
+    )
+    exit(1)
 
 
 def get_all_tags_for_image(image_tag_needle, repository_name):
@@ -91,15 +93,12 @@ def validate_service_manifest_and_return_repository(name):
     try:
         service_name_in_manifest = get_service_name_from_manifest(service_manifest)
         if service_name_in_manifest != name:
-            click.secho(
-                f"Service manifest for {name} has name attribute {service_name_in_manifest}",
-                fg="red",
+            abort_with_message(
+                f"Service manifest for {name} has name attribute {service_name_in_manifest}"
             )
-            exit(1)
     except FileNotFoundError:
-        click.secho(
-            f"Service manifest for {name} could not be found at path {service_manifest}", fg="red"
+        abort_with_message(
+            f"Service manifest for {name} could not be found at path {service_manifest}"
         )
-        exit(1)
 
     return get_repository_name_from_manifest(service_manifest)
