@@ -221,6 +221,10 @@ class TestMakeAddonCommand:
         actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
         assert actual == expected, f"The environment overrides did not have the expected content"
 
+        expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
+        actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
+        assert actual_svc_overrides_file == expected_svc_overrides_file
+
         copilot_dir = Path("copilot")
         actual_files = [
             Path(d, f).relative_to(copilot_dir)
@@ -229,8 +233,8 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 3
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
+            len(actual_files) == len(all_expected_files) + 4
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 2 override files"
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
