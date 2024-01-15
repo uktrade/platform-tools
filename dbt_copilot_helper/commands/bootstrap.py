@@ -47,14 +47,6 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
     return dict(env_vars)
 
 
-def _generate_svc_overrides(base_path, templates, name):
-    click.echo("\n>>> Generating service overrides\n")
-    overrides_path = base_path.joinpath(f"copilot/{name}/overrides")
-    overrides_path.mkdir(parents=True, exist_ok=True)
-    overrides_file = overrides_path.joinpath("cfn.patches.yml")
-    overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
-
-
 @click.group(chain=True, cls=ClickDocOptGroup)
 def bootstrap():
     check_copilot_helper_version_needs_update()
@@ -102,7 +94,6 @@ def make_config(directory="."):
         )
         name = service["name"]
         (base_path / f"copilot/{name}/addons/").mkdir(parents=True, exist_ok=True)
-        _generate_svc_overrides(base_path, templates, name)
 
         if "secrets_from" in service:
             # Copy secrets from the app referred to in the "secrets_from" key

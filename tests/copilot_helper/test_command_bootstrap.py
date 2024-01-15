@@ -115,6 +115,8 @@ def test_make_config(tmp_path):
     with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
         assert service.read() == test_service_manifest
 
+    assert os.path.exists(str(tmp_path / "copilot/test-service/addons"))
+
 
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.CloudFoundryClient", return_value=MagicMock)
