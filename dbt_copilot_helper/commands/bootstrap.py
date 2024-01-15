@@ -116,7 +116,7 @@ def make_config(directory="."):
 
 @bootstrap.command()
 @click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--env", help="Migrate secrets from a specific environment")
+@click.option("--env", required=True, help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option(
     "--overwrite",
@@ -145,7 +145,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     config_file = "bootstrap.yml"
     config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
 
-    if env and env not in config["environments"].keys():
+    if env not in config["environments"].keys():
         raise click.ClickException(f"{env} is not an environment in {config_file}")
 
     if svc and svc not in [service["name"] for service in config["services"]]:
@@ -182,7 +182,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
 
-            click.echo("Transfering secrets ...")
+            click.echo("Transferring secrets ...")
             for app_secret_key, ssm_secret_key in secrets.items():
                 if secret_should_be_skipped(app_secret_key):
                     continue
@@ -199,7 +199,8 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
                     click.echo(
-                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'",
+                        f"Empty env var in paas app: {app_secret_key}; "
+                        f"SSM requires a non-empty string; setting to 'EMPTY'",
                     )
                 else:
                     param_value = env_vars[app_secret_key]

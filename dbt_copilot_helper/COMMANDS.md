@@ -127,7 +127,7 @@ copilot-helper bootstrap make-config [-d <directory>]
 
 ```
 copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                         [--env <env>] [--svc <svc>] 
+                                         --env <env> [--svc <svc>] 
                                          [--overwrite] [--dry-run] 
 ```
 
@@ -854,7 +854,7 @@ copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>]
 
 - `--name <text>`
 
-- `--image-tag <text>` _Defaults to latest._
+- `--image-tag <text>` _Defaults to tag-latest._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
