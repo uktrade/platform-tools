@@ -854,7 +854,7 @@ copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>]
 
 - `--name <text>`
 
-- `--image-tag <text>` _Defaults to latest._
+- `--image-tag <text>` _Defaults to tag-latest._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
