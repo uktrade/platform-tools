@@ -163,6 +163,14 @@ def get_log_destination_arn():
     return destination_arns
 
 
+def _generate_svc_overrides(base_path, templates, name):
+    click.echo("\n>>> Generating service overrides\n")
+    overrides_path = base_path.joinpath(f"copilot/{name}/overrides")
+    overrides_path.mkdir(parents=True, exist_ok=True)
+    overrides_file = overrides_path.joinpath("cfn.patches.yml")
+    overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
+
+
 @copilot.command()
 @click.option("-d", "--directory", type=str, default=".")
 def make_addons(directory="."):
@@ -185,6 +193,11 @@ def make_addons(directory="."):
 
     _cleanup_old_files(config, output_dir, env_addons_path)
     custom_resources = _get_custom_resources()
+
+    svc_names = list_copilot_local_services()
+    base_path = Path(directory)
+    for svc_name in svc_names:
+        _generate_svc_overrides(base_path, templates, svc_name)
 
     services = []
     has_addons_parameters = False
