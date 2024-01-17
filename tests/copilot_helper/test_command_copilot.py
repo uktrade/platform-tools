@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from pathlib import PosixPath
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -12,6 +13,7 @@ from moto import mock_ssm
 from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
+from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from tests.copilot_helper.conftest import FIXTURES_DIR
 
@@ -61,6 +63,11 @@ s3:
   environments:
     development:
       bucket-name: my-bucket-dev
+"""
+
+WEB_SERVICE_CONTENTS = """
+name: web
+type: Load Balanced Web Service
 """
 
 ADDON_CONFIG_FILENAME = "addons.yml"
@@ -422,7 +429,10 @@ invalid-entry:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -450,7 +460,10 @@ invalid-environment:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -486,7 +499,10 @@ invalid-entry:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -647,6 +663,7 @@ invalid-entry:
         for service in services:
             fakefs.create_file(
                 f"copilot/{service}/manifest.yml",
+                contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
             )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -698,5 +715,31 @@ def create_test_manifests(addon_file_contents, fakefs):
         ADDON_CONFIG_FILENAME,
         contents=" ".join(addon_file_contents),
     )
-    fakefs.create_file("copilot/web/manifest.yml")
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+    )
     fakefs.create_file("copilot/environments/development/manifest.yml")
+
+
+@pytest.mark.parametrize(
+    "service_type, expected",
+    [
+        ("Load Balanced Web Service", True),
+        ("Backend Service", True),
+        ("Request-Driven Web Service", True),
+        ("Static Site", True),
+        ("Worker Service", True),
+        ("Scheduled Job", False),
+    ],
+)
+def test_is_service(fakefs, service_type, expected):
+    manifest_contents = f"""
+    type: {service_type}
+    """
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(manifest_contents))]),
+    )
+
+    assert is_service(PosixPath("copilot/web/manifest.yml")) == expected
