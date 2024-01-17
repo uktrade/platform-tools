@@ -518,7 +518,10 @@ invalid-entry:
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -743,3 +746,14 @@ def test_is_service(fakefs, service_type, expected):
     )
 
     assert is_service(PosixPath("copilot/web/manifest.yml")) == expected
+
+
+def test_is_service_empty_manifest(fakefs, capfd):
+    file_path = "copilot/web/manifest.yml"
+    fakefs.create_file(file_path)
+
+    with pytest.raises(SystemExit) as excinfo:
+        is_service(PosixPath(file_path))
+
+    assert excinfo.value.code == 1
+    assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out

@@ -44,8 +44,11 @@ def list_copilot_local_environments():
 def is_service(path: PosixPath) -> bool:
     with open(path) as manifest_file:
         data = yaml.safe_load(manifest_file)
-        if not data:
-            return False
+        if not data or not data.get("type"):
+            click.echo(
+                click.style(f"No type defined in manifest file {str(path)}; exiting", fg="red")
+            )
+            exit(1)
 
         return data.get("type") in SERVICE_TYPES
 
