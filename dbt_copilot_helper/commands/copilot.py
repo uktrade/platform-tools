@@ -5,6 +5,7 @@ import json
 from os import listdir
 from os.path import isfile
 from pathlib import Path
+from pathlib import PosixPath
 
 import boto3
 import click
@@ -25,6 +26,14 @@ PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
 WAF_ACL_ARN_KEY = "waf-acl-arn"
 
+SERVICE_TYPES = [
+    "Load Balanced Web Service",
+    "Backend Service",
+    "Request-Driven Web Service",
+    "Static Site",
+    "Worker Service",
+]
+
 
 def list_copilot_local_environments():
     return [
@@ -32,8 +41,24 @@ def list_copilot_local_environments():
     ]
 
 
+def is_service(path: PosixPath) -> bool:
+    with open(path) as manifest_file:
+        data = yaml.safe_load(manifest_file)
+        if not data or not data.get("type"):
+            click.echo(
+                click.style(f"No type defined in manifest file {str(path)}; exiting", fg="red")
+            )
+            exit(1)
+
+        return data.get("type") in SERVICE_TYPES
+
+
 def list_copilot_local_services():
-    return [path.parent.parts[-1] for path in Path("./copilot/").glob("*/manifest.yml")]
+    return [
+        path.parent.parts[-1]
+        for path in Path("./copilot/").glob("*/manifest.yml")
+        if is_service(path)
+    ]
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
