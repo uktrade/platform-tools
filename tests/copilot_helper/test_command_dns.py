@@ -229,6 +229,45 @@ def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_p
         assert new_cert_arn == actual_cert_arn
 
 
+@patch(
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+@patch("click.confirm")
+def test_create_cert_with_existing_record_sets_creates_a_cert(
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
+    cert_name = "_d930b28be6c5927595552b219965053e.test.1234."
+
+    resp = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    zone_id = resp["HostedZone"]["Id"]
+
+    route53_session.change_resource_record_sets(
+        HostedZoneId=zone_id,
+        ChangeBatch={
+            "Changes": [
+                {
+                    "Action": "CREATE",
+                    "ResourceRecordSet": {
+                        "Name": cert_name,
+                        "Type": "CNAME",
+                        "TTL": 300,
+                        "ResourceRecords": [
+                            {
+                                "Value": "_c9edd76ee4a0e2a74388032f3861cc50.ykybfrwcxw.acm-validations.aws."
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
+    )
+
+    assert create_cert(acm_session, route53_session, "test.1234", zone_id).startswith(
+        "arn:aws:acm:"
+    )
+
+
 def test_add_records(route53_session):
     response = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 

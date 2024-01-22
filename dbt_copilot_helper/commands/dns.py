@@ -117,24 +117,34 @@ def _get_existing_cert_if_one_exists_and_cleanup_bad_certs(client, domain):
 
 
 def _create_resource_records(cert_record, domain_client, zone_id):
-    domain_client.change_resource_record_sets(
-        HostedZoneId=zone_id,
-        ChangeBatch={
-            "Changes": [
-                {
-                    "Action": "CREATE",
-                    "ResourceRecordSet": {
-                        "Name": cert_record["Name"],
-                        "Type": cert_record["Type"],
-                        "TTL": 300,
-                        "ResourceRecords": [
-                            {"Value": cert_record["Value"]},
-                        ],
+    resource_records = domain_client.list_resource_record_sets(HostedZoneId=zone_id)[
+        "ResourceRecordSets"
+    ]
+
+    exists = False
+    for record in resource_records:
+        if record["Type"] == cert_record["Type"] and record["Name"] == cert_record["Name"]:
+            exists = True
+
+    if not exists:
+        domain_client.change_resource_record_sets(
+            HostedZoneId=zone_id,
+            ChangeBatch={
+                "Changes": [
+                    {
+                        "Action": "CREATE",
+                        "ResourceRecordSet": {
+                            "Name": cert_record["Name"],
+                            "Type": cert_record["Type"],
+                            "TTL": 300,
+                            "ResourceRecords": [
+                                {"Value": cert_record["Value"]},
+                            ],
+                        },
                     },
-                },
-            ],
-        },
-    )
+                ],
+            },
+        )
 
 
 def _certs_for_domain(client, domain):
