@@ -46,6 +46,7 @@ Mappings:
       DBMaxCapacity: {{ config.max_capacity }}
       DeletionPolicy: {{ config.deletion_policy }}
       SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
+      DeletionProtection: {{ config.deletion_protection if config.deletion_protection else false }}
 {%- endfor %}
 
 Conditions:
@@ -179,6 +180,7 @@ Resources:
         MaxCapacity: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DBMaxCapacity]
       SnapshotIdentifier: !If [{{ addon_config.prefix }}UseSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], !Ref AWS::NoValue]
       StorageEncrypted: true
+      DeletionProtection: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionProtection]
 
   {{ addon_config.prefix }}DBWriterInstance:
     Metadata:

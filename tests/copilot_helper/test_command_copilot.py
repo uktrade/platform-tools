@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from pathlib import PosixPath
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -12,6 +13,7 @@ from moto import mock_ssm
 from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
+from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from tests.copilot_helper.conftest import FIXTURES_DIR
 
@@ -61,6 +63,11 @@ s3:
   environments:
     development:
       bucket-name: my-bucket-dev
+"""
+
+WEB_SERVICE_CONTENTS = """
+name: web
+type: Load Balanced Web Service
 """
 
 ADDON_CONFIG_FILENAME = "addons.yml"
@@ -221,6 +228,10 @@ class TestMakeAddonCommand:
         actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
         assert actual == expected, f"The environment overrides did not have the expected content"
 
+        expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
+        actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
+        assert actual_svc_overrides_file == expected_svc_overrides_file
+
         copilot_dir = Path("copilot")
         actual_files = [
             Path(d, f).relative_to(copilot_dir)
@@ -229,8 +240,8 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 3
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml and override files"
+            len(actual_files) == len(all_expected_files) + 4
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 2 override files"
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
@@ -418,7 +429,10 @@ invalid-entry:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -446,7 +460,10 @@ invalid-environment:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -482,7 +499,10 @@ invalid-entry:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -498,7 +518,10 @@ invalid-entry:
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(ADDON_CONFIG_FILENAME)
 
-        fakefs.create_file("copilot/web/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -643,6 +666,7 @@ invalid-entry:
         for service in services:
             fakefs.create_file(
                 f"copilot/{service}/manifest.yml",
+                contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
             )
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -694,5 +718,42 @@ def create_test_manifests(addon_file_contents, fakefs):
         ADDON_CONFIG_FILENAME,
         contents=" ".join(addon_file_contents),
     )
-    fakefs.create_file("copilot/web/manifest.yml")
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+    )
     fakefs.create_file("copilot/environments/development/manifest.yml")
+
+
+@pytest.mark.parametrize(
+    "service_type, expected",
+    [
+        ("Load Balanced Web Service", True),
+        ("Backend Service", True),
+        ("Request-Driven Web Service", True),
+        ("Static Site", True),
+        ("Worker Service", True),
+        ("Scheduled Job", False),
+    ],
+)
+def test_is_service(fakefs, service_type, expected):
+    manifest_contents = f"""
+    type: {service_type}
+    """
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(manifest_contents))]),
+    )
+
+    assert is_service(PosixPath("copilot/web/manifest.yml")) == expected
+
+
+def test_is_service_empty_manifest(fakefs, capfd):
+    file_path = "copilot/web/manifest.yml"
+    fakefs.create_file(file_path)
+
+    with pytest.raises(SystemExit) as excinfo:
+        is_service(PosixPath(file_path))
+
+    assert excinfo.value.code == 1
+    assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out

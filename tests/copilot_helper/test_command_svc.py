@@ -54,18 +54,18 @@ def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
+def test_svc_deploy_with_tag_latest_deploys_commit_tag_of_tag_latest_image(
     subprocess_call, mock_boto_client
 ):
-    """Test that given the image tag latest, copilot svc deploy is called with
-    the unique commit tag of the image currently tagged latest."""
+    """Test that given the image tag tag-latest, copilot svc deploy is called
+    with the unique commit tag of the image currently tagged tag-latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
 
     CliRunner().invoke(
         deploy,
-        ["--env", env, "--name", name, "--image-tag", "latest"],
+        ["--env", env, "--name", name, "--image-tag", "tag-latest"],
     )
 
     mock_boto_client.describe_images.assert_called_once_with(
@@ -81,11 +81,11 @@ def test_svc_deploy_with_latest_deploys_commit_tag_of_latest_image(
 
 @patch("boto3.client")
 @patch("subprocess.call")
-def test_svc_deploy_with__no_image_tag_deploys_commit_tag_of_latest_image(
+def test_svc_deploy_with_no_image_tag_deploys_commit_tag_of_tag_latest_image(
     subprocess_call, mock_boto_client
 ):
     """Test that given no image tag, copilot svc deploy is called with the
-    unique tag of the image currently tagged latest."""
+    unique tag of the image currently tagged tag-latest."""
 
     branch_name, commit_hash, env, name = set_up_test_variables()
     mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
@@ -125,7 +125,7 @@ def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(mock_boto_clie
 
 
 @patch("boto3.client")
-def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_client):
+def test_svc_deploy_with_tag_latest_but_no_commit_tag_fails_with_message(mock_boto_client):
     """Test that given the image tag latest, where the image tagged latest has
     no commit tag, it fails with a helpful message."""
 
@@ -135,11 +135,27 @@ def test_svc_deploy_with_latest_but_no_commit_tag_fails_with_message(mock_boto_c
 
     result = CliRunner().invoke(
         deploy,
+        ["--env", env, "--name", name, "--image-tag", "tag-latest"],
+    )
+
+    assert result.exit_code == 1
+    assert """The image tagged "tag-latest" does not have a commit tag.""" in result.stdout
+
+
+@patch("boto3.client")
+def test_svc_deploy_with_latest_fails_with_message(mock_boto_client):
+    """Test that given the image tag latest, it fails with a helpful message."""
+
+    branch_name, commit_hash, env, name = set_up_test_variables()
+    mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
+
+    result = CliRunner().invoke(
+        deploy,
         ["--env", env, "--name", name, "--image-tag", "latest"],
     )
 
     assert result.exit_code == 1
-    assert """The image tagged "latest" does not have a commit tag.""" in result.stdout
+    assert 'Releasing tag "latest" is not supported. Use tag "tag-latest" instead.' in result.stdout
 
 
 @patch("boto3.client")
@@ -247,7 +263,7 @@ def mock_describe_images_return_tags(branch_name, commit_hash, mock_boto_client)
     image_tags = [
         f"commit-{commit_hash}",
         f"branch-{branch_name}",
-        "latest",
+        "tag-latest",
     ]
     if not commit_hash:
         del image_tags[0]

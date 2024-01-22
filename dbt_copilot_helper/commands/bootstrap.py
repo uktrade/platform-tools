@@ -47,14 +47,6 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
     return dict(env_vars)
 
 
-def _generate_svc_overrides(base_path, templates, name):
-    click.echo("\n>>> Generating service overrides\n")
-    overrides_path = base_path.joinpath(f"copilot/{name}/overrides")
-    overrides_path.mkdir(parents=True, exist_ok=True)
-    overrides_file = overrides_path.joinpath("cfn.patches.yml")
-    overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
-
-
 @click.group(chain=True, cls=ClickDocOptGroup)
 def bootstrap():
     check_copilot_helper_version_needs_update()
@@ -102,7 +94,6 @@ def make_config(directory="."):
         )
         name = service["name"]
         (base_path / f"copilot/{name}/addons/").mkdir(parents=True, exist_ok=True)
-        _generate_svc_overrides(base_path, templates, name)
 
         if "secrets_from" in service:
             # Copy secrets from the app referred to in the "secrets_from" key
@@ -125,7 +116,7 @@ def make_config(directory="."):
 
 @bootstrap.command()
 @click.option("--project-profile", required=True, help="AWS account profile name")
-@click.option("--env", help="Migrate secrets from a specific environment")
+@click.option("--env", required=True, help="Migrate secrets from a specific environment")
 @click.option("--svc", help="Migrate secrets from a specific service")
 @click.option(
     "--overwrite",
@@ -154,7 +145,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     config_file = "bootstrap.yml"
     config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
 
-    if env and env not in config["environments"].keys():
+    if env not in config["environments"].keys():
         raise click.ClickException(f"{env} is not an environment in {config_file}")
 
     if svc and svc not in [service["name"] for service in config["services"]]:
@@ -191,7 +182,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
             click.echo(f"getting env vars for from {environment['paas']}")
             env_vars = get_paas_env_vars(cf_client, environment["paas"])
 
-            click.echo("Transfering secrets ...")
+            click.echo("Transferring secrets ...")
             for app_secret_key, ssm_secret_key in secrets.items():
                 if secret_should_be_skipped(app_secret_key):
                     continue
@@ -208,7 +199,8 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     # FOUND BUT EMPTY STRING
                     param_value = "EMPTY"
                     click.echo(
-                        f"Empty env var in paas app: {app_secret_key}; SSM requires a non-empty string; setting to 'EMPTY'",
+                        f"Empty env var in paas app: {app_secret_key}; "
+                        f"SSM requires a non-empty string; setting to 'EMPTY'",
                     )
                 else:
                     param_value = env_vars[app_secret_key]
