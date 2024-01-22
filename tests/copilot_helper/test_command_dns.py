@@ -237,8 +237,6 @@ def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_p
 def test_create_cert_with_existing_record_sets_creates_a_cert(
     _wait_for_certificate_validation, mock_click, acm_session, route53_session
 ):
-    cert_name = "_d930b28be6c5927595552b219965053e.test.1234."
-
     resp = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
     zone_id = resp["HostedZone"]["Id"]
 
@@ -249,7 +247,7 @@ def test_create_cert_with_existing_record_sets_creates_a_cert(
                 {
                     "Action": "CREATE",
                     "ResourceRecordSet": {
-                        "Name": cert_name,
+                        "Name": "_d930b28be6c5927595552b219965053e.test.1234.",
                         "Type": "CNAME",
                         "TTL": 300,
                         "ResourceRecords": [
