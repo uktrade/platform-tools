@@ -28,8 +28,10 @@
 - [copilot-helper domain](#copilot-helper-domain)
 - [copilot-helper domain configure](#copilot-helper-domain-configure)
 - [copilot-helper domain assign](#copilot-helper-domain-assign)
-- [copilot-helper domain cdn](#copilot-helper-domain-cdn)
-- [copilot-helper domain cdn-list](#copilot-helper-domain-cdn-list)
+- [copilot-helper cdn](#copilot-helper-cdn)
+- [copilot-helper cdn assign](#copilot-helper-cdn-assign)
+- [copilot-helper cdn delete](#copilot-helper-cdn-delete)
+- [copilot-helper cdn list](#copilot-helper-cdn-list)
 - [copilot-helper environment](#copilot-helper-environment)
 - [copilot-helper environment offline](#copilot-helper-environment-offline)
 - [copilot-helper environment online](#copilot-helper-environment-online)
@@ -59,6 +61,7 @@ copilot-helper <command> [--version]
 ## Commands
 
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
+- [`cdn` ↪](#copilot-helper-cdn)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
 - [`codebase` ↪](#copilot-helper-codebase)
 - [`codebuild` ↪](#copilot-helper-codebuild)
@@ -648,7 +651,7 @@ copilot-helper copilot get-env-secrets <app> <env>
 ## Usage
 
 ```
-copilot-helper domain (configure|assign|cdn|cdn-list) 
+copilot-helper domain (configure|assign) 
 ```
 
 ## Options
@@ -659,8 +662,6 @@ copilot-helper domain (configure|assign|cdn|cdn-list)
 ## Commands
 
 - [`assign` ↪](#copilot-helper-domain-assign)
-- [`cdn` ↪](#copilot-helper-domain-cdn)
-- [`cdn-list` ↪](#copilot-helper-domain-cdn-list)
 - [`configure` ↪](#copilot-helper-domain-configure)
 
 # copilot-helper domain configure
@@ -714,17 +715,38 @@ copilot-helper domain assign --app <app> --env <env> --svc <svc>
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# copilot-helper domain cdn
+# copilot-helper cdn
 
-[↩ Parent](#copilot-helper-domain)
+[↩ Parent](#copilot-helper)
+
+## Usage
+
+```
+copilot-helper cdn (assign|delete|list) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`assign` ↪](#copilot-helper-cdn-assign)
+- [`delete` ↪](#copilot-helper-cdn-delete)
+- [`list` ↪](#copilot-helper-cdn-list)
+
+# copilot-helper cdn assign
+
+[↩ Parent](#copilot-helper-cdn)
 
     Assigns a CDN domain name to application loadbalancer.
 
 ## Usage
 
 ```
-copilot-helper domain cdn --project-profile <project_profile> --env <env> 
-                          --app <app> --svc <svc> [--delete] 
+copilot-helper cdn assign --project-profile <project_profile> --env <env> 
+                          --app <app> --svc <svc> 
 ```
 
 ## Options
@@ -737,22 +759,46 @@ copilot-helper domain cdn --project-profile <project_profile> --env <env>
   - Application Name
 - `--svc <text>`
   - Service Name
-- `--delete <boolean>` _Defaults to False._
-  - Delete the CDN domain
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# copilot-helper domain cdn-list
+# copilot-helper cdn delete
 
-[↩ Parent](#copilot-helper-domain)
+[↩ Parent](#copilot-helper-cdn)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+copilot-helper cdn delete --project-profile <project_profile> --env <env> 
+                          --app <app> --svc <svc> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper cdn list
+
+[↩ Parent](#copilot-helper-cdn)
 
     List CDN domain name attached to application loadbalancer.
 
 ## Usage
 
 ```
-copilot-helper domain cdn-list --project-profile <project_profile> 
-                               --env <env> --app <app> --svc <svc> 
+copilot-helper cdn list --project-profile <project_profile> --env <env> 
+                        --app <app> --svc <svc> 
 ```
 
 ## Options

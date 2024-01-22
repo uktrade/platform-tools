@@ -17,7 +17,8 @@ from moto import mock_sts
 from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
-from dbt_copilot_helper.commands.dns import cdn
+from dbt_copilot_helper.commands.dns import cdn_assign
+from dbt_copilot_helper.commands.dns import cdn_delete
 from dbt_copilot_helper.commands.dns import cdn_list
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
@@ -790,7 +791,7 @@ def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
     )
     runner = CliRunner()
     result = runner.invoke(
-        cdn,
+        cdn_assign,
         [
             "--project-profile",
             "foo",
@@ -870,7 +871,7 @@ def test_cdn_add(alias_session, aws_credentials):
     )
     runner = CliRunner()
     result = runner.invoke(
-        cdn,
+        cdn_assign,
         [
             "--project-profile",
             "foo",
@@ -948,7 +949,7 @@ def test_cdn_delete(alias_session, aws_credentials):
     )
     runner = CliRunner()
     result = runner.invoke(
-        cdn,
+        cdn_delete,
         [
             "--project-profile",
             "foo",
@@ -958,7 +959,7 @@ def test_cdn_delete(alias_session, aws_credentials):
             HYPHENATED_APPLICATION_NAME,
             "--svc",
             ALPHANUMERIC_SERVICE_NAME,
-            "--delete",
+            # "--delete",
         ],
         input="web.dev.uktrade.digital\ny\n",
     )
