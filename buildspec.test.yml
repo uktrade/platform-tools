@@ -4,8 +4,9 @@ phases:
   install:
     commands:
       - echo Setting local Python versions
-      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' | sort -rV > .python-version
+      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
       - echo Installing dependencies
+      - python -m ensurepip --default-pip
       - pip install poetry
       - poetry install
 
