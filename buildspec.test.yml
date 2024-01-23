@@ -6,8 +6,6 @@ phases:
       - echo Setting local Python versions
       - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' > .python-version
       - echo Installing dependencies
-      - pip install --upgrade pip
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | s
       - pip install poetry
       - poetry install
 
