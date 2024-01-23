@@ -1,0 +1,8 @@
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  ennvironments: # Misspelled key
+    development:
+      bucket-name: my-bucket-dev

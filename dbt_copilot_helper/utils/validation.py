@@ -1,7 +1,10 @@
 import re
+from pathlib import Path
 
+import yaml
 from schema import Optional
 from schema import Or
+from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
@@ -15,6 +18,26 @@ def validate_string(regex_pattern):
         return string
 
     return validator
+
+
+def validate_addons(addons_file: Path | str):
+    """
+    Validate the addons file and return a dictionary of addon: error message.
+    """
+    schema = S3_SCHEMA
+
+    with open(addons_file) as fh:
+        addons = yaml.safe_load(fh)
+
+    errors = {}
+
+    for k, addon in addons.items():
+        try:
+            schema.validate(addon)
+        except SchemaError as ex:
+            errors[k] = ex.code
+
+    return errors
 
 
 range_validator = validate_string(r"^\d+-\d+$")
@@ -141,4 +164,30 @@ PIPELINES_SCHEMA = Schema(
             },
         ],
     },
+)
+
+S3_SCHEMA = Schema(
+    {
+        "type": "s3",
+        Optional("bucket-name"): Regex(
+            r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+        ),
+        Optional("readonly"): bool,
+        Optional("deletion-policy"): Or("Delete", "Retain", "Snapshot"),
+        Optional("services"): [str],
+        Optional("environments"): {
+            str: {
+                Optional("bucket-name"): Regex(
+                    r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+                ),
+                Optional("deletion-policy"): Or("Delete", "Retain", "Snapshot"),
+            }
+        },
+        Optional("objects"): [
+            {
+                "key": str,
+                Optional("body"): str,
+            }
+        ],
+    }
 )

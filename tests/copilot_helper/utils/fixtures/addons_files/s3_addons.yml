@@ -1,0 +1,22 @@
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket-name: my-bucket-dev
+
+my-s3-bucket-with-an-object:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket-name: my-bucket-dev
+  objects:
+    - key: healthcheck.txt
+      body: |
+        HEALTHCHECK WORKS!
+
