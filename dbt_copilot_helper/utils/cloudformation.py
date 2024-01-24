@@ -17,7 +17,7 @@ def get_lint_result(path: str, ignore_path: str = None, ignore_checks: str = Non
     return run(command, capture_output=True)
 
 
-def get_static_result(path: str, ignore_path: str = None):
+def get_check_security_result(path: str, ignore_path: str = None):
     matching_files = glob.glob(path)
     command = ["checkov", "--quiet", "--framework", "cloudformation"]
 
@@ -28,7 +28,7 @@ def get_static_result(path: str, ignore_path: str = None):
         for ignored_file in glob.glob(ignore_path):
             command.extend(["--skip-path", ignore_path])
 
-    click.secho(f"\n>>> Running static analysis check", fg="yellow")
+    click.secho(f"\n>>> Running security check", fg="yellow")
     click.secho(f"""    {" ".join(command)}\n""", fg="yellow")
 
     return run(command, capture_output=True)

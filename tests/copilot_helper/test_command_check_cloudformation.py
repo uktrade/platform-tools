@@ -66,8 +66,9 @@ def test_check_cloudformation_with_no_args_summarises_all_successes(
 
     assert ">>> Running all checks" in result.output
     assert ">>> Running lint check" in result.output
+    assert ">>> Running security check" in result.output
     assert (
-        "The CloudFormation templates passed the following checks:\n  - lint\n  - static"
+        "The CloudFormation templates passed the following checks:\n  - lint\n  - check-security"
         in result.output
     )
 
@@ -85,7 +86,7 @@ def test_check_cloudformation_with_no_args_summarises_all_failures(
     )
 
 
-@pytest.mark.parametrize("check_type", ["lint", "static"])
+@pytest.mark.parametrize("check_type", ["lint", "check-security"])
 def test_check_passed(app_with_valid_cf_template, copilot_directory: Path, check_type) -> None:
     result = CliRunner().invoke(
         check_cloudformation_command, args=[check_type, "--directory", copilot_directory]
@@ -110,11 +111,14 @@ def test_linting_check_failed(app_with_invalid_cf_template, copilot_directory: P
     )
 
 
-def test_static_check_failed(app_with_insecure_cf_template, copilot_directory: Path) -> None:
+def test_security_check_failed(app_with_insecure_cf_template, copilot_directory: Path) -> None:
     result = CliRunner().invoke(
-        check_cloudformation_command, args=["static", "--directory", copilot_directory]
+        check_cloudformation_command, args=["check-security", "--directory", copilot_directory]
     )
 
     assert result.exit_code != 0
-    assert "The CloudFormation templates failed the following checks:\n  - static" in result.output
+    assert (
+        "The CloudFormation templates failed the following checks:\n  - check-security"
+        in result.output
+    )
     assert "Ensure RDS database has IAM authentication enabled" in result.output
