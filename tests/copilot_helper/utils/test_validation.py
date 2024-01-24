@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from schema import SchemaError
 
+from dbt_copilot_helper.utils.validation import int_between
 from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.validation import validate_string
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
@@ -36,7 +37,7 @@ def addons_fixtures_path():
 
 @pytest.mark.parametrize(
     "addons_file",
-    ["s3_addons.yml", "aurora_addons.yml"],
+    ["s3_addons.yml", "aurora_addons.yml", "rds_addons.yml"],
 )
 def test_validate_addons_success(addons_fixtures_path, addons_file):
     errors = validate_addons(addons_fixtures_path / addons_file)
@@ -47,26 +48,62 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
 @pytest.mark.parametrize(
     "addons_file, exp_error",
     [
-        ("s3_addons_bad_property.yml", {"my-s3-bucket": r"Wrong key 'ennvironments' in"}),
         (
-            "s3_addons_bad_value.yml",
+            "s3_addons_bad_data.yml",
             {
-                "my-s3-bucket-with-an-object": r"Key 'services' error:\s*33 should be instance of 'list'"
+                "my-s3-bucket-1": r"bucket-name.*does not match 'xn--whatever",
+                "my-s3-bucket-2": r"readonly.*should be instance of 'bool'",
+                "my-s3-bucket-3": r"deletion-policy.*does not match 'Retrain'",
+                "my-s3-bucket-4": r"services.*should be instance of 'list'",
+                "my-s3-bucket-5": r"services.*should be instance of 'str'",
+                "my-s3-bucket-6": r"environments.*dev.*bucket-name.*does not match 'banana-s3alias'",
+                "my-s3-bucket-7": r"environments.*dev.*deletion-policy.*does not match False",
+                "my-s3-bucket-8": r"objects.*should be instance of 'list'",
+                "my-s3-bucket-9": r"objects.*key.*should be instance of 'str'",
+                "my-s3-bucket-10": r"objects.*Missing key: 'key'",
+                "my-s3-bucket-11": r"objects.*body.*should be instance of 'str'",
+                "my-s3-bucket-12": r"Wrong key 'unknown1'",
+                "my-s3-bucket-13": r"objects.*Wrong key 'unknown2'",
+                "my-s3-bucket-14": r"environments.*Wrong key 'unknown3'",
             },
         ),
         (
-            "s3_addons_bad_property_and_value.yml",
+            "aurora_addons_bad_data.yml",
             {
-                "my-s3-bucket": r"Wrong key 'ennvironments' in",
-                "my-s3-bucket-with-an-object": r"Key 'services' error:\s*33 should be instance of 'list'",
+                "my-aurora-db": r"Wrong key 'im-invalid' in",
+                "my-aurora-db-2": r"did not validate 'three'",
+                "my-aurora-db-3": r"did not validate 'seven'",
+                "my-aurora-db-4": r"Key 'environments'.*Key 'default'.*Wrong key 'man-capacity' in",
+                "my-aurora-db-5": r"Missing key: 'version'",
+                "my-aurora-db-6": r"'yep' should be instance of 'bool'",
+            },
+        ),
+        (
+            "rds_addons_bad_data.yml",
+            {
+                "my-rds-db-1": r"Wrong key 'im-invalid' in",
+                "my-rds-db-2": r"Missing key: 'version'",
+                "my-rds-db-3": r"did not validate 77",
+                "my-rds-db-4": r"'whatever' should be instance of 'bool'",
+                "my-rds-db-5": r"'environments'.*'default'.*'plan'.*does not match 'cunning'",
+                "my-rds-db-6": r"'environments'.*'default'.*'instance'.*does not match 'a-wee-little-one'",
+                "my-rds-db-7a": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
+                "my-rds-db-7b": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
+                "my-rds-db-7c": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
+                "my-rds-db-8a": r"environments'.*'default'.*'replicas'.*should be an int between 0 and 5",
+                "my-rds-db-8b": r"environments'.*'default'.*'replicas'.*should be an int between 0 and 5",
+                "my-rds-db-9": r"'environments'.*'default'.*snapshot-id.*False should be instance of 'str'",
+                "my-rds-db-10": r"'environments'.*'default'.*deletion-policy.*'Snapshot' does not match 'None'",
+                "my-rds-db-11": r"'environments'.*'default'.*deletion-protection.*12 should be instance of 'bool'",
             },
         ),
     ],
 )
 def test_validate_addons_failure(addons_fixtures_path, addons_file, exp_error):
     error_map = validate_addons(addons_fixtures_path / addons_file)
-    for entry, error in error_map.items():
-        assert bool(re.search(exp_error[entry], error))
+    for entry, error in exp_error.items():
+        assert entry in error_map
+        assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
 def test_validate_addons_unsupported_addon(addons_fixtures_path):
@@ -81,3 +118,17 @@ def test_validate_addons_missing_type(addons_fixtures_path):
         "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
     )
     assert "Missing addon type in addon 'my-empty-type-addon'" == error_map["my-empty-type-addon"]
+
+
+@pytest.mark.parametrize(
+    "lower, upper, value, expected",
+    [
+        (1, 9, 5, True),
+        (1, 9, 1, True),
+        (1, 9, 9, True),
+        (1, 9, -1, False),
+        (1, 9, 10, False),
+    ],
+)
+def test_between(lower, upper, value, expected):
+    assert int_between(lower, upper)(value) == expected

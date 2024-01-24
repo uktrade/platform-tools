@@ -1,0 +1,56 @@
+##### Aurora serverless v2 example:
+
+my-aurora-db: # Invalid top level parameter
+  type: aurora-postgres
+  version: 14.4
+  im-invalid: 3
+
+  environments:
+    default:
+      min-capacity: 0.5
+      max-capacity: 8
+      snapshot-id: ""
+      deletion-protection: false
+
+    development:
+      snapshot-id: my-recent-snapshot
+      deletion-protection: true
+
+my-aurora-db-2: # Wrong data type for min-capacity
+  type: aurora-postgres
+  version: 14.4
+
+  environments:
+    default:
+      min-capacity: three
+
+my-aurora-db-3: # Wrong data type for max-capacity
+  type: aurora-postgres
+  version: 14.4
+
+  environments:
+    default:
+      max-capacity: seven
+
+my-aurora-db-4: # Misspelled environment parameter
+  type: aurora-postgres
+  version: 14.4
+
+  environments:
+    default:
+      man-capacity: 0.5
+
+my-aurora-db-5: # Missing version
+  type: aurora-postgres
+
+my-aurora-db-6: # Invalid boolean in deletion-protection
+  type: aurora-postgres
+  version: 14.4
+
+  environments:
+    default:
+      min-capacity: 0.5
+      max-capacity: 8
+
+    development:
+      deletion-protection: yep

@@ -21,11 +21,15 @@ def validate_string(regex_pattern):
     return validator
 
 
+def validate_s3_bucket_name(name):
+    return False
+
+
 def validate_addons(addons_file: Path | str):
     """
     Validate the addons file and return a dictionary of addon: error message.
     """
-    schemas = {"s3": S3_SCHEMA, "aurora-postgres": AURORA_SCHEMA}
+    schemas = {"s3": S3_SCHEMA, "aurora-postgres": AURORA_SCHEMA, "rds-postgres": RDS_SCHEMA}
 
     with open(addons_file) as fh:
         addons = yaml.safe_load(fh)
@@ -46,9 +50,18 @@ def validate_addons(addons_file: Path | str):
                 continue
             schema.validate(addon)
         except SchemaError as ex:
-            errors[addon_name] = ex.code
+            errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
     return errors
+
+
+def int_between(lower, upper):
+    def is_between(value):
+        if isinstance(value, int) and lower <= value <= upper:
+            return True
+        raise SchemaError(f"should be an int between {lower} and {upper}")
+
+    return is_between
 
 
 range_validator = validate_string(r"^\d+-\d+$")
@@ -180,6 +193,12 @@ PIPELINES_SCHEMA = Schema(
 NUMBER = Or(int, float)
 DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
 DELETION_PROTECTION = bool
+RDS_PLANS = Or(
+    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "xlarge", "xlarge-ha"
+)
+RDS_INSTANCE_TYPES = Or(
+    "db.m5.2xlarge", "db.m5.4xlarge", "db.m5.large", "db.t3.micro", "db.t3.small"
+)
 
 S3_SCHEMA = Schema(
     {
@@ -217,6 +236,32 @@ AURORA_SCHEMA = Schema(
             str: {
                 Optional("min-capacity"): And(NUMBER, lambda n: n > 0),
                 Optional("max-capacity"): And(NUMBER, lambda n: n > 0.5),
+                Optional("snapshot-id"): str,
+                Optional("deletion-policy"): DELETION_POLICY,
+                Optional("deletion-protection"): DELETION_PROTECTION,
+            }
+        },
+        Optional("objects"): [
+            {
+                "key": str,
+                Optional("body"): str,
+            }
+        ],
+    }
+)
+
+RDS_SCHEMA = Schema(
+    {
+        "type": "rds-postgres",
+        "version": NUMBER,
+        Optional("deletion-policy"): DELETION_POLICY,
+        Optional("deletion-protection"): DELETION_PROTECTION,
+        Optional("environments"): {
+            str: {
+                Optional("plan"): RDS_PLANS,
+                Optional("instance"): RDS_INSTANCE_TYPES,
+                Optional("volume-size"): int_between(5, 10000),
+                Optional("replicas"): int_between(0, 5),
                 Optional("snapshot-id"): str,
                 Optional("deletion-policy"): DELETION_POLICY,
                 Optional("deletion-protection"): DELETION_PROTECTION,

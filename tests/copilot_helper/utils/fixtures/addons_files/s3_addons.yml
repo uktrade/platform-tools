@@ -1,8 +1,11 @@
 my-s3-bucket:
   type: s3
+  bucket-name: to-be-overridden
   readonly: true
+  deletion-policy: Retain
   services:
     - "web"
+    - "other"
   environments:
     development:
       bucket-name: my-bucket-dev
@@ -15,8 +18,10 @@ my-s3-bucket-with-an-object:
   environments:
     development:
       bucket-name: my-bucket-dev
+      deletion-policy: Snapshot
   objects:
     - key: healthcheck.txt
       body: |
         HEALTHCHECK WORKS!
+    - key: empty.txt
 
