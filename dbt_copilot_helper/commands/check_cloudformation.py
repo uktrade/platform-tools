@@ -55,7 +55,6 @@ def lint(ctx: click.Context, directory: str) -> bool:
 @click.pass_context
 def check_security(ctx: click.Context, directory: str) -> bool:
     addons_manifests = f"{directory}/**/addons/*.yml"
-    addons_manifests = f"{directory}/**/overrides/*.yml"
     # # addons.parameters.yml is not a CloudFormation template file
     ignore_addons_params = f"{directory}/**/addons/addons.parameters.yml"
 
