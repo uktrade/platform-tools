@@ -36,10 +36,12 @@ def addons_fixtures_path():
 
 @pytest.mark.parametrize(
     "addons_file",
-    ["s3_addons.yml"],
+    ["s3_addons.yml", "aurora_addons.yml"],
 )
 def test_validate_addons_success(addons_fixtures_path, addons_file):
-    validate_addons(addons_fixtures_path / addons_file)
+    errors = validate_addons(addons_fixtures_path / addons_file)
+
+    assert len(errors) == 0
 
 
 @pytest.mark.parametrize(
@@ -52,9 +54,30 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
                 "my-s3-bucket-with-an-object": r"Key 'services' error:\s*33 should be instance of 'list'"
             },
         ),
+        (
+            "s3_addons_bad_property_and_value.yml",
+            {
+                "my-s3-bucket": r"Wrong key 'ennvironments' in",
+                "my-s3-bucket-with-an-object": r"Key 'services' error:\s*33 should be instance of 'list'",
+            },
+        ),
     ],
 )
 def test_validate_addons_failure(addons_fixtures_path, addons_file, exp_error):
     error_map = validate_addons(addons_fixtures_path / addons_file)
     for entry, error in error_map.items():
         assert bool(re.search(exp_error[entry], error))
+
+
+def test_validate_addons_unsupported_addon(addons_fixtures_path):
+    error_map = validate_addons(addons_fixtures_path / "unsupported_addon.yml")
+    for entry, error in error_map.items():
+        assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
+
+
+def test_validate_addons_missing_type(addons_fixtures_path):
+    error_map = validate_addons(addons_fixtures_path / "missing_type_addon.yml")
+    assert (
+        "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
+    )
+    assert "Missing addon type in addon 'my-empty-type-addon'" == error_map["my-empty-type-addon"]
