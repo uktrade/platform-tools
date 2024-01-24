@@ -54,7 +54,9 @@ def lint(ctx: click.Context, directory: str) -> bool:
 @click.option("-d", "--directory", type=str, default="copilot")
 @click.pass_context
 def static(ctx: click.Context, directory: str) -> bool:
+    """Scans generated CloudFormation templates for security issues."""
     addons_manifests = f"{directory}/**/addons/*.yml"
+    addons_manifests = f"{directory}/**/overrides/*.yml"
     # # addons.parameters.yml is not a CloudFormation template file
     ignore_addons_params = f"{directory}/**/addons/addons.parameters.yml"
 
