@@ -1,6 +1,5 @@
 my-s3-bucket:
   type: s3
-  bucket-name: to-be-overridden
   readonly: true
   deletion-policy: Retain
   services:

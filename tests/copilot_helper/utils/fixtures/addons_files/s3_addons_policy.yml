@@ -1,11 +1,13 @@
 ##### s3-policy example:
 
-my-s3-bucket-bucket-access:
+my-s3-policy:
   type: s3-policy  # gives the listed services permissions to access an existing bucket
-
+  readonly: true
+  deletion-policy: Retain
   services:  # services that require access to the bucket.
     - "web"
-
+    - - "other"
   environments:
     default:
       bucket-name: my-bucket
+      deletion-policy: Snapshot

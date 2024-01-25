@@ -211,7 +211,6 @@ RDS_INSTANCE_TYPES = Or(
 )
 
 S3_BASE = {
-    Optional("bucket-name"): Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
     Optional("readonly"): bool,
     Optional("deletion-policy"): DELETION_POLICY,
     Optional("services"): [str],
