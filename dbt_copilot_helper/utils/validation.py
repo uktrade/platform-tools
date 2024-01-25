@@ -210,6 +210,29 @@ RDS_INSTANCE_TYPES = Or(
     "db.m5.2xlarge", "db.m5.4xlarge", "db.m5.large", "db.t3.micro", "db.t3.small"
 )
 
+REDIS_PLANS = Or(
+    "micro",
+    "micro-ha",
+    "tiny",
+    "tiny-ha",
+    "small",
+    "small-ha",
+    "medium",
+    "medium-ha",
+    "large",
+    "large-ha",
+    "x-large",
+    "x-large-ha",
+)
+REDIS_ENGINE_VERSIONS = Or("3.2.6", "4.0.10", "5.0.0", "5.0.3", "5.0.4", "5.0.6", "6.0", "6.2")
+REDIS_INSTANCE_TYPES = Or(
+    "cache.m6g.2xlarge",
+    "cache.m6g.large",
+    "cache.m6g.xlarge",
+    "cache.t4g.medium",
+    "cache.t4g.micro",
+)
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("deletion-policy"): DELETION_POLICY,
@@ -292,9 +315,33 @@ RDS_SCHEMA = Schema(
     }
 )
 
+REDIS_SCHEMA = Schema(
+    {
+        "type": "redis",
+        Optional("deletion-policy"): DELETION_POLICY,
+        Optional("environments"): {
+            str: {
+                Optional("plan"): REDIS_PLANS,
+                Optional("engine"): REDIS_ENGINE_VERSIONS,
+                Optional("replicas"): int_between(0, 5),
+                Optional("instance"): REDIS_INSTANCE_TYPES,
+                Optional("deletion-policy"): DELETION_POLICY,
+            }
+        },
+    }
+)
+
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
     "aurora-postgres": AURORA_SCHEMA,
     "rds-postgres": RDS_SCHEMA,
+    "redis": REDIS_SCHEMA,
 }
+# "redis",
+# "opensearch",
+# "monitoring",
+# "appconfig-ipfilter", - no props
+# "subscription-filter", - no props
+# "vpc", - no props
+# "xray" - no props

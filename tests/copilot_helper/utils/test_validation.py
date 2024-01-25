@@ -38,7 +38,15 @@ def addons_fixtures_path():
 
 @pytest.mark.parametrize(
     "addons_file",
-    ["s3_addons.yml", "s3_policy_addons.yml", "aurora_addons.yml", "rds_addons.yml"],
+    [
+        "s3_addons.yml",
+        "s3_policy_addons.yml",
+        "aurora_addons.yml",
+        "rds_addons.yml",
+        "redis_addons.yml",
+    ],
+    # "opensearch_addons.yml",
+    # "monitoring_addons.yml",
 )
 def test_validate_addons_success(addons_fixtures_path, addons_file):
     errors = validate_addons(addons_fixtures_path / addons_file)
