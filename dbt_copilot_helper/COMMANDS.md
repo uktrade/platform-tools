@@ -7,6 +7,7 @@
 - [copilot-helper bootstrap copy-secrets](#copilot-helper-bootstrap-copy-secrets)
 - [copilot-helper check-cloudformation](#copilot-helper-check-cloudformation)
 - [copilot-helper check-cloudformation lint](#copilot-helper-check-cloudformation-lint)
+- [copilot-helper check-cloudformation check-security](#copilot-helper-check-cloudformation-check-security)
 - [copilot-helper codebase](#copilot-helper-codebase)
 - [copilot-helper codebase prepare](#copilot-helper-codebase-prepare)
 - [copilot-helper codebase list](#copilot-helper-codebase-list)
@@ -187,7 +188,8 @@ copilot-helper bootstrap copy-secrets <source_environment> <target_environment>
 ## Usage
 
 ```
-copilot-helper check-cloudformation lint [-d <directory>] 
+copilot-helper check-cloudformation (lint|check-security) 
+                                    [-d <directory>] 
 ```
 
 ## Options
@@ -200,6 +202,7 @@ copilot-helper check-cloudformation lint [-d <directory>]
 
 ## Commands
 
+- [`check-security` ↪](#copilot-helper-check-cloudformation-check-security)
 - [`lint` ↪](#copilot-helper-check-cloudformation-lint)
 
 # copilot-helper check-cloudformation lint
@@ -212,6 +215,24 @@ copilot-helper check-cloudformation lint [-d <directory>]
 
 ```
 copilot-helper check-cloudformation lint [-d <directory>] 
+```
+
+## Options
+
+- `-d
+--directory <text>` _Defaults to copilot._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper check-cloudformation check-security
+
+[↩ Parent](#copilot-helper-check-cloudformation)
+
+## Usage
+
+```
+copilot-helper check-cloudformation check-security [-d <directory>] 
 ```
 
 ## Options
