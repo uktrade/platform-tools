@@ -28,7 +28,6 @@ def validate_addons(addons_file: Path | str):
     """
     Validate the addons file and return a dictionary of addon: error message.
     """
-    schemas = {"s3": S3_SCHEMA, "aurora-postgres": AURORA_SCHEMA, "rds-postgres": RDS_SCHEMA}
 
     with open(addons_file) as fh:
         addons = yaml.safe_load(fh)
@@ -41,7 +40,7 @@ def validate_addons(addons_file: Path | str):
             if not addon_type:
                 errors[addon_name] = f"Missing addon type in addon '{addon_name}'"
                 continue
-            schema = schemas.get(addon_type, None)
+            schema = SCHEMA_MAP.get(addon_type, None)
             if not schema:
                 errors[
                     addon_name
@@ -211,23 +210,29 @@ RDS_INSTANCE_TYPES = Or(
     "db.m5.2xlarge", "db.m5.4xlarge", "db.m5.large", "db.t3.micro", "db.t3.small"
 )
 
-S3_SCHEMA = Schema(
+S3_BASE = {
+    Optional("bucket-name"): Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
+    Optional("readonly"): bool,
+    Optional("deletion-policy"): DELETION_POLICY,
+    Optional("services"): [str],
+    Optional("environments"): {
+        str: {
+            Optional("bucket-name"): Regex(
+                r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+            ),
+            Optional("deletion-policy"): Or("Delete", "Retain", "Snapshot"),
+        }
+    },
+}
+
+_S3_POLICY_DEFINITION = dict(S3_BASE)
+_S3_POLICY_DEFINITION.update({"type": "s3-policy"})
+S3_POLICY_SCHEMA = Schema(_S3_POLICY_DEFINITION)
+
+_S3_DEFINITION = dict(S3_BASE)
+_S3_DEFINITION.update(
     {
         "type": "s3",
-        Optional("bucket-name"): Regex(
-            r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-        ),
-        Optional("readonly"): bool,
-        Optional("deletion-policy"): DELETION_POLICY,
-        Optional("services"): [str],
-        Optional("environments"): {
-            str: {
-                Optional("bucket-name"): Regex(
-                    r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-                ),
-                Optional("deletion-policy"): Or("Delete", "Retain", "Snapshot"),
-            }
-        },
         Optional("objects"): [
             {
                 "key": str,
@@ -236,6 +241,7 @@ S3_SCHEMA = Schema(
         ],
     }
 )
+S3_SCHEMA = Schema(_S3_DEFINITION)
 
 AURORA_SCHEMA = Schema(
     {
@@ -286,3 +292,10 @@ RDS_SCHEMA = Schema(
         ],
     }
 )
+
+SCHEMA_MAP = {
+    "s3": S3_SCHEMA,
+    "s3-policy": S3_POLICY_SCHEMA,
+    "aurora-postgres": AURORA_SCHEMA,
+    "rds-postgres": RDS_SCHEMA,
+}
