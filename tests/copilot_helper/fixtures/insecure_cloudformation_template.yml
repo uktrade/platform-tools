@@ -1,0 +1,16 @@
+# Example of misconfigured cf template borrowed from https://www.checkov.io/7.Scan%20Examples/Cloudformation.html
+# Running `checkov --quiet --framework cloudformation --file` against it should generate four failures:
+# - Ensure RDS database has IAM authentication enabled
+# - Ensure that RDS instances have Multi-AZ enabled
+# - Ensure that enhanced monitoring is enabled for Amazon RDS instances
+# - Ensure all data stored in the RDS is securely encrypted at rest
+Resources:
+  MyDB1:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName: 'mydb'
+      DBInstanceClass: 'db.t3.micro'
+      Engine: 'mysql'
+      MasterUsername: 'master'
+      MasterUserPassword: 'password'
+      StorageEncrypted: false
