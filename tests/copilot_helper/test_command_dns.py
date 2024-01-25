@@ -898,7 +898,8 @@ def test_cdn_add(alias_session, aws_credentials):
         ],
         input="web.dev.uktrade.digital",
     )
-    assert "Domains now configured:" in result.output
+
+    assert "Domains now configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
 
 
 @mock_sts

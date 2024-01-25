@@ -759,7 +759,7 @@ def assign(app, domain_profile, project_profile, svc, env):
 def update_rule(delete, listener, conditions, rule_arn, elb_client, acm_client, cdn_domain):
     # Update Rule
     response = elb_client.modify_rule(RuleArn=rule_arn, Conditions=conditions)
-
+    check_response(response)
     # Create certificate if not already present.
     base_domain = get_base_domain([cdn_domain])
     domain_profile = AVAILABLE_DOMAINS[base_domain]
@@ -792,6 +792,7 @@ def update_rule(delete, listener, conditions, rule_arn, elb_client, acm_client, 
                 },
             ],
         )
+    check_response(response)
 
     # List newly configured domains.
     for cond in conditions:
@@ -831,6 +832,7 @@ def cdn_assign(project_profile, env, app, svc):
     response = elb_client.describe_listeners(
         LoadBalancerArn=loadbalancerarn,
     )
+    check_response(response)
 
     # Certificates and domains only need to be configured on the HTTPS listener.
     for listener in response["Listeners"]:
@@ -924,6 +926,7 @@ def cdn_delete(project_profile, env, app, svc, force=False):
     response = elb_client.describe_listeners(
         LoadBalancerArn=loadbalancerarn,
     )
+    check_response(response)
 
     # Certificates and domains only need to be configured on the HTTPS listener.
     for listener in response["Listeners"]:
@@ -1033,6 +1036,7 @@ def cdn_list(project_profile, env, app, svc):
             "LoadBalancers"
         ][0]["LoadBalancerArn"],
     )
+    check_response(response)
 
     for listener in response["Listeners"]:
         if listener["Protocol"] == "HTTPS":
