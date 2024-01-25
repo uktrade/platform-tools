@@ -783,7 +783,7 @@ def test_get_required_subdomains_throws_exception_with_multiple_errors():
     assert f"{subdomain} is not a subdomain of {base_domain}" in message
 
 
-def setup_alb_listener(conditions):
+def setup_alb_listener(conditions, multiple):
     cluster_name = (
         f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
     )
@@ -826,6 +826,14 @@ def setup_alb_listener(conditions):
         Conditions=conditions,
         Actions=actions,
     )
+    if multiple:
+        mocked_elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Priority=49000,
+            Conditions=conditions,
+            Actions=actions,
+        )
+
     mocked_ecs_client = session.client("ecs")
     mocked_ecs_client.create_cluster(clusterName=cluster_name)
     mocked_ecs_client.create_service(
@@ -843,7 +851,7 @@ def setup_alb_listener(conditions):
 def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
     conditions = [{"Field": "host-header", "Values": ["test.com"]}]
 
-    setup_alb_listener(conditions)
+    setup_alb_listener(conditions, False)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -881,7 +889,7 @@ def test_cdn_add(alias_session, aws_credentials):
         }
     ]
 
-    setup_alb_listener(conditions)
+    setup_alb_listener(conditions, False)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -918,7 +926,7 @@ def test_cdn_delete(alias_session, aws_credentials):
         }
     ]
 
-    setup_alb_listener(conditions)
+    setup_alb_listener(conditions, False)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -952,7 +960,7 @@ def test_cdn_list(alias_session, aws_credentials):
         }
     ]
 
-    setup_alb_listener(conditions)
+    setup_alb_listener(conditions, False)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -969,3 +977,40 @@ def test_cdn_list(alias_session, aws_credentials):
         ],
     )
     assert "Domains currently configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
+def test_cdn_add_multiple_domains(alias_session, aws_credentials):
+    conditions = [
+        {
+            "Field": "host-header",
+            "Values": ["test.com"],
+            "HostHeaderConfig": {"Values": ["test.com"]},
+        }
+    ]
+
+    setup_alb_listener(conditions, True)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_assign,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="web.dev.uktrade.digital\nweb2.dev.uktrade.digital\n",
+    )
+    assert "Domains now configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
+    assert "Domains now configured: ['test.com', 'web2.dev.uktrade.digital']" in result.output
