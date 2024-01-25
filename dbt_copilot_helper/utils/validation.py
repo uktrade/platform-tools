@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 
 import yaml
-from schema import And
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -60,6 +59,18 @@ def int_between(lower, upper):
         if isinstance(value, int) and lower <= value <= upper:
             return True
         raise SchemaError(f"should be an int between {lower} and {upper}")
+
+    return is_between
+
+
+def float_between_with_halfstep(lower, upper):
+    def is_between(value):
+        is_number = isinstance(value, int) or isinstance(value, float)
+        is_half_step = re.match(r"^\d+(\.[05])?$", str(value))
+
+        if is_number and is_half_step and lower <= value <= upper:
+            return True
+        raise SchemaError(f"should be a number between {lower} and {upper} in half steps")
 
     return is_between
 
@@ -234,8 +245,8 @@ AURORA_SCHEMA = Schema(
         Optional("deletion-protection"): DELETION_PROTECTION,
         Optional("environments"): {
             str: {
-                Optional("min-capacity"): And(NUMBER, lambda n: n > 0),
-                Optional("max-capacity"): And(NUMBER, lambda n: n > 0.5),
+                Optional("min-capacity"): float_between_with_halfstep(0.5, 128),
+                Optional("max-capacity"): float_between_with_halfstep(0.5, 128),
                 Optional("snapshot-id"): str,
                 Optional("deletion-policy"): DELETION_POLICY,
                 Optional("deletion-protection"): DELETION_PROTECTION,

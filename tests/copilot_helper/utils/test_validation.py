@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from schema import SchemaError
 
+from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
 from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.validation import validate_string
@@ -70,12 +71,17 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
         (
             "aurora_addons_bad_data.yml",
             {
-                "my-aurora-db": r"Wrong key 'im-invalid' in",
-                "my-aurora-db-2": r"did not validate 'three'",
-                "my-aurora-db-3": r"did not validate 'seven'",
-                "my-aurora-db-4": r"Key 'environments'.*Key 'default'.*Wrong key 'man-capacity' in",
-                "my-aurora-db-5": r"Missing key: 'version'",
-                "my-aurora-db-6": r"'yep' should be instance of 'bool'",
+                "my-aurora-db-1": r"Missing key: 'version'",
+                "my-aurora-db-2": r"deletion-policy.*does not match 'None'",
+                "my-aurora-db-3": r"deletion-protection.*should be instance of 'bool'",
+                "my-aurora-db-4": r"environments.*Missing key: <class 'str'>",
+                "my-aurora-db-5": r"environments.*default.*min-capacity.*should be a number between 0.5 and 128 in half steps",
+                "my-aurora-db-6": r"environments.*default.*max-capacity.*should be a number between 0.5 and 128 in half steps",
+                "my-aurora-db-7": r"environments.*default.*snapshot-id.*should be instance of 'str'",
+                "my-aurora-db-8": r"environments.*default.*deletion-protection.*should be instance of 'bool'",
+                "my-aurora-db-9": r"environments.*default.*deletion-policy.*does not match 'Slapstick'",
+                "my-aurora-db-10": r"Wrong key 'bad-key'",
+                "my-aurora-db-11": r"environments.*default.*Wrong key 'bad-env-key'",
             },
         ),
         (
@@ -120,15 +126,31 @@ def test_validate_addons_missing_type(addons_fixtures_path):
     assert "Missing addon type in addon 'my-empty-type-addon'" == error_map["my-empty-type-addon"]
 
 
-@pytest.mark.parametrize(
-    "lower, upper, value, expected",
-    [
-        (1, 9, 5, True),
-        (1, 9, 1, True),
-        (1, 9, 9, True),
-        (1, 9, -1, False),
-        (1, 9, 10, False),
-    ],
-)
-def test_between(lower, upper, value, expected):
-    assert int_between(lower, upper)(value) == expected
+@pytest.mark.parametrize("value", [5, 1, 9])
+def test_between_success(value):
+    assert int_between(1, 9)(value)
+
+
+@pytest.mark.parametrize("value", [-1, 10])
+def test_between_raises_error(value):
+    try:
+        int_between(1, 9)(value)
+        assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
+    except SchemaError as ex:
+        assert ex.code == "should be an int between 1 and 9"
+
+
+@pytest.mark.parametrize("value", [50.5, 33, 0.5, 128, 128.0])
+def test_between_with_step_success(value):
+    assert float_between_with_halfstep(0.5, 128)(value)
+
+
+@pytest.mark.parametrize("value", [-1, 128.5, 20.3, 67.9])
+def test_between_with_step_raises_error(value):
+    try:
+        float_between_with_halfstep(0.5, 128)(value)
+        assert (
+            False
+        ), f"testing that {value} is between 0.5 and 128 in half steps failed to raise an error."
+    except SchemaError as ex:
+        assert ex.code == "should be a number between 0.5 and 128 in half steps"
