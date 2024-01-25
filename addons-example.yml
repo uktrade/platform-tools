@@ -15,7 +15,7 @@
 #
 #     production:  # you can override defaults on a per environment basis
 #       plan: some-other-plan  # some of the keys defined in a addon plan can also be overridden
-#       volume-size: 200
+#       volume-size: 200 # default size depends on plan. See addon-plans.yaml. Optional.
 #       deletion-policy: Retain
 #       deletion-protection: true
 
@@ -26,25 +26,19 @@ my-s3-bucket:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
 
   type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-
   readonly: true  # services are granted read only access to the bucket
-
-  deletion-policy: Delete # Delete|Retain. Optional. Defaults to Delete. Can be overriden per environment
-
+  deletion-policy: Delete # Delete|Retain. Optional.
   services:  # services that require access to the bucket.
     - "web"
     - "web-celery"
 
   environments:
     # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
-
     production:
       bucket-name: my-bucket-prod
-      deletion-policy: Retain # Delete|Retain. Optional. Can be used to override base setting for the bucket
-
+      deletion-policy: Retain
     staging:
       bucket-name: my-bucket-staging
-
     development:
       bucket-name: my-bucket-dev
 
@@ -68,18 +62,17 @@ my-s3-bucket-bucket-access:
 
 my-redis:
   type: redis
-  deletion-policy: Delete # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional.
 
   environments:
     default:
-      engine: '6.2'
-      # availble engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
-
+      engine: '6.2' # available engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
       plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
 
     production:
       plan: medium-ha
-      deletion-policy: Retain # Delete|Retain|Snapshot. Optional. Defaults to Delete. Can be overriden per environment
+      replicas: 2 # 0-5. Optional
+      deletion-policy: Retain
 
 
 ##### RDS postgres example:
@@ -87,48 +80,51 @@ my-redis:
 my-rds-db:
   type: rds-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain|Snapshot
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional.
 
   environments:
     default:
       plan: small-ha
-      deletion-protection: false
+      volume_size: 100 # Default size depends on plan. See addon-plans.yaml. Optional.
+      deletion-protection: false # Optional.
 
     production:
-      deletion-policy: Retain # Delete|Retain|Snapshot
+      plan: large-ha
+      deletion-policy: Retain
       deletion-protection: true
+
 
 ##### Aurora serverless v2 example:
 
 my-aurora-db:
   type: aurora-postgres
   version: 14.4
-  deletion-policy: Delete # Delete|Retain|Snapshot
+  deletion-policy: Delete # Delete|Retain|Snapshot. Optional.
 
   environments:
     default:
       min-capacity: 0.5 # AllowedValues: from 0.5 through 128
       max-capacity: 8   # AllowedValues: from 0.5 through 128
-      deletion-protection: false
+      deletion-protection: false # Optional.
 
     production:
-      deletion-policy: Retain # Delete|Retain|Snapshot
+      deletion-policy: Retain
       deletion-protection: true
+
 
 ##### Opensearch example:
 
 my-opensearch:
   type: opensearch
-  deletion-policy: Delete # Delete|Retain
+  deletion-policy: Delete # Delete|Retain. Optional.
 
   environments:
     default:
       plan: small
-
-      # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
-      engine: "2.3"
+      engine: "2.3" # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
+      master: false # Enabled dedicated master node. Defaults to false. Optional.
 
     production:
       plan: large-ha
       volume_size: 100
-      deletion-policy: Retain # Delete|Retain
+      deletion-policy: Retain

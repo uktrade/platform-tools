@@ -363,13 +363,14 @@
           "minimum": 0,
           "maximum": 5
         },
-        "instance": {
-          "$ref": "#/definitions/redis-instance-types"
-        },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         }
       },
+      "required": [
+        "plan",
+        "engine"
+      ],
       "additionalProperties": false
     },
     "opensearch-environment": {
@@ -488,6 +489,10 @@
           }
         }
       ],
+      "required": [
+        "plan",
+        "engine"
+      ],
       "additionalProperties": false
     },
     "monitoring-environment": {
@@ -505,18 +510,10 @@
         "plan": {
           "$ref": "#/definitions/rds-postgres-plans"
         },
-        "instance": {
-          "$ref": "#/definitions/rds-postgres-instance-types"
-        },
         "volume-size": {
           "type": "integer",
           "minimum": 5,
           "maximum": 10000
-        },
-        "replicas": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
         },
         "snapshot-id": {
           "type": "string"
@@ -528,6 +525,9 @@
           "$ref": "#/definitions/deletion-protection"
         }
       },
+      "required": [
+        "plan"
+      ],
       "additionalProperties": false
     },
     "aurora-postgres-environment": {
@@ -539,7 +539,8 @@
         },
         "max-capacity": {
           "type": "number",
-          "minimum": 0.5
+          "minimum": 0.5,
+          "maximum": 128
         },
         "snapshot-id": {
           "type": "string"
@@ -551,6 +552,10 @@
           "$ref": "#/definitions/deletion-protection"
         }
       },
+      "required": [
+        "min-capacity",
+        "max-capacity"
+      ],
       "additionalProperties": false
     },
     "redis-plans": {
@@ -577,6 +582,7 @@
         "cache.m6g.large",
         "cache.m6g.xlarge",
         "cache.t4g.medium",
+        "cache.t4g.small",
         "cache.t4g.micro"
       ]
     },
@@ -628,8 +634,8 @@
         "medium-ha",
         "large",
         "large-ha",
-        "xlarge",
-        "xlarge-ha"
+        "x-large",
+        "x-large-ha"
       ]
     },
     "rds-postgres-instance-types": {
