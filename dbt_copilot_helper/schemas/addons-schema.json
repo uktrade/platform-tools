@@ -378,26 +378,116 @@
         "plan": {
           "$ref": "#/definitions/opensearch-plans"
         },
-        "replicas": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 5
-        },
-        "instance": {
-          "$ref": "#/definitions/opensearch-instance-types"
-        },
         "engine": {
           "$ref": "#/definitions/opensearch-engine-versions"
         },
         "volume_size": {
           "type": "integer",
-          "minimum": 10,
-          "exclusiveMaximum": 512
+          "minimum": 10
+        },
+        "master": {
+          "type": "boolean"
         },
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "plan": {
+                "enum": [
+                  "tiny"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "volume_size": {
+                "maximum": 100
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "plan": {
+                "enum": [
+                  "small",
+                  "small-ha"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "volume_size": {
+                "maximum": 200
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "plan": {
+                "enum": [
+                  "medium",
+                  "medium-ha"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "volume_size": {
+                "maximum": 512
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "plan": {
+                "enum": [
+                  "large",
+                  "large-ha"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "volume_size": {
+                "maximum": 1000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "plan": {
+                "enum": [
+                  "x-large",
+                  "x-large-ha"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "volume_size": {
+                "maximum": 1500
+              }
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "monitoring-environment": {
@@ -515,16 +605,6 @@
         "large-ha",
         "x-large",
         "x-large-ha"
-      ]
-    },
-    "opensearch-instance-types": {
-      "type": "string",
-      "enum": [
-        "m6g.2xlarge.search",
-        "m6g.large.search",
-        "m6g.xlarge.search",
-        "t2.medium.search",
-        "t3.medium.search"
       ]
     },
     "opensearch-engine-versions": {

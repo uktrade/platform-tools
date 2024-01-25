@@ -14,7 +14,7 @@
 #       deletion-protection: false # true|false rds-postgres and aurora-postgres only
 #
 #     production:  # you can override defaults on a per environment basis
-#       plan: some-other-plan  # Any of the keys defined in a addon plan can also be overridden
+#       plan: some-other-plan  # some of the keys defined in a addon plan can also be overridden
 #       volume-size: 200
 #       deletion-policy: Retain
 #       deletion-protection: true
@@ -130,4 +130,5 @@ my-opensearch:
 
     production:
       plan: large-ha
+      volume_size: 100
       deletion-policy: Retain # Delete|Retain
