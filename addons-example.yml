@@ -26,7 +26,7 @@ my-s3-bucket:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
 
   type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
-  readonly: true  # services are granted read only access to the bucket
+  readonly: true  # services are granted read only access to the bucket. Defaults to false. Optional.
   deletion-policy: Delete # Delete|Retain. Optional.
   services:  # services that require access to the bucket.
     - "web"

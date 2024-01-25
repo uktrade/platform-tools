@@ -130,10 +130,6 @@
                 "s3-policy"
               ]
             },
-            "bucket-name": {
-              "type": "string",
-              "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-            },
             "readonly": {
               "type": "boolean"
             },
@@ -167,10 +163,6 @@
               "enum": [
                 "s3"
               ]
-            },
-            "bucket-name": {
-              "type": "string",
-              "pattern": "^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             },
             "readonly": {
               "type": "boolean"
@@ -288,9 +280,6 @@
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         },
-        "deletion-protection": {
-          "$ref": "#/definitions/deletion-protection"
-        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -318,9 +307,6 @@
         "deletion-policy": {
           "$ref": "#/definitions/deletion-policy"
         },
-        "deletion-protection": {
-          "$ref": "#/definitions/deletion-protection"
-        },
         "environments": {
           "type": "object",
           "patternProperties": {
@@ -347,6 +333,9 @@
           "$ref": "#/definitions/deletion-policy"
         }
       },
+      "required": [
+        "bucket-name"
+      ],
       "additionalProperties": false
     },
     "redis-environment": {
