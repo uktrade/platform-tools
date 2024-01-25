@@ -124,6 +124,18 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
                 "my-rds-db-11": r"'environments'.*'default'.*deletion-protection.*12 should be instance of 'bool'",
             },
         ),
+        (
+            "redis_addons_bad_data.yml",
+            {
+                "my-redis-1": r"Wrong key 'bad-key' in",
+                "my-redis-2": r"'Snapshot' does not match 'Disabled'",
+                "my-redis-3": r"environments.*default.*engine.*'6.2' does not match 'a-big-engine'",
+                "my-redis-4": r"environments.*default.*plan.*does not match 'enormous'",
+                "my-redis-5": r"environments.*default.*replicas.*should be an int between 0 and 5",
+                "my-redis-6": r"environments.*default.*instance.*does not match 'teeny'",
+                "my-redis-7": r"environments.*default.*deletion-policy.*does not match 'Never'",
+            },
+        ),
     ],
 )
 def test_validate_addons_failure(addons_fixtures_path, addons_file, exp_error):
