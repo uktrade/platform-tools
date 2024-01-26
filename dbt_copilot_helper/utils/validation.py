@@ -364,6 +364,17 @@ OPENSEARCH_SCHEMA = Schema(
     }
 )
 
+MONITORING_SCHEMA = Schema(
+    {
+        "type": "monitoring",
+        Optional("environments"): {
+            str: {
+                Optional("enable-ops-center"): bool,
+            }
+        },
+    }
+)
+
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
@@ -371,6 +382,7 @@ SCHEMA_MAP = {
     "rds-postgres": RDS_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,
+    "monitoring": MONITORING_SCHEMA,
 }
 
 # "monitoring",

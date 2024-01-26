@@ -45,8 +45,8 @@ def addons_fixtures_path():
         "rds_addons.yml",
         "redis_addons.yml",
         "opensearch_addons.yml",
+        "monitoring_addons.yml",
     ],
-    # "monitoring_addons.yml",
 )
 def test_validate_addons_success(addons_fixtures_path, addons_file):
     errors = validate_addons(addons_fixtures_path / addons_file)
@@ -150,6 +150,15 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
                 "my-opensearch-9": r"environments.*dev.*volume_size.*should be an int between 10 and 511",
                 "my-opensearch-10": r"environments.*dev.*volume_size.*should be an int between 10 and 511",
                 "my-opensearch-11": r"environments.*dev.*deletion-policy.*does not match 'Snapeshot'",
+            },
+        ),
+        (
+            "monitoring_addons_bad_data.yml",
+            {
+                "my-monitoring-1": r"Wrong key 'monitoring-param' in",
+                "my-monitoring-2": r"environments.*'prod' should be instance of 'dict'",
+                "my-monitoring-3": r"environments.*default.*should be instance of 'dict'",
+                "my-monitoring-4": r"environments.*default.*enable-ops-center.* should be instance of 'bool'",
             },
         ),
     ],
