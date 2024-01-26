@@ -375,6 +375,11 @@ MONITORING_SCHEMA = Schema(
     }
 )
 
+
+def no_param_schema(schema_type):
+    return Schema({"type": schema_type})
+
+
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
@@ -383,10 +388,8 @@ SCHEMA_MAP = {
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,
     "monitoring": MONITORING_SCHEMA,
+    "appconfig-ipfilter": no_param_schema("appconfig-ipfilter"),
+    "subscription-filter": no_param_schema("subscription-filter"),
+    "vpc": no_param_schema("vpc"),
+    "xray": no_param_schema("xray"),
 }
-
-# "monitoring",
-# "appconfig-ipfilter", - no props
-# "subscription-filter", - no props
-# "vpc", - no props
-# "xray" - no props

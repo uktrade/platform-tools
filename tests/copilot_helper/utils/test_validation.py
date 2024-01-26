@@ -46,6 +46,7 @@ def addons_fixtures_path():
         "redis_addons.yml",
         "opensearch_addons.yml",
         "monitoring_addons.yml",
+        "no_param_addons.yml",
     ],
 )
 def test_validate_addons_success(addons_fixtures_path, addons_file):
@@ -159,6 +160,15 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
                 "my-monitoring-2": r"environments.*'prod' should be instance of 'dict'",
                 "my-monitoring-3": r"environments.*default.*should be instance of 'dict'",
                 "my-monitoring-4": r"environments.*default.*enable-ops-center.* should be instance of 'bool'",
+            },
+        ),
+        (
+            "no_param_addons_bad_data.yml",
+            {
+                "my-appconfig-ipfilter": r"Wrong key 'appconfig-param' in",
+                "my-subscription-filter": r"Wrong key 'sub-filter-param' in",
+                "my-vpc": r"Wrong key 'vpc-param' in",
+                "my-xray": r"Wrong key 'xray-param' in",
             },
         ),
     ],
