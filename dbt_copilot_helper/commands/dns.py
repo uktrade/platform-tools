@@ -934,7 +934,7 @@ def cdn_delete(project_profile, env, app, svc, force=False):
             + click.style(f"{cdn_domain}?", fg="white", bold=True),
         ):
             # Exit if specified domain doesn't exist.
-            if not cdn_domain in cond["Values"]:
+            if cdn_domain not in cond["Values"]:
                 click.echo(
                     click.style(f"{cdn_domain} doesn't exists, exiting", fg="red"),
                 )
