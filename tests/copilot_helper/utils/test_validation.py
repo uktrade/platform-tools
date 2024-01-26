@@ -97,7 +97,7 @@ def test_validate_addons_success(addons_file):
                 "my-aurora-db-1": r"Missing key: 'version'",
                 "my-aurora-db-2": r"deletion-policy.*does not match 'None'",
                 "my-aurora-db-3": r"deletion-protection.*should be instance of 'bool'",
-                "my-aurora-db-4": r"environments.*Missing key: <class 'str'>",
+                "my-aurora-db-4": r"environments.*Missing key: Regex",
                 "my-aurora-db-5": r"environments.*default.*min-capacity.*should be a number between 0.5 and 128 in half steps",
                 "my-aurora-db-6": r"environments.*default.*max-capacity.*should be a number between 0.5 and 128 in half steps",
                 "my-aurora-db-7": r"environments.*default.*snapshot-id.*should be instance of 'str'",
@@ -179,6 +179,18 @@ def test_validate_addons_failure(addons_file, exp_error):
     for entry, error in exp_error.items():
         assert entry in error_map
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
+
+
+def test_validate_addons_invalid_env_name_errors():
+    error_map = validate_addons(
+        {"my-s3": {"type": "s3", "environments": {"dev": {}, "hyphens-not-allowed": {}}}}
+    )
+    assert bool(
+        re.search(
+            f"(?s)Error in my-s3:.*environments.*Wrong key 'hyphens-not-allowed'",
+            error_map["my-s3"],
+        )
+    )
 
 
 def test_validate_addons_unsupported_addon():

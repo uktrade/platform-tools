@@ -68,6 +68,12 @@ def float_between_with_halfstep(lower, upper):
     return is_between
 
 
+ENV_NAME = Regex(
+    r"^[a-zA-Z][a-zA-Z0-9]*$",
+    error="Environment name {} is invalid: names must only contain alphanumeric characters."
+    # It would be nice if this worked, but it doesn't seem to for dictionary keys.
+)
+
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
 
@@ -248,7 +254,7 @@ S3_BASE = {
     Optional("deletion-policy"): DELETION_POLICY,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
-        str: {
+        ENV_NAME: {
             Optional("bucket-name"): Regex(
                 r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
             ),
@@ -282,7 +288,7 @@ AURORA_SCHEMA = Schema(
         Optional("deletion-policy"): DELETION_POLICY,
         Optional("deletion-protection"): DELETION_PROTECTION,
         Optional("environments"): {
-            str: {
+            ENV_NAME: {
                 Optional("min-capacity"): float_between_with_halfstep(0.5, 128),
                 Optional("max-capacity"): float_between_with_halfstep(0.5, 128),
                 Optional("snapshot-id"): str,
@@ -306,7 +312,7 @@ RDS_SCHEMA = Schema(
         Optional("deletion-policy"): DELETION_POLICY,
         Optional("deletion-protection"): DELETION_PROTECTION,
         Optional("environments"): {
-            str: {
+            ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
                 Optional("instance"): RDS_INSTANCE_TYPES,
                 Optional("volume-size"): int_between(5, 10000),
@@ -330,7 +336,7 @@ REDIS_SCHEMA = Schema(
         "type": "redis",
         Optional("deletion-policy"): DELETION_POLICY,
         Optional("environments"): {
-            str: {
+            ENV_NAME: {
                 Optional("plan"): REDIS_PLANS,
                 Optional("engine"): REDIS_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
@@ -346,7 +352,7 @@ OPENSEARCH_SCHEMA = Schema(
         "type": "opensearch",
         Optional("deletion-policy"): DELETION_POLICY,
         Optional("environments"): {
-            str: {
+            ENV_NAME: {
                 Optional("plan"): OPENSEARCH_PLANS,
                 Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
@@ -362,7 +368,7 @@ MONITORING_SCHEMA = Schema(
     {
         "type": "monitoring",
         Optional("environments"): {
-            str: {
+            ENV_NAME: {
                 Optional("enable-ops-center"): bool,
             }
         },
