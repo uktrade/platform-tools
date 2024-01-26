@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 from schema import SchemaError
 
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
@@ -9,6 +10,11 @@ from dbt_copilot_helper.utils.validation import int_between
 from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.validation import validate_string
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
+
+
+def load_addons(addons_file):
+    with open(Path(UTILS_FIXTURES_DIR / "addons_files") / addons_file) as fh:
+        return yaml.safe_load(fh)
 
 
 @pytest.mark.parametrize(
@@ -31,11 +37,6 @@ def test_validate_string(regex_pattern, valid_string, invalid_string):
     )
 
 
-@pytest.fixture()
-def addons_fixtures_path():
-    return Path(UTILS_FIXTURES_DIR / "addons_files")
-
-
 @pytest.mark.parametrize(
     "addons_file",
     [
@@ -49,8 +50,8 @@ def addons_fixtures_path():
         "no_param_addons.yml",
     ],
 )
-def test_validate_addons_success(addons_fixtures_path, addons_file):
-    errors = validate_addons(addons_fixtures_path / addons_file)
+def test_validate_addons_success(addons_file):
+    errors = validate_addons(load_addons(addons_file))
 
     assert len(errors) == 0
 
@@ -173,21 +174,21 @@ def test_validate_addons_success(addons_fixtures_path, addons_file):
         ),
     ],
 )
-def test_validate_addons_failure(addons_fixtures_path, addons_file, exp_error):
-    error_map = validate_addons(addons_fixtures_path / addons_file)
+def test_validate_addons_failure(addons_file, exp_error):
+    error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
-def test_validate_addons_unsupported_addon(addons_fixtures_path):
-    error_map = validate_addons(addons_fixtures_path / "unsupported_addon.yml")
+def test_validate_addons_unsupported_addon():
+    error_map = validate_addons(load_addons("unsupported_addon.yml"))
     for entry, error in error_map.items():
         assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
 
 
-def test_validate_addons_missing_type(addons_fixtures_path):
-    error_map = validate_addons(addons_fixtures_path / "missing_type_addon.yml")
+def test_validate_addons_missing_type():
+    error_map = validate_addons(load_addons("missing_type_addon.yml"))
     assert (
         "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
     )

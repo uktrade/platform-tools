@@ -3,7 +3,6 @@
 from importlib.metadata import version
 
 import click
-from botocore.exceptions import UnauthorizedSSOTokenError
 
 from dbt_copilot_helper.commands.bootstrap import bootstrap as bootstrap_commands
 from dbt_copilot_helper.commands.check_cloudformation import (
@@ -21,7 +20,6 @@ from dbt_copilot_helper.commands.pipeline import pipeline as pipeline_commands
 from dbt_copilot_helper.commands.svc import svc as svc_commands
 from dbt_copilot_helper.commands.waf import waf as waf_commands
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
-from dbt_copilot_helper.utils.messages import abort_with_error
 
 
 @click.group(cls=ClickDocOptGroup)
@@ -48,10 +46,4 @@ copilot_helper.add_command(svc_commands)
 copilot_helper.add_command(waf_commands)
 
 if __name__ == "__main__":
-    # TODO: We should probably wrap this to catch a botocore.exceptions.UnauthorizedSSOTokenError to
-    # give a better user experience if they are logged out of AWS. See ticket: DBTP-509
-    try:
-        copilot_helper()
-    except UnauthorizedSSOTokenError:
-        message = "You are not logged in. Please log in with: `aws sso login` and try again."
-        abort_with_error(message)
+    copilot_helper()

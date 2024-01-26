@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from pathlib import PosixPath
 from unittest.mock import Mock
@@ -446,6 +447,36 @@ invalid-entry:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
+        fakefs.create_file(
+            ADDON_CONFIG_FILENAME,
+            contents="""
+example-invalid-file:
+    type: s3
+    environments:
+        default:
+            bucket-hat: test-bucket
+""",
+        )
+
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 1
+        assert re.match(
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'bucket-hat'",
+            result.output,
+        )
+
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -507,9 +538,9 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
-        )
+        assert "Key 'services' error:" in result.output
+        assert "'__all__' does not match 'this-is-not-valid'" in result.output
+        assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",

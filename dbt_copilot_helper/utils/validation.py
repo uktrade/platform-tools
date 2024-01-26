@@ -1,7 +1,5 @@
 import re
-from pathlib import Path
 
-import yaml
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -24,14 +22,10 @@ def validate_s3_bucket_name(name):
     return False
 
 
-def validate_addons(addons_file: Path | str):
+def validate_addons(addons: dict):
     """
     Validate the addons file and return a dictionary of addon: error message.
     """
-
-    with open(addons_file) as fh:
-        addons = yaml.safe_load(fh)
-
     errors = {}
 
     for addon_name, addon in addons.items():
@@ -239,7 +233,7 @@ OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
-OPENSEARCH_ENGINE_VERSIONS = Or(2.5, 2.3, 1.3, 1.2, 1.1, 1.0)
+OPENSEARCH_ENGINE_VERSIONS = Or("2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
 
 OPENSEARCH_INSTANCE_TYPES = Or(
     "m6g.2xlarge.search",
@@ -252,7 +246,7 @@ OPENSEARCH_INSTANCE_TYPES = Or(
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("deletion-policy"): DELETION_POLICY,
-    Optional("services"): [str],
+    Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         str: {
             Optional("bucket-name"): Regex(
@@ -377,7 +371,7 @@ MONITORING_SCHEMA = Schema(
 
 
 def no_param_schema(schema_type):
-    return Schema({"type": schema_type})
+    return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
 SCHEMA_MAP = {
