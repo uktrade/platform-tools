@@ -224,13 +224,29 @@ REDIS_PLANS = Or(
     "x-large",
     "x-large-ha",
 )
+
 REDIS_ENGINE_VERSIONS = Or("3.2.6", "4.0.10", "5.0.0", "5.0.3", "5.0.4", "5.0.6", "6.0", "6.2")
+
 REDIS_INSTANCE_TYPES = Or(
     "cache.m6g.2xlarge",
     "cache.m6g.large",
     "cache.m6g.xlarge",
     "cache.t4g.medium",
     "cache.t4g.micro",
+)
+
+OPENSEARCH_PLANS = Or(
+    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
+)
+
+OPENSEARCH_ENGINE_VERSIONS = Or(2.5, 2.3, 1.3, 1.2, 1.1, 1.0)
+
+OPENSEARCH_INSTANCE_TYPES = Or(
+    "m6g.2xlarge.search",
+    "m6g.large.search",
+    "m6g.xlarge.search",
+    "t2.medium.search",
+    "t3.medium.search",
 )
 
 S3_BASE = {
@@ -331,15 +347,32 @@ REDIS_SCHEMA = Schema(
     }
 )
 
+OPENSEARCH_SCHEMA = Schema(
+    {
+        "type": "opensearch",
+        Optional("deletion-policy"): DELETION_POLICY,
+        Optional("environments"): {
+            str: {
+                Optional("plan"): OPENSEARCH_PLANS,
+                Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
+                Optional("replicas"): int_between(0, 5),
+                Optional("instance"): OPENSEARCH_INSTANCE_TYPES,
+                Optional("volume_size"): int_between(10, 511),
+                Optional("deletion-policy"): DELETION_POLICY,
+            }
+        },
+    }
+)
+
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
     "aurora-postgres": AURORA_SCHEMA,
     "rds-postgres": RDS_SCHEMA,
     "redis": REDIS_SCHEMA,
+    "opensearch": OPENSEARCH_SCHEMA,
 }
-# "redis",
-# "opensearch",
+
 # "monitoring",
 # "appconfig-ipfilter", - no props
 # "subscription-filter", - no props
