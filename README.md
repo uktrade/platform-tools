@@ -52,15 +52,15 @@ Run `pip install <file>` and confirm the installation has worked by running `cop
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-copilot-tools` installation back to what it was; e.g. `pip install dbt-copilot-tools==0.1.39`.
 
-#### [`Dockerfile.test`](Dockerfile.test)
+#### [`Dockerfile.debian`](Dockerfile.debian)
 
 This `Dockerfile` is used to create a Docker image that supports multiple versions of Python runtimes via [`pyenv`](https://github.com/pyenv/pyenv). The `tox` configuration file determines the Python versions to be tested against.
 
 #### Adding a Python version
 
-Add the Python version(s) to `Dockerfile.test` and `tox.ini`.
+Add the Python version(s) to `Dockerfile.debian` and `tox.ini`.
 
-Run `docker build -f Dockerfile.test -t alpine/python .` to build the image.
+Run `docker build -f Dockerfile.debian -t alpine/python .` to build the image.
 
 For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
 
