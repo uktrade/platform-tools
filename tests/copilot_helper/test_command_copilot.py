@@ -361,9 +361,11 @@ class TestMakeAddonCommand:
         if deletion_policy:
             addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
         if deletion_policy_override:
-            addon_file_contents[addon_name]["environments"]["development"] = {
-                "deletion-policy": deletion_policy_override
-            }
+            for env in addon_file_contents[addon_name]["environments"]:
+                addon_file_contents[addon_name]["environments"][env][
+                    "deletion-policy"
+                ] = deletion_policy_override
+
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])

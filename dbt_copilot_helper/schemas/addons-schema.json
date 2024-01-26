@@ -356,10 +356,6 @@
           "$ref": "#/definitions/deletion-policy"
         }
       },
-      "required": [
-        "plan",
-        "engine"
-      ],
       "additionalProperties": false
     },
     "opensearch-environment": {
@@ -478,10 +474,6 @@
           }
         }
       ],
-      "required": [
-        "plan",
-        "engine"
-      ],
       "additionalProperties": false
     },
     "monitoring-environment": {
@@ -514,9 +506,6 @@
           "$ref": "#/definitions/deletion-protection"
         }
       },
-      "required": [
-        "plan"
-      ],
       "additionalProperties": false
     },
     "aurora-postgres-environment": {
@@ -541,10 +530,6 @@
           "$ref": "#/definitions/deletion-protection"
         }
       },
-      "required": [
-        "min-capacity",
-        "max-capacity"
-      ],
       "additionalProperties": false
     },
     "redis-plans": {

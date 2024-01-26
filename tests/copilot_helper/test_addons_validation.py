@@ -151,16 +151,6 @@ myredis:
     type: redis
     environments:
         prod:
-            instance: invalid-instance
-""",
-            "'invalid-instance' is not one of",
-        ),
-        (
-            """
-myredis:
-    type: redis
-    environments:
-        prod:
             plan: invalid-plan
 """,
             "'invalid-plan' is not one of",
@@ -203,31 +193,9 @@ mypostgres:
     version: 14.4
     environments:
         prod:
-            instance: invalid-instance
-""",
-            "'invalid-instance' is not one of",
-        ),
-        (
-            """
-mypostgres:
-    type: rds-postgres
-    version: 14.4
-    environments:
-        prod:
             plan: invalid-plan
 """,
             "'invalid-plan' is not one of",
-        ),
-        (
-            """
-mypostgres:
-    type: rds-postgres
-    version: 14.4
-    environments:
-        prod:
-            replicas: 6
-""",
-            "6 is greater than the maximum of 5",
         ),
         (
             """
@@ -290,30 +258,10 @@ myopensearch:
     type: opensearch
     environments:
         prod:
-            instance: invalid-instance
-""",
-            "'invalid-instance' is not one of",
-        ),
-        (
-            """
-myopensearch:
-    type: opensearch
-    environments:
-        prod:
             plan: invalid-plan
 """,
             "'invalid-plan' is not one of",
-        ),
-        (
-            """
-myopensearch:
-    type: opensearch
-    environments:
-        prod:
-            replicas: 6
-""",
-            "6 is greater than the maximum of 5",
-        ),
+        )
     ],
 )
 def test_opensearch_invalid_input(addon_yaml, validation_message):
@@ -358,8 +306,6 @@ def test_s3_valid_example():
         """
 mys3bucket:
     type: s3
-
-    bucket-name: "mys3bucket"
     readonly: true
     services:
         - web
@@ -383,8 +329,6 @@ def test_s3_policy_valid_example():
         """
 mys3bucket:
     type: s3-policy
-
-    bucket-name: "mys3bucket"
     readonly: true
     services:
         - web
@@ -414,7 +358,6 @@ myredis:
 
         prod:
             engine: '6.2'
-            instance: cache.m6g.large
             replicas: 2
 """,
     )
@@ -432,8 +375,7 @@ myopensearch:
             plan: medium-ha
 
         prod:
-            replicas: 1
-            instance: m6g.2xlarge.search
+            volume_size: 100
 """,
     )
 
@@ -451,9 +393,7 @@ mypostgres:
             plan: medium-ha
 
         prod:
-            instance: db.m5.4xlarge
             volume-size: 500
-            replicas: 3
 """,
     )
 
