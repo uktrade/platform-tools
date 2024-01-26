@@ -8,6 +8,10 @@ See [the package documentation](https://github.com/uktrade/copilot-tools/blob/ma
 
 If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration/README.md) will also be relevant for you.
 
+### Supported Python versions
+
+3.9, 3.10, 3.11 and 3.12.
+
 ## Contributing to the dbt-copilot-tools package
 
 ### Getting started
