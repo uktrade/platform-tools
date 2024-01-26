@@ -942,7 +942,7 @@ def cdn_delete(project_profile, env, app, svc, force=False):
                 return save
 
             # At present at least 1 domain needs to be on the listener.
-            if len(cond["Values"]) == 1 and force != True:
+            if len(cond["Values"]) == 1 and not force:
                 click.echo(
                     click.style(
                         f"{cdn_domain} is the only domain configured on the "
