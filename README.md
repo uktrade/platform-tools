@@ -60,7 +60,7 @@ This `Dockerfile` is used to create a Docker image that supports multiple versio
 
 Add the Python version(s) to `Dockerfile.debian` and `tox.ini`.
 
-Run `docker build -f Dockerfile.debian -t alpine/python .` to build the image.
+Run `docker build -f Dockerfile.debian -t debian/python .` to build the image.
 
 For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
 
