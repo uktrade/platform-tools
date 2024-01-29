@@ -9,6 +9,7 @@ from pathlib import PosixPath
 
 import boto3
 import click
+import jsonschema
 import yaml
 from jsonschema import validate as validate_json
 
@@ -99,7 +100,11 @@ def _validate_and_normalise_config(config_file):
     if not config:
         return {}
 
-    validate_json(instance=config, schema=schema)
+    try:
+        validate_json(instance=config, schema=schema)
+    except jsonschema.exceptions.ValidationError as err:
+        click.echo(click.style(err, fg="red"))
+        exit(1)
 
     env_names = list_copilot_local_environments()
     svc_names = list_copilot_local_services()
