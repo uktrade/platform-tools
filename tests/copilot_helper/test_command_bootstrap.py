@@ -89,7 +89,10 @@ def test_make_config(tmp_path):
     production_environment_manifest = Path(
         FIXTURES_DIR, "production_environment_manifest.yml"
     ).read_text()
-    test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
+    test_public_service_manifest = Path(
+        FIXTURES_DIR, "test_public_service_manifest.yml"
+    ).read_text()
+    # test_backend_service_manifest = Path(FIXTURES_DIR, "test_backend_service_manifest.yml").read_text()
 
     assert not (tmp_path / "copilot").exists()
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
@@ -114,9 +117,14 @@ def test_make_config(tmp_path):
         assert production.read() == production_environment_manifest
 
     with open(str(tmp_path / "copilot/test-public-service/manifest.yml")) as service:
-        assert service.read() == test_service_manifest
+        assert service.read() == test_public_service_manifest
 
     assert os.path.exists(str(tmp_path / "copilot/test-public-service/addons"))
+
+    # with open(str(tmp_path / "copilot/test-backend-service/manifest.yml")) as service:
+    #     assert service.read() == test_service_manifest
+    #
+    # assert os.path.exists(str(tmp_path / "copilot/test-backend-service/addons"))
 
 
 @mock_sts
