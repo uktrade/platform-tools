@@ -91,6 +91,7 @@ def test_make_config(tmp_path):
     ).read_text()
     test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
 
+    assert not (tmp_path / "copilot").exists()
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
@@ -112,10 +113,10 @@ def test_make_config(tmp_path):
     with open(str(tmp_path / "copilot/environments/production/manifest.yml")) as production:
         assert production.read() == production_environment_manifest
 
-    with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
+    with open(str(tmp_path / "copilot/test-public-service/manifest.yml")) as service:
         assert service.read() == test_service_manifest
 
-    assert os.path.exists(str(tmp_path / "copilot/test-service/addons"))
+    assert os.path.exists(str(tmp_path / "copilot/test-public-service/addons"))
 
 
 @mock_sts
@@ -179,10 +180,12 @@ def test_migrate_secrets_param_doesnt_exist(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
-    assert ">>> migrating secrets for service: test-service; environment: test" in result.output
+    assert (
+        ">>> migrating secrets for service: test-public-service; environment: test" in result.output
+    )
     assert "Created" in result.output
 
     assert_secret_exists_with_value("TEST_SECRET", param_value)
@@ -205,7 +208,7 @@ def test_migrate_secrets_param_already_exists(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
     assert "NOT overwritten" in result.output
@@ -232,7 +235,15 @@ def test_migrate_secrets_overwrite(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service", "--overwrite"],
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            "test",
+            "--svc",
+            "test-public-service",
+            "--overwrite",
+        ],
     )
 
     assert "Overwritten" in result.output
@@ -257,7 +268,7 @@ def test_migrate_secrets_dry_run(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service", "--dry-run"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service", "--dry-run"],
     )
 
     assert (
@@ -299,7 +310,7 @@ def test_migrate_secrets_skips_aws_secrets(
 
     CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
     assert_secret_exists_with_value(good_secret_name, good_secret_value)
