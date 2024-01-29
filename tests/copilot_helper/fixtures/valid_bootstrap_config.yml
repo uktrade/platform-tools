@@ -39,22 +39,20 @@ services:
   overlapping_secrets:
   - OVERLAPPING_SECRET
   secrets:
-    TEST_SECRET: TEST_SECRET
-    TEST_SECRET_2: TEST_SECRET_2
-    GOOD_SECRET: GOOD_SECRET
-    AWS_BAD_SECRET: AWS_BAD_SECRET
+    TEST_SECRET: TEST_SECRET_SOURCE
+    TEST_SECRET_2: TEST_SECRET_2_SOURCE
+    GOOD_SECRET: GOOD_SECRET_SOURCE
+    AWS_BAD_SECRET: AWS_BAD_SECRET_SOURCE
   env_vars:
-    TEST_VAR: TEST_VAR
+    TEST_VAR: TEST_VAR_VALUE
+
 - name: test-backend-service
   type: backend
   repo: git@github.com:uktrade/not-a-repo.git
-  image_location: not-a-url
-  notes: lorem ipsum etc. etc.
+  image_location: backend-service-image-repository
   environments:
     production:
-      ipfilter: true
-      paas: dit-services/trade-space/test-service
-      url: test-service.trad.gav.ik
+      paas: dit-services/trade-space/test-backend-service
       memory: 1024
       count:
         range: 1-10
@@ -70,16 +68,11 @@ services:
         requests: 10000
         response_time: 2s
     test:
-      ipfilter: false
       paas: dit-staging/blah/test-service
-      url: test-service.landan.cloudapps.digital
       count: 2
   overlapping_secrets:
   - OVERLAPPING_SECRET
   secrets:
-    TEST_SECRET: TEST_SECRET
-    TEST_SECRET_2: TEST_SECRET_2
-    GOOD_SECRET: GOOD_SECRET
-    AWS_BAD_SECRET: AWS_BAD_SECRET
+    TEST_SECRET: TEST_SECRET_SOURCE
   env_vars:
-    TEST_VAR: TEST_VAR
+    TEST_VAR: TEST_VAR_VALUE
