@@ -512,6 +512,49 @@ invalid-environment:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    def test_exit_with_multiple_errors(self, fakefs):
+        fakefs.create_file(
+            ADDON_CONFIG_FILENAME,
+            contents="""
+my-s3-bucket-1:
+  type: s3
+  environments:
+    dev:
+      bucket-name: my-s3alias # Can't end with -s3alias
+
+my-s3-bucket-2:
+  type: s3
+  environments:
+    dev:
+      bucket-name: charles
+      deletion-policy: ThisIsInvalid # Should be a valid policy name.
+""",
+        )
+
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 1
+        assert re.search(r"(?s)Errors found in addons.yml:", result.output)
+        assert re.search(
+            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket-name.*does not match 'my-s3alias'",
+            result.output,
+        )
+        assert re.search(
+            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion-policy.*'Delete' does not match 'ThisIsInvalid'",
+            result.output,
+        )
+
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
     def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which
