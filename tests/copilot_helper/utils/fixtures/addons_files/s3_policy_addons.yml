@@ -10,4 +10,4 @@ my-s3-policy:
   environments:
     dev:
       bucket-name: my-bucket-dev
-      deletion-policy: Snapshot
+      deletion-policy: Retain

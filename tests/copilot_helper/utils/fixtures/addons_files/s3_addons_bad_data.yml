@@ -25,6 +25,7 @@ my-s3-bucket-6:
   type: s3
   environments:
     dev:
+      bucket-name: charles
       deletion-policy: False # Should be a valid policy name.
 
 my-s3-bucket-7:
@@ -61,4 +62,5 @@ my-s3-bucket-13:
   type: s3
   environments:
     dev:
+      bucket-name: mandatory
       unknown3: key

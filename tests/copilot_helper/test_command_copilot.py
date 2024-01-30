@@ -362,9 +362,12 @@ class TestMakeAddonCommand:
         if deletion_policy:
             addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
         if deletion_policy_override:
-            addon_file_contents[addon_name]["environments"]["development"] = {
-                "deletion-policy": deletion_policy_override
-            }
+            if not "development" in addon_file_contents[addon_name]["environments"]:
+                addon_file_contents[addon_name]["environments"]["development"] = {}
+            addon_file_contents[addon_name]["environments"]["development"][
+                "deletion-policy"
+            ] = deletion_policy_override
+
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
@@ -455,7 +458,8 @@ example-invalid-file:
     type: s3
     environments:
         default:
-            bucket-hat: test-bucket
+            bucket-name: test-bucket
+            no-such-key: bad-key
 """,
         )
 
@@ -469,7 +473,7 @@ example-invalid-file:
 
         assert result.exit_code == 1
         assert re.match(
-            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'bucket-hat'",
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no-such-key'",
             result.output,
         )
 

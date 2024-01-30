@@ -25,6 +25,7 @@ my-s3-bucket-policy-6:
   type: s3-policy
   environments:
     dev:
+      bucket-name: barney
       deletion-policy: False # Should be a valid policy name.
 
 my-s3-bucket-policy-7:
@@ -41,4 +42,5 @@ my-s3-bucket-policy-9:
   type: s3-policy
   environments:
     dev:
+      bucket-name: barbara
       unknown3: key

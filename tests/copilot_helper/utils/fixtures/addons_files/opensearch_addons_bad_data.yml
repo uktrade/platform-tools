@@ -56,7 +56,7 @@ my-opensearch-11:
   type: opensearch
   environments:
     dev:
-      deletion-policy: Snapeshot
+      deletion-policy: Snapshot
 
 
 

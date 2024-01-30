@@ -4,7 +4,6 @@ my-rds-db:
   type: rds-postgres
   version: 14.4
   deletion-policy: "Retain"
-  deletion-protection: true
 
   environments:
     default:

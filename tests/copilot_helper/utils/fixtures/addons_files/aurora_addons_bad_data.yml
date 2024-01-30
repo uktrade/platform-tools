@@ -11,55 +11,50 @@ my-aurora-db-2:
 my-aurora-db-3:
   type: aurora-postgres
   version: 14.4
-  deletion-protection: 3 # Should be bool
-
-my-aurora-db-4:
-  type: aurora-postgres
-  version: 14.4
   environments:
     123: # Keys should be str
 
-my-aurora-db-5:
+my-aurora-db-4:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
       min-capacity: 0.25 # AllowedValues: from 0.5 through 128
 
-my-aurora-db-6:
+my-aurora-db-5:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
       max-capacity: 129   # AllowedValues: from 0.5 through 128
 
-my-aurora-db-7:
+my-aurora-db-6:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
       snapshot-id: 712
 
-my-aurora-db-8:
+my-aurora-db-7:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
       deletion-protection: yes please
 
-my-aurora-db-9:
+my-aurora-db-8:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
       deletion-policy: Slapstick
 
-my-aurora-db-10:
+my-aurora-db-9:
   type: aurora-postgres
   version: 14.4
   bad-key:
 
-my-aurora-db-11:
+my-aurora-db-10:
   type: aurora-postgres
   version: 14.4
   environments:

@@ -96,15 +96,14 @@ def test_validate_addons_success(addons_file):
             {
                 "my-aurora-db-1": r"Missing key: 'version'",
                 "my-aurora-db-2": r"deletion-policy.*does not match 'None'",
-                "my-aurora-db-3": r"deletion-protection.*should be instance of 'bool'",
-                "my-aurora-db-4": r"environments.*Missing key: Regex",
-                "my-aurora-db-5": r"environments.*default.*min-capacity.*should be a number between 0.5 and 128 in half steps",
-                "my-aurora-db-6": r"environments.*default.*max-capacity.*should be a number between 0.5 and 128 in half steps",
-                "my-aurora-db-7": r"environments.*default.*snapshot-id.*should be instance of 'str'",
-                "my-aurora-db-8": r"environments.*default.*deletion-protection.*should be instance of 'bool'",
-                "my-aurora-db-9": r"environments.*default.*deletion-policy.*does not match 'Slapstick'",
-                "my-aurora-db-10": r"Wrong key 'bad-key'",
-                "my-aurora-db-11": r"environments.*default.*Wrong key 'bad-env-key'",
+                "my-aurora-db-3": r"environments.*Missing key: Regex",
+                "my-aurora-db-4": r"environments.*default.*min-capacity.*should be a number between 0.5 and 128 in increments of 0.5",
+                "my-aurora-db-5": r"environments.*default.*max-capacity.*should be a number between 0.5 and 128 in increments of 0.5",
+                "my-aurora-db-6": r"environments.*default.*snapshot-id.*should be instance of 'str'",
+                "my-aurora-db-7": r"environments.*default.*deletion-protection.*should be instance of 'bool'",
+                "my-aurora-db-8": r"environments.*default.*deletion-policy.*does not match 'Slapstick'",
+                "my-aurora-db-9": r"Wrong key 'bad-key'",
+                "my-aurora-db-10": r"environments.*default.*Wrong key 'bad-env-key'",
             },
         ),
         (
@@ -113,27 +112,26 @@ def test_validate_addons_success(addons_file):
                 "my-rds-db-1": r"Wrong key 'im-invalid' in",
                 "my-rds-db-2": r"Missing key: 'version'",
                 "my-rds-db-3": r"did not validate 77",
-                "my-rds-db-4": r"'whatever' should be instance of 'bool'",
-                "my-rds-db-5": r"'environments'.*'default'.*'plan'.*does not match 'cunning'",
-                "my-rds-db-6": r"'environments'.*'default'.*'instance'.*does not match 'a-wee-little-one'",
-                "my-rds-db-7a": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
-                "my-rds-db-7b": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
-                "my-rds-db-7c": r"environments'.*'default'.*'volume-size'.*should be an int between 5 and 10000",
-                "my-rds-db-8a": r"environments'.*'default'.*'replicas'.*should be an int between 0 and 5",
-                "my-rds-db-8b": r"environments'.*'default'.*'replicas'.*should be an int between 0 and 5",
-                "my-rds-db-9": r"'environments'.*'default'.*snapshot-id.*False should be instance of 'str'",
-                "my-rds-db-10": r"'environments'.*'default'.*deletion-policy.*'Snapshot' does not match 'None'",
-                "my-rds-db-11": r"'environments'.*'default'.*deletion-protection.*12 should be instance of 'bool'",
+                "my-rds-db-4": r"'environments'.*'default'.*'plan'.*does not match 'cunning'",
+                "my-rds-db-5": r"'environments'.*'default'.*'instance'.*does not match 'a-wee-little-one'",
+                "my-rds-db-6a": r"environments'.*'default'.*'volume-size'.*should be an integer between 5 and 10000",
+                "my-rds-db-6b": r"environments'.*'default'.*'volume-size'.*should be an integer between 5 and 10000",
+                "my-rds-db-6c": r"environments'.*'default'.*'volume-size'.*should be an integer between 5 and 10000",
+                "my-rds-db-7a": r"environments'.*'default'.*'replicas'.*should be an integer between 0 and 5",
+                "my-rds-db-7b": r"environments'.*'default'.*'replicas'.*should be an integer between 0 and 5",
+                "my-rds-db-8": r"'environments'.*'default'.*snapshot-id.*False should be instance of 'str'",
+                "my-rds-db-9": r"'environments'.*'default'.*deletion-policy.*'Snapshot' does not match 'None'",
+                "my-rds-db-10": r"'environments'.*'default'.*deletion-protection.*12 should be instance of 'bool'",
             },
         ),
         (
             "redis_addons_bad_data.yml",
             {
                 "my-redis-1": r"Wrong key 'bad-key' in",
-                "my-redis-2": r"deletion-policy.*Snapshot' does not match 'Disabled'",
+                "my-redis-2": r"deletion-policy.*'Retain' does not match 'Disabled'",
                 "my-redis-3": r"environments.*default.*engine.*'6.2' does not match 'a-big-engine'",
                 "my-redis-4": r"environments.*default.*plan.*does not match 'enormous'",
-                "my-redis-5": r"environments.*default.*replicas.*should be an int between 0 and 5",
+                "my-redis-5": r"environments.*default.*replicas.*should be an integer between 0 and 5",
                 "my-redis-6": r"environments.*default.*instance.*does not match 'teeny'",
                 "my-redis-7": r"environments.*default.*deletion-policy.*does not match 'Never'",
             },
@@ -146,12 +144,12 @@ def test_validate_addons_success(addons_file):
                 "my-opensearch-3": r"environments.*False should be instance of 'dict'",
                 "my-opensearch-4": r"environments.*Wrong key 'opensearch-plan'",
                 "my-opensearch-5": r"environments.*dev.*plan.*does not match 'largish'",
-                "my-opensearch-6": r"environments.*dev.*replicas.*should be an int between 0 and 5",
+                "my-opensearch-6": r"environments.*dev.*replicas.*should be an integer between 0 and 5",
                 "my-opensearch-7": r"environments.*dev.*instance.*does not match 'medium'",
                 "my-opensearch-8": r"environments.*dev.*engine.*does not match 7.3",
-                "my-opensearch-9": r"environments.*dev.*volume_size.*should be an int between 10 and 511",
-                "my-opensearch-10": r"environments.*dev.*volume_size.*should be an int between 10 and 511",
-                "my-opensearch-11": r"environments.*dev.*deletion-policy.*does not match 'Snapeshot'",
+                "my-opensearch-9": r"environments.*dev.*volume_size.*should be an integer between 10 and 511",
+                "my-opensearch-10": r"environments.*dev.*volume_size.*should be an integer between 10 and 511",
+                "my-opensearch-11": r"environments.*dev.*deletion-policy.*does not match 'Snapshot'",
             },
         ),
         (
@@ -183,7 +181,12 @@ def test_validate_addons_failure(addons_file, exp_error):
 
 def test_validate_addons_invalid_env_name_errors():
     error_map = validate_addons(
-        {"my-s3": {"type": "s3", "environments": {"dev": {}, "hyphens-not-allowed": {}}}}
+        {
+            "my-s3": {
+                "type": "s3",
+                "environments": {"dev": {"bucket-name": "bucket"}, "hyphens-not-allowed": {}},
+            }
+        }
     )
     assert bool(
         re.search(
@@ -218,7 +221,7 @@ def test_between_raises_error(value):
         int_between(1, 9)(value)
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
-        assert ex.code == "should be an int between 1 and 9"
+        assert ex.code == "should be an integer between 1 and 9"
 
 
 @pytest.mark.parametrize("value", [50.5, 33, 0.5, 128, 128.0])
@@ -234,4 +237,4 @@ def test_between_with_step_raises_error(value):
             False
         ), f"testing that {value} is between 0.5 and 128 in half steps failed to raise an error."
     except SchemaError as ex:
-        assert ex.code == "should be a number between 0.5 and 128 in half steps"
+        assert ex.code == "should be a number between 0.5 and 128 in increments of 0.5"

@@ -1,7 +1,6 @@
 my-s3-bucket:
   type: s3
   readonly: true
-  deletion-policy: Retain
   services:
     - "web"
     - "other"
@@ -17,7 +16,7 @@ my-s3-bucket-with-an-object:
   environments:
     development:
       bucket-name: my-bucket-dev
-      deletion-policy: Snapshot
+      deletion-policy: Delete
   objects:
     - key: healthcheck.txt
       body: |

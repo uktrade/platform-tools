@@ -51,7 +51,7 @@ def int_between(lower, upper):
     def is_between(value):
         if isinstance(value, int) and lower <= value <= upper:
             return True
-        raise SchemaError(f"should be an int between {lower} and {upper}")
+        raise SchemaError(f"should be an integer between {lower} and {upper}")
 
     return is_between
 
@@ -63,7 +63,7 @@ def float_between_with_halfstep(lower, upper):
 
         if is_number and is_half_step and lower <= value <= upper:
             return True
-        raise SchemaError(f"should be a number between {lower} and {upper} in half steps")
+        raise SchemaError(f"should be a number between {lower} and {upper} in increments of 0.5")
 
     return is_between
 
@@ -201,7 +201,8 @@ PIPELINES_SCHEMA = Schema(
 )
 
 NUMBER = Or(int, float)
-DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
+DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
+DELETION_POLICY = Or("Delete", "Retain")
 DELETION_PROTECTION = bool
 RDS_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "xlarge", "xlarge-ha"
@@ -255,10 +256,8 @@ S3_BASE = {
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
-            Optional("bucket-name"): Regex(
-                r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
-            ),
-            Optional("deletion-policy"): Or("Delete", "Retain", "Snapshot"),
+            "bucket-name": Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
+            Optional("deletion-policy"): DELETION_POLICY,
         }
     },
 }
@@ -285,14 +284,13 @@ AURORA_SCHEMA = Schema(
     {
         "type": "aurora-postgres",
         "version": NUMBER,
-        Optional("deletion-policy"): DELETION_POLICY,
-        Optional("deletion-protection"): DELETION_PROTECTION,
+        Optional("deletion-policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("min-capacity"): float_between_with_halfstep(0.5, 128),
                 Optional("max-capacity"): float_between_with_halfstep(0.5, 128),
                 Optional("snapshot-id"): str,
-                Optional("deletion-policy"): DELETION_POLICY,
+                Optional("deletion-policy"): DB_DELETION_POLICY,
                 Optional("deletion-protection"): DELETION_PROTECTION,
             }
         },
@@ -309,8 +307,7 @@ RDS_SCHEMA = Schema(
     {
         "type": "rds-postgres",
         "version": NUMBER,
-        Optional("deletion-policy"): DELETION_POLICY,
-        Optional("deletion-protection"): DELETION_PROTECTION,
+        Optional("deletion-policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
@@ -318,7 +315,7 @@ RDS_SCHEMA = Schema(
                 Optional("volume-size"): int_between(5, 10000),
                 Optional("replicas"): int_between(0, 5),
                 Optional("snapshot-id"): str,
-                Optional("deletion-policy"): DELETION_POLICY,
+                Optional("deletion-policy"): DB_DELETION_POLICY,
                 Optional("deletion-protection"): DELETION_PROTECTION,
             }
         },

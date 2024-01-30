@@ -1,22 +1,5 @@
 ##### RDS postgres example:
 
-my-rds-db:
-  type: rds-postgres
-  version: 14.4
-  deletion-policy: "Retain"
-  deletion-protection: true
-
-  environments:
-    default:
-      plan: small-ha
-      instance: db.t3.micro
-      volume-size: 700
-      replicas: 1
-      snapshot-id: test-snapshot-id
-    dev:
-      deletion-policy: "Delete"
-      deletion-protection: false
-
 my-rds-db-1:
   type: rds-postgres
   version: 14.4
@@ -33,72 +16,67 @@ my-rds-db-3:
 my-rds-db-4:
   type: rds-postgres
   version: 14.4
-  deletion-protection: whatever
+  environments:
+    default:
+      plan: cunning
 
 my-rds-db-5:
   type: rds-postgres
   version: 14.4
   environments:
     default:
-      plan: cunning
-
-my-rds-db-6:
-  type: rds-postgres
-  version: 14.4
-  environments:
-    default:
       instance: a-wee-little-one
 
-my-rds-db-7a:
+my-rds-db-6a:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: 1
 
-my-rds-db-7b:
+my-rds-db-6b:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: 8000000
 
-my-rds-db-7c:
+my-rds-db-6c:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: two hundred
 
-my-rds-db-8a:
+my-rds-db-7a:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       replicas: -1
 
-my-rds-db-8b:
+my-rds-db-7b:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       replicas: 10
 
-my-rds-db-9:
+my-rds-db-8:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       snapshot-id: false
 
-my-rds-db-10:
+my-rds-db-9:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       deletion-policy: "None"
 
-my-rds-db-11:
+my-rds-db-10:
   type: rds-postgres
   version: 14.4
   environments:
