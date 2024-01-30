@@ -11,7 +11,6 @@ import boto3
 import click
 import jsonschema
 import yaml
-from jsonschema import validate as validate_json
 
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
@@ -19,6 +18,7 @@ from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -89,9 +89,6 @@ def _validate_and_normalise_config(config_file):
     with open(PACKAGE_DIR / "addon-plans.yml", "r") as fd:
         addon_plans = yaml.safe_load(fd)
 
-    with open(PACKAGE_DIR / "schemas/addons-schema.json", "r") as fd:
-        schema = json.load(fd)
-
     # load and validate config
     with open(config_file, "r") as fd:
         config = yaml.safe_load(fd)
@@ -100,10 +97,11 @@ def _validate_and_normalise_config(config_file):
     if not config:
         return {}
 
-    try:
-        validate_json(instance=config, schema=schema)
-    except jsonschema.exceptions.ValidationError as err:
-        click.echo(click.style(err, fg="red"))
+    errors = validate_addons(config)
+    if errors:
+        click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
+        for addon, error in errors.items():
+            click.echo(click.style(f"Addon '{addon}': {error}", fg="red"))
         exit(1)
 
     env_names = list_copilot_local_environments()

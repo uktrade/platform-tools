@@ -1,0 +1,66 @@
+my-s3-bucket-1:
+  type: s3
+  readonly: 27 # Should be bool
+
+my-s3-bucket-2:
+  type: s3
+  deletion-policy: Retrain # Misspelled
+
+my-s3-bucket-3:
+  type: s3
+  services: 33 # Should be a list
+
+my-s3-bucket-4:
+  type: s3
+  services:
+    - True
+
+my-s3-bucket-5:
+  type: s3
+  environments:
+    dev:
+      bucket-name: banana-s3alias # Can't end with -s3alias
+
+my-s3-bucket-6:
+  type: s3
+  environments:
+    dev:
+      bucket-name: charles
+      deletion-policy: False # Should be a valid policy name.
+
+my-s3-bucket-7:
+  type: s3
+  objects: should be a list
+
+my-s3-bucket-8:
+  type: s3
+  objects:
+    - key: 777 # Should be a string
+
+my-s3-bucket-9:
+  type: s3
+  objects: # key is mandatory
+    - body: HEALTHCHECK WORKS!
+
+my-s3-bucket-10:
+  type: s3
+  objects:
+    - key: healthcheck.txt
+      body: False # Should be a string
+
+my-s3-bucket-11:
+  type: s3
+  unknown1: key
+
+my-s3-bucket-12:
+  type: s3
+  objects:
+  - key: test
+    unknown2: key
+
+my-s3-bucket-13:
+  type: s3
+  environments:
+    dev:
+      bucket-name: mandatory
+      unknown3: key

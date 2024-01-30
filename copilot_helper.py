@@ -46,6 +46,4 @@ copilot_helper.add_command(svc_commands)
 copilot_helper.add_command(waf_commands)
 
 if __name__ == "__main__":
-    # TODO: We should probably wrap this to catch a botocore.exceptions.UnauthorizedSSOTokenError to
-    # give a better user experience if they are logged out of AWS. See ticket: DBTP-509
     copilot_helper()
