@@ -71,7 +71,7 @@ def float_between_with_halfstep(lower, upper):
 ENV_NAME = Regex(
     r"^[a-zA-Z][a-zA-Z0-9]*$",
     error="Environment name {} is invalid: names must only contain alphanumeric characters."
-    # It would be nice if this worked, but it doesn't seem to for dictionary keys.
+    # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
 range_validator = validate_string(r"^\d+-\d+$")
