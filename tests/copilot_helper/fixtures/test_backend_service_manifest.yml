@@ -54,8 +54,21 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 
 
 # You can override any of the values defined above by environment.
-#environments:
-#  test:
-#    count: 2               # Number of tasks to run for the "test" environment.
-#    deployment:            # The deployment strategy for the "test" environment.
-#       rolling: 'recreate' # Stops existing tasks before new ones are started for faster deployments.
+environments:
+  production:
+    memory: 1024
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+      range: 1-10
+      cooldown:
+        in: 30s
+        out: 60s
+      cpu_percentage: 70
+      memory_percentage:
+        value: 80
+        cooldown:
+          in: 80s
+          out: 160s
+      requests: 10000
+      response_time: 2s
+  test:
+    count: 2 # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count

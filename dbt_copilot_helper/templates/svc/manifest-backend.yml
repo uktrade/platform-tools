@@ -60,8 +60,16 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 
 
 # You can override any of the values defined above by environment.
-#environments:
-#  test:
-#    count: 2               # Number of tasks to run for the "test" environment.
-#    deployment:            # The deployment strategy for the "test" environment.
-#       rolling: 'recreate' # Stops existing tasks before new ones are started for faster deployments.
+environments:
+{%- for env_name, env in environments.items() %}
+  {{ env_name }}:
+    {%- if env.memory %}
+    memory: {{ env.memory }}
+    {%- endif %}
+    {%- if env.count and env.count is mapping %}
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+      {{ env.count | to_yaml | indent(6) | trim }}
+    {%- elif env.count %}
+    count: {{ env.count }} # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+    {%- endif %}
+{%- endfor %}
