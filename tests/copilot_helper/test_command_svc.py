@@ -184,7 +184,7 @@ def test_svc_deploy_with_missing_manifest_file_fails_with_message(
     mock_boto_client.describe_images.assert_not_called()
     assert result.exit_code == 1
     assert (
-        f"Service manifest for {name} could not be found at path copilot/test-service/manifest.yml"
+        f"Service manifest for {name} could not be found at path copilot/test-public-service/manifest.yml"
         in result.stdout
     )
 
@@ -292,6 +292,6 @@ def set_up_test_variables():
     commit_hash = f"{hex_string}"
     branch_name = "does-not-matter"
     env = f"env{hex_string}"
-    name = "test-service"
+    name = "test-public-service"
 
     return branch_name, commit_hash, env, name

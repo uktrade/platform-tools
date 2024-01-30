@@ -6,7 +6,6 @@ from unittest.mock import patch
 import boto3
 import botocore
 import certifi
-import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
@@ -34,14 +33,10 @@ def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates", lazy_read=True)
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
-
-    # JSON Schema compatibility
-    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True)
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
