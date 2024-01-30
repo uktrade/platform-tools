@@ -88,7 +88,7 @@ variables:                    # Pass environment variables as key value pairs.
   OTEL_TRACES_SAMPLER: traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.05"
 {%- for envvar, value in env_vars.items() %}
-  {{ envvar }}:
+  {{ envvar }}: {{ value }}
 {%- endfor %}
 
 {% if secrets %}

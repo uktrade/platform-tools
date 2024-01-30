@@ -7,7 +7,7 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-test.landan.cloudapps.digital
 services:
-- name: test-service
+- name: test-public-service
   type: public
   repo: git@github.com:uktrade/not-a-repo.git
   image_location: not-a-url
@@ -15,7 +15,7 @@ services:
   environments:
     production:
       ipfilter: true
-      paas: dit-services/trade-space/test-service
+      paas: dit-services/trade-space/test-public-service
       url: test-service.trad.gav.ik
       memory: 1024
       count:
@@ -33,7 +33,7 @@ services:
         response_time: 2s
     test:
       ipfilter: false
-      paas: dit-staging/blah/test-service
+      paas: dit-staging/blah/test-public-service
       url: test-service.landan.cloudapps.digital
       count: 2
   overlapping_secrets:
@@ -44,4 +44,35 @@ services:
     GOOD_SECRET: GOOD_SECRET
     AWS_BAD_SECRET: AWS_BAD_SECRET
   env_vars:
-    TEST_VAR: TEST_VAR
+    TEST_VAR: TEST_VAR_VALUE
+
+- name: test-backend-service
+  type: backend
+  repo: git@github.com:uktrade/not-a-repo.git
+  image_location: backend-service-image-repository
+  environments:
+    production:
+      paas: dit-services/trade-space/test-backend-service
+      memory: 1024
+      count:
+        range: 1-10
+        cooldown:
+          in: 30s
+          out: 60s
+        cpu_percentage: 70
+        memory_percentage:
+          value: 80
+          cooldown:
+            in: 80s
+            out: 160s
+        requests: 10000
+        response_time: 2s
+    test:
+      paas: dit-staging/blah/test-service
+      count: 2
+  overlapping_secrets:
+  - OVERLAPPING_SECRET
+  secrets:
+    TEST_SECRET: TEST_SECRET
+  env_vars:
+    TEST_VAR: TEST_VAR_VALUE
