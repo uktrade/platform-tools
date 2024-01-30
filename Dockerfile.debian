@@ -34,3 +34,5 @@ RUN apt-get update \
   && git clone https://github.com/pyenv/pyenv .pyenv \
   && pyenv install ${PYTHON_VERSIONS} \
   && pyenv global $(echo ${PYTHON_VERSIONS} | awk '{ print $NF }')
+
+COPY . /codebuild
