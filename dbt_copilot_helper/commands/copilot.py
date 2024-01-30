@@ -7,12 +7,11 @@ from os.path import isfile
 from pathlib import Path
 from pathlib import PosixPath
 
-import boto3
 import click
-import jsonschema
 import yaml
 
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.files import mkfile
@@ -175,7 +174,8 @@ def _validate_and_normalise_config(config_file):
 
 def get_log_destination_arn():
     """Get destination arns stored in param store in projects aws account."""
-    client = boto3.client("ssm", region_name="eu-west-2")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm", region_name="eu-west-2")
     response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
 
     if not response["Parameters"]:
@@ -423,7 +423,8 @@ def _cleanup_old_files(config, output_dir, env_addons_path):
 def get_env_secrets(app, env):
     """List secret names and values for an environment."""
 
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 

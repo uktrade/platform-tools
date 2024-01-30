@@ -10,7 +10,9 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from freezegun import freeze_time
+from moto import mock_iam
 from moto import mock_ssm
+from moto import mock_sts
 from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
@@ -757,6 +759,8 @@ invalid-entry:
 
 
 @mock_ssm
+@mock_sts
+@mock_iam
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
 )
