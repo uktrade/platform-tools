@@ -26,33 +26,21 @@ my-opensearch-6:
   type: opensearch
   environments:
     dev:
-      replicas: 6
+      engine: 7.3
 
 my-opensearch-7:
   type: opensearch
   environments:
     dev:
-      instance: medium
+      volume_size: 9
 
 my-opensearch-8:
   type: opensearch
   environments:
     dev:
-      engine: 7.3
-
-my-opensearch-9:
-  type: opensearch
-  environments:
-    dev:
-      volume_size: 9
-
-my-opensearch-10:
-  type: opensearch
-  environments:
-    dev:
       volume_size: 512
 
-my-opensearch-11:
+my-opensearch-9:
   type: opensearch
   environments:
     dev:

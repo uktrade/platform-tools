@@ -14,7 +14,7 @@
 #       deletion-protection: false # true|false rds-postgres and aurora-postgres only
 #
 #     production:  # you can override defaults on a per environment basis
-#       plan: some-other-plan  # some of the keys defined in a addon plan can also be overridden
+#       plan: some-other-plan  # some of the keys defined in an addon plan can also be overridden
 #       volume-size: 200 # default size depends on plan. See addon-plans.yaml. Optional.
 #       deletion-policy: Retain
 #       deletion-protection: true
