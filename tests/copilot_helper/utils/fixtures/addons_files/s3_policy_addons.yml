@@ -1,0 +1,13 @@
+my-s3-policy:
+  type: s3-policy
+  readonly: true
+  deletion-policy: Delete
+
+  services:
+    - "web"
+    - "other"
+
+  environments:
+    dev:
+      bucket-name: my-bucket-dev
+      deletion-policy: Retain
