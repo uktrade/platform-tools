@@ -574,7 +574,9 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
 
 ######## Testing missing domain.
 @patch("dbt_copilot_helper.commands.dns.get_load_balancer_configuration", return_value="test.com")
-def test_get_load_balancer_domain_and_configuration_no_domain(fakefs):
+def test_get_load_balancer_domain_and_configuration_no_domain(
+    get_load_balancer_configuration, fakefs, capsys
+):
     fakefs.create_file(
         "copilot/testsvc/manifest.yml",
         contents="""
@@ -584,10 +586,10 @@ environments:
       alias:
 """,
     )
-    breakpoint()
-    get_load_balancer_domain_and_configuration(boto3.Session(), "testapp", "testsvc", "test")
+    with pytest.raises(SystemExit):
+        get_load_balancer_domain_and_configuration(boto3.Session(), "testapp", "testsvc", "test")
 
-    assert True
+    assert capsys.readouterr().out == "No domains found, please check the manifest file\n"
 
 
 @mock_ecs
