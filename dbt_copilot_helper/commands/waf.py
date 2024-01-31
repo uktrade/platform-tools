@@ -10,9 +10,9 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
-from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
+from dbt_copilot_helper.utils.aws import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.cloudformation import get_lint_result
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root

@@ -3,14 +3,14 @@
 import os
 import re
 import time
-from typing import Tuple
 
 import click
 import yaml
-from boto3 import Session
 
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
+from dbt_copilot_helper.utils.aws import get_load_balancer_configuration
+from dbt_copilot_helper.utils.aws import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.messages import abort_with_error
