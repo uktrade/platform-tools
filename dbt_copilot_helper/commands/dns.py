@@ -523,7 +523,6 @@ def get_load_balancer_domain_and_configuration(
     response = get_load_balancer_configuration(project_session, app, svc, env)
 
     # Find the domain name
-    # breakpoint()
     with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
         conf = yaml.safe_load(fd)
         if "environments" in conf:
@@ -545,7 +544,7 @@ def get_load_balancer_domain_and_configuration(
                     f"Environment {env} not found, please check the manifest file", fg="red"
                 )
                 exit()
-    breakpoint()
+
     return domain_name, response["LoadBalancers"][0]
 
 

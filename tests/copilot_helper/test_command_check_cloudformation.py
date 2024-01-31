@@ -63,7 +63,7 @@ def test_check_cloudformation_with_no_args_summarises_all_successes(
     result = CliRunner().invoke(
         check_cloudformation_command, args=["--directory", copilot_directory]
     )
-
+    breakpoint()
     assert ">>> Running all checks" in result.output
     assert ">>> Running lint check" in result.output
     assert ">>> Running security check" in result.output
