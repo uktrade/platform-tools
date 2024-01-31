@@ -576,7 +576,6 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
 def test_get_load_balancer_domain_and_configuration_no_domain(
     get_load_balancer_configuration, fakefs, capsys
 ):
-    
     fakefs.create_file(
         "copilot/testsvc1/manifest.yml",
         contents="""
