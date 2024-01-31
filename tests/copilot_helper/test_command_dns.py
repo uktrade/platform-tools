@@ -572,6 +572,24 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     )
 
 
+######## Testing missing domain.
+@patch("dbt_copilot_helper.commands.dns.get_load_balancer_configuration", return_value="test.com")
+def test_get_load_balancer_domain_and_configuration_no_domain(fakefs):
+    fakefs.create_file(
+        "copilot/testsvc/manifest.yml",
+        contents="""
+environments:
+  test:
+    http:
+      alias:
+""",
+    )
+    breakpoint()
+    get_load_balancer_domain_and_configuration(boto3.Session(), "testapp", "testsvc", "test")
+
+    assert True
+
+
 @mock_ecs
 def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     boto3.Session().client("ecs").create_cluster(
