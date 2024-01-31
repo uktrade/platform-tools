@@ -4,7 +4,6 @@ import stat
 import subprocess
 from pathlib import Path
 
-import boto3
 import click
 import requests
 import yaml
@@ -12,6 +11,7 @@ import yaml
 from dbt_copilot_helper.utils.application import Application
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from dbt_copilot_helper.utils.application import load_application
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import setup_templates
@@ -96,8 +96,9 @@ def prepare():
 def list(app, with_images):
     """List available codebases for the application."""
     application = load_application_or_abort(app)
-    ssm_client = boto3.client("ssm")
-    ecr_client = boto3.client("ecr")
+    session = get_aws_session_or_abort()
+    ssm_client = session.client("ssm")
+    ecr_client = session.client("ecr")
     parameters = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/codebases",
         Recursive=True,
@@ -161,7 +162,8 @@ def build(app, codebase, commit):
         )
         raise click.Abort
 
-    codebuild_client = boto3.client("codebuild")
+    session = get_aws_session_or_abort()
+    codebuild_client = session.client("codebuild")
     build_url = start_build_with_confirmation(
         codebuild_client,
         f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
@@ -189,11 +191,11 @@ def build(app, codebase, commit):
 def deploy(app, env, codebase, commit):
     """Trigger a CodePipeline pipeline based deployment."""
     application = load_application_with_environment(app, env)
-
     check_codebase_exists(application, codebase)
     check_image_exists(application, codebase, commit)
 
-    codebuild_client = boto3.client("codebuild")
+    session = get_aws_session_or_abort()
+    codebuild_client = session.client("codebuild")
     build_url = start_build_with_confirmation(
         codebuild_client,
         f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
@@ -229,7 +231,8 @@ def load_application_or_abort(app: str) -> Application:
 
 
 def check_image_exists(application: Application, codebase: str, commit: str):
-    ecr_client = boto3.client("ecr")
+    session = get_aws_session_or_abort()
+    ecr_client = session.client("ecr")
     try:
         ecr_client.describe_images(
             repositoryName=f"{application.name}/{codebase}",
@@ -251,13 +254,14 @@ def check_image_exists(application: Application, codebase: str, commit: str):
 
 
 def check_codebase_exists(application: Application, codebase: str):
-    ssm_client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    ssm_client = session.client("ssm")
     try:
-        json.loads(
-            ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application.name}/codebases/{codebase}",
-            )["Parameter"]["Value"]
+        parameter = ssm_client.get_parameter(
+            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
         )
+        value = parameter["Parameter"]["Value"]
+        json.loads(value)
     except (KeyError, ValueError, json.JSONDecodeError, ssm_client.exceptions.ParameterNotFound):
         click.secho(
             f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
