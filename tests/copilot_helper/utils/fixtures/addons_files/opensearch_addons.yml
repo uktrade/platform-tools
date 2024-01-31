@@ -7,4 +7,9 @@ my-opensearch:
       engine: "1.3"
       volume_size: 128
       deletion-policy: Delete
+    development:
+      plan: small
+      volume_size: 100
+    production:
+      volume_size: 1000
 
