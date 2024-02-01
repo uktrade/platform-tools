@@ -31,6 +31,6 @@ phases:
   post_build:
     commands:
       - >
-        if [ -f .copilot/phases/pre_build.sh ]; then 
-          bash .copilot/phases/pre_build.sh; 
+        if [ -f .copilot/phases/post_build.sh ]; then 
+          bash .copilot/phases/post_build.sh; 
         fi
