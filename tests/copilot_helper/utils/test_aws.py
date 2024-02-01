@@ -392,3 +392,55 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
     assert load_balancer_configuration["LoadBalancerName"] == "foo"
     assert load_balancer_configuration["VpcId"] == mocked_vpc_id
     assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
+
+
+@patch("dbt_copilot_helper.utils.aws.get_load_balancer_configuration", return_value="test.com")
+def test_get_load_balancer_domain_and_configuration_no_domain(
+    get_load_balancer_configuration, fakefs, capsys
+):
+    fakefs.create_file(
+        "copilot/testsvc1/manifest.yml",
+        contents="""
+environments:
+  test:
+    http:
+      alias:
+""",
+    )
+    with pytest.raises(SystemExit):
+        get_load_balancer_domain_and_configuration("test", "testapp", "testsvc1", "test")
+    assert (
+        capsys.readouterr().out
+        == "No domains found, please check the ./copilot/testsvc1/manifest.yml file\n"
+    )
+
+    fakefs.create_file(
+        "copilot/testsvc2/manifest.yml",
+        contents="""
+environments:
+  test:
+    http:
+""",
+    )
+    with pytest.raises(SystemExit):
+        get_load_balancer_domain_and_configuration("test", "testapp", "testsvc2", "test")
+    assert (
+        capsys.readouterr().out
+        == "No domains found, please check the ./copilot/testsvc2/manifest.yml file\n"
+    )
+
+    fakefs.create_file(
+        "copilot/testsvc3/manifest.yml",
+        contents="""
+environments:
+  not_test:
+    http:
+        alias: test.com
+""",
+    )
+    with pytest.raises(SystemExit):
+        get_load_balancer_domain_and_configuration("test", "testapp", "testsvc3", "test")
+    assert (
+        capsys.readouterr().out
+        == "Environment test not found, please check the ./copilot/testsvc3/manifest.yml file\n"
+    )

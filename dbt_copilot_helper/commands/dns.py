@@ -3,11 +3,9 @@
 import os
 import re
 import time
-from typing import Tuple
 
 import click
 import yaml
-from boto3 import Session
 
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
@@ -440,116 +438,6 @@ def _get_zone_id_or_abort(hosted_zones, zone):
         )
         exit()
     return hosted_zones[zone]["Id"]
-
-
-def get_load_balancer_configuration(
-    project_session: Session, app: str, svc: str, env: str
-) -> list[Session]:
-    def separate_hyphenated_application_environment_and_service(
-        hyphenated_string, number_of_items_of_interest, number_of_trailing_items
-    ):
-        # The application name may be hyphenated, so we start splitting
-        # at the hyphen after the first item of interest and return the
-        # items of interest only...
-        return hyphenated_string.rsplit(
-            "-", number_of_trailing_items + number_of_items_of_interest - 1
-        )[:number_of_items_of_interest]
-
-    proj_client = project_session.client("ecs")
-
-    response = proj_client.list_clusters()
-    check_response(response)
-    no_items = True
-    for cluster_arn in response["clusterArns"]:
-        cluster_name = cluster_arn.split("/")[1]
-        cluster_app, cluster_env = separate_hyphenated_application_environment_and_service(
-            cluster_name, 2, 2
-        )
-        if cluster_app == app and cluster_env == env:
-            no_items = False
-            break
-
-    if no_items:
-        click.echo(
-            click.style("There are no clusters matching ", fg="red")
-            + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in this AWS account", fg="red"),
-        )
-        exit()
-
-    response = proj_client.list_services(cluster=cluster_name)
-    check_response(response)
-    no_items = True
-    for service_arn in response["serviceArns"]:
-        fully_qualified_service_name = service_arn.split("/")[2]
-        (
-            service_app,
-            service_env,
-            service_name,
-        ) = separate_hyphenated_application_environment_and_service(
-            fully_qualified_service_name, 3, 2
-        )
-        if service_app == app and service_env == env and service_name == svc:
-            no_items = False
-            break
-
-    if no_items:
-        click.echo(
-            click.style("There are no services matching ", fg="red")
-            + click.style(f"{svc}", fg="white", bold=True)
-            + click.style(" in this aws account", fg="red"),
-        )
-        exit()
-
-    elb_client = project_session.client("elbv2")
-
-    elb_arn = elb_client.describe_target_groups(
-        TargetGroupArns=[
-            proj_client.describe_services(
-                cluster=cluster_name,
-                services=[
-                    fully_qualified_service_name,
-                ],
-            )["services"][0]["loadBalancers"][0]["targetGroupArn"],
-        ],
-    )["TargetGroups"][0]["LoadBalancerArns"][0]
-
-    response = elb_client.describe_load_balancers(LoadBalancerArns=[elb_arn])
-    check_response(response)
-    return response
-
-
-def get_load_balancer_domain_and_configuration(
-    project_session: Session, app: str, svc: str, env: str
-) -> Tuple[str, dict]:
-    response = get_load_balancer_configuration(project_session, app, svc, env)
-
-    # Find the domain name
-    with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
-        conf = yaml.safe_load(fd)
-        if "environments" in conf:
-            if env in conf["environments"]:
-                for domain in conf["environments"].items():
-                    if domain[0] == env:
-                        if (
-                            domain[1] is None
-                            or domain[1]["http"] is None
-                            or domain[1]["http"]["alias"] is None
-                        ):
-                            click.secho(
-                                f"No domains found, please check the ./copilot/{svc}/manifest.yml file",
-                                fg="red",
-                            )
-                            exit()
-                        domain_name = domain[1]["http"]["alias"]
-            else:
-                click.secho(
-                    f"Environment {env} not found, please check the ./copilot/{svc}/manifest.yml file",
-                    fg="red",
-                )
-                exit()
-
-    return domain_name, response["LoadBalancers"][0]
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)

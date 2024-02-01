@@ -216,11 +216,26 @@ def get_load_balancer_domain_and_configuration(
     with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
         conf = yaml.safe_load(fd)
         if "environments" in conf:
-            for domain in conf["environments"].items():
-                if domain[0] == env:
-                    domain_name = domain[1]["http"]["alias"]
-
-        # What happens if domain_name isn't set? Should we raise an error? Return default ? Or None?
+            if env in conf["environments"]:
+                for domain in conf["environments"].items():
+                    if domain[0] == env:
+                        if (
+                            domain[1] is None
+                            or domain[1]["http"] is None
+                            or domain[1]["http"]["alias"] is None
+                        ):
+                            click.secho(
+                                f"No domains found, please check the ./copilot/{svc}/manifest.yml file",
+                                fg="red",
+                            )
+                            exit()
+                        domain_name = domain[1]["http"]["alias"]
+            else:
+                click.secho(
+                    f"Environment {env} not found, please check the ./copilot/{svc}/manifest.yml file",
+                    fg="red",
+                )
+                exit()
 
     return domain_name, response["LoadBalancers"][0]
 
