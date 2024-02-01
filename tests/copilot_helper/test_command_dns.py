@@ -587,7 +587,10 @@ environments:
     )
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration("test", "testapp", "testsvc1", "test")
-    assert capsys.readouterr().out == "No domains found, please check the manifest file\n"
+    assert (
+        capsys.readouterr().out
+        == "No domains found, please check the ./copilot/testsvc1/manifest.yml file\n"
+    )
 
     fakefs.create_file(
         "copilot/testsvc2/manifest.yml",
@@ -599,7 +602,10 @@ environments:
     )
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration("test", "testapp", "testsvc2", "test")
-    assert capsys.readouterr().out == "No domains found, please check the manifest file\n"
+    assert (
+        capsys.readouterr().out
+        == "No domains found, please check the ./copilot/testsvc2/manifest.yml file\n"
+    )
 
     fakefs.create_file(
         "copilot/testsvc3/manifest.yml",
@@ -612,7 +618,10 @@ environments:
     )
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration("test", "testapp", "testsvc3", "test")
-    assert capsys.readouterr().out == "Environment test not found, please check the manifest file\n"
+    assert (
+        capsys.readouterr().out
+        == "Environment test not found, please check the ./copilot/testsvc3/manifest.yml file\n"
+    )
 
 
 @mock_ecs

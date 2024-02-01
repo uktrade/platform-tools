@@ -535,13 +535,15 @@ def get_load_balancer_domain_and_configuration(
                             or domain[1]["http"]["alias"] is None
                         ):
                             click.secho(
-                                "No domains found, please check the manifest file", fg="red"
+                                f"No domains found, please check the ./copilot/{svc}/manifest.yml file",
+                                fg="red",
                             )
                             exit()
                         domain_name = domain[1]["http"]["alias"]
             else:
                 click.secho(
-                    f"Environment {env} not found, please check the manifest file", fg="red"
+                    f"Environment {env} not found, please check the ./copilot/{svc}/manifest.yml file",
+                    fg="red",
                 )
                 exit()
 
