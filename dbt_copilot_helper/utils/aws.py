@@ -55,7 +55,7 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     except botocore.exceptions.TokenRetrievalError:
         click.secho(
             "The SSO Token associated with this profile has expired.  "
-            "To refresh this SSO session run aws sso login with the corresponding profile",
+            "To refresh this SSO session run `aws sso login` with the corresponding profile",
             fg="red",
         )
         exit()
