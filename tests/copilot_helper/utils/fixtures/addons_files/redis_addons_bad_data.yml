@@ -28,10 +28,4 @@ my-redis-6:
   type: redis
   environments:
     default:
-      instance: teeny
-
-my-redis-7:
-  type: redis
-  environments:
-    default:
       deletion-policy: Never

@@ -8,9 +8,7 @@ my-rds-db:
   environments:
     default:
       plan: small-ha
-      instance: db.t3.micro
       volume-size: 700
-      replicas: 1
       snapshot-id: test-snapshot-id
     dev:
       deletion-policy: "Delete"

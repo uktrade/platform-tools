@@ -42,7 +42,7 @@ Mappings:
   myRdsDbEnvironmentConfigMap:
     development:
       DBInstanceClass: 'db.t3.small'
-      MultiAZ: true
+      MultiAZ: True
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
       StorageType: gp3

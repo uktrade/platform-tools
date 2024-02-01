@@ -8,5 +8,4 @@ my-redis:
       plan: small
       # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
       replicas: 4
-      instance: cache.m6g.large
       deletion-policy: Retain

@@ -20,63 +20,42 @@ my-rds-db-4:
     default:
       plan: cunning
 
-my-rds-db-5:
-  type: rds-postgres
-  version: 14.4
-  environments:
-    default:
-      instance: a-wee-little-one
-
-my-rds-db-6a:
+my-rds-db-5a:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: 1
 
-my-rds-db-6b:
+my-rds-db-5b:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: 8000000
 
-my-rds-db-6c:
+my-rds-db-5c:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       volume-size: two hundred
 
-my-rds-db-7a:
-  type: rds-postgres
-  version: 14.4
-  environments:
-    default:
-      replicas: -1
-
-my-rds-db-7b:
-  type: rds-postgres
-  version: 14.4
-  environments:
-    default:
-      replicas: 10
-
-my-rds-db-8:
+my-rds-db-6:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       snapshot-id: false
 
-my-rds-db-9:
+my-rds-db-7:
   type: rds-postgres
   version: 14.4
   environments:
     default:
       deletion-policy: "None"
 
-my-rds-db-10:
+my-rds-db-8:
   type: rds-postgres
   version: 14.4
   environments:

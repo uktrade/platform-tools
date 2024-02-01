@@ -205,10 +205,7 @@ DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
 DELETION_POLICY = Or("Delete", "Retain")
 DELETION_PROTECTION = bool
 RDS_PLANS = Or(
-    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "xlarge", "xlarge-ha"
-)
-RDS_INSTANCE_TYPES = Or(
-    "db.m5.2xlarge", "db.m5.4xlarge", "db.m5.large", "db.t3.micro", "db.t3.small"
+    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
 REDIS_PLANS = Or(
@@ -228,27 +225,11 @@ REDIS_PLANS = Or(
 
 REDIS_ENGINE_VERSIONS = Or("3.2.6", "4.0.10", "5.0.0", "5.0.3", "5.0.4", "5.0.6", "6.0", "6.2")
 
-REDIS_INSTANCE_TYPES = Or(
-    "cache.m6g.2xlarge",
-    "cache.m6g.large",
-    "cache.m6g.xlarge",
-    "cache.t4g.medium",
-    "cache.t4g.micro",
-)
-
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
 OPENSEARCH_ENGINE_VERSIONS = Or("2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
-
-OPENSEARCH_INSTANCE_TYPES = Or(
-    "m6g.2xlarge.search",
-    "m6g.large.search",
-    "m6g.xlarge.search",
-    "t2.medium.search",
-    "t3.medium.search",
-)
 
 S3_BASE = {
     Optional("readonly"): bool,
@@ -311,9 +292,7 @@ RDS_SCHEMA = Schema(
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
-                Optional("instance"): RDS_INSTANCE_TYPES,
                 Optional("volume-size"): int_between(5, 10000),
-                Optional("replicas"): int_between(0, 5),
                 Optional("snapshot-id"): str,
                 Optional("deletion-policy"): DB_DELETION_POLICY,
                 Optional("deletion-protection"): DELETION_PROTECTION,
@@ -337,25 +316,68 @@ REDIS_SCHEMA = Schema(
                 Optional("plan"): REDIS_PLANS,
                 Optional("engine"): REDIS_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
-                Optional("instance"): REDIS_INSTANCE_TYPES,
                 Optional("deletion-policy"): DELETION_POLICY,
             }
         },
     }
 )
 
-OPENSEARCH_SCHEMA = Schema(
+OPENSEARCH_MIN_VOLUME_SIZE = 10
+OPENSEARCH_MAX_VOLUME_SIZE = {
+    "tiny": 100,
+    "small": 200,
+    "small-ha": 200,
+    "medium": 512,
+    "medium-ha": 512,
+    "large": 1000,
+    "large-ha": 1000,
+    "x-large": 1500,
+    "x-large-ha": 1500,
+}
+
+
+class ConditionalSchema(Schema):
+    def validate(self, data, _is_conditional_schema=True):
+        data = super(ConditionalSchema, self).validate(data, _is_conditional_schema=False)
+        if _is_conditional_schema:
+            default_plan = None
+            default_volume_size = None
+            if data["environments"].get("default", None):
+                default_plan = data["environments"]["default"].get("plan", None)
+                default_volume_size = data["environments"]["default"].get("volume_size", None)
+
+            for env in data["environments"]:
+                volume_size = data["environments"][env].get("volume_size", default_volume_size)
+                plan = data["environments"][env].get("plan", default_plan)
+
+                if volume_size:
+                    if not plan:
+                        raise SchemaError(f"Missing key: 'plan'")
+
+                    if volume_size < OPENSEARCH_MIN_VOLUME_SIZE:
+                        raise SchemaError(
+                            f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {OPENSEARCH_MIN_VOLUME_SIZE}"
+                        )
+
+                    for key in OPENSEARCH_MAX_VOLUME_SIZE:
+                        if plan == key and not volume_size <= OPENSEARCH_MAX_VOLUME_SIZE[key]:
+                            raise SchemaError(
+                                f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {OPENSEARCH_MIN_VOLUME_SIZE} and {OPENSEARCH_MAX_VOLUME_SIZE[key]} for plan {plan}"
+                            )
+
+        return data
+
+
+OPENSEARCH_SCHEMA = ConditionalSchema(
     {
         "type": "opensearch",
         Optional("deletion-policy"): DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
-                Optional("plan"): OPENSEARCH_PLANS,
                 Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
-                Optional("replicas"): int_between(0, 5),
-                Optional("instance"): OPENSEARCH_INSTANCE_TYPES,
-                Optional("volume_size"): int_between(10, 511),
                 Optional("deletion-policy"): DELETION_POLICY,
+                Optional("plan"): OPENSEARCH_PLANS,
+                Optional("volume_size"): int,
             }
         },
     }
