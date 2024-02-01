@@ -35,8 +35,6 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         exit()
 
     sts = session.client("sts")
-    account_id = None
-    user_id = None
     try:
         response = sts.get_caller_identity()
         account_id = response["Account"]
@@ -100,7 +98,8 @@ def get_profile_name_from_account_id(account_id: str):
 
 
 def get_ssm_secret_names(app, env):
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 
@@ -131,7 +130,8 @@ def get_ssm_secrets(app, env):
     """Return secrets from AWS Parameter Store as a list of tuples with the
     secret name and secret value."""
 
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 
@@ -161,9 +161,10 @@ def get_ssm_secrets(app, env):
 def set_ssm_param(
     app, env, param_name, param_value, overwrite, exists, description="Copied from Cloud Foundry."
 ):
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
-    args = dict(
+    parameter_args = dict(
         Name=param_name,
         Description=description,
         Value=param_value,
@@ -183,9 +184,9 @@ def set_ssm_param(
 
     if overwrite and exists:
         # Tags can't be updated when overwriting
-        del args["Tags"]
+        del parameter_args["Tags"]
 
-    client.put_parameter(**args)
+    client.put_parameter(**parameter_args)
 
 
 def check_response(response):
@@ -198,7 +199,8 @@ def check_response(response):
 
 
 def get_codestar_connection_arn(app_name):
-    response = boto3.client("codestar-connections").list_connections()
+    session = get_aws_session_or_abort()
+    response = session.client("codestar-connections").list_connections()
 
     for connection in response["Connections"]:
         if connection["ConnectionName"] == app_name:

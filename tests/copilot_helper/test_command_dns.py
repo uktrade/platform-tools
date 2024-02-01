@@ -1,4 +1,6 @@
+import json
 from unittest.mock import ANY
+from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
@@ -25,8 +27,10 @@ from dbt_copilot_helper.commands.dns import create_hosted_zones
 from dbt_copilot_helper.commands.dns import create_required_zones_and_certs
 from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_certificate_zone_id
+from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
 from dbt_copilot_helper.commands.dns import validate_subdomains
+from tests.copilot_helper.conftest import mock_aws_client
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
 ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
@@ -528,11 +532,16 @@ def test_configure_with_no_manifests_exits_with_error(fakefs):
 @patch(
     "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
-@patch("dbt_copilot_helper.utils.aws.check_response", return_value="{}")
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign(get_aws_session_or_abort, check_response, ensure_cwd_is_repo_root):
+def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
+    client = mock_aws_client(get_aws_session_or_abort)
+    client.list_clusters.return_value = {
+        "clusterArns": [],
+        "ResponseMetadata": {"HTTPStatusCode": 200},
+    }
+
     runner = CliRunner()
     result = runner.invoke(
         assign,

@@ -3,9 +3,11 @@
 import os
 import re
 import time
+from typing import Tuple
 
 import click
 import yaml
+from boto3 import Session
 
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
@@ -663,7 +665,6 @@ def assign(app, domain_profile, project_profile, svc, env):
     project_session = get_aws_session_or_abort(project_profile)
 
     ensure_cwd_is_repo_root()
-
     # Find the Load Balancer name.
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
         project_session, app, svc, env

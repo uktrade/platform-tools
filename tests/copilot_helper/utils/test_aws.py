@@ -17,6 +17,7 @@ from dbt_copilot_helper.utils.aws import get_load_balancer_domain_and_configurat
 from dbt_copilot_helper.utils.aws import get_profile_name_from_account_id
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
+from tests.copilot_helper.conftest import mock_aws_client
 from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
@@ -36,15 +37,19 @@ def test_get_aws_session_or_abort_profile_not_configured(capsys):
     assert """AWS profile "foo" is not configured.""" in captured.out
 
 
-@mock_ssm
-def test_get_ssm_secrets():
-    mocked_ssm = boto3.client("ssm")
-    mocked_ssm.put_parameter(
-        Name="/copilot/test-application/development/secrets/TEST_SECRET",
-        Description="A test parameter",
-        Value="test value",
-        Type="SecureString",
-    )
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_get_ssm_secrets(mock_get_aws_session_or_abort):
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.get_parameters_by_path.return_value = {
+        "Parameters": [
+            {
+                "Name": "/copilot/test-application/development/secrets/TEST_SECRET",
+                "Description": "A test parameter",
+                "Value": "test value",
+                "Type": "SecureString",
+            }
+        ]
+    }
 
     result = get_ssm_secrets("test-application", "development")
 
@@ -56,8 +61,10 @@ def test_get_ssm_secrets():
     [(False, False), (False, True)],
 )
 @mock_ssm
-def test_set_ssm_param(overwrite, exists):
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_set_ssm_param(mock_get_aws_session_or_abort, overwrite, exists):
     mocked_ssm = boto3.client("ssm")
+    mock_aws_client(mock_get_aws_session_or_abort, mocked_ssm)
 
     set_ssm_param(
         "test-application",
@@ -90,8 +97,10 @@ def test_set_ssm_param(overwrite, exists):
 
 
 @mock_ssm
-def test_set_ssm_param_with_existing_secret():
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_set_ssm_param_with_existing_secret(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
+    mock_aws_client(mock_get_aws_session_or_abort, mocked_ssm)
 
     mocked_ssm.put_parameter(
         Name="/copilot/test-application/development/secrets/TEST_SECRET",
@@ -126,8 +135,10 @@ def test_set_ssm_param_with_existing_secret():
 
 
 @mock_ssm
-def test_set_ssm_param_with_overwrite_but_not_exists():
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_set_ssm_param_with_overwrite_but_not_exists(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
+    mock_aws_client(mock_get_aws_session_or_abort, mocked_ssm)
 
     mocked_ssm.put_parameter(
         Name="/copilot/test-application/development/secrets/TEST_SECRET",
@@ -163,8 +174,10 @@ def test_set_ssm_param_with_overwrite_but_not_exists():
 
 
 @mock_ssm
-def test_set_ssm_param_tags():
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_set_ssm_param_tags(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
+    mock_aws_client(mock_get_aws_session_or_abort, mocked_ssm)
 
     set_ssm_param(
         "test-application",
@@ -195,8 +208,10 @@ def test_set_ssm_param_tags():
 
 
 @mock_ssm
-def test_set_ssm_param_tags_with_existing_secret():
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
+def test_set_ssm_param_tags_with_existing_secret(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
+    mock_aws_client(mock_get_aws_session_or_abort, mocked_ssm)
 
     secret_name = "/copilot/test-application/development/secrets/TEST_SECRET"
     tags = [
@@ -237,7 +252,7 @@ def test_set_ssm_param_tags_with_existing_secret():
     )
 
 
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @pytest.mark.parametrize(
     "connection_names, app_name, expected_arn",
     [
@@ -266,8 +281,10 @@ def test_set_ssm_param_tags_with_existing_secret():
         ],
     ],
 )
-def test_get_codestar_connection_arn(mocked_boto3_client, connection_names, app_name, expected_arn):
-    mock_codestar_connections_boto_client(mocked_boto3_client, connection_names)
+def test_get_codestar_connection_arn(
+    mock_get_aws_session_or_abort, connection_names, app_name, expected_arn
+):
+    mock_codestar_connections_boto_client(mock_get_aws_session_or_abort, connection_names)
 
     result = get_codestar_connection_arn(app_name)
 
