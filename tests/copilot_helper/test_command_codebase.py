@@ -5,19 +5,28 @@ import stat
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import PropertyMock
 from unittest.mock import patch
 
 import boto3
 import requests
 from click.testing import CliRunner
-from moto import mock_ssm
 
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
 
 real_ecr_client = boto3.client("ecr")
 real_ssm_client = boto3.client("ssm")
+
+
+def mock_aws_client(get_aws_session_or_abort):
+    session = MagicMock(name="session-mock")
+    client = MagicMock(name="client-mock")
+    session.client.return_value = client
+    get_aws_session_or_abort.return_value = session
+
+    return client
 
 
 class TestCodebasePrepare:
@@ -134,18 +143,19 @@ class TestCodebasePrepare:
 
 
 class TestCodebaseBuild:
-    @patch("boto3.client")
     @patch("click.confirm")
     @patch("subprocess.run")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_build_successfully_triggers_a_pipeline_based_build(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm, mock_boto_client
+        self, get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm
     ):
         from dbt_copilot_helper.commands.codebase import build
 
         mock_subprocess_run.return_value.stderr = ""
         mock_click_confirm.return_value = "y"
-        mock_boto_client.return_value.start_build.return_value = {
+
+        client = mock_aws_client(get_aws_session_or_abort)
+        client.start_build.return_value = {
             "build": {
                 "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
             }
@@ -163,7 +173,7 @@ class TestCodebaseBuild:
             ],
         )
 
-        mock_boto_client.return_value.start_build.assert_called_with(
+        client.start_build.assert_called_with(
             projectName="codebuild-test-application-application",
             artifactsOverride={"type": "NO_ARTIFACTS"},
             sourceVersion="ab1c23d",
@@ -175,11 +185,10 @@ class TestCodebaseBuild:
             "-project/build/build-project%3Abuild-id" in result.output
         )
 
-    @patch("boto3.client")
     @patch("subprocess.run")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_boto_client
+        self, mock_aws_session, mock_subprocess_run
     ):
         from dbt_copilot_helper.commands.codebase import build
 
@@ -202,12 +211,11 @@ class TestCodebaseBuild:
             in result.output
         )
 
-    @patch("boto3.client")
     @patch("click.confirm")
     @patch("subprocess.run")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_build_does_not_trigger_build_without_confirmation(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm, mock_boto_client
+        self, get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm
     ):
         from dbt_copilot_helper.commands.codebase import build
 
@@ -232,7 +240,10 @@ class TestCodebaseBuild:
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
-    def test_codebase_build_does_not_trigger_build_without_an_application(self, load_application):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_codebase_build_does_not_trigger_build_without_an_application(
+        self, mock_aws_session, load_application
+    ):
         os.environ["AWS_PROFILE"] = "foo"
         from dbt_copilot_helper.commands.codebase import build
 
@@ -255,17 +266,18 @@ class TestCodebaseBuild:
 
 
 class TestCodebaseDeploy:
-    @patch("boto3.client")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
-        self, get_aws_session_or_abort, mock_boto_client
+        self, get_aws_session_or_abort
     ):
         from dbt_copilot_helper.commands.codebase import deploy
 
-        mock_boto_client.return_value.get_parameter.return_value = {
+        client = mock_aws_client(get_aws_session_or_abort)
+
+        client.get_parameter.return_value = {
             "Parameter": {"Value": json.dumps({"name": "application"})},
         }
-        mock_boto_client.return_value.start_build.return_value = {
+        client.start_build.return_value = {
             "build": {
                 "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
             },
@@ -286,7 +298,7 @@ class TestCodebaseDeploy:
             input="y\n",
         )
 
-        mock_boto_client.return_value.start_build.assert_called_with(
+        client.start_build.assert_called_with(
             projectName="pipeline-test-application-application-BuildProject",
             artifactsOverride={"type": "NO_ARTIFACTS"},
             sourceTypeOverride="NO_SOURCE",
@@ -306,25 +318,24 @@ class TestCodebaseDeploy:
             "-project/build/build-project%3Abuild-id" in result.output
         )
 
-    @patch("boto3.client")
     @patch("subprocess.run")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_boto_client
+        self, get_aws_session_or_abort, mock_subprocess_run
     ):
         from dbt_copilot_helper.commands.codebase import deploy
 
-        mock_boto_client.return_value.get_parameter.return_value = {
+        client = mock_aws_client(get_aws_session_or_abort)
+
+        client.get_parameter.return_value = {
             "Parameter": {"Value": json.dumps({"name": "application"})},
         }
-        mock_boto_client.return_value.exceptions.ImageNotFoundException = (
-            real_ecr_client.exceptions.ImageNotFoundException
-        )
-        mock_boto_client.return_value.exceptions.RepositoryNotFoundException = (
+        client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+        client.exceptions.RepositoryNotFoundException = (
             real_ecr_client.exceptions.RepositoryNotFoundException
         )
-        mock_boto_client.return_value.describe_images.side_effect = (
-            real_ecr_client.exceptions.RepositoryNotFoundException({}, "")
+        client.describe_images.side_effect = real_ecr_client.exceptions.RepositoryNotFoundException(
+            {}, ""
         )
 
         result = CliRunner().invoke(
@@ -343,25 +354,24 @@ class TestCodebaseDeploy:
 
         assert 'The ECR Repository for codebase "application" does not exist.' in result.output
 
-    @patch("boto3.client")
     @patch("subprocess.run")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_aborts_with_a_nonexistent_image_tag(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_boto_client
+        self, get_aws_session_or_abort, mock_subprocess_run
     ):
         from dbt_copilot_helper.commands.codebase import deploy
 
-        mock_boto_client.return_value.get_parameter.return_value = {
+        client = mock_aws_client(get_aws_session_or_abort)
+
+        client.get_parameter.return_value = {
             "Parameter": {"Value": json.dumps({"name": "application"})},
         }
-        mock_boto_client.return_value.exceptions.ImageNotFoundException = (
-            real_ecr_client.exceptions.ImageNotFoundException
-        )
-        mock_boto_client.return_value.exceptions.RepositoryNotFoundException = (
+        client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+        client.exceptions.RepositoryNotFoundException = (
             real_ecr_client.exceptions.RepositoryNotFoundException
         )
-        mock_boto_client.return_value.describe_images.side_effect = (
-            real_ecr_client.exceptions.ImageNotFoundException({}, "")
+        client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException(
+            {}, ""
         )
 
         result = CliRunner().invoke(
@@ -383,25 +393,21 @@ class TestCodebaseDeploy:
             "`copilot-helper codebase build` command first." in result.output
         )
 
-    @patch("boto3.client")
-    @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_without_confirmation(
-        self, get_aws_session_or_abort, mock_boto_client
+        self, get_aws_session_or_abort
     ):
         from dbt_copilot_helper.commands.codebase import deploy
 
-        mock_boto_client.return_value.get_parameter.return_value = {
+        client = mock_aws_client(get_aws_session_or_abort)
+        client.get_parameter.return_value = {
             "Parameter": {"Value": json.dumps({"name": "application"})},
         }
-        mock_boto_client.return_value.exceptions.ImageNotFoundException = (
-            real_ecr_client.exceptions.ImageNotFoundException
-        )
-        mock_boto_client.return_value.exceptions.RepositoryNotFoundException = (
+        client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+        client.exceptions.RepositoryNotFoundException = (
             real_ecr_client.exceptions.RepositoryNotFoundException
         )
-        mock_boto_client.return_value.exceptions.ParameterNotFound = (
-            real_ssm_client.exceptions.ParameterNotFound
-        )
+        client.exceptions.ParameterNotFound = real_ssm_client.exceptions.ParameterNotFound
 
         result = CliRunner().invoke(
             deploy,
@@ -424,11 +430,11 @@ class TestCodebaseDeploy:
         )
         assert """Your deployment was not triggered.""" in result.output
 
-    @mock_ssm
     @patch(
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_without_an_application(
         self, get_aws_session_or_abort, aws_credentials
     ):
@@ -455,8 +461,8 @@ class TestCodebaseDeploy:
             in result.output
         )
 
-    @mock_ssm
     @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
         self, get_aws_session_or_abort, aws_credentials, mock_application
     ):
@@ -482,10 +488,11 @@ class TestCodebaseDeploy:
         )
 
 
-@patch("boto3.client")
 class TestCodebaseList:
-    def test_lists_codebases_successfully(self, mock_boto_client):
-        mock_boto_client.return_value.get_parameters_by_path.return_value = {
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_lists_codebases_successfully(self, get_aws_session_or_abort):
+        client = mock_aws_client(get_aws_session_or_abort)
+        client.get_parameters_by_path.return_value = {
             "Parameters": [
                 {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
             ],
@@ -497,13 +504,15 @@ class TestCodebaseList:
         assert "The following codebases are available:" in result.output
         assert "- application (https://github.com/uktrade/example)" in result.output
 
-    def test_lists_codebases_with_images_successfully(self, mock_boto_client):
-        mock_boto_client.return_value.get_parameters_by_path.return_value = {
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_lists_codebases_with_images_successfully(self, get_aws_session_or_abort):
+        client = mock_aws_client(get_aws_session_or_abort)
+        client.get_parameters_by_path.return_value = {
             "Parameters": [
                 {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
             ],
         }
-        mock_boto_client.return_value.describe_images.return_value = {
+        client.describe_images.return_value = {
             "imageDetails": [
                 {
                     "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
@@ -546,7 +555,8 @@ class TestCodebaseList:
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
-    def test_aborts_when_application_does_not_exist(self, load_application, mock_boto_client):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_aborts_when_application_does_not_exist(self, mock_aws_session, load_application):
         from dbt_copilot_helper.commands.codebase import list
 
         os.environ["AWS_PROFILE"] = "foo"
@@ -557,10 +567,13 @@ class TestCodebaseList:
             in result.output
         )
 
-    def test_aborts_when_application_has_no_codebases(self, mock_boto_client):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_aborts_when_application_has_no_codebases(self, get_aws_session_or_abort):
         from dbt_copilot_helper.commands.codebase import list
 
-        mock_boto_client.return_value.get_parameters_by_path.return_value = {"Parameters": []}
+        client = mock_aws_client(get_aws_session_or_abort)
+
+        client.get_parameters_by_path.return_value = {"Parameters": []}
 
         result = CliRunner().invoke(list, ["--app", "test-application"])
 

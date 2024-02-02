@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
@@ -291,12 +292,23 @@ def mock_codestar_connection_response(app_name):
     }
 
 
-def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names):
-    mocked_boto3_client.return_value = mocked_boto3_client
-    mocked_boto3_client.list_connections.return_value = {
+def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_names):
+    client = mock_aws_client(get_aws_session_or_abort)
+
+    client.list_connections.return_value = {
         "Connections": [mock_codestar_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
     }
+
+
+def mock_aws_client(get_aws_session_or_abort, client=None):
+    session = MagicMock(name="session-mock")
+    if not client:
+        client = MagicMock(name="client-mock")
+    session.client.return_value = client
+    get_aws_session_or_abort.return_value = session
+
+    return client
 
 
 def assert_file_created_in_stdout(output_file, result):

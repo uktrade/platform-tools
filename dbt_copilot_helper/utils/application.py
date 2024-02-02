@@ -4,6 +4,7 @@ from typing import Dict
 
 import boto3
 import yaml
+from boto3 import Session
 from yaml.parser import ParserError
 
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
@@ -59,9 +60,9 @@ class ApplicationNotFoundError(Exception):
     pass
 
 
-def load_application(app: str = None) -> Application:
+def load_application(app: str = None, default_session: Session = None) -> Application:
     application = Application(app if app else get_application_name())
-    current_session = get_aws_session_or_abort()
+    current_session = default_session if default_session else get_aws_session_or_abort()
 
     ssm_client = current_session.client("ssm")
 

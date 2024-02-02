@@ -17,12 +17,12 @@ from tests.copilot_helper.conftest import mock_codestar_connections_boto_client
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_session_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
     buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments()
 
@@ -55,12 +55,12 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_environments_creates_the_pipeline_configuration(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_session_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
 
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
@@ -80,12 +80,12 @@ def test_pipeline_generate_with_only_environments_creates_the_pipeline_configura
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuration(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_session_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
 
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
@@ -120,12 +120,12 @@ def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_overwrites_any_existing_config_files(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_session_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
@@ -142,24 +142,26 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_with_no_bootstrap_yml_succeeds(git_remote, mocked_boto3_client, fakefs):
+def test_pipeline_generate_with_no_bootstrap_yml_succeeds(
+    git_remote, get_aws_session_or_abort, fakefs
+):
     setup_fixtures(fakefs)
     os.remove("bootstrap.yml")
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 0
 
 
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_session_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, [])
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, [])
     setup_fixtures(fakefs)
 
     result = CliRunner().invoke(generate)
@@ -238,12 +240,12 @@ def test_pipeline_generate_with_invalid_bootstrap_yml_and_no_workspace_fails_wit
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
+@patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
-    git_remote, mocked_boto3_client, fakefs
+    git_remote, get_aws_command_or_abort, fakefs
 ):
-    mock_codestar_connections_boto_client(mocked_boto3_client, ["test-app"])
+    mock_codestar_connections_boto_client(get_aws_command_or_abort, ["test-app"])
     setup_fixtures(fakefs)
 
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
