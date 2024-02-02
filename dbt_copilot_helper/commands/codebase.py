@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 import requests
 import yaml
+from boto3 import Session
 
 from dbt_copilot_helper.utils.application import Application
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
@@ -95,8 +96,8 @@ def prepare():
 )
 def list(app, with_images):
     """List available codebases for the application."""
-    application = load_application_or_abort(app)
     session = get_aws_session_or_abort()
+    application = load_application_or_abort(session, app)
     ssm_client = session.client("ssm")
     ecr_client = session.client("ecr")
     parameters = ssm_client.get_parameters_by_path(
@@ -148,8 +149,8 @@ def list(app, with_images):
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
     """Trigger a CodePipeline pipeline based build."""
-
-    load_application_or_abort(app)
+    session = get_aws_session_or_abort()
+    load_application_or_abort(session, app)
 
     check_if_commit_exists = subprocess.run(
         ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
@@ -162,7 +163,6 @@ def build(app, codebase, commit):
         )
         raise click.Abort
 
-    session = get_aws_session_or_abort()
     codebuild_client = session.client("codebuild")
     build_url = start_build_with_confirmation(
         codebuild_client,
@@ -190,11 +190,11 @@ def build(app, codebase, commit):
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
     """Trigger a CodePipeline pipeline based deployment."""
-    application = load_application_with_environment(app, env)
-    check_codebase_exists(application, codebase)
-    check_image_exists(application, codebase, commit)
-
     session = get_aws_session_or_abort()
+    application = load_application_with_environment(session, app, env)
+    check_codebase_exists(session, application, codebase)
+    check_image_exists(session, application, codebase, commit)
+
     codebuild_client = session.client("codebuild")
     build_url = start_build_with_confirmation(
         codebuild_client,
@@ -219,9 +219,9 @@ def deploy(app, env, codebase, commit):
     return click.echo("Your deployment was not triggered.")
 
 
-def load_application_or_abort(app: str) -> Application:
+def load_application_or_abort(session: Session, app: str) -> Application:
     try:
-        return load_application(app)
+        return load_application(app, default_session=session)
     except ApplicationNotFoundError:
         click.secho(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
@@ -230,8 +230,7 @@ def load_application_or_abort(app: str) -> Application:
         raise click.Abort
 
 
-def check_image_exists(application: Application, codebase: str, commit: str):
-    session = get_aws_session_or_abort()
+def check_image_exists(session: Session, application: Application, codebase: str, commit: str):
     ecr_client = session.client("ecr")
     try:
         ecr_client.describe_images(
@@ -253,8 +252,7 @@ def check_image_exists(application: Application, codebase: str, commit: str):
         raise click.Abort
 
 
-def check_codebase_exists(application: Application, codebase: str):
-    session = get_aws_session_or_abort()
+def check_codebase_exists(session: Session, application: Application, codebase: str):
     ssm_client = session.client("ssm")
     try:
         parameter = ssm_client.get_parameter(
@@ -270,8 +268,8 @@ def check_codebase_exists(application: Application, codebase: str):
         raise click.Abort
 
 
-def load_application_with_environment(app, env):
-    application = load_application_or_abort(app)
+def load_application_with_environment(session: Session, app, env):
+    application = load_application_or_abort(session, app)
 
     if not application.environments.get(env):
         click.secho(

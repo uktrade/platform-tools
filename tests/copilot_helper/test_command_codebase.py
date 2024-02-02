@@ -12,7 +12,6 @@ from unittest.mock import patch
 import boto3
 import requests
 from click.testing import CliRunner
-from moto import mock_ssm
 
 from dbt_copilot_helper.utils.application import ApplicationNotFoundError
 from tests.copilot_helper.conftest import EXPECTED_FILES_DIR
@@ -187,7 +186,10 @@ class TestCodebaseBuild:
         )
 
     @patch("subprocess.run")
-    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(self, mock_subprocess_run):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
+        self, mock_aws_session, mock_subprocess_run
+    ):
         from dbt_copilot_helper.commands.codebase import build
 
         mock_subprocess_run.return_value.stderr = "malformed"
@@ -238,7 +240,10 @@ class TestCodebaseBuild:
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
-    def test_codebase_build_does_not_trigger_build_without_an_application(self, load_application):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_codebase_build_does_not_trigger_build_without_an_application(
+        self, mock_aws_session, load_application
+    ):
         os.environ["AWS_PROFILE"] = "foo"
         from dbt_copilot_helper.commands.codebase import build
 
@@ -425,11 +430,11 @@ class TestCodebaseDeploy:
         )
         assert """Your deployment was not triggered.""" in result.output
 
-    @mock_ssm
     @patch(
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_without_an_application(
         self, get_aws_session_or_abort, aws_credentials
     ):
@@ -456,8 +461,8 @@ class TestCodebaseDeploy:
             in result.output
         )
 
-    @mock_ssm
     @patch("dbt_copilot_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
         self, get_aws_session_or_abort, aws_credentials, mock_application
     ):
@@ -550,7 +555,8 @@ class TestCodebaseList:
         "dbt_copilot_helper.commands.codebase.load_application",
         side_effect=ApplicationNotFoundError,
     )
-    def test_aborts_when_application_does_not_exist(self, load_application):
+    @patch("dbt_copilot_helper.commands.codebase.get_aws_session_or_abort")
+    def test_aborts_when_application_does_not_exist(self, mock_aws_session, load_application):
         from dbt_copilot_helper.commands.codebase import list
 
         os.environ["AWS_PROFILE"] = "foo"
