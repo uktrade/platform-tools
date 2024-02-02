@@ -44,3 +44,31 @@ def ensure_cwd_is_repo_root():
             bg="red",
         )
         exit(1)
+
+
+def generate_files(base_path, file_path, output_dir):
+    for file in file_path.glob("*"):
+        if file.is_file():
+            contents = file.read_text()
+            file_name = str(file).removeprefix(f"{file_path}/")
+            click.echo(
+                mkfile(
+                    base_path,
+                    output_dir / file_name,
+                    contents,
+                    overwrite=True,
+                )
+            )
+
+    for file in file_path.glob("bin/*"):
+        if file.is_file():
+            contents = file.read_text()
+            file_name = str(file).removeprefix(f"{file_path}/")
+            click.echo(
+                mkfile(
+                    base_path,
+                    output_dir / file_name,
+                    contents,
+                    overwrite=True,
+                )
+            )
