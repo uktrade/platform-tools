@@ -132,7 +132,7 @@ def test_make_config(tmp_path):
 
 
 @mock_sts
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentials, tmp_path):
     """Test that when login fails, a helpful message is printed and the command
     aborts."""
@@ -154,7 +154,7 @@ def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentia
 
 
 @mock_sts
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
@@ -170,7 +170,7 @@ def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credential
 
 
 @mock_sts
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_service_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
@@ -196,7 +196,7 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
 @mock_ssm
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_param_doesnt_exist(
     client,
     get_paas_env_vars,
@@ -228,7 +228,7 @@ def test_migrate_secrets_param_doesnt_exist(
 @mock_ssm
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_param_already_exists(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -260,7 +260,7 @@ def test_migrate_secrets_param_already_exists(
 @mock_ssm
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_overwrite(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -301,7 +301,7 @@ def test_migrate_secrets_overwrite(
 @mock_ssm
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_dry_run(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -329,7 +329,7 @@ def test_migrate_secrets_dry_run(
 @mock_ssm
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
-@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient", return_value=MagicMock)
+@patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_skips_aws_secrets(
     client,
     get_paas_env_vars_mock,
