@@ -5,7 +5,6 @@ import subprocess
 import time
 
 import click
-import yaml
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
@@ -262,8 +261,7 @@ def update_conduit_stack_resources(
     )
 
 
-def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
-    application = load_application(app)
+def start_conduit(application: Application, env: str, addon_type: str, addon_name: str = None):
     cluster_arn = get_cluster_arn(application, env)
     task_name = get_or_create_task_name(application, env, addon_name)
 
@@ -283,8 +281,14 @@ def conduit(app: str, env: str, addon_name: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
 
-    with open("addons.yml", "r") as fd:
-        addon_config = yaml.safe_load(fd)
+    application = load_application(app)
+    session = application.environments[env].session
+    ssm_client = session.client("ssm")
+    addon_config = json.loads(
+        ssm_client.get_parameter(Name=f"/copilot/applications/{application.name}/addons")[
+            "Parameter"
+        ]["Value"]
+    )
 
     if addon_name not in addon_config.keys():
         click.secho(
@@ -309,7 +313,7 @@ def conduit(app: str, env: str, addon_name: str):
         addon_type = addon_type.split("-")[1]
 
     try:
-        start_conduit(app, env, addon_type, addon_name)
+        start_conduit(application, env, addon_type, addon_name)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)

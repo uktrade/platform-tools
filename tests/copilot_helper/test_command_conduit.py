@@ -15,6 +15,13 @@ from moto import mock_ssm
 
 from tests.copilot_helper.conftest import mock_task_name
 
+DEFAULT_ADDON_CONFIG = {
+    "custom-name-postgres": {"type": "aurora-postgres"},
+    "custom-name-rds-postgres": {"type": "aurora-postgres"},
+    "custom-name-opensearch": {"type": "opensearch"},
+    "custom-name-redis": {"type": "redis"},
+}
+
 
 @pytest.mark.parametrize(
     "test_string",
@@ -494,7 +501,7 @@ def test_start_conduit(
     task_name = mock_task_name(addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
-    start_conduit("test-application", "development", addon_type, addon_name)
+    start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
@@ -546,7 +553,7 @@ def test_start_conduit_with_custom_addon_name(
     task_name = mock_task_name("custom-addon-name")
     get_or_create_task_name.side_effect = [task_name]
 
-    start_conduit("test-application", "development", addon_type, "custom-addon-name")
+    start_conduit(mock_application, "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(
@@ -605,7 +612,7 @@ def test_start_conduit_when_no_cluster_present(
     get_cluster_arn.side_effect = NoClusterConduitError
 
     with pytest.raises(NoClusterConduitError):
-        start_conduit("test-application", "development", addon_type, "custom-addon-name")
+        start_conduit(mock_application, "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_not_called()
@@ -652,7 +659,7 @@ def test_start_conduit_when_no_secret_exists(
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
-        start_conduit("test-application", "development", addon_type, addon_name)
+        start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
@@ -702,7 +709,7 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
-        start_conduit("test-application", "development", addon_type, "custom-addon-name")
+        start_conduit(mock_application, "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(
@@ -755,7 +762,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(CreateTaskTimeoutConduitError):
-        start_conduit("test-application", "development", addon_type, addon_name)
+        start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
@@ -809,7 +816,7 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     task_name = mock_task_name(addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
-    start_conduit("test-application", "development", addon_type, addon_name)
+    start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
@@ -824,6 +831,7 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     )
 
 
+@mock_ssm
 @pytest.mark.parametrize(
     "addon_type, addon_name",
     [
@@ -837,12 +845,12 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command(start_conduit, addon_type, addon_name, validate_version, fakefs):
+def test_conduit_command(start_conduit, addon_type, addon_name, validate_version, mock_application):
     """Test that given an app, env and addon name strings, the conduit command
     calls start_conduit with app, env, addon type and addon name."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    _create_test_manifest(fakefs)
+    _add_addon_config_parameter()
 
     CliRunner().invoke(
         conduit,
@@ -857,9 +865,10 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     )
 
     validate_version.assert_called_once()
-    start_conduit.assert_called_once_with("test-application", "development", addon_type, addon_name)
+    start_conduit.assert_called_once_with(mock_application, "development", addon_type, addon_name)
 
 
+@mock_ssm
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -874,9 +883,7 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command_when_no_cluster_exists(
-    start_conduit, secho, addon_name, validate_version, fakefs
-):
+def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name, validate_version):
     """Test that given an app, env and addon name strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
     exception."""
@@ -885,7 +892,7 @@ def test_conduit_command_when_no_cluster_exists(
 
     start_conduit.side_effect = NoClusterConduitError
 
-    _create_test_manifest(fakefs)
+    _add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -906,6 +913,7 @@ def test_conduit_command_when_no_cluster_exists(
     )
 
 
+@mock_ssm
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -921,7 +929,7 @@ def test_conduit_command_when_no_cluster_exists(
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_no_connection_secret_exists(
-    start_conduit, secho, addon_name, validate_version, fakefs
+    start_conduit, secho, addon_name, validate_version
 ):
     """Test that given an app, env and addon name strings, when there is no
     connection secret available, the conduit command handles the
@@ -931,7 +939,7 @@ def test_conduit_command_when_no_connection_secret_exists(
 
     start_conduit.side_effect = SecretNotFoundConduitError(addon_name)
 
-    _create_test_manifest(fakefs)
+    _add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -953,6 +961,7 @@ def test_conduit_command_when_no_connection_secret_exists(
     )
 
 
+@mock_ssm
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -968,7 +977,7 @@ def test_conduit_command_when_no_connection_secret_exists(
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
 def test_conduit_command_when_client_task_fails_to_start(
-    start_conduit, secho, addon_name, validate_version, fakefs
+    start_conduit, secho, addon_name, validate_version
 ):
     """Test that given an app, env and addon name strings, when the ECS client
     task fails to start, the conduit command handles the
@@ -978,7 +987,7 @@ def test_conduit_command_when_client_task_fails_to_start(
 
     start_conduit.side_effect = CreateTaskTimeoutConduitError
 
-    _create_test_manifest(fakefs)
+    _add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -1000,23 +1009,18 @@ def test_conduit_command_when_client_task_fails_to_start(
     )
 
 
+@mock_ssm
 @patch("click.secho")
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, validate_version, fakefs):
+def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, validate_version):
     """Test that given an app, env and addon name strings, if the addon type is
     invalid the conduit command handles the exception."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    fakefs.create_file(
-        "addons.yml",
-        contents="""
-    custom-name-postgres:
-        type: nope
-    """,
-    )
+    _add_addon_config_parameter({"custom-name-postgres": {"type": "nope"}})
 
     result = CliRunner().invoke(
         conduit,
@@ -1039,23 +1043,18 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     )
 
 
+@mock_ssm
 @patch("click.secho")
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_copilot_helper.commands.conduit.start_conduit")
-def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validate_version, fakefs):
+def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validate_version):
     """Test that given an app, env and invalid addon name strings, the conduit
     command handles the exception."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    fakefs.create_file(
-        "addons.yml",
-        contents="""
-    custom-name-redis:
-        type: redis
-    """,
-    )
+    _add_addon_config_parameter({"non-existent-addon": {"type": "redis"}})
 
     result = CliRunner().invoke(
         conduit,
@@ -1078,17 +1077,10 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
     )
 
 
-def _create_test_manifest(fakefs):
-    fakefs.create_file(
-        "addons.yml",
-        contents="""
-    custom-name-postgres:
-        type: aurora-postgres
-    custom-name-rds-postgres:
-        type: rds-postgres
-    custom-name-opensearch:
-        type: opensearch
-    custom-name-redis:
-        type: redis
-    """,
+def _add_addon_config_parameter(param_value=None):
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name=f"/copilot/applications/test-application/addons",
+        Type="String",
+        Value=json.dumps(param_value or DEFAULT_ADDON_CONFIG),
     )
