@@ -1,0 +1,18 @@
+##### Aurora serverless v2 example:
+
+my-aurora-db:
+  type: aurora-postgres
+  version: 14.4
+  deletion-policy: Delete
+
+  environments:
+    default:
+      min-capacity: 0.5 # AllowedValues: from 0.5 through 128
+      max-capacity: 8   # AllowedValues: from 0.5 through 128
+      snapshot-id: ""
+      deletion-protection: false
+      deletion-policy: Snapshot
+
+    development:
+      snapshot-id: my-recent-snapshot
+      deletion-protection: true

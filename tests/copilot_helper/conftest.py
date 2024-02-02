@@ -1,12 +1,12 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
 import botocore
 import certifi
-import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
@@ -34,14 +34,10 @@ def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates", lazy_read=True)
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
-
-    # JSON Schema compatibility
-    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True)
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
@@ -296,12 +292,23 @@ def mock_codestar_connection_response(app_name):
     }
 
 
-def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names):
-    mocked_boto3_client.return_value = mocked_boto3_client
-    mocked_boto3_client.list_connections.return_value = {
+def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_names):
+    client = mock_aws_client(get_aws_session_or_abort)
+
+    client.list_connections.return_value = {
         "Connections": [mock_codestar_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
     }
+
+
+def mock_aws_client(get_aws_session_or_abort, client=None):
+    session = MagicMock(name="session-mock")
+    if not client:
+        client = MagicMock(name="client-mock")
+    session.client.return_value = client
+    get_aws_session_or_abort.return_value = session
+
+    return client
 
 
 def assert_file_created_in_stdout(output_file, result):

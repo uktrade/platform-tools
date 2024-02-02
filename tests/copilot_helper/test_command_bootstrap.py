@@ -89,8 +89,14 @@ def test_make_config(tmp_path):
     production_environment_manifest = Path(
         FIXTURES_DIR, "production_environment_manifest.yml"
     ).read_text()
-    test_service_manifest = Path(FIXTURES_DIR, "test_service_manifest.yml").read_text()
+    test_public_service_manifest = Path(
+        FIXTURES_DIR, "test_public_service_manifest.yml"
+    ).read_text()
+    test_backend_service_manifest = Path(
+        FIXTURES_DIR, "test_backend_service_manifest.yml"
+    ).read_text()
 
+    assert not (tmp_path / "copilot").exists()
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
 
@@ -112,10 +118,15 @@ def test_make_config(tmp_path):
     with open(str(tmp_path / "copilot/environments/production/manifest.yml")) as production:
         assert production.read() == production_environment_manifest
 
-    with open(str(tmp_path / "copilot/test-service/manifest.yml")) as service:
-        assert service.read() == test_service_manifest
+    with open(str(tmp_path / "copilot/test-public-service/manifest.yml")) as service:
+        assert service.read() == test_public_service_manifest
 
-    assert os.path.exists(str(tmp_path / "copilot/test-service/addons"))
+    assert os.path.exists(str(tmp_path / "copilot/test-public-service/addons"))
+
+    with open(str(tmp_path / "copilot/test-backend-service/manifest.yml")) as service:
+        assert service.read() == test_backend_service_manifest
+
+    assert os.path.exists(str(tmp_path / "copilot/test-backend-service/addons"))
 
 
 @mock_sts
@@ -179,10 +190,12 @@ def test_migrate_secrets_param_doesnt_exist(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
-    assert ">>> migrating secrets for service: test-service; environment: test" in result.output
+    assert (
+        ">>> migrating secrets for service: test-public-service; environment: test" in result.output
+    )
     assert "Created" in result.output
 
     assert_secret_exists_with_value("TEST_SECRET", param_value)
@@ -199,13 +212,18 @@ def test_migrate_secrets_param_already_exists(
     isn't set, migrate_secrets doesn't update it."""
 
     set_ssm_param(
-        "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
+        "test-app",
+        "test",
+        "/copilot/test-app/test/secrets/TEST_SECRET",
+        "NOT_FOUND",
+        False,
+        False,
     )
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
     assert "NOT overwritten" in result.output
@@ -226,13 +244,26 @@ def test_migrate_secrets_overwrite(
     set, migrate_secrets updates it."""
 
     set_ssm_param(
-        "test-app", "test", "/copilot/test-app/test/secrets/TEST_SECRET", "NOT_FOUND", False, False
+        "test-app",
+        "test",
+        "/copilot/test-app/test/secrets/TEST_SECRET",
+        "NOT_FOUND",
+        False,
+        False,
     )
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service", "--overwrite"],
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            "test",
+            "--svc",
+            "test-public-service",
+            "--overwrite",
+        ],
     )
 
     assert "Overwritten" in result.output
@@ -257,7 +288,7 @@ def test_migrate_secrets_dry_run(
 
     result = CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service", "--dry-run"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service", "--dry-run"],
     )
 
     assert (
@@ -294,12 +325,11 @@ def test_migrate_secrets_skips_aws_secrets(
         good_secret_name: good_secret_value,
         bad_secret_name: bad_secret_value,
     }
-    # get_paas_env_vars_mock.return_value = {good_secret_name: good_secret_value}
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     CliRunner().invoke(
         migrate_secrets,
-        ["--project-profile", "foo", "--env", "test", "--svc", "test-service"],
+        ["--project-profile", "foo", "--env", "test", "--svc", "test-public-service"],
     )
 
     assert_secret_exists_with_value(good_secret_name, good_secret_value)

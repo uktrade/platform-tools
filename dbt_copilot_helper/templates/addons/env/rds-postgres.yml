@@ -43,7 +43,7 @@ Mappings:
 {%- for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
-      MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
+      MultiAZ: {{ config.multi_az }}
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}

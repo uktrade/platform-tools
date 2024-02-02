@@ -1,0 +1,70 @@
+my-opensearch-1:
+  type: opensearch
+  nonsense: abc
+
+my-opensearch-2:
+  type: opensearch
+  deletion-policy: 27
+
+my-opensearch-3:
+  type: opensearch
+  environments: False
+
+my-opensearch-4:
+  type: opensearch
+  environments:
+    dev:
+      opensearch-plan: large
+
+my-opensearch-5:
+  type: opensearch
+  environments:
+    dev:
+      plan: largish
+
+my-opensearch-6:
+  type: opensearch
+  environments:
+    dev:
+      engine: 7.3
+
+my-opensearch-7a:
+  type: opensearch
+  environments:
+    dev:
+      volume_size: 10
+
+my-opensearch-7b:
+  type: opensearch
+  environments:
+    dev:
+      plan: tiny
+      volume_size: 9
+
+my-opensearch-7c:
+  type: opensearch
+  environments:
+    dev:
+      plan: small
+      volume_size: 512
+
+my-opensearch-7d:
+  type: opensearch
+  environments:
+    default:
+      plan: large
+      volume_size: 128
+    dev:
+      plan: small
+      volume_size: 100
+    production:
+      volume_size: 1200
+
+my-opensearch-8:
+  type: opensearch
+  environments:
+    dev:
+      deletion-policy: Snapshot
+
+
+

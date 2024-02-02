@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from pathlib import PosixPath
 from unittest.mock import Mock
@@ -9,7 +10,9 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from freezegun import freeze_time
+from moto import mock_iam
 from moto import mock_ssm
+from moto import mock_sts
 from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
@@ -360,9 +363,11 @@ class TestMakeAddonCommand:
         if deletion_policy:
             addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
         if deletion_policy_override:
-            addon_file_contents[addon_name]["environments"]["development"] = {
-                "deletion-policy": deletion_policy_override
-            }
+            for env in addon_file_contents[addon_name]["environments"]:
+                addon_file_contents[addon_name]["environments"][env][
+                    "deletion-policy"
+                ] = deletion_policy_override
+
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
@@ -445,6 +450,37 @@ invalid-entry:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
+        fakefs.create_file(
+            ADDON_CONFIG_FILENAME,
+            contents="""
+example-invalid-file:
+    type: s3
+    environments:
+        default:
+            bucket-name: test-bucket
+            no-such-key: bad-key
+""",
+        )
+
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 1
+        assert re.match(
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no-such-key'",
+            result.output,
+        )
+
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -470,6 +506,49 @@ invalid-environment:
         assert (
             result.output
             == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
+        )
+
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    def test_exit_with_multiple_errors(self, fakefs):
+        fakefs.create_file(
+            ADDON_CONFIG_FILENAME,
+            contents="""
+my-s3-bucket-1:
+  type: s3
+  environments:
+    dev:
+      bucket-name: my-s3alias # Can't end with -s3alias
+
+my-s3-bucket-2:
+  type: s3
+  environments:
+    dev:
+      bucket-name: charles
+      deletion-policy: ThisIsInvalid # Should be a valid policy name.
+""",
+        )
+
+        fakefs.create_file("copilot/environments/development/manifest.yml")
+
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 1
+        assert re.search(r"(?s)Errors found in addons.yml:", result.output)
+        assert re.search(
+            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket-name.*does not match 'my-s3alias'",
+            result.output,
+        )
+        assert re.search(
+            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion-policy.*'Delete' does not match 'ThisIsInvalid'",
+            result.output,
         )
 
     @patch(
@@ -506,9 +585,9 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output == "invalid-entry.services must be a list of service names or '__all__'\n"
-        )
+        assert "Key 'services' error:" in result.output
+        assert "'__all__' does not match 'this-is-not-valid'" in result.output
+        assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
@@ -679,6 +758,8 @@ invalid-entry:
 
 
 @mock_ssm
+@mock_sts
+@mock_iam
 @patch(
     "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
 )

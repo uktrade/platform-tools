@@ -7,19 +7,18 @@ from os.path import isfile
 from pathlib import Path
 from pathlib import PosixPath
 
-import boto3
 import click
-import jsonschema
 import yaml
-from jsonschema import validate as validate_json
 
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_copilot_helper.utils.files import generate_files
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
+from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -90,9 +89,6 @@ def _validate_and_normalise_config(config_file):
     with open(PACKAGE_DIR / "addon-plans.yml", "r") as fd:
         addon_plans = yaml.safe_load(fd)
 
-    with open(PACKAGE_DIR / "schemas/addons-schema.json", "r") as fd:
-        schema = json.load(fd)
-
     # load and validate config
     with open(config_file, "r") as fd:
         config = yaml.safe_load(fd)
@@ -101,10 +97,11 @@ def _validate_and_normalise_config(config_file):
     if not config:
         return {}
 
-    try:
-        validate_json(instance=config, schema=schema)
-    except jsonschema.exceptions.ValidationError as err:
-        click.echo(click.style(err, fg="red"))
+    errors = validate_addons(config)
+    if errors:
+        click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
+        for addon, error in errors.items():
+            click.echo(click.style(f"Addon '{addon}': {error}", fg="red"))
         exit(1)
 
     env_names = list_copilot_local_environments()
@@ -178,7 +175,8 @@ def _validate_and_normalise_config(config_file):
 
 def get_log_destination_arn():
     """Get destination arns stored in param store in projects aws account."""
-    client = boto3.client("ssm", region_name="eu-west-2")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm", region_name="eu-west-2")
     response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
 
     if not response["Parameters"]:
@@ -426,7 +424,8 @@ def _cleanup_old_files(config, output_dir, env_addons_path):
 def get_env_secrets(app, env):
     """List secret names and values for an environment."""
 
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 
