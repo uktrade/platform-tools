@@ -274,10 +274,10 @@ def start_conduit(application: Application, env: str, addon_type: str, addon_nam
 
 
 @click.command(cls=ClickDocOptCommand)
+@click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--addon-name", help="Name of custom addon", required=True)
-def conduit(app: str, env: str, addon_name: str):
+def conduit(addon_name: str, app: str, env: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
 

@@ -855,12 +855,11 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     CliRunner().invoke(
         conduit,
         [
+            addon_name,
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            addon_name,
         ],
     )
 
@@ -897,12 +896,11 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name
     result = CliRunner().invoke(
         conduit,
         [
+            addon_name,
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            addon_name,
         ],
     )
 
@@ -944,12 +942,11 @@ def test_conduit_command_when_no_connection_secret_exists(
     result = CliRunner().invoke(
         conduit,
         [
+            addon_name,
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            addon_name,
         ],
     )
 
@@ -992,12 +989,11 @@ def test_conduit_command_when_client_task_fails_to_start(
     result = CliRunner().invoke(
         conduit,
         [
+            addon_name,
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            addon_name,
         ],
     )
 
@@ -1025,12 +1021,11 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     result = CliRunner().invoke(
         conduit,
         [
+            "custom-name-postgres",
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            "custom-name-postgres",
         ],
     )
 
@@ -1059,12 +1054,11 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
     result = CliRunner().invoke(
         conduit,
         [
+            "custom-name-postgres",
             "--app",
             "test-application",
             "--env",
             "development",
-            "--addon-name",
-            "custom-name-postgres",
         ],
     )
 
