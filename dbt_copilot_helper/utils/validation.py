@@ -19,7 +19,7 @@ def validate_string(regex_pattern):
     return validator
 
 
-S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid: {}"
+S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
 
 
 def validate_s3_bucket_name(name):
@@ -48,7 +48,9 @@ def validate_s3_bucket_name(name):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
     if errors:
-        raise SchemaError(S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(errors)))
+        raise SchemaError(
+            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))
+        )
 
     return True
 

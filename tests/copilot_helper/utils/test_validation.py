@@ -68,7 +68,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-2": r"deletion_policy.*does not match 'Retrain'",
                 "my-s3-bucket-3": r"services.*should be instance of 'list'",
                 "my-s3-bucket-4": r"services.*should be instance of 'str'",
-                "my-s3-bucket-5": r"Bucket name 'banana-s3alias' is invalid: Names cannot be suffixed '-s3alias'",
+                "my-s3-bucket-5": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
                 "my-s3-bucket-6": r"environments.*dev.*deletion_policy.*does not match False",
                 "my-s3-bucket-7": r"objects.*should be instance of 'list'",
                 "my-s3-bucket-8": r"objects.*key.*should be instance of 'str'",
@@ -86,7 +86,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-policy-2": r"deletion_policy.*does not match 'Retrain'",
                 "my-s3-bucket-policy-3": r"services.*should be instance of 'list'",
                 "my-s3-bucket-policy-4": r"services.*should be instance of 'str'",
-                "my-s3-bucket-policy-5": r"Bucket name 'banana-s3alias' is invalid: Names cannot be suffixed '-s3alias'",
+                "my-s3-bucket-policy-5": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
                 "my-s3-bucket-policy-6": r"environments.*dev.*deletion_policy.*does not match False",
                 "my-s3-bucket-policy-7": r"Wrong key 'unknown1'",
                 "my-s3-bucket-policy-8": r"Wrong key 'objects'",
@@ -261,7 +261,7 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
     ],
 )
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
-    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, error_message)
+    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
