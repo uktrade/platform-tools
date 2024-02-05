@@ -5,4 +5,3 @@ my-monitoring:
       enable_ops_center: False
     prod:
       enable_ops_center: True
-

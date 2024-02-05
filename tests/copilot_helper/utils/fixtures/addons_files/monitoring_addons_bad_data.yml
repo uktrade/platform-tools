@@ -17,4 +17,3 @@ my-monitoring-4:
   environments:
     default:
       enable_ops_center: no thanks
-

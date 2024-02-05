@@ -1,5 +1,3 @@
-##### Aurora serverless v2 example:
-
 my-aurora-db-1: # No version
   type: aurora-postgres
 

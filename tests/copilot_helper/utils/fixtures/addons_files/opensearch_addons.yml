@@ -12,4 +12,3 @@ my-opensearch:
       volume_size: 100
     production:
       volume_size: 1000
-
