@@ -14,6 +14,7 @@ from dbt_copilot_helper.utils.aws import get_ssm_secret_names
 from dbt_copilot_helper.utils.aws import get_ssm_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.cloudfoundry import get_cloud_foundry_client_or_abort
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.files import to_yaml
@@ -141,7 +142,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
     get_aws_session_or_abort(project_profile)
     # TODO: optional SSM or secret manager
 
-    cf_client = CloudFoundryClient.build_from_cf_config()
+    cf_client = get_cloud_foundry_client_or_abort()
     config_file = "bootstrap.yml"
     config = load_and_validate_config(config_file, BOOTSTRAP_SCHEMA)
 
