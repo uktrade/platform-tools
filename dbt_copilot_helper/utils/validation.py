@@ -19,7 +19,7 @@ def validate_string(regex_pattern):
     return validator
 
 
-S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name {} is invalid: {}"
+S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid: {}"
 
 
 def validate_s3_bucket_name(name):
@@ -268,7 +268,7 @@ S3_BASE = {
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
-            "bucket_name": Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
+            "bucket-name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
         }
     },

@@ -524,7 +524,7 @@ my-s3-bucket-1:
   type: s3
   environments:
     dev:
-      bucket_name: my-s3alias # Can't end with -s3alias
+      bucket_name: sthree-one..TWO-s3alias # Many naming errors
 
 my-s3-bucket-2:
   type: s3
@@ -545,15 +545,12 @@ my-s3-bucket-2:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert re.search(r"(?s)Errors found in addons.yml:", result.output)
-        assert re.search(
-            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket_name.*does not match 'my-s3alias'",
-            result.output,
-        )
-        assert re.search(
-            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion_policy.*'Delete' does not match 'ThisIsInvalid'",
-            result.output,
-        )
+        assert "Errors found in addons.yml:" in result.output
+        assert "'Delete' does not match 'ThisIsInvalid'" in result.output
+        assert "Names cannot be prefixed 'sthree-'" in result.output
+        assert "Names cannot be suffixed '-s3alias'" in result.output
+        assert "Names cannot contain two adjacent periods" in result.output
+        assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
