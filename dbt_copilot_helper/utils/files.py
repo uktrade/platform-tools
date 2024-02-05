@@ -46,7 +46,7 @@ def ensure_cwd_is_repo_root():
         exit(1)
 
 
-def generate_files(base_path, file_path, output_dir):
+def generate_override_files(base_path, file_path, output_dir):
     for file in file_path.glob("*"):
         if file.is_file():
             contents = file.read_text()
