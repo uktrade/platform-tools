@@ -1,6 +1,6 @@
 my-monitoring-1:
   type: monitoring
-  monitoring-param: False
+  monitoring_param: False
 
 my-monitoring-2:
   type: monitoring
@@ -16,5 +16,5 @@ my-monitoring-4:
   type: monitoring
   environments:
     default:
-      enable-ops-center: no thanks
+      enable_ops_center: no thanks
 

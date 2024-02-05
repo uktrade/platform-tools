@@ -125,7 +125,7 @@ BOOTSTRAP_SCHEMA = Schema(
                         ),
                     },
                 },
-                Optional("backing-services"): [
+                Optional("backing_services"): [
                     {
                         "name": str,
                         "type": lambda s: s
@@ -137,8 +137,8 @@ BOOTSTRAP_SCHEMA = Schema(
                             "redis",
                             "opensearch",
                         ),
-                        Optional("paas-description"): str,
-                        Optional("paas-instance"): str,
+                        Optional("paas_description"): str,
+                        Optional("paas_instance"): str,
                         Optional("notes"): str,
                         Optional("bucket_name"): str,  # for external-s3 type
                         Optional("readonly"): bool,  # for external-s3 type
@@ -233,12 +233,12 @@ OPENSEARCH_ENGINE_VERSIONS = Or("2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
 
 S3_BASE = {
     Optional("readonly"): bool,
-    Optional("deletion-policy"): DELETION_POLICY,
+    Optional("deletion_policy"): DELETION_POLICY,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
-            "bucket-name": Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
-            Optional("deletion-policy"): DELETION_POLICY,
+            "bucket_name": Regex(r"^(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"),
+            Optional("deletion_policy"): DELETION_POLICY,
         }
     },
 }
@@ -265,14 +265,14 @@ AURORA_SCHEMA = Schema(
     {
         "type": "aurora-postgres",
         "version": NUMBER,
-        Optional("deletion-policy"): DB_DELETION_POLICY,
+        Optional("deletion_policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
-                Optional("min-capacity"): float_between_with_halfstep(0.5, 128),
-                Optional("max-capacity"): float_between_with_halfstep(0.5, 128),
-                Optional("snapshot-id"): str,
-                Optional("deletion-policy"): DB_DELETION_POLICY,
-                Optional("deletion-protection"): DELETION_PROTECTION,
+                Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
+                Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
+                Optional("snapshot_id"): str,
+                Optional("deletion_policy"): DB_DELETION_POLICY,
+                Optional("deletion_protection"): DELETION_PROTECTION,
             }
         },
         Optional("objects"): [
@@ -288,14 +288,14 @@ RDS_SCHEMA = Schema(
     {
         "type": "rds-postgres",
         "version": NUMBER,
-        Optional("deletion-policy"): DB_DELETION_POLICY,
+        Optional("deletion_policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
-                Optional("volume-size"): int_between(5, 10000),
-                Optional("snapshot-id"): str,
-                Optional("deletion-policy"): DB_DELETION_POLICY,
-                Optional("deletion-protection"): DELETION_PROTECTION,
+                Optional("volume_size"): int_between(5, 10000),
+                Optional("snapshot_id"): str,
+                Optional("deletion_policy"): DB_DELETION_POLICY,
+                Optional("deletion_protection"): DELETION_PROTECTION,
             }
         },
         Optional("objects"): [
@@ -310,13 +310,13 @@ RDS_SCHEMA = Schema(
 REDIS_SCHEMA = Schema(
     {
         "type": "redis",
-        Optional("deletion-policy"): DELETION_POLICY,
+        Optional("deletion_policy"): DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): REDIS_PLANS,
                 Optional("engine"): REDIS_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
-                Optional("deletion-policy"): DELETION_POLICY,
+                Optional("deletion_policy"): DELETION_POLICY,
             }
         },
     }
@@ -371,11 +371,11 @@ class ConditionalSchema(Schema):
 OPENSEARCH_SCHEMA = ConditionalSchema(
     {
         "type": "opensearch",
-        Optional("deletion-policy"): DELETION_POLICY,
+        Optional("deletion_policy"): DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
-                Optional("deletion-policy"): DELETION_POLICY,
+                Optional("deletion_policy"): DELETION_POLICY,
                 Optional("plan"): OPENSEARCH_PLANS,
                 Optional("volume_size"): int,
             }
@@ -388,7 +388,7 @@ MONITORING_SCHEMA = Schema(
         "type": "monitoring",
         Optional("environments"): {
             ENV_NAME: {
-                Optional("enable-ops-center"): bool,
+                Optional("enable_ops_center"): bool,
             }
         },
     }

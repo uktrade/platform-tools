@@ -2,7 +2,7 @@ my-monitoring:
   type: monitoring
   environments:
     default:
-      enable-ops-center: False
+      enable_ops_center: False
     prod:
-      enable-ops-center: True
+      enable_ops_center: True
 

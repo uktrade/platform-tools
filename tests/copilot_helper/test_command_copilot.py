@@ -44,8 +44,8 @@ aurora:
   version: 14.4
   environments:
     default:
-      min-capacity: 0.5
-      max-capacity: 8
+      min_capacity: 0.5
+      max_capacity: 8
 """
 
 OPENSEARCH_STORAGE_CONTENTS = """
@@ -65,7 +65,7 @@ s3:
     - "web"
   environments:
     development:
-      bucket-name: my-bucket-dev
+      bucket_name: my-bucket-dev
 """
 
 WEB_SERVICE_CONTENTS = """
@@ -362,11 +362,11 @@ class TestMakeAddonCommand:
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy:
-            addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
+            addon_file_contents[addon_name]["deletion_policy"] = deletion_policy
         if deletion_policy_override:
             for env in addon_file_contents[addon_name]["environments"]:
                 addon_file_contents[addon_name]["environments"][env][
-                    "deletion-policy"
+                    "deletion_policy"
                 ] = deletion_policy_override
 
         create_test_manifests([dump(addon_file_contents)], fakefs)
@@ -428,7 +428,7 @@ invalid-entry:
         - also-does-not-exist
     environments:
         default:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -459,8 +459,8 @@ example-invalid-file:
     type: s3
     environments:
         default:
-            bucket-name: test-bucket
-            no-such-key: bad-key
+            bucket_name: test-bucket
+            no_such_key: bad-key
 """,
         )
 
@@ -474,7 +474,7 @@ example-invalid-file:
 
         assert result.exit_code == 1
         assert re.match(
-            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no-such-key'",
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no_such_key'",
             result.output,
         )
 
@@ -490,7 +490,7 @@ invalid-environment:
     type: s3-policy
     environments:
         doesnotexist:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -521,14 +521,14 @@ my-s3-bucket-1:
   type: s3
   environments:
     dev:
-      bucket-name: my-s3alias # Can't end with -s3alias
+      bucket_name: my-s3alias # Can't end with -s3alias
 
 my-s3-bucket-2:
   type: s3
   environments:
     dev:
-      bucket-name: charles
-      deletion-policy: ThisIsInvalid # Should be a valid policy name.
+      bucket_name: charles
+      deletion_policy: ThisIsInvalid # Should be a valid policy name.
 """,
         )
 
@@ -544,11 +544,11 @@ my-s3-bucket-2:
         assert result.exit_code == 1
         assert re.search(r"(?s)Errors found in addons.yml:", result.output)
         assert re.search(
-            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket-name.*does not match 'my-s3alias'",
+            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket_name.*does not match 'my-s3alias'",
             result.output,
         )
         assert re.search(
-            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion-policy.*'Delete' does not match 'ThisIsInvalid'",
+            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion_policy.*'Delete' does not match 'ThisIsInvalid'",
             result.output,
         )
 
