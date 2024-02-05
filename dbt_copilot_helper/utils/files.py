@@ -47,28 +47,19 @@ def ensure_cwd_is_repo_root():
 
 
 def generate_override_files(base_path, file_path, output_dir):
-    for file in file_path.glob("*"):
-        if file.is_file():
-            contents = file.read_text()
-            file_name = str(file).removeprefix(f"{file_path}/")
-            click.echo(
-                mkfile(
-                    base_path,
-                    output_dir / file_name,
-                    contents,
-                    overwrite=True,
+    def generate_files_for_dir(pattern):
+        for file in file_path.glob(pattern):
+            if file.is_file():
+                contents = file.read_text()
+                file_name = str(file).removeprefix(f"{file_path}/")
+                click.echo(
+                    mkfile(
+                        base_path,
+                        output_dir / file_name,
+                        contents,
+                        overwrite=True,
+                    )
                 )
-            )
 
-    for file in file_path.glob("bin/*"):
-        if file.is_file():
-            contents = file.read_text()
-            file_name = str(file).removeprefix(f"{file_path}/")
-            click.echo(
-                mkfile(
-                    base_path,
-                    output_dir / file_name,
-                    contents,
-                    overwrite=True,
-                )
-            )
+    generate_files_for_dir("*")
+    generate_files_for_dir("bin/*")
