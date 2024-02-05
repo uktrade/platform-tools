@@ -44,9 +44,23 @@ def validate_s3_bucket_name(name):
 
     try:
         ipaddress.ip_address(name)
-        raise SchemaError("Names cannot be IP addresses.")
+        raise SchemaError(
+            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "Names cannot be IP addresses.")
+        )
     except ValueError:
         pass
+
+    for prefix in ("xn--", "sthree-"):
+        if name.startswith(prefix):
+            raise SchemaError(
+                S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, f"Names cannot be prefixed '{prefix}'.")
+            )
+
+    for suffix in ("-s3alias", "--ol-s3"):
+        if name.endswith(suffix):
+            raise SchemaError(
+                S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, f"Names cannot be suffixed '{suffix}'.")
+            )
 
     return True
 

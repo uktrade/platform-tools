@@ -254,11 +254,15 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
         ("ab..cd", "Names cannot contain two adjacent periods."),
         ("1.1.1.1", "Names cannot be IP addresses."),
         ("127.0.0.1", "Names cannot be IP addresses."),
+        ("xn--bob", "Names cannot be prefixed 'xn--'."),
+        ("sthree-bob", "Names cannot be prefixed 'sthree-'."),
+        ("bob-s3alias", "Names cannot be suffixed '-s3alias'."),
+        ("bob--ol-s3", "Names cannot be suffixed '--ol-s3'."),
     ],
 )
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
-    S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, error_message)
+    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, error_message)
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
-    assert error_message in str(ex)
+    assert exp_error in str(ex)
