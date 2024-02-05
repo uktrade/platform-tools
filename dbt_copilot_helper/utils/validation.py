@@ -1,3 +1,4 @@
+import ipaddress
 import re
 
 from schema import Optional
@@ -18,8 +19,36 @@ def validate_string(regex_pattern):
     return validator
 
 
+S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name {} is invalid. {}"
+
+
 def validate_s3_bucket_name(name):
-    return False
+    if not (2 < len(name) < 64):
+        raise SchemaError(
+            S3_BUCKET_NAME_ERROR_TEMPLATE.format(
+                name, "Length must be between 3 and 63 characters inclusive."
+            )
+        )
+
+    if not re.match(r"^[a-z0-9.-]*$", name):
+        raise SchemaError(
+            S3_BUCKET_NAME_ERROR_TEMPLATE.format(
+                name, "Names can only contain the characters 0-9, a-z, '.' and '-'."
+            )
+        )
+
+    if ".." in name:
+        raise SchemaError(
+            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "Names cannot contain two adjacent periods.")
+        )
+
+    try:
+        ipaddress.ip_address(name)
+        raise SchemaError("Names cannot be IP addresses.")
+    except ValueError:
+        pass
+
+    return True
 
 
 def validate_addons(addons: dict):

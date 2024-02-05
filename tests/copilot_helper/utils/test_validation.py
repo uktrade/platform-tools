@@ -5,9 +5,11 @@ import pytest
 import yaml
 from schema import SchemaError
 
+from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
 from dbt_copilot_helper.utils.validation import validate_addons
+from dbt_copilot_helper.utils.validation import validate_s3_bucket_name
 from dbt_copilot_helper.utils.validation import validate_string
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -234,3 +236,29 @@ def test_between_with_step_raises_error(value):
         ), f"testing that {value} is between 0.5 and 128 in half steps failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be a number between 0.5 and 128 in increments of 0.5"
+
+
+@pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
+def test_validate_s3_bucket_name_success_cases(bucket_name):
+    assert validate_s3_bucket_name(bucket_name)
+
+
+@pytest.mark.parametrize(
+    "bucket_name, error_message",
+    [
+        ("ab", "Length must be between 3 and 63 characters inclusive."),
+        ("a" * 64, "Length must be between 3 and 63 characters inclusive."),
+        ("ab!cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("ab_cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("aB-cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("ab..cd", "Names cannot contain two adjacent periods."),
+        ("1.1.1.1", "Names cannot be IP addresses."),
+        ("127.0.0.1", "Names cannot be IP addresses."),
+    ],
+)
+def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
+    S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, error_message)
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
+
+    assert error_message in str(ex)
