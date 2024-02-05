@@ -265,4 +265,20 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
-    assert exp_error in str(ex)
+    assert exp_error in str(ex.value)
+
+
+def test_validate_s3_bucket_name_multiple_failures():
+    bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
+
+    exp_errors = [
+        "Length must be between 3 and 63 characters inclusive.",
+        "Names can only contain the characters 0-9, a-z, '.' and '-'.",
+        "Names cannot contain two adjacent periods.",
+        "Names cannot be prefixed 'xn--'.",
+        "Names cannot be suffixed '--ol-s3'.",
+    ]
+    for exp_error in exp_errors:
+        assert exp_error in str(ex.value)

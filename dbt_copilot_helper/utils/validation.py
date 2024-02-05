@@ -19,48 +19,36 @@ def validate_string(regex_pattern):
     return validator
 
 
-S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name {} is invalid. {}"
+S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name {} is invalid: {}"
 
 
 def validate_s3_bucket_name(name):
+    errors = []
     if not (2 < len(name) < 64):
-        raise SchemaError(
-            S3_BUCKET_NAME_ERROR_TEMPLATE.format(
-                name, "Length must be between 3 and 63 characters inclusive."
-            )
-        )
+        errors.append("Length must be between 3 and 63 characters inclusive.")
 
     if not re.match(r"^[a-z0-9.-]*$", name):
-        raise SchemaError(
-            S3_BUCKET_NAME_ERROR_TEMPLATE.format(
-                name, "Names can only contain the characters 0-9, a-z, '.' and '-'."
-            )
-        )
+        errors.append("Names can only contain the characters 0-9, a-z, '.' and '-'.")
 
     if ".." in name:
-        raise SchemaError(
-            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "Names cannot contain two adjacent periods.")
-        )
+        errors.append("Names cannot contain two adjacent periods.")
 
     try:
         ipaddress.ip_address(name)
-        raise SchemaError(
-            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "Names cannot be IP addresses.")
-        )
+        errors.append("Names cannot be IP addresses.")
     except ValueError:
         pass
 
     for prefix in ("xn--", "sthree-"):
         if name.startswith(prefix):
-            raise SchemaError(
-                S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, f"Names cannot be prefixed '{prefix}'.")
-            )
+            errors.append(f"Names cannot be prefixed '{prefix}'.")
 
     for suffix in ("-s3alias", "--ol-s3"):
         if name.endswith(suffix):
-            raise SchemaError(
-                S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, f"Names cannot be suffixed '{suffix}'.")
-            )
+            errors.append(f"Names cannot be suffixed '{suffix}'.")
+
+    if errors:
+        raise SchemaError(S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(errors)))
 
     return True
 
