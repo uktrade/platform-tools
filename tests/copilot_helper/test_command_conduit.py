@@ -31,12 +31,12 @@ DEFAULT_ADDON_CONFIG = {
         ("APP-OpenSearch", "APP_OPENSEARCH"),
     ],
 )
-def test_get_secret_name(test_string):
-    """Test that given an addon name, get_secret_name produces the expected
-    result."""
-    from dbt_copilot_helper.commands.conduit import get_secret_name
+def test_normalise_secret_name(test_string):
+    """Test that given an addon name, normalise_secret_name produces the
+    expected result."""
+    from dbt_copilot_helper.commands.conduit import normalise_secret_name
 
-    assert get_secret_name(test_string[0]) == test_string[1]
+    assert normalise_secret_name(test_string[0]) == test_string[1]
 
 
 @mock_resourcegroupstaggingapi

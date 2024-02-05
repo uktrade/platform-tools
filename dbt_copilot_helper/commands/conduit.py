@@ -54,7 +54,7 @@ CONDUIT_ADDON_TYPES = [
 ]
 
 
-def get_secret_name(addon_name: str) -> str:
+def normalise_secret_name(addon_name: str) -> str:
     return addon_name.replace("-", "_").upper()
 
 
@@ -91,7 +91,7 @@ def get_addon_type(app: Application, env: str, addon_name: str) -> str:
 def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
     ssm = app.environments[env].session.client("ssm")
     task_name_parameter = (
-        f"/copilot/{app.name}/{env}/conduits/{get_secret_name(addon_name)}_CONDUIT_TASK_NAME"
+        f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_CONDUIT_TASK_NAME"
     )
 
     try:
@@ -130,7 +130,7 @@ def get_connection_secret_arn(app: Application, env: str, addon_name: str) -> st
     secrets_manager = app.environments[env].session.client("secretsmanager")
     ssm = app.environments[env].session.client("ssm")
 
-    connection_secret_id = f"/copilot/{app.name}/{env}/secrets/{get_secret_name(addon_name)}"
+    connection_secret_id = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
     try:
         return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
@@ -256,7 +256,7 @@ def update_conduit_stack_resources(
         f"""
         Type: AWS::SSM::Parameter
         Properties:
-          Name: /copilot/{app.name}/{env}/conduits/{get_secret_name(addon_name)}_CONDUIT_TASK_NAME
+          Name: /copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_CONDUIT_TASK_NAME
           Type: String
           Value: {task_name}
         """
@@ -347,7 +347,7 @@ def conduit(addon_name: str, app: str, env: str):
         exit(1)
     except SecretNotFoundConduitError as err:
         click.secho(
-            f"""No secret called "{get_secret_name(addon_name) or err}" for "{app}" in "{env}" environment.""",
+            f"""No secret called "{normalise_secret_name(addon_name) or err}" for "{app}" in "{env}" environment.""",
             fg="red",
         )
         exit(1)
