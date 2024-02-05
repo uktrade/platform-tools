@@ -3,12 +3,15 @@
 import re
 import subprocess
 from pathlib import Path
+from datetime import datetime, timedelta
+import time
 
 import boto3
 import click
 
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.manifests import get_repository_name_from_manifest
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.manifests import get_service_name_from_manifest
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
@@ -102,3 +105,72 @@ def validate_service_manifest_and_return_repository(name):
         )
 
     return get_repository_name_from_manifest(service_manifest)
+
+
+@svc.command()
+@click.option("--env", type=str, required=True)
+@click.option("--app", type=str, required=True)
+@click.option("--project-profile", type=str, required=True)
+def stat(env, app, project_profile):
+    """Deploy image tag to a service, defaults to image tagged latest."""
+
+    project_session = get_aws_session_or_abort(project_profile)
+
+    click.secho(f"Showing status for app {app} in aws account {project_profile}", fg="green",)
+    logs_client = project_session.client("logs")
+    ecs_client = project_session.client("ecs")
+
+    response = ecs_client.list_clusters()
+
+    for cluster in response["clusterArns"]:
+        cluster_name = cluster.split('/')[-1]
+        APP = cluster_name.split('-')[0]
+        ENV = cluster_name.split('-')[1]
+        if app == APP and env == ENV:
+            log_group_name = f"/aws/ecs/containerinsights/{cluster_name}/performance"
+            break
+
+    query_string = "stats max(CpuUtilized), max(MemoryUtilized), max(EphemeralStorageUtilized) by TaskId | filter Type='Task' | sort TaskId desc"
+    date_time = datetime.now()
+    end_time = int(date_time.timestamp())
+    start_time = int((date_time - timedelta(minutes=5)).timestamp())
+    end_time = int((date_time - timedelta(minutes=4)).timestamp())
+
+    click.echo(
+        click.style("Date & Time:  ", fg="cyan",)
+        + click.style(f"{datetime.utcfromtimestamp(start_time)}", fg="cyan", bold=True)
+    )
+
+    cpu_response_id = logs_client.start_query(
+        logGroupName=log_group_name,
+        startTime=start_time,
+        endTime=end_time,
+        queryString=query_string
+    )
+
+    click.secho("waiting 5s...", fg="cyan",)
+    time.sleep(5)
+    cpu_response = logs_client.get_query_results(
+        queryId=cpu_response_id["queryId"]
+    )
+
+    #cpu_response = {'results': [[{'field': 'TaskId', 'value': '7573108ac5d342f482c05e66a6d3eeff'}, {'field': 'max(CpuUtilized)', 'value': '18.5639'}, {'field': 'max(MemoryUtilized)', 'value': '274'}, {'field': 'max(EphemeralStorageUtilized)', 'value': '2.64'}], [{'field': 'TaskId', 'value': '97f19a10da624c8380e23647276ba001'}, {'field': 'max(CpuUtilized)', 'value': '12.3039'}, {'field': 'max(MemoryUtilized)', 'value': '275'}, {'field': 'max(EphemeralStorageUtilized)', 'value': '2.71'}], [{'field': 'TaskId', 'value': '3f6db7f58bd145c7a668f562ff896fb7'}, {'field': 'max(CpuUtilized)', 'value': '10.118'}, {'field': 'max(MemoryUtilized)', 'value': '268'}, {'field': 'max(EphemeralStorageUtilized)', 'value': '2.64'}]], 'statistics': {'recordsMatched': 3.0, 'recordsScanned': 35.0, 'bytesScanned': 29106.0}, 'status': 'Complete', 'ResponseMetadata': {'RequestId': '2c771daf-3e1f-40c2-8652-80a142b21ada', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': '2c771daf-3e1f-40c2-8652-80a142b21ada', 'content-type': 'application/x-amz-json-1.1', 'content-length': '755', 'date': 'Mon, 05 Feb 2024 17:30:41 GMT'}, 'RetryAttempts': 0}}
+
+    click.echo(
+         click.style("\nName:\t", fg="green",)
+         + click.style(f"{app}", fg="green", bold=True)
+         )
+    click.echo(
+         click.style("Type:\t", fg="green",)
+         + click.style("web", fg="green", bold=True)
+    )
+    click.echo(
+         click.style("No of instances:\t", fg="green",)
+         + click.style(len(cpu_response["results"]), fg="green", bold=True)
+    )
+
+    click.secho("\nTaskID\t\t\t\t\tState\t\tCPU\tMemory\tDisk", fg="cyan",)
+    for task, cpu, mem, dsk in cpu_response["results"]:
+        click.secho(f"{task['value']}\trunning\t\t"
+                    + "%.1f" % float(cpu['value'])
+                    + f"%\t{mem['value']}M\t{dsk['value']}G", fg="yellow",)
