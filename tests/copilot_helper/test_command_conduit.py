@@ -1110,6 +1110,57 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
     )
 
 
+@mock_ssm
+@pytest.mark.parametrize(
+    "addon_name, expected_type",
+    [
+        ("custom-name-postgres", "postgres"),
+        ("custom-name-rds-postgres", "postgres"),
+        ("custom-name-redis", "redis"),
+        ("custom-name-opensearch", "opensearch"),
+    ],
+)
+def test_get_addon_type(addon_name, expected_type, mock_application):
+    """Test that get_addon_type returns the expected addon type."""
+    from dbt_copilot_helper.commands.conduit import get_addon_type
+
+    _add_addon_config_parameter()
+    addon_type = get_addon_type(mock_application, "development", addon_name)
+
+    assert addon_type == expected_type
+
+
+@mock_ssm
+def test_get_addon_type_when_addon_not_found(mock_application):
+    """Test that get_addon_type raises the expected error when the addon is not
+    found in the config file."""
+    from dbt_copilot_helper.commands.conduit import AddonNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import get_addon_type
+
+    _add_addon_config_parameter({"different-name": {"type": "redis"}})
+
+    with pytest.raises(AddonNotFoundConduitError):
+        get_addon_type(mock_application, "development", "custom-name-postgres")
+
+
+@mock_ssm
+def test_get_addon_type_when_parameter_not_found(mock_application):
+    """Test that get_addon_type raises the expected error when the addon config
+    parameter is not found."""
+    from dbt_copilot_helper.commands.conduit import ParameterNotFoundConduitError
+    from dbt_copilot_helper.commands.conduit import get_addon_type
+
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name=f"/copilot/applications/test-application/environments/development/invalid-parameter",
+        Type="String",
+        Value=json.dumps({"custom-name-postgres": {"type": "postgres"}}),
+    )
+
+    with pytest.raises(ParameterNotFoundConduitError):
+        get_addon_type(mock_application, "development", "custom-name-postgres")
+
+
 def _add_addon_config_parameter(param_value=None):
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
