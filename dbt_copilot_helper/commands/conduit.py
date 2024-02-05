@@ -21,7 +21,8 @@ class ConduitError(Exception):
 
 
 class InvalidAddonTypeConduitError(ConduitError):
-    pass
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
 
 
 class NoClusterConduitError(ConduitError):
@@ -36,6 +37,14 @@ class CreateTaskTimeoutConduitError(ConduitError):
     pass
 
 
+class ParameterNotFoundConduitError(ConduitError):
+    pass
+
+
+class AddonNotFoundConduitError(ConduitError):
+    pass
+
+
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 CONDUIT_ADDON_TYPES = [
     "opensearch",
@@ -47,6 +56,36 @@ CONDUIT_ADDON_TYPES = [
 
 def get_secret_name(addon_name: str) -> str:
     return addon_name.replace("-", "_").upper()
+
+
+def get_addon_type(app: Application, env: str, addon_name: str) -> str:
+    session = app.environments[env].session
+    ssm_client = session.client("ssm")
+    addon_type = None
+
+    try:
+        addon_config = json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{app.name}/environments/{env}/addons"
+            )["Parameter"]["Value"]
+        )
+    except ssm_client.exceptions.ParameterNotFound:
+        raise ParameterNotFoundConduitError
+
+    if addon_name not in addon_config.keys():
+        raise AddonNotFoundConduitError
+
+    for name, config in addon_config.items():
+        if name == addon_name:
+            addon_type = config["type"]
+
+    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
+        raise InvalidAddonTypeConduitError(addon_type)
+
+    if "postgres" in addon_type:
+        addon_type = addon_type.split("-")[1]
+
+    return addon_type
 
 
 def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
@@ -280,40 +319,29 @@ def start_conduit(application: Application, env: str, addon_type: str, addon_nam
 def conduit(addon_name: str, app: str, env: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
-
     application = load_application(app)
-    session = application.environments[env].session
-    ssm_client = session.client("ssm")
-    addon_config = json.loads(
-        ssm_client.get_parameter(Name=f"/copilot/applications/{application.name}/addons")[
-            "Parameter"
-        ]["Value"]
-    )
 
-    if addon_name not in addon_config.keys():
+    try:
+        addon_type = get_addon_type(application, env, addon_name)
+        start_conduit(application, env, addon_type, addon_name)
+    except ParameterNotFoundConduitError:
+        click.secho(
+            f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except AddonNotFoundConduitError:
         click.secho(
             f"""Addon "{addon_name}" does not exist.""",
             fg="red",
         )
         exit(1)
-
-    addon_type = ""
-    for name, config in addon_config.items():
-        if name == addon_name:
-            addon_type = config["type"]
-
-    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
+    except InvalidAddonTypeConduitError as err:
         click.secho(
-            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            f"""Addon type "{err.addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""",
             fg="red",
         )
         exit(1)
-
-    if "postgres" in addon_type:
-        addon_type = addon_type.split("-")[1]
-
-    try:
-        start_conduit(application, env, addon_type, addon_name)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)

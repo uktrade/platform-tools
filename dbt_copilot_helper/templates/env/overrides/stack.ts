@@ -43,7 +43,7 @@ export class TransformedStack extends cdk.Stack {
         ).toString('utf-8'));
 
         new cdk.aws_ssm.CfnParameter(this, 'AddonConfig', {
-            name: `/copilot/applications/${this.appName}/addons`,
+            name: `/copilot/applications/${this.appName}/environments/${this.envName}/addons`,
             type: "String",
             value: JSON.stringify(addonConfig),
         });

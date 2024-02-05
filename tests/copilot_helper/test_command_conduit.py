@@ -1071,10 +1071,49 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
     )
 
 
+@mock_ssm
+@pytest.mark.parametrize(
+    "addon_name",
+    [
+        "custom-name-postgres",
+        "custom-name-rds-postgres",
+        "custom-name-redis",
+        "custom-name-opensearch",
+    ],
+)
+@patch("click.secho")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name, validate_version):
+    """Test that given an app, env and addon name strings, when there is no
+    addon config parameter available, the conduit command handles the
+    ParameterNotFoundConduitError exception."""
+    from dbt_copilot_helper.commands.conduit import conduit
+
+    result = CliRunner().invoke(
+        conduit,
+        [
+            addon_name,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ],
+    )
+
+    assert result.exit_code == 1
+    validate_version.assert_called_once()
+    secho.assert_called_once_with(
+        f"""No parameter called "/copilot/applications/test-application/environments/development/addons". Try deploying the "test-application" "development" environment.""",
+        fg="red",
+    )
+
+
 def _add_addon_config_parameter(param_value=None):
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
-        Name=f"/copilot/applications/test-application/addons",
+        Name=f"/copilot/applications/test-application/environments/development/addons",
         Type="String",
         Value=json.dumps(param_value or DEFAULT_ADDON_CONFIG),
     )
