@@ -1,6 +1,7 @@
 import ipaddress
 import re
 
+import click
 from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
@@ -23,19 +24,27 @@ def validate_string(regex_pattern: str):
 
 
 S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
+AVAILABILITY_UNCERTAIN = "Warning: Could not determine the availability of bucket name '{}'."
 
 
-def s3_bucket_name_exists(name: str):
+def s3_bucket_name_is_available(name: str):
     session = get_aws_session_or_abort()
     client = session.client("s3")
 
     try:
         client.head_bucket(name)
     except ClientError as ex:
+        if "Error" not in ex.response or not "Code" in ex.response["Error"]:
+            click.secho(AVAILABILITY_UNCERTAIN.format(name), fg="yellow")
+            return True
         if ex.response["Error"]["Code"] == "404":
-            return False
+            return True
 
-    return True
+        if int(ex.response["Error"]["Code"]) > 499:
+            click.secho(AVAILABILITY_UNCERTAIN.format(name), fg="yellow")
+            return True
+
+    return False
 
 
 def validate_s3_bucket_name(name: str):
