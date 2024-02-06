@@ -1,17 +1,21 @@
 import re
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import yaml
+from botocore.exceptions import ClientError
 from schema import SchemaError
 
 from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
+from dbt_copilot_helper.utils.validation import s3_bucket_name_exists
 from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.validation import validate_s3_bucket_name
 from dbt_copilot_helper.utils.validation import validate_string
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
+from tests.copilot_helper.conftest import mock_aws_client
 
 
 def load_addons(addons_file):
@@ -251,6 +255,8 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
         ("ab!cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
         ("ab_cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
         ("aB-cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("-aB-cd", "Names must start and end with 0-9 or a-z."),
+        ("aB-cd.", "Names must start and end with 0-9 or a-z."),
         ("ab..cd", "Names cannot contain two adjacent periods."),
         ("1.1.1.1", "Names cannot be IP addresses."),
         ("127.0.0.1", "Names cannot be IP addresses."),
@@ -266,6 +272,31 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
         validate_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
+
+
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_s3_bucket_name_exists_200(mock_get_session):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+    assert s3_bucket_name_exists(f"bucket_name_200")
+
+
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_s3_bucket_name_exists(mock_get_session, http_code):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+
+    assert s3_bucket_name_exists(f"bucket_name_{http_code}")
+
+
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_s3_bucket_name_doesnt_exist(mock_get_session):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadBucket")
+
+    assert not s3_bucket_name_exists("brand-new-bucket")
 
 
 def test_validate_s3_bucket_name_multiple_failures():

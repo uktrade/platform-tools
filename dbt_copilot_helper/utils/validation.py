@@ -1,14 +1,17 @@
 import ipaddress
 import re
 
+from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
 from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 
-def validate_string(regex_pattern):
+
+def validate_string(regex_pattern: str):
     def validator(string):
         if not re.match(regex_pattern, string):
             raise SchemaError(
@@ -22,10 +25,26 @@ def validate_string(regex_pattern):
 S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
 
 
-def validate_s3_bucket_name(name):
+def s3_bucket_name_exists(name: str):
+    session = get_aws_session_or_abort()
+    client = session.client("s3")
+
+    try:
+        client.head_bucket(name)
+    except ClientError as ex:
+        if ex.response["Error"]["Code"] == "404":
+            return False
+
+    return True
+
+
+def validate_s3_bucket_name(name: str):
     errors = []
     if not (2 < len(name) < 64):
         errors.append("Length must be between 3 and 63 characters inclusive.")
+
+    if not re.match(r"^[a-z0-9].*[a-z0-9]$", name):
+        errors.append("Names must start and end with 0-9 or a-z.")
 
     if not re.match(r"^[a-z0-9.-]*$", name):
         errors.append("Names can only contain the characters 0-9, a-z, '.' and '-'.")
