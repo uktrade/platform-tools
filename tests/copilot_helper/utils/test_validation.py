@@ -2,12 +2,17 @@ import re
 from pathlib import Path
 from unittest.mock import patch
 
+import boto3
 import pytest
 import yaml
 from botocore.exceptions import ClientError
+from moto import mock_iam
+from moto import mock_s3
+from moto import mock_sts
 from schema import SchemaError
 
-from dbt_copilot_helper.utils.validation import AVAILABILITY_UNCERTAIN
+from dbt_copilot_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_WARNING_TEMPLATE
 from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
@@ -206,7 +211,7 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
 
 
 @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
+def test_validate_addons_unavailable_bucket_name(mock_name_is_available, capfd):
     mock_name_is_available.return_value = False
     error_map = validate_addons(
         {
@@ -216,12 +221,8 @@ def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
             }
         }
     )
-    assert bool(
-        re.search(
-            f"(?s)Error in my-s3:.*environments.*dev.*bucket-name.*Name is already in use",
-            error_map["my-s3"],
-        )
-    )
+    assert not error_map
+    assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
 def test_validate_addons_unsupported_addon():
@@ -277,16 +278,15 @@ def test_validate_s3_bucket_name_success_cases(mock_name_is_available, bucket_na
 
 
 @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_s3_bucket_name_success_cases_fails_on_availability(mock_name_is_available):
+def test_validate_s3_bucket_name_success_cases_warns_about_availability(
+    mock_name_is_available, capfd
+):
     mock_name_is_available.return_value = False
     bucket_name = "bucket-name"
 
-    with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+    validate_s3_bucket_name(bucket_name)
 
-    assert S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, "  Name is already in use.") in str(
-        ex.value
-    )
+    assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format(bucket_name) in capfd.readouterr().out
     # We don't want to call out to AWS if the name isn't even valid.
     mock_name_is_available.assert_called_once()
 
@@ -321,28 +321,31 @@ def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_na
     mock_name_is_available.assert_not_called()
 
 
-@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available_200(mock_get_session):
-    client = mock_aws_client(mock_get_session)
-    client.head_bucket.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-
-    assert not s3_bucket_name_is_available(f"bucket_name_200")
-
-
 @pytest.mark.parametrize("http_code", ["403", "400"])
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available_400(mock_get_session, http_code):
+def test_s3_bucket_name_is_available_fails_400(mock_get_session, http_code):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
 
-    assert not s3_bucket_name_is_available(f"bucket_name_{http_code}")
+    assert not s3_bucket_name_is_available(f"bucket-name-{http_code}")
 
 
-@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available(mock_get_session):
-    client = mock_aws_client(mock_get_session)
-    client.head_bucket.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadBucket")
+@mock_s3
+@mock_sts
+@mock_iam
+def test_s3_bucket_name_is_available_fails_200():
+    client = boto3.client("s3")
+    client.create_bucket(
+        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+    )
 
+    assert not s3_bucket_name_is_available(f"bucket-name-200")
+
+
+@mock_s3
+@mock_sts
+@mock_iam
+def test_s3_bucket_name_is_available():
     assert s3_bucket_name_is_available("brand-new-bucket")
 
 
@@ -363,7 +366,7 @@ def test_s3_bucket_name_is_available_error_conditions_display_error(
     is_available = s3_bucket_name_is_available("brand-new-bucket")
 
     assert is_available
-    assert AVAILABILITY_UNCERTAIN.format("brand-new-bucket") in capfd.readouterr().out
+    assert AVAILABILITY_UNCERTAIN_TEMPLATE.format("brand-new-bucket") in capfd.readouterr().out
 
 
 def test_validate_s3_bucket_name_multiple_failures():

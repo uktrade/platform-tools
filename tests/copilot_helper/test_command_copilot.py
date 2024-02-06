@@ -11,6 +11,7 @@ import yaml
 from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_iam
+from moto import mock_s3
 from moto import mock_ssm
 from moto import mock_sts
 from yaml import dump
@@ -18,6 +19,7 @@ from yaml import dump
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_WARNING_TEMPLATE
 from tests.copilot_helper.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
@@ -156,17 +158,17 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_make_addons_success(
         self,
-        mock_name_is_available,
         fakefs,
         addon_file,
         expected_env_addons,
         expected_service_addons,
         expect_db_warning,
     ):
-        mock_name_is_available.return_value = True
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
@@ -246,6 +248,47 @@ class TestMakeAddonCommand:
         assert (
             len(actual_files) == len(all_expected_files) + 3
         ), "The actual filecount should be expected files plus 2 initial manifest.yml and 1 override files"
+
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_copilot_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_make_addons_success_outputs_warning_for_bucket_name_in_use(
+        self,
+        fakefs,
+    ):
+        """Test that make_addons generates the expected directories and file
+        contents."""
+        # Arrange
+        client = boto3.client("s3")
+        client.create_bucket(
+            Bucket="my-bucket", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+        )
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        fakefs.add_real_file(
+            addons_dir / "s3_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+        )
+        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
+
+        # Act
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 0
+        assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format("my-bucket") in result.output
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
@@ -355,10 +398,11 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_make_addons_deletion_policy(
         self,
-        mock_name_is_available,
         fakefs,
         addon_file,
         addon_name,
@@ -366,7 +410,6 @@ class TestMakeAddonCommand:
         deletion_policy_override,
         expected_deletion_policy,
     ):
-        mock_name_is_available.return_value = True
         """Test that deletion policy defaults and overrides are applied
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
@@ -426,9 +469,10 @@ class TestMakeAddonCommand:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_exit_with_error_if_invalid_services(self, mock_name_is_available, fakefs):
-        mock_name_is_available.return_value = True
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -454,51 +498,17 @@ invalid-entry:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
+            "Services listed in invalid-entry.services do not exist in ./copilot/" in result.output
         )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_exit_with_error_if_addons_yml_validation_fails_with_unavailable_bucket_name(
-        self, mock_name_is_available, fakefs
-    ):
-        mock_name_is_available.return_value = False
-        fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
-            contents="""
-example-valid-file:
-    type: s3
-    environments:
-        default:
-            bucket-name: test-bucket
-""",
-        )
-
-        fakefs.create_file("copilot/environments/development/manifest.yml")
-        fakefs.create_file(
-            "copilot/web/manifest.yml",
-            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
-        )
-
-        result = CliRunner().invoke(copilot, ["make-addons"])
-
-        assert result.exit_code == 1
-        assert re.match(
-            r"(?s).*example-valid-file.*environments.*default.*bucket-name.*test-bucket.*Name is already in use",
-            result.output,
-        )
-
-    @patch(
-        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_exit_with_error_if_addons_yml_validation_fails(self, mock_name_is_available, fakefs):
-        mock_name_is_available.return_value = True
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -529,9 +539,10 @@ example-invalid-file:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_exit_with_error_if_invalid_environments(self, mock_name_is_available, fakefs):
-        mock_name_is_available.return_value = True
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -554,17 +565,18 @@ invalid-environment:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
+            "Environment keys listed in invalid-environment do not match ./copilot/environments"
+            in result.output
         )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_exit_with_multiple_errors(self, mock_name_is_available, fakefs):
-        mock_name_is_available.return_value = True
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
             contents="""
@@ -684,12 +696,12 @@ invalid-entry:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
-        self, mock_name_is_available, fakefs, addon_file_contents, has_postgres_addon
+        self, fakefs, addon_file_contents, has_postgres_addon
     ):
-        mock_name_is_available.return_value = True
-
         def assert_in_addons_parameters_as_required(
             checks, addons_parameters_contents, should_include
         ):

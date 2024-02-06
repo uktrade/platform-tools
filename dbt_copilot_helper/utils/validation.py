@@ -24,7 +24,10 @@ def validate_string(regex_pattern: str):
 
 
 S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
-AVAILABILITY_UNCERTAIN = "Warning: Could not determine the availability of bucket name '{}'."
+AVAILABILITY_UNCERTAIN_TEMPLATE = (
+    "Warning: Could not determine the availability of bucket name '{}'."
+)
+BUCKET_NAME_IN_USE_WARNING_TEMPLATE = "Warning: bucket name '{}' is already in use."
 
 
 def s3_bucket_name_is_available(name: str):
@@ -32,16 +35,16 @@ def s3_bucket_name_is_available(name: str):
     client = session.client("s3")
 
     try:
-        client.head_bucket(name)
+        client.head_bucket(Bucket=name)
     except ClientError as ex:
         if "Error" not in ex.response or not "Code" in ex.response["Error"]:
-            click.secho(AVAILABILITY_UNCERTAIN.format(name), fg="yellow")
+            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
             return True
         if ex.response["Error"]["Code"] == "404":
             return True
 
         if int(ex.response["Error"]["Code"]) > 499:
-            click.secho(AVAILABILITY_UNCERTAIN.format(name), fg="yellow")
+            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
             return True
 
     return False
@@ -78,7 +81,7 @@ def validate_s3_bucket_name(name: str):
     if not errors:
         # Don't waste time calling AWS if the bucket name is not even valid.
         if not s3_bucket_name_is_available(name):
-            errors.append("Name is already in use.")
+            click.secho(BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format(name), fg="yellow")
 
     if errors:
         raise SchemaError(
