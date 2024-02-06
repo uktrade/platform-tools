@@ -75,6 +75,11 @@ def validate_s3_bucket_name(name: str):
         if name.endswith(suffix):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
+    if not errors:
+        # Don't waste time calling AWS if the bucket name is not even valid.
+        if not s3_bucket_name_is_available(name):
+            errors.append("Name is already in use.")
+
     if errors:
         raise SchemaError(
             S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))

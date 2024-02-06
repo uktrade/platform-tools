@@ -57,7 +57,9 @@ def test_validate_string(regex_pattern, valid_string, invalid_string):
         "no_param_addons.yml",
     ],
 )
-def test_validate_addons_success(addons_file):
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_addons_success(mock_name_is_available, addons_file):
+    mock_name_is_available.return_value = True
     errors = validate_addons(load_addons(addons_file))
 
     assert len(errors) == 0
@@ -175,14 +177,18 @@ def test_validate_addons_success(addons_file):
         ),
     ],
 )
-def test_validate_addons_failure(addons_file, exp_error):
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
+    mock_name_is_available.return_value = True
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
-def test_validate_addons_invalid_env_name_errors():
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
+    mock_name_is_available.return_value = True
     error_map = validate_addons(
         {
             "my-s3": {
@@ -194,6 +200,25 @@ def test_validate_addons_invalid_env_name_errors():
     assert bool(
         re.search(
             f"(?s)Error in my-s3:.*environments.*Wrong key 'hyphens-not-allowed'",
+            error_map["my-s3"],
+        )
+    )
+
+
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
+    mock_name_is_available.return_value = False
+    error_map = validate_addons(
+        {
+            "my-s3": {
+                "type": "s3",
+                "environments": {"dev": {"bucket-name": "bucket"}},
+            }
+        }
+    )
+    assert bool(
+        re.search(
+            f"(?s)Error in my-s3:.*environments.*dev.*bucket-name.*Name is already in use",
             error_map["my-s3"],
         )
     )
@@ -244,8 +269,26 @@ def test_between_with_step_raises_error(value):
 
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
-def test_validate_s3_bucket_name_success_cases(bucket_name):
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_s3_bucket_name_success_cases(mock_name_is_available, bucket_name):
+    mock_name_is_available.return_value = True
     assert validate_s3_bucket_name(bucket_name)
+    mock_name_is_available.assert_called_once()
+
+
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_s3_bucket_name_success_cases_fails_on_availability(mock_name_is_available):
+    mock_name_is_available.return_value = False
+    bucket_name = "bucket-name"
+
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
+
+    assert S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, "  Name is already in use.") in str(
+        ex.value
+    )
+    # We don't want to call out to AWS if the name isn't even valid.
+    mock_name_is_available.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -267,12 +310,15 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
         ("bob--ol-s3", "Names cannot be suffixed '--ol-s3'."),
     ],
 )
-def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
+@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_name, error_message):
     exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
+    # We don't want to call out to AWS if the name isn't even valid.
+    mock_name_is_available.assert_not_called()
 
 
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
