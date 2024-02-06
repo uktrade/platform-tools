@@ -104,7 +104,6 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "my-s3-bucket-bucket-access.yml",
-                    "xray.yml",
                 ],
                 False,
             ),
@@ -116,31 +115,31 @@ class TestMakeAddonCommand:
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
                 ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
                 ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
                 ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
                 ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
         ],
@@ -229,10 +228,16 @@ class TestMakeAddonCommand:
 
         expected = expected_file.read_text()
         actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
-        assert actual == expected, f"The environment overrides did not have the expected content"
+        assert (
+            actual == expected
+        ), f"The environment overrides did not have the expected content"
 
-        expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
-        actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
+        expected_svc_overrides_file = Path(
+            "expected/web/overrides/cfn.patches.yml"
+        ).read_text()
+        actual_svc_overrides_file = Path(
+            "copilot/web/overrides/cfn.patches.yml"
+        ).read_text()
         assert actual_svc_overrides_file == expected_svc_overrides_file
 
         copilot_dir = Path("copilot")
@@ -270,7 +275,9 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / "redis_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / "redis_addons.yml",
+            read_only=False,
+            target_path=ADDON_CONFIG_FILENAME,
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -287,7 +294,9 @@ class TestMakeAddonCommand:
 
         for f in old_addon_files:
             fakefs.add_real_file(
-                addons_dir / "expected" / f, read_only=False, target_path=Path("copilot", f)
+                addons_dir / "expected" / f,
+                read_only=False,
+                target_path=Path("copilot", f),
             )
 
         # Act
@@ -299,13 +308,15 @@ class TestMakeAddonCommand:
             for f in ["my-redis.yml", "addons.parameters.yml", "vpc.yml"]
         ]
         expected_service_files = [
-            Path("web/addons", f) for f in ["appconfig-ipfilter.yml", "subscription-filter.yml"]
+            Path("web/addons", f)
+            for f in ["appconfig-ipfilter.yml", "subscription-filter.yml"]
         ]
         all_expected_files = expected_env_files + expected_service_files
 
         for f in all_expected_files:
             expected_file = Path(
-                "expected", f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml"
+                "expected",
+                f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml",
             )
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
@@ -605,7 +616,10 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert result.output == "No environments found in ./copilot/environments; exiting\n"
+        assert (
+            result.output
+            == "No environments found in ./copilot/environments; exiting\n"
+        )
 
     @pytest.mark.parametrize(
         "addon_file_contents, has_postgres_addon",
@@ -616,7 +630,11 @@ invalid-entry:
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
             (
-                [RDS_POSTGRES_STORAGE_CONTENTS, OPENSEARCH_STORAGE_CONTENTS, S3_STORAGE_CONTENTS],
+                [
+                    RDS_POSTGRES_STORAGE_CONTENTS,
+                    OPENSEARCH_STORAGE_CONTENTS,
+                    S3_STORAGE_CONTENTS,
+                ],
                 True,
             ),
         ],
@@ -644,9 +662,7 @@ invalid-entry:
             for check in checks:
                 assert (
                     check in addons_parameters_contents
-                ) == should_include, (
-                    f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
-                )
+                ) == should_include, f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
 
         create_test_manifests(addon_file_contents, fakefs)
 
@@ -654,7 +670,8 @@ invalid-entry:
 
         assert result.exit_code == 0
         assert (
-            "File copilot/environments/addons/addons.parameters.yml created" in result.output
+            "File copilot/environments/addons/addons.parameters.yml created"
+            in result.output
         ), "addons.parameters.yml should be included"
         addons_parameters_contents = Path(
             "/copilot/environments/addons/addons.parameters.yml"
@@ -733,7 +750,9 @@ invalid-entry:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
+    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
+        self, fakefs
+    ):
         services = ["web", "web-celery"]
 
         fakefs.create_file(ADDON_CONFIG_FILENAME)
@@ -762,7 +781,8 @@ invalid-entry:
 @mock_sts
 @mock_iam
 @patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+    new=Mock(return_value=False),
 )
 def test_get_secrets():
     def _put_ssm_param(client, app, env, name, value):
@@ -790,7 +810,10 @@ def test_get_secrets():
 
         assert line in result.output
 
-    assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
+    assert (
+        SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV")
+        not in result.output
+    )
     assert result.exit_code == 0
 
 
@@ -837,4 +860,7 @@ def test_is_service_empty_manifest(fakefs, capfd):
         is_service(PosixPath(file_path))
 
     assert excinfo.value.code == 1
-    assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
+    assert (
+        f"No type defined in manifest file {file_path}; exiting"
+        in capfd.readouterr().out
+    )
