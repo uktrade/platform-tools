@@ -338,7 +338,7 @@ def conduit(addon_name: str, app: str, env: str):
         exit(1)
     except InvalidAddonTypeConduitError as err:
         click.secho(
-            f"""Addon type "{err.addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
             fg="red",
         )
         exit(1)
