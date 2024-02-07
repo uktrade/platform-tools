@@ -1,9 +1,6 @@
-##### Aurora serverless v2 example:
-
 my-missing-type-addon:
   version: 14.4
 
 my-empty-type-addon:
   type:
   version: 14.4
-

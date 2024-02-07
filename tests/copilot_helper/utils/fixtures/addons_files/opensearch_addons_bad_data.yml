@@ -4,7 +4,7 @@ my-opensearch-1:
 
 my-opensearch-2:
   type: opensearch
-  deletion-policy: 27
+  deletion_policy: 27
 
 my-opensearch-3:
   type: opensearch
@@ -14,7 +14,7 @@ my-opensearch-4:
   type: opensearch
   environments:
     dev:
-      opensearch-plan: large
+      opensearch_plan: large
 
 my-opensearch-5:
   type: opensearch
@@ -64,7 +64,7 @@ my-opensearch-8:
   type: opensearch
   environments:
     dev:
-      deletion-policy: Snapshot
+      deletion_policy: Snapshot
 
 
 

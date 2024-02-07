@@ -6,11 +6,11 @@ my-aurora-db:
 
   environments:
     default:
-      min-capacity: 0.5 # AllowedValues: from 0.5 through 128
-      max-capacity: 8   # AllowedValues: from 0.5 through 128
-      snapshot-id: ""
-      deletion-protection: false
+      min_capacity: 0.5 # AllowedValues: from 0.5 through 128
+      max_capacity: 8   # AllowedValues: from 0.5 through 128
+      snapshot_id: ""
+      deletion_protection: false
 
     development:
-      snapshot-id: my-recent-snapshot
-      deletion-protection: true
+      snapshot_id: my-recent-snapshot
+      deletion_protection: true

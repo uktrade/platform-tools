@@ -15,13 +15,13 @@ my-s3-bucket:
     # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
 
     production:
-      bucket-name: my-bucket-prod
+      bucket_name: my-bucket-prod
 
     staging:
-      bucket-name: my-bucket-staging
+      bucket_name: my-bucket-staging
 
     development:
-      bucket-name: my-bucket-dev
+      bucket_name: my-bucket-dev
 
 
 ##### s3-policy example:
@@ -35,7 +35,7 @@ my-s3-bucket-bucket-access:
 
   environments:
     default:
-      bucket-name: my-bucket
+      bucket_name: my-bucket
 
 
 ##### Redis example:
@@ -73,8 +73,8 @@ my-aurora-db:
 
   environments:
     default:
-      min-capacity: 0.5 # AllowedValues: from 0.5 through 128
-      max-capacity: 8   # AllowedValues: from 0.5 through 128
+      min_capacity: 0.5 # AllowedValues: from 0.5 through 128
+      max_capacity: 8   # AllowedValues: from 0.5 through 128
 
 
 ##### Opensearch example:

@@ -1,12 +1,10 @@
-##### Aurora serverless v2 example:
-
 my-aurora-db-1: # No version
   type: aurora-postgres
 
 my-aurora-db-2:
   type: aurora-postgres
   version: 14.4
-  deletion-policy: None # Not a valid policy
+  deletion_policy: None # Not a valid policy
 
 my-aurora-db-3:
   type: aurora-postgres
@@ -19,44 +17,44 @@ my-aurora-db-4:
   version: 14.4
   environments:
     default:
-      min-capacity: 0.25 # AllowedValues: from 0.5 through 128
+      min_capacity: 0.25 # AllowedValues: from 0.5 through 128
 
 my-aurora-db-5:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
-      max-capacity: 129   # AllowedValues: from 0.5 through 128
+      max_capacity: 129   # AllowedValues: from 0.5 through 128
 
 my-aurora-db-6:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
-      snapshot-id: 712
+      snapshot_id: 712
 
 my-aurora-db-7:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
-      deletion-protection: yes please
+      deletion_protection: yes please
 
 my-aurora-db-8:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
-      deletion-policy: Slapstick
+      deletion_policy: Slapstick
 
 my-aurora-db-9:
   type: aurora-postgres
   version: 14.4
-  bad-key:
+  bad_key:
 
 my-aurora-db-10:
   type: aurora-postgres
   version: 14.4
   environments:
     default:
-      bad-env-key:
+      bad_env_key:

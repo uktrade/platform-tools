@@ -1,15 +1,15 @@
 my-appconfig-ipfilter:
   type: appconfig-ipfilter
-  appconfig-param:
+  appconfig_param:
 
 my-subscription-filter:
   type: subscription-filter
-  sub-filter-param:
+  sub_filter_param:
 
 my-vpc:
   type: vpc
-  vpc-param:
+  vpc_param:
 
 my-xray:
   type: xray
-  xray-param:
+  xray_param:
