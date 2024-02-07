@@ -104,7 +104,6 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "my-s3-bucket-bucket-access.yml",
-                    "xray.yml",
                 ],
                 False,
             ),
@@ -116,31 +115,31 @@ class TestMakeAddonCommand:
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
                 ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
                 ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
                 ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
                 ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
         ],
@@ -270,7 +269,9 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / "redis_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / "redis_addons.yml",
+            read_only=False,
+            target_path=ADDON_CONFIG_FILENAME,
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -287,7 +288,9 @@ class TestMakeAddonCommand:
 
         for f in old_addon_files:
             fakefs.add_real_file(
-                addons_dir / "expected" / f, read_only=False, target_path=Path("copilot", f)
+                addons_dir / "expected" / f,
+                read_only=False,
+                target_path=Path("copilot", f),
             )
 
         # Act
@@ -305,7 +308,8 @@ class TestMakeAddonCommand:
 
         for f in all_expected_files:
             expected_file = Path(
-                "expected", f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml"
+                "expected",
+                f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml",
             )
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
@@ -616,7 +620,11 @@ invalid-entry:
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
             (
-                [RDS_POSTGRES_STORAGE_CONTENTS, OPENSEARCH_STORAGE_CONTENTS, S3_STORAGE_CONTENTS],
+                [
+                    RDS_POSTGRES_STORAGE_CONTENTS,
+                    OPENSEARCH_STORAGE_CONTENTS,
+                    S3_STORAGE_CONTENTS,
+                ],
                 True,
             ),
         ],
@@ -762,7 +770,8 @@ invalid-entry:
 @mock_sts
 @mock_iam
 @patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+    new=Mock(return_value=False),
 )
 def test_get_secrets():
     def _put_ssm_param(client, app, env, name, value):
