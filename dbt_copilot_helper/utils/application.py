@@ -76,7 +76,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
 
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/environments",
-        Recursive=True,
+        Recursive=False,
         WithDecryption=False,
     )
 
