@@ -224,11 +224,10 @@ class TestMakeAddonCommand:
             actual = Path("copilot", f).read_text()
             assert actual == expected, f"The file {f} did not have the expected content"
 
-        expected_file = Path("expected/environments/overrides/cfn.patches.yml")
-
-        expected = expected_file.read_text()
-        actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
-        assert actual == expected, f"The environment overrides did not have the expected content"
+        env_override_files = setup_override_files_for_environments()
+        for file in env_override_files:
+            assert f"{file} created" in result.stdout
+        all_expected_files += env_override_files
 
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
@@ -242,8 +241,8 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 4
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 2 override files"
+            len(actual_files) == len(all_expected_files) + 3
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 1 override files"
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
@@ -847,3 +846,17 @@ def test_is_service_empty_manifest(fakefs, capfd):
 
     assert excinfo.value.code == 1
     assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
+
+
+def setup_override_files_for_environments():
+    overrides_dir = Path("./copilot/environments/overrides")
+    return (
+        overrides_dir / "bin" / "override.ts",
+        overrides_dir / ".gitignore",
+        overrides_dir / "cdk.json",
+        overrides_dir / "log_resource_policy.json",
+        overrides_dir / "package-lock.json",
+        overrides_dir / "package.json",
+        overrides_dir / "stack.ts",
+        overrides_dir / "tsconfig.json",
+    )

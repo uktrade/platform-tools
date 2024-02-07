@@ -546,13 +546,13 @@ copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel>
 ## Usage
 
 ```
-copilot-helper conduit (opensearch|postgres|redis) 
-                       --app <app> --env <env> --addon-name <addon_name> 
+copilot-helper conduit <addon_name> 
+                       --app <app> --env <env> 
 ```
 
 ## Arguments
 
-- `addon_type <choice>`
+- `addon_name <text>`
 
 ## Options
 
@@ -560,8 +560,6 @@ copilot-helper conduit (opensearch|postgres|redis)
   - AWS application name
 - `--env <text>`
   - AWS environment name
-- `--addon-name <text>`
-  - Name of custom addon
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

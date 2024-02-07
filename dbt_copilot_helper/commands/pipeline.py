@@ -8,6 +8,7 @@ from yaml.parser import ParserError
 from dbt_copilot_helper.utils.application import get_application_name
 from dbt_copilot_helper.utils.aws import get_codestar_connection_arn
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.files import generate_override_files
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.git import git_remote
@@ -104,32 +105,9 @@ def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, cod
     )
 
     overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
-
-    for file in overrides_path.glob("*"):
-        if file.is_file():
-            contents = file.read_text()
-            file_name = str(file).removeprefix(f"{overrides_path}/")
-            click.echo(
-                mkfile(
-                    base_path,
-                    pipelines_dir / codebase["name"] / "overrides" / file_name,
-                    contents,
-                    overwrite=True,
-                )
-            )
-
-    for file in overrides_path.glob("bin/*"):
-        if file.is_file():
-            contents = file.read_text()
-            file_name = str(file).removeprefix(f"{overrides_path}/")
-            click.echo(
-                mkfile(
-                    base_path,
-                    pipelines_dir / codebase["name"] / "overrides" / file_name,
-                    contents,
-                    overwrite=True,
-                )
-            )
+    generate_override_files(
+        base_path, overrides_path, pipelines_dir / codebase["name"] / "overrides"
+    )
 
 
 def _generate_environments_pipeline(
