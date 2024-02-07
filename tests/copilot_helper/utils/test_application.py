@@ -118,6 +118,11 @@ class ApplicationTest(TestCase):
             ),
             Type="String",
         )
+        ssm_client.put_parameter(
+            Name=f"/copilot/applications/test/environments/three",
+            Value=json.dumps({"demodjango-redis": {"type": "redis", "environments": {}}}),
+            Type="String",
+        )
 
         application = load_application()
 

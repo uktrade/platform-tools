@@ -27,15 +27,23 @@ S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
 AVAILABILITY_UNCERTAIN_TEMPLATE = (
     "Warning: Could not determine the availability of bucket name '{}'."
 )
-BUCKET_NAME_IN_USE_WARNING_TEMPLATE = "Warning: bucket name '{}' is already in use."
+BUCKET_NAME_IN_USE_TEMPLATE = "Bucket name '{}' is already in use."
 
 
 def s3_bucket_name_is_available(name: str):
+    """
+    We try to find the bucket name in AWS.
+
+    The validation logic is:
+    True: if the response is a 200 (it exists and you have access - this bucket has probably already been deployed)
+    True: if the response is a 404 (it could not be found)
+    False: if the response is 40x (the bucket exists but you have no permission)
+    """
     session = get_aws_session_or_abort()
     client = session.client("s3")
-
     try:
         client.head_bucket(Bucket=name)
+        return True
     except ClientError as ex:
         if "Error" not in ex.response or not "Code" in ex.response["Error"]:
             click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
@@ -81,7 +89,7 @@ def validate_s3_bucket_name(name: str):
     if not errors:
         # Don't waste time calling AWS if the bucket name is not even valid.
         if not s3_bucket_name_is_available(name):
-            click.secho(BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format(name), fg="yellow")
+            errors.append(BUCKET_NAME_IN_USE_TEMPLATE.format(name))
 
     if errors:
         raise SchemaError(

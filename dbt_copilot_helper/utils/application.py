@@ -87,6 +87,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
     application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
         for env in [json.loads(p["Value"]) for p in response["Parameters"]]
+        if "name" in env
     }
 
     return application

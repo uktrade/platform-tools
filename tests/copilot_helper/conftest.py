@@ -18,6 +18,8 @@ from moto import mock_route53
 from moto import mock_secretsmanager
 from moto.ec2 import utils as ec2_utils
 
+from dbt_copilot_helper.utils.aws import AWS_SESSION_CACHE
+
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "copilot_helper" / "fixtures"
@@ -317,3 +319,8 @@ def assert_file_created_in_stdout(output_file, result):
 
 def assert_file_overwritten_in_stdout(output_file, result):
     assert f"File {output_file.relative_to('.')} overwritten" in result.stdout
+
+
+@pytest.fixture()
+def clear_session_cache():
+    AWS_SESSION_CACHE.clear()

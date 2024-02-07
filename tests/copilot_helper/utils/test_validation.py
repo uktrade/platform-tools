@@ -12,7 +12,7 @@ from moto import mock_sts
 from schema import SchemaError
 
 from dbt_copilot_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
-from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_WARNING_TEMPLATE
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
@@ -211,7 +211,7 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
 
 
 @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_addons_unavailable_bucket_name(mock_name_is_available, capfd):
+def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
     mock_name_is_available.return_value = False
     error_map = validate_addons(
         {
@@ -221,8 +221,8 @@ def test_validate_addons_unavailable_bucket_name(mock_name_is_available, capfd):
             }
         }
     )
-    assert not error_map
-    assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format("bucket") in capfd.readouterr().out
+
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in error_map["my-s3"]
 
 
 def test_validate_addons_unsupported_addon():
@@ -278,16 +278,14 @@ def test_validate_s3_bucket_name_success_cases(mock_name_is_available, bucket_na
 
 
 @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_s3_bucket_name_success_cases_warns_about_availability(
-    mock_name_is_available, capfd
-):
+def test_validate_s3_bucket_name_failure_raises_schema_error(mock_name_is_available):
     mock_name_is_available.return_value = False
     bucket_name = "bucket-name"
 
-    validate_s3_bucket_name(bucket_name)
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
 
-    assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format(bucket_name) in capfd.readouterr().out
-    # We don't want to call out to AWS if the name isn't even valid.
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format(bucket_name) in str(ex)
     mock_name_is_available.assert_called_once()
 
 
@@ -323,7 +321,7 @@ def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_na
 
 @pytest.mark.parametrize("http_code", ["403", "400"])
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available_fails_400(mock_get_session, http_code):
+def test_s3_bucket_name_is_available_fails_40x(mock_get_session, http_code):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
 
@@ -333,19 +331,19 @@ def test_s3_bucket_name_is_available_fails_400(mock_get_session, http_code):
 @mock_s3
 @mock_sts
 @mock_iam
-def test_s3_bucket_name_is_available_fails_200():
+def test_s3_bucket_name_is_available_success_200():
     client = boto3.client("s3")
     client.create_bucket(
         Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
     )
 
-    assert not s3_bucket_name_is_available(f"bucket-name-200")
+    assert s3_bucket_name_is_available(f"bucket-name-200")
 
 
 @mock_s3
 @mock_sts
 @mock_iam
-def test_s3_bucket_name_is_available():
+def test_s3_bucket_name_is_available(clear_session_cache):
     assert s3_bucket_name_is_available("brand-new-bucket")
 
 
@@ -358,7 +356,7 @@ def test_s3_bucket_name_is_available():
 )
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
 def test_s3_bucket_name_is_available_error_conditions_display_error(
-    mock_get_session, response, capfd
+    mock_get_session, response, capfd, clear_session_cache
 ):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")

@@ -19,7 +19,7 @@ from yaml import dump
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
-from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_WARNING_TEMPLATE
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.copilot_helper.conftest import FIXTURES_DIR
 
 REDIS_STORAGE_CONTENTS = """
@@ -234,6 +234,10 @@ class TestMakeAddonCommand:
             assert f"{file} created" in result.stdout
         all_expected_files += env_override_files
 
+        expected = expected_file.read_text()
+        actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
+        assert actual == expected, f"The environment overrides did not have the expected content"
+
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
         assert actual_svc_overrides_file == expected_svc_overrides_file
@@ -261,20 +265,14 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
-    def test_make_addons_success_outputs_warning_for_bucket_name_in_use(
-        self,
-        fakefs,
+    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+    def test_make_addons_success_fails_validation_for_bucket_name_in_use(
+        self, mock_bucket_validator, fakefs, clear_session_cache
     ):
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
-        client = boto3.client("s3")
-        client.create_bucket(
-            Bucket="my-bucket", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
-        )
+        mock_bucket_validator.return_value = False
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
@@ -287,8 +285,8 @@ class TestMakeAddonCommand:
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
 
-        assert result.exit_code == 0
-        assert BUCKET_NAME_IN_USE_WARNING_TEMPLATE.format("my-bucket") in result.output
+        assert result.exit_code == 1
+        assert BUCKET_NAME_IN_USE_TEMPLATE.format("my-bucket") in result.output
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(

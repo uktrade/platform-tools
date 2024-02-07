@@ -13,10 +13,13 @@ from dbt_copilot_helper.exceptions import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
+AWS_SESSION_CACHE = {}
 
 
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     aws_profile = aws_profile if aws_profile else os.getenv("AWS_PROFILE")
+    if aws_profile in AWS_SESSION_CACHE:
+        return AWS_SESSION_CACHE[aws_profile]
 
     # Check that the aws profile exists and is set.
     click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
@@ -77,6 +80,8 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         click.style("User: ", fg="yellow")
         + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
     )
+
+    AWS_SESSION_CACHE[aws_profile] = session
 
     return session
 
