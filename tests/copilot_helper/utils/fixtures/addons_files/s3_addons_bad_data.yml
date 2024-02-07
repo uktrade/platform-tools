@@ -4,7 +4,7 @@ my-s3-bucket-1:
 
 my-s3-bucket-2:
   type: s3
-  deletion-policy: Retrain # Misspelled
+  deletion_policy: Retrain # Misspelled
 
 my-s3-bucket-3:
   type: s3
@@ -19,14 +19,14 @@ my-s3-bucket-5:
   type: s3
   environments:
     dev:
-      bucket-name: banana-s3alias # Can't end with -s3alias
+      bucket_name: banana-s3alias # Can't end with -s3alias
 
 my-s3-bucket-6:
   type: s3
   environments:
     dev:
-      bucket-name: charles
-      deletion-policy: False # Should be a valid policy name.
+      bucket_name: charles
+      deletion_policy: False # Should be a valid policy name.
 
 my-s3-bucket-7:
   type: s3
@@ -62,5 +62,5 @@ my-s3-bucket-13:
   type: s3
   environments:
     dev:
-      bucket-name: mandatory
+      bucket_name: mandatory
       unknown3: key

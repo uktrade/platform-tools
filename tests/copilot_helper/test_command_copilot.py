@@ -44,8 +44,8 @@ aurora:
   version: 14.4
   environments:
     default:
-      min-capacity: 0.5
-      max-capacity: 8
+      min_capacity: 0.5
+      max_capacity: 8
 """
 
 OPENSEARCH_STORAGE_CONTENTS = """
@@ -65,7 +65,7 @@ s3:
     - "web"
   environments:
     development:
-      bucket-name: my-bucket-dev
+      bucket_name: my-bucket-dev
 """
 
 WEB_SERVICE_CONTENTS = """
@@ -104,7 +104,6 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "my-s3-bucket-bucket-access.yml",
-                    "xray.yml",
                 ],
                 False,
             ),
@@ -116,31 +115,31 @@ class TestMakeAddonCommand:
                     "addons.parameters.yml",
                     "vpc.yml",
                 ],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
                 ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
                 ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
                 ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
                 ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
         ],
@@ -269,7 +268,9 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / "redis_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / "redis_addons.yml",
+            read_only=False,
+            target_path=ADDON_CONFIG_FILENAME,
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -286,7 +287,9 @@ class TestMakeAddonCommand:
 
         for f in old_addon_files:
             fakefs.add_real_file(
-                addons_dir / "expected" / f, read_only=False, target_path=Path("copilot", f)
+                addons_dir / "expected" / f,
+                read_only=False,
+                target_path=Path("copilot", f),
             )
 
         # Act
@@ -304,7 +307,8 @@ class TestMakeAddonCommand:
 
         for f in all_expected_files:
             expected_file = Path(
-                "expected", f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml"
+                "expected",
+                f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml",
             )
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
@@ -361,11 +365,11 @@ class TestMakeAddonCommand:
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy:
-            addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
+            addon_file_contents[addon_name]["deletion_policy"] = deletion_policy
         if deletion_policy_override:
             for env in addon_file_contents[addon_name]["environments"]:
                 addon_file_contents[addon_name]["environments"][env][
-                    "deletion-policy"
+                    "deletion_policy"
                 ] = deletion_policy_override
 
         create_test_manifests([dump(addon_file_contents)], fakefs)
@@ -427,7 +431,7 @@ invalid-entry:
         - also-does-not-exist
     environments:
         default:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -458,8 +462,8 @@ example-invalid-file:
     type: s3
     environments:
         default:
-            bucket-name: test-bucket
-            no-such-key: bad-key
+            bucket_name: test-bucket
+            no_such_key: bad-key
 """,
         )
 
@@ -473,7 +477,7 @@ example-invalid-file:
 
         assert result.exit_code == 1
         assert re.match(
-            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no-such-key'",
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no_such_key'",
             result.output,
         )
 
@@ -489,7 +493,7 @@ invalid-environment:
     type: s3-policy
     environments:
         doesnotexist:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -520,14 +524,14 @@ my-s3-bucket-1:
   type: s3
   environments:
     dev:
-      bucket-name: my-s3alias # Can't end with -s3alias
+      bucket_name: my-s3alias # Can't end with -s3alias
 
 my-s3-bucket-2:
   type: s3
   environments:
     dev:
-      bucket-name: charles
-      deletion-policy: ThisIsInvalid # Should be a valid policy name.
+      bucket_name: charles
+      deletion_policy: ThisIsInvalid # Should be a valid policy name.
 """,
         )
 
@@ -543,11 +547,11 @@ my-s3-bucket-2:
         assert result.exit_code == 1
         assert re.search(r"(?s)Errors found in addons.yml:", result.output)
         assert re.search(
-            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket-name.*does not match 'my-s3alias'",
+            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket_name.*does not match 'my-s3alias'",
             result.output,
         )
         assert re.search(
-            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion-policy.*'Delete' does not match 'ThisIsInvalid'",
+            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion_policy.*'Delete' does not match 'ThisIsInvalid'",
             result.output,
         )
 
@@ -615,7 +619,11 @@ invalid-entry:
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
             (
-                [RDS_POSTGRES_STORAGE_CONTENTS, OPENSEARCH_STORAGE_CONTENTS, S3_STORAGE_CONTENTS],
+                [
+                    RDS_POSTGRES_STORAGE_CONTENTS,
+                    OPENSEARCH_STORAGE_CONTENTS,
+                    S3_STORAGE_CONTENTS,
+                ],
                 True,
             ),
         ],
@@ -761,7 +769,8 @@ invalid-entry:
 @mock_sts
 @mock_iam
 @patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+    new=Mock(return_value=False),
 )
 def test_get_secrets():
     def _put_ssm_param(client, app, env, name, value):

@@ -1,6 +1,6 @@
 my-redis:
   type: redis
-  deletion-policy: Delete
+  deletion_policy: Delete
   environments:
     default:
       engine: '6.2'
@@ -8,4 +8,4 @@ my-redis:
       plan: small
       # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
       replicas: 4
-      deletion-policy: Retain
+      deletion_policy: Retain
