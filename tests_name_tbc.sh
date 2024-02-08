@@ -9,7 +9,6 @@ pip install "dist/$(ls -t1 dist | head -1)"
 copilot-helper --version
 
 echo "Get CodeStar connection details"
-# todo: break this up to get account ID and ARM
 codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
 awsAccount=$(echo "$codestarConnections" | jq -r ".[0].OwnerAccountId")
 codestarArn=$(echo "$codestarConnections" | jq -r ".[0].ConnectionArn")
@@ -21,6 +20,9 @@ git config --global credential.UseHttpPath true
 git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAccount/eu-west-2/$codestarConnectionId/uktrade/demodjango-deploy.git"
 
 # make-addons
+echo "Run make-addons from copilot-helper"
+copilot-helper copilot make-addons
+ls /copilot/environments/addons
 
 # deploy env
 
