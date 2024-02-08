@@ -314,7 +314,7 @@ S3_BASE = {
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
-            "bucket-name": validate_s3_bucket_name,
+            "bucket_name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
         }
     },

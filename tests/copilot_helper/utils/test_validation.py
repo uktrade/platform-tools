@@ -217,7 +217,7 @@ def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
         {
             "my-s3": {
                 "type": "s3",
-                "environments": {"dev": {"bucket-name": "bucket"}},
+                "environments": {"dev": {"bucket_name": "bucket"}},
             }
         }
     )

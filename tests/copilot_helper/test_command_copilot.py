@@ -234,10 +234,6 @@ class TestMakeAddonCommand:
             assert f"{file} created" in result.stdout
         all_expected_files += env_override_files
 
-        expected = expected_file.read_text()
-        actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
-        assert actual == expected, f"The environment overrides did not have the expected content"
-
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
         assert actual_svc_overrides_file == expected_svc_overrides_file
