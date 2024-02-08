@@ -26,11 +26,11 @@ cd ./demodjango-deploy/
 
 # make-addons
 echo "Run make-addons from copilot-helper"
-export AWS_PROFILE=tools
+export AWS_PROFILE=platform-tools
 export AWS_REGION=eu-west-2
 export AWS_DEFAULT_REGION=eu-west-2
 copilot-helper copilot make-addons
-ls /copilot/environments/addons
+ls ./copilot/environments/addons
 
 # deploy env
 
