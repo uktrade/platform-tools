@@ -19,6 +19,6 @@ phases:
       # - poetry run tox
       - pwd
       - ls -al
-      - ./copilot-helper.py --version
+      - ./copilot_helper.py --version
       - echo Cloning demodjango
       - git clone git@github.com:uktrade/demodjango.git
