@@ -16,10 +16,10 @@ from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
-from dbt_copilot_helper.utils.validation import s3_bucket_name_is_available
 from dbt_copilot_helper.utils.validation import validate_addons
 from dbt_copilot_helper.utils.validation import validate_s3_bucket_name
 from dbt_copilot_helper.utils.validation import validate_string
+from dbt_copilot_helper.utils.validation import warn_on_s3_bucket_name_availability
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
 from tests.copilot_helper.conftest import mock_aws_client
 
@@ -62,7 +62,7 @@ def test_validate_string(regex_pattern, valid_string, invalid_string):
         "no_param_addons.yml",
     ],
 )
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
 def test_validate_addons_success(mock_name_is_available, addons_file):
     mock_name_is_available.return_value = True
     errors = validate_addons(load_addons(addons_file))
@@ -182,7 +182,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
         ),
     ],
 )
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
 def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
     mock_name_is_available.return_value = True
     error_map = validate_addons(load_addons(addons_file))
@@ -191,7 +191,7 @@ def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error)
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
 def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
     mock_name_is_available.return_value = True
     error_map = validate_addons(
@@ -210,10 +210,12 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
     )
 
 
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
-    mock_name_is_available.return_value = False
-    error_map = validate_addons(
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, capfd):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+    validate_addons(
         {
             "my-s3": {
                 "type": "s3",
@@ -222,7 +224,7 @@ def test_validate_addons_unavailable_bucket_name(mock_name_is_available):
         }
     )
 
-    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in error_map["my-s3"]
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
 def test_validate_addons_unsupported_addon():
@@ -270,23 +272,23 @@ def test_between_with_step_raises_error(value):
 
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
 def test_validate_s3_bucket_name_success_cases(mock_name_is_available, bucket_name):
     mock_name_is_available.return_value = True
     assert validate_s3_bucket_name(bucket_name)
     mock_name_is_available.assert_called_once()
 
 
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-def test_validate_s3_bucket_name_failure_raises_schema_error(mock_name_is_available):
-    mock_name_is_available.return_value = False
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_validate_s3_bucket_name_failure_shows_warning(mock_get_session, http_code, capfd):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
     bucket_name = "bucket-name"
 
-    with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+    validate_s3_bucket_name(bucket_name)
 
-    assert BUCKET_NAME_IN_USE_TEMPLATE.format(bucket_name) in str(ex)
-    mock_name_is_available.assert_called_once()
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format(bucket_name) in capfd.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -308,7 +310,7 @@ def test_validate_s3_bucket_name_failure_raises_schema_error(mock_name_is_availa
         ("bob--ol-s3", "Names cannot be suffixed '--ol-s3'."),
     ],
 )
-@patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
 def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_name, error_message):
     exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
     with pytest.raises(SchemaError) as ex:
@@ -321,30 +323,34 @@ def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_na
 
 @pytest.mark.parametrize("http_code", ["403", "400"])
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available_fails_40x(mock_get_session, http_code):
+def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_code, capfd):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
 
-    assert not s3_bucket_name_is_available(f"bucket-name-{http_code}")
+    warn_on_s3_bucket_name_availability(f"bucket-name-{http_code}")
+
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format(f"bucket-name-{http_code}") in capfd.readouterr().out
 
 
 @mock_s3
 @mock_sts
 @mock_iam
-def test_s3_bucket_name_is_available_success_200():
+def test_warn_on_s3_bucket_name_availability_success_200(capfd):
     client = boto3.client("s3")
     client.create_bucket(
         Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
     )
 
-    assert s3_bucket_name_is_available(f"bucket-name-200")
+    warn_on_s3_bucket_name_availability(f"bucket-name-200")
+    assert "Warning:" not in capfd.readouterr().out
 
 
 @mock_s3
 @mock_sts
 @mock_iam
-def test_s3_bucket_name_is_available(clear_session_cache):
-    assert s3_bucket_name_is_available("brand-new-bucket")
+def test_warn_on_s3_bucket_name_availability(clear_session_cache, capfd):
+    warn_on_s3_bucket_name_availability("brand-new-bucket")
+    assert "Warning:" not in capfd.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -355,15 +361,14 @@ def test_s3_bucket_name_is_available(clear_session_cache):
     ],
 )
 @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
-def test_s3_bucket_name_is_available_error_conditions_display_error(
+def test_warn_on_s3_bucket_name_availability_error_conditions_display_error(
     mock_get_session, response, capfd, clear_session_cache
 ):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")
 
-    is_available = s3_bucket_name_is_available("brand-new-bucket")
+    warn_on_s3_bucket_name_availability("brand-new-bucket")
 
-    assert is_available
     assert AVAILABILITY_UNCERTAIN_TEMPLATE.format("brand-new-bucket") in capfd.readouterr().out
 
 

@@ -8,6 +8,7 @@ from unittest.mock import patch
 import boto3
 import pytest
 import yaml
+from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_iam
@@ -21,6 +22,7 @@ from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
 from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import mock_aws_client
 
 REDIS_STORAGE_CONTENTS = """
 redis:
@@ -261,14 +263,13 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_copilot_helper.utils.validation.s3_bucket_name_is_available")
-    def test_make_addons_success_fails_validation_for_bucket_name_in_use(
-        self, mock_bucket_validator, fakefs, clear_session_cache
-    ):
+    @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+    def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
+        client = mock_aws_client(mock_get_session)
+        client.head_bucket.side_effect = ClientError({"Error": {"Code": "400"}}, "HeadBucket")
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
-        mock_bucket_validator.return_value = False
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
@@ -281,7 +282,7 @@ class TestMakeAddonCommand:
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
 
-        assert result.exit_code == 1
+        assert result.exit_code == 0
         assert BUCKET_NAME_IN_USE_TEMPLATE.format("my-bucket") in result.output
 
     @freeze_time("2023-08-22 16:00:00")
