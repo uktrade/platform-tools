@@ -545,7 +545,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilter{{ addon_config.prefix }}:
+  {{ addon_config.prefix }}SubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}DBWriterInstance

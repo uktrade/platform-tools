@@ -540,7 +540,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFiltermyRdsDb:
+  myRdsDbSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myRdsDbDBInstance

@@ -543,7 +543,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFiltermyAuroraDb:
+  myAuroraDbSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myAuroraDbDBWriterInstance
