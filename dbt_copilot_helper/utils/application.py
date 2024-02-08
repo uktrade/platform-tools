@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from typing import Dict
 
@@ -84,12 +85,26 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
     account_id = sts_client.get_caller_identity()["Account"]
     sessions = {account_id: current_session}
 
+    def is_environment_key(name):
+        """
+        Match only parameter names that are an environment path with no further
+        nesting.
+
+        e.g.
+         - /copilot/applications/test/environments/my_env will match.
+         - /copilot/applications/test/environments/my_env/addons will not match.
+        """
+        environment_key_regex = r"^/copilot/applications/{}/environments/[^/]*$".format(
+            application.name
+        )
+        return bool(re.match(environment_key_regex, name))
+
     application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
-        for env in [json.loads(p["Value"]) for p in response["Parameters"]]
-        if "name" in env
+        for env in [
+            json.loads(p["Value"]) for p in response["Parameters"] if is_environment_key(p["Name"])
+        ]
     }
-
     return application
 
 
