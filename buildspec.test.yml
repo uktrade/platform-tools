@@ -17,6 +17,8 @@ phases:
       - echo Running unit tests
       - echo TEMPORARILY SKIPPED FOR DEVELOPMENT SPEED
       # - poetry run tox
+      - pwd
+      - ls -al
       - ./copilot-helper.py --version
       - echo Cloning demodjango
       - git clone git@github.com:uktrade/demodjango.git
