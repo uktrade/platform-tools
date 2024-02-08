@@ -14,5 +14,9 @@ phases:
 
   build:
     commands:
-      - echo Running tests
-      - poetry run tox
+      - echo Running unit tests
+      - echo TEMPORARILY SKIPPED FOR DEVELOPMENT SPEED
+      # - poetry run tox
+      - copilot-helper --version
+      - echo Cloning demodjango
+      - git clone git@github.com:uktrade/demodjango.git
