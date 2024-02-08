@@ -19,8 +19,13 @@ git config --global credential.helper '!aws codecommit credential-helper $@'
 git config --global credential.UseHttpPath true
 git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAccount/eu-west-2/$codestarConnectionId/uktrade/demodjango-deploy.git"
 
+# change working directory
+echo "cd demodjango-deploy"
+cd ./demodjango-deploy/
+
 # make-addons
 echo "Run make-addons from copilot-helper"
+cd ./demodjango-deploy/
 copilot-helper copilot make-addons
 ls /copilot/environments/addons
 
