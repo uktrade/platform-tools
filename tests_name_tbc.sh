@@ -3,10 +3,10 @@
 # exit early if something goes wrong
 set -e
 
-#echo "Build and install copilot-helper"
-#poetry build --no-interaction --format sdist --no-ansi
-#pip install "dist/$(ls -t1 dist | head -1)"
-#copilot-helper --version
+echo "Build and install copilot-helper"
+poetry build --no-interaction --format sdist --no-ansi
+pip install "dist/$(ls -t1 dist | head -1)"
+copilot-helper --version
 
 echo "Get CodeStar connection details"
 # todo: break this up to get account ID and ARM
@@ -19,5 +19,11 @@ echo "Clone demodjango_deploy"
 git config --global credential.helper '!aws codecommit credential-helper $@'
 git config --global credential.UseHttpPath true
 git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAccount/eu-west-2/$codestarConnectionId/uktrade/demodjango-deploy.git"
-ls -al
-ls -al "demodjango-deploy"
+
+# make-addons
+
+# deploy env
+
+# deploy services
+
+# run smoke tests
