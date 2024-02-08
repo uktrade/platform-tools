@@ -10,15 +10,11 @@ set -e
 
 echo "Get CodeStar connection details"
 # todo: break this up to get account ID and ARM
-codestarArn=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']" | jq -r ".[0].ConnectionArn")
-echo "$codestarArn"
-
-codestarArnFromAccount=$(echo "${codestarArn#*arn:aws:codestar-connections:eu-west-2:}")
-echo "$codestarArnFromAccount"
-
-codestarId=$("${codestarArnFromAccount#*/}")
-echo "$codestarId"
+codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
+awsAccount=$(echo "$codestarConnections" | jq -r ".[0].OwnerAccountId")
+codestarArn=$(echo "$codestarConnections" | jq -r ".[0].ConnectionArn")
+codestarConnectionId=$(echo "${codestarArn##*/}")
 
 echo "Clone demodjango_deploy"
-#git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/AWS ACCOUNT/" \
-#        "eu-west-2/CSID/uktrade/demodjango-deploy.git"
+git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAccount/" \
+    "eu-west-2/$codestarConnectionId/uktrade/demodjango-deploy.git"
