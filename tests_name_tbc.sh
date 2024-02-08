@@ -25,7 +25,6 @@ cd ./demodjango-deploy/
 
 # make-addons
 echo "Run make-addons from copilot-helper"
-cd ./demodjango-deploy/
 copilot-helper copilot make-addons
 ls /copilot/environments/addons
 
