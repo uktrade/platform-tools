@@ -17,8 +17,9 @@ phases:
       - echo Running unit tests
       - echo TEMPORARILY SKIPPED FOR DEVELOPMENT SPEED
       # - poetry run tox
-      - pwd
-      - ls -al
-      - ./copilot_helper.py --version
+      - echo Build and install copilot-helper
+      - poetry build --no-interaction --format sdist --no-ansi
+      - pip install "dist/$(ls -t1 dist | head -1)"
+      - copilot-helper --version
       - echo Cloning demodjango
       - git clone git@github.com:uktrade/demodjango.git
