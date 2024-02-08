@@ -1,4 +1,5 @@
 import json
+from unittest.mock import Mock
 from unittest.mock import mock_open
 from unittest.mock import patch
 
@@ -28,13 +29,37 @@ CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 
 
-def test_get_aws_session_or_abort_profile_not_configured(capsys):
+def test_get_aws_session_or_abort_profile_not_configured(clear_session_cache, capsys):
     with pytest.raises(SystemExit):
         get_aws_session_or_abort("foo")
 
     captured = capsys.readouterr()
 
     assert """AWS profile "foo" is not configured.""" in captured.out
+
+
+def get_mock_session(name):
+    session = Mock(name=name)
+    client = Mock(name=f"client-mock-for-{name}")
+    session.client.return_value = client
+    client.get_caller_identity.return_value = {"Account": "account", "UserId": "user"}
+    client.list_account_aliases.return_value = {"AccountAliases": "account", "UserId": "user"}
+
+    return session
+
+
+@patch("boto3.session.Session")
+def test_get_aws_session_caches_sessions_per_profile(mock_session):
+    mock_session.side_effect = (get_mock_session("one"), get_mock_session("two"))
+    session1 = get_aws_session_or_abort()
+    session2 = get_aws_session_or_abort()
+
+    session3 = get_aws_session_or_abort("my-profile")
+    session4 = get_aws_session_or_abort("my-profile")
+
+    assert session1 is session2
+    assert session3 is session4
+    assert session1 is not session4
 
 
 @patch("dbt_copilot_helper.utils.aws.get_aws_session_or_abort")

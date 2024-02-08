@@ -1,15 +1,27 @@
 import re
 from pathlib import Path
+from unittest.mock import patch
 
+import boto3
 import pytest
 import yaml
+from botocore.exceptions import ClientError
+from moto import mock_iam
+from moto import mock_s3
+from moto import mock_sts
 from schema import SchemaError
 
+from dbt_copilot_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
+from dbt_copilot_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_copilot_helper.utils.validation import float_between_with_halfstep
 from dbt_copilot_helper.utils.validation import int_between
 from dbt_copilot_helper.utils.validation import validate_addons
+from dbt_copilot_helper.utils.validation import validate_s3_bucket_name
 from dbt_copilot_helper.utils.validation import validate_string
+from dbt_copilot_helper.utils.validation import warn_on_s3_bucket_name_availability
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
+from tests.copilot_helper.conftest import mock_aws_client
 
 
 def load_addons(addons_file):
@@ -50,7 +62,9 @@ def test_validate_string(regex_pattern, valid_string, invalid_string):
         "no_param_addons.yml",
     ],
 )
-def test_validate_addons_success(addons_file):
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
+def test_validate_addons_success(mock_name_is_available, addons_file):
+    mock_name_is_available.return_value = True
     errors = validate_addons(load_addons(addons_file))
 
     assert len(errors) == 0
@@ -66,7 +80,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-2": r"deletion_policy.*does not match 'Retrain'",
                 "my-s3-bucket-3": r"services.*should be instance of 'list'",
                 "my-s3-bucket-4": r"services.*should be instance of 'str'",
-                "my-s3-bucket-5": r"environments.*dev.*bucket_name.*does not match 'banana-s3alias'",
+                "my-s3-bucket-5": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
                 "my-s3-bucket-6": r"environments.*dev.*deletion_policy.*does not match False",
                 "my-s3-bucket-7": r"objects.*should be instance of 'list'",
                 "my-s3-bucket-8": r"objects.*key.*should be instance of 'str'",
@@ -84,7 +98,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-policy-2": r"deletion_policy.*does not match 'Retrain'",
                 "my-s3-bucket-policy-3": r"services.*should be instance of 'list'",
                 "my-s3-bucket-policy-4": r"services.*should be instance of 'str'",
-                "my-s3-bucket-policy-5": r"environments.*dev.*bucket_name.*does not match 'banana-s3alias'",
+                "my-s3-bucket-policy-5": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
                 "my-s3-bucket-policy-6": r"environments.*dev.*deletion_policy.*does not match False",
                 "my-s3-bucket-policy-7": r"Wrong key 'unknown1'",
                 "my-s3-bucket-policy-8": r"Wrong key 'objects'",
@@ -168,14 +182,18 @@ def test_validate_addons_success(addons_file):
         ),
     ],
 )
-def test_validate_addons_failure(addons_file, exp_error):
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
+def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
+    mock_name_is_available.return_value = True
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
-def test_validate_addons_invalid_env_name_errors():
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
+def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
+    mock_name_is_available.return_value = True
     error_map = validate_addons(
         {
             "my-s3": {
@@ -190,6 +208,23 @@ def test_validate_addons_invalid_env_name_errors():
             error_map["my-s3"],
         )
     )
+
+
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, capfd):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+    validate_addons(
+        {
+            "my-s3": {
+                "type": "s3",
+                "environments": {"dev": {"bucket_name": "bucket"}},
+            }
+        }
+    )
+
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
 def test_validate_addons_unsupported_addon():
@@ -234,3 +269,120 @@ def test_between_with_step_raises_error(value):
         ), f"testing that {value} is between 0.5 and 128 in half steps failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be a number between 0.5 and 128 in increments of 0.5"
+
+
+@pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
+def test_validate_s3_bucket_name_success_cases(mock_name_is_available, bucket_name):
+    mock_name_is_available.return_value = True
+    assert validate_s3_bucket_name(bucket_name)
+    mock_name_is_available.assert_called_once()
+
+
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_validate_s3_bucket_name_failure_shows_warning(mock_get_session, http_code, capfd):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+    bucket_name = "bucket-name"
+
+    validate_s3_bucket_name(bucket_name)
+
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format(bucket_name) in capfd.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "bucket_name, error_message",
+    [
+        ("ab", "Length must be between 3 and 63 characters inclusive."),
+        ("a" * 64, "Length must be between 3 and 63 characters inclusive."),
+        ("ab!cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("ab_cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("aB-cd", "Names can only contain the characters 0-9, a-z, '.' and '-'."),
+        ("-aB-cd", "Names must start and end with 0-9 or a-z."),
+        ("aB-cd.", "Names must start and end with 0-9 or a-z."),
+        ("ab..cd", "Names cannot contain two adjacent periods."),
+        ("1.1.1.1", "Names cannot be IP addresses."),
+        ("127.0.0.1", "Names cannot be IP addresses."),
+        ("xn--bob", "Names cannot be prefixed 'xn--'."),
+        ("sthree-bob", "Names cannot be prefixed 'sthree-'."),
+        ("bob-s3alias", "Names cannot be suffixed '-s3alias'."),
+        ("bob--ol-s3", "Names cannot be suffixed '--ol-s3'."),
+    ],
+)
+@patch("dbt_copilot_helper.utils.validation.warn_on_s3_bucket_name_availability")
+def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_name, error_message):
+    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
+
+    assert exp_error in str(ex.value)
+    # We don't want to call out to AWS if the name isn't even valid.
+    mock_name_is_available.assert_not_called()
+
+
+@pytest.mark.parametrize("http_code", ["403", "400"])
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_code, capfd):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+
+    warn_on_s3_bucket_name_availability(f"bucket-name-{http_code}")
+
+    assert BUCKET_NAME_IN_USE_TEMPLATE.format(f"bucket-name-{http_code}") in capfd.readouterr().out
+
+
+@mock_s3
+@mock_sts
+@mock_iam
+def test_warn_on_s3_bucket_name_availability_success_200(capfd):
+    client = boto3.client("s3")
+    client.create_bucket(
+        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+    )
+
+    warn_on_s3_bucket_name_availability(f"bucket-name-200")
+    assert "Warning:" not in capfd.readouterr().out
+
+
+@mock_s3
+@mock_sts
+@mock_iam
+def test_warn_on_s3_bucket_name_availability(clear_session_cache, capfd):
+    warn_on_s3_bucket_name_availability("brand-new-bucket")
+    assert "Warning:" not in capfd.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        {"Error": {"Code": "500"}},
+        {},
+    ],
+)
+@patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+def test_warn_on_s3_bucket_name_availability_error_conditions_display_error(
+    mock_get_session, response, capfd, clear_session_cache
+):
+    client = mock_aws_client(mock_get_session)
+    client.head_bucket.side_effect = ClientError(response, "HeadBucket")
+
+    warn_on_s3_bucket_name_availability("brand-new-bucket")
+
+    assert AVAILABILITY_UNCERTAIN_TEMPLATE.format("brand-new-bucket") in capfd.readouterr().out
+
+
+def test_validate_s3_bucket_name_multiple_failures():
+    bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
+    with pytest.raises(SchemaError) as ex:
+        validate_s3_bucket_name(bucket_name)
+
+    exp_errors = [
+        "Length must be between 3 and 63 characters inclusive.",
+        "Names can only contain the characters 0-9, a-z, '.' and '-'.",
+        "Names cannot contain two adjacent periods.",
+        "Names cannot be prefixed 'xn--'.",
+        "Names cannot be suffixed '--ol-s3'.",
+    ]
+    for exp_error in exp_errors:
+        assert exp_error in str(ex.value)

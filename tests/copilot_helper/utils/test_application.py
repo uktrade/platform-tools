@@ -128,6 +128,47 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.environments["one"].session, boto3)
         self.assertEqual(application.environments["two"].session, boto3)
 
+    @patch("dbt_copilot_helper.utils.application.get_application_name", return_value="test")
+    def test_load_application_does_not_fail_when_addons_params_are_present(
+        self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
+    ):
+        """
+        Note that we are mocking the session, as moto has different behaviour
+        than boto3 when using the get_parameters_by_path method.
+
+        It only brings back parameters at the same level as that path where
+        boto3 will bring back nested paramaters as well.
+        """
+        mock_client = MagicMock(name="client-mock")
+        mock_session = MagicMock(name="session-mock")
+        mock_session.client.return_value = mock_client
+        mock_client.get_caller_identity.return_value = {"Account": "111111111"}
+        mock_client.get_parameters_by_path.return_value = {
+            "Parameters": [
+                {
+                    "Name": f"/copilot/applications/test/environments/one",
+                    "Value": json.dumps({"name": "one", "accountID": "111111111"}),
+                },
+                {
+                    "Name": f"/copilot/applications/test/environments/two/addons",
+                    "Value": json.dumps(
+                        {"demodjango-redis": {"type": "redis", "environments": {}}}
+                    ),
+                },
+                {
+                    "Name": f"/copilot/applications/test/environments/two/something/else",
+                    "Value": json.dumps(
+                        {"demodjango-redis": {"type": "redis", "environments": {}}}
+                    ),
+                },
+            ]
+        }
+
+        application = load_application(default_session=mock_session)
+
+        self.assertEqual(application.name, "test")
+        self.assertEqual(str(application), "Application test with environments one:111111111")
+
     @mock_ssm
     @mock_sts
     @patch("dbt_copilot_helper.utils.application.get_application_name", return_value="test")
@@ -162,7 +203,12 @@ class ApplicationTest(TestCase):
 
         client.get_caller_identity.return_value = {"Account": "abc_123"}
         client.get_parameters_by_path.return_value = {
-            "Parameters": [{"Value": '{"name": "my_env", "accountID": "abc_123"}'}]
+            "Parameters": [
+                {
+                    "Name": "/copilot/applications/another-test/environments/my_env",
+                    "Value": '{"name": "my_env", "accountID": "abc_123"}',
+                }
+            ]
         }
 
         application = load_application(app="another-test", default_session=session)
