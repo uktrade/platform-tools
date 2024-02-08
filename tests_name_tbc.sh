@@ -16,4 +16,6 @@ codestarArn=$(echo "$codestarConnections" | jq -r ".[0].ConnectionArn")
 codestarConnectionId=$(echo "${codestarArn##*/}")
 
 echo "Clone demodjango_deploy"
+git config --global credential.helper '!aws codecommit credential-helper $@'
+git config --global credential.UseHttpPath true
 git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAccount/eu-west-2/$codestarConnectionId/uktrade/demodjango-deploy.git"
