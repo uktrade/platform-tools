@@ -1,7 +1,11 @@
 #!/bin/bash
+export AWS_PROFILE=tools
+export AWS_REGION=eu-west-2
+export AWS_DEFAULT_REGION=eu-west-2
 
 # exit early if something goes wrong
 set -e
+
 
 echo "Build and install copilot-helper"
 poetry build --no-interaction --format sdist --no-ansi
