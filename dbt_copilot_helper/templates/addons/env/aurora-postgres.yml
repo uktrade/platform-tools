@@ -294,7 +294,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-aurora-create-user"
+      FunctionName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-aurora-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -501,7 +501,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-aurora-user"
+      RoleName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-aurora-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
