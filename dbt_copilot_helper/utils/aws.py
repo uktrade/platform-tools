@@ -63,6 +63,7 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
 
     alias_client = session.client("iam")
     account_name = alias_client.list_account_aliases()["AccountAliases"]
+    print(", ".join(account_name))
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
