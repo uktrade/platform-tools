@@ -42,6 +42,8 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 #aws configure --profile $AWS_PROFILE set aws_access_key_id "$AWS_ACCESS_KEY_ID"
 #aws configure --profile $AWS_PROFILE set aws_session_token "$AWS_SESSION_TOKEN"
 
+# TODO: copilot-tools is set to 1.0.2 should be 1.1.2 / skipped / disable version check
+
 copilot-helper copilot make-addons
 ls ./copilot/environments/addons
 
