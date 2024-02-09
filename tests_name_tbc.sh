@@ -26,21 +26,21 @@ cd ./demodjango-deploy/
 
 # make-addons
 echo "Run make-addons from copilot-helper"
-#export AWS_PROFILE=platform-tools
+export AWS_PROFILE="platform-tools"
 #export AWS_REGION=eu-west-2
 #export AWS_DEFAULT_REGION=eu-west-2
 
-creds=$(aws sts get-session-token)
+#creds=$(aws sts get-session-token)
 
-AWS_ACCESS_KEY_ID=$(echo $creds | jq '.Credentials.AccessKeyId')
-AWS_SECRET_ACCESS_KEY=$(echo $creds | jq '.Credentials.SecretAccessKey')
-AWS_SESSION_TOKEN=$(echo $creds | jq '.Credentials.SessionToken')
+#AWS_ACCESS_KEY_ID=$(echo $creds | jq '.Credentials.AccessKeyId')
+#AWS_SECRET_ACCESS_KEY=$(echo $creds | jq '.Credentials.SecretAccessKey')
+#AWS_SESSION_TOKEN=$(echo $creds | jq '.Credentials.SessionToken')
 
-aws configure --profile $AWS_PROFILE set region "eu-west-2"
-aws configure --profile $AWS_PROFILE set output "json"
-aws configure --profile $AWS_PROFILE set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-aws configure --profile $AWS_PROFILE set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-aws configure --profile $AWS_PROFILE set aws_session_token "$AWS_SESSION_TOKEN"
+aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
+aws configure --profile "$AWS_PROFILE" set output "json"
+#aws configure --profile $AWS_PROFILE set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+#aws configure --profile $AWS_PROFILE set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+#aws configure --profile $AWS_PROFILE set aws_session_token "$AWS_SESSION_TOKEN"
 
 copilot-helper copilot make-addons
 ls ./copilot/environments/addons
