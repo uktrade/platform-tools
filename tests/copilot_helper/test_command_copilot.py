@@ -100,6 +100,7 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "addons.parameters.yml",
+                    "monitoring.yml",
                     "vpc.yml",
                 ],
                 [
@@ -117,6 +118,7 @@ class TestMakeAddonCommand:
                     "my-opensearch.yml",
                     "my-opensearch-longer.yml",
                     "addons.parameters.yml",
+                    "monitoring.yml",
                     "vpc.yml",
                 ],
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
@@ -124,19 +126,19 @@ class TestMakeAddonCommand:
             ),
             (
                 "rds_addons.yml",
-                ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
+                ["my-rds-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
-                ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
+                ["my-redis.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
-                ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
+                ["my-aurora-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
