@@ -215,7 +215,7 @@ def get_codestar_connection_arn(app_name):
 def get_load_balancer_domain_and_configuration(
     project_session: Session, app: str, svc: str, env: str
 ) -> Tuple[str, dict]:
-    response = get_load_balancer_configuration(project_session, app, svc, env)
+    response = get_load_balancer_configuration(project_session, app, env, svc)
 
     # Find the domain name
     with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
@@ -246,7 +246,7 @@ def get_load_balancer_domain_and_configuration(
 
 
 def get_load_balancer_configuration(
-    project_session: Session, app: str, svc: str, env: str
+    project_session: Session, app: str, env: str, svc: str
 ) -> list[Session]:
     def separate_hyphenated_application_environment_and_service(
         hyphenated_string, number_of_items_of_interest, number_of_trailing_items

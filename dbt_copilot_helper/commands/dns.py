@@ -716,7 +716,7 @@ def find_domain_rules(action, delete, project_profile, env, app, svc):
     elb_client = project_session.client("elbv2")
     acm_client = project_session.client("acm")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 
@@ -884,7 +884,7 @@ def cdn_list(project_profile, env, app, svc):
 
     elb_client = project_session.client("elbv2")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 
