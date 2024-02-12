@@ -1,3 +1,4 @@
+import pytest
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.config import validate
@@ -8,6 +9,7 @@ def test_running_in_non_copilot_directory():
     assert result.output == "Could not find a deployment repository, no checks to run.\n"
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
     get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
     get_app_versions.return_value = (1, 0, 0), (1, 0, 0)
@@ -38,6 +40,7 @@ def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
     ) in result.output
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_with_outdated_copilot_helper(fakefs, mock_tool_versions):
     get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
     get_app_versions.return_value = (0, 1, 0), (1, 0, 0)
@@ -69,6 +72,7 @@ def test_with_outdated_copilot_helper(fakefs, mock_tool_versions):
     ) in result.output
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_with_outdated_tools(fakefs, mock_tool_versions):
     get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
     get_app_versions.return_value = (0, 1, 0), (1, 0, 0)

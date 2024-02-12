@@ -7,12 +7,14 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import botocore.errorfactory
+import pytest
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.svc import deploy
 from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
@@ -55,6 +57,7 @@ def test_svc_deploy_with_env_name_repository_and_image_tag_deploys_image_tag(
     )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_tag_latest_deploys_commit_tag_of_tag_latest_image(
@@ -84,6 +87,7 @@ def test_svc_deploy_with_tag_latest_deploys_commit_tag_of_tag_latest_image(
     )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_no_image_tag_deploys_commit_tag_of_tag_latest_image(
@@ -113,6 +117,7 @@ def test_svc_deploy_with_no_image_tag_deploys_commit_tag_of_tag_latest_image(
     )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(get_aws_session_or_abort):
     """Test that given an image tag which does not exist, it fails with a
@@ -131,6 +136,7 @@ def test_svc_deploy_with_nonexistent_image_tag_fails_with_message(get_aws_sessio
     assert f"""No image exists with the tag "{expected_tag}".""" in result.stdout
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_tag_latest_but_no_commit_tag_fails_with_message(get_aws_session_or_abort):
     """Test that given the image tag latest, where the image tagged latest has
@@ -149,6 +155,7 @@ def test_svc_deploy_with_tag_latest_but_no_commit_tag_fails_with_message(get_aws
     assert """The image tagged "tag-latest" does not have a commit tag.""" in result.stdout
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_latest_fails_with_message(get_aws_session_or_abort):
     """Test that given the image tag latest, it fails with a helpful message."""
@@ -165,6 +172,7 @@ def test_svc_deploy_with_latest_fails_with_message(get_aws_session_or_abort):
     assert 'Releasing tag "latest" is not supported. Use tag "tag-latest" instead.' in result.stdout
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_missing_manifest_file_fails_with_message(
@@ -198,6 +206,7 @@ def test_svc_deploy_with_missing_manifest_file_fails_with_message(
     )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 def test_svc_deploy_with_mismatched_name_in_manifest_file_fails_with_message(
     get_aws_session_or_abort, tmp_path
@@ -232,6 +241,7 @@ def test_svc_deploy_with_mismatched_name_in_manifest_file_fails_with_message(
     assert f"Service manifest for {other_name} has name attribute {name}" in result.stdout
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.svc.get_aws_session_or_abort")
 def test_svc_deploy_with_copilot_bootstrap_image_does_not_change_the_tag(
