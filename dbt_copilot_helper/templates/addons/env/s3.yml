@@ -16,7 +16,24 @@ Mappings:
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
       DeletionPolicy: {{ config.deletion_policy }}
-{% endfor %}
+  {%- if config.retention_policy %}
+      RetentionPolicy: Enabled
+      RetentionMode: {{ config.retention_policy.retention_mode }}
+    {%- if config.retention_policy.retention_days %}
+      RetentionDays: {{ config.retention_policy.retention_days }}
+    {%- elif config.retention_policy.retention_years %}
+      RetentionYears: {{ config.retention_policy.retention_years }}
+    {%- endif %}
+  {%- endif %}
+{%- endfor %}
+
+Conditions:
+  {{ addon_config.prefix }}ApplyRetentionPolicy: !Equals
+    - !FindInMap
+      - {{ addon_config.prefix }}EnvironmentConfigMap
+      - !Ref Env
+      - RetentionPolicy
+    - Enabled
 
 Resources:
   {{ addon_config.prefix }}KMSKey:
@@ -58,6 +75,15 @@ Resources:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: aws:kms
             KMSMasterKeyID: !Ref {{ addon_config.prefix }}KMSKey
+      ObjectLockConfiguration:
+        !If
+        - {{ addon_config.prefix }}ApplyRetentionPolicy
+        - ObjectLockEnabled: Enabled
+          Rule:
+            DefaultRetention:
+              Mode: !FindInMap [ {{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RetentionMode ]
+              Days: !FindInMap [ {{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RetentionDays ]
+        - !Ref AWS::NoValue
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:

@@ -17,6 +17,13 @@ Mappings:
       BucketName: 'my-bucket-dev'
       DeletionPolicy: Delete
 
+Conditions:
+  myS3BucketWithAnObjectApplyRetentionPolicy: !Equals
+    - !FindInMap
+      - myS3BucketWithAnObjectEnvironmentConfigMap
+      - !Ref Env
+      - RetentionPolicy
+    - Enabled
 
 Resources:
   myS3BucketWithAnObjectKMSKey:
@@ -58,6 +65,15 @@ Resources:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: aws:kms
             KMSMasterKeyID: !Ref myS3BucketWithAnObjectKMSKey
+      ObjectLockConfiguration:
+        !If
+        - myS3BucketWithAnObjectApplyRetentionPolicy
+        - ObjectLockEnabled: Enabled
+          Rule:
+            DefaultRetention:
+              Mode: !FindInMap [ myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionMode ]
+              Days: !FindInMap [ myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionDays ]
+        - !Ref AWS::NoValue
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
