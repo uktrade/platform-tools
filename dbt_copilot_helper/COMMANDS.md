@@ -38,8 +38,6 @@
 - [copilot-helper environment online](#copilot-helper-environment-online)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
-- [copilot-helper svc](#copilot-helper-svc)
-- [copilot-helper svc deploy](#copilot-helper-svc-deploy)
 - [copilot-helper waf](#copilot-helper-waf)
 - [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
 - [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
@@ -72,7 +70,6 @@ copilot-helper <command> [--version]
 - [`domain` ↪](#copilot-helper-domain)
 - [`environment` ↪](#copilot-helper-environment)
 - [`pipeline` ↪](#copilot-helper-pipeline)
-- [`svc` ↪](#copilot-helper-svc)
 - [`waf` ↪](#copilot-helper-waf)
 
 # copilot-helper bootstrap
@@ -934,50 +931,6 @@ copilot-helper pipeline generate
 ```
 
 ## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper svc
-
-[↩ Parent](#copilot-helper)
-
-    AWS Copilot svc actions with DBT extras.
-
-## Usage
-
-```
-copilot-helper svc deploy 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`deploy` ↪](#copilot-helper-svc-deploy)
-
-# copilot-helper svc deploy
-
-[↩ Parent](#copilot-helper-svc)
-
-    Deploy image tag to a service, defaults to image tagged latest.
-
-## Usage
-
-```
-copilot-helper svc deploy --env <env> --name <name> [--image-tag <image_tag>] 
-```
-
-## Options
-
-- `--env <text>`
-
-- `--name <text>`
-
-- `--image-tag <text>` _Defaults to tag-latest._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
