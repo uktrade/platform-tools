@@ -2,4 +2,4 @@ monitoring:
   type: monitoring
   environments:
     development:
-      enable-ops-center: false
+      enable_ops_center: false

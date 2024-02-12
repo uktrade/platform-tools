@@ -7,14 +7,14 @@ from os.path import isfile
 from pathlib import Path
 from pathlib import PosixPath
 
-import boto3
 import click
-import jsonschema
 import yaml
 
 from dbt_copilot_helper.utils.aws import SSM_BASE_PATH
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_copilot_helper.utils.files import generate_override_files
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
@@ -175,7 +175,8 @@ def _validate_and_normalise_config(config_file):
 
 def get_log_destination_arn():
     """Get destination arns stored in param store in projects aws account."""
-    client = boto3.client("ssm", region_name="eu-west-2")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm", region_name="eu-west-2")
     response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
 
     if not response["Parameters"]:
@@ -212,7 +213,7 @@ def make_addons(directory="."):
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    _generate_env_overrides(output_dir, templates)
+    _generate_env_overrides(output_dir)
 
     click.echo("\n>>> Generating addons CloudFormation\n")
 
@@ -242,7 +243,7 @@ def make_addons(directory="."):
         for environment_name, environment_config in environments.items():
             if not environment_config.get("deletion_policy"):
                 environments[environment_name]["deletion_policy"] = addon_config.get(
-                    "deletion-policy", "Delete"
+                    "deletion_policy", "Delete"
                 )
 
         environment_addon_config = {
@@ -315,12 +316,12 @@ def _get_config():
     return config
 
 
-def _generate_env_overrides(output_dir, templates):
+def _generate_env_overrides(output_dir):
     click.echo("\n>>> Generating Environment overrides\n")
     overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
     overrides_path.mkdir(parents=True, exist_ok=True)
-    overrides_file = overrides_path.joinpath("cfn.patches.yml")
-    overrides_file.write_text(templates.get_template("env/overrides/cfn.patches.yml").render())
+    template_overrides_path = Path(__file__).parent.parent.joinpath("templates/env/overrides")
+    generate_override_files(Path("."), template_overrides_path, overrides_path)
 
 
 def _generate_env_addons(
@@ -423,7 +424,8 @@ def _cleanup_old_files(config, output_dir, env_addons_path):
 def get_env_secrets(app, env):
     """List secret names and values for an environment."""
 
-    client = boto3.client("ssm")
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
 
     path = SSM_BASE_PATH.format(app=app, env=env)
 

@@ -6,7 +6,7 @@ my-s3-bucket:
     - "other"
   environments:
     development:
-      bucket-name: my-bucket-dev
+      bucket_name: my-bucket-dev
 
 my-s3-bucket-with-an-object:
   type: s3
@@ -15,8 +15,8 @@ my-s3-bucket-with-an-object:
     - "web"
   environments:
     development:
-      bucket-name: my-bucket-dev
-      deletion-policy: Delete
+      bucket_name: my-bucket-dev
+      deletion_policy: Delete
   objects:
     - key: healthcheck.txt
       body: |

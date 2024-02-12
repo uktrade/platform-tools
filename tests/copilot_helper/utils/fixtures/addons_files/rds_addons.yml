@@ -3,15 +3,13 @@
 my-rds-db:
   type: rds-postgres
   version: 14.4
-  deletion-policy: "Retain"
+  deletion_policy: "Retain"
 
   environments:
     default:
       plan: small-ha
-      instance: db.t3.micro
-      volume-size: 700
-      replicas: 1
-      snapshot-id: test-snapshot-id
+      volume_size: 700
+      snapshot_id: test-snapshot-id
     dev:
-      deletion-policy: "Delete"
-      deletion-protection: false
+      deletion_policy: "Delete"
+      deletion_protection: false

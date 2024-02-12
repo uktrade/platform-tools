@@ -1,10 +1,10 @@
 my-redis-1:
   type: redis
-  bad-key:
+  bad_key:
 
 my-redis-2:
   type: redis
-  deletion-policy: Disabled # Bad policy type
+  deletion_policy: Disabled # Bad policy type
 
 my-redis-3:
   type: redis
@@ -28,10 +28,4 @@ my-redis-6:
   type: redis
   environments:
     default:
-      instance: teeny
-
-my-redis-7:
-  type: redis
-  environments:
-    default:
-      deletion-policy: Never
+      deletion_policy: Never

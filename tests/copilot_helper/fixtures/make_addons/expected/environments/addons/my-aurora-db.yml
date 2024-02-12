@@ -292,7 +292,7 @@ Resources:
   myAuroraDbLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-aurora-create-user"
+      FunctionName: !Sub "${App}-${Env}-myAuroraDb-aurora-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -499,7 +499,7 @@ Resources:
   myAuroraDbLambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-aurora-user"
+      RoleName: !Sub "${App}-${Env}-myAuroraDb-aurora-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -543,7 +543,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFiltermyAuroraDb:
+  myAuroraDbSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myAuroraDbDBWriterInstance

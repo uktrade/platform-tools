@@ -4,9 +4,9 @@ import re
 import subprocess
 from pathlib import Path
 
-import boto3
 import click
 
+from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.manifests import get_repository_name_from_manifest
 from dbt_copilot_helper.utils.manifests import get_service_name_from_manifest
@@ -63,8 +63,9 @@ def abort_with_message(message):
 
 
 def get_all_tags_for_image(image_tag_needle, repository_name):
-    registry_id = boto3.client("sts").get_caller_identity()["Account"]
-    ecr_client = boto3.client("ecr")
+    session = get_aws_session_or_abort()
+    registry_id = session.client("sts").get_caller_identity()["Account"]
+    ecr_client = session.client("ecr")
     try:
         response = ecr_client.describe_images(
             registryId=registry_id,

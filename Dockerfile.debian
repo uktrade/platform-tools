@@ -12,6 +12,7 @@ RUN apt-get update \
     ca-certificates \
     curl \
     git \
+    jq \
     libbz2-dev \
     libffi-dev \
     liblzma-dev \
@@ -24,6 +25,7 @@ RUN apt-get update \
     llvm \
     make \
     tk-dev \
+    unzip \
     wget \
     xz-utils \
     zlib1g-dev \
@@ -34,3 +36,8 @@ RUN apt-get update \
   && git clone https://github.com/pyenv/pyenv .pyenv \
   && pyenv install ${PYTHON_VERSIONS} \
   && pyenv global $(echo ${PYTHON_VERSIONS} | awk '{ print $NF }')
+
+# Install AWS CLI
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
+  && unzip awscliv2.zip \
+  && ./aws/install

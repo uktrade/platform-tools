@@ -1,12 +1,14 @@
 my-opensearch:
   type: opensearch
-  deletion-policy: Delete
+  deletion_policy: Delete
   environments:
     default:
       plan: large
-      replicas: 4
-      instance: t2.medium.search
       engine: "1.3"
       volume_size: 128
-      deletion-policy: Delete
-
+      deletion_policy: Delete
+    development:
+      plan: small
+      volume_size: 100
+    production:
+      volume_size: 1000

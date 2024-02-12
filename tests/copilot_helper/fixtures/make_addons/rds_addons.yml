@@ -7,4 +7,4 @@ my-rds-db:
   environments:
     default:
       plan: small-ha
-      snapshot-id: test-snapshot-id
+      snapshot_id: test-snapshot-id

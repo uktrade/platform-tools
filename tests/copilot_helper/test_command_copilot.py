@@ -8,15 +8,21 @@ from unittest.mock import patch
 import boto3
 import pytest
 import yaml
+from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from freezegun import freeze_time
+from moto import mock_iam
+from moto import mock_s3
 from moto import mock_ssm
+from moto import mock_sts
 from yaml import dump
 
 from dbt_copilot_helper.commands.copilot import copilot
 from dbt_copilot_helper.commands.copilot import is_service
 from dbt_copilot_helper.utils.aws import SSM_PATH
+from dbt_copilot_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.copilot_helper.conftest import FIXTURES_DIR
+from tests.copilot_helper.conftest import mock_aws_client
 
 REDIS_STORAGE_CONTENTS = """
 redis:
@@ -42,8 +48,8 @@ aurora:
   version: 14.4
   environments:
     default:
-      min-capacity: 0.5
-      max-capacity: 8
+      min_capacity: 0.5
+      max_capacity: 8
 """
 
 OPENSEARCH_STORAGE_CONTENTS = """
@@ -63,7 +69,7 @@ s3:
     - "web"
   environments:
     development:
-      bucket-name: my-bucket-dev
+      bucket_name: my-bucket-dev
 """
 
 WEB_SERVICE_CONTENTS = """
@@ -94,6 +100,7 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "addons.parameters.yml",
+                    "monitoring.yml",
                     "vpc.yml",
                 ],
                 [
@@ -102,7 +109,6 @@ class TestMakeAddonCommand:
                     "my-s3-bucket.yml",
                     "my-s3-bucket-with-an-object.yml",
                     "my-s3-bucket-bucket-access.yml",
-                    "xray.yml",
                 ],
                 False,
             ),
@@ -112,33 +118,34 @@ class TestMakeAddonCommand:
                     "my-opensearch.yml",
                     "my-opensearch-longer.yml",
                     "addons.parameters.yml",
+                    "monitoring.yml",
                     "vpc.yml",
                 ],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "rds_addons.yml",
-                ["my-rds-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["my-rds-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "redis_addons.yml",
-                ["my-redis.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["my-redis.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
             (
                 "aurora_addons.yml",
-                ["my-aurora-db.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["my-aurora-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 True,
             ),
             (
                 "monitoring_addons.yml",
                 ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-                ["appconfig-ipfilter.yml", "subscription-filter.yml", "xray.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
         ],
@@ -155,6 +162,9 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_make_addons_success(
         self,
         fakefs,
@@ -223,11 +233,10 @@ class TestMakeAddonCommand:
             actual = Path("copilot", f).read_text()
             assert actual == expected, f"The file {f} did not have the expected content"
 
-        expected_file = Path("expected/environments/overrides/cfn.patches.yml")
-
-        expected = expected_file.read_text()
-        actual = Path("copilot/environments/overrides/cfn.patches.yml").read_text()
-        assert actual == expected, f"The environment overrides did not have the expected content"
+        env_override_files = setup_override_files_for_environments()
+        for file in env_override_files:
+            assert f"{file} created" in result.stdout
+        all_expected_files += env_override_files
 
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
@@ -241,8 +250,42 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 4
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 2 override files"
+            len(actual_files) == len(all_expected_files) + 3
+        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 1 override files"
+
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_copilot_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @patch("dbt_copilot_helper.utils.validation.get_aws_session_or_abort")
+    def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
+        client = mock_aws_client(mock_get_session)
+        client.head_bucket.side_effect = ClientError({"Error": {"Code": "400"}}, "HeadBucket")
+        """Test that make_addons generates the expected directories and file
+        contents."""
+        # Arrange
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        fakefs.add_real_file(
+            addons_dir / "s3_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+        )
+        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
+
+        # Act
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert result.exit_code == 0
+        assert BUCKET_NAME_IN_USE_TEMPLATE.format("my-bucket") in result.output
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
@@ -268,7 +311,9 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / "redis_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / "redis_addons.yml",
+            read_only=False,
+            target_path=ADDON_CONFIG_FILENAME,
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -285,7 +330,9 @@ class TestMakeAddonCommand:
 
         for f in old_addon_files:
             fakefs.add_real_file(
-                addons_dir / "expected" / f, read_only=False, target_path=Path("copilot", f)
+                addons_dir / "expected" / f,
+                read_only=False,
+                target_path=Path("copilot", f),
             )
 
         # Act
@@ -303,7 +350,8 @@ class TestMakeAddonCommand:
 
         for f in all_expected_files:
             expected_file = Path(
-                "expected", f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml"
+                "expected",
+                f if not f.name == "vpc.yml" else "environments/addons/vpc-default.yml",
             )
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
@@ -347,6 +395,9 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_make_addons_deletion_policy(
         self,
         fakefs,
@@ -360,13 +411,12 @@ class TestMakeAddonCommand:
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy:
-            addon_file_contents[addon_name]["deletion-policy"] = deletion_policy
+            addon_file_contents[addon_name]["deletion_policy"] = deletion_policy
         if deletion_policy_override:
-            if not "development" in addon_file_contents[addon_name]["environments"]:
-                addon_file_contents[addon_name]["environments"]["development"] = {}
-            addon_file_contents[addon_name]["environments"]["development"][
-                "deletion-policy"
-            ] = deletion_policy_override
+            for env in addon_file_contents[addon_name]["environments"]:
+                addon_file_contents[addon_name]["environments"][env][
+                    "deletion_policy"
+                ] = deletion_policy_override
 
         create_test_manifests([dump(addon_file_contents)], fakefs)
 
@@ -416,6 +466,9 @@ class TestMakeAddonCommand:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -427,7 +480,7 @@ invalid-entry:
         - also-does-not-exist
     environments:
         default:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -442,14 +495,16 @@ invalid-entry:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "Services listed in invalid-entry.services do not exist in ./copilot/\n"
+            "Services listed in invalid-entry.services do not exist in ./copilot/" in result.output
         )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -458,8 +513,8 @@ example-invalid-file:
     type: s3
     environments:
         default:
-            bucket-name: test-bucket
-            no-such-key: bad-key
+            bucket_name: test-bucket
+            no_such_key: bad-key
 """,
         )
 
@@ -473,7 +528,7 @@ example-invalid-file:
 
         assert result.exit_code == 1
         assert re.match(
-            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no-such-key'",
+            r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no_such_key'",
             result.output,
         )
 
@@ -481,6 +536,9 @@ example-invalid-file:
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -489,7 +547,7 @@ invalid-environment:
     type: s3-policy
     environments:
         doesnotexist:
-            bucket-name: test-bucket
+            bucket_name: test-bucket
 """,
         )
 
@@ -504,14 +562,17 @@ invalid-environment:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "Environment keys listed in invalid-environment do not match ./copilot/environments\n"
+            "Environment keys listed in invalid-environment do not match ./copilot/environments"
+            in result.output
         )
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -520,14 +581,14 @@ my-s3-bucket-1:
   type: s3
   environments:
     dev:
-      bucket-name: my-s3alias # Can't end with -s3alias
+      bucket_name: sthree-one..TWO-s3alias # Many naming errors
 
 my-s3-bucket-2:
   type: s3
   environments:
     dev:
-      bucket-name: charles
-      deletion-policy: ThisIsInvalid # Should be a valid policy name.
+      bucket_name: charles
+      deletion_policy: ThisIsInvalid # Should be a valid policy name.
 """,
         )
 
@@ -541,15 +602,12 @@ my-s3-bucket-2:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert re.search(r"(?s)Errors found in addons.yml:", result.output)
-        assert re.search(
-            r"(?s)my-s3-bucket-1.*environments.*dev.*bucket-name.*does not match 'my-s3alias'",
-            result.output,
-        )
-        assert re.search(
-            r"(?s)my-s3-bucket-2.*environments.*dev.*deletion-policy.*'Delete' does not match 'ThisIsInvalid'",
-            result.output,
-        )
+        assert "Errors found in addons.yml:" in result.output
+        assert "'Delete' does not match 'ThisIsInvalid'" in result.output
+        assert "Names cannot be prefixed 'sthree-'" in result.output
+        assert "Names cannot be suffixed '-s3alias'" in result.output
+        assert "Names cannot contain two adjacent periods" in result.output
+        assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
     @patch(
         "dbt_copilot_helper.utils.versioning.running_as_installed_package",
@@ -615,7 +673,11 @@ invalid-entry:
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
             (
-                [RDS_POSTGRES_STORAGE_CONTENTS, OPENSEARCH_STORAGE_CONTENTS, S3_STORAGE_CONTENTS],
+                [
+                    RDS_POSTGRES_STORAGE_CONTENTS,
+                    OPENSEARCH_STORAGE_CONTENTS,
+                    S3_STORAGE_CONTENTS,
+                ],
                 True,
             ),
         ],
@@ -631,6 +693,9 @@ invalid-entry:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @mock_s3
+    @mock_sts
+    @mock_iam
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_file_contents, has_postgres_addon
     ):
@@ -758,8 +823,11 @@ invalid-entry:
 
 
 @mock_ssm
+@mock_sts
+@mock_iam
 @patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=False)
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package",
+    new=Mock(return_value=False),
 )
 def test_get_secrets():
     def _put_ssm_param(client, app, env, name, value):
@@ -835,3 +903,17 @@ def test_is_service_empty_manifest(fakefs, capfd):
 
     assert excinfo.value.code == 1
     assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
+
+
+def setup_override_files_for_environments():
+    overrides_dir = Path("./copilot/environments/overrides")
+    return (
+        overrides_dir / "bin" / "override.ts",
+        overrides_dir / ".gitignore",
+        overrides_dir / "cdk.json",
+        overrides_dir / "log_resource_policy.json",
+        overrides_dir / "package-lock.json",
+        overrides_dir / "package.json",
+        overrides_dir / "stack.ts",
+        overrides_dir / "tsconfig.json",
+    )

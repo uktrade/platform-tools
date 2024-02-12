@@ -1,9 +1,11 @@
 import json
+import re
 from pathlib import Path
 from typing import Dict
 
 import boto3
 import yaml
+from boto3 import Session
 from yaml.parser import ParserError
 
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
@@ -59,9 +61,9 @@ class ApplicationNotFoundError(Exception):
     pass
 
 
-def load_application(app: str = None) -> Application:
+def load_application(app: str = None, default_session: Session = None) -> Application:
     application = Application(app if app else get_application_name())
-    current_session = get_aws_session_or_abort()
+    current_session = default_session if default_session else get_aws_session_or_abort()
 
     ssm_client = current_session.client("ssm")
 
@@ -75,7 +77,7 @@ def load_application(app: str = None) -> Application:
 
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/environments",
-        Recursive=True,
+        Recursive=False,
         WithDecryption=False,
     )
 
@@ -83,11 +85,26 @@ def load_application(app: str = None) -> Application:
     account_id = sts_client.get_caller_identity()["Account"]
     sessions = {account_id: current_session}
 
+    def is_environment_key(name):
+        """
+        Match only parameter names that are an environment path with no further
+        nesting.
+
+        e.g.
+         - /copilot/applications/test/environments/my_env will match.
+         - /copilot/applications/test/environments/my_env/addons will not match.
+        """
+        environment_key_regex = r"^/copilot/applications/{}/environments/[^/]*$".format(
+            application.name
+        )
+        return bool(re.match(environment_key_regex, name))
+
     application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
-        for env in [json.loads(p["Value"]) for p in response["Parameters"]]
+        for env in [
+            json.loads(p["Value"]) for p in response["Parameters"] if is_environment_key(p["Name"])
+        ]
     }
-
     return application
 
 
