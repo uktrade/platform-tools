@@ -369,11 +369,20 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_get_load_balancer_domain_and_configuration(tmp_path):
+@pytest.mark.parametrize(
+    "svc_name",
+    [
+        ALPHANUMERIC_SERVICE_NAME,
+        "test",
+        "test-service",
+        "test-service-name",
+    ],
+)
+def test_get_load_balancer_domain_and_configuration(tmp_path, svc_name):
     cluster_name = (
         f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
     )
-    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{svc_name}-{SERVICE_NAME_SUFFIX}"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(
@@ -407,11 +416,11 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
         domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
             boto3.Session(),
             HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
+            svc_name,
             ALPHANUMERIC_ENVIRONMENT_NAME,
         )
 
-    open_mock.assert_called_once_with(f"./copilot/{ALPHANUMERIC_SERVICE_NAME}/manifest.yml", "r")
+    open_mock.assert_called_once_with(f"./copilot/{svc_name}/manifest.yml", "r")
     assert domain_name == "somedomain.tld"
     assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
     assert load_balancer_configuration["LoadBalancerName"] == "foo"
