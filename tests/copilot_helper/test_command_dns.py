@@ -556,7 +556,7 @@ def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
         ],
     )
     assert (
-        "There are no clusters for environment dev of application some-app " "in AWS account foo"
+        "There are no clusters for environment dev of application some-app in AWS account foo"
     ) in result.output
 
 
