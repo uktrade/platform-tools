@@ -305,6 +305,7 @@ def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_n
 
 def mock_aws_client(get_aws_session_or_abort, client=None):
     session = MagicMock(name="session-mock")
+    session.profile_name = "foo"
     if not client:
         client = MagicMock(name="client-mock")
     session.client.return_value = client
