@@ -555,7 +555,7 @@ def assign(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
     # Find the Load Balancer name.
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
     elb_name = load_balancer_configuration["DNSName"]
 

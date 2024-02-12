@@ -342,7 +342,8 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     out, _ = capfd.readouterr()
 
     assert (
-        out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this AWS account\n"
+        out == f"There are no clusters for environment {ALPHANUMERIC_ENVIRONMENT_NAME} of "
+        f"application {HYPHENATED_APPLICATION_NAME} in AWS account default\n"
     )
 
 
@@ -355,8 +356,8 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
         get_load_balancer_domain_and_configuration(
             boto3.Session(),
             HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
             ALPHANUMERIC_ENVIRONMENT_NAME,
+            ALPHANUMERIC_SERVICE_NAME,
         )
 
     out, _ = capfd.readouterr()
@@ -414,10 +415,7 @@ def test_get_load_balancer_domain_and_configuration(tmp_path, svc_name):
 
     with patch("dbt_copilot_helper.utils.aws.open", open_mock):
         domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-            boto3.Session(),
-            HYPHENATED_APPLICATION_NAME,
-            svc_name,
-            ALPHANUMERIC_ENVIRONMENT_NAME,
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_ENVIRONMENT_NAME, svc_name
         )
 
     open_mock.assert_called_once_with(f"./copilot/{svc_name}/manifest.yml", "r")
@@ -449,7 +447,7 @@ def test_get_load_balancer_domain_and_configuration_no_domain(
         contents=content,
     )
     with pytest.raises(SystemExit):
-        get_load_balancer_domain_and_configuration("test", "testapp", svc_name, "test")
+        get_load_balancer_domain_and_configuration("test", "testapp", "test", svc_name)
     assert (
         capsys.readouterr().out
         == f"{exp_error}, please check the ./copilot/{svc_name}/manifest.yml file\n"

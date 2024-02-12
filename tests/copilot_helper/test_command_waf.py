@@ -113,10 +113,10 @@ def test_attach_waf(alias_session):
         DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
     ecs_client = session.client("ecs")
-    ecs_client.create_cluster(clusterName="app-env-svc")
+    ecs_client.create_cluster(clusterName="app-env-Cluster-c0PIlotiD3ntIF3r")
     ecs_client.create_service(
-        cluster="app-env-svc",
-        serviceName="app-env-svc",
+        cluster="app-env-Cluster-c0PIlotiD3ntIF3r",
+        serviceName="app-env-svc-Service-c0PIlotiD3ntIF3r",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
     open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')

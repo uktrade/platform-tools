@@ -213,7 +213,7 @@ def get_codestar_connection_arn(app_name):
 
 
 def get_load_balancer_domain_and_configuration(
-    project_session: Session, app: str, svc: str, env: str
+    project_session: Session, app: str, env: str, svc: str
 ) -> Tuple[str, dict]:
     response = get_load_balancer_configuration(project_session, app, env, svc)
 
@@ -261,9 +261,12 @@ def get_load_balancer_configuration(
 
     if no_items:
         click.echo(
-            click.style("There are no clusters matching ", fg="red")
+            click.style("There are no clusters for environment ", fg="red")
+            + click.style(f"{env} ", fg="white", bold=True)
+            + click.style("of application ", fg="red")
             + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in this AWS account", fg="red"),
+            + click.style("in AWS account ", fg="red")
+            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
         )
         exit()
 
