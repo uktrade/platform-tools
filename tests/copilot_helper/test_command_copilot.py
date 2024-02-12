@@ -188,6 +188,8 @@ class TestMakeAddonCommand:
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
 
+        if addon_file == "s3_addons.yml":
+            breakpoint()
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
