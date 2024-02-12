@@ -4,6 +4,7 @@ from importlib.metadata import version
 
 import click
 
+from dbt_copilot_helper.commands.application import application as application_commands
 from dbt_copilot_helper.commands.bootstrap import bootstrap as bootstrap_commands
 from dbt_copilot_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
@@ -44,6 +45,7 @@ copilot_helper.add_command(environment_commands)
 copilot_helper.add_command(pipeline_commands)
 copilot_helper.add_command(svc_commands)
 copilot_helper.add_command(waf_commands)
+copilot_helper.add_command(application_commands)
 
 if __name__ == "__main__":
     copilot_helper()
