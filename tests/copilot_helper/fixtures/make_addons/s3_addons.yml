@@ -13,8 +13,18 @@ my-s3-bucket:
   environments:
     # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
 
+    default:
+      bucket_name: my-bucket-default
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_days: 10
     development:
       bucket_name: my-bucket-dev
+    prod:
+      bucket_name: my-bucket-prod
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_years: 1
 
 my-s3-bucket-with-an-object:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.

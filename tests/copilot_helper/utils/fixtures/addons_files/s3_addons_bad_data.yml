@@ -64,3 +64,47 @@ my-s3-bucket-13:
     dev:
       bucket_name: mandatory
       unknown3: key
+
+my-s3-bucket-14:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy: bad-policy
+
+my-s3-bucket-15:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        retention_mode: BAD_MODE
+        retention_days: 1
+
+my-s3-bucket-16:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_days: 1
+        retention_years: 1
+
+my-s3-bucket-17:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_days: three
+
+my-s3-bucket-18:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_years: one

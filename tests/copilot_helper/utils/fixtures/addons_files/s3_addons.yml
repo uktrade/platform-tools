@@ -5,8 +5,19 @@ my-s3-bucket:
     - "web"
     - "other"
   environments:
+    default:
+      bucket_name: my-bucket-default
+      retention_policy:
+        retention_mode: COMPLIANCE
+        retention_days: 10
     development:
       bucket_name: my-bucket-dev
+      retention_policy:
+    prod:
+      bucket_name: my-bucket-prod
+      retention_policy:
+        retention_mode: GOVERNANCE
+        retention_years: 1
 
 my-s3-bucket-with-an-object:
   type: s3

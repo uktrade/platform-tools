@@ -283,6 +283,14 @@ RDS_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
+RETENTION_POLICY = Or(
+    None,
+    {
+        "retention_mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("retention_days", "retention_years", only_one=True): int,
+    },
+)
+
 REDIS_PLANS = Or(
     "micro",
     "micro-ha",
@@ -314,6 +322,7 @@ S3_BASE = {
         ENV_NAME: {
             "bucket_name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
+            Optional("retention_policy"): RETENTION_POLICY,
         }
     },
 }
