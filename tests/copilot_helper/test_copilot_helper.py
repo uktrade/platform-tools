@@ -30,6 +30,5 @@ class TestCopilotHelperCli:
             "cdn",
             "environment",
             "pipeline",
-            "svc",
             "waf",
         ]
