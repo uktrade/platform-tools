@@ -363,7 +363,9 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     out, _ = capfd.readouterr()
 
     assert (
-        out == f"There are no services matching {ALPHANUMERIC_SERVICE_NAME} in this aws account\n"
+        out == f"There are no services called {ALPHANUMERIC_SERVICE_NAME} for environment "
+        f"{ALPHANUMERIC_ENVIRONMENT_NAME} of application {HYPHENATED_APPLICATION_NAME} "
+        f"in AWS account default\n"
     )
 
 

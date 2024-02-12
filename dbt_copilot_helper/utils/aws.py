@@ -281,9 +281,14 @@ def get_load_balancer_configuration(
 
     if no_items:
         click.echo(
-            click.style("There are no services matching ", fg="red")
-            + click.style(f"{svc}", fg="white", bold=True)
-            + click.style(" in this aws account", fg="red"),
+            click.style("There are no services called ", fg="red")
+            + click.style(f"{svc} ", fg="white", bold=True)
+            + click.style("for environment ", fg="red")
+            + click.style(f"{env} ", fg="white", bold=True)
+            + click.style("of application ", fg="red")
+            + click.style(f"{app} ", fg="white", bold=True)
+            + click.style("in AWS account ", fg="red")
+            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
         )
         exit()
 
