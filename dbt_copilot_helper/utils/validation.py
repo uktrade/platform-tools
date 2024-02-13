@@ -286,8 +286,8 @@ RDS_PLANS = Or(
 RETENTION_POLICY = Or(
     None,
     {
-        "retention_mode": Or("GOVERNANCE", "COMPLIANCE"),
-        Or("retention_days", "retention_years", only_one=True): int,
+        "mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("days", "years", only_one=True): int,
     },
 )
 

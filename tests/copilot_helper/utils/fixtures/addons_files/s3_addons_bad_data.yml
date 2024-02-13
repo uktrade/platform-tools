@@ -78,8 +78,8 @@ my-s3-bucket-15:
     dev:
       bucket_name: mandatory
       retention_policy:
-        retention_mode: BAD_MODE
-        retention_days: 1
+        mode: BAD_MODE
+        days: 1
 
 my-s3-bucket-16:
   type: s3
@@ -87,9 +87,9 @@ my-s3-bucket-16:
     dev:
       bucket_name: mandatory
       retention_policy:
-        retention_mode: COMPLIANCE
-        retention_days: 1
-        retention_years: 1
+        mode: COMPLIANCE
+        days: 1
+        years: 1
 
 my-s3-bucket-17:
   type: s3
@@ -97,8 +97,8 @@ my-s3-bucket-17:
     dev:
       bucket_name: mandatory
       retention_policy:
-        retention_mode: COMPLIANCE
-        retention_days: three
+        mode: COMPLIANCE
+        days: three
 
 my-s3-bucket-18:
   type: s3
@@ -106,5 +106,5 @@ my-s3-bucket-18:
     dev:
       bucket_name: mandatory
       retention_policy:
-        retention_mode: COMPLIANCE
-        retention_years: one
+        mode: COMPLIANCE
+        years: one

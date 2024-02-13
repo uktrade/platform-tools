@@ -18,11 +18,11 @@ Mappings:
       DeletionPolicy: {{ config.deletion_policy }}
   {%- if config.retention_policy %}
       RetentionPolicy: Enabled
-      RetentionMode: {{ config.retention_policy.retention_mode }}
-    {%- if config.retention_policy.retention_days %}
-      RetentionDays: {{ config.retention_policy.retention_days }}
-    {%- elif config.retention_policy.retention_years %}
-      RetentionYears: {{ config.retention_policy.retention_years }}
+      RetentionMode: {{ config.retention_policy.mode }}
+    {%- if config.retention_policy.days %}
+      RetentionDays: {{ config.retention_policy.days }}
+    {%- elif config.retention_policy.years %}
+      RetentionYears: {{ config.retention_policy.years }}
     {%- endif %}
   {%- endif %}
 {%- endfor %}
