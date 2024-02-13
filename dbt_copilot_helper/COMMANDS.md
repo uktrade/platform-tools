@@ -346,7 +346,7 @@ copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase>
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - codebase name in pipelines.yml file
+  - Codebase name in pipelines.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._

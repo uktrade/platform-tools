@@ -186,7 +186,7 @@ def build(app, codebase, commit):
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS Copilot environment", required=True)
-@click.option("--codebase", help="codebase name in pipelines.yml file", required=True)
+@click.option("--codebase", help="Codebase name in pipelines.yml file", required=True)
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
     """Trigger a CodePipeline pipeline based deployment."""
