@@ -437,14 +437,17 @@ def test_create_required_zones_and_certs(
             )
 
 
-@pytest.mark.parametrize("env", ["dev", "staging"])
+@pytest.mark.parametrize("env", ["prod"])
 @patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
 @patch(
     "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
     return_value="arn:1234",
 )
 def test_configure_success(
-    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, create_test_manifest, env
+    mock_create_required_zones_and_certs,
+    mock_get_aws_session_or_abort,
+    create_test_service_manifest,
+    env,
 ):
     runner = CliRunner()
     result = runner.invoke(
@@ -458,14 +461,18 @@ def test_configure_success(
     )
 
     expected = [
-        "Checking file: copilot/manifest.yml",
+        "Checking file: copilot/fe/manifest.yml",
         "Domains listed in manifest file",
-        f"v2.app.{env}.uktrade.digital",
+        f"test-fe.app.prod.uktrade.digital",
+        "Checking file: copilot/be/manifest.yml",
+        "Domains listed in manifest file",
+        f"test-be.app.prod.uktrade.digital",
         "Here are your Certificate ARNs:",
-        f"Domain: v2.app.{env}.uktrade.digital => Cert ARN: arn:1234",
+        f"Domain: test-fe.app.prod.uktrade.digital => Cert ARN: arn:1234",
+        f"Domain: test-be.app.prod.uktrade.digital => Cert ARN: arn:1234",
     ]
-    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
 
+    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
     assert actual == expected
 
 
@@ -484,7 +491,7 @@ def test_configure_success(
     return_value="arn:1234",
 )
 def test_configure_gets_the_correct_domain_profile(
-    mock_create_required_zones_and_certs, create_test_manifest, env, expected_domain_profile
+    mock_create_required_zones_and_certs, create_test_service_manifest, env, expected_domain_profile
 ):
     with patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort") as mock_get_session:
         runner = CliRunner()

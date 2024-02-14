@@ -99,9 +99,9 @@ secrets:                      # Pass secrets from AWS Systems Manager (SSM) Para
 
 # You can override any of the values defined above by environment.
 environments:
-  production:
+  prod:
     http:
-      alias: test-service.trad.gav.ik
+      alias: test-fe.app.prod.uktrade.digital
     memory: 1024
     count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
       range: 1-10

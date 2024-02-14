@@ -88,6 +88,7 @@ def test_make_config(tmp_path):
     contents."""
 
     test_environment_manifest = Path(FIXTURES_DIR, "test_environment_manifest.yml").read_text()
+
     production_environment_manifest = Path(
         FIXTURES_DIR, "production_environment_manifest.yml"
     ).read_text()

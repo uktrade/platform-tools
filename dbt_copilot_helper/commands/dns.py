@@ -385,6 +385,7 @@ def validate_subdomains(subdomains: list[str]) -> None:
                 break
         if not is_valid:
             bad_domains.append(subdomain)
+
     if bad_domains:
         csv_domains = ", ".join(bad_domains)
         raise InvalidDomainException(
@@ -461,8 +462,8 @@ def configure(project_profile, env):
     # and the applications records on the hosted zone for the environment in the dev AWS account.
 
     manifests = _get_manifests_or_abort()
-
     subdomains = _get_subdomains_from_env_manifests(env, manifests)
+
     validate_subdomains(subdomains)
     base_domain = get_base_domain(subdomains)
     domain_profile = AVAILABLE_DOMAINS[base_domain]
