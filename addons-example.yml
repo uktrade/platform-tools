@@ -27,7 +27,6 @@ my-s3-bucket:
 
   type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
   readonly: true  # services are granted read only access to the bucket. Defaults to false. Optional.
-  deletion_policy: Delete # Delete|Retain. Optional.
   services:  # services that require access to the bucket.
     - "web"
     - "web-celery"
@@ -37,6 +36,10 @@ my-s3-bucket:
     production:
       bucket_name: my-bucket-prod
       deletion_policy: Retain
+      retention_policy: # Optional
+        mode: GOVERNANCE # or COMPLIANCE
+        days: 1
+        # years: 1 # Either days or years, but not both
     staging:
       bucket_name: my-bucket-staging
     development:
