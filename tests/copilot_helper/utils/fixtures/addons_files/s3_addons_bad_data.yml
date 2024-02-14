@@ -4,75 +4,71 @@ my-s3-bucket-1:
 
 my-s3-bucket-2:
   type: s3
-  deletion_policy: Retrain # Misspelled
-
-my-s3-bucket-3:
-  type: s3
   services: 33 # Should be a list
 
-my-s3-bucket-4:
+my-s3-bucket-3:
   type: s3
   services:
     - True
 
-my-s3-bucket-5:
+my-s3-bucket-4:
   type: s3
   environments:
     dev:
       bucket_name: banana-s3alias # Can't end with -s3alias
 
-my-s3-bucket-6:
+my-s3-bucket-5:
   type: s3
   environments:
     dev:
       bucket_name: charles
       deletion_policy: False # Should be a valid policy name.
 
-my-s3-bucket-7:
+my-s3-bucket-6:
   type: s3
   objects: should be a list
 
-my-s3-bucket-8:
+my-s3-bucket-7:
   type: s3
   objects:
     - key: 777 # Should be a string
 
-my-s3-bucket-9:
+my-s3-bucket-8:
   type: s3
   objects: # key is mandatory
     - body: HEALTHCHECK WORKS!
 
-my-s3-bucket-10:
+my-s3-bucket-9:
   type: s3
   objects:
     - key: healthcheck.txt
       body: False # Should be a string
 
-my-s3-bucket-11:
+my-s3-bucket-10:
   type: s3
   unknown1: key
 
-my-s3-bucket-12:
+my-s3-bucket-11:
   type: s3
   objects:
   - key: test
     unknown2: key
 
-my-s3-bucket-13:
+my-s3-bucket-12:
   type: s3
   environments:
     dev:
       bucket_name: mandatory
       unknown3: key
 
-my-s3-bucket-14:
+my-s3-bucket-13:
   type: s3
   environments:
     dev:
       bucket_name: mandatory
       retention_policy: bad-policy
 
-my-s3-bucket-15:
+my-s3-bucket-14:
   type: s3
   environments:
     dev:
@@ -81,7 +77,7 @@ my-s3-bucket-15:
         mode: BAD_MODE
         days: 1
 
-my-s3-bucket-16:
+my-s3-bucket-15:
   type: s3
   environments:
     dev:
@@ -91,7 +87,7 @@ my-s3-bucket-16:
         days: 1
         years: 1
 
-my-s3-bucket-17:
+my-s3-bucket-16:
   type: s3
   environments:
     dev:
@@ -100,7 +96,7 @@ my-s3-bucket-17:
         mode: COMPLIANCE
         days: three
 
-my-s3-bucket-18:
+my-s3-bucket-17:
   type: s3
   environments:
     dev:
