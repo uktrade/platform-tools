@@ -223,7 +223,7 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  SubscriptionFilterapplication:
+  {{ addon_config.prefix }}SubscriptionFilterApplication:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}OpenSearchApplicationLogGroup
@@ -234,7 +234,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
 
-  SubscriptionFilteraudit:
+  {{ addon_config.prefix }}SubscriptionFilterAudit:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}OpenSearchAuditLogGroup

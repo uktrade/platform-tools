@@ -18,6 +18,8 @@ from moto import mock_route53
 from moto import mock_secretsmanager
 from moto.ec2 import utils as ec2_utils
 
+from dbt_copilot_helper.utils.aws import AWS_SESSION_CACHE
+
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "copilot_helper" / "fixtures"
@@ -303,6 +305,7 @@ def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_n
 
 def mock_aws_client(get_aws_session_or_abort, client=None):
     session = MagicMock(name="session-mock")
+    session.profile_name = "foo"
     if not client:
         client = MagicMock(name="client-mock")
     session.client.return_value = client
@@ -317,3 +320,8 @@ def assert_file_created_in_stdout(output_file, result):
 
 def assert_file_overwritten_in_stdout(output_file, result):
     assert f"File {output_file.relative_to('.')} overwritten" in result.stdout
+
+
+@pytest.fixture()
+def clear_session_cache():
+    AWS_SESSION_CACHE.clear()

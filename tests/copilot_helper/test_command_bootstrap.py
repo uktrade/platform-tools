@@ -360,7 +360,7 @@ def test_migrate_secrets_skips_aws_secrets(
     assert_secret_does_not_exist(bad_secret_name)
 
 
-def test_migrate_secrets_profile_not_configured(tmp_path):
+def test_migrate_secrets_profile_not_configured(clear_session_cache, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(
@@ -371,7 +371,7 @@ def test_migrate_secrets_profile_not_configured(tmp_path):
     assert """AWS profile "foo" is not configured.""" in result.output
 
 
-def test_copy_secrets_profile_not_configured(tmp_path):
+def test_copy_secrets_profile_not_configured(clear_session_cache, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
     result = CliRunner().invoke(

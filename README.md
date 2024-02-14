@@ -30,6 +30,13 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 ### Testing
 
+#### Requirements
+
+The following tools are required to run the full test suite.
+
+- [checkov](https://www.checkov.io/)
+- [AWS Copilot](https://aws.github.io/copilot-cli/)
+
 #### Automated testing
 
 Run `poetry run pytest` in the root directory to run all tests.

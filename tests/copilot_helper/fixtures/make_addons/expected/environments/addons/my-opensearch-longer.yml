@@ -221,7 +221,7 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  SubscriptionFilterapplication:
+  myOpensearchLongerSubscriptionFilterApplication:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myOpensearchLongerOpenSearchApplicationLogGroup
@@ -232,7 +232,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [myOpensearchLongerCreateProdSubFilter, '', '']
 
-  SubscriptionFilteraudit:
+  myOpensearchLongerSubscriptionFilterAudit:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myOpensearchLongerOpenSearchAuditLogGroup

@@ -555,7 +555,7 @@ def assign(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
     # Find the Load Balancer name.
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
     elb_name = load_balancer_configuration["DNSName"]
 
@@ -716,7 +716,7 @@ def find_domain_rules(action, delete, project_profile, env, app, svc):
     elb_client = project_session.client("elbv2")
     acm_client = project_session.client("acm")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 
@@ -884,7 +884,7 @@ def cdn_list(project_profile, env, app, svc):
 
     elb_client = project_session.client("elbv2")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 

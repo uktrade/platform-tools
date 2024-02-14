@@ -292,7 +292,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-rds-create-user"
+      FunctionName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-rds-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -498,7 +498,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-rds-user"
+      RoleName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-rds-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -542,7 +542,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilter{{ addon_config.prefix }}:
+  {{ addon_config.prefix }}SubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}DBInstance

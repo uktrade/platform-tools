@@ -555,7 +555,9 @@ def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
             "dev",
         ],
     )
-    assert result.output.startswith("There are no clusters matching")
+    assert (
+        "There are no clusters for environment dev of application some-app in AWS account foo"
+    ) in result.output
 
 
 @pytest.mark.parametrize(
