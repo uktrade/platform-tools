@@ -1,0 +1,63 @@
+##### RDS postgres example:
+
+my-rds-db-1:
+  type: rds-postgres
+  version: 14.4
+  im_invalid: true
+
+my-rds-db-2:
+  type: rds-postgres
+
+my-rds-db-3:
+  type: rds-postgres
+  version: 14.4
+  deletion_policy: 77
+
+my-rds-db-4:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      plan: cunning
+
+my-rds-db-5a:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: 1
+
+my-rds-db-5b:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: 8000000
+
+my-rds-db-5c:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: two hundred
+
+my-rds-db-6:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      snapshot_id: false
+
+my-rds-db-7:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      deletion_policy: "None"
+
+my-rds-db-8:
+  type: rds-postgres
+  version: 14.4
+  environments:
+    default:
+      deletion_protection: 12

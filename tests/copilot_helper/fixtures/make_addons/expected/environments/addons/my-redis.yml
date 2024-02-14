@@ -155,7 +155,7 @@ Resources:
         - url: !GetAtt 'myRedisReplicationGroup.PrimaryEndPoint.Address'
           port: !GetAtt 'myRedisReplicationGroup.PrimaryEndPoint.Port'
 
-  SubscriptionFilterengine:
+  myRedisSubscriptionFilterEngine:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myRedisRedisEngineLogGroup
@@ -166,7 +166,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [myRedisCreateProdSubFilter, '', '']
 
-  SubscriptionFilterslow:
+  myRedisSubscriptionFilterSlow:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myRedisRedisSlowLogGroup

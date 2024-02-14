@@ -1,0 +1,31 @@
+my-redis-1:
+  type: redis
+  bad_key:
+
+my-redis-2:
+  type: redis
+  deletion_policy: Disabled # Bad policy type
+
+my-redis-3:
+  type: redis
+  environments:
+    default:
+      engine: 'a-big-engine'
+
+my-redis-4:
+  type: redis
+  environments:
+    default:
+      plan: enormous
+
+my-redis-5:
+  type: redis
+  environments:
+    default:
+      replicas: 42
+
+my-redis-6:
+  type: redis
+  environments:
+    default:
+      deletion_policy: Never

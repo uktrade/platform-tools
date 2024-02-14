@@ -1,0 +1,46 @@
+my-s3-bucket-policy-1:
+  type: s3-policy
+  readonly: 27 # Should be bool
+
+my-s3-bucket-policy-2:
+  type: s3-policy
+  deletion_policy: Retrain # Misspelled
+
+my-s3-bucket-policy-3:
+  type: s3-policy
+  services: 33 # Should be a list
+
+my-s3-bucket-policy-4:
+  type: s3-policy
+  services:
+    - True
+
+my-s3-bucket-policy-5:
+  type: s3-policy
+  environments:
+    dev:
+      bucket_name: banana-s3alias # Can't end with -s3alias
+
+my-s3-bucket-policy-6:
+  type: s3-policy
+  environments:
+    dev:
+      bucket_name: barney
+      deletion_policy: False # Should be a valid policy name.
+
+my-s3-bucket-policy-7:
+  type: s3-policy
+  unknown1: key
+
+my-s3-bucket-policy-8: # policies don't have objects
+  type: s3-policy
+  objects:
+    - key: test
+      data: DATA
+
+my-s3-bucket-policy-9:
+  type: s3-policy
+  environments:
+    dev:
+      bucket_name: barbara
+      unknown3: key
