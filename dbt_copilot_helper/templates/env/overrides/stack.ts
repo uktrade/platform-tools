@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as path from 'path';
-import {aws_logs as logs, aws_cloudformation as cloudformation} from 'aws-cdk-lib';
+import { aws_logs as logs, aws_cloudformation as cloudformation, Fn } from 'aws-cdk-lib';
 import resource_policy from './log_resource_policy.json';
 import {readFileSync} from "fs";
 import {parse} from 'yaml';
@@ -32,8 +32,7 @@ export class TransformedStack extends cdk.Stack {
         const logResourcePolicy = this.template.getResource("LogResourcePolicy") as logs.CfnResourcePolicy;
 
         addonStack.addDependency(logResourcePolicy);
-        logResourcePolicy.policyDocument = JSON.stringify(resource_policy);
-        // Todo: Maybe need something here to ensure it's applied
+        logResourcePolicy.policyDocument = Fn.sub(JSON.stringify(resource_policy));
     }
 
     private uploadAddonConfiguration() {
