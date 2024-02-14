@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
+import { aws_cloudformation as cloudformation, aws_logs as logs, Fn } from 'aws-cdk-lib';
 import * as path from 'path';
-import { aws_logs as logs, aws_cloudformation as cloudformation, Fn } from 'aws-cdk-lib';
 import resource_policy from './log_resource_policy.json';
-import {readFileSync} from "fs";
-import {parse} from 'yaml';
+import { readFileSync } from "fs";
+import { parse } from 'yaml';
 
 interface TransformedStackProps extends cdk.StackProps {
     readonly appName: string;
