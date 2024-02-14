@@ -18,12 +18,21 @@ Mappings:
       DeletionPolicy: Delete
 
 Conditions:
-  myS3BucketWithAnObjectApplyRetentionPolicy: !Equals
+  myS3BucketWithAnObjectApplyRetentionPolicy: !Not
+    - !Equals
+      - !FindInMap
+        - myS3BucketWithAnObjectEnvironmentConfigMap
+        - !Ref Env
+        - RetentionPolicy
+        - DefaultValue: No retention
+      - No retention
+  myS3BucketWithAnObjectRetentionPolicyDurationIsInDays: !Equals
     - !FindInMap
       - myS3BucketWithAnObjectEnvironmentConfigMap
       - !Ref Env
-      - RetentionPolicy
-    - Enabled
+      - RetentionDurationType
+      - DefaultValue: Days
+    - Days
 
 Resources:
   myS3BucketWithAnObjectKMSKey:
@@ -70,9 +79,18 @@ Resources:
         - myS3BucketWithAnObjectApplyRetentionPolicy
         - ObjectLockEnabled: Enabled
           Rule:
-            DefaultRetention:
-              Mode: !FindInMap [ myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionMode ]
-              Days: !FindInMap [ myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionDays ]
+            DefaultRetention: !If
+              - myS3BucketWithAnObjectRetentionPolicyDurationIsInDays
+              - Mode: !FindInMap [myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionMode]
+                Days: !FindInMap
+                  - myS3BucketWithAnObjectEnvironmentConfigMap
+                  - !Ref Env
+                  - RetentionDuration
+              - Mode: !FindInMap [myS3BucketWithAnObjectEnvironmentConfigMap, !Ref Env, RetentionMode]
+                Years: !FindInMap
+                  - myS3BucketWithAnObjectEnvironmentConfigMap
+                  - !Ref Env
+                  - RetentionDuration
         - !Ref AWS::NoValue
       VersioningConfiguration:
         Status: Enabled
