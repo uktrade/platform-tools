@@ -33,6 +33,7 @@ export class TransformedStack extends cdk.Stack {
 
         addonStack.addDependency(logResourcePolicy);
         logResourcePolicy.policyDocument = JSON.stringify(resource_policy);
+        // Todo: Maybe need something here to ensure it's applied
     }
 
     private uploadAddonConfiguration() {
