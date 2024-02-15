@@ -4,6 +4,7 @@
 set -e
 
 export AWS_PROFILE="platform-tools"
+export DEMODJANGO_AWS_PROFILE="platform-sandbox"
 export COPILOT_HELPER_DISABLE_VERSION_CHECK="true"
 
 echo "Build and install copilot-helper"
@@ -12,7 +13,7 @@ pip install "dist/$(ls -t1 dist | head -1)"
 copilot-helper --version
 
 echo "Get CodeStar connection details"
-codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
+codestarConnections=$(aws codestar-connections list-connections --profile "$DEMODJANGO_AWS_PROFILE}" --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
 awsAccount=$(echo "$codestarConnections" | jq -r ".[0].OwnerAccountId")
 codestarArn=$(echo "$codestarConnections" | jq -r ".[0].ConnectionArn")
 codestarConnectionId=$(echo "${codestarArn##*/}")
