@@ -63,8 +63,6 @@ def create_test_manifest(fakefs):
         contents="""
 environments:
   dev:
-    http:
-      alias: v2.app.dev.uktrade.digital
 
   staging:
     http:
