@@ -149,11 +149,7 @@ def create_addon_client_task(
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
     if addon_type == "postgres":
-        connection_secret_arns = f"""
-                READ_ONLY_USER={get_connection_secret_arn(app, env,f"{secret_name}_READ_ONLY_USER")},
-                APPLICATION_USER={get_connection_secret_arn(app, env,f"{secret_name}_APPLICATION_USER")},
-                POSTGRES_USER={get_connection_secret_arn(app, env,f"{secret_name}")}
-            """
+        connection_secret_arns = f"""READ_ONLY_USER={get_connection_secret_arn(app, env,f"{secret_name}_READ_ONLY_USER")},APPLICATION_USER={get_connection_secret_arn(app, env,f"{secret_name}_APPLICATION_USER")},POSTGRES_USER={get_connection_secret_arn(app, env,f"{secret_name}")}"""
     else:
         connection_secret_arns = (
             f"""CONNECTION_SECRET={get_connection_secret_arn(app, env,f"{secret_name}")}"""
@@ -198,6 +194,16 @@ def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_n
 def connect_to_addon_client_task(
     app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
 ):
+    command = "bash"
+    if "postgres" in task_name:
+        user = "READ_ONLY_USER"
+        if write:
+            user = "APPLICATION_USER"
+        if admin:
+            user = "POSTGRES_USER"
+
+        command = f"""'psql $(echo ${user} | jq -rc '"postgres://\(.username):\(.password)@\(.host):\(.port)/\(.dbname)"')' """
+
     tries = 0
     running = False
 
@@ -207,8 +213,10 @@ def connect_to_addon_client_task(
         if addon_client_is_running(app, env, cluster_arn, task_name):
             running = True
             subprocess.call(
-                "copilot task exec " f"--app {app.name} --env {env} " f"--name {task_name} ",
-                # "--command bash",
+                "copilot task exec "
+                f"--app {app.name} --env {env} "
+                f"--name {task_name} "
+                f"--command {command}",
                 shell=True,
             )
 
