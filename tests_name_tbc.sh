@@ -3,6 +3,8 @@
 # exit early if something goes wrong
 set -e
 
+export AWS_PROFILE="platform-tools"
+export COPILOT_HELPER_DISABLE_VERSION_CHECK="true"
 
 echo "Build and install copilot-helper"
 poetry build --no-interaction --format sdist --no-ansi
@@ -26,7 +28,6 @@ cd ./demodjango-deploy/
 
 # make-addons
 echo "Run make-addons from copilot-helper"
-export AWS_PROFILE="platform-sandbox"
 aws configure --profile "$AWS_PROFILE" set account_id "$PLATFORM_SANDBOX_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
@@ -35,6 +36,9 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 
 copilot-helper copilot make-addons
 ls ./copilot/environments/addons
+
+echo "Run copilot env init"
+copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 
 # deploy env
 
