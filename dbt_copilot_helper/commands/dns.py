@@ -516,7 +516,7 @@ def _get_subdomains_from_env_manifests(environment, manifests):
                 if not len(aliases):
                     click.echo(
                         click.style(
-                            "Misconfigured: no domain or alias present, skipping...", fg="cyan"
+                            f"No http.alias present for {environment} environment in {manifest}, skipping...", fg="cyan"
                         ),
                     )
                 else:
