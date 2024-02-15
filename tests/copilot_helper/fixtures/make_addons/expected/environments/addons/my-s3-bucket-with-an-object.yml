@@ -23,7 +23,7 @@ Conditions:
       - !FindInMap
         - myS3BucketWithAnObjectEnvironmentConfigMap
         - !Ref Env
-        - RetentionPolicy
+        - RetentionMode
         - DefaultValue: No retention
       - No retention
   myS3BucketWithAnObjectRetentionPolicyDurationIsInDays: !Equals

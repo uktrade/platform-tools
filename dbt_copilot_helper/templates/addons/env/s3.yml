@@ -34,7 +34,7 @@ Conditions:
       - !FindInMap
         - {{ addon_config.prefix }}EnvironmentConfigMap
         - !Ref Env
-        - RetentionPolicy
+        - RetentionMode
         - DefaultValue: No retention
       - No retention
   {{ addon_config.prefix }}RetentionPolicyDurationIsInDays: !Equals
