@@ -63,6 +63,8 @@ def create_test_manifest(fakefs):
         contents="""
 environments:
   dev:
+    http:
+      alias: v2.app.dev.uktrade.digital
 
   staging:
     http:
@@ -79,31 +81,6 @@ environments:
   prod3:
     http:
       alias: app.trade.gov.uk
-""",
-    )
-
-
-@pytest.fixture(scope="function")
-def create_test_manifest_no_http_alias(fakefs):
-    fakefs.create_file(
-        "copilot/manifest.yml",
-        contents="""
-environments:
-  devnohttp:
-    memory: 1024
-    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
-      range: 1-10
-      cooldown:
-        in: 30s
-        out: 60s
-      cpu_percentage: 70
-      memory_percentage:
-        value: 80
-        cooldown:
-          in: 80s
-          out: 160s
-      requests: 10000
-      response_time: 2s
 """,
     )
 

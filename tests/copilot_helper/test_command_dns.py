@@ -469,26 +469,30 @@ def test_configure_success(
     assert actual == expected
 
 
-@pytest.mark.parametrize("env", ["devnohttp"])
+@pytest.mark.parametrize(
+    "env",
+    ["devnohttp", "devnoalias"],
+)
 @patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
 @patch(
     "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
     return_value="arn:1234",
 )
 def test_configure_success_no_http(
-    mock_get_aws_session_or_abort,
-    mock_create_required_zones_and_certs,
-    fakefs,
-    env,
+    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, fakefs, env
 ):
     fakefs.create_file(
         "copilot/manifest.yml",
         contents="""
-environments:
-  withouthttp:
-    count:
-      range: 2-10
-""",
+        environments:
+          devnohttp:
+            count:
+              range: 2-10
+          devnoalias:
+            http:
+            count:
+              range: 2-10
+        """,
     )
 
     runner = CliRunner()
@@ -498,13 +502,13 @@ environments:
             "--project-profile",
             "foo",
             "--env",
-            "withouthttp",
+            env,
         ],
     )
 
     expected = [
         "Checking file: copilot/manifest.yml",
-        "Domains listed in manifest file",
+        "Misconfigured: no domain or alias present, skipping...",
     ]
     actual = [line.strip() for line in result.output.split("\n") if line.strip()]
     assert actual == expected

@@ -491,6 +491,17 @@ def configure(project_profile, env):
         click.secho("No domains found, please check the manifest file", fg="red")
 
 
+def _get_domain_aliases(conf, environment):
+    aliases = []
+    for env, domain in conf["environments"].items():
+        if env == environment:
+            # ensure configure doesn't blow up when http or alias
+            # are missing
+            if domain.get("http") and domain.get("http").get("alias"):
+                aliases.append(domain["http"]["alias"])
+    return aliases
+
+
 def _get_subdomains_from_env_manifests(environment, manifests):
     subdomains = []
     for manifest in manifests:
@@ -501,29 +512,21 @@ def _get_subdomains_from_env_manifests(environment, manifests):
                 click.echo(
                     click.style("Checking file: ", fg="cyan") + click.style(manifest, fg="white"),
                 )
-                click.secho("Domains listed in manifest file", fg="cyan", underline=True)
-
-                aliases = []
-                for env, domain in conf["environments"].items():
-                    if env == environment:
-                        # Why doesn't this blow up when domain has not http?
-                        aliases.append(domain["http"]["alias"])
-                        # if domain.get("http") is not None:
-                        #     aliases.append(domain.get("http")["alias"]
-                        # )
-
-                # aliases = [
-                #     domain["http"]["alias"]
-                #     for env, domain in conf["environments"].items()
-                #     if env == environment
-                # ]
-
-                click.secho(
-                    "  " + "\n  ".join(aliases),
-                    fg="yellow",
-                    bold=True,
-                )
-                subdomains.extend(aliases)
+                aliases = _get_domain_aliases(conf, environment)
+                if not len(aliases):
+                    click.echo(
+                        click.style(
+                            "Misconfigured: no domain or alias present, skipping...", fg="cyan"
+                        ),
+                    )
+                else:
+                    click.secho("Domains listed in manifest file", fg="cyan", underline=True)
+                    click.secho(
+                        "  " + "\n  ".join(aliases),
+                        fg="yellow",
+                        bold=True,
+                    )
+                    subdomains.extend(aliases)
     return subdomains
 
 
