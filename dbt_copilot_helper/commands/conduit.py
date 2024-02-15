@@ -144,29 +144,36 @@ def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> s
 
 
 def create_addon_client_task(
-    app: Application, env: str, addon_type: str, addon_name: str, task_name: str
+    app: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    task_name: str,
+    write: bool,
+    admin: bool,
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
     if addon_type == "postgres":
-        connection_secret_arns = f"""READ_ONLY_USER={get_connection_secret_arn(app, env,f"{secret_name}_READ_ONLY_USER")},APPLICATION_USER={get_connection_secret_arn(app, env,f"{secret_name}_APPLICATION_USER")},POSTGRES_USER={get_connection_secret_arn(app, env,f"{secret_name}")}"""
-    else:
-        connection_secret_arns = (
-            f"""CONNECTION_SECRET={get_connection_secret_arn(app, env,f"{secret_name}")}"""
-        )
+        if write:
+            secret_name += "_APPLICATION_USER"
+        elif not admin:
+            secret_name += "_READ_ONLY_USER"
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets {connection_secret_arns} "
+        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
     )
 
 
-def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_name: str) -> bool:
+def addon_client_is_running(
+    app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
+) -> bool:
     ecs_client = app.environments[env].session.client("ecs")
 
     tasks = ecs_client.list_tasks(
@@ -177,6 +184,19 @@ def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_n
 
     if not tasks["taskArns"]:
         return False
+
+    described_task_definition = ecs_client.describe_task_definition(
+        taskDefinition=f"copilot-{task_name}"
+    )
+    secrets = described_task_definition["taskDefinition"]["containerDefinitions"][0]["secrets"]
+
+    for secret in secrets:
+        if write and "APPLICATION_USER" not in secret["valueFrom"]:
+            return False
+        if admin and (
+            "APPLICATION_USER" in secret["valueFrom"] or "READ_ONLY_USER" in secret["valueFrom"]
+        ):
+            return False
 
     described_tasks = ecs_client.describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
 
@@ -194,29 +214,19 @@ def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_n
 def connect_to_addon_client_task(
     app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
 ):
-    command = "bash"
-    if "postgres" in task_name:
-        user = "READ_ONLY_USER"
-        if write:
-            user = "APPLICATION_USER"
-        if admin:
-            user = "POSTGRES_USER"
-
-        command = f"""'psql $(echo ${user} | jq -rc '"postgres://\(.username):\(.password)@\(.host):\(.port)/\(.dbname)"')' """
-
     tries = 0
     running = False
 
     while tries < 15 and not running:
         tries += 1
 
-        if addon_client_is_running(app, env, cluster_arn, task_name):
+        if addon_client_is_running(app, env, cluster_arn, task_name, write, admin):
             running = True
             subprocess.call(
                 "copilot task exec "
                 f"--app {app.name} --env {env} "
                 f"--name {task_name} "
-                f"--command {command}",
+                f"--command bash",
                 shell=True,
             )
 
@@ -326,8 +336,8 @@ def start_conduit(
     cluster_arn = get_cluster_arn(application, env)
     task_name = get_or_create_task_name(application, env, addon_name)
 
-    if not addon_client_is_running(application, env, cluster_arn, task_name):
-        create_addon_client_task(application, env, addon_type, addon_name, task_name)
+    if not addon_client_is_running(application, env, cluster_arn, task_name, write, admin):
+        create_addon_client_task(application, env, addon_type, addon_name, task_name, write, admin)
         add_stack_delete_policy_to_task_role(application, env, task_name)
         update_conduit_stack_resources(application, env, addon_type, addon_name, task_name)
 
