@@ -2,19 +2,24 @@
 
 set -euo pipefail
 
+# Proxy pass config.  Pass in $1 path, $2 target (public/private), $3 target_file (public/private).
+set_paths () {
+    echo -e "    location $1 {\n\tproxy_pass http://$2;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix $1;\n    }\n" >> $3
+}
+
 # Either PRIV_PATH_LIST or PUB_PATH_LIST VARs can be set, not both.
 # If neither is set, the default is to make / public
 # To enable IP filter set PRIV_PATH_LIST: '/'
 if ! [ -z ${PRIV_PATH_LIST+x} ]; then
   PUBLIC_PATHS=""
 elif [ -z ${PUB_PATH_LIST+x} ]; then
-  echo -e "    location / {\n\tproxy_pass http://upstream_server_public;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix /;\n    }\n" >> public_paths.txt
+  set_paths "/" "upstream_server_public" "public_paths.txt"
   PUBLIC_PATHS=$(<public_paths.txt)
 else
-  echo -e "    location / {\n\tproxy_pass http://upstream_server_private;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix /;\n    }\n" >> public_paths.txt
+  set_paths "/" "upstream_server_private" "public_paths.txt"
   for pub in $(echo -e $PUB_PATH_LIST |sed "s/,/ /g") 
   do
-    echo -e "    location $pub {\n\tproxy_pass http://upstream_server_public;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix $pub;\n    }\n" >> public_paths.txt
+    set_paths "$pub" "upstream_server_public" "public_paths.txt"
   done
   PUBLIC_PATHS=$(<public_paths.txt)
 fi
@@ -23,13 +28,13 @@ fi
 if (! [ -z ${PRIV_PATH_LIST+x} ] && ! [ -z ${PUB_PATH_LIST+x} ] ) || [ -z ${PRIV_PATH_LIST+x} ]; then
   PRIVATE_PATHS=""
 elif [ ${PRIV_PATH_LIST} == '/' ]; then
-    echo -e "    location / {\n\tproxy_pass http://upstream_server_private;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix /;\n    }\n" >> private_paths.txt
+    set_paths "/" "upstream_server_private" "private_paths.txt"
     PRIVATE_PATHS=$(<private_paths.txt)
 else
-  echo -e "    location / {\n\tproxy_pass http://upstream_server_public;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix /;\n    }\n" >> private_paths.txt
+  set_paths "/" "upstream_server_public" "private_paths.txt"
   for priv in $(echo -e $PRIV_PATH_LIST |sed "s/,/ /g") 
   do
-    echo -e "    location $priv {\n\tproxy_pass http://upstream_server_private;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix $priv;\n    }\n" >> private_paths.txt
+    set_paths "$priv" "upstream_server_private" "private_paths.txt"
   done
   PRIVATE_PATHS=$(<private_paths.txt) 
 fi
