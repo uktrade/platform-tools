@@ -437,7 +437,7 @@ def test_create_required_zones_and_certs(
             )
 
 
-@pytest.mark.parametrize("env", ["prod"])
+@pytest.mark.parametrize("env", ["nohttpdev"])
 @patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
 @patch(
     "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
@@ -446,7 +446,7 @@ def test_create_required_zones_and_certs(
 def test_configure_success(
     mock_create_required_zones_and_certs,
     mock_get_aws_session_or_abort,
-    create_test_service_manifest,
+    create_test_service_manifests,
     env,
 ):
     runner = CliRunner()
@@ -479,11 +479,8 @@ def test_configure_success(
 @pytest.mark.parametrize(
     "env, expected_domain_profile",
     [
-        ("dev", "dev"),
-        ("staging", "dev"),
-        ("prod1", "live"),
-        ("prod2", "live"),
-        ("prod3", "live"),
+        ("prod", "live"),
+        ("test", "dev"),
     ],
 )
 @patch(
@@ -491,7 +488,10 @@ def test_configure_success(
     return_value="arn:1234",
 )
 def test_configure_gets_the_correct_domain_profile(
-    mock_create_required_zones_and_certs, create_test_service_manifest, env, expected_domain_profile
+    mock_create_required_zones_and_certs,
+    create_test_service_manifests,
+    env,
+    expected_domain_profile,
 ):
     with patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort") as mock_get_session:
         runner = CliRunner()

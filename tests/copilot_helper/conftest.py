@@ -57,13 +57,43 @@ def fakefs(fs):
 
 
 @pytest.fixture(scope="function")
-def create_test_service_manifest(fakefs):
+def create_test_service_manifestss(fakefs):
     # valid fe and valid be services
     fakefs.add_real_file(
         FIXTURES_DIR / "test_public_service_manifest.yml", True, "copilot/fe/manifest.yml"
     )
     fakefs.add_real_file(
         FIXTURES_DIR / "test_backend_service_manifest.yml", True, "copilot/be/manifest.yml"
+    )
+
+
+@pytest.fixture(scope="function")
+def create_test_manifests(fakefs):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+    environments:
+      nohttpdev:
+      dev:
+        http:
+          alias: v2.app.dev.uktrade.digital
+
+      staging:
+        http:
+          alias: v2.app.staging.uktrade.digital
+
+      prod1:
+        http:
+          alias: v2.app.prod.uktrade.digital
+
+      prod2:
+        http:
+          alias: v2.app.great.gov.uk
+
+      prod3:
+        http:
+          alias: app.trade.gov.uk
+    """,
     )
 
 

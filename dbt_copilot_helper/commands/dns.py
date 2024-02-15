@@ -504,11 +504,17 @@ def _get_subdomains_from_env_manifests(environment, manifests):
                 )
                 click.secho("Domains listed in manifest file", fg="cyan", underline=True)
 
-                aliases = [
-                    domain["http"]["alias"]
-                    for env, domain in conf["environments"].items()
-                    if env == environment
-                ]
+                aliases = []
+                for env, domain in conf["environments"].items():
+                    if env == environment:
+                        if domain.get("http") is not None:
+                            aliases.append(domain.get("http")["alias"])
+
+                #                aliases = [
+                #                    domain.get("HTTP", None) ["http"]["alias"]
+                #                    for env, domain in conf["environments"].items()
+                #                    if env == environment
+                #                ]
 
                 click.secho(
                     "  " + "\n  ".join(aliases),
