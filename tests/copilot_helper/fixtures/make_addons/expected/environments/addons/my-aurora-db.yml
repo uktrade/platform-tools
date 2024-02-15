@@ -327,8 +327,8 @@ Resources:
 
               cursor.execute(f"CREATE USER {username} WITH ENCRYPTED PASSWORD '%s'" % password)
               cursor.execute(f"GRANT {username} to postgres;")
-              cursor.execute(f"GRANT {", ".join(permissions)} ON ALL TABLES IN SCHEMA public TO {username};")
-              cursor.execute(f"ALTER DEFAULT PRIVILEGES FOR USER {username} IN SCHEMA public GRANT {", ".join(permissions)} ON TABLES TO {username};")
+              cursor.execute(f"GRANT {', '.join(permissions)} ON ALL TABLES IN SCHEMA public TO {username};")
+              cursor.execute(f"ALTER DEFAULT PRIVILEGES FOR USER {username} IN SCHEMA public GRANT {', '.join(permissions)} ON TABLES TO {username};")
               conn.commit()
 
 
@@ -347,7 +347,7 @@ Resources:
                       Tags=[
                           {'Key': 'custom:cloudformation:stack-name', 'Value': event["StackId"].split('/')[1]},
                           {'Key': 'custom:cloudformation:logical-id', 'Value': event["LogicalResourceId"]},
-                          {'Key': 'custom:cloudformation:stack-d', 'Value': event["StackId"]},
+                          {'Key': 'custom:cloudformation:stack-id', 'Value': event["StackId"]},
                           {'Key': 'copilot-application', 'Value': copilot_application},
                           {'Key': 'copilot-environment', 'Value': copilot_environment},
                       ],

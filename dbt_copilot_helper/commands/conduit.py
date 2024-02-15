@@ -126,37 +126,44 @@ def get_cluster_arn(app: Application, env: str) -> str:
     raise NoClusterConduitError
 
 
-def get_connection_secret_arn(app: Application, env: str, addon_name: str) -> str:
+def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> str:
     secrets_manager = app.environments[env].session.client("secretsmanager")
     ssm = app.environments[env].session.client("ssm")
 
-    connection_secret_id = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
-
     try:
-        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
-            "ARN"
-        ]
+        return ssm.get_parameter(Name=secret_name, WithDecryption=False)["Parameter"]["ARN"]
     except ssm.exceptions.ParameterNotFound:
         pass
 
     try:
-        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
+        return secrets_manager.describe_secret(SecretId=secret_name)["ARN"]
     except secrets_manager.exceptions.ResourceNotFoundException:
         pass
 
-    raise SecretNotFoundConduitError(addon_name)
+    raise SecretNotFoundConduitError(secret_name)
 
 
 def create_addon_client_task(
     app: Application, env: str, addon_type: str, addon_name: str, task_name: str
 ):
-    connection_secret_arn = get_connection_secret_arn(app, env, addon_name)
+    secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
+
+    if addon_type == "postgres":
+        connection_secret_arns = f"""
+                READ_ONLY_USER={get_connection_secret_arn(app, env,f"{secret_name}_READ_ONLY_USER")},
+                APPLICATION_USER={get_connection_secret_arn(app, env,f"{secret_name}_APPLICATION_USER")},
+                POSTGRES_USER={get_connection_secret_arn(app, env,f"{secret_name}")}
+            """
+    else:
+        connection_secret_arns = (
+            f"""CONNECTION_SECRET={get_connection_secret_arn(app, env,f"{secret_name}")}"""
+        )
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        f"--secrets {connection_secret_arns} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -188,7 +195,9 @@ def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_n
     return False
 
 
-def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, task_name: str):
+def connect_to_addon_client_task(
+    app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
+):
     tries = 0
     running = False
 
@@ -198,10 +207,8 @@ def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, t
         if addon_client_is_running(app, env, cluster_arn, task_name):
             running = True
             subprocess.call(
-                "copilot task exec "
-                f"--app {app.name} --env {env} "
-                f"--name {task_name} "
-                f"--command bash",
+                "copilot task exec " f"--app {app.name} --env {env} " f"--name {task_name} ",
+                # "--command bash",
                 shell=True,
             )
 
@@ -300,7 +307,14 @@ def update_conduit_stack_resources(
     )
 
 
-def start_conduit(application: Application, env: str, addon_type: str, addon_name: str = None):
+def start_conduit(
+    application: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    write: bool = False,
+    admin: bool = False,
+):
     cluster_arn = get_cluster_arn(application, env)
     task_name = get_or_create_task_name(application, env, addon_name)
 
@@ -309,21 +323,23 @@ def start_conduit(application: Application, env: str, addon_type: str, addon_nam
         add_stack_delete_policy_to_task_role(application, env, task_name)
         update_conduit_stack_resources(application, env, addon_type, addon_name, task_name)
 
-    connect_to_addon_client_task(application, env, cluster_arn, task_name)
+    connect_to_addon_client_task(application, env, cluster_arn, task_name, write, admin)
 
 
 @click.command(cls=ClickDocOptCommand)
 @click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-def conduit(addon_name: str, app: str, env: str):
+@click.option("--write", is_flag=True, help="Allow write access to database addons")
+@click.option("--admin", is_flag=True, help="Allow admin access to database addons")
+def conduit(addon_name: str, app: str, env: str, write: bool, admin: bool):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
     application = load_application(app)
 
     try:
         addon_type = get_addon_type(application, env, addon_name)
-        start_conduit(application, env, addon_type, addon_name)
+        start_conduit(application, env, addon_type, addon_name, write, admin)
     except ParameterNotFoundConduitError:
         click.secho(
             f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
@@ -347,7 +363,7 @@ def conduit(addon_name: str, app: str, env: str):
         exit(1)
     except SecretNotFoundConduitError as err:
         click.secho(
-            f"""No secret called "{normalise_secret_name(addon_name) or err}" for "{app}" in "{env}" environment.""",
+            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
             fg="red",
         )
         exit(1)

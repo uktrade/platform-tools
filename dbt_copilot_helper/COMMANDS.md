@@ -547,7 +547,7 @@ copilot-helper codebuild slackcreds --workspace <workspace> --channel <channel>
 
 ```
 copilot-helper conduit <addon_name> 
-                       --app <app> --env <env> 
+                       --app <app> --env <env> [--write] [--admin] 
 ```
 
 ## Arguments
@@ -560,6 +560,10 @@ copilot-helper conduit <addon_name>
   - AWS application name
 - `--env <text>`
   - AWS environment name
+- `--write <boolean>` _Defaults to False._
+  - Allow write access to database addons
+- `--admin <boolean>` _Defaults to False._
+  - Allow admin access to database addons
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
