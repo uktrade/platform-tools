@@ -28,7 +28,7 @@ cd ./demodjango-deploy/
 
 # make-addons
 echo "Run make-addons from copilot-helper"
-aws configure --profile "$AWS_PROFILE" set account_id "$PLATFORM_SANDBOX_ACCOUNT_ID"
+aws configure --profile "$AWS_PROFILE" set account_id "$PLATFORM_TOOLS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 
