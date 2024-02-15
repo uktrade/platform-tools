@@ -508,7 +508,7 @@ def test_configure_success_no_http(
 
     expected = [
         "Checking file: copilot/manifest.yml",
-        "Misconfigured: no domain or alias present, skipping...",
+        f"No http.alias present for {env} environment in copilot/manifest.yml, skipping...",
     ]
     actual = [line.strip() for line in result.output.split("\n") if line.strip()]
     assert actual == expected
