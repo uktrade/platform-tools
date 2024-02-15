@@ -1,6 +1,7 @@
 # {% version_info %}
 
 Parameters:
+  ECSClusterName: !Ref Cluster
   EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup
   {%- if has_postgres_addon  %}
   DefaultPublicRoute: !Ref DefaultPublicRoute

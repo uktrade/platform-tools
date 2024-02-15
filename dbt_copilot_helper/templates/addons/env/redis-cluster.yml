@@ -157,7 +157,7 @@ Resources:
         - url: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Address'
           port: !GetAtt '{{ addon_config.prefix }}ReplicationGroup.PrimaryEndPoint.Port'
 
-  SubscriptionFilterengine:
+  {{ addon_config.prefix }}SubscriptionFilterEngine:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}RedisEngineLogGroup
@@ -168,7 +168,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
 
-  SubscriptionFilterslow:
+  {{ addon_config.prefix }}SubscriptionFilterSlow:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}RedisSlowLogGroup

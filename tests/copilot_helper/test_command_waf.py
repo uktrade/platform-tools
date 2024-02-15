@@ -113,14 +113,14 @@ def test_attach_waf(alias_session):
         DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
     ecs_client = session.client("ecs")
-    ecs_client.create_cluster(clusterName="app-env-svc")
+    ecs_client.create_cluster(clusterName="app-env-Cluster-c0PIlotiD3ntIF3r")
     ecs_client.create_service(
-        cluster="app-env-svc",
-        serviceName="app-env-svc",
+        cluster="app-env-Cluster-c0PIlotiD3ntIF3r",
+        serviceName="app-env-svc-Service-c0PIlotiD3ntIF3r",
         loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
     )
     open_mock = mock_open(read_data='{"environments": {"env": {"http": {"alias": "blah"}}}}')
-    acl_arn = session.client("wafv2").create_web_acl(
+    session.client("wafv2").create_web_acl(
         Name="default",
         Scope="REGIONAL",
         DefaultAction={},
@@ -129,12 +129,12 @@ def test_attach_waf(alias_session):
             "CloudWatchMetricsEnabled": True,
             "MetricName": "blah",
         },
-    )["Summary"]["ARN"]
+    )
     runner = CliRunner()
     response = session.client("wafv2").get_web_acl_for_resource(ResourceArn=lb_arn)
 
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
-    with patch("dbt_copilot_helper.commands.dns.open", open_mock):
+    with patch("dbt_copilot_helper.utils.aws.open", open_mock):
         result = runner.invoke(
             attach_waf, ["--app", "app", "--project-profile", "foo", "--svc", "svc", "--env", "env"]
         )

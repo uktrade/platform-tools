@@ -1,0 +1,15 @@
+my-appconfig-ipfilter:
+  type: appconfig-ipfilter
+
+my-subscription-filter:
+  type: subscription-filter
+
+my-vpc:
+  type: vpc
+  services:
+    - aaa
+    - bbb
+
+my-xray:
+  type: xray
+  services: __all__

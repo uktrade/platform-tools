@@ -10,9 +10,9 @@ import click
 import yaml
 from cfn_tools import load_yaml
 
-from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.utils.aws import check_response
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
+from dbt_copilot_helper.utils.aws import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.cloudformation import get_lint_result
 from dbt_copilot_helper.utils.files import ensure_cwd_is_repo_root
@@ -62,7 +62,7 @@ def attach_waf(app, project_profile, svc, env):
         exit()
 
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
 
     elb_arn = load_balancer_configuration["LoadBalancerArn"]
@@ -158,7 +158,7 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     )
 
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
     elb_arn = load_balancer_configuration["LoadBalancerArn"]
     elb_name = load_balancer_configuration["DNSName"]

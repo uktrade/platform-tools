@@ -43,11 +43,12 @@ Mappings:
 {%- for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       DBInstanceClass: '{{ config.instance }}'
-      MultiAZ: {% if config.replicas %}true{% else %}false{% endif %}
+      MultiAZ: {{ config.multi_az }}
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}
       DeletionPolicy: {{ config.deletion_policy }}
+      DeletionProtection: {{ config.deletion_protection if config.deletion_protection else false }}
       SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
 {%- endfor %}
 
@@ -264,6 +265,7 @@ Resources:
           !Ref AWS::NoValue,
           true
         ]
+      DeletionProtection: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionProtection]
 
   {{ addon_config.prefix }}RDSSecret:
     Metadata:
@@ -290,7 +292,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-rds-create-user"
+      FunctionName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-rds-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -496,7 +498,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${App}-${Env}-rds-user"
+      RoleName: !Sub "${App}-${Env}-{{ addon_config.prefix }}-rds-user"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -540,7 +542,7 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
 
-  SubscriptionFilter{{ addon_config.prefix }}:
+  {{ addon_config.prefix }}SubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}DBInstance

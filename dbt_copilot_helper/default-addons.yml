@@ -9,9 +9,11 @@ subscription-filter:
   type: subscription-filter
   services: __all__
 
-xray:
-  type: xray
-  services: __all__
-
 vpc:
   type: vpc
+
+monitoring:
+  type: monitoring
+  environments:
+    default:
+      enable_ops_center: false

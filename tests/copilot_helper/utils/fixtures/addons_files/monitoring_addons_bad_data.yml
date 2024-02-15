@@ -1,0 +1,19 @@
+my-monitoring-1:
+  type: monitoring
+  monitoring_param: False
+
+my-monitoring-2:
+  type: monitoring
+  environments: "prod"
+
+my-monitoring-3:
+  type: monitoring
+  environments:
+    default:
+      - what??
+
+my-monitoring-4:
+  type: monitoring
+  environments:
+    default:
+      enable_ops_center: no thanks
