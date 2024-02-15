@@ -70,7 +70,7 @@ def get_query_results(env, app, profile, query_string):
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def application():
-    """AWS Copilot svc actions with DBT extras."""
+    """Application metrics"""
     check_copilot_helper_version_needs_update()
 
 
@@ -81,7 +81,7 @@ def application():
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
 def stats_long(env, app, project_profile, storage, network):
-    """Deploy image tag to a service, defaults to image tagged latest."""
+    """Command to get application container level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized) by TaskId, ContainerName, TaskDefinitionFamily, TaskDefinitionRevision, Image, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes | filter Type='Container' | sort TaskId, ContainerName desc"
@@ -193,7 +193,7 @@ def stats_long(env, app, project_profile, storage, network):
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
 def stats(env, app, project_profile, disk, storage, network):
-    """Deploy image tag to a service, defaults to image tagged latest."""
+    """Command to get application task level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized), max(EphemeralStorageUtilized) by TaskId, TaskDefinitionFamily, TaskDefinitionRevision, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes, KnownStatus | filter Type='Task' | sort TaskId desc"
