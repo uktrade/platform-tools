@@ -469,6 +469,41 @@ def test_configure_success(
     assert actual == expected
 
 
+@pytest.mark.parametrize("env", ["devnohttp"])
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
+@patch(
+    "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
+    return_value="arn:1234",
+)
+def test_configure_success_no_http(
+    mock_get_aws_session_or_abort,
+    mock_create_required_zones_and_certs,
+    create_test_manifest_no_http_alias,
+    env,
+):
+    runner = CliRunner()
+    result = runner.invoke(
+        configure,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            env,
+        ],
+    )
+
+    expected = [
+        "Checking file: copilot/manifest.yml",
+        "Domains listed in manifest file",
+        f"v2.app.{env}.uktrade.digital",
+        "Here are your Certificate ARNs:",
+        f"Domain: v2.app.{env}.uktrade.digital => Cert ARN: arn:1234",
+    ]
+    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
+
+    assert actual == expected
+
+
 @pytest.mark.parametrize(
     "env, expected_domain_profile",
     [

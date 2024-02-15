@@ -85,6 +85,31 @@ environments:
     )
 
 
+@pytest.fixture(scope="function")
+def create_test_manifest_no_http_alias(fakefs):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+environments:
+  devnohttp:
+    memory: 1024
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+      range: 1-10
+      cooldown:
+        in: 30s
+        out: 60s
+      cpu_percentage: 70
+      memory_percentage:
+        value: 80
+        cooldown:
+          in: 80s
+          out: 160s
+      requests: 10000
+      response_time: 2s
+""",
+    )
+
+
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
     with patch(
