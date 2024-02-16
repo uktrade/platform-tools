@@ -68,13 +68,14 @@ def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     get_connection_secret_arn returns an ARN from secrets manager."""
     from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
 
+    secret_name = f"/copilot/{mock_application.name}/development/secrets/POSTGRES"
     mock_secretsmanager = boto3.client("secretsmanager")
     mock_secretsmanager.create_secret(
-        Name="/copilot/test-application/development/secrets/POSTGRES",
+        Name=secret_name,
         SecretString="something-secret",
     )
 
-    arn = get_connection_secret_arn(mock_application, "development", "POSTGRES")
+    arn = get_connection_secret_arn(mock_application, "development", secret_name)
 
     assert arn.startswith(
         "arn:aws:secretsmanager:eu-west-2:123456789012:secret:"
@@ -88,14 +89,15 @@ def test_get_connection_secret_arn_from_parameter_store(mock_application):
     get_connection_secret_arn returns an ARN from parameter store."""
     from dbt_copilot_helper.commands.conduit import get_connection_secret_arn
 
+    secret_name = f"/copilot/{mock_application.name}/development/secrets/POSTGRES"
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
-        Name="/copilot/test-application/development/secrets/POSTGRES",
+        Name=secret_name,
         Value="something-secret",
         Type="SecureString",
     )
 
-    arn = get_connection_secret_arn(mock_application, "development", "POSTGRES")
+    arn = get_connection_secret_arn(mock_application, "development", secret_name)
 
     assert (
         arn
@@ -127,8 +129,9 @@ def test_create_addon_client_task(get_connection_secret_arn, subprocess_call, mo
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
     create_addon_client_task(mock_application, "development", "postgres", addon_name, task_name)
+    secret_name = _get_secret_name(mock_application, "postgres", addon_name)
 
-    get_connection_secret_arn.assert_called_once_with(mock_application, "development", addon_name)
+    get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
         f"--task-group-name {task_name} "
@@ -155,8 +158,9 @@ def test_create_addon_client_task_with_addon_name(
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
     create_addon_client_task(mock_application, "development", "postgres", addon_name, task_name)
+    secret_name = _get_secret_name(mock_application, "postgres", addon_name)
 
-    get_connection_secret_arn.assert_called_once_with(mock_application, "development", addon_name)
+    get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
         f"--task-group-name {task_name} "
@@ -317,15 +321,17 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
 @mock_ssm
 @mock_cloudformation
 @pytest.mark.parametrize(
-    "addon_type, addon_name",
+    "addon_type, addon_name, parameter_suffix",
     [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
-        ("redis", "custom-name-redis"),
-        ("opensearch", "custom-name-opensearch"),
+        ("postgres", "custom-name-postgres", "_READ_ONLY"),
+        ("postgres", "custom-name-rds-postgres", "_READ_ONLY"),
+        ("redis", "custom-name-redis", ""),
+        ("opensearch", "custom-name-opensearch", ""),
     ],
 )
-def test_update_conduit_stack_resources(mock_stack, addon_type, addon_name, mock_application):
+def test_update_conduit_stack_resources(
+    mock_stack, addon_type, addon_name, parameter_suffix, mock_application
+):
     """Test that, given app, env and addon name update_conduit_stack_resources
     updates the conduit CloudFormation stack to add DeletionPolicy:Retain and
     subscription filter to the LogGroup."""
@@ -349,18 +355,16 @@ def test_update_conduit_stack_resources(mock_stack, addon_type, addon_name, mock
 
     mock_stack(addon_name)
     task_name = mock_task_name(addon_name)
+    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
 
     update_conduit_stack_resources(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name
     )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
     template_yml = load_yaml(template["TemplateBody"])
     assert template_yml["Resources"]["LogGroup"]["DeletionPolicy"] == "Retain"
-    assert (
-        template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"]
-        == f"/copilot/{mock_application.name}/development/conduits/{addon_name.replace('-', '_').upper()}_CONDUIT_TASK_NAME"
-    )
+    assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["LogGroupName"]
         == f"/copilot/{task_name}"
@@ -382,14 +386,15 @@ def test_get_or_create_task_name(mock_application):
     from dbt_copilot_helper.commands.conduit import get_or_create_task_name
 
     addon_name = "app-postgres"
+    parameter_name = _get_parameter_name(mock_application, "postgres", addon_name)
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
-        Name=f"/copilot/test-application/development/conduits/{addon_name.replace('-', '_').upper()}_CONDUIT_TASK_NAME",
+        Name=parameter_name,
         Type="String",
         Value=mock_task_name(addon_name),
     )
 
-    task_name = get_or_create_task_name(mock_application, "development", addon_name)
+    task_name = get_or_create_task_name(mock_application, "development", addon_name, parameter_name)
 
     assert task_name == mock_task_name(addon_name)
 
@@ -401,7 +406,9 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     parameter store."""
     from dbt_copilot_helper.commands.conduit import get_or_create_task_name
 
-    task_name = get_or_create_task_name(mock_application, "development", "app-postgres")
+    addon_name = "app-postgres"
+    parameter_name = _get_parameter_name(mock_application, "postgres", addon_name)
+    task_name = get_or_create_task_name(mock_application, "development", addon_name, parameter_name)
     random_id = task_name.rsplit("-", 1)[1]
 
     assert task_name.rsplit("-", 1)[0] == mock_task_name("app-postgres").rsplit("-", 1)[0]
@@ -499,23 +506,26 @@ def test_start_conduit(
 
     addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
+    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
+    get_or_create_task_name.assert_called_once_with(
+        mock_application, "development", addon_name, parameter_name
+    )
     addon_client_is_running.assert_called_with(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, False, False
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -551,25 +561,26 @@ def test_start_conduit_with_custom_addon_name(
     from dbt_copilot_helper.commands.conduit import start_conduit
 
     task_name = mock_task_name("custom-addon-name")
+    parameter_name = _get_parameter_name(mock_application, addon_type, "custom-addon-name")
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(
-        mock_application, "development", "custom-addon-name"
+        mock_application, "development", "custom-addon-name", parameter_name
     )
     addon_client_is_running.assert_called_with(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name
+        mock_application, "development", addon_type, "custom-addon-name", task_name, False, False
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name
+        mock_application, "development", addon_type, "custom-addon-name", task_name, parameter_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -656,18 +667,21 @@ def test_start_conduit_when_no_secret_exists(
     addon_name = addon_type.upper()
     create_addon_client_task.side_effect = SecretNotFoundConduitError
     task_name = mock_task_name(addon_name)
+    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
         start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
+    get_or_create_task_name.assert_called_once_with(
+        mock_application, "development", addon_name, parameter_name
+    )
     addon_client_is_running.assert_called_with(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, False, False
     )
     add_stack_delete_policy_to_task_role.assert_not_called()
     update_conduit_stack_resources.assert_not_called()
@@ -706,6 +720,7 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 
     create_addon_client_task.side_effect = SecretNotFoundConduitError
     task_name = mock_task_name("custom-addon-name")
+    parameter_name = _get_parameter_name(mock_application, addon_type, "custom-addon-name")
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
@@ -713,13 +728,13 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
     get_or_create_task_name.assert_called_once_with(
-        mock_application, "development", "custom-addon-name"
+        mock_application, "development", "custom-addon-name", parameter_name
     )
     addon_client_is_running.assert_called_with(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name
+        mock_application, "development", addon_type, "custom-addon-name", task_name, False, False
     )
     add_stack_delete_policy_to_task_role.assert_not_called()
     update_conduit_stack_resources.assert_not_called()
@@ -759,24 +774,27 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     addon_name = addon_type.upper()
     connect_to_addon_client_task.side_effect = CreateTaskTimeoutConduitError
     task_name = mock_task_name(addon_name)
+    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(CreateTaskTimeoutConduitError):
         start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
+    get_or_create_task_name.assert_called_once_with(
+        mock_application, "development", addon_name, parameter_name
+    )
     addon_client_is_running.assert_called_with(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, False, False
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -814,12 +832,15 @@ def test_start_conduit_when_addon_client_task_is_already_running(
 
     addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
+    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(mock_application, "development", addon_name)
+    get_or_create_task_name.assert_called_once_with(
+        mock_application, "development", addon_name, parameter_name
+    )
     addon_client_is_running.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
     )
@@ -864,7 +885,9 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     )
 
     validate_version.assert_called_once()
-    start_conduit.assert_called_once_with(mock_application, "development", addon_type, addon_name)
+    start_conduit.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, False, False
+    )
 
 
 @mock_ssm
@@ -953,7 +976,7 @@ def test_conduit_command_when_no_connection_secret_exists(
     assert result.exit_code == 1
     validate_version.assert_called_once()
     secho.assert_called_once_with(
-        f"""No secret called "{addon_name.replace('-', '_').upper()}" for "test-application" in "development" environment.""",
+        f"""No secret called "{addon_name}" for "test-application" in "development" environment.""",
         fg="red",
     )
 
@@ -1168,3 +1191,24 @@ def _add_addon_config_parameter(param_value=None):
         Type="String",
         Value=json.dumps(param_value or DEFAULT_ADDON_CONFIG),
     )
+
+
+def _get_secret_name(
+    mock_application, addon_type, addon_name, write: bool = False, admin: bool = False
+):
+    secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
+    if addon_type == "postgres":
+        if write:
+            return f"{secret_name}_APPLICATION_USER"
+        elif not admin:
+            return f"{secret_name}_READ_ONLY_USER"
+
+    return secret_name
+
+
+def _get_parameter_name(app, addon_type, addon_name):
+    addon_name = addon_name.replace("-", "_").upper()
+    if addon_type == "postgres":
+        return f"/copilot/{app.name}/development/conduits/{addon_name}_READ_ONLY"
+    else:
+        return f"/copilot/{app.name}/development/conduits/{addon_name}"

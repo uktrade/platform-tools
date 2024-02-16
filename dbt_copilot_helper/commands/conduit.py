@@ -88,14 +88,29 @@ def get_addon_type(app: Application, env: str, addon_name: str) -> str:
     return addon_type
 
 
-def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
+def get_parameter_name(
+    app: Application, env: str, addon_type: str, addon_name: str, write: bool, admin: bool
+) -> str:
+    if addon_type == "postgres":
+        permission = "READ_ONLY"
+        if admin:
+            permission = "ADMIN"
+        elif write:
+            permission = "WRITE"
+        return (
+            f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_{permission}"
+        )
+    else:
+        return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}"
+
+
+def get_or_create_task_name(
+    app: Application, env: str, addon_name: str, parameter_name: str
+) -> str:
     ssm = app.environments[env].session.client("ssm")
-    task_name_parameter = (
-        f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_CONDUIT_TASK_NAME"
-    )
 
     try:
-        return ssm.get_parameter(Name=task_name_parameter)["Parameter"]["Value"]
+        return ssm.get_parameter(Name=parameter_name)["Parameter"]["Value"]
     except ssm.exceptions.ParameterNotFound:
         random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
         return f"conduit-{app.name}-{env}-{addon_name}-{random_id}"
@@ -149,8 +164,8 @@ def create_addon_client_task(
     addon_type: str,
     addon_name: str,
     task_name: str,
-    write: bool,
-    admin: bool,
+    write: bool = False,
+    admin: bool = False,
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
@@ -171,9 +186,7 @@ def create_addon_client_task(
     )
 
 
-def addon_client_is_running(
-    app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
-) -> bool:
+def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_name: str) -> bool:
     ecs_client = app.environments[env].session.client("ecs")
 
     tasks = ecs_client.list_tasks(
@@ -184,19 +197,6 @@ def addon_client_is_running(
 
     if not tasks["taskArns"]:
         return False
-
-    described_task_definition = ecs_client.describe_task_definition(
-        taskDefinition=f"copilot-{task_name}"
-    )
-    secrets = described_task_definition["taskDefinition"]["containerDefinitions"][0]["secrets"]
-
-    for secret in secrets:
-        if write and "APPLICATION_USER" not in secret["valueFrom"]:
-            return False
-        if admin and (
-            "APPLICATION_USER" in secret["valueFrom"] or "READ_ONLY_USER" in secret["valueFrom"]
-        ):
-            return False
 
     described_tasks = ecs_client.describe_tasks(cluster=cluster_arn, tasks=tasks["taskArns"])
 
@@ -211,16 +211,14 @@ def addon_client_is_running(
     return False
 
 
-def connect_to_addon_client_task(
-    app: Application, env: str, cluster_arn: str, task_name: str, write: bool, admin: bool
-):
+def connect_to_addon_client_task(app: Application, env: str, cluster_arn: str, task_name: str):
     tries = 0
     running = False
 
     while tries < 15 and not running:
         tries += 1
 
-        if addon_client_is_running(app, env, cluster_arn, task_name, write, admin):
+        if addon_client_is_running(app, env, cluster_arn, task_name):
             running = True
             subprocess.call(
                 "copilot task exec "
@@ -268,7 +266,12 @@ def add_stack_delete_policy_to_task_role(app: Application, env: str, task_name: 
 
 
 def update_conduit_stack_resources(
-    app: Application, env: str, addon_type: str, addon_name: str, task_name: str
+    app: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    task_name: str,
+    parameter_name: str,
 ):
     session = app.environments[env].session
     cloudformation_client = session.client("cloudformation")
@@ -281,7 +284,7 @@ def update_conduit_stack_resources(
         f"""
         Type: AWS::SSM::Parameter
         Properties:
-          Name: /copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_CONDUIT_TASK_NAME
+          Name: {parameter_name}
           Type: String
           Value: {task_name}
         """
@@ -334,14 +337,17 @@ def start_conduit(
     admin: bool = False,
 ):
     cluster_arn = get_cluster_arn(application, env)
-    task_name = get_or_create_task_name(application, env, addon_name)
+    parameter_name = get_parameter_name(application, env, addon_type, addon_name, write, admin)
+    task_name = get_or_create_task_name(application, env, addon_name, parameter_name)
 
-    if not addon_client_is_running(application, env, cluster_arn, task_name, write, admin):
+    if not addon_client_is_running(application, env, cluster_arn, task_name):
         create_addon_client_task(application, env, addon_type, addon_name, task_name, write, admin)
         add_stack_delete_policy_to_task_role(application, env, task_name)
-        update_conduit_stack_resources(application, env, addon_type, addon_name, task_name)
+        update_conduit_stack_resources(
+            application, env, addon_type, addon_name, task_name, parameter_name
+        )
 
-    connect_to_addon_client_task(application, env, cluster_arn, task_name, write, admin)
+    connect_to_addon_client_task(application, env, cluster_arn, task_name)
 
 
 @click.command(cls=ClickDocOptCommand)
