@@ -3,6 +3,7 @@
 # exit early if something goes wrong
 set -e
 
+# Todo: Make this do something...
 export COPILOT_HELPER_DISABLE_VERSION_CHECK="true"
 
 echo "Build and install copilot-helper"
