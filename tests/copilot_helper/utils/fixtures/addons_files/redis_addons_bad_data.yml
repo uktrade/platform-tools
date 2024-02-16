@@ -1,26 +1,26 @@
-my-redis-1:
+my-redis-bad-key:
   type: redis
   bad_key:
 
-my-redis-2:
+my-redis-bad-engine-size:
   type: redis
   environments:
     default:
       engine: 'a-big-engine'
 
-my-redis-3:
+my-redis-bad-plan:
   type: redis
   environments:
     default:
       plan: enormous
 
-my-redis-4:
+my-redis-too-many-replicas:
   type: redis
   environments:
     default:
       replicas: 42
 
-my-redis-5:
+my-redis-bad-deletion-policy:
   type: redis
   environments:
     default:

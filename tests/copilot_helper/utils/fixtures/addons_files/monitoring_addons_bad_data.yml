@@ -1,18 +1,18 @@
-my-monitoring-1:
+my-monitoring-bad-param:
   type: monitoring
   monitoring_param: False
 
-my-monitoring-2:
+my-monitoring-envs-should-be-list:
   type: monitoring
   environments: "prod"
 
-my-monitoring-3:
+my-monitoring-env-should-be-dict:
   type: monitoring
   environments:
     default:
       - what??
 
-my-monitoring-4:
+my-monitoring-enable-ops-center-should-be-bool:
   type: monitoring
   environments:
     default:

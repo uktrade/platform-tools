@@ -1,40 +1,40 @@
-my-s3-bucket-policy-1:
+my-s3-bucket-policy-readonly-should-be-bool:
   type: s3-policy
   readonly: 27 # Should be bool
 
-my-s3-bucket-policy-2:
+my-s3-bucket-policy-services-should-be-list:
   type: s3-policy
   services: 33 # Should be a list
 
-my-s3-bucket-policy-3:
+my-s3-bucket-policy-service-should-be-string:
   type: s3-policy
   services:
     - True
 
-my-s3-bucket-policy-4:
+my-s3-bucket-policy-bad-name-suffix:
   type: s3-policy
   environments:
     dev:
       bucket_name: banana-s3alias # Can't end with -s3alias
 
-my-s3-bucket-policy-5:
+my-s3-bucket-policy-invalid-deletion-policy:
   type: s3-policy
   environments:
     dev:
       bucket_name: barney
       deletion_policy: False # Should be a valid policy name.
 
-my-s3-bucket-policy-6:
+my-s3-bucket-policy-invalid-param:
   type: s3-policy
   unknown1: key
 
-my-s3-bucket-policy-7: # policies don't have objects
+my-s3-bucket-policy-invalid-object-param: # policies don't have objects
   type: s3-policy
   objects:
     - key: test
       data: DATA
 
-my-s3-bucket-policy-8:
+my-s3-bucket-policy-invalid-env-param:
   type: s3-policy
   environments:
     dev:
