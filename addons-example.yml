@@ -37,7 +37,7 @@ my-s3-bucket:
       bucket_name: my-bucket-prod
       deletion_policy: Retain
       retention_policy: # Optional
-        mode: GOVERNANCE # or COMPLIANCE
+        mode: GOVERNANCE # or COMPLIANCE (See https://aws.amazon.com/blogs/storage/protecting-data-with-amazon-s3-object-lock/)
         days: 1
         # years: 1 # Either days or years, but not both
     staging:
