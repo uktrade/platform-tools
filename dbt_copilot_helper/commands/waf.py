@@ -62,7 +62,7 @@ def attach_waf(app, project_profile, svc, env):
         exit()
 
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
 
     elb_arn = load_balancer_configuration["LoadBalancerArn"]
@@ -158,7 +158,7 @@ def custom_waf(app, project_profile, svc, env, waf_path):
     )
 
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
     elb_arn = load_balancer_configuration["LoadBalancerArn"]
     elb_name = load_balancer_configuration["DNSName"]

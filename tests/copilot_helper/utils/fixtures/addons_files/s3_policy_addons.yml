@@ -1,7 +1,6 @@
 my-s3-policy:
   type: s3-policy
   readonly: true
-  deletion_policy: Delete
 
   services:
     - "web"

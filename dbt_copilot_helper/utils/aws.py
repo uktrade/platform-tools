@@ -213,9 +213,9 @@ def get_codestar_connection_arn(app_name):
 
 
 def get_load_balancer_domain_and_configuration(
-    project_session: Session, app: str, svc: str, env: str
+    project_session: Session, app: str, env: str, svc: str
 ) -> Tuple[str, dict]:
-    response = get_load_balancer_configuration(project_session, app, svc, env)
+    response = get_load_balancer_configuration(project_session, app, env, svc)
 
     # Find the domain name
     with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
@@ -246,18 +246,8 @@ def get_load_balancer_domain_and_configuration(
 
 
 def get_load_balancer_configuration(
-    project_session: Session, app: str, svc: str, env: str
+    project_session: Session, app: str, env: str, svc: str
 ) -> list[Session]:
-    def separate_hyphenated_application_environment_and_service(
-        hyphenated_string, number_of_items_of_interest, number_of_trailing_items
-    ):
-        # The application name may be hyphenated, so we start splitting
-        # at the hyphen after the first item of interest and return the
-        # items of interest only...
-        return hyphenated_string.rsplit(
-            "-", number_of_trailing_items + number_of_items_of_interest - 1
-        )[:number_of_items_of_interest]
-
     proj_client = project_session.client("ecs")
 
     response = proj_client.list_clusters()
@@ -265,18 +255,18 @@ def get_load_balancer_configuration(
     no_items = True
     for cluster_arn in response["clusterArns"]:
         cluster_name = cluster_arn.split("/")[1]
-        cluster_app, cluster_env = separate_hyphenated_application_environment_and_service(
-            cluster_name, 2, 2
-        )
-        if cluster_app == app and cluster_env == env:
+        if cluster_name.startswith(f"{app}-{env}-Cluster"):
             no_items = False
             break
 
     if no_items:
         click.echo(
-            click.style("There are no clusters matching ", fg="red")
+            click.style("There are no clusters for environment ", fg="red")
+            + click.style(f"{env} ", fg="white", bold=True)
+            + click.style("of application ", fg="red")
             + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in this AWS account", fg="red"),
+            + click.style("in AWS account ", fg="red")
+            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
         )
         exit()
 
@@ -285,22 +275,20 @@ def get_load_balancer_configuration(
     no_items = True
     for service_arn in response["serviceArns"]:
         fully_qualified_service_name = service_arn.split("/")[2]
-        (
-            service_app,
-            service_env,
-            service_name,
-        ) = separate_hyphenated_application_environment_and_service(
-            fully_qualified_service_name, 3, 2
-        )
-        if service_app == app and service_env == env and service_name == svc:
+        if fully_qualified_service_name.startswith(f"{app}-{env}-{svc}-Service"):
             no_items = False
             break
 
     if no_items:
         click.echo(
-            click.style("There are no services matching ", fg="red")
-            + click.style(f"{svc}", fg="white", bold=True)
-            + click.style(" in this aws account", fg="red"),
+            click.style("There are no services called ", fg="red")
+            + click.style(f"{svc} ", fg="white", bold=True)
+            + click.style("for environment ", fg="red")
+            + click.style(f"{env} ", fg="white", bold=True)
+            + click.style("of application ", fg="red")
+            + click.style(f"{app} ", fg="white", bold=True)
+            + click.style("in AWS account ", fg="red")
+            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
         )
         exit()
 

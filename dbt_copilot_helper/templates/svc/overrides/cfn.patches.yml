@@ -1,3 +1,14 @@
 - op: replace
   path: /Resources/LogGroup/Properties/LogGroupName
   value: !Sub '/copilot/${AppName}/${EnvName}/${WorkloadName}'
+
+- op: add
+  path: /Resources/TaskDefinition/Properties/ContainerDefinitions/0/MountPoints
+  value:
+    - ContainerPath: /tmp
+      SourceVolume: temporary-fs
+
+- op: add
+  path: /Resources/TaskDefinition/Properties/Volumes
+  value:
+    - Name: temporary-fs

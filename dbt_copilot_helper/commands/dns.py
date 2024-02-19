@@ -491,6 +491,17 @@ def configure(project_profile, env):
         click.secho("No domains found, please check the manifest file", fg="red")
 
 
+def _get_domain_aliases(conf, environment):
+    aliases = []
+    for env, domain in conf["environments"].items():
+        if env == environment:
+            # ensure configure doesn't blow up when http or alias
+            # are missing
+            if domain.get("http") and domain.get("http").get("alias"):
+                aliases.append(domain["http"]["alias"])
+    return aliases
+
+
 def _get_subdomains_from_env_manifests(environment, manifests):
     subdomains = []
     for manifest in manifests:
@@ -501,20 +512,21 @@ def _get_subdomains_from_env_manifests(environment, manifests):
                 click.echo(
                     click.style("Checking file: ", fg="cyan") + click.style(manifest, fg="white"),
                 )
-                click.secho("Domains listed in manifest file", fg="cyan", underline=True)
-
-                aliases = [
-                    domain["http"]["alias"]
-                    for env, domain in conf["environments"].items()
-                    if env == environment
-                ]
-
-                click.secho(
-                    "  " + "\n  ".join(aliases),
-                    fg="yellow",
-                    bold=True,
-                )
-                subdomains.extend(aliases)
+                aliases = _get_domain_aliases(conf, environment)
+                if not len(aliases):
+                    click.echo(
+                        click.style(
+                            f"No http.alias present for {environment} environment in {manifest}, skipping...", fg="cyan"
+                        ),
+                    )
+                else:
+                    click.secho("Domains listed in manifest file", fg="cyan", underline=True)
+                    click.secho(
+                        "  " + "\n  ".join(aliases),
+                        fg="yellow",
+                        bold=True,
+                    )
+                    subdomains.extend(aliases)
     return subdomains
 
 
@@ -555,7 +567,7 @@ def assign(app, domain_profile, project_profile, svc, env):
     ensure_cwd_is_repo_root()
     # Find the Load Balancer name.
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-        project_session, app, svc, env
+        project_session, app, env, svc
     )
     elb_name = load_balancer_configuration["DNSName"]
 
@@ -716,7 +728,7 @@ def find_domain_rules(action, delete, project_profile, env, app, svc):
     elb_client = project_session.client("elbv2")
     acm_client = project_session.client("acm")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 
@@ -884,7 +896,7 @@ def cdn_list(project_profile, env, app, svc):
 
     elb_client = project_session.client("elbv2")
 
-    loadbalancerarn = get_load_balancer_configuration(project_session, app, svc, env)[
+    loadbalancerarn = get_load_balancer_configuration(project_session, app, env, svc)[
         "LoadBalancers"
     ][0]["LoadBalancerArn"]
 

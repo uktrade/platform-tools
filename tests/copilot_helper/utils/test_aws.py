@@ -342,7 +342,8 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     out, _ = capfd.readouterr()
 
     assert (
-        out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this AWS account\n"
+        out == f"There are no clusters for environment {ALPHANUMERIC_ENVIRONMENT_NAME} of "
+        f"application {HYPHENATED_APPLICATION_NAME} in AWS account default\n"
     )
 
 
@@ -355,25 +356,36 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
         get_load_balancer_domain_and_configuration(
             boto3.Session(),
             HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
             ALPHANUMERIC_ENVIRONMENT_NAME,
+            ALPHANUMERIC_SERVICE_NAME,
         )
 
     out, _ = capfd.readouterr()
 
     assert (
-        out == f"There are no services matching {ALPHANUMERIC_SERVICE_NAME} in this aws account\n"
+        out == f"There are no services called {ALPHANUMERIC_SERVICE_NAME} for environment "
+        f"{ALPHANUMERIC_ENVIRONMENT_NAME} of application {HYPHENATED_APPLICATION_NAME} "
+        f"in AWS account default\n"
     )
 
 
 @mock_elbv2
 @mock_ec2
 @mock_ecs
-def test_get_load_balancer_domain_and_configuration(tmp_path):
+@pytest.mark.parametrize(
+    "svc_name",
+    [
+        ALPHANUMERIC_SERVICE_NAME,
+        "test",
+        "test-service",
+        "test-service-name",
+    ],
+)
+def test_get_load_balancer_domain_and_configuration(tmp_path, svc_name):
     cluster_name = (
         f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
     )
-    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{svc_name}-{SERVICE_NAME_SUFFIX}"
     session = boto3.Session()
     mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
     mocked_subnet_id = session.client("ec2").create_subnet(
@@ -405,13 +417,10 @@ def test_get_load_balancer_domain_and_configuration(tmp_path):
 
     with patch("dbt_copilot_helper.utils.aws.open", open_mock):
         domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-            boto3.Session(),
-            HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
-            ALPHANUMERIC_ENVIRONMENT_NAME,
+            boto3.Session(), HYPHENATED_APPLICATION_NAME, ALPHANUMERIC_ENVIRONMENT_NAME, svc_name
         )
 
-    open_mock.assert_called_once_with(f"./copilot/{ALPHANUMERIC_SERVICE_NAME}/manifest.yml", "r")
+    open_mock.assert_called_once_with(f"./copilot/{svc_name}/manifest.yml", "r")
     assert domain_name == "somedomain.tld"
     assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
     assert load_balancer_configuration["LoadBalancerName"] == "foo"
@@ -440,7 +449,7 @@ def test_get_load_balancer_domain_and_configuration_no_domain(
         contents=content,
     )
     with pytest.raises(SystemExit):
-        get_load_balancer_domain_and_configuration("test", "testapp", svc_name, "test")
+        get_load_balancer_domain_and_configuration("test", "testapp", "test", svc_name)
     assert (
         capsys.readouterr().out
         == f"{exp_error}, please check the ./copilot/{svc_name}/manifest.yml file\n"

@@ -470,6 +470,51 @@ def test_configure_success(
 
 
 @pytest.mark.parametrize(
+    "env",
+    ["devnohttp", "devnoalias"],
+)
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
+@patch(
+    "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
+    return_value="arn:1234",
+)
+def test_configure_success_no_http(
+    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, fakefs, env
+):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+        environments:
+          devnohttp:
+            count:
+              range: 2-10
+          devnoalias:
+            http:
+            count:
+              range: 2-10
+        """,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        configure,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            env,
+        ],
+    )
+
+    expected = [
+        "Checking file: copilot/manifest.yml",
+        f"No http.alias present for {env} environment in copilot/manifest.yml, skipping...",
+    ]
+    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
     "env, expected_domain_profile",
     [
         ("dev", "dev"),
@@ -555,7 +600,9 @@ def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
             "dev",
         ],
     )
-    assert result.output.startswith("There are no clusters matching")
+    assert (
+        "There are no clusters for environment dev of application some-app in AWS account foo"
+    ) in result.output
 
 
 @pytest.mark.parametrize(
