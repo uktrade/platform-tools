@@ -1,6 +1,5 @@
 my-opensearch:
   type: opensearch
-  deletion_policy: Delete
   environments:
     default:
       plan: large

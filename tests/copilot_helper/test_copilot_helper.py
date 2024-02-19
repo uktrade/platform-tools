@@ -22,7 +22,6 @@ class TestCopilotHelperCli:
             "bootstrap",
             "check-cloudformation",
             "codebase",
-            "codebuild",
             "conduit",
             "config",
             "copilot",
@@ -30,7 +29,6 @@ class TestCopilotHelperCli:
             "cdn",
             "environment",
             "pipeline",
-            "svc",
             "waf",
             "application"
         ]
