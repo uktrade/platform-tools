@@ -149,29 +149,54 @@ def test_create_addon_client_task(
     )
 
 
-@patch("subprocess.call")
-@patch(
-    "dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-named-arn"
+@pytest.mark.parametrize(
+    "write, admin",
+    [
+        (False, False),
+        (False, True),
+        (True, False),
+        (True, True),
+    ],
 )
-def test_create_addon_client_task_with_addon_name(
-    get_connection_secret_arn, subprocess_call, mock_application
+@pytest.mark.parametrize(
+    "addon_type, addon_name",
+    [
+        ("postgres", "custom-name-postgres"),
+        ("postgres", "custom-name-rds-postgres"),
+        ("redis", "custom-name-redis"),
+        ("opensearch", "custom-name-opensearch"),
+    ],
+)
+@patch("subprocess.call")
+@patch("dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+def test_create_addon_client_task(
+    get_connection_secret_arn,
+    subprocess_call,
+    write,
+    admin,
+    addon_type,
+    addon_name,
+    mock_application,
 ):
-    """Test that, given app, environment and secret name strings,
-    create_addon_client_task calls get_connection_secret_arn with the custom
-    secret name and subsequently subprocess.call with the correct secret ARN."""
+    """Test that, given app, env and permissions, create_addon_client_task calls
+    get_connection_secret_arn with the default secret name and subsequently
+    subprocess.call with the correct secret ARN."""
     from dbt_copilot_helper.commands.conduit import create_addon_client_task
 
-    addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
-    create_addon_client_task(mock_application, "development", "postgres", addon_name, task_name)
-    secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name)
+    create_addon_client_task(
+        mock_application, "development", addon_type, addon_name, task_name, write, admin
+    )
+    secret_name = mock_connection_secret_name(
+        mock_application, addon_type, addon_name, write, admin
+    )
 
     get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
         f"--task-group-name {task_name} "
-        "--image public.ecr.aws/uktrade/tunnel:postgres "
-        "--secrets CONNECTION_SECRET=test-named-arn "
+        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
+        "--secrets CONNECTION_SECRET=test-arn "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -440,7 +465,7 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
         ("opensearch", "custom-name-opensearch"),
     ],
 )
-def test_get_parameter_name(admin, write, addon_type, addon_name, mock_application):
+def test_get_parameter_name(write, admin, addon_type, addon_name, mock_application):
     """Test that get_parameter_name builds the correct parameter name given the
     addon_name, addon_type and permission."""
     from dbt_copilot_helper.commands.conduit import get_parameter_name

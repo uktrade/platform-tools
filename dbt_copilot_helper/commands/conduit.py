@@ -170,10 +170,10 @@ def create_addon_client_task(
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
     if addon_type == "postgres":
-        if write:
-            secret_name += "_APPLICATION_USER"
-        elif not admin:
+        if not write and not admin:
             secret_name += "_READ_ONLY_USER"
+        elif write and not admin:
+            secret_name += "_APPLICATION_USER"
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "

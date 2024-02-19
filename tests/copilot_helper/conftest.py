@@ -301,9 +301,11 @@ def mock_connection_secret_name(
 ):
     secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
     if addon_type == "postgres":
-        if write:
+        if admin:
+            return secret_name
+        elif write:
             return f"{secret_name}_APPLICATION_USER"
-        elif not admin:
+        else:
             return f"{secret_name}_READ_ONLY_USER"
 
     return secret_name
