@@ -13,14 +13,10 @@ from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
 from moto import mock_ssm
 
+from tests.copilot_helper.conftest import add_addon_config_parameter
+from tests.copilot_helper.conftest import mock_connection_secret_name
+from tests.copilot_helper.conftest import mock_parameter_name
 from tests.copilot_helper.conftest import mock_task_name
-
-DEFAULT_ADDON_CONFIG = {
-    "custom-name-postgres": {"type": "aurora-postgres"},
-    "custom-name-rds-postgres": {"type": "aurora-postgres"},
-    "custom-name-opensearch": {"type": "opensearch"},
-    "custom-name-redis": {"type": "redis"},
-}
 
 
 @pytest.mark.parametrize(
@@ -118,24 +114,34 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
         get_connection_secret_arn(mock_application, "development", "POSTGRES")
 
 
+@pytest.mark.parametrize(
+    "addon_type, addon_name",
+    [
+        ("postgres", "custom-name-postgres"),
+        ("postgres", "custom-name-rds-postgres"),
+        ("redis", "custom-name-redis"),
+        ("opensearch", "custom-name-opensearch"),
+    ],
+)
 @patch("subprocess.call")
 @patch("dbt_copilot_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-def test_create_addon_client_task(get_connection_secret_arn, subprocess_call, mock_application):
+def test_create_addon_client_task(
+    get_connection_secret_arn, subprocess_call, addon_type, addon_name, mock_application
+):
     """Test that, given app and environment strings, create_addon_client_task
     calls get_connection_secret_arn with the default secret name and
     subsequently subprocess.call with the correct secret ARN."""
     from dbt_copilot_helper.commands.conduit import create_addon_client_task
 
-    addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
-    create_addon_client_task(mock_application, "development", "postgres", addon_name, task_name)
-    secret_name = _get_secret_name(mock_application, "postgres", addon_name)
+    create_addon_client_task(mock_application, "development", addon_type, addon_name, task_name)
+    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name)
 
     get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
         "copilot task run --app test-application --env development "
         f"--task-group-name {task_name} "
-        "--image public.ecr.aws/uktrade/tunnel:postgres "
+        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "
         "--platform-os linux "
         "--platform-arch arm64",
@@ -158,7 +164,7 @@ def test_create_addon_client_task_with_addon_name(
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
     create_addon_client_task(mock_application, "development", "postgres", addon_name, task_name)
-    secret_name = _get_secret_name(mock_application, "postgres", addon_name)
+    secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name)
 
     get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
@@ -355,7 +361,7 @@ def test_update_conduit_stack_resources(
 
     mock_stack(addon_name)
     task_name = mock_task_name(addon_name)
-    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
 
     update_conduit_stack_resources(
         mock_application, "development", addon_type, addon_name, task_name, parameter_name
@@ -386,7 +392,7 @@ def test_get_or_create_task_name(mock_application):
     from dbt_copilot_helper.commands.conduit import get_or_create_task_name
 
     addon_name = "app-postgres"
-    parameter_name = _get_parameter_name(mock_application, "postgres", addon_name)
+    parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
         Name=parameter_name,
@@ -407,12 +413,44 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     from dbt_copilot_helper.commands.conduit import get_or_create_task_name
 
     addon_name = "app-postgres"
-    parameter_name = _get_parameter_name(mock_application, "postgres", addon_name)
+    parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
     task_name = get_or_create_task_name(mock_application, "development", addon_name, parameter_name)
     random_id = task_name.rsplit("-", 1)[1]
 
     assert task_name.rsplit("-", 1)[0] == mock_task_name("app-postgres").rsplit("-", 1)[0]
     assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
+
+
+@mock_ssm
+@pytest.mark.parametrize(
+    "write, admin",
+    [
+        (False, False),
+        (False, True),
+        (True, False),
+        (True, True),
+    ],
+)
+@pytest.mark.parametrize(
+    "addon_type, addon_name",
+    [
+        ("postgres", "custom-name-postgres"),
+        ("postgres", "custom-name-rds-postgres"),
+        ("redis", "custom-name-redis"),
+        ("opensearch", "custom-name-opensearch"),
+    ],
+)
+def test_get_parameter_name(admin, write, addon_type, addon_name, mock_application):
+    """Test that get_parameter_name builds the correct parameter name given the
+    addon_name, addon_type and permission."""
+    from dbt_copilot_helper.commands.conduit import get_parameter_name
+
+    parameter_name = get_parameter_name(
+        mock_application, "development", addon_type, addon_name, write, admin
+    )
+    assert parameter_name == mock_parameter_name(
+        mock_application, addon_type, addon_name, write, admin
+    )
 
 
 @pytest.mark.parametrize(
@@ -506,7 +544,7 @@ def test_start_conduit(
 
     addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
-    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
@@ -561,7 +599,7 @@ def test_start_conduit_with_custom_addon_name(
     from dbt_copilot_helper.commands.conduit import start_conduit
 
     task_name = mock_task_name("custom-addon-name")
-    parameter_name = _get_parameter_name(mock_application, addon_type, "custom-addon-name")
+    parameter_name = mock_parameter_name(mock_application, addon_type, "custom-addon-name")
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, "custom-addon-name")
@@ -667,7 +705,7 @@ def test_start_conduit_when_no_secret_exists(
     addon_name = addon_type.upper()
     create_addon_client_task.side_effect = SecretNotFoundConduitError
     task_name = mock_task_name(addon_name)
-    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
@@ -720,7 +758,7 @@ def test_start_conduit_when_no_custom_addon_secret_exists(
 
     create_addon_client_task.side_effect = SecretNotFoundConduitError
     task_name = mock_task_name("custom-addon-name")
-    parameter_name = _get_parameter_name(mock_application, addon_type, "custom-addon-name")
+    parameter_name = mock_parameter_name(mock_application, addon_type, "custom-addon-name")
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(SecretNotFoundConduitError):
@@ -774,7 +812,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     addon_name = addon_type.upper()
     connect_to_addon_client_task.side_effect = CreateTaskTimeoutConduitError
     task_name = mock_task_name(addon_name)
-    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     with pytest.raises(CreateTaskTimeoutConduitError):
@@ -832,7 +870,7 @@ def test_start_conduit_when_addon_client_task_is_already_running(
 
     addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
-    parameter_name = _get_parameter_name(mock_application, addon_type, addon_name)
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
@@ -871,7 +909,7 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     calls start_conduit with app, env, addon type and addon name."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
 
     CliRunner().invoke(
         conduit,
@@ -914,7 +952,7 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name
 
     start_conduit.side_effect = NoClusterConduitError
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -960,7 +998,7 @@ def test_conduit_command_when_no_connection_secret_exists(
 
     start_conduit.side_effect = SecretNotFoundConduitError(addon_name)
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -1007,7 +1045,7 @@ def test_conduit_command_when_client_task_fails_to_start(
 
     start_conduit.side_effect = CreateTaskTimeoutConduitError
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
@@ -1039,7 +1077,7 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     invalid the conduit command handles the exception."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    _add_addon_config_parameter({"custom-name-postgres": {"type": "nope"}})
+    add_addon_config_parameter({"custom-name-postgres": {"type": "nope"}})
 
     result = CliRunner().invoke(
         conduit,
@@ -1072,7 +1110,7 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
     command handles the exception."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    _add_addon_config_parameter({"non-existent-addon": {"type": "redis"}})
+    add_addon_config_parameter({"non-existent-addon": {"type": "redis"}})
 
     result = CliRunner().invoke(
         conduit,
@@ -1162,7 +1200,7 @@ def test_conduit_command_flags(
     addon name and the correct boolean values."""
     from dbt_copilot_helper.commands.conduit import conduit
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
 
     CliRunner().invoke(
         conduit,
@@ -1196,7 +1234,7 @@ def test_get_addon_type(addon_name, expected_type, mock_application):
     """Test that get_addon_type returns the expected addon type."""
     from dbt_copilot_helper.commands.conduit import get_addon_type
 
-    _add_addon_config_parameter()
+    add_addon_config_parameter()
     addon_type = get_addon_type(mock_application, "development", addon_name)
 
     assert addon_type == expected_type
@@ -1209,7 +1247,7 @@ def test_get_addon_type_when_addon_not_found(mock_application):
     from dbt_copilot_helper.commands.conduit import AddonNotFoundConduitError
     from dbt_copilot_helper.commands.conduit import get_addon_type
 
-    _add_addon_config_parameter({"different-name": {"type": "redis"}})
+    add_addon_config_parameter({"different-name": {"type": "redis"}})
 
     with pytest.raises(AddonNotFoundConduitError):
         get_addon_type(mock_application, "development", "custom-name-postgres")
@@ -1231,33 +1269,3 @@ def test_get_addon_type_when_parameter_not_found(mock_application):
 
     with pytest.raises(ParameterNotFoundConduitError):
         get_addon_type(mock_application, "development", "custom-name-postgres")
-
-
-def _add_addon_config_parameter(param_value=None):
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name=f"/copilot/applications/test-application/environments/development/addons",
-        Type="String",
-        Value=json.dumps(param_value or DEFAULT_ADDON_CONFIG),
-    )
-
-
-def _get_secret_name(
-    mock_application, addon_type, addon_name, write: bool = False, admin: bool = False
-):
-    secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
-    if addon_type == "postgres":
-        if write:
-            return f"{secret_name}_APPLICATION_USER"
-        elif not admin:
-            return f"{secret_name}_READ_ONLY_USER"
-
-    return secret_name
-
-
-def _get_parameter_name(app, addon_type, addon_name):
-    addon_name = addon_name.replace("-", "_").upper()
-    if addon_type == "postgres":
-        return f"/copilot/{app.name}/development/conduits/{addon_name}_READ_ONLY"
-    else:
-        return f"/copilot/{app.name}/development/conduits/{addon_name}"

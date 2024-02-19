@@ -283,6 +283,49 @@ def mock_task_name(addon_name):
     return f"conduit-test-application-development-{addon_name}-tq7vzeigl2vf"
 
 
+def mock_parameter_name(app, addon_type, addon_name, write: bool = False, admin: bool = False):
+    addon_name = addon_name.replace("-", "_").upper()
+    if addon_type == "postgres":
+        permission = "READ_ONLY"
+        if admin:
+            permission = "ADMIN"
+        elif write:
+            permission = "WRITE"
+        return f"/copilot/{app.name}/development/conduits/{addon_name}_{permission}"
+    else:
+        return f"/copilot/{app.name}/development/conduits/{addon_name}"
+
+
+def mock_connection_secret_name(
+    mock_application, addon_type, addon_name, write: bool = False, admin: bool = False
+):
+    secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
+    if addon_type == "postgres":
+        if write:
+            return f"{secret_name}_APPLICATION_USER"
+        elif not admin:
+            return f"{secret_name}_READ_ONLY_USER"
+
+    return secret_name
+
+
+def add_addon_config_parameter(param_value=None):
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name=f"/copilot/applications/test-application/environments/development/addons",
+        Type="String",
+        Value=json.dumps(
+            param_value
+            or {
+                "custom-name-postgres": {"type": "aurora-postgres"},
+                "custom-name-rds-postgres": {"type": "aurora-postgres"},
+                "custom-name-opensearch": {"type": "opensearch"},
+                "custom-name-redis": {"type": "redis"},
+            }
+        ),
+    )
+
+
 def mock_codestar_connection_response(app_name):
     return {
         "ConnectionName": app_name,
