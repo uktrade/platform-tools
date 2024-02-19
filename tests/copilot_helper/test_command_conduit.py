@@ -1135,6 +1135,55 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
 
 @mock_ssm
 @pytest.mark.parametrize(
+    "addon_type, addon_name, flags, expected_write, expected_admin",
+    [
+        ("postgres", "custom-name-postgres", ["--write"], True, False),
+        ("postgres", "custom-name-postgres", ["--admin"], False, True),
+        ("postgres", "custom-name-postgres", ["--write", "--admin"], True, True),
+        ("postgres", "custom-name-postgres", [], False, False),
+    ],
+)
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+@patch("dbt_copilot_helper.commands.conduit.start_conduit")
+def test_conduit_command_flags(
+    start_conduit,
+    addon_type,
+    addon_name,
+    flags,
+    expected_write,
+    expected_admin,
+    validate_version,
+    mock_application,
+):
+    """Test that given an app, env, addon name strings and optional permission
+    flags, the conduit command calls start_conduit with app, env, addon type,
+    addon name and the correct boolean values."""
+    from dbt_copilot_helper.commands.conduit import conduit
+
+    _add_addon_config_parameter()
+
+    CliRunner().invoke(
+        conduit,
+        [
+            addon_name,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+        ]
+        + flags,
+    )
+
+    validate_version.assert_called_once()
+    start_conduit.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, expected_write, expected_admin
+    )
+
+
+@mock_ssm
+@pytest.mark.parametrize(
     "addon_name, expected_type",
     [
         ("custom-name-postgres", "postgres"),
