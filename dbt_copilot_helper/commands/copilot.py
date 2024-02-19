@@ -123,17 +123,8 @@ def _validate_and_normalise_config(config_file):
         normalised_config[addon_name] = copy.deepcopy(addon_config)
 
         if "services" in normalised_config[addon_name]:
-            if type(normalised_config[addon_name]["services"]) == str:
-                if normalised_config[addon_name]["services"] == "__all__":
-                    normalised_config[addon_name]["services"] = svc_names
-                else:
-                    click.echo(
-                        click.style(
-                            f"{addon_name}.services must be a list of service names or '__all__'",
-                            fg="red",
-                        ),
-                    )
-                    exit(1)
+            if normalised_config[addon_name]["services"] == "__all__":
+                normalised_config[addon_name]["services"] = svc_names
 
             if not set(normalised_config[addon_name]["services"]).issubset(set(svc_names)):
                 click.echo(
