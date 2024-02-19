@@ -35,7 +35,7 @@ ls ./copilot/environments/addons
 
 echo -e "\nAssume demodjango-executionrole"
 aws sts assume-role \
-    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:role/demodjango-executionrole" \
+    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:stackset/demodjango-executionrole" \
     --role-session-name "copilot-tools-regression-pipeline-$CODEBUILD_BUILD_NUMBER"
 
 echo -e "\nRun copilot env init"
