@@ -41,10 +41,7 @@ def get_query_results(env, app, profile, query_string):
     end_time = int((date_time - timedelta(minutes=4)).timestamp())
 
     click.echo(
-        click.style(
-            "Date & Time:  ",
-            fg="cyan",
-        )
+        click.style("Date & Time:  ", fg="cyan")
         + click.style(f"{datetime.utcfromtimestamp(start_time)}", fg="cyan", bold=True)
     )
 
@@ -57,10 +54,7 @@ def get_query_results(env, app, profile, query_string):
     )
 
     # Need to wait approx 5 seconds for the query to be available.
-    click.secho(
-        "waiting 5s...",
-        fg="cyan",
-    )
+    click.secho("waiting 5s...", fg="cyan")
     time.sleep(5)
 
     cpu_response = logs_client.get_query_results(queryId=cpu_response_id["queryId"])
@@ -88,26 +82,16 @@ def stats_long(env, app, project_profile, storage, network):
     cpu_response = get_query_results(env, app, project_profile, query_string)
 
     click.echo(
-        click.style(
-            f"\n{'Name:':<20}",
-            fg="green",
-        )
-        + click.style(f"{app}", fg="green", bold=True)
+        click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
     )
 
     click.echo(
-        click.style(
-            f"{'Environment:':<20}",
-            fg="green",
-        )
+        click.style(f"{'Environment:':<20}", fg="green")
         + click.style(f"{env}", fg="green", bold=True)
     )
 
     click.echo(
-        click.style(
-            f"{'No of instances:':<20}",
-            fg="green",
-        )
+        click.style(f"{'No of instances:':<20}", fg="green")
         + click.style(len(cpu_response["results"]), fg="green", bold=True)
     )
 
@@ -143,17 +127,11 @@ def stats_long(env, app, project_profile, storage, network):
             != cpu_response["results"][end_index][0]["value"]
         ):
             click.echo(
-                click.style(
-                    f"\n{'Type:':<10}",
-                    fg="green",
-                )
+                click.style(f"\n{'Type:':<10}", fg="green")
                 + click.style(f"{cont_name_short}", fg="green", bold=True)
             )
 
-            click.secho(
-                f"{'Task ID:':<10}{task}",
-                fg="green",
-            )
+            click.secho(f"{'Task ID:':<10}{task}", fg="green")
             heading = f"{'Container Name':<35}{'CPU':<10}{'Memory':<10}{'Revision':<12}"
 
             # Optional parameters.
@@ -163,10 +141,7 @@ def stats_long(env, app, project_profile, storage, network):
                 heading += f"{'Net Read':<12}{'Net Write':<12}"
             heading += "Image"
 
-            click.secho(
-                heading,
-                fg="cyan",
-            )
+            click.secho(heading, fg="cyan")
 
         # Print container stats
         result = f"{cont_name:<35}" + f"{cpu:<10}" + f"{memory:<10}" + f"{task_def_revision:<12}"
@@ -178,10 +153,7 @@ def stats_long(env, app, project_profile, storage, network):
             result += f"{network_read:<12}{network_write:<12}"
         result += f"{image}"
 
-        click.secho(
-            result,
-            fg="yellow",
-        )
+        click.secho(result, fg="yellow")
         index = index + 1
 
 
@@ -200,18 +172,11 @@ def stats(env, app, project_profile, disk, storage, network):
     cpu_response = get_query_results(env, app, project_profile, query_string)
 
     click.echo(
-        click.style(
-            f"\n{'Name:':<20}",
-            fg="green",
-        )
-        + click.style(f"{app}", fg="green", bold=True)
+        click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
     )
 
     click.echo(
-        click.style(
-            f"{'No of instances:':<20}",
-            fg="green",
-        )
+        click.style(f"{'No of instances:':<20}", fg="green")
         + click.style(len(cpu_response["results"]), fg="green", bold=True)
     )
 
@@ -224,10 +189,7 @@ def stats(env, app, project_profile, disk, storage, network):
     if network:
         heading += f"{'Net Read':<12}{'Net Write':<12}"
 
-    click.secho(
-        heading,
-        fg="cyan",
-    )
+    click.secho(heading, fg="cyan")
     for (
         task,
         taskdef,
@@ -258,7 +220,4 @@ def stats(env, app, project_profile, disk, storage, network):
         if network:
             result += f"{network_read['value']:<12}{network_write['value']:<12}"
 
-        click.secho(
-            result,
-            fg="yellow",
-        )
+        click.secho(result, fg="yellow")
