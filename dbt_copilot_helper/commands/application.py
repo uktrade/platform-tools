@@ -70,7 +70,7 @@ def get_query_results(env, app, profile, query_string):
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def application():
-    """Application metrics"""
+    """Application metrics."""
     check_copilot_helper_version_needs_update()
 
 
