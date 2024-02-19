@@ -84,7 +84,6 @@ def test_load_and_validate_config_invalid_file():
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@pytest.mark.xdist_group(name="fileaccess")
 def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
@@ -158,7 +157,6 @@ def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentia
 
 @mock_sts
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and an environment not found in that
     file, migrate_secrets outputs the expected error message."""
@@ -175,7 +173,6 @@ def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credential
 
 @mock_sts
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_service_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and a secret not found in that file,
     migrate_secrets outputs the expected error message."""
@@ -202,7 +199,6 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_param_doesnt_exist(
     client,
     get_paas_env_vars,
@@ -235,7 +231,6 @@ def test_migrate_secrets_param_doesnt_exist(
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_param_already_exists(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -268,7 +263,6 @@ def test_migrate_secrets_param_already_exists(
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_overwrite(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -310,7 +304,6 @@ def test_migrate_secrets_overwrite(
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_dry_run(
     client, get_paas_env_vars, alias_session, aws_credentials, tmp_path
 ):
@@ -339,7 +332,6 @@ def test_migrate_secrets_dry_run(
 @mock_sts
 @patch("dbt_copilot_helper.commands.bootstrap.get_paas_env_vars")
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_skips_aws_secrets(
     client,
     get_paas_env_vars_mock,
@@ -370,7 +362,6 @@ def test_migrate_secrets_skips_aws_secrets(
     assert_secret_does_not_exist(bad_secret_name)
 
 
-@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_profile_not_configured(clear_session_cache, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
@@ -382,7 +373,6 @@ def test_migrate_secrets_profile_not_configured(clear_session_cache, tmp_path):
     assert """AWS profile "foo" is not configured.""" in result.output
 
 
-@pytest.mark.xdist_group(name="fileaccess")
 def test_copy_secrets_profile_not_configured(clear_session_cache, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
 
@@ -395,7 +385,6 @@ def test_copy_secrets_profile_not_configured(clear_session_cache, tmp_path):
 
 
 @mock_sts
-@pytest.mark.xdist_group(name="fileaccess")
 def test_copy_secrets_without_new_environment_directory(alias_session, aws_credentials, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
@@ -418,7 +407,6 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
-@pytest.mark.xdist_group(name="fileaccess")
 def test_copy_secrets(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
@@ -466,7 +454,6 @@ def test_copy_secrets(
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
-@pytest.mark.xdist_group(name="fileaccess")
 def test_copy_secrets_skips_aws_secrets(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
@@ -503,7 +490,6 @@ def test_copy_secrets_skips_aws_secrets(
 @patch("dbt_copilot_helper.commands.bootstrap.set_ssm_param")
 @mock_ssm
 @mock_sts
-@pytest.mark.xdist_group(name="fileaccess")
 def test_copy_secrets_with_existing_secret(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
