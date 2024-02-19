@@ -283,6 +283,14 @@ RDS_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
+RETENTION_POLICY = Or(
+    None,
+    {
+        "mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("days", "years", only_one=True): int,
+    },
+)
+
 REDIS_PLANS = Or(
     "micro",
     "micro-ha",
@@ -308,12 +316,12 @@ OPENSEARCH_ENGINE_VERSIONS = Or("2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
 
 S3_BASE = {
     Optional("readonly"): bool,
-    Optional("deletion_policy"): DELETION_POLICY,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
             "bucket_name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
+            Optional("retention_policy"): RETENTION_POLICY,
         }
     },
 }
@@ -385,7 +393,6 @@ RDS_SCHEMA = Schema(
 REDIS_SCHEMA = Schema(
     {
         "type": "redis",
-        Optional("deletion_policy"): DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): REDIS_PLANS,
@@ -446,7 +453,6 @@ class ConditionalSchema(Schema):
 OPENSEARCH_SCHEMA = ConditionalSchema(
     {
         "type": "opensearch",
-        Optional("deletion_policy"): DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
                 Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
