@@ -27,7 +27,7 @@ cd ./demodjango-deploy/
 
 echo -e "\nRun make-addons from copilot-helper"
 export AWS_PROFILE="platform-tools"
-aws configure --profile "$AWS_PROFILE" set account_id "$PLATFORM_TOOLS_ACCOUNT_ID"
+aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 copilot-helper copilot make-addons
@@ -35,7 +35,7 @@ ls ./copilot/environments/addons
 
 echo -e "\nAssume demodjango-executionrole"
 aws sts assume-role \
-    --role-arn "arn:aws:iam::$PLATFORM_TOOLS_ACCOUNT_ID:role/demodjango-executionrole" \
+    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:role/demodjango-executionrole" \
     --role-session-name "copilot-tools-regression-pipeline-$CODEBUILD_BUILD_NUMBER"
 
 echo -e "\nRun copilot env init"
