@@ -13,9 +13,7 @@ from dbt_copilot_helper.utils.versioning import (
 )
 
 
-def get_query_results(env, app, profile, query_string):
-
-    timeout = 15
+def get_query_results(env, app, profile, query_string, timeout):
     label_text = click.style("Waiting for results:", fg="yellow")
     fill_char = click.style("#", fg="yellow")
     empty_char = click.style("-", fg="yellow", dim=True)
@@ -59,15 +57,29 @@ def get_query_results(env, app, profile, query_string):
         queryString=query_string,
     )
 
+    elapsed = 0
     # Need to wait a few seconds for the query to be available, up to timeout value.
-    with click.progressbar(label=label_text, length=timeout, show_eta=False, show_percent=False, fill_char=fill_char, empty_char=empty_char) as progress_bar:
-        while len(logs_client.get_query_results(queryId=cpu_response_id["queryId"])['results']) == 0 and timeout > 0:
+    with click.progressbar(
+        label=label_text,
+        length=timeout,
+        show_eta=False,
+        show_percent=False,
+        fill_char=fill_char,
+        empty_char=empty_char,
+    ) as progress_bar:
+        while (
+            len(logs_client.get_query_results(queryId=cpu_response_id["queryId"])["results"]) == 0
+            and elapsed < timeout
+        ):
             time.sleep(1)
             progress_bar.update(1)
-            timeout = timeout - 1
+            elapsed = elapsed + 1
 
-    if timeout == 0:
-        click.secho("Timeout threshold breached, no results returned.\nExiting...", fg="red")
+    if elapsed == timeout:
+        click.secho(
+            f"Timeout threshold breached, no results returned in {timeout} seconds.\nExiting...",
+            fg="red",
+        )
         exit()
 
     cpu_response = logs_client.get_query_results(queryId=cpu_response_id["queryId"])
@@ -92,7 +104,7 @@ def container_stats(env, app, project_profile, storage, network):
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized) by TaskId, ContainerName, TaskDefinitionFamily, TaskDefinitionRevision, Image, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes | filter Type='Container' | sort TaskId, ContainerName desc"
-    cpu_response = get_query_results(env, app, project_profile, query_string)
+    cpu_response = get_query_results(env, app, project_profile, query_string, 15)
 
     click.echo(
         click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
@@ -182,7 +194,7 @@ def task_stats(env, app, project_profile, disk, storage, network):
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized), max(EphemeralStorageUtilized) by TaskId, TaskDefinitionFamily, TaskDefinitionRevision, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes, KnownStatus | filter Type='Task' | sort TaskId desc"
-    cpu_response = get_query_results(env, app, project_profile, query_string)
+    cpu_response = get_query_results(env, app, project_profile, query_string, 15)
 
     click.echo(
         click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
