@@ -1,8 +1,10 @@
+import pytest
 from click.testing import CliRunner
 
 from dbt_copilot_helper.commands.config import validate
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_running_in_non_copilot_directory():
     result = CliRunner().invoke(validate)
     assert result.output == "Could not find a deployment repository, no checks to run.\n"
