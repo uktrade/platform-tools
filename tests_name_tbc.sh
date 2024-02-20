@@ -33,10 +33,10 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 copilot-helper copilot make-addons
 ls ./copilot/environments/addons
 
-echo -e "\nAssume demodjango-executionrole"
-aws sts assume-role \
-    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:role/demodjango-toolspr-CFNExecutionRole" \
-    --role-session-name "copilot-tools-regression-pipeline-$CODEBUILD_BUILD_NUMBER"
+#echo -e "\nAssume demodjango-executionrole"
+#aws sts assume-role \
+#    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:role/demodjango-adminrole" \
+#    --role-session-name "copilot-tools-regression-pipeline-$CODEBUILD_BUILD_NUMBER"
 
 echo -e "\nRun copilot env init"
 copilot env init --name toolspr --profile $AWS_PROFILE --default-config
