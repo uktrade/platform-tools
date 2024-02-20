@@ -448,12 +448,11 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
 
 @mock_ssm
 @pytest.mark.parametrize(
-    "write, admin",
+    "access",
     [
-        (False, False),
-        (False, True),
-        (True, False),
-        (True, True),
+        "read",
+        "write",
+        "admin",
     ],
 )
 @pytest.mark.parametrize(
@@ -465,17 +464,15 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
         ("opensearch", "custom-name-opensearch"),
     ],
 )
-def test_get_parameter_name(write, admin, addon_type, addon_name, mock_application):
+def test_get_parameter_name(access, addon_type, addon_name, mock_application):
     """Test that get_parameter_name builds the correct parameter name given the
     addon_name, addon_type and permission."""
     from dbt_copilot_helper.commands.conduit import get_parameter_name
 
     parameter_name = get_parameter_name(
-        mock_application, "development", addon_type, addon_name, write, admin
+        mock_application, "development", addon_type, addon_name, access
     )
-    assert parameter_name == mock_parameter_name(
-        mock_application, addon_type, addon_name, write, admin
-    )
+    assert parameter_name == mock_parameter_name(mock_application, addon_type, addon_name, access)
 
 
 @pytest.mark.parametrize(
@@ -582,7 +579,7 @@ def test_start_conduit(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, False, False
+        mock_application, "development", addon_type, addon_name, task_name, "read"
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
         mock_application, "development", task_name
@@ -949,7 +946,7 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
 
     validate_version.assert_called_once()
     start_conduit.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, False, False
+        mock_application, "development", addon_type, addon_name, "read"
     )
 
 
@@ -1198,12 +1195,11 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
 
 @mock_ssm
 @pytest.mark.parametrize(
-    "addon_type, addon_name, flags, expected_write, expected_admin",
+    "addon_type, addon_name, access",
     [
-        ("postgres", "custom-name-postgres", ["--write"], True, False),
-        ("postgres", "custom-name-postgres", ["--admin"], False, True),
-        ("postgres", "custom-name-postgres", ["--write", "--admin"], True, True),
-        ("postgres", "custom-name-postgres", [], False, False),
+        ("postgres", "custom-name-postgres", "read"),
+        ("postgres", "custom-name-postgres", "write"),
+        ("postgres", "custom-name-postgres", "admin"),
     ],
 )
 @patch(
@@ -1214,9 +1210,7 @@ def test_conduit_command_flags(
     start_conduit,
     addon_type,
     addon_name,
-    flags,
-    expected_write,
-    expected_admin,
+    access,
     validate_version,
     mock_application,
 ):
@@ -1229,19 +1223,12 @@ def test_conduit_command_flags(
 
     CliRunner().invoke(
         conduit,
-        [
-            addon_name,
-            "--app",
-            "test-application",
-            "--env",
-            "development",
-        ]
-        + flags,
+        [addon_name, "--app", "test-application", "--env", "development", "--access", f"{access}"],
     )
 
     validate_version.assert_called_once()
     start_conduit.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, expected_write, expected_admin
+        mock_application, "development", addon_type, addon_name, access
     )
 
 

@@ -283,30 +283,21 @@ def mock_task_name(addon_name):
     return f"conduit-test-application-development-{addon_name}-tq7vzeigl2vf"
 
 
-def mock_parameter_name(app, addon_type, addon_name, write: bool = False, admin: bool = False):
+def mock_parameter_name(app, addon_type, addon_name, access: str = "read"):
     addon_name = addon_name.replace("-", "_").upper()
     if addon_type == "postgres":
-        permission = "READ_ONLY"
-        if admin:
-            permission = "ADMIN"
-        elif write:
-            permission = "WRITE"
-        return f"/copilot/{app.name}/development/conduits/{addon_name}_{permission}"
+        return f"/copilot/{app.name}/development/conduits/{addon_name}_{access.upper()}"
     else:
         return f"/copilot/{app.name}/development/conduits/{addon_name}"
 
 
-def mock_connection_secret_name(
-    mock_application, addon_type, addon_name, write: bool = False, admin: bool = False
-):
+def mock_connection_secret_name(mock_application, addon_type, addon_name, access):
     secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
     if addon_type == "postgres":
-        if admin:
-            return secret_name
-        elif write:
-            return f"{secret_name}_APPLICATION_USER"
-        else:
+        if access == "read":
             return f"{secret_name}_READ_ONLY_USER"
+        elif access == "write":
+            return f"{secret_name}_APPLICATION_USER"
 
     return secret_name
 

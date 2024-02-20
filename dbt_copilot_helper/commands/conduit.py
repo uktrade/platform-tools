@@ -52,6 +52,7 @@ CONDUIT_ADDON_TYPES = [
     "aurora-postgres",
     "redis",
 ]
+CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
 def normalise_secret_name(addon_name: str) -> str:
@@ -89,17 +90,10 @@ def get_addon_type(app: Application, env: str, addon_name: str) -> str:
 
 
 def get_parameter_name(
-    app: Application, env: str, addon_type: str, addon_name: str, write: bool, admin: bool
+    app: Application, env: str, addon_type: str, addon_name: str, access: str
 ) -> str:
     if addon_type == "postgres":
-        permission = "READ_ONLY"
-        if admin:
-            permission = "ADMIN"
-        elif write:
-            permission = "WRITE"
-        return (
-            f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_{permission}"
-        )
+        return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_{access.upper()}"
     else:
         return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}"
 
@@ -164,15 +158,14 @@ def create_addon_client_task(
     addon_type: str,
     addon_name: str,
     task_name: str,
-    write: bool = False,
-    admin: bool = False,
+    access: str,
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
 
     if addon_type == "postgres":
-        if not write and not admin:
+        if access == "read":
             secret_name += "_READ_ONLY_USER"
-        elif write and not admin:
+        elif access == "write":
             secret_name += "_APPLICATION_USER"
 
     subprocess.call(
@@ -333,15 +326,14 @@ def start_conduit(
     env: str,
     addon_type: str,
     addon_name: str,
-    write: bool = False,
-    admin: bool = False,
+    access: str = "read",
 ):
     cluster_arn = get_cluster_arn(application, env)
-    parameter_name = get_parameter_name(application, env, addon_type, addon_name, write, admin)
+    parameter_name = get_parameter_name(application, env, addon_type, addon_name, access)
     task_name = get_or_create_task_name(application, env, addon_name, parameter_name)
 
     if not addon_client_is_running(application, env, cluster_arn, task_name):
-        create_addon_client_task(application, env, addon_type, addon_name, task_name, write, admin)
+        create_addon_client_task(application, env, addon_type, addon_name, task_name, access)
         add_stack_delete_policy_to_task_role(application, env, task_name)
         update_conduit_stack_resources(
             application, env, addon_type, addon_name, task_name, parameter_name
@@ -354,16 +346,20 @@ def start_conduit(
 @click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--write", is_flag=True, help="Allow write access to database addons")
-@click.option("--admin", is_flag=True, help="Allow admin access to database addons")
-def conduit(addon_name: str, app: str, env: str, write: bool, admin: bool):
+@click.option(
+    "--access",
+    default="read",
+    type=click.Choice(CONDUIT_ACCESS_OPTIONS),
+    help="Allow write or admin access to database addons",
+)
+def conduit(addon_name: str, app: str, env: str, access: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
     application = load_application(app)
 
     try:
         addon_type = get_addon_type(application, env, addon_name)
-        start_conduit(application, env, addon_type, addon_name, write, admin)
+        start_conduit(application, env, addon_type, addon_name, access)
     except ParameterNotFoundConduitError:
         click.secho(
             f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
