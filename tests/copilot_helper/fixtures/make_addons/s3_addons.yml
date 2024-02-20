@@ -15,6 +15,9 @@ my-s3-bucket:
 
     development:
       bucket_name: my-bucket-dev
+      retention_policy:
+        mode: COMPLIANCE
+        days: 1
 
 my-s3-bucket-with-an-object:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.

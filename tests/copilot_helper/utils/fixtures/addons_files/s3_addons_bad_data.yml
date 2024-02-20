@@ -1,66 +1,106 @@
-my-s3-bucket-1:
+my-s3-bucket-readonly-should-be-bool:
   type: s3
   readonly: 27 # Should be bool
 
-my-s3-bucket-2:
-  type: s3
-  deletion_policy: Retrain # Misspelled
-
-my-s3-bucket-3:
+my-s3-bucket-services-should-be-list:
   type: s3
   services: 33 # Should be a list
 
-my-s3-bucket-4:
+my-s3-bucket-service-should-be-string:
   type: s3
   services:
     - True
 
-my-s3-bucket-5:
+my-s3-bucket-bad-name-suffix:
   type: s3
   environments:
     dev:
       bucket_name: banana-s3alias # Can't end with -s3alias
 
-my-s3-bucket-6:
+my-s3-bucket-bad-deletion-policy:
   type: s3
   environments:
     dev:
       bucket_name: charles
       deletion_policy: False # Should be a valid policy name.
 
-my-s3-bucket-7:
+my-s3-bucket-objects-should-be-list:
   type: s3
   objects: should be a list
 
-my-s3-bucket-8:
+my-s3-bucket-keys-should-be-string:
   type: s3
   objects:
     - key: 777 # Should be a string
 
-my-s3-bucket-9:
+my-s3-bucket-missing-key:
   type: s3
   objects: # key is mandatory
     - body: HEALTHCHECK WORKS!
 
-my-s3-bucket-10:
+my-s3-bucket-body-should-be-string:
   type: s3
   objects:
     - key: healthcheck.txt
       body: False # Should be a string
 
-my-s3-bucket-11:
+my-s3-bucket-invalid-param:
   type: s3
   unknown1: key
 
-my-s3-bucket-12:
+my-s3-bucket-invalid-object-param:
   type: s3
   objects:
   - key: test
     unknown2: key
 
-my-s3-bucket-13:
+my-s3-bucket-invalid-env-param:
   type: s3
   environments:
     dev:
       bucket_name: mandatory
       unknown3: key
+
+my-s3-bucket-retention-should-be-dict:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy: bad-policy
+
+my-s3-bucket-invalid-retention-mode:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        mode: BAD_MODE
+        days: 1
+
+my-s3-bucket-invalid-param-combo:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        mode: COMPLIANCE
+        days: 1
+        years: 1
+
+my-s3-bucket-days-should-be-int:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        mode: COMPLIANCE
+        days: three
+
+my-s3-bucket-years-should-be-int:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      retention_policy:
+        mode: COMPLIANCE
+        years: one

@@ -1,4 +1,5 @@
 # {% version_info %}
+Transform: AWS::LanguageExtensions
 
 Parameters:
   # Copilot required Parameters...
@@ -16,7 +17,34 @@ Mappings:
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
       DeletionPolicy: {{ config.deletion_policy }}
-{% endfor %}
+  {%- if config.retention_policy %}
+      RetentionMode: {{ config.retention_policy.mode }}
+    {%- if config.retention_policy.days %}
+      RetentionDurationType: Days
+      RetentionDuration: {{ config.retention_policy.days }}
+    {%- else %}
+      RetentionDurationType: Years
+      RetentionDuration: {{ config.retention_policy.years }}
+    {%- endif %}
+  {%- endif %}
+{%- endfor %}
+
+Conditions:
+  {{ addon_config.prefix }}ApplyRetentionPolicy: !Not
+    - !Equals
+      - !FindInMap
+        - {{ addon_config.prefix }}EnvironmentConfigMap
+        - !Ref Env
+        - RetentionMode
+        - DefaultValue: No retention
+      - No retention
+  {{ addon_config.prefix }}RetentionPolicyDurationIsInDays: !Equals
+    - !FindInMap
+      - {{ addon_config.prefix }}EnvironmentConfigMap
+      - !Ref Env
+      - RetentionDurationType
+      - DefaultValue: Days
+    - Days
 
 Resources:
   {{ addon_config.prefix }}KMSKey:
@@ -58,6 +86,24 @@ Resources:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: aws:kms
             KMSMasterKeyID: !Ref {{ addon_config.prefix }}KMSKey
+      ObjectLockConfiguration:
+        !If
+        - {{ addon_config.prefix }}ApplyRetentionPolicy
+        - ObjectLockEnabled: Enabled
+          Rule:
+            DefaultRetention: !If
+              - {{ addon_config.prefix }}RetentionPolicyDurationIsInDays
+              - Mode: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RetentionMode]
+                Days: !FindInMap
+                  - {{ addon_config.prefix }}EnvironmentConfigMap
+                  - !Ref Env
+                  - RetentionDuration
+              - Mode: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RetentionMode]
+                Years: !FindInMap
+                  - {{ addon_config.prefix }}EnvironmentConfigMap
+                  - !Ref Env
+                  - RetentionDuration
+        - !Ref AWS::NoValue
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
