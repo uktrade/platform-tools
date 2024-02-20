@@ -14,6 +14,12 @@ from dbt_copilot_helper.utils.versioning import (
 
 
 def get_query_results(env, app, profile, query_string):
+
+    timeout = 15
+    label_text = click.style("Waiting for results:", fg="yellow")
+    fill_char = click.style("#", fg="yellow")
+    empty_char = click.style("-", fg="yellow", dim=True)
+
     project_session = get_aws_session_or_abort(profile)
 
     click.secho(
@@ -53,9 +59,16 @@ def get_query_results(env, app, profile, query_string):
         queryString=query_string,
     )
 
-    # Need to wait approx 5 seconds for the query to be available.
-    click.secho("waiting 5s...", fg="cyan")
-    time.sleep(5)
+    # Need to wait a few seconds for the query to be available, up to timeout value.
+    with click.progressbar(label=label_text, length=timeout, show_eta=False, show_percent=False, fill_char=fill_char, empty_char=empty_char) as progress_bar:
+        while len(logs_client.get_query_results(queryId=cpu_response_id["queryId"])['results']) == 0 and timeout > 0:
+            time.sleep(1)
+            progress_bar.update(1)
+            timeout = timeout - 1
+
+    if timeout == 0:
+        click.secho("Timeout threshold breached, no results returned.\nExiting...", fg="red")
+        exit()
 
     cpu_response = logs_client.get_query_results(queryId=cpu_response_id["queryId"])
 
