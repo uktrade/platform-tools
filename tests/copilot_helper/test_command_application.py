@@ -161,20 +161,16 @@ def test_stats(alias_session):
     result = runner.invoke(task_stats, ["--app", "app", "--project-profile", "foo", "--env", "env"])
 
     assert (
-        "beat      cc8c4319890d4700a94fa7ed8c8949ee   10        RUNNING     3.6%      193M"
-        in result.output
+        "beat     cc8c4319890d4700a94fa7ed8c8949ee  10        RUNNING  3.6%   193M" in result.output
     )
     assert (
-        "web       25aa2186290d4be3bda996a8bb5b83f9   15        RUNNING     6.5%      361M"
-        in result.output
+        "web      25aa2186290d4be3bda996a8bb5b83f9  15        RUNNING  6.5%   361M" in result.output
     )
     assert (
-        "s3proxy   0ae6a9d6ad9042e0b10a73cc8ac448c2   10        RUNNING     14.9%     281M"
-        in result.output
+        "s3proxy  0ae6a9d6ad9042e0b10a73cc8ac448c2  10        RUNNING  14.9%  281M" in result.output
     )
     assert (
-        "worker    b69144bc79b04b1ba29e548abfcfa157   10        RUNNING     1.6%      352M"
-        in result.output
+        "worker   b69144bc79b04b1ba29e548abfcfa157  10        RUNNING  1.6%   352M" in result.output
     )
 
 
@@ -190,19 +186,19 @@ def test_stats_all_options(alias_session):
     )
 
     assert (
-        "beat      cc8c4319890d4700a94fa7ed8c8949ee   10        RUNNING     3.6%      193M      121540608   0           1692606     613"
+        "beat     cc8c4319890d4700a94fa7ed8c8949ee  10        RUNNING  3.6%   193M    121540608  0           1692606   613"
         in result.output
     )
     assert (
-        "web       25aa2186290d4be3bda996a8bb5b83f9   15        RUNNING     6.5%      361M      280645632   8192        2458539     1114"
+        "web      25aa2186290d4be3bda996a8bb5b83f9  15        RUNNING  6.5%   361M    280645632  8192        2458539   1114"
         in result.output
     )
     assert (
-        "s3proxy   0ae6a9d6ad9042e0b10a73cc8ac448c2   10        RUNNING     14.9%     281M      726413312   8192        1552221     2415"
+        "s3proxy  0ae6a9d6ad9042e0b10a73cc8ac448c2  10        RUNNING  14.9%  281M    726413312  8192        1552221   2415"
         in result.output
     )
     assert (
-        "worker    b69144bc79b04b1ba29e548abfcfa157   10        RUNNING     1.6%      352M      122626048   196608      2130282     712"
+        "worker   b69144bc79b04b1ba29e548abfcfa157  10        RUNNING  1.6%   352M    122626048  196608      2130282   712"
         in result.output
     )
 
@@ -218,19 +214,19 @@ def test_container_stats(alias_session):
     )
 
     assert (
-        "intranet-hotfix-beat               193.0%    2.14M     121540608   0\n\nType:     10\nTask ID:  b69144bc79b04b1ba29e548abfcfa157"
+        "intranet-hotfix-beat  193.0%  2.14M   121540608  0     \n\nType:     10\nTask ID:  b69144bc79b04b1ba29e548abfcfa157"
         in result.output
     )
     assert (
-        "intranet-hotfix-web                361.0%    4.09M     280645632   8192\n\nType:     15\nTask ID:  6dfa2088ba0f4ae7aca1d08405f3615e"
+        "intranet-hotfix-web  361.0%  4.09M   280645632  8192  \n\nType:     15\nTask ID:  6dfa2088ba0f4ae7aca1d08405f3615e"
         in result.output
     )
     assert (
-        "intranet-hotfix-worker             352.0%    2.14M     122626048   196608\n\nType:     15\nTask ID:  67e49dd9af094474bad8f58eb6d6061e"
+        "intranet-hotfix-worker  352.0%  2.14M   122626048  196608 \n\nType:     15\nTask ID:  67e49dd9af094474bad8f58eb6d6061e"
         in result.output
     )
     assert (
-        "intranet-hotfix-web                355.0%    4.07M     251211776   8192\n\nType:     10\nTask ID:  0ae6a9d6ad9042e0b10a73cc8ac448c2"
+        "intranet-hotfix-web  355.0%  4.07M   251211776  8192  \n\nType:     10\nTask ID:  0ae6a9d6ad9042e0b10a73cc8ac448c2"
         in result.output
     )
 
@@ -246,19 +242,7 @@ def test_container_stats_all_options(alias_session):
         ["--app", "app", "--project-profile", "foo", "--env", "env", "--storage", "--network"],
     )
 
-    assert (
-        "intranet-hotfix-beat               193.0%    2.14M     121540608   1692606     613"
-        in result.output
-    )
-    assert (
-        "intranet-hotfix-web                361.0%    4.09M     280645632   2458539     1114"
-        in result.output
-    )
-    assert (
-        "intranet-hotfix-worker             352.0%    2.14M     122626048   2130282     712"
-        in result.output
-    )
-    assert (
-        "intranet-hotfix-web                355.0%    4.07M     251211776   1070550     1390"
-        in result.output
-    )
+    assert "intranet-hotfix-beat  193.0%  2.14M   121540608  1692606    613" in result.output
+    assert "intranet-hotfix-web  361.0%  4.09M   280645632  2458539    1114" in result.output
+    assert "intranet-hotfix-worker  352.0%  2.14M   122626048  2130282    712" in result.output
+    assert "intranet-hotfix-web  355.0%  4.07M   251211776  1070550    1390" in result.output

@@ -5,12 +5,16 @@ from datetime import datetime
 from datetime import timedelta
 
 import click
+from prettytable import PrettyTable
 
 from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
+
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
 
 
 def get_query_results(env, app, profile, query_string, timeout):
@@ -121,7 +125,6 @@ def container_stats(env, app, project_profile, storage, network):
     )
 
     index = 0
-
     for field in cpu_response["results"]:
         # Not all containers have an image not present, so need to pad.
         if len(field) == 10:
@@ -145,40 +148,73 @@ def container_stats(env, app, project_profile, storage, network):
         else:
             end_index = 0
 
-        # If its a new task then display the headings.
+        # If its a new task then create new table and display the headings.
         if (
             index == 0
             or cpu_response["results"][index][0]["value"]
             != cpu_response["results"][end_index][0]["value"]
         ):
+            result_table = PrettyTable()
             click.echo(
                 click.style(f"\n{'Type:':<10}", fg="green")
                 + click.style(f"{cont_name_short}", fg="green", bold=True)
             )
 
-            click.secho(f"{'Task ID:':<10}{task}", fg="green")
-            heading = f"{'Container Name':<35}{'CPU':<10}{'Memory':<10}{'Revision':<12}"
+            click.echo(
+                click.style(f"{'Task ID:':<10}", fg="green")
+                + click.style(f"{task}", fg="green", bold=True)
+                + "\n"
+            )
+
+            heading_fields = [
+                f"{CYAN}Container Name",
+                f"{CYAN}CPU",
+                f"{CYAN}Memory",
+                f"{CYAN}Revision",
+            ]
 
             # Optional parameters.
             if storage:
-                heading += f"{'Dsk Read':<12}{'Dsk Write':<12}"
+                heading_fields.append(f"{CYAN}Disk Read")
+                heading_fields.append(f"{CYAN}Disk Write")
             if network:
-                heading += f"{'Net Read':<12}{'Net Write':<12}"
-            heading += "Image"
+                heading_fields.append(f"{CYAN}Net Read")
+                heading_fields.append(f"{CYAN}Net Write")
 
-            click.secho(heading, fg="cyan")
+            heading_fields.append(f"{CYAN}Image")
+
+            result_table.field_names = heading_fields
+            for item in heading_fields:
+                result_table.align[f"{item}"] = "l"
+            result_table.border = False
 
         # Print container stats
-        result = f"{cont_name:<35}" + f"{cpu:<10}" + f"{memory:<10}" + f"{task_def_revision:<12}"
+        values = [
+            f"{YELLOW}{cont_name}",
+            f"{YELLOW}{cpu}",
+            f"{YELLOW}{memory}",
+            f"{YELLOW}{task_def_revision}",
+        ]
 
         # Optional stats.
         if storage:
-            result += f"{storage_read:<12}{storage_write:<12}"
+            values.append(f"{storage_read}")
+            values.append(f"{storage_write}")
         if network:
-            result += f"{network_read:<12}{network_write:<12}"
-        result += f"{image}"
+            values.append(f"{network_read}")
+            values.append(f"{network_write}")
+        values.append(f"{image}")
 
-        click.secho(result, fg="yellow")
+        result_table.add_row(values)
+
+        # Print table when new task is next or at end of loop.
+        if (
+            index == len(cpu_response["results"]) - 1
+            or cpu_response["results"][index][0]["value"]
+            != cpu_response["results"][index + 1][0]["value"]
+        ):
+            click.secho(result_table)
+
         index = index + 1
 
 
@@ -203,18 +239,36 @@ def task_stats(env, app, project_profile, disk, storage, network):
     click.echo(
         click.style(f"{'No of instances:':<20}", fg="green")
         + click.style(len(cpu_response["results"]), fg="green", bold=True)
+        + "\n"
     )
 
-    # Add to title if additional parameters are used.
-    heading = f"\n{'Type':<10}{'TaskID':<35}{'Revision':<10}{'Status':<12}{'CPU':<10}{'Memory':<10}"
-    if disk:
-        heading += f"{'Disk':<10}"
-    if storage:
-        heading += f"{'Dsk Read':<12}{'Dsk Write':<12}"
-    if network:
-        heading += f"{'Net Read':<12}{'Net Write':<12}"
+    result_table = PrettyTable()
+    heading_fields = [
+        f"{CYAN}Type",
+        f"{CYAN}TaskID",
+        f"{CYAN}Revision",
+        f"{CYAN}Status",
+        f"{CYAN}CPU",
+        f"{CYAN}Memory",
+    ]
 
-    click.secho(heading, fg="cyan")
+    # Add to heading if additional parameters are used.
+    if disk:
+        heading_fields.append(f"{CYAN}Disk")
+    if storage:
+        heading_fields.append(f"{CYAN}Disk Read")
+        heading_fields.append(f"{CYAN}Disk Write")
+    if network:
+        heading_fields.append(f"{CYAN}Net Read")
+        heading_fields.append(f"{CYAN}Net Write")
+
+    result_table.field_names = heading_fields
+
+    for item in heading_fields:
+        result_table.align[f"{item}"] = "l"
+
+    result_table.border = False
+
     for (
         task,
         taskdef,
@@ -228,21 +282,25 @@ def task_stats(env, app, project_profile, disk, storage, network):
         memory,
         dsk,
     ) in cpu_response["results"]:
-        result = (
-            f"{taskdef['value'].split('-')[-1]:<10}"
-            + f"{task['value']:<35}"
-            + f"{task_def_revision['value']:<10}"
-            + f"{status['value']:<12}"
-            + f"{'%.1f' % float(cpu['value']) + '%':<10}"
-            + f"{memory['value'] + 'M':<10}"
-        )
+        values = [
+            f"{YELLOW}{taskdef['value'].split('-')[-1]}",
+            f"{YELLOW}{task['value']}",
+            f"{YELLOW}{task_def_revision['value']}",
+            f"{YELLOW}{status['value']}",
+            f"{YELLOW}{'%.1f' % float(cpu['value']) + '%'}",
+            f"{YELLOW}{memory['value'] + 'M'}",
+        ]
 
         # Optional stats.
         if disk:
-            result += f"{dsk['value'] + 'G':<10}"
+            values.append(f"{dsk['value'] + 'G'}")
         if storage:
-            result += f"{storage_read['value']:<12}{storage_write['value']:<12}"
+            values.append(f"{storage_read['value']}")
+            values.append(f"{storage_write['value']}")
         if network:
-            result += f"{network_read['value']:<12}{network_write['value']:<12}"
+            values.append(f"{network_read['value']}")
+            values.append(f"{network_write['value']}")
 
-        click.secho(result, fg="yellow")
+        result_table.add_row(values)
+
+    click.secho(result_table)
