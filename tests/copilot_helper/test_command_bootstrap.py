@@ -66,6 +66,7 @@ def test_get_paas_env_vars_exception():
     assert err.value.args[0] == f"Application {paas} not found"
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_load_and_validate_config_invalid_file():
     """Test that, given the path to an invalid yaml file,
     load_and_validate_config raises a SchemaError with specific field errors."""
@@ -133,6 +134,7 @@ def test_make_config(tmp_path):
 
 @mock_sts
 @patch("dbt_copilot_helper.utils.cloudfoundry.CloudFoundryClient")
+@pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentials, tmp_path):
     """Test that when login fails, a helpful message is printed and the command
     aborts."""
