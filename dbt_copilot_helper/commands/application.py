@@ -87,7 +87,7 @@ def application():
 @click.option("--project-profile", type=str, required=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
-def stats_long(env, app, project_profile, storage, network):
+def container_stats(env, app, project_profile, storage, network):
     """Command to get application container level metrics."""
 
     # Query string to get the required container stats
@@ -177,7 +177,7 @@ def stats_long(env, app, project_profile, storage, network):
 @click.option("--disk", is_flag=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
-def stats(env, app, project_profile, disk, storage, network):
+def task_stats(env, app, project_profile, disk, storage, network):
     """Command to get application task level metrics."""
 
     # Query string to get the required container stats

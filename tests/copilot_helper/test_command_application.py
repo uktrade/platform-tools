@@ -7,8 +7,8 @@ from moto import mock_logs
 from moto import mock_sts
 
 from dbt_copilot_helper.commands.application import get_query_results
-from dbt_copilot_helper.commands.application import stats
-from dbt_copilot_helper.commands.application import stats_long
+from dbt_copilot_helper.commands.application import task_stats
+from dbt_copilot_helper.commands.application import container_stats
 
 
 @mock_logs
@@ -159,7 +159,7 @@ def test_get_query_results(alias_session):
 )
 def test_stats(alias_session):
     runner = CliRunner()
-    result = runner.invoke(stats, ["--app", "app", "--project-profile", "foo", "--env", "env"])
+    result = runner.invoke(task_stats, ["--app", "app", "--project-profile", "foo", "--env", "env"])
 
     assert (
         "beat      cc8c4319890d4700a94fa7ed8c8949ee   10        RUNNING     3.6%      193M"
@@ -296,7 +296,7 @@ def test_stats(alias_session):
 def test_stats_all_options(alias_session):
     runner = CliRunner()
     result = runner.invoke(
-        stats,
+        task_stats,
         ["--app", "app", "--project-profile", "foo", "--env", "env", "--storage", "--network"],
     )
 
@@ -432,9 +432,9 @@ def test_stats_all_options(alias_session):
         },
     },
 )
-def test_stats_long(alias_session):
+def test_container_stats(alias_session):
     runner = CliRunner()
-    result = runner.invoke(stats_long, ["--app", "app", "--project-profile", "foo", "--env", "env"])
+    result = runner.invoke(container_stats, ["--app", "app", "--project-profile", "foo", "--env", "env"])
 
     assert (
         "intranet-hotfix-beat               193.0%    2.14M     121540608   0\n\nType:     10\nTask ID:  b69144bc79b04b1ba29e548abfcfa157"
@@ -568,10 +568,10 @@ def test_stats_long(alias_session):
         },
     },
 )
-def test_stats_long_all_options(alias_session):
+def test_container_stats_all_options(alias_session):
     runner = CliRunner()
     result = runner.invoke(
-        stats_long,
+        container_stats,
         ["--app", "app", "--project-profile", "foo", "--env", "env", "--storage", "--network"],
     )
 
