@@ -1,6 +1,5 @@
 my-redis:
   type: redis
-  deletion_policy: Delete
   environments:
     default:
       engine: '6.2'

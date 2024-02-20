@@ -372,15 +372,11 @@ class TestMakeAddonCommand:
         ],
     )
     @pytest.mark.parametrize(
-        "deletion_policy, deletion_policy_override, expected_deletion_policy",
+        "deletion_policy_override, expected_deletion_policy",
         [
-            (None, None, "Delete"),
-            ("Delete", None, "Delete"),
-            (None, "Delete", "Delete"),
-            ("Retain", None, "Retain"),
-            (None, "Retain", "Retain"),
-            ("Delete", "Retain", "Retain"),
-            ("Retain", "Delete", "Delete"),
+            (None, "Delete"),
+            ("Retain", "Retain"),
+            ("Delete", "Delete"),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
@@ -403,15 +399,12 @@ class TestMakeAddonCommand:
         fakefs,
         addon_file,
         addon_name,
-        deletion_policy,
         deletion_policy_override,
         expected_deletion_policy,
     ):
         """Test that deletion policy defaults and overrides are applied
         correctly."""
         addon_file_contents = yaml.safe_load(addon_file)
-        if deletion_policy:
-            addon_file_contents[addon_name]["deletion_policy"] = deletion_policy
         if deletion_policy_override:
             for env in addon_file_contents[addon_name]["environments"]:
                 addon_file_contents[addon_name]["environments"][env][
