@@ -150,12 +150,11 @@ def test_create_addon_client_task(
 
 
 @pytest.mark.parametrize(
-    "write, admin",
+    "access",
     [
-        (False, False),
-        (False, True),
-        (True, False),
-        (True, True),
+        "read",
+        "write",
+        "admin",
     ],
 )
 @pytest.mark.parametrize(
@@ -172,8 +171,7 @@ def test_create_addon_client_task(
 def test_create_addon_client_task(
     get_connection_secret_arn,
     subprocess_call,
-    write,
-    admin,
+    access,
     addon_type,
     addon_name,
     mock_application,
@@ -185,11 +183,9 @@ def test_create_addon_client_task(
 
     task_name = mock_task_name(addon_name)
     create_addon_client_task(
-        mock_application, "development", addon_type, addon_name, task_name, write, admin
+        mock_application, "development", addon_type, addon_name, task_name, access
     )
-    secret_name = mock_connection_secret_name(
-        mock_application, addon_type, addon_name, write, admin
-    )
+    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
     get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
     subprocess_call.assert_called_once_with(
@@ -223,6 +219,7 @@ def test_create_addon_client_task_when_no_secret_found(
             "postgres",
             "named-postgres",
             mock_task_name("named-postgres"),
+            "read",
         )
 
         subprocess_call.assert_not_called()
@@ -538,10 +535,11 @@ def test_connect_to_addon_client_task_when_timeout_reached(
 
 
 @pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
+    "addon_type, addon_name",
+    [("postgres", "app-postgres"), ("redis", "app-redis"), ("opensearch", "app-opensearch")],
 )
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
 @patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
@@ -555,8 +553,10 @@ def test_start_conduit(
     create_addon_client_task,
     addon_client_is_running,
     get_or_create_task_name,
+    get_parameter_name,
     get_cluster_arn,
     addon_type,
+    addon_name,
     mock_application,
 ):
     """Test that given app, env and addon type strings, start_conduit calls
@@ -564,14 +564,17 @@ def test_start_conduit(
     add_stack_delete_policy_to_task_role and connect_to_addon_client_task."""
     from dbt_copilot_helper.commands.conduit import start_conduit
 
-    addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
-    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    get_parameter_name.side_effect = [parameter_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, "read"
+    )
     get_or_create_task_name.assert_called_once_with(
         mock_application, "development", addon_name, parameter_name
     )
@@ -596,62 +599,8 @@ def test_start_conduit(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
-@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
-@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
-@patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
-@patch("dbt_copilot_helper.commands.conduit.update_conduit_stack_resources")
-def test_start_conduit_with_custom_addon_name(
-    update_conduit_stack_resources,
-    add_stack_delete_policy_to_task_role,
-    connect_to_addon_client_task,
-    create_addon_client_task,
-    addon_client_is_running,
-    get_or_create_task_name,
-    get_cluster_arn,
-    addon_type,
-    mock_application,
-):
-    """Test that given app, env, addon type and addon name strings,
-    start_conduit calls get_cluster_arn, addon_client_is_running,
-    created_addon_client_task, connect_to_addon_client_task and
-    add_stack_delete_policy_to_task_role."""
-    from dbt_copilot_helper.commands.conduit import start_conduit
-
-    task_name = mock_task_name("custom-addon-name")
-    parameter_name = mock_parameter_name(mock_application, addon_type, "custom-addon-name")
-    get_or_create_task_name.side_effect = [task_name]
-
-    start_conduit(mock_application, "development", addon_type, "custom-addon-name")
-
-    get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(
-        mock_application, "development", "custom-addon-name", parameter_name
-    )
-    addon_client_is_running.assert_called_with(
-        mock_application, "development", "test-arn", task_name
-    )
-    create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name, False, False
-    )
-    add_stack_delete_policy_to_task_role.assert_called_once_with(
-        mock_application, "development", task_name
-    )
-    update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name, parameter_name
-    )
-    connect_to_addon_client_task.assert_called_once_with(
-        mock_application, "development", "test-arn", task_name
-    )
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
 @patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
@@ -665,6 +614,7 @@ def test_start_conduit_when_no_cluster_present(
     create_addon_client_task,
     addon_client_is_running,
     get_or_create_task_name,
+    get_parameter_name,
     get_cluster_arn,
     addon_type,
     mock_application,
@@ -686,6 +636,7 @@ def test_start_conduit_when_no_cluster_present(
         start_conduit(mock_application, "development", addon_type, "custom-addon-name")
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_not_called()
     get_or_create_task_name.assert_not_called()
     addon_client_is_running.assert_not_called()
     create_addon_client_task.assert_not_called()
@@ -695,10 +646,11 @@ def test_start_conduit_when_no_cluster_present(
 
 
 @pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
+    "addon_type, addon_name",
+    [("postgres", "app-postgres"), ("redis", "app-redis"), ("opensearch", "app-opensearch")],
 )
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
 @patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
@@ -712,8 +664,10 @@ def test_start_conduit_when_no_secret_exists(
     create_addon_client_task,
     addon_client_is_running,
     get_or_create_task_name,
+    get_parameter_name,
     get_cluster_arn,
     addon_type,
+    addon_name,
     mock_application,
 ):
     """Test that given app, env, addon type and no available secret,
@@ -724,16 +678,19 @@ def test_start_conduit_when_no_secret_exists(
     from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
     from dbt_copilot_helper.commands.conduit import start_conduit
 
-    addon_name = addon_type.upper()
-    create_addon_client_task.side_effect = SecretNotFoundConduitError
     task_name = mock_task_name(addon_name)
-    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    get_parameter_name.side_effect = [parameter_name]
 
+    create_addon_client_task.side_effect = SecretNotFoundConduitError
     with pytest.raises(SecretNotFoundConduitError):
         start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, "read"
+    )
     get_or_create_task_name.assert_called_once_with(
         mock_application, "development", addon_name, parameter_name
     )
@@ -741,7 +698,7 @@ def test_start_conduit_when_no_secret_exists(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, False, False
+        mock_application, "development", addon_type, addon_name, task_name, "read"
     )
     add_stack_delete_policy_to_task_role.assert_not_called()
     update_conduit_stack_resources.assert_not_called()
@@ -749,63 +706,11 @@ def test_start_conduit_when_no_secret_exists(
 
 
 @pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
+    "addon_type, addon_name",
+    [("postgres", "app-postgres"), ("redis", "app-redis"), ("opensearch", "app-opensearch")],
 )
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
-@patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
-@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
-@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
-@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
-@patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
-@patch("dbt_copilot_helper.commands.conduit.update_conduit_stack_resources")
-def test_start_conduit_when_no_custom_addon_secret_exists(
-    update_conduit_stack_resources,
-    add_stack_delete_policy_to_task_role,
-    connect_to_addon_client_task,
-    create_addon_client_task,
-    addon_client_is_running,
-    get_or_create_task_name,
-    get_cluster_arn,
-    addon_type,
-    mock_application,
-):
-    """Test that given app, env, addon type, addon name and no available custom
-    addon secret, start_conduit calls get_cluster_arn, then
-    addon_client_is_running, create_addon_client_task and the
-    NoConnectionSecretError is raised and add_stack_delete_policy_to_task_role
-    and connect_to_addon_client_task are not called."""
-    from dbt_copilot_helper.commands.conduit import SecretNotFoundConduitError
-    from dbt_copilot_helper.commands.conduit import start_conduit
-
-    create_addon_client_task.side_effect = SecretNotFoundConduitError
-    task_name = mock_task_name("custom-addon-name")
-    parameter_name = mock_parameter_name(mock_application, addon_type, "custom-addon-name")
-    get_or_create_task_name.side_effect = [task_name]
-
-    with pytest.raises(SecretNotFoundConduitError):
-        start_conduit(mock_application, "development", addon_type, "custom-addon-name")
-
-    get_cluster_arn.assert_called_once_with(mock_application, "development")
-    get_or_create_task_name.assert_called_once_with(
-        mock_application, "development", "custom-addon-name", parameter_name
-    )
-    addon_client_is_running.assert_called_with(
-        mock_application, "development", "test-arn", task_name
-    )
-    create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, "custom-addon-name", task_name, False, False
-    )
-    add_stack_delete_policy_to_task_role.assert_not_called()
-    update_conduit_stack_resources.assert_not_called()
-    connect_to_addon_client_task.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
 @patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
@@ -819,8 +724,10 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     create_addon_client_task,
     addon_client_is_running,
     get_or_create_task_name,
+    get_parameter_name,
     get_cluster_arn,
     addon_type,
+    addon_name,
     mock_application,
 ):
     """Test that given app, env, and addon type strings when the client task
@@ -831,16 +738,19 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
     from dbt_copilot_helper.commands.conduit import CreateTaskTimeoutConduitError
     from dbt_copilot_helper.commands.conduit import start_conduit
 
-    addon_name = addon_type.upper()
-    connect_to_addon_client_task.side_effect = CreateTaskTimeoutConduitError
     task_name = mock_task_name(addon_name)
-    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    get_parameter_name.side_effect = [parameter_name]
 
+    connect_to_addon_client_task.side_effect = CreateTaskTimeoutConduitError
     with pytest.raises(CreateTaskTimeoutConduitError):
         start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, "read"
+    )
     get_or_create_task_name.assert_called_once_with(
         mock_application, "development", addon_name, parameter_name
     )
@@ -848,7 +758,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
         mock_application, "development", "test-arn", task_name
     )
     create_addon_client_task.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, False, False
+        mock_application, "development", addon_type, addon_name, task_name, "read"
     )
     add_stack_delete_policy_to_task_role.assert_called_once_with(
         mock_application, "development", task_name
@@ -862,10 +772,11 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
 
 
 @pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
+    "addon_type, addon_name",
+    [("postgres", "app-postgres"), ("redis", "app-redis"), ("opensearch", "app-opensearch")],
 )
 @patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
 @patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
 @patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
 @patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=True)
@@ -879,8 +790,10 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     addon_client_is_running,
     create_addon_client_task,
     get_or_create_task_name,
+    get_parameter_name,
     get_cluster_arn,
     addon_type,
+    addon_name,
     mock_application,
 ):
     """Test that given app, env, and addon type strings when the client task is
@@ -890,14 +803,17 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     called."""
     from dbt_copilot_helper.commands.conduit import start_conduit
 
-    addon_name = addon_type.upper()
     task_name = mock_task_name(addon_name)
-    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
     get_or_create_task_name.side_effect = [task_name]
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    get_parameter_name.side_effect = [parameter_name]
 
     start_conduit(mock_application, "development", addon_type, addon_name)
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, "read"
+    )
     get_or_create_task_name.assert_called_once_with(
         mock_application, "development", addon_name, parameter_name
     )
@@ -907,6 +823,72 @@ def test_start_conduit_when_addon_client_task_is_already_running(
     create_addon_client_task.assert_not_called()
     add_stack_delete_policy_to_task_role.assert_not_called()
     update_conduit_stack_resources.assert_not_called()
+    connect_to_addon_client_task.assert_called_once_with(
+        mock_application, "development", "test-arn", task_name
+    )
+
+
+@pytest.mark.parametrize(
+    "access",
+    ["read", "write", "admin"],
+)
+@pytest.mark.parametrize(
+    "addon_type, addon_name",
+    [("postgres", "app-postgres"), ("redis", "app-redis"), ("opensearch", "app-opensearch")],
+)
+@patch("dbt_copilot_helper.commands.conduit.get_cluster_arn", return_value="test-arn")
+@patch("dbt_copilot_helper.commands.conduit.get_parameter_name")
+@patch("dbt_copilot_helper.commands.conduit.get_or_create_task_name")
+@patch("dbt_copilot_helper.commands.conduit.addon_client_is_running", return_value=False)
+@patch("dbt_copilot_helper.commands.conduit.create_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.connect_to_addon_client_task")
+@patch("dbt_copilot_helper.commands.conduit.add_stack_delete_policy_to_task_role")
+@patch("dbt_copilot_helper.commands.conduit.update_conduit_stack_resources")
+def test_start_conduit_with_access_permissions(
+    update_conduit_stack_resources,
+    add_stack_delete_policy_to_task_role,
+    connect_to_addon_client_task,
+    create_addon_client_task,
+    addon_client_is_running,
+    get_or_create_task_name,
+    get_parameter_name,
+    get_cluster_arn,
+    addon_type,
+    addon_name,
+    access,
+    mock_application,
+):
+    """Test that given app, env, addon type and access, start_conduit calls
+    get_cluster_arn, addon_client_is_running, created_addon_client_task,
+    add_stack_delete_policy_to_task_role and connect_to_addon_client_task."""
+    from dbt_copilot_helper.commands.conduit import start_conduit
+
+    task_name = mock_task_name(addon_name)
+    get_or_create_task_name.side_effect = [task_name]
+    parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    get_parameter_name.side_effect = [parameter_name]
+
+    start_conduit(mock_application, "development", addon_type, addon_name, access)
+
+    get_cluster_arn.assert_called_once_with(mock_application, "development")
+    get_parameter_name.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, access
+    )
+    get_or_create_task_name.assert_called_once_with(
+        mock_application, "development", addon_name, parameter_name
+    )
+    addon_client_is_running.assert_called_with(
+        mock_application, "development", "test-arn", task_name
+    )
+    create_addon_client_task.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, task_name, access
+    )
+    add_stack_delete_policy_to_task_role.assert_called_once_with(
+        mock_application, "development", task_name
+    )
+    update_conduit_stack_resources.assert_called_once_with(
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name
+    )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
     )
