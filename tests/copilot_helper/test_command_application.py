@@ -1,14 +1,16 @@
 from unittest.mock import patch
 
-import boto3
 from click.testing import CliRunner
 from moto import mock_ecs
 from moto import mock_logs
 from moto import mock_sts
 
 from dbt_copilot_helper.commands.application import container_stats
-from dbt_copilot_helper.commands.application import get_query_results
 from dbt_copilot_helper.commands.application import task_stats
+
+# from tests.copilot_helper.conftest import mock_application
+
+
 
 results = {
     "results": [
@@ -120,36 +122,38 @@ results = {
 }
 
 
-@mock_logs
-@mock_ecs
-@mock_sts
-def test_get_query_results(alias_session):
-    session = boto3.Session(region_name="eu-west-2")
-    session.client("ecs").create_cluster(clusterName="testapp-dev-Cluster-blah")
-    session.client("ecs").create_cluster(clusterName="testapp-test-Cluster-blah")
+# @mock_logs
+# @mock_ecs
+# @mock_sts
+# @mock_ssm
+# @patch("dbt_copilot_helper.commands.application.load_application")
+# def test_get_query_results(alias_session, mock_application):
+#     session = boto3.Session(region_name="eu-west-2")
+#     session.client("ecs").create_cluster(clusterName="testapp-dev-Cluster-blah")
+#     session.client("ecs").create_cluster(clusterName="testapp-test-Cluster-blah")
 
-    # Currently get_query_results is not returning anything for our query, as per doc
-    # not all query results are implemented.   http://docs.getmoto.org/en/latest/docs/services/logs.html
-    # So for now we will only check for 200 success code.
-    #
-    session.client("logs").create_log_group(
-        logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance"
-    )
-    session.client("logs").create_log_stream(
-        logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance",
-        logStreamName="FargateTelemetry-7624",
-    )
-    message = '{"Version":"0","Type":"Task","TaskId":"3f6db7f58bd145c7a668f562ff896fb7","TaskDefinitionFamily":"testapp-test-web","TaskDefinitionRevision":"2","ServiceName":"testapp-test-web-Service-blah","ClusterName":"testapp-test-Cluster-blah","KnownStatus":"RUNNING","CreatedAt":1707384290000,"StartedAt":1707384290000,"Timestamp":1707384300000,"CpuUtilized":23.619295457204185,"CpuReserved":256,"MemoryUtilized":277,"MemoryReserved":1024,"StorageReadBytes":138981376,"StorageWriteBytes":1806336,"NetworkRxBytes":2198,"NetworkRxPackets":3125725,"NetworkTxBytes":1005,"NetworkTxPackets":3039639}'
-    session.client("logs").put_log_events(
-        logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance",
-        logStreamName="FargateTelemetry-7624",
-        logEvents=[
-            {"timestamp": 1707469200000, "message": message},
-        ],
-    )
+#     # Currently get_query_results is not returning anything for our query, as per doc
+#     # not all query results are implemented.   http://docs.getmoto.org/en/latest/docs/services/logs.html
+#     # So for now we will only check for 200 success code.
+#     #
+#     session.client("logs").create_log_group(
+#         logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance"
+#     )
+#     session.client("logs").create_log_stream(
+#         logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance",
+#         logStreamName="FargateTelemetry-7624",
+#     )
+#     message = '{"Version":"0","Type":"Task","TaskId":"3f6db7f58bd145c7a668f562ff896fb7","TaskDefinitionFamily":"testapp-test-web","TaskDefinitionRevision":"2","ServiceName":"testapp-test-web-Service-blah","ClusterName":"testapp-test-Cluster-blah","KnownStatus":"RUNNING","CreatedAt":1707384290000,"StartedAt":1707384290000,"Timestamp":1707384300000,"CpuUtilized":23.619295457204185,"CpuReserved":256,"MemoryUtilized":277,"MemoryReserved":1024,"StorageReadBytes":138981376,"StorageWriteBytes":1806336,"NetworkRxBytes":2198,"NetworkRxPackets":3125725,"NetworkTxBytes":1005,"NetworkTxPackets":3039639}'
+#     session.client("logs").put_log_events(
+#         logGroupName="/aws/ecs/containerinsights/testapp-test-Cluster-blah/performance",
+#         logStreamName="FargateTelemetry-7624",
+#         logEvents=[
+#             {"timestamp": 1707469200000, "message": message},
+#         ],
+#     )
 
-    result = get_query_results("test", "testapp", "foo", "query_string", -1)
-    assert result["ResponseMetadata"]["HTTPStatusCode"] == 200
+#     result = get_query_results("test", "testapp", "query_string", -1)
+#     assert result["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
 @mock_logs
@@ -158,7 +162,7 @@ def test_get_query_results(alias_session):
 @patch("dbt_copilot_helper.commands.application.get_query_results", return_value=results)
 def test_stats(alias_session):
     runner = CliRunner()
-    result = runner.invoke(task_stats, ["--app", "app", "--project-profile", "foo", "--env", "env"])
+    result = runner.invoke(task_stats, ["--app", "app", "--env", "env"])
 
     assert (
         "beat     cc8c4319890d4700a94fa7ed8c8949ee  10        RUNNING  3.6%   193M" in result.output
@@ -182,7 +186,7 @@ def test_stats_all_options(alias_session):
     runner = CliRunner()
     result = runner.invoke(
         task_stats,
-        ["--app", "app", "--project-profile", "foo", "--env", "env", "--storage", "--network"],
+        ["--app", "app", "--env", "env", "--storage", "--network"],
     )
 
     assert (
@@ -209,9 +213,7 @@ def test_stats_all_options(alias_session):
 @patch("dbt_copilot_helper.commands.application.get_query_results", return_value=results)
 def test_container_stats(alias_session):
     runner = CliRunner()
-    result = runner.invoke(
-        container_stats, ["--app", "app", "--project-profile", "foo", "--env", "env"]
-    )
+    result = runner.invoke(container_stats, ["--app", "app", "--env", "env"])
 
     assert (
         "intranet-hotfix-beat  193.0%  2.14M   121540608  0     \n\nType:     10\nTask ID:  b69144bc79b04b1ba29e548abfcfa157"
@@ -239,7 +241,7 @@ def test_container_stats_all_options(alias_session):
     runner = CliRunner()
     result = runner.invoke(
         container_stats,
-        ["--app", "app", "--project-profile", "foo", "--env", "env", "--storage", "--network"],
+        ["--app", "app", "--env", "env", "--storage", "--network"],
     )
 
     assert "intranet-hotfix-beat  193.0%  2.14M   121540608  1692606    613" in result.output

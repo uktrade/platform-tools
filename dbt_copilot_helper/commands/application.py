@@ -7,7 +7,7 @@ from datetime import timedelta
 import click
 from prettytable import PrettyTable
 
-from dbt_copilot_helper.utils.aws import get_aws_session_or_abort
+from dbt_copilot_helper.utils.application import load_application
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
@@ -17,15 +17,16 @@ YELLOW = "\033[93m"
 CYAN = "\033[96m"
 
 
-def get_query_results(env, app, profile, query_string, timeout):
+def get_query_results(env, app, query_string, timeout):
     label_text = click.style("Waiting for results:", fg="yellow")
     fill_char = click.style("#", fg="yellow")
     empty_char = click.style("-", fg="yellow", dim=True)
 
-    project_session = get_aws_session_or_abort(profile)
+    application = load_application(app)
+    project_session = application.environments[env].session
 
     click.secho(
-        f"Showing status for app {app} in aws account {profile}",
+        f"Showing status for app {app}",
         fg="green",
     )
     logs_client = project_session.client("logs")
@@ -100,15 +101,14 @@ def application():
 @application.command()
 @click.option("--env", type=str, required=True)
 @click.option("--app", type=str, required=True)
-@click.option("--project-profile", type=str, required=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
-def container_stats(env, app, project_profile, storage, network):
+def container_stats(env, app, storage, network):
     """Command to get application container level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized) by TaskId, ContainerName, TaskDefinitionFamily, TaskDefinitionRevision, Image, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes | filter Type='Container' | sort TaskId, ContainerName desc"
-    cpu_response = get_query_results(env, app, project_profile, query_string, 15)
+    cpu_response = get_query_results(env, app, query_string, 15)
 
     click.echo(
         click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
@@ -221,16 +221,15 @@ def container_stats(env, app, project_profile, storage, network):
 @application.command()
 @click.option("--env", type=str, required=True)
 @click.option("--app", type=str, required=True)
-@click.option("--project-profile", type=str, required=True)
 @click.option("--disk", is_flag=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
-def task_stats(env, app, project_profile, disk, storage, network):
+def task_stats(env, app, disk, storage, network):
     """Command to get application task level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized), max(EphemeralStorageUtilized) by TaskId, TaskDefinitionFamily, TaskDefinitionRevision, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes, KnownStatus | filter Type='Task' | sort TaskId desc"
-    cpu_response = get_query_results(env, app, project_profile, query_string, 15)
+    cpu_response = get_query_results(env, app, query_string, 15)
 
     click.echo(
         click.style(f"\n{'Name:':<20}", fg="green") + click.style(f"{app}", fg="green", bold=True)
