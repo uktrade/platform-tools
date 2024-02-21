@@ -35,6 +35,7 @@ def setup_test_directory():
 
 
 @mock_wafv2
+@pytest.mark.xdist_group(name="fileaccess")
 def test_check_waf():
     session = boto3.Session()
     arn = session.client("wafv2").create_web_acl(
@@ -52,6 +53,7 @@ def test_check_waf():
 
 
 @mock_wafv2
+@pytest.mark.xdist_group(name="fileaccess")
 def test_check_waf_no_arn():
     session = boto3.Session()
     session.client("wafv2").create_web_acl(
@@ -70,6 +72,7 @@ def test_check_waf_no_arn():
 
 @mock_sts
 @mock_wafv2
+@pytest.mark.xdist_group(name="fileaccess")
 def test_attach_waf_no_default(alias_session):
     boto3.Session().client("wafv2").create_web_acl(
         Name="non-default",
@@ -94,6 +97,7 @@ def test_attach_waf_no_default(alias_session):
 @mock_elbv2
 @mock_sts
 @mock_wafv2
+@pytest.mark.xdist_group(name="fileaccess")
 def test_attach_waf(alias_session):
     session = boto3.Session()
     vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
@@ -150,6 +154,7 @@ def test_attach_waf(alias_session):
 
 
 @mock_sts
+@pytest.mark.xdist_group(name="fileaccess")
 def test_custom_waf_file_not_found(alias_session, setup_test_directory):
     runner = CliRunner()
     result = runner.invoke(
@@ -175,6 +180,7 @@ def test_custom_waf_file_not_found(alias_session, setup_test_directory):
 
 @mock_cloudformation
 @mock_sts
+@pytest.mark.xdist_group(name="fileaccess")
 def test_custom_waf_invalid_yml(alias_session, setup_test_directory):
     runner = CliRunner()
     result = runner.invoke(
@@ -205,6 +211,7 @@ def test_custom_waf_invalid_yml(alias_session, setup_test_directory):
 @mock_sts
 @patch("dbt_copilot_helper.commands.waf.get_aws_session_or_abort")
 @patch("dbt_copilot_helper.commands.waf.create_stack")
+@pytest.mark.xdist_group(name="fileaccess")
 def test_custom_waf_cf_stack_already_exists(
     create_stack, get_aws_session_or_abort, alias_session, setup_test_directory
 ):
@@ -235,6 +242,7 @@ def test_custom_waf_cf_stack_already_exists(
 
 @mock_cloudformation
 @mock_sts
+@pytest.mark.xdist_group(name="fileaccess")
 @patch(
     "dbt_copilot_helper.commands.waf.botocore.client.BaseClient._make_api_call",
     return_value={"Stacks": [{"StackStatus": "DELETE_IN_PROGRESS"}]},
@@ -281,6 +289,7 @@ def test_custom_waf_delete_in_progress(
     return_value={"StackId": "abc", "ResponseMetadata": {"HTTPStatusCode": 200}},
 )
 @patch("dbt_copilot_helper.commands.waf.get_aws_session_or_abort")
+@pytest.mark.xdist_group(name="fileaccess")
 def test_custom_waf(
     get_aws_session_or_abort,
     create_stack,
