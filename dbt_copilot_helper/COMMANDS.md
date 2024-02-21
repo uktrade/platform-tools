@@ -354,7 +354,7 @@ copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase>
 
 ```
 copilot-helper conduit <addon_name> 
-                       --app <app> --env <env> 
+                       --app <app> --env <env> [--access (read|write|admin)] 
 ```
 
 ## Arguments
@@ -367,6 +367,8 @@ copilot-helper conduit <addon_name>
   - AWS application name
 - `--env <text>`
   - AWS environment name
+- `--access <choice>` _Defaults to read._
+  - Allow write or admin access to database addons
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
