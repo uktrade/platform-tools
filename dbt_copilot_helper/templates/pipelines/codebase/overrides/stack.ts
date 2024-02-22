@@ -17,6 +17,7 @@ export class TransformedStack extends cdk.Stack {
     public readonly appName: string;
     private pipelineManifest: PipelineManifest;
     private codestarConnection: { arn: string; id: string; };
+    private envManagerRole: string;
     private deployRepository: string;
     private codebaseConfiguration: PipelinesConfiguration['codebases'][0];
     private pipelinesFile: PipelinesConfiguration;
@@ -32,6 +33,7 @@ export class TransformedStack extends cdk.Stack {
         this.loadManifestFiles();
         this.loadCodestarConnection();
         this.loadGitRemote();
+        this.loadEnvManagerRole();
 
         // Alter cloudformation template
         this.createImageBuildProject();
@@ -41,6 +43,8 @@ export class TransformedStack extends cdk.Stack {
         this.updatePipelines();
         this.allowBuildProjectToUseCodestarConnection();
         this.allowPipelineToDescribeECRImages();
+        this.allowPipelineToUseEnvManagerRole();
+        this.allowBuildProjectToUseEnvManagerRole();
         this.uploadPipelineConfiguration();
     }
 
@@ -380,6 +384,24 @@ export class TransformedStack extends cdk.Stack {
         });
     }
 
+    private allowPipelineToUseEnvManagerRole() {
+        const pipelineRolePolicy = this.template.getResource("PipelineRolePolicy") as cdk.aws_iam.CfnPolicy;
+        (pipelineRolePolicy.policyDocument.Statement as Array<any>).push({
+            Effect: 'Allow',
+            Action: ['sts:AssumeRole'],
+            Resource: [this.envManagerRole],
+        });
+    }
+
+    private allowBuildProjectToUseEnvManagerRole() {
+        const buildProjectPolicy = this.template.getResource("BuildProjectPolicy") as cdk.aws_iam.CfnPolicy;
+        (buildProjectPolicy.policyDocument.Statement as Array<any>).push({
+            Effect: 'Allow',
+            Action: ['sts:AssumeRole'],
+            Resource: [this.envManagerRole],
+        });
+    }
+
     private allowPipelineToDescribeECRImages() {
         const pipelineRolePolicy = this.template.getResource("PipelineRolePolicy") as cdk.aws_iam.CfnPolicy;
         pipelineRolePolicy.policyDocument.Statement[0].Action.push('ecr:DescribeImages');
@@ -430,6 +452,10 @@ export class TransformedStack extends cdk.Stack {
         }
 
         this.codestarConnection = {arn: codestarConnectionArn, id: codestarConnectionId};
+    }
+
+    private loadEnvManagerRole() {
+        this.envManagerRole = `arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`;
     }
 
     private loadGitRemote() {
