@@ -31,6 +31,9 @@
 - [copilot-helper environment online](#copilot-helper-environment-online)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
+- [copilot-helper application](#copilot-helper-application)
+- [copilot-helper application container-stats](#copilot-helper-application-container-stats)
+- [copilot-helper application task-stats](#copilot-helper-application-task-stats)
 
 # copilot-helper
 
@@ -49,6 +52,7 @@ copilot-helper <command> [--version]
 
 ## Commands
 
+- [`application` ↪](#copilot-helper-application)
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
 - [`cdn` ↪](#copilot-helper-cdn)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
@@ -739,6 +743,82 @@ copilot-helper pipeline generate
 ```
 
 ## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper application
+
+[↩ Parent](#copilot-helper)
+
+    Application metrics.
+
+## Usage
+
+```
+copilot-helper application (container-stats|task-stats) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`container-stats` ↪](#copilot-helper-application-container-stats)
+- [`task-stats` ↪](#copilot-helper-application-task-stats)
+
+# copilot-helper application container-stats
+
+[↩ Parent](#copilot-helper-application)
+
+    Command to get application container level metrics.
+
+## Usage
+
+```
+copilot-helper application container-stats --env <env> --app <app> 
+                                           [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper application task-stats
+
+[↩ Parent](#copilot-helper-application)
+
+    Command to get application task level metrics.
+
+## Usage
+
+```
+copilot-helper application task-stats --env <env> --app <app> [--disk] 
+                                      [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--disk <boolean>` _Defaults to False._
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
