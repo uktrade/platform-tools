@@ -34,6 +34,9 @@
 - [copilot-helper waf](#copilot-helper-waf)
 - [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
 - [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
+- [copilot-helper application](#copilot-helper-application)
+- [copilot-helper application container-stats](#copilot-helper-application-container-stats)
+- [copilot-helper application task-stats](#copilot-helper-application-task-stats)
 
 # copilot-helper
 
@@ -52,6 +55,7 @@ copilot-helper <command> [--version]
 
 ## Commands
 
+- [`application` ↪](#copilot-helper-application)
 - [`bootstrap` ↪](#copilot-helper-bootstrap)
 - [`cdn` ↪](#copilot-helper-cdn)
 - [`check-cloudformation` ↪](#copilot-helper-check-cloudformation)
@@ -354,7 +358,7 @@ copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase>
 
 ```
 copilot-helper conduit <addon_name> 
-                       --app <app> --env <env> 
+                       --app <app> --env <env> [--access (read|write|admin)] 
 ```
 
 ## Arguments
@@ -367,6 +371,8 @@ copilot-helper conduit <addon_name>
   - AWS application name
 - `--env <text>`
   - AWS environment name
+- `--access <choice>` _Defaults to read._
+  - Allow write or admin access to database addons
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -817,5 +823,81 @@ copilot-helper waf custom-waf --app <app> --env <env> --svc <svc>
   - AWS account profile name for application account
 - `--waf-path <text>`
   - path to waf.yml file
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper application
+
+[↩ Parent](#copilot-helper)
+
+    Application metrics.
+
+## Usage
+
+```
+copilot-helper application (container-stats|task-stats) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`container-stats` ↪](#copilot-helper-application-container-stats)
+- [`task-stats` ↪](#copilot-helper-application-task-stats)
+
+# copilot-helper application container-stats
+
+[↩ Parent](#copilot-helper-application)
+
+    Command to get application container level metrics.
+
+## Usage
+
+```
+copilot-helper application container-stats --env <env> --app <app> 
+                                           [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper application task-stats
+
+[↩ Parent](#copilot-helper-application)
+
+    Command to get application task level metrics.
+
+## Usage
+
+```
+copilot-helper application task-stats --env <env> --app <app> [--disk] 
+                                      [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--disk <boolean>` _Defaults to False._
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
