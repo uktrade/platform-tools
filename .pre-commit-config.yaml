@@ -57,11 +57,3 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-  - repo: local
-    hooks:
-      - id: version_number
-        name: Bump version if necessary
-        entry: poetry run python ./utils/bump_version.py
-        language: system
-        pass_filenames: true
-        always_run: true
