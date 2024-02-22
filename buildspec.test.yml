@@ -14,5 +14,4 @@ phases:
 
   build:
     commands:
-      - echo Running tests
-      - poetry run tox
+      - echo Leaving placeholder here for when we merge https://github.com/uktrade/copilot-tools/pull/309
