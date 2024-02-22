@@ -18,7 +18,3 @@ phases:
       - poetry run tox
       - echo -e "\nRunning regression tests"
       - ./regression_tests/pull_request_tests.sh
-
-
-
-
