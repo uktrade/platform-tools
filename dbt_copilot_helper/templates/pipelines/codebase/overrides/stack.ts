@@ -456,8 +456,6 @@ export class TransformedStack extends cdk.Stack {
         this.codestarConnection = {arn: codestarConnectionArn, id: codestarConnectionId};
     }
 
-
-
     private loadGitRemote() {
         const output = execSync('git remote get-url origin').toString('utf-8');
 
