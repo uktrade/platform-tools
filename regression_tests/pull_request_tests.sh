@@ -31,14 +31,16 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 echo -e "\nRun copilot-helper copilot make-addons"
 copilot-helper copilot make-addons
 
-echo -e "\nRun copilot-helper pipeline generate"
-copilot-helper pipeline generate
+# echo -e "\nRun copilot-helper pipeline generate"
+# copilot-helper pipeline generate
 
 # echo -e "\nRun copilot env init"
 # copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 
-# deploy env
+# deploy pipelines
 
-# deploy services
+# deploy env (ideally with pipelines)
+
+# deploy services (ideally with pipelines)
 
 # run smoke tests
