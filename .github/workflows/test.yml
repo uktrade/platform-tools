@@ -23,6 +23,6 @@ jobs:
           poetry install
 
       - name: Test against Python ${PYTHON_VERSION}
-        run: poetry run tox -e "py${PYTHON_VERSION/./}"
+        run: poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
