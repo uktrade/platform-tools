@@ -17,7 +17,6 @@ export class TransformedStack extends cdk.Stack {
     public readonly appName: string;
     private pipelineManifest: PipelineManifest;
     private codestarConnection: { arn: string; id: string; };
-    private envManagerRole: string;
     private deployRepository: string;
     private codebaseConfiguration: PipelinesConfiguration['codebases'][0];
     private pipelinesFile: PipelinesConfiguration;
@@ -33,7 +32,6 @@ export class TransformedStack extends cdk.Stack {
         this.loadManifestFiles();
         this.loadCodestarConnection();
         this.loadGitRemote();
-        this.loadEnvManagerRole();
 
         // Alter cloudformation template
         this.createImageBuildProject();
@@ -386,20 +384,24 @@ export class TransformedStack extends cdk.Stack {
 
     private allowPipelineToUseEnvManagerRole() {
         const pipelineRolePolicy = this.template.getResource("PipelineRolePolicy") as cdk.aws_iam.CfnPolicy;
-        (pipelineRolePolicy.policyDocument.Statement as Array<any>).push({
-            Effect: 'Allow',
-            Action: ['sts:AssumeRole'],
-            Resource: [this.envManagerRole],
-        });
+        (pipelineRolePolicy.policyDocument.Statement as Array<any>).push(
+            this.getEnvManagerRolePolicyDoc()
+        );
     }
 
     private allowBuildProjectToUseEnvManagerRole() {
         const buildProjectPolicy = this.template.getResource("BuildProjectPolicy") as cdk.aws_iam.CfnPolicy;
-        (buildProjectPolicy.policyDocument.Statement as Array<any>).push({
+        (buildProjectPolicy.policyDocument.Statement as Array<any>).push(
+            this.getEnvManagerRolePolicyDoc()
+        );
+    }
+
+    private getEnvManagerRolePolicyDoc() {
+        return {
             Effect: 'Allow',
             Action: ['sts:AssumeRole'],
-            Resource: [this.envManagerRole],
-        });
+            Resource: [`arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`],
+        };
     }
 
     private allowPipelineToDescribeECRImages() {
@@ -454,9 +456,7 @@ export class TransformedStack extends cdk.Stack {
         this.codestarConnection = {arn: codestarConnectionArn, id: codestarConnectionId};
     }
 
-    private loadEnvManagerRole() {
-        this.envManagerRole = `arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`;
-    }
+
 
     private loadGitRemote() {
         const output = execSync('git remote get-url origin').toString('utf-8');
