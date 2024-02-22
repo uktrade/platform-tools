@@ -3,9 +3,6 @@
 # exit early if something goes wrong
 set -e
 
-# Todo: Make this do something...
-export COPILOT_HELPER_DISABLE_VERSION_CHECK="true"
-
 echo -e "\nBuild and install copilot-helper"
 poetry build --no-interaction --format sdist --no-ansi
 pip install "dist/$(ls -t1 dist | head -1)"
@@ -25,21 +22,17 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAcc
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
 
-echo -e "\nRun make-addons from copilot-helper"
+echo -e "\nConfigure AWS Profile"
 export AWS_PROFILE="platform-tools"
 aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
+
+echo -e "\nRun copilot-helper copilot make-addons"
 copilot-helper copilot make-addons
-ls ./copilot/environments/addons
 
-#echo -e "\nAssume demodjango-executionrole"
-#aws sts assume-role \
-#    --role-arn "arn:aws:iam::$AWS_ACCOUNT_ID:role/demodjango-adminrole" \
-#    --role-session-name "copilot-tools-regression-pipeline-$CODEBUILD_BUILD_NUMBER"
-
-echo -e "\nRun copilot env init"
-copilot env init --name toolspr --profile $AWS_PROFILE --default-config
+# echo -e "\nRun copilot env init"
+# copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 
 # deploy env
 

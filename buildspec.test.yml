@@ -15,9 +15,8 @@ phases:
   build:
     commands:
       - echo Running unit tests
-      - echo TEMPORARILY SKIPPED FOR DEVELOPMENT SPEED
-      # - poetry run tox
-      - ./tests_name_tbc.sh
+      - poetry run tox
+      - ./regression_tests/pull_request_tests.sh
 
 
 
