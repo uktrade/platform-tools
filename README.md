@@ -93,3 +93,4 @@ poetry publish
 Check the [PyPi Release history](https://pypi.org/project/dbt-copilot-tools/#history) to make sure the package has been updated.
 
 For an optional manual check, install the package locally and test everything works as expected.
+
