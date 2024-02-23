@@ -289,260 +289,6 @@ Resources:
       FromPort: 443
       ToPort: 443
 
-  myAuroraDbLambdaFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub "${App}-${Env}-myAuroraDb-aurora-create-user"
-      Handler: index.handler
-      Runtime: python3.11
-      Layers:
-        - arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:1
-      MemorySize: 128
-      Timeout: 10
-      Role: !GetAtt myAuroraDbLambdaFunctionExecutionRole.Arn
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref myAuroraDbDBClusterSecurityGroup
-        SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
-      Code:
-        ZipFile: |
-          import json
-
-          import boto3
-          import cfnresponse
-          import psycopg2
-          from botocore.exceptions import ClientError
-
-
-          def drop_user(cursor):
-              cursor.execute("SELECT * FROM pg_catalog.pg_user WHERE usename = 'application_user'")
-
-              if cursor.fetchone() is not None:
-                  cursor.execute("GRANT application_user TO postgres")
-                  cursor.execute("DROP OWNED BY application_user")
-                  cursor.execute("DROP USER application_user")
-
-
-          def create_db_user(conn, cursor, password):
-              drop_user(cursor)
-
-              cursor.execute("CREATE USER application_user WITH ENCRYPTED PASSWORD '%s'" % password)
-              cursor.execute(
-                  "GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON ALL TABLES IN SCHEMA public TO application_user;")
-              cursor.execute("GRANT application_user to postgres;")
-              cursor.execute(
-                  "ALTER DEFAULT PRIVILEGES FOR USER application_user IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON TABLES TO application_user;")
-              conn.commit()
-
-
-          def create_or_update_application_user_secret(ssm, application_user_secret_name,
-                                                       application_user_secret_string, event):
-              application_user_secret_description = event['ResourceProperties']['SecretDescription']
-              copilot_application = event['ResourceProperties']['CopilotApplication']
-              copilot_environment = event['ResourceProperties']['CopilotEnvironment']
-
-              application_user_secret = None
-
-              try:
-                  application_user_secret = ssm.put_parameter(
-                      Name=application_user_secret_name,
-                      Description=application_user_secret_description,
-                      Value=json.dumps(application_user_secret_string),
-                      Tags=[
-                          {'Key': 'custom:cloudformation:stack-name', 'Value': event["StackId"].split('/')[1]},
-                          {'Key': 'custom:cloudformation:logical-id', 'Value': event["LogicalResourceId"]},
-                          {'Key': 'custom:cloudformation:stack-d', 'Value': event["StackId"]},
-                          {'Key': 'copilot-application', 'Value': copilot_application},
-                          {'Key': 'copilot-environment', 'Value': copilot_environment},
-                      ],
-                      Type="String",
-                  )
-              except ClientError as error:
-                  if error.response["Error"]["Code"] == "ParameterAlreadyExists":
-                      application_user_secret = ssm.put_parameter(
-                          Name=application_user_secret_name,
-                          Description=application_user_secret_description,
-                          Value=json.dumps(application_user_secret_string),
-                          Overwrite=True,
-                      )
-
-              return application_user_secret
-
-
-          def handler(event, context):
-              print("REQUEST RECEIVED:\n" + json.dumps(event))
-
-              db_master_user_secret = event['ResourceProperties']['MasterUserSecret']
-              application_user_secret_name = event['ResourceProperties']['SecretName']
-              application_user_secret_description = event['ResourceProperties']['SecretDescription']
-              copilot_application = event['ResourceProperties']['CopilotApplication']
-              copilot_environment = event['ResourceProperties']['CopilotEnvironment']
-
-              secrets_manager = boto3.client("secretsmanager")
-              ssm = boto3.client("ssm")
-
-              master_user = json.loads(secrets_manager.get_secret_value(SecretId=db_master_user_secret)["SecretString"])
-
-              application_user_password = secrets_manager.get_random_password(
-                  PasswordLength=16,
-                  ExcludeCharacters='[]{}()"@/\;=?&`><:|#',
-                  ExcludePunctuation=True,
-                  IncludeSpace=False,
-              )["RandomPassword"]
-
-              application_user_secret_string = {
-                  "username": "application_user",
-                  "password": application_user_password,
-                  "engine": master_user["engine"],
-                  "port": master_user["port"],
-                  "dbname": master_user["dbname"],
-                  "host": master_user["host"],
-                  "dbClusterIdentifier": master_user["dbClusterIdentifier"]
-              }
-
-              conn = psycopg2.connect(
-                  dbname=master_user["dbname"],
-                  user=master_user["username"],
-                  password=master_user["password"],
-                  host=master_user["host"],
-                  port=master_user["port"]
-              )
-
-              cursor = conn.cursor()
-
-              response = {"Status": "SUCCESS"}
-
-              try:
-                  match event["RequestType"]:
-                      case "Create":
-                          create_db_user(conn, cursor, application_user_password)
-
-                          response = {
-                              **response,
-                              "Data": create_or_update_application_user_secret(
-                                  ssm, application_user_secret_name, application_user_secret_string, event
-                              )
-                          }
-                      case "Update":
-                          create_db_user(conn, cursor, application_user_password)
-
-                          response = {
-                              **response,
-                              "Data": create_or_update_application_user_secret(
-                                  ssm, application_user_secret_name, application_user_secret_string, event
-                              )
-                          }
-                      case "Delete":
-                          drop_user(cursor)
-
-                          response = {
-                              **response,
-                              "Data": ssm.delete_parameter(Name=application_user_secret_name)
-                          }
-                      case _:
-                          response = {"Status": "FAILED",
-                                      "Data": {"Error": f"""Invalid requestType of '${event["RequestType"]}'"""}}
-              except Exception as e:
-                  response = {"Status": "FAILED", "Data": {"Error": str(e)}}
-
-              cursor.close()
-              conn.close()
-
-              print(json.dumps(response, default=str))
-              cfnresponse.send(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
-
-  myAuroraDbApplicationUser:
-    Type: 'Custom::myAuroraDbApplicationUser'
-    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    UpdateReplacePolicy: Retain
-    Properties:
-      ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
-      CopilotApplication: !Sub "${App}"
-      CopilotEnvironment: !Sub "${Env}"
-      MasterUserSecret: !Ref myAuroraDbAuroraSecret
-      SecretDescription: !Sub Aurora application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/MY_AURORA_DB_APPLICATION_USER'
-      DefaultPublicRoute: !Ref DefaultPublicRoute
-      InternetGateway: !Ref InternetGateway
-      InternetGatewayAttachment: !Ref InternetGatewayAttachment
-      PublicRouteTable: !Ref PublicRouteTable
-      PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation
-      PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation
-      Snapshot: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
-    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
-            - E3005
-    DependsOn:
-      - VpcEndpoint
-      - myAuroraDbDBWriterInstance
-      - AdditionalNatGateway1
-      - AdditionalNatGateway2
-      - AdditionalPrivateRoute1
-      - AdditionalPrivateRouteTable1
-      - AdditionalPrivateRouteTable1Association
-      - AdditionalPrivateRoute2
-      - AdditionalPrivateRouteTable2
-      - AdditionalPrivateRouteTable2Association
-      - myAuroraDbSecretAuroraClusterAttachment
-      - myAuroraDbEnvironmentIngress
-      - myAuroraDbSecretsManagerIngress
-      - myAuroraDbLambdaIngress
-      - myAuroraDbSecretsManagerEgress
-      - myAuroraDbLambdaEgress
-      - myAuroraDbHTTPSEgress
-      - myAuroraDbKeyAlias
-
-  myAuroraDbLambdaFunctionExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub "${App}-${Env}-myAuroraDb-aurora-user"
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - 'sts:AssumeRole'
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-      Policies:
-        - PolicyName: !Sub "${App}-${Env}-aurora-user"
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'ec2:CreateNetworkInterface'
-                  - 'ec2:DescribeNetworkInterfaces'
-                  - 'ec2:DeleteNetworkInterface'
-                Resource:
-                  - '*'
-              - Effect: Allow
-                Action:
-                  - 'ssm:DeleteParameter'
-                  - 'ssm:PutParameter'
-                  - 'ssm:AddTagsToResource'
-                  - 'kms:Decrypt'
-                Resource:
-                  - '*'
-              - Effect: Allow
-                Action:
-                  - 'secretsmanager:DescribeSecret'
-                  - 'secretsmanager:GetRandomPassword'
-                  - 'secretsmanager:GetSecretValue'
-                Resource:
-                  - '*'
-              - Effect: Allow
-                Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource: 'arn:aws:logs:*:*:*'
-
   myAuroraDbSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
@@ -553,3 +299,58 @@ Resources:
       FilterName: !Sub '/aws/rds/cluster/${App}/${Env}/${myAuroraDbDBCluster}/postgresql'
       FilterPattern: ''
       DestinationArn: !If [myAuroraDbCreateProdSubFilter, '', '']
+
+Outputs:
+  myAuroraDbDBClusterSecurityGroupName:
+    Description: The name of the db cluster security group
+    Value: !Ref myAuroraDbDBClusterSecurityGroup
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-DBClusterSecurityGroupName"
+
+  myAuroraDbPublicSubnet1RouteTableAssociationName:
+    Description: The name of the first public subnet route table association
+    Value: !Ref PublicSubnet1RouteTableAssociation
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-PublicSubnet1RouteTableAssociationName"
+
+  myAuroraDbPublicSubnet2RouteTableAssociationName:
+    Description: The name of the second public subnet route table association
+    Value: !Ref PublicSubnet2RouteTableAssociation
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-PublicSubnet2RouteTableAssociationName"
+    
+  myAuroraDbAuroraSecretName:
+    Description: Name of Aurora db secret
+    Value: !Ref myAuroraDbAuroraSecret
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-AuroraSecretName"
+
+  myAuroraDbInternetGatewayName:
+    Description: Name of internet gateway
+    Value: !Ref InternetGateway
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-InternetGatewayName"
+  
+  myAuroraDbPublicRouteTableName:
+    Description: Name of public route table
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-PublicRouteTableName"
+  
+  myAuroraDbDefaultPublicRouteName:
+    Description: Name of default public route
+    Value: !Ref DefaultPublicRoute
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-DefaultPublicRouteName"
+    
+  myAuroraDbInternetGatewayAttachmentName:
+    Description: Name of internet gateway attachment
+    Value: !Ref InternetGatewayAttachment
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-InternetGatewayAttachmentName"
+
+  myAuroraDbPrivateSubnetsName:
+    Description: Name of private subnets
+    Value: !Ref PrivateSubnets
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-PrivateSubnetsName"

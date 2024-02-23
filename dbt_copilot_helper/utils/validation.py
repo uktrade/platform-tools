@@ -358,6 +358,7 @@ AURORA_SCHEMA = Schema(
                 Optional("deletion_protection"): DELETION_PROTECTION,
             }
         },
+        Optional("services"): Or("__all__", [str]),
         Optional("objects"): [
             {
                 "key": str,
@@ -381,6 +382,7 @@ RDS_SCHEMA = Schema(
                 Optional("deletion_protection"): DELETION_PROTECTION,
             }
         },
+        Optional("services"): Or("__all__", [str]),
         Optional("objects"): [
             {
                 "key": str,

@@ -256,6 +256,9 @@ def make_addons(directory="."):
             **addon_config,
         }
 
+        if has_postgres_addon:
+            service_addon_config["type"] = addon_type.split("-")[0]
+
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
