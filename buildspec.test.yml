@@ -3,12 +3,12 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo Setting local Python versions
+      - echo -e "\nSetting local Python versions"
       - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
       - |
-        echo Check we are using the latest installed Python 3.x
+        echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - echo Installing dependencies
+      - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
 
