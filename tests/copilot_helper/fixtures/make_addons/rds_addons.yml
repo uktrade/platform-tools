@@ -8,3 +8,5 @@ my-rds-db:
     default:
       plan: small-ha
       snapshot_id: test-snapshot-id
+  services:
+    - web
