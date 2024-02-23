@@ -269,6 +269,7 @@ def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
 
     actual_content = output_file.read_text()
     expected_content = expected_file.read_text()
+    breakpoint()
 
     assert actual_content.partition("\n")[0].strip() == expected_content.partition("\n")[0].strip()
     assert get_yaml(actual_content) == get_yaml(expected_content)

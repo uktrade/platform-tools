@@ -43,6 +43,11 @@ Run `poetry run pytest` in the root directory to run all tests.
 
 Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
 
+Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb does not 
+play nicely and will error. To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
+
+`poetry run pytest --numprocesses 0`
+
 #### Manual testing
 
 You may want to test any CLI changes locally. 
