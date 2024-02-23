@@ -10,6 +10,13 @@ env:
     CI: true
 
 phases:
+  install:
+    commands:
+      # Install copilot
+      - COPILOT_VERSION=`cat .copilot-version`
+      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}" -O copilot
+      - chmod +x ./copilot
+      - mv copilot /usr/bin/
   build:
     commands:
       - /work/cli deploy --send-notifications
