@@ -14,4 +14,5 @@ phases:
 
   build:
     commands:
-      - echo Leaving placeholder here for when we merge https://github.com/uktrade/copilot-tools/pull/309
+      - echo -e "\nRunning regression tests"
+      - ./regression_tests/pull_request_tests.sh
