@@ -20,6 +20,16 @@ source:
     repository: https://github.com/{{ git_repo }}
     connection_name: {{ app_name }}
 
+build:
+  additional_policy:
+    PolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Action:
+            - iam:ListAccountAliases
+          Resource: '*'
+
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
 {% for environment in pipeline_environments -%}
