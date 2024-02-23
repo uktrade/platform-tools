@@ -20,6 +20,16 @@ source:
     # Optional: specify the name of an existing CodeStar Connections connection.
     connection_name: test-app
 
+build:
+  additional_policy:
+    PolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Action:
+            - iam:ListAccountAliases
+          Resource: '*'
+
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
   - # The name of the environment.

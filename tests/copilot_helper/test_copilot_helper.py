@@ -30,4 +30,5 @@ class TestCopilotHelperCli:
             "environment",
             "pipeline",
             "waf",
+            "application"
         ]

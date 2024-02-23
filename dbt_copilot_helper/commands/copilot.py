@@ -184,7 +184,7 @@ def get_log_destination_arn():
 
 
 def _generate_svc_overrides(base_path, templates, name):
-    click.echo("\n>>> Generating service overrides\n")
+    click.echo(f"\n>>> Generating service overrides for {name}\n")
     overrides_path = base_path.joinpath(f"copilot/{name}/overrides")
     overrides_path.mkdir(parents=True, exist_ok=True)
     overrides_file = overrides_path.joinpath("cfn.patches.yml")
