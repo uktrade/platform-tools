@@ -94,36 +94,36 @@ class TestMakeAddonCommand:
     @pytest.mark.parametrize(
         "addon_file, expected_env_addons, expected_service_addons, expect_db_warning",
         [
-            # (
-            #     "s3_addons.yml",
-            #     [
-            #         "my-s3-bucket.yml",
-            #         "my-s3-bucket-with-an-object.yml",
-            #         "addons.parameters.yml",
-            #         "monitoring.yml",
-            #         "vpc.yml",
-            #     ],
-            #     [
-            #         "appconfig-ipfilter.yml",
-            #         "subscription-filter.yml",
-            #         "my-s3-bucket.yml",
-            #         "my-s3-bucket-with-an-object.yml",
-            #         "my-s3-bucket-bucket-access.yml",
-            #     ],
-            #     False,
-            # ),
-            # (
-            #     "opensearch_addons.yml",
-            #     [
-            #         "my-opensearch.yml",
-            #         "my-opensearch-longer.yml",
-            #         "addons.parameters.yml",
-            #         "monitoring.yml",
-            #         "vpc.yml",
-            #     ],
-            #     ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            #     False,
-            # ),
+            (
+                "s3_addons.yml",
+                [
+                    "my-s3-bucket.yml",
+                    "my-s3-bucket-with-an-object.yml",
+                    "addons.parameters.yml",
+                    "monitoring.yml",
+                    "vpc.yml",
+                ],
+                [
+                    "appconfig-ipfilter.yml",
+                    "subscription-filter.yml",
+                    "my-s3-bucket.yml",
+                    "my-s3-bucket-with-an-object.yml",
+                    "my-s3-bucket-bucket-access.yml",
+                ],
+                False,
+            ),
+            (
+                "opensearch_addons.yml",
+                [
+                    "my-opensearch.yml",
+                    "my-opensearch-longer.yml",
+                    "addons.parameters.yml",
+                    "monitoring.yml",
+                    "vpc.yml",
+                ],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+                False,
+            ),
             (
                 "rds_addons.yml",
                 ["my-rds-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
@@ -134,12 +134,12 @@ class TestMakeAddonCommand:
                 ],
                 True,
             ),
-            # (
-            #     "redis_addons.yml",
-            #     ["my-redis.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
-            #     ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            #     False,
-            # ),
+            (
+                "redis_addons.yml",
+                ["my-redis.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+                False,
+            ),
             (
                 "aurora_addons.yml",
                 ["my-aurora-db.yml", "addons.parameters.yml", "monitoring.yml", "vpc.yml"],
@@ -150,12 +150,12 @@ class TestMakeAddonCommand:
                 ],
                 True,
             ),
-            # (
-            #     "monitoring_addons.yml",
-            #     ["my-rds-db.yml", "monitoring.yml", "addons.parameters.yml", "vpc.yml"],
-            #     ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            #     False,
-            # ),
+            (
+                "monitoring_addons.yml",
+                ["my-rds-db.yml", "monitoring.yml", "addons.parameters.yml", "vpc.yml"],
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+                False,
+            ),
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
