@@ -152,7 +152,7 @@ class TestMakeAddonCommand:
             ),
             (
                 "monitoring_addons.yml",
-                ["my-rds-db.yml", "monitoring.yml", "addons.parameters.yml", "vpc.yml"],
+                ["monitoring.yml", "addons.parameters.yml", "vpc.yml"],
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
                 False,
             ),
