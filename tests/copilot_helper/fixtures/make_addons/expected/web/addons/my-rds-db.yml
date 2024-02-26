@@ -15,7 +15,7 @@ Resources:
   myRdsDbLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-myRdsDb-rds-create-user"
+      FunctionName: !Sub "${App}-${Env}-${Name}-myRdsDb-rds-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -179,7 +179,9 @@ Resources:
 
   myRdsDbApplicationUser:
     Type: 'Custom::myRdsDbApplicationUser'
-    DeletionPolicy: Delete
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myRdsDbLambdaFunction.Arn'
@@ -189,7 +191,7 @@ Resources:
         Fn::ImportValue:
           !Sub "${App}-${Env}-myRdsDb-RdsSecretName"
       SecretDescription: !Sub  application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/MY_RDS_DB_APPLICATION_USER'
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/MY_RDS_DB_APPLICATION_USER'
       DefaultPublicRoute: 
         Fn::ImportValue:
           !Sub "${App}-${Env}-myRdsDb-DefaultPublicRouteName"
@@ -208,7 +210,63 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myRdsDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: ""
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"
+      Username: 'application_user'
+      Permissions:
+        - 'SELECT'
+        - 'INSERT'
+        - 'UPDATE'
+        - 'DELETE'
+        - 'TRIGGER'
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E3005
+
+  myRdsDbReadOnlyUser:
+    Type: 'Custom::myRdsDbReadOnlyUser'
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
+    UpdateReplacePolicy: Retain
+    Properties:
+      ServiceToken: !GetAtt 'myRdsDbLambdaFunction.Arn'
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      MasterUserSecret: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myRdsDb-RdsSecretName"
+      SecretDescription: !Sub Aurora read only user secret for ${AWS::StackName}
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/MY_RDS_DB_READ_ONLY_USER'
+      DefaultPublicRoute: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myRdsDb-DefaultPublicRouteName"
+      InternetGateway: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myRdsDb-InternetGatewayName"
+      InternetGatewayAttachment: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myRdsDb-InternetGatewayAttachmentName"
+      PublicRouteTable: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myRdsDb-PublicRouteTableName"
+      PublicSubnet1RouteTableAssociation:
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-myRdsDb-PublicSubnet1RouteTableAssociationName"
+      PublicSubnet2RouteTableAssociation: 
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-myRdsDb-PublicSubnet2RouteTableAssociationName"
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"
+      Username: 'read_only_user'
+      Permissions:
+        - 'SELECT'
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:

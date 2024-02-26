@@ -354,3 +354,15 @@ Outputs:
     Value: !Ref PrivateSubnets
     Export:
       Name: !Sub "${App}-${Env}-myAuroraDb-PrivateSubnetsName"
+
+  myAuroraDbDeletionPolicyName:
+    Description: "Name of deletion policy"
+    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-DeletionPolicyName"
+
+  myAuroraDbSnapshotIdentifierName:
+    Description: "Name of snapshot identifier"
+    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, SnapshotIdentifier]
+    Export:
+      Name: !Sub "${App}-${Env}-myAuroraDb-SnapshotIdentifierName"

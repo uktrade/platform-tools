@@ -352,3 +352,15 @@ Outputs:
     Value: !Ref PrivateSubnets
     Export:
       Name: !Sub "${App}-${Env}-myRdsDb-PrivateSubnetsName"
+
+  myRdsDbDeletionPolicyName:
+    Description: "Deletion policy"
+    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    Export:
+      Name: !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
+
+  myRdsDbSnapshotIdentifierName:
+    Description: "Name of snapshot identifier"
+    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, SnapshotIdentifier]
+    Export:
+      Name: !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"

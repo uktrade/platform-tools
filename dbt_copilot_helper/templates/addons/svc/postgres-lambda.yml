@@ -15,7 +15,7 @@ Resources:
   {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-{{ addon_config.prefix}}-{{ addon_config.type }}-create-user"
+      FunctionName: !Sub "${App}-${Env}-${Name}-{{ addon_config.prefix}}-{{ addon_config.type }}-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -179,7 +179,9 @@ Resources:
 
   {{ addon_config.prefix }}ApplicationUser:
     Type: 'Custom::{{ addon_config.prefix }}ApplicationUser'
-    DeletionPolicy: Delete
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-{{ addon_config.prefix }}-DeletionPolicyName"
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
@@ -189,7 +191,7 @@ Resources:
         Fn::ImportValue:
           !Sub "${App}-${Env}-{{ addon_config.prefix }}-{{ addon_config.type|capitalize }}SecretName"
       SecretDescription: !Sub {{ addon_type }} application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/{{ addon_config.name|upper|replace("-", "_") }}_APPLICATION_USER'
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/{{ addon_config.name|upper|replace("-", "_") }}_APPLICATION_USER'
       DefaultPublicRoute: 
         Fn::ImportValue:
           !Sub "${App}-${Env}-{{ addon_config.prefix }}-DefaultPublicRouteName"
@@ -208,7 +210,63 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicSubnet2RouteTableAssociationName"
-      Snapshot: ""
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-SnapshotIdentifierName"
+      Username: 'application_user'
+      Permissions:
+        - 'SELECT'
+        - 'INSERT'
+        - 'UPDATE'
+        - 'DELETE'
+        - 'TRIGGER'
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E3005
+
+  {{ addon_config.prefix }}ReadOnlyUser:
+    Type: 'Custom::{{ addon_config.prefix }}ReadOnlyUser'
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-{{ addon_config.prefix }}-DeletionPolicyName"
+    UpdateReplacePolicy: Retain
+    Properties:
+      ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      MasterUserSecret: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-{{ addon_config.type|capitalize }}SecretName"
+      SecretDescription: !Sub Aurora read only user secret for ${AWS::StackName}
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/{{ addon_config.name|upper|replace("-", "_") }}_READ_ONLY_USER'
+      DefaultPublicRoute: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-DefaultPublicRouteName"
+      InternetGateway: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-InternetGatewayName"
+      InternetGatewayAttachment: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-InternetGatewayAttachmentName"
+      PublicRouteTable: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicRouteTableName"
+      PublicSubnet1RouteTableAssociation:
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicSubnet1RouteTableAssociationName"
+      PublicSubnet2RouteTableAssociation: 
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicSubnet2RouteTableAssociationName"
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-{{ addon_config.prefix }}-SnapshotIdentifierName"
+      Username: 'read_only_user'
+      Permissions:
+        - 'SELECT'
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:

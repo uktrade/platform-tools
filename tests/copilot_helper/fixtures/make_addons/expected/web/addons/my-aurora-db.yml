@@ -15,7 +15,7 @@ Resources:
   myAuroraDbLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${App}-${Env}-myAuroraDb-aurora-create-user"
+      FunctionName: !Sub "${App}-${Env}-${Name}-myAuroraDb-aurora-create-user"
       Handler: index.handler
       Runtime: python3.11
       Layers:
@@ -179,7 +179,9 @@ Resources:
 
   myAuroraDbApplicationUser:
     Type: 'Custom::myAuroraDbApplicationUser'
-    DeletionPolicy: Delete
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-myAuroraDb-DeletionPolicyName"
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
@@ -189,7 +191,7 @@ Resources:
         Fn::ImportValue:
           !Sub "${App}-${Env}-myAuroraDb-AuroraSecretName"
       SecretDescription: !Sub  application user secret for ${AWS::StackName}
-      SecretName: !Sub '/copilot/${App}/${Env}/secrets/MY_AURORA_DB_APPLICATION_USER'
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/MY_AURORA_DB_APPLICATION_USER'
       DefaultPublicRoute: 
         Fn::ImportValue:
           !Sub "${App}-${Env}-myAuroraDb-DefaultPublicRouteName"
@@ -208,7 +210,63 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myAuroraDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: ""
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-myAuroraDb-SnapshotIdentifierName"
+      Username: 'application_user'
+      Permissions:
+        - 'SELECT'
+        - 'INSERT'
+        - 'UPDATE'
+        - 'DELETE'
+        - 'TRIGGER'
+    # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            # https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md
+            - E3005
+
+  myAuroraDbReadOnlyUser:
+    Type: 'Custom::myAuroraDbReadOnlyUser'
+    DeletionPolicy:
+      Fn:ImportValue
+        !Sub "${App}-${Env}-myAuroraDb-DeletionPolicyName"
+    UpdateReplacePolicy: Retain
+    Properties:
+      ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      MasterUserSecret: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myAuroraDb-AuroraSecretName"
+      SecretDescription: !Sub Aurora read only user secret for ${AWS::StackName}
+      SecretName: !Sub '/copilot/${App}/${Env}/${Name}/secrets/MY_AURORA_DB_READ_ONLY_USER'
+      DefaultPublicRoute: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myAuroraDb-DefaultPublicRouteName"
+      InternetGateway: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myAuroraDb-InternetGatewayName"
+      InternetGatewayAttachment: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myAuroraDb-InternetGatewayAttachmentName"
+      PublicRouteTable: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-myAuroraDb-PublicRouteTableName"
+      PublicSubnet1RouteTableAssociation:
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-myAuroraDb-PublicSubnet1RouteTableAssociationName"
+      PublicSubnet2RouteTableAssociation: 
+        Fn::ImportValue: 
+          !Sub "${App}-${Env}-myAuroraDb-PublicSubnet2RouteTableAssociationName"
+      Snapshot: 
+        Fn:ImportValue
+          !Sub "${App}-${Env}-myAuroraDb-SnapshotIdentifierName"
+      Username: 'read_only_user'
+      Permissions:
+        - 'SELECT'
     # Resource based metadata block to ignore reference to resources in other addon templates. Do not remove.
     Metadata:
       cfn-lint:
