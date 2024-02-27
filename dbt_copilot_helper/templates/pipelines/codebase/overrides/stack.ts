@@ -41,6 +41,8 @@ export class TransformedStack extends cdk.Stack {
         this.updatePipelines();
         this.allowBuildProjectToUseCodestarConnection();
         this.allowPipelineToDescribeECRImages();
+        this.allowPipelineToUseEnvManagerRole();
+        this.allowBuildProjectToUseEnvManagerRole();
         this.uploadPipelineConfiguration();
     }
 
@@ -378,6 +380,28 @@ export class TransformedStack extends cdk.Stack {
             Action: ['codestar-connections:UseConnection'],
             Resource: [this.codestarConnection.arn],
         });
+    }
+
+    private allowPipelineToUseEnvManagerRole() {
+        const pipelineRolePolicy = this.template.getResource("PipelineRolePolicy") as cdk.aws_iam.CfnPolicy;
+        (pipelineRolePolicy.policyDocument.Statement as Array<any>).push(
+            this.getEnvManagerRolePolicyDoc()
+        );
+    }
+
+    private allowBuildProjectToUseEnvManagerRole() {
+        const buildProjectPolicy = this.template.getResource("BuildProjectPolicy") as cdk.aws_iam.CfnPolicy;
+        (buildProjectPolicy.policyDocument.Statement as Array<any>).push(
+            this.getEnvManagerRolePolicyDoc()
+        );
+    }
+
+    private getEnvManagerRolePolicyDoc() {
+        return {
+            Effect: 'Allow',
+            Action: ['sts:AssumeRole'],
+            Resource: [`arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`],
+        };
     }
 
     private allowPipelineToDescribeECRImages() {
