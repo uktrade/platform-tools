@@ -19,11 +19,19 @@ from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
 
+from .copilot import make_addons
+
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def pipeline():
     """Pipeline commands."""
     check_copilot_helper_version_needs_update()
+
+
+@pipeline.command()
+def full_generate():
+    generate()
+    make_addons()
 
 
 @pipeline.command()
