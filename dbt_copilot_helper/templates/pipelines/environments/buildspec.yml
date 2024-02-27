@@ -8,10 +8,10 @@ phases:
   install:
     commands:
       - cd $CODEBUILD_SRC_DIR
+      - COPILOT_VERSION=`cat .copilot-version`
       - mkdir ./build-tools
       - cd ./build-tools
       # Install copilot
-      - COPILOT_VERSION=`cat .copilot-version`
       - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}"
       - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
