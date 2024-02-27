@@ -23,6 +23,7 @@ from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
+from dbt_copilot_helper.utils.versioning import get_copilot_versions
 
 
 def secret_should_be_skipped(secret_name):
@@ -65,6 +66,10 @@ def make_config(directory="."):
     templates.filters["to_yaml"] = to_yaml
 
     click.echo(">>> Generating Copilot configuration files\n")
+
+    # add .copilot-helper-version file
+    copilot_version = ".".join([str(num) for num in get_copilot_versions()])
+    click.echo(mkfile(base_path, ".copilot-version-file", f"{copilot_version}"))
 
     # create copilot directory
     (base_path / "copilot").mkdir(parents=True, exist_ok=True)

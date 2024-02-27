@@ -24,6 +24,7 @@ from dbt_copilot_helper.commands.bootstrap import migrate_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
+from dbt_copilot_helper.utils.versioning import get_copilot_versions
 from tests.copilot_helper.conftest import FIXTURES_DIR
 from tests.copilot_helper.conftest import TEST_APP_DIR
 
@@ -109,6 +110,12 @@ def test_make_config(tmp_path):
         "GitHub documentation: https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration"
         in result.output
     )
+
+    assert (tmp_path / ".copilot-version-file").exists()
+
+    with open(str(tmp_path / ".copilot-version-file")) as copilot_version_file:
+        copilot_version = ".".join([str(num) for num in get_copilot_versions()])
+        assert copilot_version_file.read() == copilot_version
 
     assert (tmp_path / "copilot").exists()
 
