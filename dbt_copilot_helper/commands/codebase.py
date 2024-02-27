@@ -145,7 +145,7 @@ def list(app, with_images):
 
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
-@click.option("--codebase", help="GitHub codebase name", required=True)
+@click.option("--codebase", help="The name of the codebase. E.g. `application`", required=True)
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
     """Trigger a CodePipeline pipeline based build."""

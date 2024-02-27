@@ -316,7 +316,7 @@ copilot-helper codebase build --app <app> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - GitHub codebase name
+  - The name of the codebase. E.g. `application`
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
