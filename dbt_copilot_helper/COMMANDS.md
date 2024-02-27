@@ -126,7 +126,7 @@ copilot-helper bootstrap make-config [-d <directory>]
 
 ```
 copilot-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                         --env <env> [--svc <svc>] 
+                                         --env <environment> [--svc <service>] 
                                          [--overwrite] [--dry-run] 
 ```
 
@@ -286,7 +286,7 @@ copilot-helper codebase prepare
 ## Usage
 
 ```
-copilot-helper codebase list --app <app> [--with-images] 
+copilot-helper codebase list --app <application> [--with-images] 
 ```
 
 ## Options
@@ -307,7 +307,7 @@ copilot-helper codebase list --app <app> [--with-images]
 ## Usage
 
 ```
-copilot-helper codebase build --app <app> --codebase <codebase> 
+copilot-helper codebase build --app <application> --codebase <codebase> 
                               --commit <commit> 
 ```
 
@@ -331,7 +331,7 @@ copilot-helper codebase build --app <app> --codebase <codebase>
 ## Usage
 
 ```
-copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase> 
+copilot-helper codebase deploy --app <application> --env <environment> --codebase <codebase> 
                                --commit <commit> 
 ```
 
@@ -358,7 +358,7 @@ copilot-helper codebase deploy --app <app> --env <env> --codebase <codebase>
 
 ```
 copilot-helper conduit <addon_name> 
-                       --app <app> --env <env> [--access (read|write|admin)] 
+                       --app <application> --env <environment> [--access (read|write|admin)] 
 ```
 
 ## Arguments
@@ -463,7 +463,7 @@ copilot-helper copilot make-addons [-d <directory>]
 ## Usage
 
 ```
-copilot-helper copilot get-env-secrets <app> <env> 
+copilot-helper copilot get-env-secrets <application> <environment> 
 ```
 
 ## Arguments
@@ -507,7 +507,7 @@ copilot-helper domain (configure|assign)
 
 ```
 copilot-helper domain configure --project-profile <project_profile> 
-                                --env <env> 
+                                --env <environment> 
 ```
 
 ## Options
@@ -528,7 +528,7 @@ copilot-helper domain configure --project-profile <project_profile>
 ## Usage
 
 ```
-copilot-helper domain assign --app <app> --env <env> --svc <svc> 
+copilot-helper domain assign --app <application> --env <environment> --svc <service> 
                              --domain-profile (dev|live) --project-profile <project_profile> 
 ```
 
@@ -577,8 +577,8 @@ copilot-helper cdn (assign|delete|list)
 ## Usage
 
 ```
-copilot-helper cdn assign --project-profile <project_profile> --env <env> 
-                          --app <app> --svc <svc> 
+copilot-helper cdn assign --project-profile <project_profile> --env <environment> 
+                          --app <application> --svc <service> 
 ```
 
 ## Options
@@ -603,8 +603,8 @@ copilot-helper cdn assign --project-profile <project_profile> --env <env>
 ## Usage
 
 ```
-copilot-helper cdn delete --project-profile <project_profile> --env <env> 
-                          --app <app> --svc <svc> 
+copilot-helper cdn delete --project-profile <project_profile> --env <environment> 
+                          --app <application> --svc <service> 
 ```
 
 ## Options
@@ -629,8 +629,8 @@ copilot-helper cdn delete --project-profile <project_profile> --env <env>
 ## Usage
 
 ```
-copilot-helper cdn list --project-profile <project_profile> --env <env> 
-                        --app <app> --svc <svc> 
+copilot-helper cdn list --project-profile <project_profile> --env <environment> 
+                        --app <application> --svc <service> 
 ```
 
 ## Options
@@ -677,7 +677,7 @@ copilot-helper environment (offline|online)
 ## Usage
 
 ```
-copilot-helper environment offline --app <app> --env <env> [--template (default|migration)] 
+copilot-helper environment offline --app <application> --env <environment> [--template (default|migration)] 
 ```
 
 ## Options
@@ -700,7 +700,7 @@ copilot-helper environment offline --app <app> --env <env> [--template (default|
 ## Usage
 
 ```
-copilot-helper environment online --app <app> --env <env> 
+copilot-helper environment online --app <application> --env <environment> 
 ```
 
 ## Options
@@ -780,7 +780,7 @@ copilot-helper waf (attach-waf|custom-waf)
 ## Usage
 
 ```
-copilot-helper waf attach-waf --app <app> --env <env> --svc <svc> 
+copilot-helper waf attach-waf --app <application> --env <environment> --svc <service> 
                               --project-profile <project_profile> 
 ```
 
@@ -806,7 +806,7 @@ copilot-helper waf attach-waf --app <app> --env <env> --svc <svc>
 ## Usage
 
 ```
-copilot-helper waf custom-waf --app <app> --env <env> --svc <svc> 
+copilot-helper waf custom-waf --app <application> --env <environment> --svc <service> 
                               --project-profile <project_profile> 
                               --waf-path <waf_path> 
 ```
@@ -857,7 +857,7 @@ copilot-helper application (container-stats|task-stats)
 ## Usage
 
 ```
-copilot-helper application container-stats --env <env> --app <app> 
+copilot-helper application container-stats --env <environment> --app <application> 
                                            [--storage] [--network] 
 ```
 
@@ -883,7 +883,7 @@ copilot-helper application container-stats --env <env> --app <app>
 ## Usage
 
 ```
-copilot-helper application task-stats --env <env> --app <app> [--disk] 
+copilot-helper application task-stats --env <environment> --app <application> [--disk] 
                                       [--storage] [--network] 
 ```
 

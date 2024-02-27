@@ -73,7 +73,7 @@ cli argument-replacements <application> <environment> <service>
 ## Usage
 
 ```
-cli option-replacements [--app <application>] [--environment <environment>] [--svc <service>] 
+cli option-replacements [--app <application>] [--env <environment>] [--svc <service>] 
 ```
 
 ## Options
