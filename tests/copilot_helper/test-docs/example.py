@@ -14,12 +14,30 @@ def hello(count, name):
         click.echo(f"Hello {name}!")
 
 
+@click.command(cls=ClickDocOptCommand)
+@click.argument("app")
+@click.argument("env")
+@click.argument("svc")
+def argument_replacements(app, env, svc):
+    click.echo(f"app: {app}, env: {env}, svc: {svc}")
+
+
+@click.command(cls=ClickDocOptCommand)
+@click.option("--app")
+@click.option("--env")
+@click.option("--svc")
+def option_replacements(app, env, svc):
+    click.echo(f"app: {app}, env: {env}, svc: {svc}")
+
+
 @click.group(cls=ClickDocOptGroup)
 def cli():
     pass
 
 
 cli.add_command(hello)
+cli.add_command(argument_replacements)
+cli.add_command(option_replacements)
 
 
 if __name__ == "__main__":
