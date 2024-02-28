@@ -1,9 +1,9 @@
-name: quality-checks
+name: Quality Checks
 
 on: [push]
 
 jobs:
-  test:
+  test-against-supported-python-versions:
     name: Test against Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
