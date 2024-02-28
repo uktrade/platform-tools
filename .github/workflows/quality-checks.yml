@@ -3,7 +3,7 @@ name: Quality Checks
 on: [push]
 
 jobs:
-  test-against-supported-python-versions:
+  tests:
     name: Test against Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
