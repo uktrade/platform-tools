@@ -111,9 +111,9 @@ def validate_addons(addons: dict):
                 continue
             schema = SCHEMA_MAP.get(addon_type, None)
             if not schema:
-                errors[
-                    addon_name
-                ] = f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
+                errors[addon_name] = (
+                    f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
+                )
                 continue
             schema.validate(addon)
         except SchemaError as ex:
@@ -145,7 +145,7 @@ def float_between_with_halfstep(lower, upper):
 
 ENV_NAME = Regex(
     r"^[a-zA-Z][a-zA-Z0-9]*$",
-    error="Environment name {} is invalid: names must only contain alphanumeric characters."
+    error="Environment name {} is invalid: names must only contain alphanumeric characters.",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
