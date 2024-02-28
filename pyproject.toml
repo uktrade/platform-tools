@@ -49,7 +49,6 @@ pre-commit = "^3.3.3"
 freezegun = "^1.2.2"
 parameterized = "^0.9.0"
 pytest-xdist = "^3.5.0"
-black = "^24.2.0"
 
 [build-system]
 requires = ["poetry-core"]
