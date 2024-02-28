@@ -3,9 +3,10 @@ import click
 
 from dbt_copilot_helper.commands.copilot import make_addons
 from dbt_copilot_helper.commands.pipeline import generate as pipeline_generate
+from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
 
-@click.command()
+@click.group(chain=False, cls=ClickDocOptGroup)
 def generate():
     """
     Given a pipelines.yml file, generate environment and service deployment
