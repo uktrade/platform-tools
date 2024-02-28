@@ -516,7 +516,8 @@ def _get_subdomains_from_env_manifests(environment, manifests):
                 if not len(aliases):
                     click.echo(
                         click.style(
-                            f"No http.alias present for {environment} environment in {manifest}, skipping...", fg="cyan"
+                            f"No http.alias present for {environment} environment in {manifest}, skipping...",
+                            fg="cyan",
                         ),
                     )
                 else:
