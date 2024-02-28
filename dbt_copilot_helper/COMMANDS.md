@@ -29,6 +29,7 @@
 - [copilot-helper environment](#copilot-helper-environment)
 - [copilot-helper environment offline](#copilot-helper-environment-offline)
 - [copilot-helper environment online](#copilot-helper-environment-online)
+- [copilot-helper generate](#copilot-helper-generate)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper waf](#copilot-helper-waf)
@@ -65,6 +66,7 @@ copilot-helper <command> [--version]
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
 - [`environment` ↪](#copilot-helper-environment)
+- [`generate` ↪](#copilot-helper-generate)
 - [`pipeline` ↪](#copilot-helper-pipeline)
 - [`waf` ↪](#copilot-helper-waf)
 
@@ -708,6 +710,26 @@ copilot-helper environment online --app <app> --env <env>
 - `--app <text>`
 
 - `--env <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# copilot-helper generate
+
+[↩ Parent](#copilot-helper)
+
+    Given a pipelines.yml file, generate environment and service deployment
+    pipelines and generate addons CloudFormation for each environment.
+
+    Wraps pipeline generate and make-addons.
+
+## Usage
+
+```
+copilot-helper generate () 
+```
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
