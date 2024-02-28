@@ -29,5 +29,5 @@ class TestCopilotHelperCli:
             "cdn",
             "environment",
             "pipeline",
-            "application"
+            "application",
         ]
