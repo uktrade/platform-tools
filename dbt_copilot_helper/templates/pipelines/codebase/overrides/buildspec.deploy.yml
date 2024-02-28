@@ -10,14 +10,6 @@ env:
     CI: true
 
 phases:
-  install:
-    commands:
-      # Install copilot
-      - git clone https://codestar-connections.$AWS_REGION.amazonaws.com/git-http/$AWS_ACCOUNT_ID/$AWS_REGION/$CODESTAR_CONNECTION_ID/$DEPLOY_REPOSITORY.git deploy-repo
-      - COPILOT_VERSION=`cat .copilot-version`
-      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}" -O copilot
-      - chmod +x ./copilot
-      - mv copilot /usr/bin/
   build:
     commands:
       - /work/cli deploy --send-notifications
