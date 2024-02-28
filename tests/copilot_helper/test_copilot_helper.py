@@ -28,7 +28,8 @@ class TestCopilotHelperCli:
             "domain",
             "cdn",
             "environment",
+            "generate",
             "pipeline",
             "waf",
-            "application"
+            "application",
         ]
