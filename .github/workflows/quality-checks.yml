@@ -4,6 +4,7 @@ on: [push]
 
 jobs:
   test:
+    name: Test against Python ${PYTHON_VERSION}
     runs-on: ubuntu-latest
 
     strategy:
@@ -22,12 +23,13 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: Test against Python ${PYTHON_VERSION}
+      - name: Run pytest
         run: poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
   lint:
+    name: Run lint checks
     runs-on: ubuntu-latest
 
     steps:
