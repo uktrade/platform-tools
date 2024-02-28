@@ -30,7 +30,6 @@
 - [copilot-helper environment offline](#copilot-helper-environment-offline)
 - [copilot-helper environment online](#copilot-helper-environment-online)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
-- [copilot-helper pipeline full-generate](#copilot-helper-pipeline-full-generate)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper waf](#copilot-helper-waf)
 - [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
@@ -722,7 +721,7 @@ copilot-helper environment online --app <app> --env <env>
 ## Usage
 
 ```
-copilot-helper pipeline (full-generate|generate) 
+copilot-helper pipeline generate 
 ```
 
 ## Options
@@ -732,23 +731,7 @@ copilot-helper pipeline (full-generate|generate)
 
 ## Commands
 
-- [`full-generate` ↪](#copilot-helper-pipeline-full-generate)
 - [`generate` ↪](#copilot-helper-pipeline-generate)
-
-# copilot-helper pipeline full-generate
-
-[↩ Parent](#copilot-helper-pipeline)
-
-## Usage
-
-```
-copilot-helper pipeline full-generate 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
 
 # copilot-helper pipeline generate
 
