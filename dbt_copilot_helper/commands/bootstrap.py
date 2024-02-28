@@ -226,9 +226,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     text = (
                         "Created"
                         if not param_exists
-                        else "Overwritten"
-                        if overwrite
-                        else "NOT overwritten"
+                        else "Overwritten" if overwrite else "NOT overwritten"
                     )
                     click.echo(f"{text} {ssm_path}")
                 else:
