@@ -722,7 +722,7 @@ copilot-helper environment online --app <app> --env <env>
 ## Usage
 
 ```
-copilot-helper generate () 
+copilot-helper generate 
 ```
 
 ## Options
