@@ -356,15 +356,3 @@ Outputs:
     Value: !Ref PrivateSubnets
     Export:
       Name: !Sub "${App}-${Env}-{{ addon_config.prefix }}-PrivateSubnetsName"
-
-  {{ addon_config.prefix }}DeletionPolicyName:
-    Description: "Name of deletion policy"
-    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    Export:
-      Name: !Sub "${App}-${Env}-{{ addon_config.prefix }}-DeletionPolicyName"
-
-  {{ addon_config.prefix }}SnapshotIdentifierName:
-    Description: "Name of snapshot identifier"
-    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, SnapshotIdentifier]
-    Export:
-      Name: !Sub "${App}-${Env}-{{ addon_config.prefix }}-SnapshotIdentifierName"

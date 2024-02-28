@@ -11,6 +11,17 @@ Parameters:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
 
+Mappings:
+  {{ addon_config.prefix }}EnvironmentConfigMap:
+{%- for env_name, config in addon_config.environments.items() %}
+    {{ env_name }}:
+      DeletionPolicy: {{ config.deletion_policy }}
+      SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
+{%- endfor %}
+
+Conditions:
+  {{ addon_config.prefix }}UseSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+
 Resources:
   {{ addon_config.prefix }}LambdaFunction:
     Type: AWS::Lambda::Function
@@ -179,9 +190,7 @@ Resources:
 
   {{ addon_config.prefix }}ApplicationUser:
     Type: 'Custom::{{ addon_config.prefix }}ApplicationUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-{{ addon_config.prefix }}-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
@@ -210,9 +219,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-{{ addon_config.prefix }}-SnapshotIdentifierName"
+      Snapshot: !If [{{ addon_config.prefix }}UseSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'application_user'
       Permissions:
         - 'SELECT'
@@ -230,9 +237,7 @@ Resources:
 
   {{ addon_config.prefix }}ReadOnlyUser:
     Type: 'Custom::{{ addon_config.prefix }}ReadOnlyUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-{{ addon_config.prefix }}-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt '{{ addon_config.prefix }}LambdaFunction.Arn'
@@ -261,9 +266,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-{{ addon_config.prefix }}-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-{{ addon_config.prefix }}-SnapshotIdentifierName"
+      Snapshot: !If [{{ addon_config.prefix }}UseSnapshot, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'read_only_user'
       Permissions:
         - 'SELECT'
