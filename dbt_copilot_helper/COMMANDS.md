@@ -32,9 +32,6 @@
 - [copilot-helper generate](#copilot-helper-generate)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
-- [copilot-helper waf](#copilot-helper-waf)
-- [copilot-helper waf attach-waf](#copilot-helper-waf-attach-waf)
-- [copilot-helper waf custom-waf](#copilot-helper-waf-custom-waf)
 - [copilot-helper application](#copilot-helper-application)
 - [copilot-helper application container-stats](#copilot-helper-application-container-stats)
 - [copilot-helper application task-stats](#copilot-helper-application-task-stats)
@@ -68,7 +65,6 @@ copilot-helper <command> [--version]
 - [`environment` ↪](#copilot-helper-environment)
 - [`generate` ↪](#copilot-helper-generate)
 - [`pipeline` ↪](#copilot-helper-pipeline)
-- [`waf` ↪](#copilot-helper-waf)
 
 # copilot-helper bootstrap
 
@@ -770,81 +766,6 @@ copilot-helper pipeline generate
 
 ## Options
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper waf
-
-[↩ Parent](#copilot-helper)
-
-## Usage
-
-```
-copilot-helper waf (attach-waf|custom-waf) 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`attach-waf` ↪](#copilot-helper-waf-attach-waf)
-- [`custom-waf` ↪](#copilot-helper-waf-custom-waf)
-
-# copilot-helper waf attach-waf
-
-[↩ Parent](#copilot-helper-waf)
-
-    Attach default WAF rule to ECS Load Balancer.
-
-## Usage
-
-```
-copilot-helper waf attach-waf --app <app> --env <env> --svc <svc> 
-                              --project-profile <project_profile> 
-```
-
-## Options
-
-- `--app <text>`
-  - Application Name
-- `--env <text>`
-  - Environment
-- `--svc <text>`
-  - Service Name
-- `--project-profile <text>`
-  - AWS account profile name for application account
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# copilot-helper waf custom-waf
-
-[↩ Parent](#copilot-helper-waf)
-
-    Attach custom WAF to ECS Load Balancer.
-
-## Usage
-
-```
-copilot-helper waf custom-waf --app <app> --env <env> --svc <svc> 
-                              --project-profile <project_profile> 
-                              --waf-path <waf_path> 
-```
-
-## Options
-
-- `--app <text>`
-  - Application Name
-- `--env <text>`
-  - Environment
-- `--svc <text>`
-  - Service Name
-- `--project-profile <text>`
-  - AWS account profile name for application account
-- `--waf-path <text>`
-  - path to waf.yml file
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
