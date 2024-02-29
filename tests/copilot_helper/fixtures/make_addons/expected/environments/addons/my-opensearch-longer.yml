@@ -168,6 +168,8 @@ Resources:
 
   myOpensearchLongerOpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
+    DependsOn: 
+      - myOpensearchLongerOpenSearchDomain
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/MY_OPENSEARCH_LONGER"
       Type: String
