@@ -3,7 +3,7 @@
 version: 0.2
 env:
   variables:
-    COPILOT_VERSION: 1.32.0
+    COPILOT_VERSION: 1.32.1
     DYFF_VERSION: 1.5.8
 phases:
   install:
@@ -48,7 +48,7 @@ phases:
       - git checkout -- .
       - export COLOR="false"
       - export CI="true"
-      - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/environments/manifest.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
+      - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/environments/manifest.yml | python -c 'import sys, json, yaml; print(json.dumps(yaml.safe_load(sys.stdin.read())))')
       - stages=$(echo $pipeline | jq -r '.stages[].name')
       # Generate the cloudformation templates.
       - >

@@ -8,6 +8,10 @@ See [the package documentation](https://github.com/uktrade/copilot-tools/blob/ma
 
 If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration/README.md) will also be relevant for you.
 
+### Supported Python versions
+
+3.9, 3.10, 3.11 and 3.12.
+
 ## Contributing to the dbt-copilot-tools package
 
 ### Getting started
@@ -26,11 +30,23 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 ### Testing
 
+#### Requirements
+
+The following tools are required to run the full test suite.
+
+- [checkov](https://www.checkov.io/)
+- [AWS Copilot](https://aws.github.io/copilot-cli/)
+
 #### Automated testing
 
 Run `poetry run pytest` in the root directory to run all tests.
 
 Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
+
+Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb does not 
+play nicely and will error. To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
+
+`poetry run pytest --numprocesses 0`
 
 #### Manual testing
 
@@ -47,18 +63,6 @@ Run `pip install <file>` and confirm the installation has worked by running `cop
 
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-copilot-tools` installation back to what it was; e.g. `pip install dbt-copilot-tools==0.1.39`.
-
-#### [`Dockerfile.test`](Dockerfile.test)
-
-This `Dockerfile` is used to create a Docker image that supports multiple versions of Python runtimes via [`pyenv`](https://github.com/pyenv/pyenv). The `tox` configuration file determines the Python versions to be tested against.
-
-#### Adding a Python version
-
-Add the Python version(s) to `Dockerfile.test` and `tox.ini`.
-
-Run `docker build -f Dockerfile.test -t alpine/python .` to build the image.
-
-For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
 
 ### Publishing
 

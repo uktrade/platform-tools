@@ -38,6 +38,11 @@ def app_with_invalid_cf_template(application_under_test):
 
 
 @pytest.fixture
+def app_with_insecure_cf_template(application_under_test):
+    prepare_fake_cloudformation_templates("insecure_cloudformation_template.yml")
+
+
+@pytest.fixture
 def copilot_directory() -> Path:
     return TEST_APP_DIR / "copilot"
 
@@ -52,6 +57,7 @@ def application_under_test(copilot_directory):
     ensure_directory_does_not_exist(copilot_directory)
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_check_cloudformation_with_no_args_summarises_all_successes(
     app_with_valid_cf_template, copilot_directory: Path
 ) -> None:
@@ -61,9 +67,14 @@ def test_check_cloudformation_with_no_args_summarises_all_successes(
 
     assert ">>> Running all checks" in result.output
     assert ">>> Running lint check" in result.output
-    assert "The CloudFormation templates passed the following checks:\n  - lint" in result.output
+    assert ">>> Running security check" in result.output
+    assert (
+        "The CloudFormation templates passed the following checks:\n  - lint\n  - check-security"
+        in result.output
+    )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_check_cloudformation_with_no_args_summarises_all_failures(
     app_with_invalid_cf_template, copilot_directory: Path
 ) -> None:
@@ -77,15 +88,21 @@ def test_check_cloudformation_with_no_args_summarises_all_failures(
     )
 
 
-def test_linting_check_passed(app_with_valid_cf_template, copilot_directory: Path) -> None:
+@pytest.mark.xdist_group(name="fileaccess")
+@pytest.mark.parametrize("check_type", ["lint", "check-security"])
+def test_check_passed(app_with_valid_cf_template, copilot_directory: Path, check_type) -> None:
     result = CliRunner().invoke(
-        check_cloudformation_command, args=["lint", "--directory", copilot_directory]
+        check_cloudformation_command, args=[check_type, "--directory", copilot_directory]
     )
 
     assert result.exit_code == 0
-    assert "The CloudFormation templates passed the following checks:\n  - lint" in result.output
+    assert (
+        f"The CloudFormation templates passed the following checks:\n  - {check_type}"
+        in result.output
+    )
 
 
+@pytest.mark.xdist_group(name="fileaccess")
 def test_linting_check_failed(app_with_invalid_cf_template, copilot_directory: Path) -> None:
     result = CliRunner().invoke(
         check_cloudformation_command, args=["lint", "--directory", copilot_directory]
@@ -96,3 +113,17 @@ def test_linting_check_failed(app_with_invalid_cf_template, copilot_directory: P
         "The CloudFormation templates failed the following checks:\n  - lint [E0000 could not find expected ':'"
         in result.output
     )
+
+
+@pytest.mark.xdist_group(name="fileaccess")
+def test_security_check_failed(app_with_insecure_cf_template, copilot_directory: Path) -> None:
+    result = CliRunner().invoke(
+        check_cloudformation_command, args=["check-security", "--directory", copilot_directory]
+    )
+
+    assert result.exit_code != 0
+    assert (
+        "The CloudFormation templates failed the following checks:\n  - check-security"
+        in result.output
+    )
+    assert "Ensure RDS database has IAM authentication enabled" in result.output

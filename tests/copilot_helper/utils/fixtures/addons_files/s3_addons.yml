@@ -1,0 +1,36 @@
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+    - "other"
+  environments:
+    default:
+      bucket_name: my-bucket-default
+      retention_policy:
+        mode: COMPLIANCE
+        days: 10
+    development:
+      bucket_name: my-bucket-dev
+      retention_policy:
+    prod:
+      bucket_name: my-bucket-prod
+      retention_policy:
+        mode: GOVERNANCE
+        years: 1
+
+my-s3-bucket-with-an-object:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket_name: my-bucket-dev
+      deletion_policy: Delete
+  objects:
+    - key: healthcheck.txt
+      body: |
+        HEALTHCHECK WORKS!
+    - key: empty.txt
+

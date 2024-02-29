@@ -8,27 +8,35 @@ env:
 phases:
   install:
     commands:
-      - echo Setting local Python versions
-      - pyenv versions | awk 'match($0, /\d\.\d+\.\d+/) { print substr($0, RSTART, RLENGTH) }' | sort -rV > .python-version
-      - echo Installing dependencies
+      - echo -e "\nSetting local Python versions"
+      - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
+      - |
+        echo -e "\nCheck we are using the latest installed Python 3.x"
+        python --version
+      - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
 
   build:
     commands:
-      - echo Running tests
+      - echo -e "\nRunning unit tests"
       - poetry run tox
-      - |
-        VERSION=$(python utils/check_pypi.py --version)
-        if ! python utils/check_pypi.py
-        then
-          echo Building Python package
-          poetry build
-          echo Publishing Python package ${VERSION}
-          poetry config pypi-token.pypi ${PYPI_TOKEN}
-          poetry publish
-          echo Checking the package has reached PyPI
-          python utils/check_pypi.py --max-attempts 20
-        else
-          echo ${VERSION} of the package has already been published
-        fi
+      - echo -e "\nRunning regression tests"
+      # Todo: Swap this out for the full regression tests when we have them
+      - ./regression_tests/pull_request_tests.sh
+      # Todo: DBTP-768 Only publish tagged releases to PyPi
+      - echo -e "\nBuild and publish to PyPi - SKIPPED FOR NOW, PUBLISH MANUALLY IF NEEDED"
+      # - |
+      #   VERSION=$(python utils/check_pypi.py --version)
+      #   if ! python utils/check_pypi.py
+      #   then
+      #     echo Building Python package
+      #     poetry build
+      #     echo Publishing Python package ${VERSION}
+      #     poetry config pypi-token.pypi ${PYPI_TOKEN}
+      #     poetry publish
+      #     echo Checking the package has reached PyPI
+      #     python utils/check_pypi.py --max-attempts 20
+      #   else
+      #     echo ${VERSION} of the package has already been published
+      #   fi

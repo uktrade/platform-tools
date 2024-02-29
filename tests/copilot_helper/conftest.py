@@ -1,12 +1,12 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
 import botocore
 import certifi
-import jsonschema
 import pytest
 import yaml
 from moto import mock_acm
@@ -17,6 +17,8 @@ from moto import mock_iam
 from moto import mock_route53
 from moto import mock_secretsmanager
 from moto.ec2 import utils as ec2_utils
+
+from dbt_copilot_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "copilot_helper" / "test-application-deploy"
@@ -34,14 +36,10 @@ def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/custom_resources", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/templates", lazy_read=True)
-    fs.add_real_directory(BASE_DIR / "dbt_copilot_helper/schemas", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addon-plans.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/default-addons.yml")
     fs.add_real_file(BASE_DIR / "dbt_copilot_helper/addons-template-map.yml")
-
-    # JSON Schema compatibility
-    fs.add_real_directory(Path(jsonschema.__path__[0]) / "schemas/vocabularies", lazy_read=True)
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
@@ -285,6 +283,42 @@ def mock_task_name(addon_name):
     return f"conduit-test-application-development-{addon_name}-tq7vzeigl2vf"
 
 
+def mock_parameter_name(app, addon_type, addon_name, access: str = "read"):
+    addon_name = addon_name.replace("-", "_").upper()
+    if addon_type == "postgres":
+        return f"/copilot/{app.name}/development/conduits/{addon_name}_{access.upper()}"
+    else:
+        return f"/copilot/{app.name}/development/conduits/{addon_name}"
+
+
+def mock_connection_secret_name(mock_application, addon_type, addon_name, access):
+    secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
+    if addon_type == "postgres":
+        if access == "read":
+            return f"{secret_name}_READ_ONLY_USER"
+        elif access == "write":
+            return f"{secret_name}_APPLICATION_USER"
+
+    return secret_name
+
+
+def add_addon_config_parameter(param_value=None):
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name=f"/copilot/applications/test-application/environments/development/addons",
+        Type="String",
+        Value=json.dumps(
+            param_value
+            or {
+                "custom-name-postgres": {"type": "aurora-postgres"},
+                "custom-name-rds-postgres": {"type": "aurora-postgres"},
+                "custom-name-opensearch": {"type": "opensearch"},
+                "custom-name-redis": {"type": "redis"},
+            }
+        ),
+    )
+
+
 def mock_codestar_connection_response(app_name):
     return {
         "ConnectionName": app_name,
@@ -296,12 +330,24 @@ def mock_codestar_connection_response(app_name):
     }
 
 
-def mock_codestar_connections_boto_client(mocked_boto3_client, connection_names):
-    mocked_boto3_client.return_value = mocked_boto3_client
-    mocked_boto3_client.list_connections.return_value = {
+def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_names):
+    client = mock_aws_client(get_aws_session_or_abort)
+
+    client.list_connections.return_value = {
         "Connections": [mock_codestar_connection_response(name) for name in connection_names],
         "NextToken": "not-interesting",
     }
+
+
+def mock_aws_client(get_aws_session_or_abort, client=None):
+    session = MagicMock(name="session-mock")
+    session.profile_name = "foo"
+    if not client:
+        client = MagicMock(name="client-mock")
+    session.client.return_value = client
+    get_aws_session_or_abort.return_value = session
+
+    return client
 
 
 def assert_file_created_in_stdout(output_file, result):
@@ -310,3 +356,8 @@ def assert_file_created_in_stdout(output_file, result):
 
 def assert_file_overwritten_in_stdout(output_file, result):
     assert f"File {output_file.relative_to('.')} overwritten" in result.stdout
+
+
+@pytest.fixture()
+def clear_session_cache():
+    AWS_SESSION_CACHE.clear()

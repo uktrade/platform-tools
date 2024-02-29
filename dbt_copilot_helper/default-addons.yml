@@ -11,3 +11,9 @@ subscription-filter:
 
 vpc:
   type: vpc
+
+monitoring:
+  type: monitoring
+  environments:
+    default:
+      enable_ops_center: false

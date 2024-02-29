@@ -1,6 +1,10 @@
+import os
+from pathlib import Path
+
 import pytest
 import yaml
 
+from dbt_copilot_helper.utils.files import generate_override_files
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
@@ -59,3 +63,21 @@ def test_mkfile_does_nothing_if_file_already_exists_but_override_is_false(tmp_pa
     message = mkfile(tmp_path, filename, contents="does not matter", overwrite=False)
 
     assert message == f"File {filename} exists; doing nothing"
+
+
+def test_generate_override_files(fakefs):
+    """Test that, given a path to override files and an output directory,
+    generate_override_files copies the required files to the output
+    directory."""
+
+    fakefs.create_file("templates/.gitignore")
+    fakefs.create_file("templates/bin/code.ts")
+    fakefs.create_file("templates/node_modules/package.ts")
+
+    generate_override_files(
+        base_path=Path("."), file_path=Path("templates"), output_dir=Path("output")
+    )
+
+    assert ".gitignore" in os.listdir("/output")
+    assert "code.ts" in os.listdir("/output/bin")
+    assert "node_modules" not in os.listdir("/output")

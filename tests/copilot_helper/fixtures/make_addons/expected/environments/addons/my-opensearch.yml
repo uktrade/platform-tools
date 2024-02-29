@@ -168,6 +168,8 @@ Resources:
 
   myOpensearchOpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
+    DependsOn: 
+      - myOpensearchOpenSearchDomain
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/MY_OPENSEARCH"
       Type: String
@@ -221,7 +223,7 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  SubscriptionFilterapplication:
+  myOpensearchSubscriptionFilterApplication:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myOpensearchOpenSearchApplicationLogGroup
@@ -232,7 +234,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [myOpensearchCreateProdSubFilter, '', '']
 
-  SubscriptionFilteraudit:
+  myOpensearchSubscriptionFilterAudit:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - myOpensearchOpenSearchAuditLogGroup

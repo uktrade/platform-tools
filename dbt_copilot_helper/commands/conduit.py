@@ -1,6 +1,5 @@
 import json
 import random
-import re
 import string
 import subprocess
 import time
@@ -22,7 +21,8 @@ class ConduitError(Exception):
 
 
 class InvalidAddonTypeConduitError(ConduitError):
-    pass
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
 
 
 class NoClusterConduitError(ConduitError):
@@ -37,28 +37,77 @@ class CreateTaskTimeoutConduitError(ConduitError):
     pass
 
 
+class ParameterNotFoundConduitError(ConduitError):
+    pass
+
+
+class AddonNotFoundConduitError(ConduitError):
+    pass
+
+
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 CONDUIT_ADDON_TYPES = [
     "opensearch",
-    "postgres",
+    "rds-postgres",
+    "aurora-postgres",
     "redis",
 ]
+CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
-def normalise_string(to_normalise: str) -> str:
-    output = re.sub("[^0-9a-zA-Z]+", "-", to_normalise)
-    return output.lower()
+def normalise_secret_name(addon_name: str) -> str:
+    return addon_name.replace("-", "_").upper()
 
 
-def get_or_create_task_name(app: Application, env: str, addon_name: str) -> str:
-    ssm = app.environments[env].session.client("ssm")
-    task_name_parameter = f"/copilot/{app.name}/{env}/conduits/{addon_name}_CONDUIT_TASK_NAME"
+def get_addon_type(app: Application, env: str, addon_name: str) -> str:
+    session = app.environments[env].session
+    ssm_client = session.client("ssm")
+    addon_type = None
 
     try:
-        return ssm.get_parameter(Name=task_name_parameter)["Parameter"]["Value"]
+        addon_config = json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{app.name}/environments/{env}/addons"
+            )["Parameter"]["Value"]
+        )
+    except ssm_client.exceptions.ParameterNotFound:
+        raise ParameterNotFoundConduitError
+
+    if addon_name not in addon_config.keys():
+        raise AddonNotFoundConduitError
+
+    for name, config in addon_config.items():
+        if name == addon_name:
+            addon_type = config["type"]
+
+    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
+        raise InvalidAddonTypeConduitError(addon_type)
+
+    if "postgres" in addon_type:
+        addon_type = addon_type.split("-")[1]
+
+    return addon_type
+
+
+def get_parameter_name(
+    app: Application, env: str, addon_type: str, addon_name: str, access: str
+) -> str:
+    if addon_type == "postgres":
+        return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_{access.upper()}"
+    else:
+        return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}"
+
+
+def get_or_create_task_name(
+    app: Application, env: str, addon_name: str, parameter_name: str
+) -> str:
+    ssm = app.environments[env].session.client("ssm")
+
+    try:
+        return ssm.get_parameter(Name=parameter_name)["Parameter"]["Value"]
     except ssm.exceptions.ParameterNotFound:
         random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
-        return f"conduit-{app.name}-{env}-{normalise_string(addon_name)}-{random_id}"
+        return f"conduit-{app.name}-{env}-{addon_name}-{random_id}"
 
 
 def get_cluster_arn(app: Application, env: str) -> str:
@@ -86,37 +135,44 @@ def get_cluster_arn(app: Application, env: str) -> str:
     raise NoClusterConduitError
 
 
-def get_connection_secret_arn(app: Application, env: str, name: str) -> str:
+def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> str:
     secrets_manager = app.environments[env].session.client("secretsmanager")
     ssm = app.environments[env].session.client("ssm")
 
-    connection_secret_id = f"/copilot/{app.name}/{env}/secrets/{name}"
-
     try:
-        return ssm.get_parameter(Name=connection_secret_id, WithDecryption=False)["Parameter"][
-            "ARN"
-        ]
+        return ssm.get_parameter(Name=secret_name, WithDecryption=False)["Parameter"]["ARN"]
     except ssm.exceptions.ParameterNotFound:
         pass
 
     try:
-        return secrets_manager.describe_secret(SecretId=connection_secret_id)["ARN"]
+        return secrets_manager.describe_secret(SecretId=secret_name)["ARN"]
     except secrets_manager.exceptions.ResourceNotFoundException:
         pass
 
-    raise SecretNotFoundConduitError(name)
+    raise SecretNotFoundConduitError(secret_name)
 
 
 def create_addon_client_task(
-    app: Application, env: str, addon_type: str, addon_name: str, task_name: str
+    app: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    task_name: str,
+    access: str,
 ):
-    connection_secret_arn = get_connection_secret_arn(app, env, addon_name.upper())
+    secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
+
+    if addon_type == "postgres":
+        if access == "read":
+            secret_name += "_READ_ONLY_USER"
+        elif access == "write":
+            secret_name += "_APPLICATION_USER"
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -203,7 +259,12 @@ def add_stack_delete_policy_to_task_role(app: Application, env: str, task_name: 
 
 
 def update_conduit_stack_resources(
-    app: Application, env: str, addon_type: str, addon_name: str, task_name: str
+    app: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    task_name: str,
+    parameter_name: str,
 ):
     session = app.environments[env].session
     cloudformation_client = session.client("cloudformation")
@@ -216,7 +277,7 @@ def update_conduit_stack_resources(
         f"""
         Type: AWS::SSM::Parameter
         Properties:
-          Name: /copilot/{app.name}/{env}/conduits/{addon_name}_CONDUIT_TASK_NAME
+          Name: {parameter_name}
           Type: String
           Value: {task_name}
         """
@@ -241,7 +302,7 @@ def update_conduit_stack_resources(
         Properties:
           RoleArn: {log_filter_role_arn}
           LogGroupName: /copilot/{task_name}
-          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{normalise_string(addon_name)}/{task_name.rsplit("-", 1)[1]}
+          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}
           FilterPattern: ''
           DestinationArn: {destination_arn}
         """
@@ -260,37 +321,60 @@ def update_conduit_stack_resources(
     )
 
 
-def start_conduit(app: str, env: str, addon_type: str, addon_name: str = None):
-    if addon_type not in CONDUIT_ADDON_TYPES:
-        raise InvalidAddonTypeConduitError(addon_type)
-
-    application = load_application(app)
+def start_conduit(
+    application: Application,
+    env: str,
+    addon_type: str,
+    addon_name: str,
+    access: str = "read",
+):
     cluster_arn = get_cluster_arn(application, env)
-    addon_name = addon_name or addon_type
-    task_name = get_or_create_task_name(application, env, addon_name)
+    parameter_name = get_parameter_name(application, env, addon_type, addon_name, access)
+    task_name = get_or_create_task_name(application, env, addon_name, parameter_name)
 
     if not addon_client_is_running(application, env, cluster_arn, task_name):
-        create_addon_client_task(application, env, addon_type, addon_name, task_name)
+        create_addon_client_task(application, env, addon_type, addon_name, task_name, access)
         add_stack_delete_policy_to_task_role(application, env, task_name)
-        update_conduit_stack_resources(application, env, addon_type, addon_name, task_name)
+        update_conduit_stack_resources(
+            application, env, addon_type, addon_name, task_name, parameter_name
+        )
 
     connect_to_addon_client_task(application, env, cluster_arn, task_name)
 
 
 @click.command(cls=ClickDocOptCommand)
-@click.argument("addon_type", type=click.Choice(CONDUIT_ADDON_TYPES))
+@click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS environment name", required=True)
-@click.option("--addon-name", help="Name of custom addon", required=False)
-def conduit(addon_type: str, app: str, env: str, addon_name: str):
+@click.option(
+    "--access",
+    default="read",
+    type=click.Choice(CONDUIT_ACCESS_OPTIONS),
+    help="Allow write or admin access to database addons",
+)
+def conduit(addon_name: str, app: str, env: str, access: str):
     """Create a conduit connection to an addon."""
     check_copilot_helper_version_needs_update()
+    application = load_application(app)
 
     try:
-        start_conduit(app, env, addon_type, addon_name)
-    except InvalidAddonTypeConduitError:
+        addon_type = get_addon_type(application, env, addon_name)
+        start_conduit(application, env, addon_type, addon_name, access)
+    except ParameterNotFoundConduitError:
         click.secho(
-            f"""Addon type "{addon_type}" does not exist, try one of {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except AddonNotFoundConduitError:
+        click.secho(
+            f"""Addon "{addon_name}" does not exist.""",
+            fg="red",
+        )
+        exit(1)
+    except InvalidAddonTypeConduitError as err:
+        click.secho(
+            f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
             fg="red",
         )
         exit(1)
@@ -299,13 +383,13 @@ def conduit(addon_type: str, app: str, env: str, addon_name: str):
         exit(1)
     except SecretNotFoundConduitError as err:
         click.secho(
-            f"""No secret called "{addon_name or err}" for "{app}" in "{env}" environment.""",
+            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
             fg="red",
         )
         exit(1)
     except CreateTaskTimeoutConduitError:
         click.secho(
-            f"""Client ({addon_type}) ECS task has failed to start for "{app}" in "{env}" environment.""",
+            f"""Client ({addon_name}) ECS task has failed to start for "{app}" in "{env}" environment.""",
             fg="red",
         )
         exit(1)

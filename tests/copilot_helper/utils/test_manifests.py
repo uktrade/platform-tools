@@ -10,7 +10,7 @@ def test_get_service_name_from_manifest():
 
     name = get_service_name_from_manifest(service_manifest)
 
-    assert name == "test-service"
+    assert name == "test-public-service"
 
 
 def test_get_repository_name_from_manifest():
@@ -18,4 +18,4 @@ def test_get_repository_name_from_manifest():
 
     repository = get_repository_name_from_manifest(service_manifest)
 
-    assert repository == "testapp/test-service"
+    assert repository == "testapp/test-public-service"

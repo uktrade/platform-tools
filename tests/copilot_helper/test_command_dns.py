@@ -1,6 +1,4 @@
-import json
 from unittest.mock import ANY
-from unittest.mock import mock_open
 from unittest.mock import patch
 
 import boto3
@@ -8,13 +6,18 @@ import pytest
 from botocore import stub
 from botocore.stub import Stubber
 from click.testing import CliRunner
+from moto import mock_acm
 from moto import mock_ec2
 from moto import mock_ecs
 from moto import mock_elbv2
+from moto import mock_sts
 
 from dbt_copilot_helper.commands.dns import InvalidDomainException
 from dbt_copilot_helper.commands.dns import add_records
 from dbt_copilot_helper.commands.dns import assign
+from dbt_copilot_helper.commands.dns import cdn_assign
+from dbt_copilot_helper.commands.dns import cdn_delete
+from dbt_copilot_helper.commands.dns import cdn_list
 from dbt_copilot_helper.commands.dns import configure
 from dbt_copilot_helper.commands.dns import copy_records_from_parent_to_subdomain
 from dbt_copilot_helper.commands.dns import create_cert
@@ -22,9 +25,9 @@ from dbt_copilot_helper.commands.dns import create_hosted_zones
 from dbt_copilot_helper.commands.dns import create_required_zones_and_certs
 from dbt_copilot_helper.commands.dns import get_base_domain
 from dbt_copilot_helper.commands.dns import get_certificate_zone_id
-from dbt_copilot_helper.commands.dns import get_load_balancer_domain_and_configuration
 from dbt_copilot_helper.commands.dns import get_required_subdomains
 from dbt_copilot_helper.commands.dns import validate_subdomains
+from tests.copilot_helper.conftest import mock_aws_client
 
 HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
 ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
@@ -229,6 +232,43 @@ def test_create_cert_deletes_the_old_and_creates_a_new_cert_if_existing_one_is_p
         assert new_cert_arn == actual_cert_arn
 
 
+@patch(
+    "dbt_copilot_helper.commands.dns._wait_for_certificate_validation",
+    return_value="arn:1234",
+)
+@patch("click.confirm")
+def test_create_cert_with_existing_record_sets_creates_a_cert(
+    _wait_for_certificate_validation, mock_click, acm_session, route53_session
+):
+    resp = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
+    zone_id = resp["HostedZone"]["Id"]
+
+    route53_session.change_resource_record_sets(
+        HostedZoneId=zone_id,
+        ChangeBatch={
+            "Changes": [
+                {
+                    "Action": "CREATE",
+                    "ResourceRecordSet": {
+                        "Name": "_d930b28be6c5927595552b219965053e.test.1234.",
+                        "Type": "CNAME",
+                        "TTL": 300,
+                        "ResourceRecords": [
+                            {
+                                "Value": "_c9edd76ee4a0e2a74388032f3861cc50.ykybfrwcxw.acm-validations.aws."
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
+    )
+
+    assert create_cert(acm_session, route53_session, "test.1234", zone_id).startswith(
+        "arn:aws:acm:"
+    )
+
+
 def test_add_records(route53_session):
     response = route53_session.create_hosted_zone(Name="1234", CallerReference="1234")
 
@@ -430,6 +470,51 @@ def test_configure_success(
 
 
 @pytest.mark.parametrize(
+    "env",
+    ["devnohttp", "devnoalias"],
+)
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort")
+@patch(
+    "dbt_copilot_helper.commands.dns.create_required_zones_and_certs",
+    return_value="arn:1234",
+)
+def test_configure_success_no_http(
+    mock_get_aws_session_or_abort, mock_create_required_zones_and_certs, fakefs, env
+):
+    fakefs.create_file(
+        "copilot/manifest.yml",
+        contents="""
+        environments:
+          devnohttp:
+            count:
+              range: 2-10
+          devnoalias:
+            http:
+            count:
+              range: 2-10
+        """,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        configure,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            env,
+        ],
+    )
+
+    expected = [
+        "Checking file: copilot/manifest.yml",
+        f"No http.alias present for {env} environment in copilot/manifest.yml, skipping...",
+    ]
+    actual = [line.strip() for line in result.output.split("\n") if line.strip()]
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
     "env, expected_domain_profile",
     [
         ("dev", "dev"),
@@ -489,11 +574,16 @@ def test_configure_with_no_manifests_exits_with_error(fakefs):
 @patch(
     "dbt_copilot_helper.commands.dns.get_aws_session_or_abort",
 )
-@patch("dbt_copilot_helper.commands.dns.check_response", return_value="{}")
 @patch(
     "dbt_copilot_helper.commands.dns.ensure_cwd_is_repo_root",
 )
-def test_assign(get_aws_session_or_abort, check_response, ensure_cwd_is_repo_root):
+def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
+    client = mock_aws_client(get_aws_session_or_abort)
+    client.list_clusters.return_value = {
+        "clusterArns": [],
+        "ResponseMetadata": {"HTTPStatusCode": 200},
+    }
+
     runner = CliRunner()
     result = runner.invoke(
         assign,
@@ -510,97 +600,9 @@ def test_assign(get_aws_session_or_abort, check_response, ensure_cwd_is_repo_roo
             "dev",
         ],
     )
-    assert result.output.startswith("There are no clusters matching")
-
-
-@mock_ecs
-def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
-    with pytest.raises(SystemExit):
-        get_load_balancer_domain_and_configuration(
-            boto3.Session(),
-            HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_ENVIRONMENT_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
-        )
-
-    out, _ = capfd.readouterr()
-
     assert (
-        out == f"There are no clusters matching {HYPHENATED_APPLICATION_NAME} in this AWS account\n"
-    )
-
-
-@mock_ecs
-def test_get_load_balancer_domain_and_configuration_no_services(capfd):
-    boto3.Session().client("ecs").create_cluster(
-        clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
-    )
-    with pytest.raises(SystemExit):
-        get_load_balancer_domain_and_configuration(
-            boto3.Session(),
-            HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
-            ALPHANUMERIC_ENVIRONMENT_NAME,
-        )
-
-    out, _ = capfd.readouterr()
-
-    assert (
-        out == f"There are no services matching {ALPHANUMERIC_SERVICE_NAME} in this aws account\n"
-    )
-
-
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-def test_get_load_balancer_domain_and_configuration(tmp_path):
-    cluster_name = (
-        f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
-    )
-    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
-    session = boto3.Session()
-    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
-    mocked_subnet_id = session.client("ec2").create_subnet(
-        VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16"
-    )["Subnet"]["SubnetId"]
-    mocked_elbv2_client = session.client("elbv2")
-    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
-        Name="foo", Subnets=[mocked_subnet_id]
-    )["LoadBalancers"][0]["LoadBalancerArn"]
-    target_group = mocked_elbv2_client.create_target_group(
-        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
-    )
-    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
-    mocked_elbv2_client.create_listener(
-        LoadBalancerArn=mocked_load_balancer_arn,
-        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
-    )
-    mocked_ecs_client = session.client("ecs")
-    mocked_ecs_client.create_cluster(clusterName=cluster_name)
-    mocked_ecs_client.create_service(
-        cluster=cluster_name,
-        serviceName=service_name,
-        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
-    )
-    mocked_service_manifest_contents = {
-        "environments": {ALPHANUMERIC_ENVIRONMENT_NAME: {"http": {"alias": "somedomain.tld"}}}
-    }
-    open_mock = mock_open(read_data=json.dumps(mocked_service_manifest_contents))
-
-    with patch("dbt_copilot_helper.commands.dns.open", open_mock):
-        domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
-            boto3.Session(),
-            HYPHENATED_APPLICATION_NAME,
-            ALPHANUMERIC_SERVICE_NAME,
-            ALPHANUMERIC_ENVIRONMENT_NAME,
-        )
-
-    open_mock.assert_called_once_with(f"./copilot/{ALPHANUMERIC_SERVICE_NAME}/manifest.yml", "r")
-    assert domain_name == "somedomain.tld"
-    assert load_balancer_configuration["LoadBalancerArn"] == mocked_load_balancer_arn
-    assert load_balancer_configuration["LoadBalancerName"] == "foo"
-    assert load_balancer_configuration["VpcId"] == mocked_vpc_id
-    assert load_balancer_configuration["AvailabilityZones"][0]["SubnetId"] == mocked_subnet_id
+        "There are no clusters for environment dev of application some-app in AWS account foo"
+    ) in result.output
 
 
 @pytest.mark.parametrize(
@@ -739,3 +741,236 @@ def test_get_required_subdomains_throws_exception_with_multiple_errors():
     message = exc_info.value.args[0]
     assert f"Subdomain {subdomain} is not a valid domain" in message
     assert f"{subdomain} is not a subdomain of {base_domain}" in message
+
+
+def setup_alb_listener(conditions, multiple):
+    cluster_name = (
+        f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
+    )
+    service_name = f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{ALPHANUMERIC_SERVICE_NAME}-{SERVICE_NAME_SUFFIX}"
+    session = boto3.Session()
+    mocked_vpc_id = session.client("ec2").create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+    mocked_subnet_id = session.client("ec2").create_subnet(
+        VpcId=mocked_vpc_id, CidrBlock="10.0.0.0/16"
+    )["Subnet"]["SubnetId"]
+    mocked_elbv2_client = session.client("elbv2")
+    mocked_load_balancer_arn = mocked_elbv2_client.create_load_balancer(
+        Name="foo",
+        Subnets=[mocked_subnet_id],
+    )["LoadBalancers"][0]["LoadBalancerArn"]
+    target_group = mocked_elbv2_client.create_target_group(
+        Name="foo", Protocol="HTTPS", Port=80, VpcId=mocked_vpc_id
+    )
+    target_group_arn = target_group["TargetGroups"][0]["TargetGroupArn"]
+    listener_arn = mocked_elbv2_client.create_listener(
+        LoadBalancerArn=mocked_load_balancer_arn,
+        DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Protocol="HTTPS",
+    )["Listeners"][0]["ListenerArn"]
+
+    actions = [
+        {
+            "Type": "forward",
+            "TargetGroupArn": target_group_arn,
+            "Order": 1,
+            "ForwardConfig": {
+                "TargetGroups": [{"TargetGroupArn": target_group_arn, "Weight": 1}],
+                "TargetGroupStickinessConfig": {"Enabled": False, "DurationSeconds": 3600},
+            },
+        }
+    ]
+
+    mocked_elbv2_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=50000,
+        Conditions=conditions,
+        Actions=actions,
+    )
+    if multiple:
+        mocked_elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Priority=49000,
+            Conditions=conditions,
+            Actions=actions,
+        )
+
+    mocked_ecs_client = session.client("ecs")
+    mocked_ecs_client.create_cluster(clusterName=cluster_name)
+    mocked_ecs_client.create_service(
+        cluster=cluster_name,
+        serviceName=service_name,
+        loadBalancers=[{"loadBalancerName": "foo", "targetGroupArn": target_group_arn}],
+    )
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
+    conditions = [{"Field": "host-header", "Values": ["test.com"]}]
+
+    setup_alb_listener(conditions, False)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_assign,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="test.com",
+    )
+
+    assert "Domains currently configured: test.com" in result.output
+    assert "test.com already exists, exiting" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
+def test_cdn_add(alias_session, aws_credentials):
+    conditions = [
+        {
+            "Field": "host-header",
+            "Values": ["test.com"],
+            "HostHeaderConfig": {"Values": ["test.com"]},
+        }
+    ]
+
+    setup_alb_listener(conditions, False)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_assign,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="web.dev.uktrade.digital",
+    )
+
+    assert "Domains now configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
+def test_cdn_delete(alias_session, aws_credentials):
+    conditions = [
+        {
+            "Field": "host-header",
+            "Values": ["test.com", "web.dev.uktrade.digital"],
+            "HostHeaderConfig": {"Values": ["test.com", "web.dev.uktrade.digital"]},
+        }
+    ]
+
+    setup_alb_listener(conditions, False)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_delete,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="web.dev.uktrade.digital\ny\n",
+    )
+    assert "deleting web.dev.uktrade.digital\nDomains now configured: ['test.com']" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+def test_cdn_list(alias_session, aws_credentials):
+    conditions = [
+        {
+            "Field": "host-header",
+            "Values": ["test.com", "web.dev.uktrade.digital"],
+            "HostHeaderConfig": {"Values": ["test.com", "web.dev.uktrade.digital"]},
+        }
+    ]
+
+    setup_alb_listener(conditions, False)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_list,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+    )
+    assert "Domains currently configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
+
+
+@mock_sts
+@mock_elbv2
+@mock_ec2
+@mock_ecs
+@mock_acm
+@patch("dbt_copilot_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
+@patch("dbt_copilot_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
+def test_cdn_add_multiple_domains(alias_session, aws_credentials):
+    conditions = [
+        {
+            "Field": "host-header",
+            "Values": ["test.com"],
+            "HostHeaderConfig": {"Values": ["test.com"]},
+        }
+    ]
+
+    setup_alb_listener(conditions, True)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cdn_assign,
+        [
+            "--project-profile",
+            "foo",
+            "--env",
+            ALPHANUMERIC_ENVIRONMENT_NAME,
+            "--app",
+            HYPHENATED_APPLICATION_NAME,
+            "--svc",
+            ALPHANUMERIC_SERVICE_NAME,
+        ],
+        input="web.dev.uktrade.digital\nweb2.dev.uktrade.digital\n",
+    )
+    assert "Domains now configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
+    assert "Domains now configured: ['test.com', 'web2.dev.uktrade.digital']" in result.output

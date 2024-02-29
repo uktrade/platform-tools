@@ -170,6 +170,8 @@ Resources:
 
   {{ addon_config.prefix }}OpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
+    DependsOn: 
+      - {{ addon_config.prefix }}OpenSearchDomain
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ addon_config.secret_name }}"
       Type: String
@@ -223,7 +225,7 @@ Resources:
         - Key: 'Copilot-Environment'
           Value: !Sub ${Env}
 
-  SubscriptionFilterapplication:
+  {{ addon_config.prefix }}SubscriptionFilterApplication:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}OpenSearchApplicationLogGroup
@@ -234,7 +236,7 @@ Resources:
       FilterPattern: ''
       DestinationArn: !If [{{ addon_config.prefix }}CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']
 
-  SubscriptionFilteraudit:
+  {{ addon_config.prefix }}SubscriptionFilterAudit:
     Type: AWS::Logs::SubscriptionFilter
     DependsOn:
       - {{ addon_config.prefix }}OpenSearchAuditLogGroup

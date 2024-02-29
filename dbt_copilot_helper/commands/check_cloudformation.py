@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
+from dbt_copilot_helper.utils.cloudformation import get_check_security_result
 from dbt_copilot_helper.utils.cloudformation import get_lint_result
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -42,6 +43,25 @@ def lint(ctx: click.Context, directory: str) -> bool:
     success = result.returncode == 0
 
     ctx.obj["lint"] = {
+        "success": success,
+        "message": result.stdout.decode() if not success else None,
+    }
+
+    return success
+
+
+@check_cloudformation.command()
+@click.option("-d", "--directory", type=str, default="copilot")
+@click.pass_context
+def check_security(ctx: click.Context, directory: str) -> bool:
+    addons_manifests = f"{directory}/**/addons/*.yml"
+    # # addons.parameters.yml is not a CloudFormation template file
+    ignore_addons_params = f"{directory}/**/addons/addons.parameters.yml"
+
+    result = get_check_security_result(addons_manifests, ignore_addons_params)
+    success = result.returncode == 0
+
+    ctx.obj["check-security"] = {
         "success": success,
         "message": result.stdout.decode() if not success else None,
     }
