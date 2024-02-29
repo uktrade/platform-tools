@@ -439,13 +439,10 @@ copilot-helper copilot (make-addons|get-env-secrets)
 ## Usage
 
 ```
-copilot-helper copilot make-addons [-d <directory>] 
+copilot-helper copilot make-addons 
 ```
 
 ## Options
-
-- `-d
---directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

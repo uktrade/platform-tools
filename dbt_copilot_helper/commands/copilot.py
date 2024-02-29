@@ -192,10 +192,9 @@ def _generate_svc_overrides(base_path, templates, name):
 
 
 @copilot.command()
-@click.option("-d", "--directory", type=str, default=".")
-def make_addons(directory="."):
+def make_addons():
     """Generate addons CloudFormation for each environment."""
-    output_dir = Path(directory).absolute()
+    output_dir = Path(".").absolute()
 
     ensure_cwd_is_repo_root()
     templates = setup_templates()
@@ -215,7 +214,7 @@ def make_addons(directory="."):
     custom_resources = _get_custom_resources()
 
     svc_names = list_copilot_local_services()
-    base_path = Path(directory)
+    base_path = Path(".")
     for svc_name in svc_names:
         _generate_svc_overrides(base_path, templates, svc_name)
 
