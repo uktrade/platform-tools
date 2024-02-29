@@ -24,6 +24,7 @@ from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
 from dbt_copilot_helper.utils.versioning import get_copilot_versions
+from dbt_copilot_helper.utils.versioning import string_version
 
 
 def secret_should_be_skipped(secret_name):
@@ -68,7 +69,7 @@ def make_config(directory="."):
     click.echo(">>> Generating Copilot configuration files\n")
 
     # add .copilot-helper-version file
-    copilot_version = ".".join([str(num) for num in get_copilot_versions()[0]])
+    copilot_version = string_version(get_copilot_versions()[0])
     click.echo(mkfile(base_path, ".copilot-version-file", f"{copilot_version}"))
 
     # create copilot directory
