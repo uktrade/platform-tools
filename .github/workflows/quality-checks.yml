@@ -1,0 +1,61 @@
+name: Quality Checks
+
+on: [push]
+
+jobs:
+  tests:
+    name: Test against Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.11"
+          - "3.10"
+          - "3.9"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run pytest
+        run: poetry run pytest
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+
+  lint:
+    name: Run lint checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: black
+        run: poetry run pre-commit run black --all-files
+
+      - name: mixed-line-ending
+        run: poetry run pre-commit run mixed-line-ending --all-files
+
+      - name: detect-private-key
+        run: poetry run pre-commit run detect-private-key --all-files
+
+      - name: autoflake
+        run: poetry run pre-commit run autoflake --all-files
+
+      - name: docformatter
+        run: poetry run pre-commit run docformatter --all-files
+
+      - name: docs
+        run: poetry run pre-commit run docs --all-files
+
+

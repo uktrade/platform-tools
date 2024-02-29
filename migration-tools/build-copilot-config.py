@@ -152,9 +152,9 @@ def space_to_copilot_app(app_name, ns_conf):
             psvc["secrets_from"] = svc["name"]
             psvc["name"] += "-" + process["type"]
             psvc["type"] = "backend"
-            psvc[
-                "notes"
-            ] = f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
+            psvc["notes"] = (
+                f"service created based on Procfile entry for {svc['name']} and will require access to the same backing services"
+            )
 
             if "overlapping_secrets" in psvc:
                 del psvc["overlapping_secrets"]
