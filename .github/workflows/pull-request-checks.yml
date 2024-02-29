@@ -1,0 +1,25 @@
+name: Pull request title validation
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+jobs:
+
+  pull-request-title-validation:
+    name: Pull request title validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: beemojs/conventional-pr-action@v2
+
+      - name: Pull request title validation
+        uses:  ytanikin/PRConventionalCommits@1.1.0
+        with:
+          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
+          add_label: 'false'
+          ticket_key_regex: '[A-Z]+-\d+'
