@@ -8,7 +8,16 @@ phases:
   install:
     commands:
       - cd $CODEBUILD_SRC_DIR
+      - if [ ! -f .copilot-version ]; then
+          echo "Cannot find .copilot-version file"
+          exit 1
+        fi
+      - if [ ! -f .copilot-helper-version ]; then
+          echo "Cannot find .copilot-helper-version file"
+          exit 1
+        fi
       - COPILOT_VERSION=`cat .copilot-version`
+      - COPILOT_HELPER_VERSION=`cat .copilot-helper-version`
       - mkdir ./build-tools
       - cd ./build-tools
       # Install copilot
@@ -16,7 +25,6 @@ phases:
       - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
       # Install pyyaml and dbt-copilot-tools
-      - COPILOT_HELPER_VERSION=`cat .copilot-helper-version`
       - pip install PyYAML dbt-copilot-tools==$COPILOT_HELPER_VERSION
       # Install dyff - yaml differ
       - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
