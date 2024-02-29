@@ -436,20 +436,15 @@ copilot-helper copilot (make-addons|get-env-secrets)
 
 [↩ Parent](#copilot-helper-copilot)
 
-    WARNING: this command should not be used as a stand-alone.
-    Use `copilot-helper generate` instead.
     Generate addons CloudFormation for each environment.
 
 ## Usage
 
 ```
-copilot-helper copilot make-addons [-d <directory>] 
+copilot-helper copilot make-addons 
 ```
 
 ## Options
-
-- `-d
---directory <text>` _Defaults to .._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
