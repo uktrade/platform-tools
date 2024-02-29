@@ -170,6 +170,8 @@ Resources:
 
   {{ addon_config.prefix }}OpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
+    DependsOn: 
+      - {{ addon_config.prefix }}OpenSearchDomain
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/{{ addon_config.secret_name }}"
       Type: String
