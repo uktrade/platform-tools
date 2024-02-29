@@ -70,7 +70,7 @@ def make_config(directory="."):
 
     # add .copilot-helper-version file
     copilot_version = string_version(get_copilot_versions()[0])
-    click.echo(mkfile(base_path, ".copilot-version-file", f"{copilot_version}"))
+    click.echo(mkfile(base_path, ".copilot-helper-version", f"{copilot_version}"))
 
     # create copilot directory
     (base_path / "copilot").mkdir(parents=True, exist_ok=True)
