@@ -18,4 +18,5 @@ jobs:
       - name: Pull request title validation
         uses:  ytanikin/PRConventionalCommits@1.1.0
         with:
-          task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
+          # Todo: Look at allowing the exclamation marks in ytanikin/PRConventionalCommits
+          task_types: '["feat","feat!","fix","fix!","docs","docs!","test","test!","ci","ci!","refactor","refactor!","perf","perf!","chore","chore!","revert","revert!"]'
