@@ -191,7 +191,7 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
 
-@copilot.command()
+@copilot.command(deprecated=True, hidden=True)
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
