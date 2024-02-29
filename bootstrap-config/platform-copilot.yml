@@ -1,14 +1,10 @@
 app: platform
 environments:
-  dev:
-    certificate_arns:
-    - ACM-ARN-FOR-help-desk-service-dev.london.cloudapps.digital
   prod:
     certificate_arns:
     - ACM-ARN-FOR-clamav-mirror.london.cloudapps.digital
     - ACM-ARN-FOR-clamav.london.cloudapps.digital
     - ACM-ARN-FOR-company-service.london.cloudapps.digital
-    - ACM-ARN-FOR-prom-statsd.london.cloudapps.digital
     - ACM-ARN-FOR-return-to-office.london.cloudapps.digital
     - ACM-ARN-FOR-return-to-office.trade.gov.uk
     - ACM-ARN-FOR-return-to-office.trade.gov.uk
@@ -20,8 +16,6 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-clamav-mirror-staging.london.cloudapps.digital
     - ACM-ARN-FOR-clamav-uat.london.cloudapps.digital
-    - ACM-ARN-FOR-statsd-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-prom-statsd-staging.london.cloudapps.digital
     - ACM-ARN-FOR-return-to-office-staging.london.cloudapps.digital
     - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
     - ACM-ARN-FOR-return-to-office.staging.uktrade.digital
@@ -34,27 +28,35 @@ services:
 - env_vars: {}
   environments:
     prod:
+      count: 8
       ipfilter: false
+      memory: 4096
       paas: dit-services/platform/clamav
       url: null
     staging:
       ipfilter: false
+      memory: 2048
       paas: dit-staging/platform-staging/clamav-staging
       url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: clamav
+  overlapping_secrets:
+  - MAX_CONTENT_LENGTH
   repo: git@github.com:uktrade/docker-clamav.git
   secrets:
+    MAX_CONTENT_LENGTH: MAX_CONTENT_LENGTH
     MIRROR_URL: MIRROR_URL
   type: public
 - env_vars: {}
   environments:
     prod:
       ipfilter: false
+      memory: 1024
       paas: dit-services/platform/clamav-mirror
       url: clamav-mirror.london.cloudapps.digital
     staging:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/platform-staging/clamav-mirror-staging
       url: clamav-mirror-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -72,16 +74,20 @@ services:
 - env_vars: {}
   environments:
     prod:
+      count: 4
       ipfilter: false
+      memory: 2048
       paas: dit-services/platform/clamav-rest
       url: clamav.london.cloudapps.digital
     staging:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/platform-staging/clamav-rest-staging
       url: clamav-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: clamav-rest
   overlapping_secrets:
+  - MAX_CONTENT_LENGTH
   - SENTRY_DSN
   repo: git@github.com:uktrade/dit-clamav-rest.git
   secrets:
@@ -94,15 +100,21 @@ services:
 - env_vars: {}
   environments:
     prod:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/platform/external-company-service
       url: company-service.london.cloudapps.digital
     staging:
+      count: 2
       ipfilter: false
+      memory: 2048
       paas: dit-staging/platform-staging/external-company-service-staging
       url: null
     uat:
+      count: 4
       ipfilter: true
+      memory: 1024
       paas: dit-staging/platform-staging/external-company-service-uat
       url: company-service-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -191,56 +203,15 @@ services:
   type: backend
 - env_vars: {}
   environments:
-    dev:
-      ipfilter: false
-      paas: dit-staging/sre-ticketing-dev/help-desk-service-dev
-      url: help-desk-service-dev.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: help-desk-service
-  overlapping_secrets:
-  - ALLOWED_HOSTS
-  - APP_ENV
-  - DEBUG
-  - DJANGO_SETTINGS_MODULE
-  - SECRET_KEY
-  repo: git@github.com:uktrade/help-desk-service.git
-  secrets:
-    ALLOWED_HOSTS: ALLOWED_HOSTS
-    APP_ENV: APP_ENV
-    DATABASE_URL: DATABASE_URL
-    DEBUG: DEBUG
-    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
-    HALO_SUBDOMAIN: HALO_SUBDOMAIN
-    HELP_DESK_CREDS: HELP_DESK_CREDS
-    HELP_DESK_INTERFACE: HELP_DESK_INTERFACE
-    REDIS_URL: REDIS_URL
-    REQUIRE_ZENDESK: REQUIRE_ZENDESK
-    SECRET_KEY: SECRET_KEY
-  type: public
-- env_vars: {}
-  environments:
     prod:
+      count: 2
       ipfilter: true
-      paas: dit-services/platform/prom-statsd-exporter
-      url: prom-statsd.london.cloudapps.digital
-    staging:
-      ipfilter: false
-      paas: dit-staging/platform-staging/prom-statsd-exporter-staging
-      url: prom-statsd-staging.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: prom-statsd-exporter
-  repo: git@github.com:uktrade/prom-statsd-exporter.git
-  secrets:
-    X_AUTOSCALING: X_AUTOSCALING
-  type: public
-- env_vars: {}
-  environments:
-    prod:
-      ipfilter: true
+      memory: 1024
       paas: dit-services/platform/return-to-office
       url: return-to-office.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/platform-staging/return-to-office-staging
       url: return-to-office.staging.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -250,11 +221,9 @@ services:
   - ACTIVITY_STREAM_HAWK_SECRET
   - ALLOWED_HOSTS
   - ALLOWED_IPS
-  - APP_ENV
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AUTHBROKER_URL
-  - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - IP_RESTRICT
   - SECRET_KEY
@@ -295,11 +264,15 @@ services:
 - env_vars: {}
   environments:
     prod:
+      count: 4
       ipfilter: false
+      memory: 1024
       paas: dit-services/platform/staff-sso
       url: sso.trade.gov.uk
     staging:
+      count: 2
       ipfilter: false
+      memory: 3072
       paas: dit-staging/platform-staging/staff-sso-staging
       url: sso.trade.uat.uktrade.io
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -323,6 +296,9 @@ services:
     ALLOWED_ADMIN_IP_RANGES: ALLOWED_ADMIN_IP_RANGES
     ALLOWED_HOSTS: ALLOWED_HOSTS
     AUTH_EMAIL_TO_IPD_MAP: AUTH_EMAIL_TO_IPD_MAP
+    AWS_IDC_ENTITY_ID: AWS_IDC_ENTITY_ID
+    AWS_IDC_TOKEN: AWS_IDC_TOKEN
+    AWS_IDC_URL: AWS_IDC_URL
     DEBUG: DEBUG
     DEFAULT_EMAIL_ORDER: DEFAULT_EMAIL_ORDER
     ELASTIC_APM_ENABLED: ELASTIC_APM_ENABLED
@@ -365,7 +341,6 @@ services:
     SENTRY_DSN: SENTRY_DSN
     SESSION_COOKIE_AGE_SECONDS: SESSION_COOKIE_AGE_SECONDS
     TELEMETRY_URL: TELEMETRY_URL
-    XMLSEC1: XMLSEC1
     ZENDESK_EMAIL: ZENDESK_EMAIL
     ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
     ZENDESK_TOKEN: ZENDESK_TOKEN
