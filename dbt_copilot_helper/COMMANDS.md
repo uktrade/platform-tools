@@ -436,6 +436,8 @@ copilot-helper copilot (make-addons|get-env-secrets)
 
 [↩ Parent](#copilot-helper-copilot)
 
+    WARNING: this command should not be used as a stand-alone.
+    Use `copilot-helper generate` instead.
     Generate addons CloudFormation for each environment.
 
 ## Usage
@@ -754,6 +756,9 @@ copilot-helper pipeline generate
 # copilot-helper pipeline generate
 
 [↩ Parent](#copilot-helper-pipeline)
+
+    WARNING: this command should not be used as a stand-alone.
+    Use `copilot-helper generate` instead.
 
     Given a pipelines.yml file, generate environment and service deployment
     pipelines.

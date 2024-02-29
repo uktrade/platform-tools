@@ -194,7 +194,11 @@ def _generate_svc_overrides(base_path, templates, name):
 @copilot.command()
 @click.option("-d", "--directory", type=str, default=".")
 def make_addons(directory="."):
-    """Generate addons CloudFormation for each environment."""
+    """
+    WARNING: this command should not be used as a stand-alone.
+    Use `copilot-helper generate` instead.
+    Generate addons CloudFormation for each environment.
+    """
     output_dir = Path(directory).absolute()
 
     ensure_cwd_is_repo_root()
