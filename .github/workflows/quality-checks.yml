@@ -57,5 +57,3 @@ jobs:
 
       - name: docs
         run: poetry run pre-commit run docs --all-files
-
-
