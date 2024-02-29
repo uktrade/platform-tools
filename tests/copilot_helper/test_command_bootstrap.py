@@ -24,7 +24,6 @@ from dbt_copilot_helper.commands.bootstrap import migrate_secrets
 from dbt_copilot_helper.utils.aws import set_ssm_param
 from dbt_copilot_helper.utils.files import load_and_validate_config
 from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
-from dbt_copilot_helper.utils.versioning import get_copilot_versions
 from tests.copilot_helper.conftest import FIXTURES_DIR
 from tests.copilot_helper.conftest import TEST_APP_DIR
 
@@ -85,6 +84,10 @@ def test_load_and_validate_config_invalid_file():
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch(
+    "dbt_copilot_helper.commands.bootstrap.get_copilot_versions",
+    new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
+)
 def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
@@ -114,8 +117,7 @@ def test_make_config(tmp_path):
     assert (tmp_path / ".copilot-version-file").exists()
 
     with open(str(tmp_path / ".copilot-version-file")) as copilot_version_file:
-        copilot_version = ".".join([str(num) for num in get_copilot_versions()])
-        assert copilot_version_file.read() == copilot_version
+        assert copilot_version_file.read() == "1.0.0"
 
     assert (tmp_path / "copilot").exists()
 
