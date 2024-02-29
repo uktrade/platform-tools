@@ -10,8 +10,8 @@ from dbt_copilot_helper.utils.click import ClickDocOptCommand
 @click.pass_context
 def generate(ctx: click.Context):
     """
-    Given a pipelines.yml file, generate environment and service deployment
-    pipelines and generate addons CloudFormation for each environment.
+    Generate deployment pipeline configuration files and generate addons
+    CloudFormation template files for each environment.
 
     Wraps pipeline generate and make-addons.
     """
