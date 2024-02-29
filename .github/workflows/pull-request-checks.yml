@@ -18,7 +18,7 @@ jobs:
 #      - uses: beemojs/conventional-pr-action@v2
 
       - name: Pull request title validation
-        uses:  ytanikin/PRConventionalCommits
+        uses:  ytanikin/PRConventionalCommits@1.1.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert"]'
           add_label: 'false'
