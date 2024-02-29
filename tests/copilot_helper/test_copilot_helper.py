@@ -28,6 +28,7 @@ class TestCopilotHelperCli:
             "domain",
             "cdn",
             "environment",
+            "generate",
             "pipeline",
             "application",
         ]

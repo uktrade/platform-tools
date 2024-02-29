@@ -29,6 +29,7 @@
 - [copilot-helper environment](#copilot-helper-environment)
 - [copilot-helper environment offline](#copilot-helper-environment-offline)
 - [copilot-helper environment online](#copilot-helper-environment-online)
+- [copilot-helper generate](#copilot-helper-generate)
 - [copilot-helper pipeline](#copilot-helper-pipeline)
 - [copilot-helper pipeline generate](#copilot-helper-pipeline-generate)
 - [copilot-helper application](#copilot-helper-application)
@@ -62,6 +63,7 @@ copilot-helper <command> [--version]
 - [`copilot` ↪](#copilot-helper-copilot)
 - [`domain` ↪](#copilot-helper-domain)
 - [`environment` ↪](#copilot-helper-environment)
+- [`generate` ↪](#copilot-helper-generate)
 - [`pipeline` ↪](#copilot-helper-pipeline)
 
 # copilot-helper bootstrap
@@ -705,6 +707,26 @@ copilot-helper environment online --app <application> --env <environment>
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
+# copilot-helper generate
+
+[↩ Parent](#copilot-helper)
+
+    Generate deployment pipeline configuration files and generate addons
+    CloudFormation template files for each environment.
+
+    Wraps pipeline generate and make-addons.
+
+## Usage
+
+```
+copilot-helper generate 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
 # copilot-helper pipeline
 
 [↩ Parent](#copilot-helper)
@@ -729,6 +751,9 @@ copilot-helper pipeline generate
 # copilot-helper pipeline generate
 
 [↩ Parent](#copilot-helper-pipeline)
+
+    WARNING: this command should not be used as a stand-alone.
+    Use `copilot-helper generate` instead.
 
     Given a pipelines.yml file, generate environment and service deployment
     pipelines.

@@ -28,7 +28,11 @@ def pipeline():
 
 @pipeline.command()
 def generate():
-    """Given a pipelines.yml file, generate environment and service deployment
+    """
+    WARNING: this command should not be used as a stand-alone.
+    Use `copilot-helper generate` instead.
+
+    Given a pipelines.yml file, generate environment and service deployment
     pipelines."""
     templates = setup_templates()
 
