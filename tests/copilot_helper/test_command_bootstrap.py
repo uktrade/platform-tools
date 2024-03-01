@@ -84,6 +84,10 @@ def test_load_and_validate_config_invalid_file():
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_copilot_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch(
+    "dbt_copilot_helper.commands.bootstrap.get_app_versions",
+    new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
+)
 def test_make_config(tmp_path):
     """Test that make_config generates the expected directories and file
     contents."""
@@ -109,6 +113,11 @@ def test_make_config(tmp_path):
         "GitHub documentation: https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration"
         in result.output
     )
+
+    assert (tmp_path / ".copilot-helper-version").exists()
+
+    with open(str(tmp_path / ".copilot-helper-version")) as copilot_helper_version_file:
+        assert copilot_helper_version_file.read() == "1.0.0"
 
     assert (tmp_path / "copilot").exists()
 
