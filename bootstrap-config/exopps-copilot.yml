@@ -22,18 +22,23 @@ services:
   environments:
     continuous-deployment:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/exopps-dev/export-opportunities-continuous-deployment
       url: great.dev.uktrade.digital
     production:
+      count: 3
       ipfilter: false
+      memory: 8192
       paas: dit-services/exopps/export-opportunities
       url: www.great.gov.uk
     staging:
       ipfilter: true
+      memory: 16384
       paas: dit-staging/exopps-staging/export-opportunities-staging
       url: great.staging.uktrade.digital
     uat:
       ipfilter: true
+      memory: 16384
       paas: dit-staging/exopps-uat/export-opportunities-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

@@ -1,95 +1,36 @@
 app: trade-helpdesk
 environments:
-  cms-dev:
-    certificate_arns:
-    - ACM-ARN-FOR-helpdesk-cms-dev.london.cloudapps.digital
-  cms-prod:
-    certificate_arns:
-    - ACM-ARN-FOR-helpdesk-cms.london.cloudapps.digital
-  cms-staging:
-    certificate_arns:
-    - ACM-ARN-FOR-helpdesk-cms-staging.london.cloudapps.digital
   dev:
     certificate_arns:
     - ACM-ARN-FOR-contact-forms-dev.london.cloudapps.digital
-    - ACM-ARN-FOR-helpdesk-dev.london.cloudapps.digital
-    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.dev.uktrade.io
-    - ACM-ARN-FOR-helpdesk-importer-dev.london.cloudapps.digital
-  development:
-    certificate_arns:
-    - ACM-ARN-FOR-mendel-data-development.london.cloudapps.digital
   prod:
     certificate_arns:
     - ACM-ARN-FOR-contact-forms.london.cloudapps.digital
     - ACM-ARN-FOR-contact.check-duties-customs-exporting-goods.service.gov.uk
-    - ACM-ARN-FOR-helpdesk.london.cloudapps.digital
-    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.gov.uk
-    - ACM-ARN-FOR-www.get-rules-tariffs-trade-with-uk.service.gov.uk
-  production:
-    certificate_arns:
-    - ACM-ARN-FOR-mendel-data-production.london.cloudapps.digital
   staging:
     certificate_arns:
     - ACM-ARN-FOR-contact-forms-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-helpdesk-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-get-rules-tariffs-trade-with-uk.service.staging.uktrade.io
-    - ACM-ARN-FOR-helpdesk-importer-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-mendel-data-staging.london.cloudapps.digital
 services:
 - env_vars: {}
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/trade-helpdesk-dev/contact-forms-dev
       url: contact-forms-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/trade-helpdesk/contact-forms
       url: contact.check-duties-customs-exporting-goods.service.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/trade-helpdesk-staging/contact-forms-staging
       url: contact-forms-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: contact-forms
-  overlapping_secrets:
-  - ADMIN_ENABLED
-  - ALLOWED_ADMIN_IPS
-  - ALLOWED_ADMIN_IP_RANGES
-  - ALLOWED_HOSTS
-  - APM_DEBUG
-  - APM_ENVIRONMENT
-  - APM_SECRET_TOKEN
-  - APM_SERVER_URL
-  - APM_SERVICE_NAME
-  - APM_TIMEOUT
-  - APP_START_DOMAIN
-  - AUTHBROKER_CLIENT_ID
-  - AUTHBROKER_CLIENT_SECRET
-  - AUTHBROKER_URL
-  - BASICAUTH_USERS
-  - DEBUG
-  - DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS
-  - DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS
-  - DIRECTORY_FORMS_API_API_KEY
-  - DIRECTORY_FORMS_API_BASE_URL
-  - DIRECTORY_FORMS_API_SENDER_ID
-  - DISABLE_COLLECTSTATIC
-  - DJANGO_BASE_DIR
-  - DJANGO_SECRET_KEY
-  - DJANGO_SETTINGS_MODULE
-  - FEEDBACK_DESTINATION_EMAIL
-  - FEEDBACK_EMAIL
-  - HMRC_TAX_FORM_URL
-  - IP_SAFELIST_XFF_INDEX
-  - LOGIN_REDIRECT_URL
-  - LOGIN_URL
-  - PYTHONPATH
-  - RESTRICT_ADMIN
-  - SENTRY_DSN
-  - SENTRY_ENVIRONMENT
-  - X_AUTOSCALING
-  - xBASICAUTH_DISABLE
   repo: git@github.com:uktrade/dit-contact-forms.git
   secrets:
     ADMIN_ENABLED: ADMIN_ENABLED
@@ -141,251 +82,6 @@ services:
     X_AUTOSCALING: X_AUTOSCALING
     ZENDESK_CHEG_SERVICE_NAME: ZENDESK_CHEG_SERVICE_NAME
     ZENDESK_EU_EXIT_SERVICE_NAME: ZENDESK_EU_EXIT_SERVICE_NAME
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
     xBASICAUTH_DISABLE: xBASICAUTH_DISABLE
   type: public
-- env_vars: {}
-  environments:
-    cms-dev:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-dev/helpdesk-cms-dev
-      url: helpdesk-cms-dev.london.cloudapps.digital
-    cms-prod:
-      ipfilter: true
-      paas: dit-services/trade-helpdesk/helpdesk-cms
-      url: helpdesk-cms.london.cloudapps.digital
-    cms-staging:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-staging/helpdesk-cms-staging
-      url: helpdesk-cms-staging.london.cloudapps.digital
-    dev:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-dev/helpdesk-dev
-      url: helpdesk-importer-dev.london.cloudapps.digital
-    prod:
-      ipfilter: true
-      paas: dit-services/trade-helpdesk/helpdesk
-      url: www.get-rules-tariffs-trade-with-uk.service.gov.uk
-    staging:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-staging/helpdesk-staging
-      url: helpdesk-importer-staging.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: helpdesk
-  overlapping_secrets:
-  - ADMIN_ENABLED
-  - ALLOWED_ADMIN_IPS
-  - ALLOWED_ADMIN_IP_RANGES
-  - ALLOWED_HOSTS
-  - APM_DEBUG
-  - APM_ENVIRONMENT
-  - APM_SECRET_TOKEN
-  - APM_SERVER_URL
-  - APM_SERVICE_NAME
-  - APM_TIMEOUT
-  - APP_START_DOMAIN
-  - AUTHBROKER_CLIENT_ID
-  - AUTHBROKER_CLIENT_SECRET
-  - AUTHBROKER_URL
-  - BASICAUTH_USERS
-  - DEBUG
-  - DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS
-  - DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS
-  - DIRECTORY_FORMS_API_API_KEY
-  - DIRECTORY_FORMS_API_BASE_URL
-  - DIRECTORY_FORMS_API_SENDER_ID
-  - DISABLE_COLLECTSTATIC
-  - DJANGO_BASE_DIR
-  - DJANGO_SECRET_KEY
-  - DJANGO_SETTINGS_MODULE
-  - FEEDBACK_DESTINATION_EMAIL
-  - FEEDBACK_EMAIL
-  - HMRC_TAX_FORM_URL
-  - IP_SAFELIST_XFF_INDEX
-  - LOGIN_REDIRECT_URL
-  - LOGIN_URL
-  - PYTHONPATH
-  - RESTRICT_ADMIN
-  - ROO_S3_ACCESS_KEY_ID
-  - ROO_S3_SECRET_ACCESS_KEY
-  - SENTRY_DSN
-  - SENTRY_ENVIRONMENT
-  - X_AUTOSCALING
-  - xBASICAUTH_DISABLE
-  repo: git@github.com:uktrade/dit-helpdesk.git
-  secrets:
-    ADMIN_ENABLED: ADMIN_ENABLED
-    ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
-    ALLOWED_ADMIN_IP_RANGES: ALLOWED_ADMIN_IP_RANGES
-    ALLOWED_HOSTS: ALLOWED_HOSTS
-    APM_DEBUG: APM_DEBUG
-    APM_ENVIRONMENT: APM_ENVIRONMENT
-    APM_SECRET_TOKEN: APM_SECRET_TOKEN
-    APM_SERVER_URL: APM_SERVER_URL
-    APM_SERVICE_NAME: APM_SERVICE_NAME
-    APM_TIMEOUT: APM_TIMEOUT
-    APP_START_DOMAIN: APP_START_DOMAIN
-    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
-    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
-    AUTHBROKER_URL: AUTHBROKER_URL
-    BASICAUTH_USERS: BASICAUTH_USERS
-    BEIS_CONTACT: BEIS_CONTACT
-    BEIS_EMAIL: BEIS_EMAIL
-    CMS_ENABLED: CMS_ENABLED
-    CSP_REPORT_ONLY: CSP_REPORT_ONLY
-    DEBUG: DEBUG
-    DEFRA_CONTACT: DEFRA_CONTACT
-    DEFRA_EMAIL: DEFRA_EMAIL
-    DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS: DIRECTORY_CLIENT_CORE_CACHE_EXPIRE_SECONDS
-    DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS: DIRECTORY_CLIENT_CORE_CACHE_LOG_THROTTLING_SECONDS
-    DIRECTORY_FORMS_API_API_KEY: DIRECTORY_FORMS_API_API_KEY
-    DIRECTORY_FORMS_API_BASE_URL: DIRECTORY_FORMS_API_BASE_URL
-    DIRECTORY_FORMS_API_SENDER_ID: DIRECTORY_FORMS_API_SENDER_ID
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-    DIT_HELPDESK_ADMIN_PASSWORD: DIT_HELPDESK_ADMIN_PASSWORD
-    DJANGO_BASE_DIR: DJANGO_BASE_DIR
-    DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
-    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
-    FEEDBACK_CONTACT: FEEDBACK_CONTACT
-    FEEDBACK_DESTINATION_EMAIL: FEEDBACK_DESTINATION_EMAIL
-    FEEDBACK_EMAIL: FEEDBACK_EMAIL
-    FTA_INFO_SHARING_ENABLED: FTA_INFO_SHARING_ENABLED
-    GROUPED_SEARCH_ENABLED: GROUPED_SEARCH_ENABLED
-    HELPDESK_GA_GTM: HELPDESK_GA_GTM
-    HELPDESK_GA_UA: HELPDESK_GA_UA
-    HMRC_TAX_FORM_URL: HMRC_TAX_FORM_URL
-    IMPORTER_JOURNEY_HOST: IMPORTER_JOURNEY_HOST
-    IP_SAFELIST_XFF_INDEX: IP_SAFELIST_XFF_INDEX
-    JAPAN_FTA_ENABLED: JAPAN_FTA_ENABLED
-    LOGIN_REDIRECT_URL: LOGIN_REDIRECT_URL
-    LOGIN_URL: LOGIN_URL
-    LOG_LEVEL: LOG_LEVEL
-    NI_JOURNEY_ENABLED: NI_JOURNEY_ENABLED
-    PYTHONPATH: PYTHONPATH
-    READ_ONLY: READ_ONLY
-    RESTRICT_ADMIN: RESTRICT_ADMIN
-    ROO_S3_ACCESS_KEY_ID: ROO_S3_ACCESS_KEY_ID
-    ROO_S3_BUCKET_NAME: ROO_S3_BUCKET_NAME
-    ROO_S3_SECRET_ACCESS_KEY: ROO_S3_SECRET_ACCESS_KEY
-    RUN_MIGRATIONS: RUN_MIGRATIONS
-    SENTRY_DSN: SENTRY_DSN
-    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
-    SENTRY_KEY: SENTRY_KEY
-    SENTRY_SECURITY_ENDPOINT: SENTRY_SECURITY_ENDPOINT
-    TRACK_GA_EVENTS: TRACK_GA_EVENTS
-    UKGT_ENABLED: UKGT_ENABLED
-    X_AUTOSCALING: X_AUTOSCALING
-    xBASICAUTH_DISABLE: xBASICAUTH_DISABLE
-  type: public
-- env_vars: {}
-  environments:
-    development:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
-      url: mendel-data-development.london.cloudapps.digital
-    production:
-      ipfilter: true
-      paas: dit-services/trade-helpdesk/mendel-data-production
-      url: mendel-data-production.london.cloudapps.digital
-    staging:
-      ipfilter: true
-      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
-      url: mendel-data-staging.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: mendel-data
-  overlapping_secrets:
-  - APM_DEBUG
-  - APM_ENVIRONMENT
-  - APM_SECRET_TOKEN
-  - APM_SERVER_URL
-  - APM_SERVICE_NAME
-  - APM_TIMEOUT
-  - AUTHBROKER_CLIENT_ID
-  - AUTHBROKER_CLIENT_SECRET
-  - AUTHBROKER_URL
-  - DEBUG
-  - ROO_S3_ACCESS_KEY_ID
-  - ROO_S3_SECRET_ACCESS_KEY
-  - SENTRY_DSN
-  - SENTRY_ENVIRONMENT
-  repo: git@github.com:uktrade/dit-mendel-data.git
-  secrets:
-    API_KEY: API_KEY
-    APM_DEBUG: APM_DEBUG
-    APM_ENVIRONMENT: APM_ENVIRONMENT
-    APM_SECRET_TOKEN: APM_SECRET_TOKEN
-    APM_SERVER_URL: APM_SERVER_URL
-    APM_SERVICE_NAME: APM_SERVICE_NAME
-    APM_TIMEOUT: APM_TIMEOUT
-    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
-    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
-    AUTHBROKER_URL: AUTHBROKER_URL
-    DAILY_DIGEST_EMAIL_RECIPIENTS: DAILY_DIGEST_EMAIL_RECIPIENTS
-    DATABASE_URL: DATABASE_URL
-    DEBUG: DEBUG
-    DJANGO_SU_EMAIL: DJANGO_SU_EMAIL
-    DJANGO_SU_NAME: DJANGO_SU_NAME
-    DJANGO_SU_PASSWORD: DJANGO_SU_PASSWORD
-    ENVIRONMENT: ENVIRONMENT
-    FTP_COPY_FROM_HOST: FTP_COPY_FROM_HOST
-    FTP_COPY_FROM_PASSWORD: FTP_COPY_FROM_PASSWORD
-    FTP_COPY_FROM_USER: FTP_COPY_FROM_USER
-    FTP_COPY_TO_HOST: FTP_COPY_TO_HOST
-    FTP_COPY_TO_PASSWORD: FTP_COPY_TO_PASSWORD
-    FTP_COPY_TO_USER: FTP_COPY_TO_USER
-    FTP_SAMPLE_DATA_TARGET_HOST: FTP_SAMPLE_DATA_TARGET_HOST
-    FTP_SAMPLE_DATA_TARGET_PASSWORD: FTP_SAMPLE_DATA_TARGET_PASSWORD
-    FTP_SAMPLE_DATA_TARGET_USER: FTP_SAMPLE_DATA_TARGET_USER
-    MENDEL_FTP_DELETE_FILES: MENDEL_FTP_DELETE_FILES
-    MENDEL_FTP_HOST: MENDEL_FTP_HOST
-    MENDEL_FTP_PASSWORD: MENDEL_FTP_PASSWORD
-    MENDEL_FTP_URL: MENDEL_FTP_URL
-    MENDEL_FTP_USER: MENDEL_FTP_USER
-    NOTIFICATIONS_API_KEY: NOTIFICATIONS_API_KEY
-    NOTIFICATIONS_DAILY_DIGEST_TEMPLATE_ID: NOTIFICATIONS_DAILY_DIGEST_TEMPLATE_ID
-    POSTGRES_DB: POSTGRES_DB
-    POSTGRES_PASSWORD: POSTGRES_PASSWORD
-    POSTGRES_USER: POSTGRES_USER
-    ROO_S3_ACCESS_KEY_ID: ROO_S3_ACCESS_KEY_ID
-    ROO_S3_BUCKET: ROO_S3_BUCKET
-    ROO_S3_SECRET_ACCESS_KEY: ROO_S3_SECRET_ACCESS_KEY
-    RUN_SCHEDULED_TASKS: RUN_SCHEDULED_TASKS
-    SAMPLE_DATA_ACCESS_KEY: SAMPLE_DATA_ACCESS_KEY
-    SAMPLE_DATA_ACCESS_KEY_ID: SAMPLE_DATA_ACCESS_KEY_ID
-    SAMPLE_DATA_BUCKET_NAME: SAMPLE_DATA_BUCKET_NAME
-    SAMPLE_DATA_REGION: SAMPLE_DATA_REGION
-    SECRET_KEY: SECRET_KEY
-    SENTRY_DSN: SENTRY_DSN
-    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
-  type: public
-- env_vars: {}
-  environments:
-    development:
-      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
-    production:
-      paas: dit-services/trade-helpdesk/mendel-data-production
-    staging:
-      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: mendel-data-beat
-  notes: service created based on Procfile entry for mendel-data and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/dit-mendel-data.git
-  secrets: {}
-  secrets_from: mendel-data
-  type: backend
-- env_vars: {}
-  environments:
-    development:
-      paas: dit-staging/trade-helpdesk-dev/mendel-data-development
-    production:
-      paas: dit-services/trade-helpdesk/mendel-data-production
-    staging:
-      paas: dit-staging/trade-helpdesk-staging/mendel-data-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: mendel-data-celery
-  notes: service created based on Procfile entry for mendel-data and will require
-    access to the same backing services
-  repo: git@github.com:uktrade/dit-mendel-data.git
-  secrets: {}
-  secrets_from: mendel-data
-  type: backend

@@ -9,8 +9,6 @@ environments:
     - ACM-ARN-FOR-datahub-dev.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.dev.uktrade.io
     - ACM-ARN-FOR-datahub.dev.uktrade.io
-    - ACM-ARN-FOR-datahub-filebrowser-dev.london.cloudapps.digital
-    - ACM-ARN-FOR-legacy.datahub.dev.uktrade.io
     - ACM-ARN-FOR-datahub-omis-dev.london.cloudapps.digital
     - ACM-ARN-FOR-omis.datahub.dev.uktrade.io
   mig-test: {}
@@ -22,8 +20,6 @@ environments:
     - ACM-ARN-FOR-datahub-api-redis-queue-exporter.london.cloudapps.digital
     - ACM-ARN-FOR-datahub.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.trade.gov.uk
-    - ACM-ARN-FOR-datahub-filebrowser.london.cloudapps.digital
-    - ACM-ARN-FOR-legacy.datahub.trade.gov.uk
     - ACM-ARN-FOR-omis.trade.gov.uk
   staging:
     certificate_arns:
@@ -33,8 +29,6 @@ environments:
     - ACM-ARN-FOR-datahub-staging.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.staging.uktrade.io
     - ACM-ARN-FOR-datahub.staging.uktrade.io
-    - ACM-ARN-FOR-datahub-filebrowser-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-legacy.datahub.staging.uktrade.io
     - ACM-ARN-FOR-datahub-omis-staging.london.cloudapps.digital
   uat:
     certificate_arns:
@@ -44,33 +38,36 @@ environments:
     - ACM-ARN-FOR-datahub-uat.london.cloudapps.digital
     - ACM-ARN-FOR-www.datahub.uat.uktrade.io
     - ACM-ARN-FOR-datahub.uat.uktrade.io
-    - ACM-ARN-FOR-datahub-filebrowser-uat.london.cloudapps.digital
-    - ACM-ARN-FOR-legacy.datahub.uat.uktrade.io
     - ACM-ARN-FOR-datahub-omis-uat.london.cloudapps.digital
 services:
 - env_vars: {}
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-dev/datahub-api-dev
       url: api.datahub.dev.uktrade.io
     production:
+      count: 4
       ipfilter: true
+      memory: 5120
       paas: dit-services/datahub/datahub-api
       url: datahub-api.london.cloudapps.digital
     staging:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-staging/datahub-staging/datahub-api-staging
       url: api.datahub.staging.uktrade.io
     uat:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-uat/datahub-api-uat
       url: api.datahub.uat.uktrade.io
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: datahub-api
   overlapping_secrets:
-  - DEBUG
-  - DJANGO_SETTINGS_MODULE
   - SENTRY_ENVIRONMENT
   repo: git@github.com:uktrade/data-hub-api.git
   secrets:
@@ -142,6 +139,7 @@ services:
     DNB_AUTOMATIC_UPDATE_LIMIT: DNB_AUTOMATIC_UPDATE_LIMIT
     DNB_INVESTIGATION_NOTIFICATION_API_KEY: DNB_INVESTIGATION_NOTIFICATION_API_KEY
     DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS: DNB_INVESTIGATION_NOTIFICATION_RECIPIENTS
+    DNB_MAX_COMPANIES_IN_TREE_COUNT: DNB_MAX_COMPANIES_IN_TREE_COUNT
     DNB_SERVICE_BASE_URL: DNB_SERVICE_BASE_URL
     DNB_SERVICE_TOKEN: DNB_SERVICE_TOKEN
     ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW: ENABLE_ADMIN_ADD_ACCESS_TOKEN_VIEW
@@ -176,6 +174,10 @@ services:
     EXPORT_WINS_HAWK_ID: EXPORT_WINS_HAWK_ID
     EXPORT_WINS_HAWK_KEY: EXPORT_WINS_HAWK_KEY
     EXPORT_WINS_SERVICE_BASE_URL: EXPORT_WINS_SERVICE_BASE_URL
+    EXPORT_WIN_CLIENT_RECEIPT_TEMPLATE_ID: EXPORT_WIN_CLIENT_RECEIPT_TEMPLATE_ID
+    EXPORT_WIN_LEAD_OFFICER_APPROVED_TEMPLATE_ID: EXPORT_WIN_LEAD_OFFICER_APPROVED_TEMPLATE_ID
+    EXPORT_WIN_LEAD_OFFICER_REJECTED_TEMPLATE_ID: EXPORT_WIN_LEAD_OFFICER_REJECTED_TEMPLATE_ID
+    EXPORT_WIN_NOTIFICATION_API_KEY: EXPORT_WIN_NOTIFICATION_API_KEY
     GOVUK_PAY_AUTH_TOKEN: GOVUK_PAY_AUTH_TOKEN
     GOVUK_PAY_URL: GOVUK_PAY_URL
     HAWK_RECEIVER_IP_WHITELIST: HAWK_RECEIVER_IP_WHITELIST
@@ -207,7 +209,7 @@ services:
     OMIS_PUBLIC_BASE_URL: OMIS_PUBLIC_BASE_URL
     OMIS_PUBLIC_SECRET_ACCESS_KEY: OMIS_PUBLIC_SECRET_ACCESS_KEY
     OPENSEARCH_INDEX_PREFIX: OPENSEARCH_INDEX_PREFIX
-    PAAS_IP_WHITELIST: PAAS_IP_WHITELIST
+    PAAS_IP_ALLOWLIST: PAAS_IP_ALLOWLIST
     REPORT_AWS_ACCESS_KEY_ID: REPORT_AWS_ACCESS_KEY_ID
     REPORT_AWS_REGION: REPORT_AWS_REGION
     REPORT_AWS_SECRET_ACCESS_KEY: REPORT_AWS_SECRET_ACCESS_KEY
@@ -215,6 +217,7 @@ services:
     RESOURCE_SERVER_AUTH_TOKEN: RESOURCE_SERVER_AUTH_TOKEN
     RESOURCE_SERVER_INTROSPECTION_URL: RESOURCE_SERVER_INTROSPECTION_URL
     RESTRICT_ADMIN: RESTRICT_ADMIN
+    SECTOR_ENVIRONMENT: SECTOR_ENVIRONMENT
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
     SESSION_COOKIE_AGE: SESSION_COOKIE_AGE
     SKIP_MI_DATABASE_MIGRATIONS: SKIP_MI_DATABASE_MIGRATIONS
@@ -228,6 +231,9 @@ services:
     STATSD_HOST: STATSD_HOST
     STATSD_PORT: STATSD_PORT
     STATSD_PREFIX: STATSD_PREFIX
+    TASK_NOTIFICATION_FROM_OTHERS_TEMPLATE_ID: TASK_NOTIFICATION_FROM_OTHERS_TEMPLATE_ID
+    TASK_REMINDER_EMAIL_TEMPLATE_ID: TASK_REMINDER_EMAIL_TEMPLATE_ID
+    TASK_REMINDER_STATUS_TEMPLATE_ID: TASK_REMINDER_STATUS_TEMPLATE_ID
   type: public
 - env_vars: {}
   environments:
@@ -287,18 +293,22 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-dev/datahub-api-redis-queue-exporter-dev
       url: datahub-api-redis-queue-exporter-dev.london.cloudapps.digital
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/datahub/datahub-api-redis-queue-exporter
       url: datahub-api-redis-queue-exporter.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-staging/datahub-api-redis-queue-exporter-staging
       url: datahub-api-redis-queue-exporter-staging.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-uat/datahub-api-redis-queue-exporter-uat
       url: datahub-api-redis-queue-exporter-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -310,19 +320,25 @@ services:
 - env_vars: {}
   environments:
     dev:
+      count: 2
       ipfilter: true
+      memory: 5120
       paas: dit-staging/datahub-dev/datahub-dev
       url: datahub.dev.uktrade.io
     production:
+      count: 6
       ipfilter: false
+      memory: 5120
       paas: dit-services/datahub/datahub
       url: www.datahub.trade.gov.uk
     staging:
       ipfilter: false
+      memory: 5120
       paas: dit-staging/datahub-staging/datahub-staging
       url: datahub.staging.uktrade.io
     uat:
       ipfilter: false
+      memory: 5120
       paas: dit-staging/datahub-uat/datahub-uat
       url: datahub.uat.uktrade.io
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -387,6 +403,10 @@ services:
     TEAM_SITE_SHARE_POINT_URL: TEAM_SITE_SHARE_POINT_URL
     X_AUTOSCALING: X_AUTOSCALING
     X_AUTOSCALING_MIN: X_AUTOSCALING_MIN
+    ZENDESK_EMAIL: ZENDESK_EMAIL
+    ZENDESK_SUBDOMAIN: ZENDESK_SUBDOMAIN
+    ZENDESK_TOKEN: ZENDESK_TOKEN
+    ZENPY_FORCE_NETLOC: ZENPY_FORCE_NETLOC
     ZEN_ANNOUNCEMENT_URL: ZEN_ANNOUNCEMENT_URL
     ZEN_BROWSER: ZEN_BROWSER
     ZEN_EMAIL: ZEN_EMAIL
@@ -399,78 +419,24 @@ services:
   environments:
     dev:
       ipfilter: false
-      paas: dit-staging/datahub-dev/datahub-filebrowser-dev
-      url: legacy.datahub.dev.uktrade.io
-    production:
-      ipfilter: false
-      paas: dit-services/datahub/datahub-filebrowser
-      url: legacy.datahub.trade.gov.uk
-    staging:
-      ipfilter: false
-      paas: dit-staging/datahub-staging/datahub-filebrowser-staging
-      url: legacy.datahub.staging.uktrade.io
-    uat:
-      ipfilter: false
-      paas: dit-staging/datahub-uat/datahub-filebrowser-uat
-      url: legacy.datahub.uat.uktrade.io
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-filebrowser
-  overlapping_secrets:
-  - DEBUG
-  repo: git@github.com:uktrade/data-hub-file-browser.git
-  secrets:
-    DEBUG: DEBUG
-    DHFB_ABC_AUTHORIZE_URL: DHFB_ABC_AUTHORIZE_URL
-    DHFB_ABC_BASE_URL: DHFB_ABC_BASE_URL
-    DHFB_ABC_CLIENT_ID: DHFB_ABC_CLIENT_ID
-    DHFB_ABC_CLIENT_SECRET: DHFB_ABC_CLIENT_SECRET
-    DHFB_ABC_LOGOUT_URL: DHFB_ABC_LOGOUT_URL
-    DHFB_ABC_TOKEN_URL: DHFB_ABC_TOKEN_URL
-    DHFB_AWS_KEY_ID: DHFB_AWS_KEY_ID
-    DHFB_AWS_SECRET: DHFB_AWS_SECRET
-    DHFB_S3_BUCKET_NAME: DHFB_S3_BUCKET_NAME
-    DHFB_SECRET_KEY: DHFB_SECRET_KEY
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-  type: public
-- env_vars: {}
-  environments:
-    dev:
-      ipfilter: false
-      paas: dit-staging/datahub-dev/datahub-helpcentre-dev
-      url: null
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: datahub-helpcentre
-  overlapping_secrets:
-  - DJANGO_SETTINGS_MODULE
-  - SENTRY_DSN
-  repo: git@github.com:uktrade/data-hub-helpcentre.git
-  secrets:
-    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
-    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
-    AUTHBROKER_URL: AUTHBROKER_URL
-    DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
-    ENV_NAME: ENV_NAME
-    FEEDBACK_URL: FEEDBACK_URL
-    FEED_API_TOKEN: FEED_API_TOKEN
-    SENTRY_DSN: SENTRY_DSN
-    SHOW_ENV_BANNER: SHOW_ENV_BANNER
-  type: public
-- env_vars: {}
-  environments:
-    dev:
-      ipfilter: false
+      memory: 1024
       paas: dit-staging/datahub-dev/datahub-omis-dev
       url: omis.datahub.dev.uktrade.io
     production:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/datahub/datahub-omis
       url: omis.trade.gov.uk
     staging:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-staging/datahub-omis-staging
       url: datahub-omis-staging.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datahub-uat/datahub-omis-uat
       url: datahub-omis-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

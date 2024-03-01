@@ -3,43 +3,424 @@ environments:
   dev:
     certificate_arns:
     - ACM-ARN-FOR-data-flow-dev.london.cloudapps.digital
-  dev-a:
-    certificate_arns:
-    - ACM-ARN-FOR-data-flow-dev-a.london.cloudapps.digital
   production:
     certificate_arns:
     - ACM-ARN-FOR-data-flow.london.cloudapps.digital
-    - ACM-ARN-FOR-dt06.london.cloudapps.digital
-    - ACM-ARN-FOR-dt07.london.cloudapps.digital
   staging:
     certificate_arns:
     - ACM-ARN-FOR-data-flow-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-dt05-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-dt06-staging.london.cloudapps.digital
-    - ACM-ARN-FOR-dt07-staging.london.cloudapps.digital
 services:
 - env_vars: {}
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datasci-dev/data-flow-dev
       url: data-flow-dev.london.cloudapps.digital
-    dev-a:
-      ipfilter: false
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-      url: data-flow-dev-a.london.cloudapps.digital
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/datasci/data-flow
       url: data-flow.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/datasci-staging/data-flow-staging
       url: data-flow-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
   name: data-flow
   overlapping_secrets:
+  - AIRFLOW_CONN_AWS_ECS
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW_CONN_DATA_WORKSPACE_S3
+  - AIRFLOW_CONN_TAGS_CLASSIFIER_S3
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - AIRFLOW__WEBSERVER__BASE_URL
+  - ALLOW_NULL_DATASET_COLUMNS
+  - AUTHBROKER_URL
+  - BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX
+  - CF_API_BASE
+  - CF_LOGIN_BASE
+  - CF_PASSWORD
+  - CF_USERNAME
+  - COMTRADE_TOKEN
+  - DAGS_AWS_ACCESS_KEY_ID
+  - DAGS_AWS_SECRET_ACCESS_KEY
+  - DAGS_S3_BUCKET
+  - DAGS_S3_ENDPOINT
+  - DAGS_S3_PREFIX
+  - DAGS_S3_REGION
+  - DAG_MANAGEMENT_SCRIPT_HAWK_ID
+  - DAG_MANAGEMENT_SCRIPT_HAWK_KEY
+  - DAG_RUN_OVERVIEW_DOCS_LINK
+  - DAG_RUN_OVERVIEW_URL_PATH
+  - DAG_SYNC_GITHUB_KEY
+  - DATA_GOV_UK_TARIFF_PDG_BASE
+  - DATA_STORE_SERVICE_BASE_URL
+  - DATA_STORE_SERVICE_HAWK_ID
+  - DATA_STORE_SERVICE_HAWK_KEY
+  - DATA_STORE_UPLOADER_SENDER_HAWK_ID
+  - DATA_STORE_UPLOADER_SENDER_HAWK_KEY
+  - DATA_WORKSPACE_AWS_ACCESS_KEY_ID
+  - DATA_WORKSPACE_AWS_SECRET_ACCESS_KEY
+  - DATA_WORKSPACE_BASE_URL
+  - DATA_WORKSPACE_HAWK_ID
+  - DATA_WORKSPACE_HAWK_KEY
+  - DATA_WORKSPACE_NOTEBOOKS_S3_BUCKET
+  - DATA_WORKSPACE_S3_BUCKET
+  - DATA_WORKSPACE_S3_IMPORT_HAWK_ID
+  - DATA_WORKSPACE_S3_IMPORT_HAWK_KEY
+  - ELASTICSEARCH_ENABLED
   - ENVIRONMENT
+  - HAWK_ALGORITHM
+  - HAWK_ID
+  - HAWK_KEY
+  - MARKET_ACCESS_BASE_URL
+  - MARKET_ACCESS_HAWK_ID
+  - MARKET_ACCESS_HAWK_KEY
+  - MATCHING_SERVICE_BASE_URL
+  - MATCHING_SERVICE_HAWK_ID
+  - MATCHING_SERVICE_HAWK_KEY
+  - MLFLOW_CONFIG
+  - NOTIFY_API_KEY
+  - NOTIFY_TEMPLATE_ID__DATASET_UPDATED
+  - PEOPLE_FINDER_BASE_URL
+  - PEOPLE_FINDER_PRIVATE_KEY
+  - PIPELINE_LOG_URL
+  - PUBLIC_DATA_API_BASE_URL
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+  - PUBLIC_DATA_GATEWAY_BUCKET_NAME
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - SLACK_TOKEN_ID
+  - SLACK_USER_URL
+  - TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID
+  - TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY
+  - TAGS_CLASSIFIER_S3_BUCKET
+  - UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID
+  - UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY
+  - UK_TARIFF_BUCKET_NAME
+  - UPDATE_EMAILS_DATA__ONSUKSATradeInGoodsPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTotalTradeAllCountriesNSAPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTradeInGoodsByCountryAndCommodityPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTradeInServicesByPartnerCountryNSAPollingPipeline
+  - US_CENSUS_DATA_API_KEY
+  repo: git@github.com:uktrade/data-flow.git
+  secrets:
+    AIRFLOW_CONN_AWS_ECS: AIRFLOW_CONN_AWS_ECS
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW_CONN_DATA_WORKSPACE_S3: AIRFLOW_CONN_DATA_WORKSPACE_S3
+    AIRFLOW_CONN_TAGS_CLASSIFIER_S3: AIRFLOW_CONN_TAGS_CLASSIFIER_S3
+    AIRFLOW__CORE__FERNET_KEY: AIRFLOW__CORE__FERNET_KEY
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    AIRFLOW__WEBSERVER__BASE_URL: AIRFLOW__WEBSERVER__BASE_URL
+    AIRFLOW__WEBSERVER__SECRET_KEY: AIRFLOW__WEBSERVER__SECRET_KEY
+    ALLOW_NULL_DATASET_COLUMNS: ALLOW_NULL_DATASET_COLUMNS
+    AUTHBROKER_ALLOWED_DOMAINS: AUTHBROKER_ALLOWED_DOMAINS
+    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
+    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX: BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX
+    CF_API_BASE: CF_API_BASE
+    CF_LOGIN_BASE: CF_LOGIN_BASE
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
+    COMTRADE_TOKEN: COMTRADE_TOKEN
+    DAGS_AWS_ACCESS_KEY_ID: DAGS_AWS_ACCESS_KEY_ID
+    DAGS_AWS_SECRET_ACCESS_KEY: DAGS_AWS_SECRET_ACCESS_KEY
+    DAGS_S3_BUCKET: DAGS_S3_BUCKET
+    DAGS_S3_ENDPOINT: DAGS_S3_ENDPOINT
+    DAGS_S3_PREFIX: DAGS_S3_PREFIX
+    DAGS_S3_REGION: DAGS_S3_REGION
+    DAG_MANAGEMENT_SCRIPT_HAWK_ID: DAG_MANAGEMENT_SCRIPT_HAWK_ID
+    DAG_MANAGEMENT_SCRIPT_HAWK_KEY: DAG_MANAGEMENT_SCRIPT_HAWK_KEY
+    DAG_RUN_OVERVIEW_DOCS_LINK: DAG_RUN_OVERVIEW_DOCS_LINK
+    DAG_RUN_OVERVIEW_URL_PATH: DAG_RUN_OVERVIEW_URL_PATH
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    DATA_GOV_UK_TARIFF_PDG_BASE: DATA_GOV_UK_TARIFF_PDG_BASE
+    DATA_STORE_SERVICE_BASE_URL: DATA_STORE_SERVICE_BASE_URL
+    DATA_STORE_SERVICE_HAWK_ID: DATA_STORE_SERVICE_HAWK_ID
+    DATA_STORE_SERVICE_HAWK_KEY: DATA_STORE_SERVICE_HAWK_KEY
+    DATA_STORE_UPLOADER_SENDER_HAWK_ID: DATA_STORE_UPLOADER_SENDER_HAWK_ID
+    DATA_STORE_UPLOADER_SENDER_HAWK_KEY: DATA_STORE_UPLOADER_SENDER_HAWK_KEY
+    DATA_WORKSPACE_AWS_ACCESS_KEY_ID: DATA_WORKSPACE_AWS_ACCESS_KEY_ID
+    DATA_WORKSPACE_AWS_SECRET_ACCESS_KEY: DATA_WORKSPACE_AWS_SECRET_ACCESS_KEY
+    DATA_WORKSPACE_BASE_URL: DATA_WORKSPACE_BASE_URL
+    DATA_WORKSPACE_HAWK_ID: DATA_WORKSPACE_HAWK_ID
+    DATA_WORKSPACE_HAWK_KEY: DATA_WORKSPACE_HAWK_KEY
+    DATA_WORKSPACE_NOTEBOOKS_S3_BUCKET: DATA_WORKSPACE_NOTEBOOKS_S3_BUCKET
+    DATA_WORKSPACE_S3_BUCKET: DATA_WORKSPACE_S3_BUCKET
+    DATA_WORKSPACE_S3_IMPORT_HAWK_ID: DATA_WORKSPACE_S3_IMPORT_HAWK_ID
+    DATA_WORKSPACE_S3_IMPORT_HAWK_KEY: DATA_WORKSPACE_S3_IMPORT_HAWK_KEY
+    ELASTICSEARCH_ENABLED: ELASTICSEARCH_ENABLED
+    ENVIRONMENT: ENVIRONMENT
+    HAWK_ALGORITHM: HAWK_ALGORITHM
+    HAWK_ID: HAWK_ID
+    HAWK_KEY: HAWK_KEY
+    MARKET_ACCESS_BASE_URL: MARKET_ACCESS_BASE_URL
+    MARKET_ACCESS_HAWK_ID: MARKET_ACCESS_HAWK_ID
+    MARKET_ACCESS_HAWK_KEY: MARKET_ACCESS_HAWK_KEY
+    MATCHING_SERVICE_BASE_URL: MATCHING_SERVICE_BASE_URL
+    MATCHING_SERVICE_HAWK_ID: MATCHING_SERVICE_HAWK_ID
+    MATCHING_SERVICE_HAWK_KEY: MATCHING_SERVICE_HAWK_KEY
+    MLFLOW_CONFIG: MLFLOW_CONFIG
+    NOTIFY_API_KEY: NOTIFY_API_KEY
+    NOTIFY_TEMPLATE_ID__DATASET_UPDATED: NOTIFY_TEMPLATE_ID__DATASET_UPDATED
+    PEOPLE_FINDER_BASE_URL: PEOPLE_FINDER_BASE_URL
+    PEOPLE_FINDER_PRIVATE_KEY: PEOPLE_FINDER_PRIVATE_KEY
+    PIPELINE_LOG_URL: PIPELINE_LOG_URL
+    PUBLIC_DATA_API_BASE_URL: PUBLIC_DATA_API_BASE_URL
+    PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID: PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+    PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY: PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+    PUBLIC_DATA_GATEWAY_BUCKET_NAME: PUBLIC_DATA_GATEWAY_BUCKET_NAME
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    SLACK_TOKEN_ID: SLACK_TOKEN_ID
+    SLACK_USER_URL: SLACK_USER_URL
+    TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID: TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID
+    TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY: TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY
+    TAGS_CLASSIFIER_S3_BUCKET: TAGS_CLASSIFIER_S3_BUCKET
+    UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID: UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID
+    UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY: UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY
+    UK_TARIFF_BUCKET_NAME: UK_TARIFF_BUCKET_NAME
+    UPDATE_EMAILS_DATA__ONSUKSATradeInGoodsPollingPipeline: UPDATE_EMAILS_DATA__ONSUKSATradeInGoodsPollingPipeline
+    UPDATE_EMAILS_DATA__ONSUKTotalTradeAllCountriesNSAPollingPipeline: UPDATE_EMAILS_DATA__ONSUKTotalTradeAllCountriesNSAPollingPipeline
+    UPDATE_EMAILS_DATA__ONSUKTradeInGoodsByCountryAndCommodityPollingPipeline: UPDATE_EMAILS_DATA__ONSUKTradeInGoodsByCountryAndCommodityPollingPipeline
+    UPDATE_EMAILS_DATA__ONSUKTradeInServicesByPartnerCountryNSAPollingPipeline: UPDATE_EMAILS_DATA__ONSUKTradeInServicesByPartnerCountryNSAPollingPipeline
+    US_CENSUS_DATA_API_KEY: US_CENSUS_DATA_API_KEY
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-scheduler
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-dev
+    production:
+      paas: dit-services/datasci/data-flow
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-dag-processor
+  notes: service created based on Procfile entry for data-flow and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-analysis-group-dev
+      url: null
+    production:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-services/datasci/data-flow-analysis-group
+      url: null
+    staging:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-analysis-group-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-analysis-group
+  overlapping_secrets:
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - DAG_SYNC_GITHUB_KEY
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/data-flow.git
+  secrets:
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-analysis-group-dev
+    production:
+      paas: dit-services/datasci/data-flow-analysis-group
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-analysis-group-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-analysis-group-scheduler
+  notes: service created based on Procfile entry for data-flow-analysis-group and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-analysis-group
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-analysis-group-dev
+    production:
+      paas: dit-services/datasci/data-flow-analysis-group
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-analysis-group-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-analysis-group-dag-processor
+  notes: service created based on Procfile entry for data-flow-analysis-group and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-analysis-group
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-data-infrastructure-dev
+      url: null
+    production:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-services/datasci/data-flow-data-infrastructure
+      url: null
+    staging:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-data-infrastructure-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-data-infrastructure
+  overlapping_secrets:
+  - AIRFLOW_CONN_AWS_ECS
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW_CONN_DATA_WORKSPACE_S3
+  - AIRFLOW_CONN_TAGS_CLASSIFIER_S3
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - AIRFLOW__WEBSERVER__BASE_URL
+  - ALLOW_NULL_DATASET_COLUMNS
+  - ALTANA__AWS_ACCESS_KEY_ID
+  - ALTANA__AWS_SECRET_ACCESS_KEY
+  - ALTANA__S3_BUCKET
+  - BLOOMBERG__AWS_ACCESS_KEY_ID
+  - BLOOMBERG__AWS_SECRET_ACCESS_KEY
+  - BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN
+  - BLOOMBERG__S3_BASE_KEY
+  - BLOOMBERG__S3_BUCKET
+  - BLOOMBERG__S3_ENDPOINT_URL
+  - BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX
+  - CF_API_BASE
+  - CF_LOGIN_BASE
+  - CF_PASSWORD
+  - CF_USERNAME
+  - COMTRADE_TOKEN
+  - DAGS_AWS_ACCESS_KEY_ID
+  - DAGS_AWS_SECRET_ACCESS_KEY
+  - DAGS_S3_BUCKET
+  - DAGS_S3_ENDPOINT
+  - DAGS_S3_PREFIX
+  - DAGS_S3_REGION
+  - DAG_MANAGEMENT_SCRIPT_HAWK_ID
+  - DAG_MANAGEMENT_SCRIPT_HAWK_KEY
+  - DAG_RUN_OVERVIEW_DOCS_LINK
+  - DAG_RUN_OVERVIEW_URL_PATH
+  - DAG_SYNC_GITHUB_KEY
+  - DATA_GOV_UK_TARIFF_PDG_BASE
+  - DATA_STORE_SERVICE_BASE_URL
+  - DATA_STORE_SERVICE_HAWK_ID
+  - DATA_STORE_SERVICE_HAWK_KEY
+  - DATA_STORE_UPLOADER_SENDER_HAWK_ID
+  - DATA_STORE_UPLOADER_SENDER_HAWK_KEY
+  - DATA_WORKSPACE_AWS_ACCESS_KEY_ID
+  - DATA_WORKSPACE_AWS_SECRET_ACCESS_KEY
+  - DATA_WORKSPACE_BASE_URL
+  - DATA_WORKSPACE_HAWK_ID
+  - DATA_WORKSPACE_HAWK_KEY
+  - DATA_WORKSPACE_NOTEBOOKS_S3_BUCKET
+  - DATA_WORKSPACE_S3_BUCKET
+  - DATA_WORKSPACE_S3_IMPORT_HAWK_ID
+  - DATA_WORKSPACE_S3_IMPORT_HAWK_KEY
+  - ELASTICSEARCH_ENABLED
+  - ENVIRONMENT
+  - FACTSET_AWS_CLUSTER
+  - FACTSET_AWS_SECURITY_GROUP
+  - FACTSET_AWS_SUBNET
+  - FACTSET_BUCKET_AWS_ACCESS_KEY_ID
+  - FACTSET_BUCKET_AWS_SECRET_ACCESS_KEY
+  - FACTSET_BUCKET_NAME
+  - FACTSET_BUNDLES
+  - FACTSET_DEVICE_SERIAL
+  - FACTSET_USER
+  - GLOBAL_DATA_API_ENDPOINT
+  - GLOBAL_DATA_API_PASSWORD
+  - GLOBAL_DATA_API_USERNAME
+  - HAWK_ALGORITHM
+  - HAWK_ID
+  - HAWK_KEY
+  - INTEROS__AWS_ACCESS_KEY_ID
+  - INTEROS__AWS_SECRET_ACCESS_KEY
+  - INTEROS__BUCKET
+  - INTEROS__IAM_ASSUME_OUR_ROLE_ARN
+  - INTEROS__IAM_ASSUME_THEIR_ROLE_ARN
+  - INTEROS__ZIP_PASSWORD
+  - MAPLECROFT_API_KEY
+  - MAPLECROFT_BASE_URL
+  - MARKET_ACCESS_BASE_URL
+  - MARKET_ACCESS_HAWK_ID
+  - MARKET_ACCESS_HAWK_KEY
+  - MATCHING_SERVICE_BASE_URL
+  - MATCHING_SERVICE_HAWK_ID
+  - MATCHING_SERVICE_HAWK_KEY
+  - MLFLOW_CONFIG
+  - NOTIFY_API_KEY
+  - NOTIFY_TEMPLATE_ID__DATASET_UPDATED
+  - PEOPLE_FINDER_BASE_URL
+  - PEOPLE_FINDER_PRIVATE_KEY
+  - PIPELINE_LOG_URL
+  - PUBLIC_DATA_API_BASE_URL
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+  - PUBLIC_DATA_GATEWAY_BUCKET_NAME
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - SLACK_TOKEN_ID
+  - SLACK_USER_URL
+  - TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID
+  - TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY
+  - TAGS_CLASSIFIER_S3_BUCKET
+  - UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID
+  - UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY
+  - UK_TARIFF_BUCKET_NAME
+  - UPDATE_EMAILS_DATA__ONSUKSATradeInGoodsPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTotalTradeAllCountriesNSAPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTradeInGoodsByCountryAndCommodityPollingPipeline
+  - UPDATE_EMAILS_DATA__ONSUKTradeInServicesByPartnerCountryNSAPollingPipeline
+  - US_CENSUS_DATA_API_KEY
+  - Z2DATA_HOST_KEY
+  - Z2DATA_SFTP_HOST
+  - Z2DATA_SFTP_PASSWORD
+  - Z2DATA_SFTP_USERNAME
   repo: git@github.com:uktrade/data-flow.git
   secrets:
     ACTIVITY_STREAM_BASE_URL: ACTIVITY_STREAM_BASE_URL
@@ -48,45 +429,35 @@ services:
     AIRFLOW_CONN_AWS_ECS: AIRFLOW_CONN_AWS_ECS
     AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
     AIRFLOW_CONN_DATA_WORKSPACE_S3: AIRFLOW_CONN_DATA_WORKSPACE_S3
-    AIRFLOW_CONN_GREAT: AIRFLOW_CONN_GREAT
-    AIRFLOW_CONN_JML: AIRFLOW_CONN_JML
-    AIRFLOW_CONN_MARKET_ACCESS: AIRFLOW_CONN_MARKET_ACCESS
     AIRFLOW_CONN_TAGS_CLASSIFIER_S3: AIRFLOW_CONN_TAGS_CLASSIFIER_S3
-    AIRFLOW_DEFAULT_POOL_SLOTS: AIRFLOW_DEFAULT_POOL_SLOTS
-    AIRFLOW_ES_INGEST_SLOTS: AIRFLOW_ES_INGEST_SLOTS
-    AIRFLOW_HIGH_MEMORY_POOL_SLOTS: AIRFLOW_HIGH_MEMORY_POOL_SLOTS
-    AIRFLOW_SENSORS_POOL_SLOTS: AIRFLOW_SENSORS_POOL_SLOTS
-    AIRFLOW_TENSORFLOW_POOL_SLOTS: AIRFLOW_TENSORFLOW_POOL_SLOTS
-    AIRFLOW__API__AUTH_BACKEND: AIRFLOW__API__AUTH_BACKEND
-    AIRFLOW__CELERY_BROKER_TRANSPORT_OPTIONS__VISIBILITY_TIMEOUT: AIRFLOW__CELERY_BROKER_TRANSPORT_OPTIONS__VISIBILITY_TIMEOUT
-    AIRFLOW__CELERY__FLOWER_BASIC_AUTH: AIRFLOW__CELERY__FLOWER_BASIC_AUTH
-    AIRFLOW__CELERY__WORKER_AUTOSCALE: AIRFLOW__CELERY__WORKER_AUTOSCALE
-    AIRFLOW__CELERY__WORKER_CONCURRENCY: AIRFLOW__CELERY__WORKER_CONCURRENCY
-    AIRFLOW__CELERY__WORKER_MAX_MEMORY_PER_CHILD: AIRFLOW__CELERY__WORKER_MAX_MEMORY_PER_CHILD
-    AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER: AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER
-    AIRFLOW__CORE__DAG_CONCURRENCY: AIRFLOW__CORE__DAG_CONCURRENCY
-    AIRFLOW__CORE__FERNET_KEY: AIRFLOW__CORE__FERNET_KEY
-    AIRFLOW__CORE__PARALLELISM: AIRFLOW__CORE__PARALLELISM
-    AIRFLOW__LOGGING__TASK_LOG_PREFIX_TEMPLATE: AIRFLOW__LOGGING__TASK_LOG_PREFIX_TEMPLATE
-    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
+    AIRFLOW__CORE__DEFAULT_TASK_WEIGHT_RULE: AIRFLOW__CORE__DEFAULT_TASK_WEIGHT_RULE
     AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
     AIRFLOW__WEBSERVER__BASE_URL: AIRFLOW__WEBSERVER__BASE_URL
-    AIRFLOW__WEBSERVER__SECRET_KEY: AIRFLOW__WEBSERVER__SECRET_KEY
     ALLOW_NULL_DATASET_COLUMNS: ALLOW_NULL_DATASET_COLUMNS
     ALTANA__AWS_ACCESS_KEY_ID: ALTANA__AWS_ACCESS_KEY_ID
     ALTANA__AWS_SECRET_ACCESS_KEY: ALTANA__AWS_SECRET_ACCESS_KEY
     ALTANA__S3_BUCKET: ALTANA__S3_BUCKET
-    AUTHBROKER_ALLOWED_DOMAINS: AUTHBROKER_ALLOWED_DOMAINS
-    AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
-    AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
-    AUTHBROKER_URL: AUTHBROKER_URL
+    AVENTRI_ACCOUNT_ID: AVENTRI_ACCOUNT_ID
+    AVENTRI_API_KEY: AVENTRI_API_KEY
+    AVENTRI_ATTENDEES_URL: AVENTRI_ATTENDEES_URL
+    AVENTRI_AUTH_URL: AVENTRI_AUTH_URL
+    AVENTRI_EVENT_URL: AVENTRI_EVENT_URL
+    AVENTRI_REGISTRATIONS_URL: AVENTRI_REGISTRATIONS_URL
     BLOOMBERG__AWS_ACCESS_KEY_ID: BLOOMBERG__AWS_ACCESS_KEY_ID
     BLOOMBERG__AWS_SECRET_ACCESS_KEY: BLOOMBERG__AWS_SECRET_ACCESS_KEY
     BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN: BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN
     BLOOMBERG__S3_BASE_KEY: BLOOMBERG__S3_BASE_KEY
     BLOOMBERG__S3_BUCKET: BLOOMBERG__S3_BUCKET
     BLOOMBERG__S3_ENDPOINT_URL: BLOOMBERG__S3_ENDPOINT_URL
+    BOXTECH_CONTAINER_URL: BOXTECH_CONTAINER_URL
+    BOXTECH_PASSWORD: BOXTECH_PASSWORD
+    BOXTECH_TOKEN_URL: BOXTECH_TOKEN_URL
+    BOXTECH_USERNAME: BOXTECH_USERNAME
     BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX: BUSINESS_INTELLIGENCE_SUMMARY_S3_PREFIX
+    CF_API_BASE: CF_API_BASE
+    CF_LOGIN_BASE: CF_LOGIN_BASE
+    CF_PASSWORD: CF_PASSWORD
+    CF_USERNAME: CF_USERNAME
     COMAEA_HOST: COMAEA_HOST
     COMAEA_PASSWORD: COMAEA_PASSWORD
     COMAEA_PORT: COMAEA_PORT
@@ -95,6 +466,7 @@ services:
     COMPANIES_HOUSE_PSC_TOTAL_FILES: COMPANIES_HOUSE_PSC_TOTAL_FILES
     COMTRADE_GOODS_KEY: COMTRADE_GOODS_KEY
     COMTRADE_GOODS_MONTHLY_KEY: COMTRADE_GOODS_MONTHLY_KEY
+    COMTRADE_GOODS_MONTHLY_KEY_FLT: COMTRADE_GOODS_MONTHLY_KEY_FLT
     COMTRADE_SERVICES_KEY: COMTRADE_SERVICES_KEY
     COMTRADE_TOKEN: COMTRADE_TOKEN
     CONSENT_BASE_URL: CONSENT_BASE_URL
@@ -111,6 +483,7 @@ services:
     DAG_MANAGEMENT_SCRIPT_HAWK_KEY: DAG_MANAGEMENT_SCRIPT_HAWK_KEY
     DAG_RUN_OVERVIEW_DOCS_LINK: DAG_RUN_OVERVIEW_DOCS_LINK
     DAG_RUN_OVERVIEW_URL_PATH: DAG_RUN_OVERVIEW_URL_PATH
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
     DATAHUB_BASE_URL: DATAHUB_BASE_URL
     DATASETS_DB_NAME: DATASETS_DB_NAME
     DATASETS_FINDER_ACCESS_KEY: DATASETS_FINDER_ACCESS_KEY
@@ -120,11 +493,7 @@ services:
     DATA_CITY_LISTS_API_ENDPOINT: DATA_CITY_LISTS_API_ENDPOINT
     DATA_CITY_LIST_API_ENDPOINT: DATA_CITY_LIST_API_ENDPOINT
     DATA_CITY_TOKEN: DATA_CITY_TOKEN
-    DATA_GOV_UK_LOGIN_URL: DATA_GOV_UK_LOGIN_URL
-    DATA_GOV_UK_PASSWORD: DATA_GOV_UK_PASSWORD
     DATA_GOV_UK_TARIFF_PDG_BASE: DATA_GOV_UK_TARIFF_PDG_BASE
-    DATA_GOV_UK_TARIFF_RESOURCE_CREATE_URL: DATA_GOV_UK_TARIFF_RESOURCE_CREATE_URL
-    DATA_GOV_UK_USERNAME: DATA_GOV_UK_USERNAME
     DATA_STORE_SERVICE_BASE_URL: DATA_STORE_SERVICE_BASE_URL
     DATA_STORE_SERVICE_HAWK_ID: DATA_STORE_SERVICE_HAWK_ID
     DATA_STORE_SERVICE_HAWK_KEY: DATA_STORE_SERVICE_HAWK_KEY
@@ -142,6 +511,10 @@ services:
     DATA_WORKSPACE_S3_BUCKET: DATA_WORKSPACE_S3_BUCKET
     DATA_WORKSPACE_S3_IMPORT_HAWK_ID: DATA_WORKSPACE_S3_IMPORT_HAWK_ID
     DATA_WORKSPACE_S3_IMPORT_HAWK_KEY: DATA_WORKSPACE_S3_IMPORT_HAWK_KEY
+    DBT_AWS_COSTS__AWS_ACCESS_KEY_ID: DBT_AWS_COSTS__AWS_ACCESS_KEY_ID
+    DBT_AWS_COSTS__BUCKET: DBT_AWS_COSTS__BUCKET
+    DBT_AWS_COSTS__DATA_DEV_PREFIX: DBT_AWS_COSTS__DATA_DEV_PREFIX
+    DBT_AWS_COSTS__SECRET_ACCESS_KEY: DBT_AWS_COSTS__SECRET_ACCESS_KEY
     DIT_SALESFORCE_PASSWORD: DIT_SALESFORCE_PASSWORD
     DIT_SALESFORCE_TOKEN: DIT_SALESFORCE_TOKEN
     DIT_SALESFORCE_USER: DIT_SALESFORCE_USER
@@ -157,6 +530,15 @@ services:
     DUN_AND_BRADSTREET_AWS_ACCESS_KEY_ID: DUN_AND_BRADSTREET_AWS_ACCESS_KEY_ID
     DUN_AND_BRADSTREET_AWS_SECRET_ACCESS_KEY: DUN_AND_BRADSTREET_AWS_SECRET_ACCESS_KEY
     DUN_AND_BRADSTREET_S3_BUCKET: DUN_AND_BRADSTREET_S3_BUCKET
+    DYNAMICS_APPLICATION_ID: DYNAMICS_APPLICATION_ID
+    DYNAMICS_CLIENT_SECRET: DYNAMICS_CLIENT_SECRET
+    DYNAMICS_DOMESTIC_TEAM_ID: DYNAMICS_DOMESTIC_TEAM_ID
+    DYNAMICS_INSTANCE_URI: DYNAMICS_INSTANCE_URI
+    DYNAMICS_INTERNAL_TEAM_ID: DYNAMICS_INTERNAL_TEAM_ID
+    DYNAMICS_INTERNATIONAL_TEAM_ID: DYNAMICS_INTERNATIONAL_TEAM_ID
+    DYNAMICS_RECORD_LIMIT: DYNAMICS_RECORD_LIMIT
+    DYNAMICS_TENANT_ID: DYNAMICS_TENANT_ID
+    DYNAMICS_UKEA_TEAM_ID: DYNAMICS_UKEA_TEAM_ID
     ELASTICSEARCH_ENABLED: ELASTICSEARCH_ENABLED
     ENQUIRY_MGMT_BASE_URL: ENQUIRY_MGMT_BASE_URL
     ENQUIRY_MGMT_HAWK_ID: ENQUIRY_MGMT_HAWK_ID
@@ -209,27 +591,47 @@ services:
     GOOGLE_BIGQUERY_CHEG_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_CHEG_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_CHEG_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_CHEG_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_CHEG_ANALYTICS_TABLE_PREFIX_SERVER_SIDE: GOOGLE_BIGQUERY_CHEG_ANALYTICS_TABLE_PREFIX_SERVER_SIDE
+    GOOGLE_BIGQUERY_CHEG_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_CHEG_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_CHEG_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_CHEG_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_CITB_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_CITB_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_CITB_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_CITB_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_CITB_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_CITB_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_CITB_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_CITB_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_CITB_SERVER_SIDE_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_CITB_SERVER_SIDE_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_DATA_HUB_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DATA_HUB_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_DATA_HUB_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DATA_HUB_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_DATA_HUB_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DATA_HUB_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_DATA_HUB_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DATA_HUB_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_DATA_WORKSPACE_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DATA_WORKSPACE_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_DATA_WORKSPACE_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DATA_WORKSPACE_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DIGITAL_WORKSPACE_GA4_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_DMAS_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DMAS_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_DMAS_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DMAS_GA4_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_DWS_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_DWS_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_DWS_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_DWS_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_ESS_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_ESS_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_ESS_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_ESS_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_ESS_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_ESS_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_ESS_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_ESS_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_ESS_SERVER_SIDE_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_ESS_SERVER_SIDE_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_GREAT_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_GREAT_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_GREAT_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_GREAT_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_GREAT_GOV_UK_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_GREAT_GOV_UK_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_GREAT_GOV_UK_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_GREAT_GOV_UK_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_GREAT_GOV_UK_BETA_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_GREAT_GOV_UK_BETA_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_GREAT_GOV_UK_BETA_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_GREAT_GOV_UK_BETA_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_GREAT_GOV_UK_SERVER_SIDE_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_GREAT_GOV_UK_SERVER_SIDE_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_LITE_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_LITE_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_LITE_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_LITE_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_MARKET_ACCESS_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_TAP_GA4_ANALYTICS_TABLE_PREFIX
+    GOOGLE_BIGQUERY_TRS_GA4_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_TRS_GA4_ANALYTICS_CREDENTIALS
+    GOOGLE_BIGQUERY_TRS_GA4_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_TRS_GA4_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_TWUK_ANALYTICS_CREDENTIALS: GOOGLE_BIGQUERY_TWUK_ANALYTICS_CREDENTIALS
     GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX: GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX
     GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX_SERVER_SIDE: GOOGLE_BIGQUERY_TWUK_ANALYTICS_TABLE_PREFIX_SERVER_SIDE
@@ -240,6 +642,9 @@ services:
     HAWK_ALGORITHM: HAWK_ALGORITHM
     HAWK_ID: HAWK_ID
     HAWK_KEY: HAWK_KEY
+    HMRC_OTS_AWS_ACCESS_KEY_ID: HMRC_OTS_AWS_ACCESS_KEY_ID
+    HMRC_OTS_AWS_SECRET_ACCESS_KEY: HMRC_OTS_AWS_SECRET_ACCESS_KEY
+    HMRC_OTS_BUCKET: HMRC_OTS_BUCKET
     HMRC_SDES_TRA_AWS_ACCESS_KEY_ID: HMRC_SDES_TRA_AWS_ACCESS_KEY_ID
     HMRC_SDES_TRA_AWS_SECRET_ACCESS_KEY_ID: HMRC_SDES_TRA_AWS_SECRET_ACCESS_KEY_ID
     HMRC_SDES_TRA_DATA_BUCKET: HMRC_SDES_TRA_DATA_BUCKET
@@ -256,6 +661,13 @@ services:
     INTEROS__IAM_ASSUME_OUR_ROLE_ARN: INTEROS__IAM_ASSUME_OUR_ROLE_ARN
     INTEROS__IAM_ASSUME_THEIR_ROLE_ARN: INTEROS__IAM_ASSUME_THEIR_ROLE_ARN
     INTEROS__ZIP_PASSWORD: INTEROS__ZIP_PASSWORD
+    IP2LOCATION_SOURCE_ENDPOINT: IP2LOCATION_SOURCE_ENDPOINT
+    IP2LOCATION_SOURCE_FILE_NAME: IP2LOCATION_SOURCE_FILE_NAME
+    IP2LOCATION_SOURCE_TOKEN: IP2LOCATION_SOURCE_TOKEN
+    IP2LOCATION_TARGET_AWS_ACCESS_KEY_ID: IP2LOCATION_TARGET_AWS_ACCESS_KEY_ID
+    IP2LOCATION_TARGET_AWS_SECRET_ACCESS_KEY: IP2LOCATION_TARGET_AWS_SECRET_ACCESS_KEY
+    IP2LOCATION_TARGET_BUCKET: IP2LOCATION_TARGET_BUCKET
+    IP2LOCATION_TARGET_KEY: IP2LOCATION_TARGET_KEY
     JIRA_BASE_URL: JIRA_BASE_URL
     JIRA_ISSUES_TOKEN: JIRA_ISSUES_TOKEN
     JIRA_USERNAME: JIRA_USERNAME
@@ -279,6 +691,9 @@ services:
     MATCHING_SERVICE_HAWK_ID: MATCHING_SERVICE_HAWK_ID
     MATCHING_SERVICE_HAWK_KEY: MATCHING_SERVICE_HAWK_KEY
     MATCHING_SERVICE_UPDATE: MATCHING_SERVICE_UPDATE
+    MAXEMAIL_BASE_URL: MAXEMAIL_BASE_URL
+    MAXEMAIL_PASSWORD: MAXEMAIL_PASSWORD
+    MAXEMAIL_USERNAME: MAXEMAIL_USERNAME
     MENDEL_ROO_HOST: MENDEL_ROO_HOST
     MENDEL_ROO_PASSWORD: MENDEL_ROO_PASSWORD
     MENDEL_ROO_PORT: MENDEL_ROO_PORT
@@ -295,6 +710,7 @@ services:
     PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID: PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
     PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY: PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
     PUBLIC_DATA_GATEWAY_BUCKET_NAME: PUBLIC_DATA_GATEWAY_BUCKET_NAME
+    QUALTRICS_API_TOKEN: QUALTRICS_API_TOKEN
     RAPID_BASE_URL: RAPID_BASE_URL
     RAPID_CLIENT_ID: RAPID_CLIENT_ID
     RAPID_CLIENT_SECRET: RAPID_CLIENT_SECRET
@@ -343,6 +759,8 @@ services:
     TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID: TAGS_CLASSIFIER_AWS_ACCESS_KEY_ID
     TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY: TAGS_CLASSIFIER_AWS_SECRET_ACCESS_KEY
     TAGS_CLASSIFIER_S3_BUCKET: TAGS_CLASSIFIER_S3_BUCKET
+    TEAMS_WEBHOOK: TEAMS_WEBHOOK
+    TEAMS_WEBHOOK_DASHBOARD_URL: TEAMS_WEBHOOK_DASHBOARD_URL
     TRELLO_API_KEY: TRELLO_API_KEY
     TRELLO_API_TOKEN: TRELLO_API_TOKEN
     TRELLO_BASE_URL: TRELLO_BASE_URL
@@ -374,333 +792,397 @@ services:
 - env_vars: {}
   environments:
     dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
+      paas: dit-staging/datasci-dev/data-flow-data-infrastructure-dev
     production:
-      paas: dit-services/datasci/data-flow
+      paas: dit-services/datasci/data-flow-data-infrastructure
     staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
+      paas: dit-staging/datasci-staging/data-flow-data-infrastructure-staging
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-flower
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
+  name: data-flow-data-infrastructure-scheduler
+  notes: service created based on Procfile entry for data-flow-data-infrastructure
+    and will require access to the same backing services
   repo: git@github.com:uktrade/data-flow.git
   secrets: {}
-  secrets_from: data-flow
+  secrets_from: data-flow-data-infrastructure
   type: backend
 - env_vars: {}
   environments:
     dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
+      paas: dit-staging/datasci-dev/data-flow-data-infrastructure-dev
     production:
-      paas: dit-services/datasci/data-flow
+      paas: dit-services/datasci/data-flow-data-infrastructure
     staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
+      paas: dit-staging/datasci-staging/data-flow-data-infrastructure-staging
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-scheduler
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
+  name: data-flow-data-infrastructure-dag-processor
+  notes: service created based on Procfile entry for data-flow-data-infrastructure
+    and will require access to the same backing services
   repo: git@github.com:uktrade/data-flow.git
   secrets: {}
-  secrets_from: data-flow
+  secrets_from: data-flow-data-infrastructure
   type: backend
 - env_vars: {}
   environments:
     dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-worker
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-high-memory-worker
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-tensorflow-worker
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-es-ingest-worker
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-sensors-worker
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    dev:
-      paas: dit-staging/datasci-dev/data-flow-dev
-    dev-a:
-      paas: dit-staging/datasci-dev/data-flow-dev-a
-    production:
-      paas: dit-services/datasci/data-flow
-    staging:
-      paas: dit-staging/datasci-staging/data-flow-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: data-flow-migrate
-  notes: service created based on Procfile entry for data-flow and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/data-flow.git
-  secrets: {}
-  secrets_from: data-flow
-  type: backend
-- env_vars: {}
-  environments:
-    production:
+      count: 0
       ipfilter: false
-      paas: dit-services/datasci/dt04
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-data-science-dev
+      url: null
+    production:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-services/datasci/data-flow-data-science
       url: null
     staging:
+      count: 0
       ipfilter: false
-      paas: dit-staging/datasci-staging/dt04-staging
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-data-science-staging
       url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: dt04-input
+  name: data-flow-data-science
   overlapping_secrets:
-  - AWS_ACCESS_KEY_ID
-  - AWS_DEFAULT_REGION
-  - AWS_SECRET_ACCESS_KEY
-  - DISABLE_COLLECTSTATIC
-  repo: git@github.com:uktrade/dt04-input.git
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - DAG_SYNC_GITHUB_KEY
+  - MLFLOW_CONFIG
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/data-flow.git
   secrets:
-    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
-    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
-    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-    DT04_ACTIVITY_STREAM_ACCESS_KEY_ID: DT04_ACTIVITY_STREAM_ACCESS_KEY_ID
-    DT04_ACTIVITY_STREAM_DOWNLOAD_URL: DT04_ACTIVITY_STREAM_DOWNLOAD_URL
-    DT04_ACTIVITY_STREAM_SECRET_ACCESS_KEY: DT04_ACTIVITY_STREAM_SECRET_ACCESS_KEY
-    DT04_DATAHUB_SRC: DT04_DATAHUB_SRC
-    DT04_DATAHUB_VCAP_INSTANCE_NAME: DT04_DATAHUB_VCAP_INSTANCE_NAME
-    DT04_EXPORT_WINS_ALICE_SECRET: DT04_EXPORT_WINS_ALICE_SECRET
-    DT04_EXPORT_WINS_URL_SECRET: DT04_EXPORT_WINS_URL_SECRET
-    DT04_FAB_BUYERS_URL_SECRET: DT04_FAB_BUYERS_URL_SECRET
-    DT04_FAB_SUPPLIERS_URL_SECRET: DT04_FAB_SUPPLIERS_URL_SECRET
-    DT04_PG_DUMP_PATH: DT04_PG_DUMP_PATH
-    DT04_STORAGE_FOLDER: DT04_STORAGE_FOLDER
-    DT04_TRA_AWS_ACCESS_KEY_ID: DT04_TRA_AWS_ACCESS_KEY_ID
-    DT04_TRA_AWS_SECRET_ACCESS_KEY: DT04_TRA_AWS_SECRET_ACCESS_KEY
-    DT04_TRA_STORAGE_FOLDER: DT04_TRA_STORAGE_FOLDER
-    DT04_ZENDESK_EU_EXIT_KEY: DT04_ZENDESK_EU_EXIT_KEY
-    DT04_ZENDESK_EU_EXIT_USER: DT04_ZENDESK_EU_EXIT_USER
-    DT04_ZENDESK_KEY: DT04_ZENDESK_KEY
-    DT04_ZENDESK_USER: DT04_ZENDESK_USER
-  type: public
-- env_vars: {}
-  environments:
-    production:
-      ipfilter: false
-      paas: dit-services/datasci/dt05
-      url: null
-    staging:
-      ipfilter: true
-      paas: dit-staging/datasci-staging/dt05-staging
-      url: dt05-staging.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: dt05-clean
-  overlapping_secrets:
-  - AWS_ACCESS_KEY_ID
-  - AWS_DEFAULT_REGION
-  - AWS_SECRET_ACCESS_KEY
-  - DISABLE_COLLECTSTATIC
-  repo: git@github.com:uktrade/dt05-clean.git
-  secrets:
-    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
-    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
-    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-    DT05_DB_HOST: DT05_DB_HOST
-    DT05_DB_NAME: DT05_DB_NAME
-    DT05_DB_PSQL_PATH: DT05_DB_PSQL_PATH
-    DT05_DB_PWD: DT05_DB_PWD
-    DT05_DB_USER: DT05_DB_USER
-    DT05_INPUTS_SOURCE_FOLDER: DT05_INPUTS_SOURCE_FOLDER
-  type: public
-- env_vars: {}
-  environments:
-    production:
-      paas: dit-services/datasci/dt05
-    staging:
-      paas: dit-staging/datasci-staging/dt05-staging
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: dt05-clean-worker
-  notes: service created based on Procfile entry for dt05-clean and will require access
-    to the same backing services
-  repo: git@github.com:uktrade/dt05-clean.git
-  secrets: {}
-  secrets_from: dt05-clean
-  type: backend
-- env_vars: {}
-  environments:
-    production:
-      ipfilter: false
-      paas: dit-services/datasci/dt06
-      url: dt06.london.cloudapps.digital
-    staging:
-      ipfilter: true
-      paas: dit-staging/datasci-staging/dt06-staging
-      url: dt06-staging.london.cloudapps.digital
-  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: dt06-algorithm
-  overlapping_secrets:
-  - AWS_ACCESS_KEY_ID
-  - AWS_DEFAULT_REGION
-  - AWS_SECRET_ACCESS_KEY
-  - DISABLE_COLLECTSTATIC
-  repo: git@github.com:uktrade/dt06-algorithm.git
-  secrets:
-    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
-    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
-    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-    DT06_ALGO_DB_HOST: DT06_ALGO_DB_HOST
-    DT06_ALGO_DB_INSTANCE_NAME: DT06_ALGO_DB_INSTANCE_NAME
-    DT06_ALGO_DB_NAME: DT06_ALGO_DB_NAME
-    DT06_ALGO_DB_PWD: DT06_ALGO_DB_PWD
-    DT06_ALGO_DB_USER: DT06_ALGO_DB_USER
-    DT06_DB_PSQL_PATH: DT06_DB_PSQL_PATH
-    DT06_REPORTING_DB_HOST: DT06_REPORTING_DB_HOST
-    DT06_REPORTING_DB_INSTANCE_NAME: DT06_REPORTING_DB_INSTANCE_NAME
-    DT06_REPORTING_DB_NAME: DT06_REPORTING_DB_NAME
-    DT06_REPORTING_DB_PWD: DT06_REPORTING_DB_PWD
-    DT06_REPORTING_DB_USER: DT06_REPORTING_DB_USER
-    DT06_REPORTING_ES_INSTANCE_NAME: DT06_REPORTING_ES_INSTANCE_NAME
-    DT06_REPORTING_STORAGE_FOLDER: DT06_REPORTING_STORAGE_FOLDER
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    MLFLOW_CONFIG: MLFLOW_CONFIG
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
   type: public
 - env_vars: {}
   environments:
     dev:
+      paas: dit-staging/datasci-dev/data-flow-data-science-dev
+    production:
+      paas: dit-services/datasci/data-flow-data-science
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-data-science-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-data-science-scheduler
+  notes: service created based on Procfile entry for data-flow-data-science and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-data-science
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-data-science-dev
+    production:
+      paas: dit-services/datasci/data-flow-data-science
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-data-science-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-data-science-dag-processor
+  notes: service created based on Procfile entry for data-flow-data-science and will
+    require access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-data-science
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      count: 0
       ipfilter: false
-      paas: dit-staging/datasci-dev/dt07-dev
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-gscip-dev
       url: null
     production:
+      count: 0
       ipfilter: false
-      paas: dit-services/datasci/dt07
-      url: dt07.london.cloudapps.digital
+      memory: 1024
+      paas: dit-services/datasci/data-flow-gscip
+      url: null
     staging:
-      ipfilter: true
-      paas: dit-staging/datasci-staging/dt07-staging
-      url: dt07-staging.london.cloudapps.digital
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-gscip-staging
+      url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
-  name: dt07-reporting
+  name: data-flow-gscip
   overlapping_secrets:
-  - AWS_ACCESS_KEY_ID
-  - AWS_DEFAULT_REGION
-  - AWS_SECRET_ACCESS_KEY
-  - DISABLE_COLLECTSTATIC
-  - ENVIRONMENT
-  repo: git@github.com:uktrade/dt07-reporting.git
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - ALTANA__AWS_ACCESS_KEY_ID
+  - ALTANA__AWS_SECRET_ACCESS_KEY
+  - ALTANA__S3_BUCKET
+  - AUTHBROKER_URL
+  - BLOOMBERG__AWS_ACCESS_KEY_ID
+  - BLOOMBERG__AWS_SECRET_ACCESS_KEY
+  - BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN
+  - BLOOMBERG__S3_BASE_KEY
+  - BLOOMBERG__S3_BUCKET
+  - BLOOMBERG__S3_ENDPOINT_URL
+  - DAG_SYNC_GITHUB_KEY
+  - FACTSET_AWS_CLUSTER
+  - FACTSET_AWS_SECURITY_GROUP
+  - FACTSET_AWS_SUBNET
+  - FACTSET_BUCKET_AWS_ACCESS_KEY_ID
+  - FACTSET_BUCKET_AWS_SECRET_ACCESS_KEY
+  - FACTSET_BUCKET_NAME
+  - FACTSET_BUNDLES
+  - FACTSET_DEVICE_SERIAL
+  - FACTSET_USER
+  - GLOBAL_DATA_API_ENDPOINT
+  - GLOBAL_DATA_API_PASSWORD
+  - GLOBAL_DATA_API_USERNAME
+  - INTEROS__AWS_ACCESS_KEY_ID
+  - INTEROS__AWS_SECRET_ACCESS_KEY
+  - INTEROS__BUCKET
+  - INTEROS__IAM_ASSUME_OUR_ROLE_ARN
+  - INTEROS__IAM_ASSUME_THEIR_ROLE_ARN
+  - INTEROS__ZIP_PASSWORD
+  - MAPLECROFT_API_KEY
+  - MAPLECROFT_BASE_URL
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - Z2DATA_HOST_KEY
+  - Z2DATA_SFTP_HOST
+  - Z2DATA_SFTP_PASSWORD
+  - Z2DATA_SFTP_USERNAME
+  repo: git@github.com:uktrade/data-flow.git
   secrets:
-    ACTIVITY_STREAM_ITEMS_PER_PAGE: ACTIVITY_STREAM_ITEMS_PER_PAGE
-    API_ROOT: API_ROOT
-    AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
-    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
-    AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY
-    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
-    DT07_AC_HAWK_RESPONSE_HEADER: DT07_AC_HAWK_RESPONSE_HEADER
-    DT07_AC_ISSUERS_1_DESC: DT07_AC_ISSUERS_1_DESC
-    DT07_AC_ISSUERS_1_ISSUER: DT07_AC_ISSUERS_1_ISSUER
-    DT07_AC_ISSUERS_1_KEY: DT07_AC_ISSUERS_1_KEY
-    DT07_AC_ISSUERS_1_SCOPE: DT07_AC_ISSUERS_1_SCOPE
-    DT07_AC_ISSUERS_2_DESC: DT07_AC_ISSUERS_2_DESC
-    DT07_AC_ISSUERS_2_ISSUER: DT07_AC_ISSUERS_2_ISSUER
-    DT07_AC_ISSUERS_2_KEY: DT07_AC_ISSUERS_2_KEY
-    DT07_AC_ISSUERS_2_SCOPE: DT07_AC_ISSUERS_2_SCOPE
-    DT07_AC_ISSUERS_3_DESC: DT07_AC_ISSUERS_3_DESC
-    DT07_AC_ISSUERS_3_ISSUER: DT07_AC_ISSUERS_3_ISSUER
-    DT07_AC_ISSUERS_3_KEY: DT07_AC_ISSUERS_3_KEY
-    DT07_AC_ISSUERS_3_SCOPE: DT07_AC_ISSUERS_3_SCOPE
-    DT07_AC_ISSUERS_4_DESC: DT07_AC_ISSUERS_4_DESC
-    DT07_AC_ISSUERS_4_ISSUER: DT07_AC_ISSUERS_4_ISSUER
-    DT07_AC_ISSUERS_4_KEY: DT07_AC_ISSUERS_4_KEY
-    DT07_AC_ISSUERS_4_SCOPE: DT07_AC_ISSUERS_4_SCOPE
-    DT07_AC_ISSUERS_5_DESC: DT07_AC_ISSUERS_5_DESC
-    DT07_AC_ISSUERS_5_ISSUER: DT07_AC_ISSUERS_5_ISSUER
-    DT07_AC_ISSUERS_5_KEY: DT07_AC_ISSUERS_5_KEY
-    DT07_AC_ISSUERS_5_SCOPE: DT07_AC_ISSUERS_5_SCOPE
-    DT07_CACHE_HOST: DT07_CACHE_HOST
-    DT07_CACHE_PORT: DT07_CACHE_PORT
-    DT07_CACHE_PWD: DT07_CACHE_PWD
-    DT07_DHR_API_ALICE_SECRET: DT07_DHR_API_ALICE_SECRET
-    DT07_DHR_API_ENDPOINT: DT07_DHR_API_ENDPOINT
-    DT07_DHR_OUTPUT_PATH: DT07_DHR_OUTPUT_PATH
-    DT07_DHR_UPLOAD_PATH: DT07_DHR_UPLOAD_PATH
-    DT07_DHR_UPLOAD_READ_AWS_ACCESS_KEY_ID: DT07_DHR_UPLOAD_READ_AWS_ACCESS_KEY_ID
-    DT07_DHR_UPLOAD_READ_AWS_SECRET_ACCESS_KEY: DT07_DHR_UPLOAD_READ_AWS_SECRET_ACCESS_KEY
-    DT07_DHR_UPLOAD_WRITE_AWS_ACCESS_KEY_ID: DT07_DHR_UPLOAD_WRITE_AWS_ACCESS_KEY_ID
-    DT07_DHR_UPLOAD_WRITE_AWS_SECRET_ACCESS_KEY: DT07_DHR_UPLOAD_WRITE_AWS_SECRET_ACCESS_KEY
-    DT07_GUNICORN_PORT: DT07_GUNICORN_PORT
-    DT07_SLACK_WEBHOOK: DT07_SLACK_WEBHOOK
-    ENVIRONMENT: ENVIRONMENT
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    ALTANA__AWS_ACCESS_KEY_ID: ALTANA__AWS_ACCESS_KEY_ID
+    ALTANA__AWS_SECRET_ACCESS_KEY: ALTANA__AWS_SECRET_ACCESS_KEY
+    ALTANA__S3_BUCKET: ALTANA__S3_BUCKET
+    AUTHBROKER_URL: AUTHBROKER_URL
+    BLOOMBERG__AWS_ACCESS_KEY_ID: BLOOMBERG__AWS_ACCESS_KEY_ID
+    BLOOMBERG__AWS_SECRET_ACCESS_KEY: BLOOMBERG__AWS_SECRET_ACCESS_KEY
+    BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN: BLOOMBERG__IAM_ASSUME_OUR_ROLE_ARN
+    BLOOMBERG__S3_BASE_KEY: BLOOMBERG__S3_BASE_KEY
+    BLOOMBERG__S3_BUCKET: BLOOMBERG__S3_BUCKET
+    BLOOMBERG__S3_ENDPOINT_URL: BLOOMBERG__S3_ENDPOINT_URL
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    FACTSET_AWS_CLUSTER: FACTSET_AWS_CLUSTER
+    FACTSET_AWS_SECURITY_GROUP: FACTSET_AWS_SECURITY_GROUP
+    FACTSET_AWS_SUBNET: FACTSET_AWS_SUBNET
+    FACTSET_BUCKET_AWS_ACCESS_KEY_ID: FACTSET_BUCKET_AWS_ACCESS_KEY_ID
+    FACTSET_BUCKET_AWS_SECRET_ACCESS_KEY: FACTSET_BUCKET_AWS_SECRET_ACCESS_KEY
+    FACTSET_BUCKET_NAME: FACTSET_BUCKET_NAME
+    FACTSET_BUNDLES: FACTSET_BUNDLES
+    FACTSET_DEVICE_SERIAL: FACTSET_DEVICE_SERIAL
+    FACTSET_USER: FACTSET_USER
+    GLOBAL_DATA_API_ENDPOINT: GLOBAL_DATA_API_ENDPOINT
+    GLOBAL_DATA_API_PASSWORD: GLOBAL_DATA_API_PASSWORD
+    GLOBAL_DATA_API_USERNAME: GLOBAL_DATA_API_USERNAME
+    INTEROS__AWS_ACCESS_KEY_ID: INTEROS__AWS_ACCESS_KEY_ID
+    INTEROS__AWS_SECRET_ACCESS_KEY: INTEROS__AWS_SECRET_ACCESS_KEY
+    INTEROS__BUCKET: INTEROS__BUCKET
+    INTEROS__IAM_ASSUME_OUR_ROLE_ARN: INTEROS__IAM_ASSUME_OUR_ROLE_ARN
+    INTEROS__IAM_ASSUME_THEIR_ROLE_ARN: INTEROS__IAM_ASSUME_THEIR_ROLE_ARN
+    INTEROS__ZIP_PASSWORD: INTEROS__ZIP_PASSWORD
+    MAPLECROFT_API_KEY: MAPLECROFT_API_KEY
+    MAPLECROFT_BASE_URL: MAPLECROFT_BASE_URL
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    Z2DATA_HOST_KEY: Z2DATA_HOST_KEY
+    Z2DATA_SFTP_HOST: Z2DATA_SFTP_HOST
+    Z2DATA_SFTP_PASSWORD: Z2DATA_SFTP_PASSWORD
+    Z2DATA_SFTP_USERNAME: Z2DATA_SFTP_USERNAME
   type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-gscip-dev
+    production:
+      paas: dit-services/datasci/data-flow-gscip
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-gscip-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-gscip-scheduler
+  notes: service created based on Procfile entry for data-flow-gscip and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-gscip
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-gscip-dev
+    production:
+      paas: dit-services/datasci/data-flow-gscip
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-gscip-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-gscip-dag-processor
+  notes: service created based on Procfile entry for data-flow-gscip and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-gscip
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-opss-dev
+      url: null
+    production:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-services/datasci/data-flow-opss
+      url: null
+    staging:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-opss-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-opss
+  overlapping_secrets:
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - DAG_SYNC_GITHUB_KEY
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  repo: git@github.com:uktrade/data-flow.git
+  secrets:
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    OPSS_DATAPIPE_PROD__AWS_ACCESS_KEY_ID: OPSS_DATAPIPE_PROD__AWS_ACCESS_KEY_ID
+    OPSS_DATAPIPE_PROD__AWS_SECRET_ACCESS_KEY: OPSS_DATAPIPE_PROD__AWS_SECRET_ACCESS_KEY
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-opss-dev
+    production:
+      paas: dit-services/datasci/data-flow-opss
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-opss-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-opss-scheduler
+  notes: service created based on Procfile entry for data-flow-opss and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-opss
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-opss-dev
+    production:
+      paas: dit-services/datasci/data-flow-opss
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-opss-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-opss-dag-processor
+  notes: service created based on Procfile entry for data-flow-opss and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-opss
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-dev/data-flow-tap-dev
+      url: null
+    production:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-services/datasci/data-flow-tap
+      url: null
+    staging:
+      count: 0
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/datasci-staging/data-flow-tap-staging
+      url: null
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-tap
+  overlapping_secrets:
+  - AIRFLOW_CONN_DATASETS_DB
+  - AIRFLOW__SENTRY__SENTRY_ON
+  - DAG_SYNC_GITHUB_KEY
+  - DATA_GOV_UK_TARIFF_PDG_BASE
+  - PUBLIC_DATA_API_BASE_URL
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+  - PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+  - PUBLIC_DATA_GATEWAY_BUCKET_NAME
+  - SENTRY_DSN
+  - SENTRY_ENVIRONMENT
+  - UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID
+  - UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY
+  - UK_TARIFF_BUCKET_NAME
+  repo: git@github.com:uktrade/data-flow.git
+  secrets:
+    AIRFLOW_CONN_DATASETS_DB: AIRFLOW_CONN_DATASETS_DB
+    AIRFLOW__SENTRY__SENTRY_ON: AIRFLOW__SENTRY__SENTRY_ON
+    AWS_DEFAULT_REGION: AWS_DEFAULT_REGION
+    DAG_SYNC_GITHUB_KEY: DAG_SYNC_GITHUB_KEY
+    DATA_GOV_UK_LOGIN_URL: DATA_GOV_UK_LOGIN_URL
+    DATA_GOV_UK_PASSWORD: DATA_GOV_UK_PASSWORD
+    DATA_GOV_UK_TARIFF_PDG_BASE: DATA_GOV_UK_TARIFF_PDG_BASE
+    DATA_GOV_UK_TARIFF_RESOURCE_CREATE_URL: DATA_GOV_UK_TARIFF_RESOURCE_CREATE_URL
+    DATA_GOV_UK_USERNAME: DATA_GOV_UK_USERNAME
+    PUBLIC_DATA_API_BASE_URL: PUBLIC_DATA_API_BASE_URL
+    PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID: PUBLIC_DATA_GATEWAY_BUCKET_AWS_ACCESS_KEY_ID
+    PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY: PUBLIC_DATA_GATEWAY_BUCKET_AWS_SECRET_ACCESS_KEY
+    PUBLIC_DATA_GATEWAY_BUCKET_NAME: PUBLIC_DATA_GATEWAY_BUCKET_NAME
+    SENTRY_DSN: SENTRY_DSN
+    SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
+    UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID: UK_TARIFF_BUCKET_AWS_ACCESS_KEY_ID
+    UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY: UK_TARIFF_BUCKET_AWS_SECRET_ACCESS_KEY
+    UK_TARIFF_BUCKET_NAME: UK_TARIFF_BUCKET_NAME
+  type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-tap-dev
+    production:
+      paas: dit-services/datasci/data-flow-tap
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-tap-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-tap-scheduler
+  notes: service created based on Procfile entry for data-flow-tap and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-tap
+  type: backend
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/datasci-dev/data-flow-tap-dev
+    production:
+      paas: dit-services/datasci/data-flow-tap
+    staging:
+      paas: dit-staging/datasci-staging/data-flow-tap-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: data-flow-tap-dag-processor
+  notes: service created based on Procfile entry for data-flow-tap and will require
+    access to the same backing services
+  repo: git@github.com:uktrade/data-flow.git
+  secrets: {}
+  secrets_from: data-flow-tap
+  type: backend

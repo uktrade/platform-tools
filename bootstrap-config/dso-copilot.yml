@@ -21,14 +21,17 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/dso-dev/dso-dev
       url: dso-dev.london.cloudapps.digital
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/dso/dso
       url: www.manage-delegates.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/dso-staging/dso-staging
       url: dso-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -119,14 +122,17 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/dso-dev/dso-dev
       url: dso-dev.london.cloudapps.digital
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/dso/dso
       url: www.manage-delegates.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/dso-staging/dso-staging
       url: dso-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
