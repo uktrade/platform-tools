@@ -26,7 +26,7 @@ def pipeline():
     check_copilot_helper_version_needs_update()
 
 
-@pipeline.command()
+@pipeline.command(deprecated=True, hidden=True)
 def generate():
     """
     WARNING: this command should not be used as a stand-alone.
