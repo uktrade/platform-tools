@@ -8,11 +8,13 @@ phases:
   install:
     commands:
       - cd $CODEBUILD_SRC_DIR
-      - if [ ! -f .copilot-version ]; then
+      - |
+        if [ ! -f .copilot-version ]; then
           echo "Cannot find .copilot-version file"
           exit 1
         fi
-      - if [ ! -f .copilot-helper-version ]; then
+      - |
+        if [ ! -f .copilot-helper-version ]; then
           echo "Cannot find .copilot-helper-version file"
           exit 1
         fi
