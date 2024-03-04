@@ -24,19 +24,26 @@ services:
 - env_vars: {}
   environments:
     dev-eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 128
       paas: dit-staging/activity-stream-dev/activity-stream-dev
       url: activity-stream-dev.london.cloudapps.digital
     production-3-eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 2048
       paas: dit-services/activity-stream/activity-stream-3
       url: activity-stream-3.london.cloudapps.digital
     staging-eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 128
       paas: dit-staging/activity-stream-staging/activity-stream-staging
       url: activity-stream-staging.london.cloudapps.digital
     uat-eu-west-2:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/activity-stream-uat/activity-stream-uat
       url: activity-stream-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -120,6 +127,29 @@ services:
     FEEDS_DISABLED__09__SEED: FEEDS_DISABLED__09__SEED
     FEEDS_DISABLED__09__TYPE: FEEDS_DISABLED__09__TYPE
     FEEDS_DISABLED__09__UNIQUE_ID: FEEDS_DISABLED__09__UNIQUE_ID
+    FEEDS_DISABLED__12__ACCESS_KEY_ID: FEEDS_DISABLED__12__ACCESS_KEY_ID
+    FEEDS_DISABLED__12__SECRET_ACCESS_KEY: FEEDS_DISABLED__12__SECRET_ACCESS_KEY
+    FEEDS_DISABLED__12__SEED: FEEDS_DISABLED__12__SEED
+    FEEDS_DISABLED__12__TYPE: FEEDS_DISABLED__12__TYPE
+    FEEDS_DISABLED__12__UNIQUE_ID: FEEDS_DISABLED__12__UNIQUE_ID
+    FEEDS_DISABLED__17__ACCESS_KEY_ID: FEEDS_DISABLED__17__ACCESS_KEY_ID
+    FEEDS_DISABLED__17__SECRET_ACCESS_KEY: FEEDS_DISABLED__17__SECRET_ACCESS_KEY
+    FEEDS_DISABLED__17__SEED: FEEDS_DISABLED__17__SEED
+    FEEDS_DISABLED__17__TYPE: FEEDS_DISABLED__17__TYPE
+    FEEDS_DISABLED__17__UNIQUE_ID: FEEDS_DISABLED__17__UNIQUE_ID
+    FEEDS_DISABLED__27__ACCESS_KEY_ID: FEEDS_DISABLED__27__ACCESS_KEY_ID
+    FEEDS_DISABLED__27__SECRET_ACCESS_KEY: FEEDS_DISABLED__27__SECRET_ACCESS_KEY
+    FEEDS_DISABLED__27__SEED: FEEDS_DISABLED__27__SEED
+    FEEDS_DISABLED__27__TYPE: FEEDS_DISABLED__27__TYPE
+    FEEDS_DISABLED__27__UNIQUE_ID: FEEDS_DISABLED__27__UNIQUE_ID
+    FEEDS_DISABLED__40__CAMPAIGN_URL: FEEDS_DISABLED__40__CAMPAIGN_URL
+    FEEDS_DISABLED__40__DATA_EXPORT_URL: FEEDS_DISABLED__40__DATA_EXPORT_URL
+    FEEDS_DISABLED__40__PAGE_SIZE: FEEDS_DISABLED__40__PAGE_SIZE
+    FEEDS_DISABLED__40__PASSWORD: FEEDS_DISABLED__40__PASSWORD
+    FEEDS_DISABLED__40__SEED: FEEDS_DISABLED__40__SEED
+    FEEDS_DISABLED__40__TYPE: FEEDS_DISABLED__40__TYPE
+    FEEDS_DISABLED__40__UNIQUE_ID: FEEDS_DISABLED__40__UNIQUE_ID
+    FEEDS_DISABLED__40__USERNAME: FEEDS_DISABLED__40__USERNAME
     FEEDS_DISABLED__5__ACCOUNT_ID: FEEDS_DISABLED__5__ACCOUNT_ID
     FEEDS_DISABLED__5__API_EMAIL: FEEDS_DISABLED__5__API_EMAIL
     FEEDS_DISABLED__5__API_KEY: FEEDS_DISABLED__5__API_KEY
@@ -348,15 +378,45 @@ services:
     FEEDS__35__TYPE: FEEDS__35__TYPE
     FEEDS__35__UNIQUE_ID: FEEDS__35__UNIQUE_ID
     FEEDS__36__ACCESS_KEY_ID: FEEDS__36__ACCESS_KEY_ID
+    FEEDS__36__CAMPAIGN_URL: FEEDS__36__CAMPAIGN_URL
+    FEEDS__36__DATA_EXPORT_URL: FEEDS__36__DATA_EXPORT_URL
+    FEEDS__36__PAGE_SIZE: FEEDS__36__PAGE_SIZE
+    FEEDS__36__PASSWORD: FEEDS__36__PASSWORD
     FEEDS__36__SECRET_ACCESS_KEY: FEEDS__36__SECRET_ACCESS_KEY
     FEEDS__36__SEED: FEEDS__36__SEED
     FEEDS__36__TYPE: FEEDS__36__TYPE
     FEEDS__36__UNIQUE_ID: FEEDS__36__UNIQUE_ID
+    FEEDS__36__USERNAME: FEEDS__36__USERNAME
+    FEEDS__37__ACCESS_KEY_ID: FEEDS__37__ACCESS_KEY_ID
+    FEEDS__37__SECRET_ACCESS_KEY: FEEDS__37__SECRET_ACCESS_KEY
+    FEEDS__37__SEED: FEEDS__37__SEED
+    FEEDS__37__TYPE: FEEDS__37__TYPE
+    FEEDS__37__UNIQUE_ID: FEEDS__37__UNIQUE_ID
+    FEEDS__38__ACCESS_KEY_ID: FEEDS__38__ACCESS_KEY_ID
+    FEEDS__38__SECRET_ACCESS_KEY: FEEDS__38__SECRET_ACCESS_KEY
+    FEEDS__38__SEED: FEEDS__38__SEED
+    FEEDS__38__TYPE: FEEDS__38__TYPE
+    FEEDS__38__UNIQUE_ID: FEEDS__38__UNIQUE_ID
+    FEEDS__39__ACCESS_KEY_ID: FEEDS__39__ACCESS_KEY_ID
+    FEEDS__39__SECRET_ACCESS_KEY: FEEDS__39__SECRET_ACCESS_KEY
+    FEEDS__39__SEED: FEEDS__39__SEED
+    FEEDS__39__TYPE: FEEDS__39__TYPE
+    FEEDS__39__UNIQUE_ID: FEEDS__39__UNIQUE_ID
     FEEDS__3__ACCESS_KEY_ID: FEEDS__3__ACCESS_KEY_ID
     FEEDS__3__SECRET_ACCESS_KEY: FEEDS__3__SECRET_ACCESS_KEY
     FEEDS__3__SEED: FEEDS__3__SEED
     FEEDS__3__TYPE: FEEDS__3__TYPE
     FEEDS__3__UNIQUE_ID: FEEDS__3__UNIQUE_ID
+    FEEDS__41__ACCESS_KEY_ID: FEEDS__41__ACCESS_KEY_ID
+    FEEDS__41__SECRET_ACCESS_KEY: FEEDS__41__SECRET_ACCESS_KEY
+    FEEDS__41__SEED: FEEDS__41__SEED
+    FEEDS__41__TYPE: FEEDS__41__TYPE
+    FEEDS__41__UNIQUE_ID: FEEDS__41__UNIQUE_ID
+    FEEDS__42__ACCESS_KEY_ID: FEEDS__42__ACCESS_KEY_ID
+    FEEDS__42__SECRET_ACCESS_KEY: FEEDS__42__SECRET_ACCESS_KEY
+    FEEDS__42__SEED: FEEDS__42__SEED
+    FEEDS__42__TYPE: FEEDS__42__TYPE
+    FEEDS__42__UNIQUE_ID: FEEDS__42__UNIQUE_ID
     FEEDS__4__ACCESS_KEY_ID: FEEDS__4__ACCESS_KEY_ID
     FEEDS__4__SECRET_ACCESS_KEY: FEEDS__4__SECRET_ACCESS_KEY
     FEEDS__4__SEED: FEEDS__4__SEED
@@ -389,6 +449,7 @@ services:
     INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__5: INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__5
     INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__6: INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__6
     INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__7: INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__7
+    INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__8: INCOMING_ACCESS_KEY_PAIRS__02__PERMISSIONS__objects__1__TERMS_VALUES__8
     INCOMING_ACCESS_KEY_PAIRS__02__SECRET_KEY: INCOMING_ACCESS_KEY_PAIRS__02__SECRET_KEY
     INCOMING_ACCESS_KEY_PAIRS__03__DESCRIPTION: INCOMING_ACCESS_KEY_PAIRS__03__DESCRIPTION
     INCOMING_ACCESS_KEY_PAIRS__03__KEY_ID: INCOMING_ACCESS_KEY_PAIRS__03__KEY_ID
@@ -463,6 +524,7 @@ services:
     INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__5: INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__5
     INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__6: INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__6
     INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__7: INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__7
+    INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__8: INCOMING_ACCESS_KEY_PAIRS__22__PERMISSIONS__objects__1__TERMS_VALUES__8
     INCOMING_ACCESS_KEY_PAIRS__22__SECRET_KEY: INCOMING_ACCESS_KEY_PAIRS__22__SECRET_KEY
     INCOMING_ACCESS_KEY_PAIRS__2__DESCRIPTION: INCOMING_ACCESS_KEY_PAIRS__2__DESCRIPTION
     INCOMING_ACCESS_KEY_PAIRS__2__KEY_ID: INCOMING_ACCESS_KEY_PAIRS__2__KEY_ID
@@ -527,6 +589,7 @@ services:
     INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__5: INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__5
     INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__6: INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__6
     INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__7: INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__7
+    INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__8: INCOMING_ACCESS_KEY_PAIRS__9__PERMISSIONS__objects__1__TERMS_VALUES__8
     INCOMING_ACCESS_KEY_PAIRS__9__SECRET_KEY: INCOMING_ACCESS_KEY_PAIRS__9__SECRET_KEY
     INCOMING_DISABLED_ACCESS_KEY_PAIRS__2__DESCRIPTION: INCOMING_DISABLED_ACCESS_KEY_PAIRS__2__DESCRIPTION
     INCOMING_DISABLED_ACCESS_KEY_PAIRS__2__KEY_ID: INCOMING_DISABLED_ACCESS_KEY_PAIRS__2__KEY_ID
@@ -587,12 +650,19 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    dev-eu-west-2:
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/activity-stream-dev/activity-stream-kibana-dev
+      url: null
     staging-eu-west-2:
       ipfilter: false
+      memory: 256
       paas: dit-staging/activity-stream-staging/activity-stream-kibana-staging
       url: activity-stream-elasticsearch-staging.london.cloudapps.digital
     uat-eu-west-2:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/activity-stream-uat/activity-stream-kibana-uat
       url: activity-stream-elasticsearch-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -614,18 +684,22 @@ services:
   environments:
     dev-eu-west-2:
       ipfilter: false
+      memory: 256
       paas: dit-staging/activity-stream-dev/activity-stream-verification-feed-dev
       url: null
     production-eu-west-2:
       ipfilter: false
+      memory: 256
       paas: dit-services/activity-stream/activity-stream-verification-feed
       url: activity-stream-verification-feed.london.cloudapps.digital
     staging-eu-west-2:
       ipfilter: false
+      memory: 256
       paas: dit-staging/activity-stream-staging/activity-stream-verification-feed-staging
       url: null
     uat-eu-west-2:
       ipfilter: false
+      memory: 256
       paas: dit-staging/activity-stream-uat/activity-stream-verification-feed-uat
       url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

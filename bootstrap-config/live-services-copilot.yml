@@ -6,7 +6,12 @@ environments:
     - ACM-ARN-FOR-irap-dev.london.cloudapps.digital
     - ACM-ARN-FOR-joiners-movers-leavers-dev.london.cloudapps.digital
     - ACM-ARN-FOR-jml.dev.uktrade.digital
-  prod: {}
+  prod:
+    certificate_arns:
+    - ACM-ARN-FOR-irap.london.cloudapps.digital
+    - ACM-ARN-FOR-irap.trade.gov.uk
+    - ACM-ARN-FOR-irap.trade.gov.uk
+    - ACM-ARN-FOR-irap.london.cloudapps.digital
   production:
     certificate_arns:
     - ACM-ARN-FOR-data-services-helpcentre.london.cloudapps.digital
@@ -26,14 +31,17 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/data-services-helpcentre-dev/data-services-helpcentre-dev
       url: data-services-helpcentre-dev.london.cloudapps.digital
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/data-services-helpcentre/data-services-helpcentre
       url: data-services-help.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/data-services-helpcentre-dev/data-services-helpcentre-staging
       url: data-services-helpcentre-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -79,8 +87,15 @@ services:
       ipfilter: true
       paas: dit-staging/irap-dev/irap-dev
       url: irap-dev.london.cloudapps.digital
+    prod:
+      count: 2
+      ipfilter: true
+      memory: 1024
+      paas: dit-services/irap/irap
+      url: irap.london.cloudapps.digital
     staging:
-      ipfilter: false
+      ipfilter: true
+      memory: 1024
       paas: dit-staging/irap-staging/irap-staging
       url: irap-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -101,15 +116,25 @@ services:
     AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
     AUTHBROKER_INTROSPECTION_TOKEN: AUTHBROKER_INTROSPECTION_TOKEN
     AUTHBROKER_URL: AUTHBROKER_URL
+    CLAM_AV_DOMAIN: CLAM_AV_DOMAIN
+    CLAM_AV_PASSWORD: CLAM_AV_PASSWORD
+    CLAM_AV_USERNAME: CLAM_AV_USERNAME
     DEV_TOOLS_DEFAULT_USER: DEV_TOOLS_DEFAULT_USER
     DEV_TOOLS_ENABLED: DEV_TOOLS_ENABLED
     DEV_TOOLS_LOGIN_URL: DEV_TOOLS_LOGIN_URL
     DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
+    DOCS_URL_DATA_PROTECTION_ONE_STOP_SHOP: DOCS_URL_DATA_PROTECTION_ONE_STOP_SHOP
+    ENABLE_RISK: ENABLE_RISK
     NOTIFICATION_CLIENT: NOTIFICATION_CLIENT
     NOTIFICATION_CLIENT_API_KEY: NOTIFICATION_CLIENT_API_KEY
     NOTIFICATION_CONTEXT_SERVICE_URL: NOTIFICATION_CONTEXT_SERVICE_URL
+    NOTIFICATION_TEMPLATE_COLLABORATION_INVITATION_COLLABORATOR: NOTIFICATION_TEMPLATE_COLLABORATION_INVITATION_COLLABORATOR
     NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_HIGH: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_HIGH
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_LOW: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_LOW
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_MODERATE: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_REQUESTOR_MODERATE
     NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_SECRETARIAT
+    NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_TDA_LOW_RISK: NOTIFICATION_TEMPLATE_IRAP_REQUEST_SUBMITTED_TDA_LOW_RISK
     PROFILE_CARD_JS: PROFILE_CARD_JS
     PROFILE_CARD_URL: PROFILE_CARD_URL
     SECRET_KEY: SECRET_KEY
@@ -117,6 +142,22 @@ services:
     VITE_DEV: VITE_DEV
     VITE_DEV_SERVER_URL: VITE_DEV_SERVER_URL
   type: public
+- env_vars: {}
+  environments:
+    dev:
+      paas: dit-staging/irap-dev/irap-dev
+    prod:
+      paas: dit-services/irap/irap
+    staging:
+      paas: dit-staging/irap-staging/irap-staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: irap-worker
+  notes: service created based on Procfile entry for irap and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/irap.git
+  secrets: {}
+  secrets_from: irap
+  type: backend
 - env_vars: {}
   environments:
     dev:
@@ -129,6 +170,7 @@ services:
       url: www.leavingdbt.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/jml-staging/jml-staging
       url: jml-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -283,6 +325,7 @@ services:
     UKSBS_POST_LEAVER_SUBMISSION: UKSBS_POST_LEAVER_SUBMISSION
     UKSBS_TOKEN_URL: UKSBS_TOKEN_URL
     WORKFORCE_PLANNING_EMAIL: WORKFORCE_PLANNING_EMAIL
+    ZENPY_FORCE_NETLOC: ZENPY_FORCE_NETLOC
   type: public
 - env_vars: {}
   environments:

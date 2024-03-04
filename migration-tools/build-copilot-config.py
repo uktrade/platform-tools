@@ -163,7 +163,7 @@ def space_to_copilot_app(app_name, ns_conf):
             for env_name, env_conf in psvc["environments"].items():
                 del env_conf["url"]
                 del env_conf["ipfilter"]
-                del env_conf["memory"]
+                env_conf.pop("memory", None)
                 if "count" in env_conf:
                     del env_conf["count"]
 

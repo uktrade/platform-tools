@@ -1,13 +1,19 @@
 app: market-access
 environments:
-  demo: {}
-  dev:
+  atlantis:
     certificate_arns:
-    - ACM-ARN-FOR-market-access-api-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-api-atlantis.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-atlantis.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-public-fe-atlantis.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-publicfe-atlantis.london.cloudapps.digital
+  gotham:
+    certificate_arns:
+    - ACM-ARN-FOR-market-access-api-gotham.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-gotham.london.cloudapps.digital
     - ACM-ARN-FOR-market-access-dev.london.cloudapps.digital
-    - ACM-ARN-FOR-market-access-pyfe-dev.london.cloudapps.digital
     - ACM-ARN-FOR-market-access.dev.uktrade.digital
     - ACM-ARN-FOR-market-access-publicfe-dev.london.cloudapps.digital
+    - ACM-ARN-FOR-market-access-publicfe-gotham.london.cloudapps.digital
   prod:
     certificate_arns:
     - ACM-ARN-FOR-market-access.london.cloudapps.digital
@@ -18,7 +24,6 @@ environments:
   production:
     certificate_arns:
     - ACM-ARN-FOR-market-access-api.london.cloudapps.digital
-  staging: {}
   uat:
     certificate_arns:
     - ACM-ARN-FOR-market-access-api-uat.london.cloudapps.digital
@@ -29,16 +34,25 @@ environments:
 services:
 - env_vars: {}
   environments:
-    dev:
-      ipfilter: true
-      paas: dit-staging/market-access-dev/market-access-api-dev
-      url: market-access-api-dev.london.cloudapps.digital
+    atlantis:
+      ipfilter: false
+      memory: 2048
+      paas: dit-staging/market-access-dev/market-access-api-atlantis
+      url: market-access-api-atlantis.london.cloudapps.digital
+    gotham:
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/market-access-dev/market-access-api-gotham
+      url: market-access-api-gotham.london.cloudapps.digital
     production:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/market-access/market-access-api
       url: market-access-api.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/market-access-uat/market-access-api-uat
       url: market-access-api-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -46,6 +60,7 @@ services:
   overlapping_secrets:
   - ACTION_PLANS_ENABLED
   - DEBUG
+  - DISABLE_COLLECTSTATIC
   - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_URL
@@ -78,6 +93,7 @@ services:
     COMTRADE_DB_PORT: COMTRADE_DB_PORT
     COMTRADE_DB_PWORD: COMTRADE_DB_PWORD
     COMTRADE_DB_USER: COMTRADE_DB_USER
+    CUDA_VISIBLE_DEVICES: CUDA_VISIBLE_DEVICES
     DATA_WORKSPACE_HAWK_ID: DATA_WORKSPACE_HAWK_ID
     DATA_WORKSPACE_HAWK_KEY: DATA_WORKSPACE_HAWK_KEY
     DEBUG: DEBUG
@@ -85,6 +101,7 @@ services:
     DH_HAWK_ID: DH_HAWK_ID
     DH_HAWK_KEY: DH_HAWK_KEY
     DH_METADATA_URL: DH_METADATA_URL
+    DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
     DJANGO_HASHID_FIELD_SALT: DJANGO_HASHID_FIELD_SALT
     DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
     DMAS_BASE_URL: DMAS_BASE_URL
@@ -130,8 +147,10 @@ services:
   type: public
 - env_vars: {}
   environments:
-    dev:
-      paas: dit-staging/market-access-dev/market-access-api-dev
+    atlantis:
+      paas: dit-staging/market-access-dev/market-access-api-atlantis
+    gotham:
+      paas: dit-staging/market-access-dev/market-access-api-gotham
     production:
       paas: dit-services/market-access/market-access-api
     uat:
@@ -146,8 +165,10 @@ services:
   type: backend
 - env_vars: {}
   environments:
-    dev:
-      paas: dit-staging/market-access-dev/market-access-api-dev
+    atlantis:
+      paas: dit-staging/market-access-dev/market-access-api-atlantis
+    gotham:
+      paas: dit-staging/market-access-dev/market-access-api-gotham
     production:
       paas: dit-services/market-access/market-access-api
     uat:
@@ -162,16 +183,25 @@ services:
   type: backend
 - env_vars: {}
   environments:
-    dev:
-      ipfilter: true
-      paas: dit-staging/market-access-dev/market-access-pyfe-dev
+    atlantis:
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/market-access-dev/market-access-pyfe-atlantis
+      url: market-access-atlantis.london.cloudapps.digital
+    gotham:
+      ipfilter: false
+      memory: 1024
+      paas: dit-staging/market-access-dev/market-access-pyfe-gotham
       url: market-access.dev.uktrade.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/market-access/market-access-pyfe
       url: market-access-pyfe.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/market-access-uat/market-access-pyfe-uat
       url: market-access.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -212,6 +242,7 @@ services:
     ALLOWED_HOSTS: ALLOWED_HOSTS
     COMPANIES_HOUSE_API_ENDPOINT: COMPANIES_HOUSE_API_ENDPOINT
     COMPANIES_HOUSE_API_KEY: COMPANIES_HOUSE_API_KEY
+    CSP_REPORT_URI: CSP_REPORT_URI
     DATAHUB_HAWK_ID: DATAHUB_HAWK_ID
     DATAHUB_HAWK_KEY: DATAHUB_HAWK_KEY
     DATAHUB_URL: DATAHUB_URL
@@ -229,6 +260,7 @@ services:
     MARKET_ACCESS_API_HAWK_ID: MARKET_ACCESS_API_HAWK_ID
     MARKET_ACCESS_API_HAWK_KEY: MARKET_ACCESS_API_HAWK_KEY
     MARKET_ACCESS_API_URI: MARKET_ACCESS_API_URI
+    MOCK_METADATA: MOCK_METADATA
     NEW_ACTION_PLANS_ENABLED: NEW_ACTION_PLANS_ENABLED
     PRIORITISATION_STRATEGIC_ASSESSMENTS: PRIORITISATION_STRATEGIC_ASSESSMENTS
     SECRET_KEY: SECRET_KEY
@@ -244,16 +276,25 @@ services:
   type: public
 - env_vars: {}
   environments:
-    dev:
-      ipfilter: true
-      paas: dit-staging/market-access-dev/market-access-publicfe-dev
-      url: market-access-publicfe-dev.london.cloudapps.digital
-    prod:
+    atlantis:
       ipfilter: false
+      memory: 1024
+      paas: dit-staging/market-access-dev/market-access-publicfe-atlantis
+      url: market-access-publicfe-atlantis.london.cloudapps.digital
+    gotham:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/market-access-dev/market-access-publicfe-gotham
+      url: market-access-publicfe-gotham.london.cloudapps.digital
+    prod:
+      count: 2
+      ipfilter: false
+      memory: 1024
       paas: dit-services/market-access/market-access-publicfe
       url: www.check-international-trade-barriers.service.gov.uk
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/market-access-uat/market-access-publicfe-uat
       url: market-access-publicfe-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

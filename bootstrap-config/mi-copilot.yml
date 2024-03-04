@@ -23,14 +23,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-dev/exportwins-admin-dev
       url: exportwins-admin-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/mi/exportwins-admin
       url: admin.exportwins.service.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-staging/exportwins-admin-staging
       url: exportwins-admin-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -87,14 +91,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-dev/exportwins-data-dev
       url: exportwins-data-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/mi/exportwins-data
       url: exportwins-data.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-staging/exportwins-data-staging
       url: exportwins-data-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -212,14 +220,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-dev/exportwins-ui-dev
       url: exportwins-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/mi/exportwins-ui
       url: www.exportwins.service.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/mi-staging/exportwins-ui-staging
       url: exportwins-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

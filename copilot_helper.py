@@ -16,6 +16,7 @@ from dbt_copilot_helper.commands.copilot import copilot as copilot_commands
 from dbt_copilot_helper.commands.dns import cdn as cdn_commands
 from dbt_copilot_helper.commands.dns import domain as domain_commands
 from dbt_copilot_helper.commands.environment import environment as environment_commands
+from dbt_copilot_helper.commands.generate import generate as generate_commands
 from dbt_copilot_helper.commands.pipeline import pipeline as pipeline_commands
 from dbt_copilot_helper.utils.click import ClickDocOptGroup
 
@@ -38,6 +39,7 @@ copilot_helper.add_command(copilot_commands)
 copilot_helper.add_command(domain_commands)
 copilot_helper.add_command(cdn_commands)
 copilot_helper.add_command(environment_commands)
+copilot_helper.add_command(generate_commands)
 copilot_helper.add_command(pipeline_commands)
 copilot_helper.add_command(application_commands)
 
