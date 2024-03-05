@@ -250,8 +250,8 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 3
-        ), "The actual filecount should be expected files plus 2 initial manifest.yml and 1 override files"
+            len(actual_files) == len(all_expected_files) + 4
+        ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(

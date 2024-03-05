@@ -26,6 +26,13 @@ Mappings:
       DedicatedMaster: false
       VolumeSize: 40
       DeletionPolicy: Delete
+    production:
+      EngineVersion: '2.3'
+      InstanceType: 't3.medium.search'
+      InstanceCount: 1
+      DedicatedMaster: false
+      VolumeSize: 40
+      DeletionPolicy: Delete
 
   myOpensearchEngineVersionMap:
     '1.0':

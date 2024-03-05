@@ -19,6 +19,12 @@ my-s3-bucket:
         mode: COMPLIANCE
         days: 1
 
+    production:
+      bucket_name: my-bucket-prod
+      retention_policy:
+        mode: COMPLIANCE
+        days: 1
+
 my-s3-bucket-with-an-object:
   # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
 
@@ -34,6 +40,9 @@ my-s3-bucket-with-an-object:
 
     development:
       bucket_name: my-bucket-dev
+
+    production:
+      bucket_name: my-bucket-prod
 
   objects:
     - key: healthcheck.txt

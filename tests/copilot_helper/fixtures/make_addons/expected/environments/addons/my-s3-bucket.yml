@@ -20,6 +20,12 @@ Mappings:
       RetentionMode: COMPLIANCE
       RetentionDurationType: Days
       RetentionDuration: 1
+    production:
+      BucketName: 'my-bucket-prod'
+      DeletionPolicy: Delete
+      RetentionMode: COMPLIANCE
+      RetentionDurationType: Days
+      RetentionDuration: 1
 
 Conditions:
   myS3BucketApplyRetentionPolicy: !Not
