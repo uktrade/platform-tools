@@ -46,6 +46,12 @@ Mappings:
       DeletionPolicy: Delete
       SnapshotIdentifier: my-recent-snapshot
       DeletionProtection: True
+    production:
+      DBMinCapacity: 0.5
+      DBMaxCapacity: 8
+      DeletionPolicy: Delete
+      SnapshotIdentifier: ""
+      DeletionProtection: False
 
 Conditions:
   myAuroraDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]

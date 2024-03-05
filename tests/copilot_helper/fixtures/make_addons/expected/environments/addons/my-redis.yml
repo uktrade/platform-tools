@@ -24,6 +24,11 @@ Mappings:
       CacheNodeType: 'cache.t4g.medium'
       NumReplicas: 0
       DeletionPolicy: Delete
+    production:
+      EngineVersion: '6.2'
+      CacheNodeType: 'cache.t4g.medium'
+      NumReplicas: 0
+      DeletionPolicy: Delete
 
   myRedisEngineVersionMap:
     '6.2':
