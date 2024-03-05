@@ -17,6 +17,9 @@ Mappings:
     development:
       EnableOpsCenter: false
 
+    production:
+      EnableOpsCenter: false
+
 
 Resources:
   monitoringComputeDashboard:
