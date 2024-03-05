@@ -15,6 +15,7 @@ from dbt_copilot_helper.utils.git import git_remote
 from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
+from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_is_higher
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -34,6 +35,11 @@ def generate():
 
     Given a pipelines.yml file, generate environment and service deployment
     pipelines."""
+
+    # check for copilot-helper-version file compatibility
+    if not globals().get("copilot_helper_file_version_checked", False):
+        check_copilot_helper_version_is_higher()
+
     templates = setup_templates()
 
     app_name = get_application_name()

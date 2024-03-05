@@ -85,7 +85,7 @@ def get_app_versions():
 
 def get_file_app_versions():
     version_from_file = Path(".copilot-helper-version").read_text()
-    return (parse_version(version("dbt-copilot-tools")), parse_version(version_from_file))
+    return parse_version(version("dbt-copilot-tools")), parse_version(version_from_file)
 
 
 def validate_version_compatibility(
@@ -167,6 +167,7 @@ def check_copilot_helper_version_is_higher():
     if not running_as_installed_package():
         return
 
+    globals()["copilot_helper_file_version_checked"] = True
     app_version, on_file_version = get_file_app_versions()
 
     if not check_version_on_file_compatibility(app_version, on_file_version):

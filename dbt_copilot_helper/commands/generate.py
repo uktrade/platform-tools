@@ -4,6 +4,7 @@ import click
 from dbt_copilot_helper.commands.copilot import make_addons
 from dbt_copilot_helper.commands.pipeline import generate as pipeline_generate
 from dbt_copilot_helper.utils.click import ClickDocOptCommand
+from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_is_higher
 
 
 @click.command(cls=ClickDocOptCommand)
@@ -15,6 +16,6 @@ def generate(ctx: click.Context):
 
     Wraps pipeline generate and make-addons.
     """
-
+    check_copilot_helper_version_is_higher()
     ctx.invoke(pipeline_generate)
     ctx.invoke(make_addons)
