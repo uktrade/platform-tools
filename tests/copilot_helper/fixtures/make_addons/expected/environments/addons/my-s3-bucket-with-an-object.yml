@@ -17,6 +17,9 @@ Mappings:
     development:
       BucketName: 'my-bucket-dev'
       DeletionPolicy: Delete
+    production:
+      BucketName: 'my-bucket-prod'
+      DeletionPolicy: Delete
 
 Conditions:
   myS3BucketWithAnObjectApplyRetentionPolicy: !Not
