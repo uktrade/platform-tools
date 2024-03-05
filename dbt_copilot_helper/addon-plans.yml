@@ -64,63 +64,63 @@ redis:
 opensearch:
   # 2 vCPU, 2GB RAM, volume size range 10-100GB
   tiny:
-    volume-size: 80
+    volume_size: 80
     instances: 1
     master: false
     instance: t3.small.search
 
   # 2 vCPU, 4GB RAM, volume size range 10-200GB
   small:
-    volume-size: 200
+    volume_size: 200
     instances: 1
     master: false
     instance: t3.medium.search
 
   # 2 nodes with 2 vCPU, 4GB RAM, volume size range 10-200GB
   small-ha:
-    volume-size: 200
+    volume_size: 200
     instances: 2
     master: false
     instance: t3.medium.search
 
   # 2 vCPU, 8GB RAM, volume size range 10-512GB
   medium:
-    volume-size: 512
+    volume_size: 512
     instances: 1
     master: false
     instance: m6g.large.search
 
   # 2 nodes with 2 vCPU, 8GB RAM, volume size range 10-512GB
   medium-ha:
-    volume-size: 512
+    volume_size: 512
     instances: 2
     master: false
     instance: m6g.large.search
 
   # 4 vCPU, 16GB RAM, volume size range 10-1000GB
   large:
-    volume-size: 1000
+    volume_size: 1000
     instances: 1
     master: false
     instance: m6g.xlarge.search
 
   # 2 nodes with 4 vCPU, 16GB RAM, volume size range 10-1000GB
   large-ha:
-    volume-size: 1000
+    volume_size: 1000
     instances: 2
     master: false
     instance: m6g.xlarge.search
 
   # 8 vCPU, 32GB RAM, volume size range 10-1500GB
   x-large:
-    volume-size: 1500
+    volume_size: 1500
     instances: 1
     master: false
     instance: m6g.2xlarge.search
 
   # 2 nodes with 8 vCPU, 32GB RAM, volume size range 10-1500GB
   x-large-ha:
-    volume-size: 1500
+    volume_size: 1500
     instances: 2
     master: false
     instance: m6g.2xlarge.search
