@@ -9,6 +9,7 @@ import pytest
 from dbt_copilot_helper.exceptions import IncompatibleMajorVersion
 from dbt_copilot_helper.exceptions import IncompatibleMinorVersion
 from dbt_copilot_helper.exceptions import ValidationException
+from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_is_higher
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -173,3 +174,20 @@ def test_check_copilot_helper_version_skips_when_running_local_version(version_c
     check_copilot_helper_version_needs_update()
 
     version_compatibility.assert_not_called()
+
+
+@patch("click.secho")
+@patch("dbt_copilot_helper.utils.versioning.get_file_app_versions")
+@patch(
+    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_copilot_helper_version_shows_warning_when_higher_than_file_spec(
+    get_file_app_versions, secho
+):
+    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+    check_copilot_helper_version_is_higher()
+
+    secho.assert_called_with(
+        f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version.",
+        fg="red",
+    )

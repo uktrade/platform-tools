@@ -83,6 +83,11 @@ def get_app_versions():
     return parse_version(version("dbt-copilot-tools")), parsed_released_versions[0]
 
 
+def get_file_app_versions():
+    version_from_file = Path(".copilot-helper-version").read_text()
+    return (parse_version(version("dbt-copilot-tools")), parse_version(version_from_file))
+
+
 def validate_version_compatibility(
     app_version: Tuple[int, int, int], check_version: Tuple[int, int, int]
 ):
@@ -101,6 +106,17 @@ def validate_version_compatibility(
 
     if app_minor != check_minor:
         raise IncompatibleMinorVersion(app_version_as_string, check_version_as_string)
+
+
+def check_version_on_file_compatibility(
+    app_version: Tuple[int, int, int], file_version: Tuple[int, int, int]
+):
+    app_major, app_minor, app_patch = app_version
+    file_major, file_minor, file_patch = file_version
+
+    if app_major > file_major or app_minor > file_minor or app_patch > file_patch:
+        return False
+    return True
 
 
 def get_template_generated_with_version(template_file_path: str) -> Tuple[int, int, int]:
@@ -145,6 +161,20 @@ def check_copilot_helper_version_needs_update():
         continue_confirmation = click.confirm("Do you wish to continue executing?", default=False)
         if not continue_confirmation:
             exit(1)
+
+
+def check_copilot_helper_version_is_higher():
+    if not running_as_installed_package():
+        return
+
+    app_version, on_file_version = get_file_app_versions()
+
+    if not check_version_on_file_compatibility(app_version, on_file_version):
+        message = (
+            f"WARNING: You are running copilot-helper v{string_version(app_version)} against "
+            f"v{string_version(on_file_version)} specified by .copilot-helper-version."
+        )
+        click.secho(message, fg="red")
 
 
 def running_as_installed_package():
