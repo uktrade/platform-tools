@@ -306,7 +306,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("3.2.6", "4.0.10", "5.0.0", "5.0.3", "5.0.4", "5.0.6", "6.0", "6.2")
+REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2")
 
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
