@@ -37,8 +37,7 @@ def generate():
     pipelines."""
 
     # check for copilot-helper-version file compatibility
-    if not globals().get("copilot_helper_file_version_checked", False):
-        check_copilot_helper_version_is_higher()
+    check_copilot_helper_version_is_higher()
 
     templates = setup_templates()
 
