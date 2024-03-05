@@ -174,7 +174,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'postgres13'
+      Family: 'postgres{{ addon_config.version | int }}'
       Parameters:
         client_encoding: 'UTF8'
         log_statement: ddl
