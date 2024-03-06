@@ -119,11 +119,11 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 
 @pytest.mark.parametrize(
-    "suite",
+    "expected_exception",
     [
-        (IncompatibleMajorVersion, False),
-        (IncompatibleMinorVersion, True),
-        (IncompatibleMinorVersion, False),
+        IncompatibleMajorVersion,
+        IncompatibleMinorVersion,
+        IncompatibleMinorVersion,
     ],
 )
 @patch("click.secho")
@@ -134,35 +134,25 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 )
 @patch("dbt_copilot_helper.utils.versioning.validate_version_compatibility")
 def test_check_copilot_helper_version_needs_update(
-    version_compatibility, get_app_versions, confirm, secho, suite
+    version_compatibility, get_app_versions, confirm, secho, expected_exception
 ):
-    expected_exception, confirmation = suite
     get_app_versions.return_value = (1, 0, 0), (1, 0, 0)
-    confirm.return_value = confirmation
     version_compatibility.side_effect = expected_exception((1, 0, 0), (1, 0, 0))
 
-    if expected_exception == IncompatibleMajorVersion:
-        with pytest.raises(SystemExit):
-            check_copilot_helper_version_needs_update()
-            secho.assert_called_with(
-                "This command will not run until you upgrade dbt-copilot-tools; exiting...",
-                fg="red",
-            )
-    if expected_exception == IncompatibleMinorVersion:
-        if not confirmation:
-            with pytest.raises(SystemExit):
-                check_copilot_helper_version_needs_update()
-        else:
-            check_copilot_helper_version_needs_update()
+    check_copilot_helper_version_needs_update()
 
+    if expected_exception == IncompatibleMajorVersion:
+        secho.assert_called_with(
+            "You are running copilot-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
+            "--upgrade dbt-copilot-tools`.",
+            fg="red",
+        )
+
+    if expected_exception == IncompatibleMinorVersion:
         secho.assert_called_with(
             "You are running copilot-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
             "--upgrade dbt-copilot-tools`.",
             fg="yellow",
-        )
-        confirm.assert_called_with(
-            "Do you wish to continue executing?",
-            default=False,
         )
 
 

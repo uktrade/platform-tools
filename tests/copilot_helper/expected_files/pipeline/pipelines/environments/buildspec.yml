@@ -3,20 +3,31 @@
 version: 0.2
 env:
   variables:
-    COPILOT_VERSION: 1.32.1
     DYFF_VERSION: 1.5.8
 phases:
   install:
     commands:
       - cd $CODEBUILD_SRC_DIR
+      - |
+        if [ ! -f .copilot-version ]; then
+          echo "Cannot find .copilot-version file"
+          exit 1
+        fi
+      - |
+        if [ ! -f .copilot-helper-version ]; then
+          echo "Cannot find .copilot-helper-version file"
+          exit 1
+        fi
+      - COPILOT_VERSION=`cat .copilot-version`
+      - COPILOT_HELPER_VERSION=`cat .copilot-helper-version`
       - mkdir ./build-tools
       - cd ./build-tools
-      # Download the copilot linux binary. You can update this version.
-      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v$COPILOT_VERSION"
-      - mv "./copilot-linux-v$COPILOT_VERSION" ./copilot
+      # Install copilot
+      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}"
+      - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
-      # Install dbt-copilot-tools
-      - pip install dbt-copilot-tools
+      # Install pyyaml and dbt-copilot-tools
+      - pip install PyYAML dbt-copilot-tools==$COPILOT_HELPER_VERSION
       # Install dyff - yaml differ
       - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
       - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
@@ -24,6 +35,7 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR
+      - COPILOT_HELPER_VERSION=`cat .copilot-helper-version`
       - cp -r copilot/ current-copilot/
       - copilot-helper copilot make-addons
       - >
@@ -32,14 +44,14 @@ phases:
         done;
       - |
         if [[ "$(cat ./build-tools/file-differences)" = *[![:space:]]* ]]; then
-          echo 'Changes are introduced with the latest version of copilot-helper:'
+          echo 'Changes are introduced with version ${COPILOT_HELPER_VERSION} of copilot-helper:'
           echo
           for FILE in $(ls copilot/**/addons/*.yml); do
             echo "Changes in $FILE:"
             ./build-tools/dyff between --omit-header $FILE current-$FILE
           done;
           echo
-          echo 'Upgrade to the latest version with pip install --upgrade dbt-copilot-tools'
+          echo 'Ensure you are running version ${COPILOT_HELPER_VERSION} with pip install dbt-copilot-tools==${COPILOT_HELPER_VERSION}'
           echo 'And run copilot-helper copilot make-addons to regenerate your addons templates'
           exit 1
         fi

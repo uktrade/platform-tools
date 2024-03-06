@@ -151,16 +151,8 @@ def check_copilot_helper_version_needs_update():
         validate_version_compatibility(app_version, app_released_version)
     except IncompatibleMajorVersion:
         click.secho(message, fg="red")
-        click.secho(
-            "This command will not run until you upgrade dbt-copilot-tools; exiting...",
-            fg="red",
-        )
-        exit(1)
     except IncompatibleMinorVersion:
         click.secho(message, fg="yellow")
-        continue_confirmation = click.confirm("Do you wish to continue executing?", default=False)
-        if not continue_confirmation:
-            exit(1)
 
 
 def check_copilot_helper_version_mismatch():
