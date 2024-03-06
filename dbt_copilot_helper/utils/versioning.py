@@ -114,7 +114,7 @@ def check_version_on_file_compatibility(
     app_major, app_minor, app_patch = app_version
     file_major, file_minor, file_patch = file_version
 
-    if app_major > file_major or app_minor > file_minor or app_patch > file_patch:
+    if app_major != file_major or app_minor != file_minor or app_patch != file_patch:
         return False
     return True
 
@@ -163,7 +163,7 @@ def check_copilot_helper_version_needs_update():
             exit(1)
 
 
-def check_copilot_helper_version_is_higher():
+def check_copilot_helper_version_mismatch():
     if not running_as_installed_package():
         return
 

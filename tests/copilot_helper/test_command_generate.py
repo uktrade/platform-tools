@@ -24,7 +24,7 @@ def test_copilot_helper_generate_creates_the_pipeline_configuration_and_addons(
 )
 @patch("dbt_copilot_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_copilot_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
-def test_copilot_helper_generate_shows_a_warning_when_version_is_higher_than_on_file(
+def test_copilot_helper_generate_shows_a_warning_when_version_is_different_than_on_file(
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)

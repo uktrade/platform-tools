@@ -15,7 +15,7 @@ from dbt_copilot_helper.utils.git import git_remote
 from dbt_copilot_helper.utils.messages import abort_with_error
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import PIPELINES_SCHEMA
-from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_is_higher
+from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_mismatch
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -37,7 +37,7 @@ def generate():
     pipelines."""
 
     # check for copilot-helper-version file compatibility
-    check_copilot_helper_version_is_higher()
+    check_copilot_helper_version_mismatch()
 
     templates = setup_templates()
 
