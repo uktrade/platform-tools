@@ -375,7 +375,7 @@ RDS_SCHEMA = Schema(
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
-                Optional("volume_size"): int_between(5, 10000),
+                Optional("volume_size"): int_between(20, 10000),
                 Optional("snapshot_id"): str,
                 Optional("deletion_policy"): DB_DELETION_POLICY,
                 Optional("deletion_protection"): DELETION_PROTECTION,
