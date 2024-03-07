@@ -46,7 +46,8 @@ Mappings:
       MultiAZ: {{ config.multi_az }}
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
-      StorageType: {% if env_name == "prod" %}io1{% else %}gp3{% endif %}
+      StorageType: {% if env_name == "prod" or env_name == "production" %}io1{% else %}gp3{% endif %}
+      Iops: {{ config.iops if config.iops else '""' }}
       DeletionPolicy: {{ config.deletion_policy }}
       DeletionProtection: {{ config.deletion_protection if config.deletion_protection else false }}
       SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
@@ -55,6 +56,7 @@ Mappings:
 Conditions:
     {{ addon_config.prefix }}CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
     {{ addon_config.prefix }}UseSnapshot: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+    {{ addon_config.prefix }}UseIops: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, Iops], ""]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -230,6 +232,7 @@ Resources:
       AllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, StorageType]
+      Iops: !If [{{ addon_config.prefix }}UseIops, !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, Iops], !Ref AWS::NoValue]
       MultiAZ: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref {{ addon_config.prefix }}RDSDBParameterGroup
       DBName:
