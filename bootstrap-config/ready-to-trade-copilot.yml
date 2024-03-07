@@ -20,14 +20,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/ready-to-trade-dev/enquiry-mgmt-tool-dev
       url: enquiry-mgmt-dev.london.cloudapps.digital
     production:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/ready-to-trade/enquiry-mgmt-tool
       url: enquiry-mgmt.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/ready-to-trade-staging/enquiry-mgmt-tool-staging
       url: enquiry-mgmt-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

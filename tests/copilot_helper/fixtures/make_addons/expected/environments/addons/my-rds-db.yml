@@ -42,13 +42,22 @@ Mappings:
   myRdsDbEnvironmentConfigMap:
     development:
       DBInstanceClass: 'db.t3.small'
-      MultiAZ: True
+      MultiAZ: False
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
       StorageType: gp3
       DeletionPolicy: Delete
       DeletionProtection: False
       SnapshotIdentifier: test-snapshot-id
+    production:
+      DBInstanceClass: 'db.m5.2xlarge'
+      MultiAZ: True
+      AllocatedStorage: 564
+      MaxAllocatedStorage: 711
+      StorageType: gp3
+      DeletionPolicy: Delete
+      DeletionProtection: False
+      SnapshotIdentifier: ""
 
 Conditions:
     myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
@@ -172,7 +181,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'postgres13'
+      Family: 'postgres14'
       Parameters:
         client_encoding: 'UTF8'
         log_statement: ddl
@@ -352,15 +361,3 @@ Outputs:
     Value: !Ref PrivateSubnets
     Export:
       Name: !Sub "${App}-${Env}-myRdsDb-PrivateSubnetsName"
-
-  myRdsDbDeletionPolicyName:
-    Description: "Deletion policy"
-    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, DeletionPolicy]
-    Export:
-      Name: !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
-
-  myRdsDbSnapshotIdentifierName:
-    Description: "Name of snapshot identifier"
-    Value: !FindInMap [demodjangoPostgresEnvironmentConfigMap, !Ref Env, SnapshotIdentifier]
-    Export:
-      Name: !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"

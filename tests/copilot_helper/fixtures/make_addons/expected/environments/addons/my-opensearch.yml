@@ -21,10 +21,17 @@ Mappings:
   myOpensearchEnvironmentConfigMap:
     development:
       EngineVersion: '2.3'
-      InstanceType: 't3.medium.search'
+      InstanceType: 't3.small.search'
       InstanceCount: 1
       DedicatedMaster: false
-      VolumeSize: 40
+      VolumeSize: 80
+      DeletionPolicy: Delete
+    production:
+      EngineVersion: '2.3'
+      InstanceType: 'm6g.xlarge.search'
+      InstanceCount: 2
+      DedicatedMaster: false
+      VolumeSize: 1000
       DeletionPolicy: Delete
 
   myOpensearchEngineVersionMap:
@@ -168,6 +175,8 @@ Resources:
 
   myOpensearchOpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
+    DependsOn: 
+      - myOpensearchOpenSearchDomain
     Properties:
       Name: !Sub "/copilot/${App}/${Env}/secrets/MY_OPENSEARCH"
       Type: String

@@ -24,6 +24,9 @@ Mappings:
     development:
       BucketName: 'my-bucket-dev'
 
+    production:
+      BucketName: 'my-bucket-prod'
+
 
 Resources:
   myS3BucketS3AccessPolicy:

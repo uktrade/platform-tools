@@ -11,6 +11,18 @@ Parameters:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
 
+Mappings:
+  myRdsDbEnvironmentConfigMap:
+    development:
+      DeletionPolicy: Delete
+      SnapshotIdentifier: test-snapshot-id
+    production:
+      DeletionPolicy: Delete
+      SnapshotIdentifier: ""
+
+Conditions:
+  myRdsDbUseSnapshot: !Not [!Equals [!FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+
 Resources:
   myRdsDbLambdaFunction:
     Type: AWS::Lambda::Function
@@ -179,9 +191,7 @@ Resources:
 
   myRdsDbApplicationUser:
     Type: 'Custom::myRdsDbApplicationUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myRdsDbLambdaFunction.Arn'
@@ -210,9 +220,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myRdsDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"
+      Snapshot: !If [myRdsDbUseSnapshot, !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'application_user'
       Permissions:
         - 'SELECT'
@@ -230,9 +238,7 @@ Resources:
 
   myRdsDbReadOnlyUser:
     Type: 'Custom::myRdsDbReadOnlyUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-myRdsDb-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myRdsDbLambdaFunction.Arn'
@@ -261,9 +267,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myRdsDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-myRdsDb-SnapshotIdentifierName"
+      Snapshot: !If [myRdsDbUseSnapshot, !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'read_only_user'
       Permissions:
         - 'SELECT'

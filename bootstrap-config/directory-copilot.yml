@@ -8,6 +8,7 @@ environments:
     - ACM-ARN-FOR-exceptional-review-procedure.service.dev.uktrade.io
     - ACM-ARN-FOR-give-trade-tariff-feedback.service.dev.uktrade.digital
     - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-cms-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great-cms.dev.uktrade.digital
     - ACM-ARN-FOR-great-mvp.dev.uktrade.digital
@@ -15,8 +16,18 @@ environments:
     - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-international-ui-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.io
-    - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
   dev_eu-west-2:
     certificate_arns:
     - ACM-ARN-FOR-directory-api-dev.london.cloudapps.digital
@@ -42,6 +53,15 @@ environments:
     - ACM-ARN-FOR-great.dev.uktrade.io
     - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-magna.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
+    - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great-domestic-ui-dev.london.cloudapps.digital
     - ACM-ARN-FOR-great.dev.uktrade.digital
     - ACM-ARN-FOR-great.dev.uktrade.digital
@@ -60,6 +80,17 @@ environments:
     - ACM-ARN-FOR-great-international-ui.london.cloudapps.digital
     - ACM-ARN-FOR-demo.export.great.gov.uk
     - ACM-ARN-FOR-great.preprod.uktrade.io
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
+    - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-www.great.gov.uk
   prod_eu-west-2:
     certificate_arns:
@@ -108,7 +139,6 @@ environments:
     - ACM-ARN-FOR-www.great.gov.uk
     - ACM-ARN-FOR-great-cms.london.cloudapps.digital
     - ACM-ARN-FOR-www.great.gov.uk
-    - ACM-ARN-FOR-www.great.gov.uk
   production_eu-west-2:
     certificate_arns:
     - ACM-ARN-FOR-navigator.london.cloudapps.digital
@@ -121,6 +151,7 @@ environments:
     - ACM-ARN-FOR-exceptional-review-procedure.service.staging.uktrade.io
     - ACM-ARN-FOR-give-trade-tariff-feedback.service.staging.uktrade.digital
     - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
     - ACM-ARN-FOR-great-cms-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great-cms.staging.uktrade.digital
     - ACM-ARN-FOR-great-mvp.staging.uktrade.digital
@@ -129,6 +160,17 @@ environments:
     - ACM-ARN-FOR-great-international-ui-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great.staging.uktrade.io
     - ACM-ARN-FOR-great.demo.uktrade.io
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
     - ACM-ARN-FOR-great.staging.uktrade.digital
     - ACM-ARN-FOR-great-styles-staging.london.cloudapps.digital
   staging_eu-west-2:
@@ -150,6 +192,14 @@ environments:
     - ACM-ARN-FOR-directory-ui-buyer-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great.staging.uktrade.io
     - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
+    - ACM-ARN-FOR-great.staging.uktrade.digital
     - ACM-ARN-FOR-directory-ui-supplier-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great-domestic-ui-staging.london.cloudapps.digital
     - ACM-ARN-FOR-great.staging.uktrade.io
@@ -168,10 +218,22 @@ environments:
     certificate_arns:
     - ACM-ARN-FOR-directory-cms-flower-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great-cms-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great-international-ui-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.io
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great.uat.uktrade.digital
   uat_eu-west-2:
     certificate_arns:
@@ -193,6 +255,14 @@ environments:
     - ACM-ARN-FOR-directory-ui-buyer-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.io
     - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
+    - ACM-ARN-FOR-great.uat.uktrade.digital
     - ACM-ARN-FOR-great-domestic-ui-uat.london.cloudapps.digital
     - ACM-ARN-FOR-great.uat.uktrade.io
     - ACM-ARN-FOR-great.uat.uktrade.digital
@@ -208,18 +278,24 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/directory-dev/directory-api-dev
       url: directory-api-dev.london.cloudapps.digital
     prod_eu-west-2:
+      count: 9
       ipfilter: false
+      memory: 4096
       paas: dit-services/directory/directory-api
       url: directory-api.london.cloudapps.digital
     staging_eu-west-2:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/directory-staging/directory-api-staging
       url: directory-api-staging.london.cloudapps.digital
     uat_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-api-uat
       url: directory-api-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -230,6 +306,7 @@ services:
   - ACTIVITY_STREAM_SECRET_ACCESS_KEY
   - AIRTABLE_API_KEY
   - ALLOWED_ADMIN_IPS
+  - APP_ENVIRONMENT
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AWS_ACCESS_KEY_ID
@@ -286,10 +363,6 @@ services:
   - X_AUTOSCALING
   repo: git@github.com:uktrade/directory-api.git
   secrets:
-    ' AWS_ACCESS_KEY_ID_EMAIL': ' AWS_ACCESS_KEY_ID_EMAIL'
-    ' AWS_SECRET_ACCESS_KEY_EMAIL': ' AWS_SECRET_ACCESS_KEY_EMAIL'
-    ' AWS_STORAGE_BUCKET_NAME_EMAIL': ' AWS_STORAGE_BUCKET_NAME_EMAIL'
-    ' AWS_STORAGE_BUCKET_NAME_EMAIL ': ' AWS_STORAGE_BUCKET_NAME_EMAIL '
     ACTIVITY_STREAM_ACCESS_KEY_ID: ACTIVITY_STREAM_ACCESS_KEY_ID
     ACTIVITY_STREAM_INCOMING_ACCESS_KEY: ACTIVITY_STREAM_INCOMING_ACCESS_KEY
     ACTIVITY_STREAM_INCOMING_IP_WHITELIST: ACTIVITY_STREAM_INCOMING_IP_WHITELIST
@@ -302,6 +375,7 @@ services:
     ACTIVITY_STREAM_SECRET_ACCESS_KEY: ACTIVITY_STREAM_SECRET_ACCESS_KEY
     AIRTABLE_API_KEY: AIRTABLE_API_KEY
     ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    APP_ENVIRONMENT: APP_ENVIRONMENT
     AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
     AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
     AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
@@ -317,6 +391,7 @@ services:
     AWS_STORAGE_BUCKET_NAME: AWS_STORAGE_BUCKET_NAME
     AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE: AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
     AWS_STORAGE_BUCKET_NAME_EMAIL: AWS_STORAGE_BUCKET_NAME_EMAIL
+    'AWS_STORAGE_BUCKET_NAME_EMAIL ': 'AWS_STORAGE_BUCKET_NAME_EMAIL '
     AZURE_CONTENT_MODERATOR_KEY: AZURE_CONTENT_MODERATOR_KEY
     AZURE_CONTENT_MODERATOR_URI: AZURE_CONTENT_MODERATOR_URI
     CELERY_BROKER_POOL_LIMIT: CELERY_BROKER_POOL_LIMIT
@@ -364,7 +439,10 @@ services:
     FEATURE_VERIFICATION_LETTERS_ENABLED: FEATURE_VERIFICATION_LETTERS_ENABLED
     GECKO_API_KEY: GECKO_API_KEY
     GOVNOTIFY_DUPLICATE_COMPANIES_EMAIL: GOVNOTIFY_DUPLICATE_COMPANIES_EMAIL
+    GOVNOTIFY_GREAT_MARKETGUIDES_REVIEW_REQUEST_TEMPLATE_ID: GOVNOTIFY_GREAT_MARKETGUIDES_REVIEW_REQUEST_TEMPLATE_ID
     GOV_NOTIFY_API_KEY: GOV_NOTIFY_API_KEY
+    GREAT_MARKETGUIDES_REVIEW_PERIOD_DAYS: GREAT_MARKETGUIDES_REVIEW_PERIOD_DAYS
+    GREAT_MARKETGUIDES_TEAMS_CHANNEL_EMAIL: GREAT_MARKETGUIDES_TEAMS_CHANNEL_EMAIL
     HASNT_LOGGED_IN_URL: HASNT_LOGGED_IN_URL
     HEALTH_CHECK_TOKEN: HEALTH_CHECK_TOKEN
     IP_RESTRICTOR_ALLOWED_ADMIN_IPS: IP_RESTRICTOR_ALLOWED_ADMIN_IPS
@@ -437,18 +515,24 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-cms-dev
       url: directory-cms-dev.london.cloudapps.digital
     prod_eu-west-2:
+      count: 9
       ipfilter: true
+      memory: 1024
       paas: dit-services/directory/directory-cms
       url: directory-cms.trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-cms-staging
       url: directory-cms-staging.london.cloudapps.digital
     uat_eu-west-2:
+      count: 9
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-cms-uat
       url: cms.trade.great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -569,7 +653,9 @@ services:
 - env_vars: {}
   environments:
     production:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-cms-flower
       url: directory-cms-flower.london.cloudapps.digital
     uat:
@@ -592,18 +678,23 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/directory-dev/directory-companies-house-search-dev
       url: directory-companies-house-search-dev.london.cloudapps.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-companies-house-search
       url: directory-companies-house-search.london.cloudapps.digital
     staging_eu-west-2:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/directory-staging/directory-companies-house-search-staging
       url: directory-companies-house-search-staging.london.cloudapps.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/directory-uat/directory-companies-house-search-uat
       url: directory-companies-house-search-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -674,6 +765,7 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-components-dev
       url: directory-components-dev.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -692,18 +784,24 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-forms-api-dev
       url: directory-forms-api-dev.london.cloudapps.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/directory/directory-forms-api
       url: cms.trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-forms-api-staging
       url: directory-forms-api-staging.london.cloudapps.digital
     uat_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-forms-api-uat
       url: directory-forms-api-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -712,6 +810,7 @@ services:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
   - ACTIVITY_STREAM_SECRET_ACCESS_KEY
   - ALLOWED_ADMIN_IPS
+  - APP_ENVIRONMENT
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - DEFAULT_FROM_EMAIL
@@ -721,6 +820,9 @@ services:
   - DIRECTORY_CONSTANTS_URL_INVEST
   - DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS
   - DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON
+  - ELASTIC_APM_ENABLED
+  - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_URL
   - EMAIL_FROM
   - EMAIL_HOST
   - EMAIL_HOST_PASSWORD
@@ -754,6 +856,7 @@ services:
     ACTIVITY_STREAM_ACCESS_KEY_ID: ACTIVITY_STREAM_ACCESS_KEY_ID
     ACTIVITY_STREAM_SECRET_ACCESS_KEY: ACTIVITY_STREAM_SECRET_ACCESS_KEY
     ALLOWED_ADMIN_IPS: ALLOWED_ADMIN_IPS
+    APP_ENVIRONMENT: APP_ENVIRONMENT
     AUTHBROKER_CLIENT_ID: AUTHBROKER_CLIENT_ID
     AUTHBROKER_CLIENT_SECRET: AUTHBROKER_CLIENT_SECRET
     DEFAULT_FROM_EMAIL: DEFAULT_FROM_EMAIL
@@ -763,6 +866,9 @@ services:
     DIRECTORY_CONSTANTS_URL_INVEST: DIRECTORY_CONSTANTS_URL_INVEST
     DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS: DIRECTORY_CONSTANTS_URL_SELLING_ONLINE_OVERSEAS
     DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON: DIRECTORY_CONSTANTS_URL_SINGLE_SIGN_ON
+    ELASTIC_APM_ENABLED: ELASTIC_APM_ENABLED
+    ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
+    ELASTIC_APM_URL: ELASTIC_APM_URL
     EMAIL_FROM: EMAIL_FROM
     EMAIL_HOST: EMAIL_HOST
     EMAIL_HOST_PASSWORD: EMAIL_HOST_PASSWORD
@@ -798,6 +904,7 @@ services:
     ZENDESK_SUBDOMAIN_EUEXIT: ZENDESK_SUBDOMAIN_EUEXIT
     ZENDESK_TOKEN: ZENDESK_TOKEN
     ZENDESK_TOKEN_EUEXIT: ZENDESK_TOKEN_EUEXIT
+    ZENPY_FORCE_NETLOC: ZENPY_FORCE_NETLOC
   type: public
 - env_vars: {}
   environments:
@@ -821,18 +928,24 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-sso-dev
       url: directory-sso-dev.great.dev.uktrade.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/directory/directory-sso
       url: cms.trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-sso-staging
       url: great.staging.uktrade.digital
     uat_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-sso-uat
       url: magna-beta.great.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1031,18 +1144,24 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-sso-profile-dev
       url: great-magna.dev.uktrade.digital
     prod_eu-west-2:
+      count: 3
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-sso-profile
       url: profile.great.gov.uk
     staging_eu-west-2:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-sso-profile-staging
       url: directory-sso-profile-staging.london.cloudapps.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-sso-profile-uat
       url: great.uat.uktrade.io
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1214,18 +1333,23 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 256
       paas: dit-staging/directory-dev/directory-sso-proxy-dev
       url: www.great.dev.uktrade.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-sso-proxy
       url: www.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-sso-proxy-staging
       url: great.staging.uktrade.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-sso-proxy-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1264,18 +1388,23 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/directory-ui-buyer-dev
-      url: great-magna.dev.uktrade.digital
+      url: great.dev.uktrade.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-ui-buyer
       url: www.great.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/directory-ui-buyer-staging
       url: great.staging.uktrade.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/directory-ui-buyer-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1476,11 +1605,14 @@ services:
 - env_vars: {}
   environments:
     prod_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/directory-ui-supplier
       url: trade.great.gov.uk
     staging_eu-west-2:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/directory-staging/directory-ui-supplier-staging
       url: directory-ui-supplier-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1621,18 +1753,23 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/exceptional-review-procedure-dev
       url: give-trade-tariff-feedback.service.dev.uktrade.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/exceptional-review-procedure
       url: give-trade-tariff-feedback.service.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/exceptional-review-procedure-staging
       url: give-trade-tariff-feedback.service.staging.uktrade.digital
     uat:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/directory-uat/exceptional-review-procedure-uat
       url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1687,19 +1824,26 @@ services:
 - env_vars: {}
   environments:
     dev:
+      count: 3
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/great-cms-dev
       url: great.dev.uktrade.digital
     production:
+      count: 6
       ipfilter: true
+      memory: 3072
       paas: dit-services/directory/great-cms
       url: www.great.gov.uk
     staging:
       ipfilter: true
+      memory: 3072
       paas: dit-staging/directory-staging/great-cms-staging
       url: great.staging.uktrade.digital
     uat:
+      count: 6
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/great-cms-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -1707,6 +1851,7 @@ services:
   overlapping_secrets:
   - ACTIVITY_STREAM_ACCESS_KEY_ID
   - AIRTABLE_API_KEY
+  - APP_ENVIRONMENT
   - AUTHBROKER_CLIENT_ID
   - AUTHBROKER_CLIENT_SECRET
   - AWS_ACCESS_KEY_ID
@@ -1743,7 +1888,12 @@ services:
   - DIRECTORY_FORMS_API_SENDER_ID
   - DIT_HELPDESK_URL
   - ELASTICSEARCH_PROVIDER
+  - ELASTIC_APM_ENABLED
   - ELASTIC_APM_SECRET_TOKEN
+  - ELASTIC_APM_URL
+  - EMAIL_HOST
+  - EMAIL_HOST_PASSWORD
+  - EMAIL_HOST_USER
   - EU_EXIT_ZENDESK_SUBDOMAIN
   - EXPORTING_OPPORTUNITIES_API_BASE_URL
   - EXPORTING_OPPORTUNITIES_API_SECRET
@@ -1800,6 +1950,9 @@ services:
     AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE: AWS_STORAGE_BUCKET_NAME_DATA_SCIENCE
     BASE_URL: BASE_URL
     BREADCRUMBS_ROOT_URL: BREADCRUMBS_ROOT_URL
+    CAMPAIGN_MODERATION_REPLY_TO_I: CAMPAIGN_MODERATION_REPLY_TO_I
+    CAMPAIGN_MODERATION_REQUESTOR_EMAIL_TEMPLATE_ID': CAMPAIGN_MODERATION_REQUESTOR_EMAIL_TEMPLATE_ID'
+    'CAMPAIGN_MODERATORS_EMAIL_TEMPLATE_ID ': 'CAMPAIGN_MODERATORS_EMAIL_TEMPLATE_ID '
     CCCE_BASE_URL: CCCE_BASE_URL
     CCCE_COMMODITY_SEARCH_TOKEN: CCCE_COMMODITY_SEARCH_TOKEN
     CELERY_BROKER_POOL_LIMIT: CELERY_BROKER_POOL_LIMIT
@@ -1828,28 +1981,40 @@ services:
     DIRECTORY_FORMS_API_API_KEY: DIRECTORY_FORMS_API_API_KEY
     DIRECTORY_FORMS_API_BASE_URL: DIRECTORY_FORMS_API_BASE_URL
     DIRECTORY_FORMS_API_SENDER_ID: DIRECTORY_FORMS_API_SENDER_ID
+    DIRECTORY_FORMS_API_ZENDESK_SEVICE_NAME: DIRECTORY_FORMS_API_ZENDESK_SEVICE_NAME
     DIT_HELPDESK_URL: DIT_HELPDESK_URL
     ELASTICSEARCH_PROVIDER: ELASTICSEARCH_PROVIDER
     ELASTIC_APM_ENABLED: ELASTIC_APM_ENABLED
     ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
     ELASTIC_APM_URL: ELASTIC_APM_URL
+    EMAIL_BACKEND_CLASS_NAME: EMAIL_BACKEND_CLASS_NAME
+    EMAIL_HOST: EMAIL_HOST
+    EMAIL_HOST_PASSWORD: EMAIL_HOST_PASSWORD
+    EMAIL_HOST_USER: EMAIL_HOST_USER
     ENFORCE_STAFF_SSO_ENABLED: ENFORCE_STAFF_SSO_ENABLED
     EU_EXIT_ZENDESK_SUBDOMAIN: EU_EXIT_ZENDESK_SUBDOMAIN
     EXPORTING_OPPORTUNITIES_API_BASE_URL: EXPORTING_OPPORTUNITIES_API_BASE_URL
     EXPORTING_OPPORTUNITIES_API_SECRET: EXPORTING_OPPORTUNITIES_API_SECRET
     EXPORTING_OPPORTUNITIES_SEARCH_URL: EXPORTING_OPPORTUNITIES_SEARCH_URL
+    EXPORT_ACADEMY_AUTOMATED_EVENT_COMPLETE_EMAIL_RETRY_HOURS: EXPORT_ACADEMY_AUTOMATED_EVENT_COMPLETE_EMAIL_RETRY_HOURS
     EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES: EXPORT_ACADEMY_AUTOMATED_NOTIFY_TIME_DELAY_MINUTES
     EXPORT_ACADEMY_REMOVE_EVENT_MEDIA_AFTER_DAYS: EXPORT_ACADEMY_REMOVE_EVENT_MEDIA_AFTER_DAYS
     FEATURE_COMPARE_MARKETS_TABS: FEATURE_COMPARE_MARKETS_TABS
+    FEATURE_COURSES_LANDING_PAGE: FEATURE_COURSES_LANDING_PAGE
     FEATURE_DATA_PIPELINE_STATS: FEATURE_DATA_PIPELINE_STATS
+    FEATURE_DEA_V2: FEATURE_DEA_V2
+    FEATURE_DESIGN_SYSTEM: FEATURE_DESIGN_SYSTEM
     FEATURE_DIGITAL_POINT_OF_ENTRY: FEATURE_DIGITAL_POINT_OF_ENTRY
     FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER: FEATURE_ENABLE_PRODUCT_SEARCH_WHEN_NO_USER
     FEATURE_EXPORT_ACADEMY: FEATURE_EXPORT_ACADEMY
     FEATURE_EXPORT_ACADEMY_RELEASE_2: FEATURE_EXPORT_ACADEMY_RELEASE_2
     FEATURE_EXPORT_PLAN_SECTIONS_DISABLED: FEATURE_EXPORT_PLAN_SECTIONS_DISABLED
     FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST: FEATURE_EXPORT_PLAN_SECTIONS_DISABLED_LIST
+    FEATURE_FEEDBACK_BUTTON_EXPERIMENT: FEATURE_FEEDBACK_BUTTON_EXPERIMENT
     FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE: FEATURE_FLAG_HARD_CODE_USER_INDUSTRIES_EXPERTISE
     FEATURE_GREAT_CMS_OPENAPI_ENABLED: FEATURE_GREAT_CMS_OPENAPI_ENABLED
+    FEATURE_HOMEPAGE_REDESIGN_V1: FEATURE_HOMEPAGE_REDESIGN_V1
+    FEATURE_INTERNATIONAL: FEATURE_INTERNATIONAL
     FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED: FEATURE_INTERNATIONAL_CONTACT_TRIAGE_ENABLED
     FEATURE_INTERNATIONAL_ONLINE_OFFER: FEATURE_INTERNATIONAL_ONLINE_OFFER
     FEATURE_MAINTENANCE_MODE_ENABLED: FEATURE_MAINTENANCE_MODE_ENABLED
@@ -1857,11 +2022,18 @@ services:
     FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE: FEATURE_MICROSITE_ENABLE_EXPERIMENTAL_LANGUAGE
     FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION: FEATURE_MICROSITE_ENABLE_TEMPLATE_TRANSLATION
     FEATURE_MOCK_CLIENT_IP_ENABLED: FEATURE_MOCK_CLIENT_IP_ENABLED
+    FEATURE_PRODUCT_EXPERIMENT: FEATURE_PRODUCT_EXPERIMENT
+    FEATURE_PRODUCT_EXPERIMENT_HEADER: FEATURE_PRODUCT_EXPERIMENT_HEADER
+    FEATURE_PRODUCT_EXPERIMENT_LINKS: FEATURE_PRODUCT_EXPERIMENT_LINKS
+    FEATURE_PRODUCT_MARKET_HERO: FEATURE_PRODUCT_MARKET_HERO
+    FEATURE_PRODUCT_MARKET_SEARCH_ENABLED: FEATURE_PRODUCT_MARKET_SEARCH_ENABLED
     FEATURE_REDIS_USE_SSL: FEATURE_REDIS_USE_SSL
+    FEATURE_SHARE_COMPONENT: FEATURE_SHARE_COMPONENT
     FEATURE_SHOW_BRAND_BANNER: FEATURE_SHOW_BRAND_BANNER
     FEATURE_SHOW_CASE_STUDY_RANKINGS: FEATURE_SHOW_CASE_STUDY_RANKINGS
     FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK: FEATURE_SHOW_INTERNATIONAL_FOOTER_LINK
     FEATURE_SHOW_MAGNA_LINKS_IN_HEADER: FEATURE_SHOW_MAGNA_LINKS_IN_HEADER
+    FEATURE_SHOW_OLD_CONTACT_FORM: FEATURE_SHOW_OLD_CONTACT_FORM
     FEATURE_SHOW_REPORT_BARRIER_CONTENT: FEATURE_SHOW_REPORT_BARRIER_CONTENT
     FEATURE_TEST_SEARCH_API_PAGES_ENABLED: FEATURE_TEST_SEARCH_API_PAGES_ENABLED
     GET_ADDRESS_API_KEY: GET_ADDRESS_API_KEY
@@ -1871,10 +2043,12 @@ services:
     HASHIDS_SALT: HASHIDS_SALT
     HEALTH_CHECK_TOKEN: HEALTH_CHECK_TOKEN
     MAXMIND_LICENCE_KEY: MAXMIND_LICENCE_KEY
+    MODERATION_EMAIL_DIST_LIST: MODERATION_EMAIL_DIST_LIST
     PRIVACY_COOKIE_DOMAIN: PRIVACY_COOKIE_DOMAIN
     RECAPTCHA_PRIVATE_KEY: RECAPTCHA_PRIVATE_KEY
     RECAPTCHA_PUBLIC_KEY: RECAPTCHA_PUBLIC_KEY
     RECAPTCHA_REQUIRED_SCORE: RECAPTCHA_REQUIRED_SCORE
+    SAFELIST_HOSTS: SAFELIST_HOSTS
     SECRET_KEY: SECRET_KEY
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
@@ -1951,6 +2125,7 @@ services:
       paas: dit-staging/directory-dev/great-domestic-ui-dev
       url: great.dev.uktrade.digital
     prod_eu-west-2:
+      count: 3
       ipfilter: false
       paas: dit-services/directory/great-domestic-ui
       url: www.great.gov.uk
@@ -2156,18 +2331,24 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/great-international-ui-dev
-      url: great-magna.dev.uktrade.digital
+      url: great.dev.uktrade.digital
     prod:
+      count: 6
       ipfilter: true
+      memory: 1024
       paas: dit-services/directory/great-international-ui
       url: www.great.gov.uk
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/great-international-ui-staging
       url: great.staging.uktrade.digital
     uat:
+      count: 6
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/great-international-ui-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -2348,6 +2529,7 @@ services:
   environments:
     staging:
       ipfilter: true
+      memory: 8192
       paas: dit-staging/directory-staging/great-styles-staging
       url: great-styles-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -2359,18 +2541,22 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/invest-pir-api-dev
       url: admin-pir.invest.great.dev.uktrade.digital
     prod_eu-west-2:
+      count: 2
       ipfilter: true
       paas: dit-services/directory/invest-pir-api
       url: invest-pir-api.london.cloudapps.digital
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/invest-pir-api-staging
       url: admin-pir.invest.great.staging.uktrade.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/invest-pir-api-uat
       url: admin-pir.invest.great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -2452,7 +2638,9 @@ services:
 - env_vars: {}
   environments:
     prod_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/invest-ui
       url: invest.great.gov.uk
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -2528,18 +2716,23 @@ services:
   environments:
     dev_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-dev/selling-online-overseas-dev
       url: great-magna.dev.uktrade.digital
     production_eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/directory/selling-online-overseas
       url: sooadmin.trade.gov.uk
     staging_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-staging/selling-online-overseas-staging
       url: great.staging.uktrade.digital
     uat_eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/directory-uat/selling-online-overseas-uat
       url: great.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

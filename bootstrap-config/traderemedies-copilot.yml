@@ -37,26 +37,33 @@ services:
   environments:
     berlin-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-berlin
       url: trade-remedies-api-berlin.london.cloudapps.digital
     chicago-eu-west-2:
       ipfilter: true
+      memory: 4096
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-chicago
       url: trade-remedies-api-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-api-hotfix
       url: trade-remedies-api-hotfix.london.cloudapps.digital
     prod-eu-west-2:
+      count: 5
       ipfilter: false
+      memory: 4096
       paas: traderemedies-services/traderemedies/trade-remedies-api
       url: null
     tokyo-eu-west-2:
       ipfilter: false
+      memory: 4096
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-api-tokyo
       url: null
     uat-eu-west-2:
       ipfilter: true
+      memory: 4096
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-api-uat
       url: trade-remedies-api-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -185,6 +192,7 @@ services:
   environments:
     berlin-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-caseworker-berlin
       url: trade-remedies-caseworker-berlin.london.cloudapps.digital
     chicago-eu-west-2:
@@ -193,9 +201,11 @@ services:
       url: trade-remedies-caseworker-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-caseworker-hotfix
       url: trade-remedies-caseworker-hotfix.london.cloudapps.digital
     prod-eu-west-2:
+      count: 2
       ipfilter: true
       paas: traderemedies-services/traderemedies/trade-remedies-caseworker
       url: www.investigations-trade-remedies.service.gov.uk
@@ -285,26 +295,33 @@ services:
   environments:
     berlin-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-berlin
       url: trade-remedies-public-berlin.london.cloudapps.digital
     chicago-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-chicago
       url: trade-remedies-public-chicago.london.cloudapps.digital
     hotfix-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-hotfix/trade-remedies-public-hotfix
       url: trade-remedies-public-hotfix.london.cloudapps.digital
     prod-eu-west-2:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: traderemedies-services/traderemedies/trade-remedies-public
       url: www.trade-remedies.service.gov.uk
     tokyo-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-dev/trade-remedies-public-tokyo
       url: trade-remedies-public-tokyo.london.cloudapps.digital
     uat-eu-west-2:
       ipfilter: true
+      memory: 1024
       paas: traderemedies-staging/traderemedies-uat/trade-remedies-public-uat
       url: trade-remedies-public-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

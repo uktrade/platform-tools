@@ -122,9 +122,11 @@ def deployment():
         addons_templates_table.add_row(
             [
                 template_file.relative_to("."),
-                maybe
-                if latest_compatible_symbol is maybe
-                else versioning.string_version(generated_with_version),
+                (
+                    maybe
+                    if latest_compatible_symbol is maybe
+                    else versioning.string_version(generated_with_version)
+                ),
                 local_compatible_symbol,
                 latest_compatible_symbol,
             ]
@@ -142,9 +144,9 @@ def tool_versions():
 
     copilot_version, copilot_released_version = versioning.get_copilot_versions()
     if copilot_version is None:
-        recommendations[
-            "install-copilot"
-        ] = "Install AWS Copilot https://aws.github.io/copilot-cli/"
+        recommendations["install-copilot"] = (
+            "Install AWS Copilot https://aws.github.io/copilot-cli/"
+        )
 
     aws_version, aws_released_version = versioning.get_aws_versions()
     if aws_version is None:

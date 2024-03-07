@@ -11,7 +11,6 @@ from dbt_copilot_helper.commands.application import task_stats
 # from tests.copilot_helper.conftest import mock_application
 
 
-
 results = {
     "results": [
         [

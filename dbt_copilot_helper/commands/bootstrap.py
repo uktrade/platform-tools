@@ -23,6 +23,8 @@ from dbt_copilot_helper.utils.validation import BOOTSTRAP_SCHEMA
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
+from dbt_copilot_helper.utils.versioning import get_app_versions
+from dbt_copilot_helper.utils.versioning import string_version
 
 
 def secret_should_be_skipped(secret_name):
@@ -65,6 +67,10 @@ def make_config(directory="."):
     templates.filters["to_yaml"] = to_yaml
 
     click.echo(">>> Generating Copilot configuration files\n")
+
+    # add .copilot-helper-version file
+    copilot_version = string_version(get_app_versions()[0])
+    click.echo(mkfile(base_path, ".copilot-helper-version", f"{copilot_version}"))
 
     # create copilot directory
     (base_path / "copilot").mkdir(parents=True, exist_ok=True)
@@ -221,9 +227,7 @@ def migrate_secrets(project_profile, env, svc, overwrite, dry_run):
                     text = (
                         "Created"
                         if not param_exists
-                        else "Overwritten"
-                        if overwrite
-                        else "NOT overwritten"
+                        else "Overwritten" if overwrite else "NOT overwritten"
                     )
                     click.echo(f"{text} {ssm_path}")
                 else:

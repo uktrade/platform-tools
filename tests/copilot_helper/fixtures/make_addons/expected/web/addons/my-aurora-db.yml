@@ -11,6 +11,18 @@ Parameters:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
 
+Mappings:
+  myAuroraDbEnvironmentConfigMap:
+    development:
+      DeletionPolicy: Delete
+      SnapshotIdentifier: my-recent-snapshot
+    production:
+      DeletionPolicy: Delete
+      SnapshotIdentifier: ""
+
+Conditions:
+  myAuroraDbUseSnapshot: !Not [!Equals [!FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+
 Resources:
   myAuroraDbLambdaFunction:
     Type: AWS::Lambda::Function
@@ -179,9 +191,7 @@ Resources:
 
   myAuroraDbApplicationUser:
     Type: 'Custom::myAuroraDbApplicationUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-myAuroraDb-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
@@ -210,9 +220,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myAuroraDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-myAuroraDb-SnapshotIdentifierName"
+      Snapshot: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'application_user'
       Permissions:
         - 'SELECT'
@@ -230,9 +238,7 @@ Resources:
 
   myAuroraDbReadOnlyUser:
     Type: 'Custom::myAuroraDbReadOnlyUser'
-    DeletionPolicy:
-      Fn:ImportValue
-        !Sub "${App}-${Env}-myAuroraDb-DeletionPolicyName"
+    DeletionPolicy: !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ServiceToken: !GetAtt 'myAuroraDbLambdaFunction.Arn'
@@ -261,9 +267,7 @@ Resources:
       PublicSubnet2RouteTableAssociation: 
         Fn::ImportValue: 
           !Sub "${App}-${Env}-myAuroraDb-PublicSubnet2RouteTableAssociationName"
-      Snapshot: 
-        Fn:ImportValue
-          !Sub "${App}-${Env}-myAuroraDb-SnapshotIdentifierName"
+      Snapshot: !If [myAuroraDbUseSnapshot, !FindInMap [myAuroraDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]
       Username: 'read_only_user'
       Permissions:
         - 'SELECT'

@@ -20,6 +20,13 @@ environments:
     - ACM-ARN-FOR-lite-internal-frontend-dev.london.cloudapps.digital
     - ACM-ARN-FOR-internal.lite.service.dev.uktrade.io
     - ACM-ARN-FOR-internal.lite.service.dev.uktrade.digital
+  dev2:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-dev2.london.cloudapps.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-dev2.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.dev2.uktrade.digital
+    - ACM-ARN-FOR-lite-internal-frontend-dev2.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.dev2.uktrade.digital
   devdata:
     certificate_arns:
     - ACM-ARN-FOR-lite-api-devdata.london.cloudapps.digital
@@ -39,6 +46,13 @@ environments:
     - ACM-ARN-FOR-internal.lite.service.private-beta.uktrade.digital
     - ACM-ARN-FOR-internal.lite.service.private-beta.uktrade.digital
   staging: {}
+  support:
+    certificate_arns:
+    - ACM-ARN-FOR-lite-api-support.london.cloudapps.digital
+    - ACM-ARN-FOR-exporter.lite.service.support.uktrade.digital
+    - ACM-ARN-FOR-lite-exporter-frontend-support.london.cloudapps.digital
+    - ACM-ARN-FOR-internal.lite.service.support.uktrade.digital
+    - ACM-ARN-FOR-lite-internal-frontend-support.london.cloudapps.digital
   uat:
     certificate_arns:
     - ACM-ARN-FOR-lite-api-uat.london.cloudapps.digital
@@ -54,22 +68,38 @@ services:
   environments:
     demo:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/lite-demo/lite-api-demo
       url: lite-api-demo.london.cloudapps.digital
     dev:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/lite-dev/lite-api-dev
       url: lite-api-dev.london.cloudapps.digital
+    dev2:
+      ipfilter: true
+      memory: 2048
+      paas: dit-staging/lite-dev/lite-api-dev2
+      url: lite-api-dev2.london.cloudapps.digital
     devdata:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/lite-devdata/lite-api-devdata
       url: lite-api-devdata.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 2048
       paas: dit-services/lite/lite-api
       url: null
+    support:
+      ipfilter: true
+      memory: 2048
+      paas: dit-staging/lite-uat/lite-api-support
+      url: lite-api-support.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/lite-uat/lite-api-uat
       url: lite-api-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -119,9 +149,9 @@ services:
     EXPORTER_USERS: EXPORTER_USERS
     FEATURE_C5_ROUTING_ENABLED: FEATURE_C5_ROUTING_ENABLED
     FEATURE_C6_ROUTING_ENABLED: FEATURE_C6_ROUTING_ENABLED
-    FEATURE_C7_ROUTING_ENABLED: FEATURE_C7_ROUTING_ENABLED
     FEATURE_COUNTERSIGN_ROUTING_ENABLED: FEATURE_COUNTERSIGN_ROUTING_ENABLED
     FEATURE_EMAIL_REPORTS_ENABLED: FEATURE_EMAIL_REPORTS_ENABLED
+    FEATURE_INFORM_LETTER_ENABLED: FEATURE_INFORM_LETTER_ENABLED
     FEATURE_STAFF_SSO_ENABLED: FEATURE_STAFF_SSO_ENABLED
     GA_KEY: GA_KEY
     GOV_NOTIFY_ENABLED: GOV_NOTIFY_ENABLED
@@ -166,10 +196,14 @@ services:
       paas: dit-staging/lite-demo/lite-api-demo
     dev:
       paas: dit-staging/lite-dev/lite-api-dev
+    dev2:
+      paas: dit-staging/lite-dev/lite-api-dev2
     devdata:
       paas: dit-staging/lite-devdata/lite-api-devdata
     prod:
       paas: dit-services/lite/lite-api
+    support:
+      paas: dit-staging/lite-uat/lite-api-support
     uat:
       paas: dit-staging/lite-uat/lite-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -186,10 +220,14 @@ services:
       paas: dit-staging/lite-demo/lite-api-demo
     dev:
       paas: dit-staging/lite-dev/lite-api-dev
+    dev2:
+      paas: dit-staging/lite-dev/lite-api-dev2
     devdata:
       paas: dit-staging/lite-devdata/lite-api-devdata
     prod:
       paas: dit-services/lite/lite-api
+    support:
+      paas: dit-staging/lite-uat/lite-api-support
     uat:
       paas: dit-staging/lite-uat/lite-api-uat
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -202,12 +240,38 @@ services:
   type: backend
 - env_vars: {}
   environments:
+    demo:
+      paas: dit-staging/lite-demo/lite-api-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-api-dev
+    dev2:
+      paas: dit-staging/lite-dev/lite-api-dev2
+    devdata:
+      paas: dit-staging/lite-devdata/lite-api-devdata
+    prod:
+      paas: dit-services/lite/lite-api
+    support:
+      paas: dit-staging/lite-uat/lite-api-support
+    uat:
+      paas: dit-staging/lite-uat/lite-api-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-api-celeryscheduler
+  notes: service created based on Procfile entry for lite-api and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-api.git
+  secrets: {}
+  secrets_from: lite-api
+  type: backend
+- env_vars: {}
+  environments:
     devdata:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-devdata/lite-data-flow-devdata
       url: lite-data-flow-devdata.london.cloudapps.digital
     prod:
-      ipfilter: false
+      ipfilter: true
+      memory: 1024
       paas: dit-services/lite/lite-data-flow
       url: lite-data-flow.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -268,6 +332,7 @@ services:
   environments:
     dev:
       ipfilter: false
+      memory: 384
       paas: dit-staging/lite-dev/lite-document-store-dev
       url: null
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -282,23 +347,38 @@ services:
 - env_vars: {}
   environments:
     demo:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-demo/lite-exporter-frontend-demo
       url: exporter.lite.service.demo.uktrade.digital
     dev:
       ipfilter: true
       paas: dit-staging/lite-dev/lite-exporter-frontend-dev
       url: exporter.lite.service.dev.uktrade.digital
+    dev2:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/lite-dev/lite-exporter-frontend-dev2
+      url: exporter.lite.service.dev2.uktrade.digital
     devdata:
       ipfilter: true
       paas: dit-staging/lite-devdata/lite-exporter-frontend-devdata
       url: exporter.lite.service.devdata.uktrade.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/lite/lite-exporter-frontend
       url: exporter.lite.private-beta.service.trade.gov.uk
+    support:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/lite-uat/lite-exporter-frontend-support
+      url: lite-exporter-frontend-support.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-uat/lite-exporter-frontend-uat
       url: exporter.lite.service.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -324,8 +404,8 @@ services:
   - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_URL
-  - FEATURE_C7_NCSC_ENABLED
   - FEATURE_FLAG_PRODUCT_2_0
+  - FEATURE_FLAG_REFUSALS
   - FEEDBACK_URL
   - GOOGLE_ANALYTICS_KEY
   - GTM_ID
@@ -372,7 +452,7 @@ services:
     DJANGO_SETTINGS_MODULE: DJANGO_SETTINGS_MODULE
     ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
     ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
-    FEATURE_C7_NCSC_ENABLED: FEATURE_C7_NCSC_ENABLED
+    FEATURE_FLAG_APPEALS: FEATURE_FLAG_APPEALS
     FEATURE_FLAG_DJANGO_FORMS_REGISTRATION_ENABLED: FEATURE_FLAG_DJANGO_FORMS_REGISTRATION_ENABLED
     FEATURE_FLAG_F680_SECURITY_CLASSIFIED_ENABLED: FEATURE_FLAG_F680_SECURITY_CLASSIFIED_ENABLED
     FEATURE_FLAG_GOVUK_SIGNIN_ENABLED: FEATURE_FLAG_GOVUK_SIGNIN_ENABLED
@@ -383,6 +463,7 @@ services:
     FEATURE_FLAG_ONLY_ALLOW_FIREARMS_PRODUCTS: FEATURE_FLAG_ONLY_ALLOW_FIREARMS_PRODUCTS
     FEATURE_FLAG_ONLY_ALLOW_SIEL: FEATURE_FLAG_ONLY_ALLOW_SIEL
     FEATURE_FLAG_PRODUCT_2_0: FEATURE_FLAG_PRODUCT_2_0
+    FEATURE_FLAG_REFUSALS: FEATURE_FLAG_REFUSALS
     FEEDBACK_URL: FEEDBACK_URL
     GOOGLE_ANALYTICS_KEY: GOOGLE_ANALYTICS_KEY
     GTM_ID: GTM_ID
@@ -401,6 +482,7 @@ services:
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
     SESSION_EXPIRE_SECONDS: SESSION_EXPIRE_SECONDS
+    SURVEY_URL: SURVEY_URL
     TEST_EXPORTER_SSO_NAME: TEST_EXPORTER_SSO_NAME
     TEST_SSO_EMAIL: TEST_SSO_EMAIL
     TEST_SSO_EMAIL_1: TEST_SSO_EMAIL_1
@@ -414,22 +496,28 @@ services:
   environments:
     demo:
       ipfilter: true
+      memory: 256
       paas: dit-staging/lite-demo/lite-hmrc-demo
       url: lite-hmrc-demo.london.cloudapps.digital
     dev:
       ipfilter: true
+      memory: 256
       paas: dit-staging/lite-dev/lite-hmrc-dev
       url: lite-hmrc-dev.london.cloudapps.digital
     devdata:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-devdata/lite-hmrc-devdata
       url: lite-hmrc-devdata.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 1024
       paas: dit-services/lite/lite-hmrc
       url: null
     uat:
       ipfilter: true
+      memory: 256
       paas: dit-staging/lite-uat/lite-hmrc-uat
       url: lite-hmrc-uat.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -493,6 +581,7 @@ services:
     NOTIFY_USERS: NOTIFY_USERS
     OUTGOING_EMAIL_USER: OUTGOING_EMAIL_USER
     REPLY_PENDING_WARNING_TIME: REPLY_PENDING_WARNING_TIME
+    SEND_REJECTED_EMAIL: SEND_REJECTED_EMAIL
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT
     SPIRE_ADDRESS: SPIRE_ADDRESS
@@ -504,6 +593,7 @@ services:
     SPIRE_STANDIN_EMAIL_POP3_PORT: SPIRE_STANDIN_EMAIL_POP3_PORT
     SPIRE_STANDIN_EMAIL_SMTP_PORT: SPIRE_STANDIN_EMAIL_SMTP_PORT
     SPIRE_STANDIN_EMAIL_USER: SPIRE_STANDIN_EMAIL_USER
+    TESTING_ENV: TESTING_ENV
     TIME_TESTS: TIME_TESTS
   type: public
 - env_vars: {}
@@ -529,23 +619,78 @@ services:
 - env_vars: {}
   environments:
     demo:
+      paas: dit-staging/lite-demo/lite-hmrc-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-hmrc-dev
+    devdata:
+      paas: dit-staging/lite-devdata/lite-hmrc-devdata
+    prod:
+      paas: dit-services/lite/lite-hmrc
+    uat:
+      paas: dit-staging/lite-uat/lite-hmrc-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-hmrc-celerybeat
+  notes: service created based on Procfile entry for lite-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-hmrc.git
+  secrets: {}
+  secrets_from: lite-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    demo:
+      paas: dit-staging/lite-demo/lite-hmrc-demo
+    dev:
+      paas: dit-staging/lite-dev/lite-hmrc-dev
+    devdata:
+      paas: dit-staging/lite-devdata/lite-hmrc-devdata
+    prod:
+      paas: dit-services/lite/lite-hmrc
+    uat:
+      paas: dit-staging/lite-uat/lite-hmrc-uat
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: lite-hmrc-celeryworker
+  notes: service created based on Procfile entry for lite-hmrc and will require access
+    to the same backing services
+  repo: git@github.com:uktrade/lite-hmrc.git
+  secrets: {}
+  secrets_from: lite-hmrc
+  type: backend
+- env_vars: {}
+  environments:
+    demo:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-demo/lite-internal-frontend-demo
       url: internal.lite.service.demo.uktrade.digital
     dev:
       ipfilter: true
       paas: dit-staging/lite-dev/lite-internal-frontend-dev
       url: internal.lite.service.dev.uktrade.digital
+    dev2:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/lite-dev/lite-internal-frontend-dev2
+      url: internal.lite.service.dev2.uktrade.digital
     devdata:
       ipfilter: true
       paas: dit-staging/lite-devdata/lite-internal-frontend-devdata
       url: internal.lite.service.devdata.uktrade.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-services/lite/lite-internal-frontend
       url: internal.lite.service.private-beta.uktrade.digital
+    support:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/lite-uat/lite-internal-frontend-support
+      url: lite-internal-frontend-support.london.cloudapps.digital
     uat:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/lite-uat/lite-internal-frontend-uat
       url: internal.lite.service.uat.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -571,8 +716,8 @@ services:
   - DJANGO_SETTINGS_MODULE
   - ELASTIC_APM_SECRET_TOKEN
   - ELASTIC_APM_SERVER_URL
-  - FEATURE_C7_NCSC_ENABLED
   - FEATURE_FLAG_PRODUCT_2_0
+  - FEATURE_FLAG_REFUSALS
   - FEEDBACK_URL
   - GOOGLE_ANALYTICS_KEY
   - GTM_ID
@@ -618,15 +763,16 @@ services:
     ELASTIC_APM_SECRET_TOKEN: ELASTIC_APM_SECRET_TOKEN
     ELASTIC_APM_SERVER_URL: ELASTIC_APM_SERVER_URL
     FEATURE_C6_REGIMES: FEATURE_C6_REGIMES
-    FEATURE_C7_NCSC_ENABLED: FEATURE_C7_NCSC_ENABLED
     FEATURE_FLAG_NOTES_TIMELINE_2_0: FEATURE_FLAG_NOTES_TIMELINE_2_0
     FEATURE_FLAG_PRODUCT_2_0: FEATURE_FLAG_PRODUCT_2_0
+    FEATURE_FLAG_PRODUCT_SEARCH: FEATURE_FLAG_PRODUCT_SEARCH
+    FEATURE_FLAG_REFUSALS: FEATURE_FLAG_REFUSALS
     FEATURE_FLAG_REGIMES: FEATURE_FLAG_REGIMES
     FEATURE_LU_POST_CIRC_COUNTERSIGNING: FEATURE_LU_POST_CIRC_COUNTERSIGNING
-    FEATURE_MENTIONS_ENABLED: FEATURE_MENTIONS_ENABLED
     FEATURE_PRODUCTPEDIA_ON: FEATURE_PRODUCTPEDIA_ON
     FEATURE_QUICK_SUMMARY: FEATURE_QUICK_SUMMARY
     FEATURE_SPIRE_SEARCH_ON: FEATURE_SPIRE_SEARCH_ON
+    FEATURE_TAU_PREVIOUS_ASSESSMENTS: FEATURE_TAU_PREVIOUS_ASSESSMENTS
     FEEDBACK_URL: FEEDBACK_URL
     GOOGLE_ANALYTICS_KEY: GOOGLE_ANALYTICS_KEY
     GTM_ID: GTM_ID

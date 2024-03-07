@@ -11,6 +11,7 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 2048
       paas: dit-staging/enhanced-support-dev/enhanced-support-designer-dev
       url: enhanced-support-designer-dev.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -29,6 +30,7 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/enhanced-support-dev/enhanced-support-runner-dev
       url: enhanced-support-runner-dev.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest

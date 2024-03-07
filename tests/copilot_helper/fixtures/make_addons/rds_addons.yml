@@ -6,7 +6,10 @@ my-rds-db:
 
   environments:
     default:
-      plan: small-ha
+      plan: small
       snapshot_id: test-snapshot-id
+    production:
+      plan: large-ha
+      snapshot_id: ""
   services:
     - web

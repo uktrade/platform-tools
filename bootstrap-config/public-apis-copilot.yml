@@ -32,14 +32,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 128
       paas: dit-staging/public-apis-dev/data-api-dev
       url: data.api.trade.dev.uktrade.digital
     production:
+      count: 3
       ipfilter: false
+      memory: 256
       paas: dit-services/public-apis/data-api
       url: data.api.trade.gov.uk
     staging:
       ipfilter: true
+      memory: 128
       paas: dit-staging/public-apis-staging/data-api-staging
       url: data.api.trade.staging.uktrade.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -91,15 +95,20 @@ services:
 - env_vars: {}
   environments:
     development:
+      count: 2
       ipfilter: true
+      memory: 1024
       paas: dit-staging/public-apis-dev/tariffs-api-dev
       url: tariffs-api-dev.london.cloudapps.digital
     production:
+      count: 5
       ipfilter: true
+      memory: 1024
       paas: dit-services/public-apis/tariffs-api
       url: tariffs-api.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/public-apis-staging/tariffs-api-staging
       url: tariffs-api-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -129,10 +138,12 @@ services:
   environments:
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/public-apis/sftp-notification--hmrc-fta
       url: sftp-notification--hmrc-fta.london.cloudapps.digital
     staging:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/public-apis-staging/sftp-notification--hmrc-fta--staging
       url: sftp-notification--hmrc-fta--staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -155,10 +166,12 @@ services:
   environments:
     production:
       ipfilter: true
+      memory: 1024
       paas: dit-services/public-apis/sftp-notification--hmrc-tra
       url: sftp-notification--hmrc-tra.london.cloudapps.digital
     staging:
       ipfilter: false
+      memory: 1024
       paas: dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging
       url: sftp-notification--hmrc-tra--staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -177,3 +190,17 @@ services:
     BUCKET: BUCKET
     TOKEN: TOKEN
   type: public
+- env_vars: {}
+  environments:
+    production:
+      paas: dit-services/public-apis/sftp-notification--hmrc-tra
+    staging:
+      paas: dit-staging/public-apis-staging/sftp-notification--hmrc-tra--staging
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: sftp-notification--hmrc-tra-worker
+  notes: service created based on Procfile entry for sftp-notification--hmrc-tra and
+    will require access to the same backing services
+  repo: git@github.com:uktrade/s3-dropbox.git
+  secrets: {}
+  secrets_from: sftp-notification--hmrc-tra
+  type: backend

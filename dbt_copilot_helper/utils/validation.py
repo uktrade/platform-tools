@@ -111,9 +111,9 @@ def validate_addons(addons: dict):
                 continue
             schema = SCHEMA_MAP.get(addon_type, None)
             if not schema:
-                errors[
-                    addon_name
-                ] = f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
+                errors[addon_name] = (
+                    f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
+                )
                 continue
             schema.validate(addon)
         except SchemaError as ex:
@@ -145,7 +145,7 @@ def float_between_with_halfstep(lower, upper):
 
 ENV_NAME = Regex(
     r"^[a-zA-Z][a-zA-Z0-9]*$",
-    error="Environment name {} is invalid: names must only contain alphanumeric characters."
+    error="Environment name {} is invalid: names must only contain alphanumeric characters.",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
@@ -306,7 +306,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("3.2.6", "4.0.10", "5.0.0", "5.0.3", "5.0.4", "5.0.6", "6.0", "6.2")
+REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2")
 
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
@@ -376,7 +376,7 @@ RDS_SCHEMA = Schema(
         Optional("environments"): {
             ENV_NAME: {
                 Optional("plan"): RDS_PLANS,
-                Optional("volume_size"): int_between(5, 10000),
+                Optional("volume_size"): int_between(20, 10000),
                 Optional("snapshot_id"): str,
                 Optional("deletion_policy"): DB_DELETION_POLICY,
                 Optional("deletion_protection"): DELETION_PROTECTION,
