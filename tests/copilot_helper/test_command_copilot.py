@@ -195,8 +195,7 @@ class TestMakeAddonCommand:
 
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
-        if result.exit_code != 0:
-            print(result)
+
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
