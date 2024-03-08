@@ -19,14 +19,14 @@ Parameters:
 
 Mappings:
   myOpensearchLongerEnvironmentConfigMap:
-    development:
+    production:
       EngineVersion: '2.3'
       InstanceType: 't3.medium.search'
       InstanceCount: 1
       DedicatedMaster: false
       VolumeSize: 200
       DeletionPolicy: Delete
-    production:
+    development:
       EngineVersion: '2.3'
       InstanceType: 't3.medium.search'
       InstanceCount: 1

@@ -19,19 +19,19 @@ Parameters:
 
 Mappings:
   myOpensearchEnvironmentConfigMap:
-    development:
-      EngineVersion: '2.3'
-      InstanceType: 't3.small.search'
-      InstanceCount: 1
-      DedicatedMaster: false
-      VolumeSize: 80
-      DeletionPolicy: Delete
     production:
       EngineVersion: '2.3'
       InstanceType: 'm6g.xlarge.search'
       InstanceCount: 2
       DedicatedMaster: false
       VolumeSize: 1000
+      DeletionPolicy: Delete
+    development:
+      EngineVersion: '2.3'
+      InstanceType: 't3.small.search'
+      InstanceCount: 1
+      DedicatedMaster: false
+      VolumeSize: 80
       DeletionPolicy: Delete
 
   myOpensearchEngineVersionMap:
