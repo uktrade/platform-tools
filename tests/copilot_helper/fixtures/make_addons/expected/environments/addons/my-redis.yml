@@ -19,12 +19,12 @@ Parameters:
 
 Mappings:
   myRedisEnvironmentConfigMap:
-    development:
+    production:
       EngineVersion: '6.2'
       CacheNodeType: 'cache.t4g.medium'
       NumReplicas: 0
       DeletionPolicy: Delete
-    production:
+    development:
       EngineVersion: '6.2'
       CacheNodeType: 'cache.t4g.medium'
       NumReplicas: 0
