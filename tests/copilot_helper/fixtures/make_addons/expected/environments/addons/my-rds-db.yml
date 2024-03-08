@@ -40,15 +40,6 @@ Parameters:
 
 Mappings:
   myRdsDbEnvironmentConfigMap:
-    development:
-      DBInstanceClass: 'db.t3.small'
-      MultiAZ: False
-      AllocatedStorage: 100
-      MaxAllocatedStorage: 126
-      StorageType: gp3
-      DeletionPolicy: Delete
-      DeletionProtection: False
-      SnapshotIdentifier: test-snapshot-id
     production:
       DBInstanceClass: 'db.m5.2xlarge'
       MultiAZ: True
@@ -58,6 +49,15 @@ Mappings:
       DeletionPolicy: Delete
       DeletionProtection: False
       SnapshotIdentifier: ""
+    development:
+      DBInstanceClass: 'db.t3.small'
+      MultiAZ: False
+      AllocatedStorage: 100
+      MaxAllocatedStorage: 126
+      StorageType: gp3
+      DeletionPolicy: Delete
+      DeletionProtection: False
+      SnapshotIdentifier: test-snapshot-id
 
 Conditions:
     myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
