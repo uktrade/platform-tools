@@ -229,9 +229,14 @@ class TestMakeAddonCommand:
                     "addons.parameters.rds.yml",
                 )
 
-            expected = expected_file.read_text()
-            actual = Path("copilot", f).read_text()
-            assert actual == expected, f"The file {f} did not have the expected content"
+            expected = yaml.safe_load(expected_file.read_text())
+            actual = yaml.safe_load(Path("copilot", f).read_text())
+
+            assert sorted(expected) == sorted(
+                actual
+            ), f"The file {f} did not have the expected content"
+
+            assert actual == expected
 
         env_override_files = setup_override_files_for_environments()
         for file in env_override_files:
