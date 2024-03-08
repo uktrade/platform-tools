@@ -231,6 +231,11 @@ class TestMakeAddonCommand:
 
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
+            print("ACTUAL---------------")
+            print(actual)
+            print("EXPECTED---------------")
+            print(expected)
+            print("END---------------")
             assert actual == expected, f"The file {f} did not have the expected content"
 
         env_override_files = setup_override_files_for_environments()
