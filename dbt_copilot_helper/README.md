@@ -49,4 +49,4 @@ Commands:
   migrate-secrets  Migrate secrets from your gov paas application to...
 ```
 
-See the [Commands Reference](https://github.com/uktrade/copilot-tools/blob/main/commands/COMMANDS.md) for a list of all available subcommands.
+See the [Commands Reference](https://github.com/uktrade/copilot-tools/blob/main/dbt_copilot_helper/COMMANDS.md) for a list of all available subcommands.
