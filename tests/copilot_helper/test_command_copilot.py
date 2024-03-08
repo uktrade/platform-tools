@@ -231,6 +231,8 @@ class TestMakeAddonCommand:
 
             expected = expected_file.read_text()
             actual = Path("copilot", f).read_text()
+            print("FILE-----------------")
+            print(expected_file)
             print("ACTUAL---------------")
             print(actual)
             print("EXPECTED---------------")
