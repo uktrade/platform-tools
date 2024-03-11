@@ -47,7 +47,7 @@ Mappings:
       AllocatedStorage: {{ config.volume_size }}
       MaxAllocatedStorage: {{ (config.volume_size * 1.26)|round|int }}
       StorageType: {% if env_name == "prod" or env_name == "production" %}io1{% else %}gp3{% endif %}
-      Iops: {{ config.iops if config.iops else '""' }}
+      Iops: {{ config.iops if env_name == "prod" or env_name == "production" else '""' }}
       DeletionPolicy: {{ config.deletion_policy }}
       DeletionProtection: {{ config.deletion_protection if config.deletion_protection else false }}
       SnapshotIdentifier: {{ config.snapshot_id if config.snapshot_id else '""' }}
