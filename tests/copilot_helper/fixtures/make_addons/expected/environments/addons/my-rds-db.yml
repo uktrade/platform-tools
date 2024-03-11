@@ -46,6 +46,7 @@ Mappings:
       AllocatedStorage: 100
       MaxAllocatedStorage: 126
       StorageType: gp3
+      Iops: ""
       DeletionPolicy: Delete
       DeletionProtection: False
       SnapshotIdentifier: test-snapshot-id
@@ -54,7 +55,8 @@ Mappings:
       MultiAZ: True
       AllocatedStorage: 564
       MaxAllocatedStorage: 711
-      StorageType: gp3
+      StorageType: io1
+      Iops: 1000
       DeletionPolicy: Delete
       DeletionProtection: False
       SnapshotIdentifier: ""
@@ -62,6 +64,7 @@ Mappings:
 Conditions:
     myRdsDbCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
     myRdsDbUseSnapshot: !Not [!Equals [!FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, SnapshotIdentifier], ""]]
+    myRdsDbUseIops: !Not [!Equals [!FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, Iops], ""]]
 
 Resources:
   # Subnet group to control where the DB gets placed
@@ -237,6 +240,7 @@ Resources:
       AllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, AllocatedStorage]
       MaxAllocatedStorage: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MaxAllocatedStorage]
       StorageType: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, StorageType]
+      Iops: !If [myRdsDbUseIops, !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, Iops], !Ref AWS::NoValue]
       MultiAZ: !FindInMap [myRdsDbEnvironmentConfigMap, !Ref Env, MultiAZ]
       DBParameterGroupName: !Ref myRdsDbRDSDBParameterGroup
       DBName:

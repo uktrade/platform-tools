@@ -12,3 +12,4 @@ my-rds-db:
     production:
       plan: large-ha
       snapshot_id: ""
+      iops: 1000
