@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
+from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 from utils.check_pypi import check_for_version_in_pypi_releases
 from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases

@@ -54,12 +54,12 @@ You may want to test any CLI changes locally.
 
 Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so.
 
-Copy the package file(s) to the directory where you would like to test your changes, and make sure you are in a virtual environment. Run `copilot-helper --version` to check the installed package version (e.g. `0.1.39`).
+Copy the package file(s) to the directory where you would like to test your changes, and make sure you are in a virtual environment. Run `platform-helper --version` to check the installed package version (e.g. `0.1.39`).
 
 > [!NOTE]
 > Copying the package file is optional, but recommended. You can keep the package file in the `dist` folder and install the package from your directory.
 
-Run `pip install <file>` and confirm the installation has worked by running `copilot-helper --version` which would output version `0.1.40` following our example.
+Run `pip install <file>` and confirm the installation has worked by running `platform-helper --version` which would output version `0.1.40` following our example.
 
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-tools` installation back to what it was; e.g. `pip install dbt-platform-tools==0.1.39`.

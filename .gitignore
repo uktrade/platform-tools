@@ -31,7 +31,7 @@ src/
 staticfiles/
 node_modules/
 
-tests/copilot_helper/test-application-deploy/copilot
+tests/platform_helper/test-application-deploy/copilot
 
 dist
 
