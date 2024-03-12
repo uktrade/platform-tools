@@ -198,6 +198,7 @@ def test_check_copilot_helper_version_shows_warning_when_different_than_file_spe
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+    
     check_copilot_helper_version_mismatch()
 
     secho.assert_called_with(
