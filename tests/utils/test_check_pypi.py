@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from tests.copilot_helper.conftest import UTILS_FIXTURES_DIR
+from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 from utils.check_pypi import check_for_version_in_pypi_releases
 from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases
@@ -34,6 +34,7 @@ def test_get_current_version__fails_with_missing_version():
 
 def test_get_releases__success():
     releases = get_releases()
+
     assert "0.1.1" in releases
     assert "0.1.21" in releases
 

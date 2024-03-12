@@ -2,7 +2,7 @@
 
 These images are designed to emulate most of the functionality from
 [alphagov/paas-cf-conduit](https://github.com/alphagov/paas-cf-conduit)
-working with the `copilot-helper conduit` command.
+working with the `platform-helper conduit` command.
 
 Each image is built and pushed to the public ECR repository
 [uktrade/tunnel](https://gallery.ecr.aws/uktrade/tunnel) when changes

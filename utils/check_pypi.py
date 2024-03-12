@@ -3,6 +3,7 @@ import json
 import time
 from urllib.request import urlopen
 
+# Todo: Rename once new package published
 PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-copilot-tools/json"
 OK = 0
 FAIL = 1
@@ -10,7 +11,7 @@ FAIL = 1
 
 def opts():
     parser = argparse.ArgumentParser(
-        description="Tool to check PyPI for the presence of the copilot-tools package"
+        description="Tool to check PyPI for the presence of the platform-tools package"
     )
     parser.add_argument("--retry-interval", help="Delay before retrying", type=int, default=6)
     parser.add_argument("--max-attempts", help="Maximum number of attempts", type=int, default=1)

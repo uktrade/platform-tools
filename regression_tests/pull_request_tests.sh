@@ -3,10 +3,10 @@
 # exit early if something goes wrong
 set -e
 
-echo -e "\nBuild and install copilot-helper"
+echo -e "\nBuild and install platform-helper"
 poetry build --no-interaction --format sdist --no-ansi
 pip install "dist/$(ls -t1 dist | head -1)"
-copilot-helper --version
+platform-helper --version
 
 echo -e "\nGet CodeStar connection details"
 codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
@@ -28,11 +28,11 @@ aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 
-echo -e "\nRun copilot-helper copilot make-addons"
-copilot-helper copilot make-addons
+echo -e "\nRun platform-helper copilot make-addons"
+platform-helper copilot make-addons
 
-# echo -e "\nRun copilot-helper pipeline generate"
-# copilot-helper pipeline generate
+# echo -e "\nRun platform-helper pipeline generate"
+# platform-helper pipeline generate
 
 # echo -e "\nRun copilot env init"
 # copilot env init --name toolspr --profile $AWS_PROFILE --default-config
