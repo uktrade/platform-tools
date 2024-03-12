@@ -22,16 +22,17 @@ def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
     )
 
     result = CliRunner().invoke(validate)
+
     assert "Detected a deployment repository" in result.output
     assert "Checking tooling versions..." in result.output
     assert (
-        "| aws               |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| aws                |     1.0.0     |      1.0.0       |        ✔        |"
     ) in result.output
     assert (
-        "| copilot           |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| copilot            |     1.0.0     |      1.0.0       |        ✔        |"
     ) in result.output
     assert (
-        "| dbt-platform-tools |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| dbt-platform-tools |     1.0.0     |      1.0.0       |        ✔        |"
     ) in result.output
 
     assert (
@@ -56,13 +57,13 @@ def test_with_outdated_platform_helper(fakefs, mock_tool_versions):
     assert "Detected a deployment repository" in result.output
     assert "Checking tooling versions..." in result.output
     assert (
-        "| aws               |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| aws                |     1.0.0     |      1.0.0       |        ✔        |"
     ) in result.output
     assert (
-        "| copilot           |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| copilot            |     1.0.0     |      1.0.0       |        ✔        |"
     ) in result.output
     assert (
-        "| dbt-platform-tools |     0.1.0     |      1.0.0       " "|        ✖        |"
+        "| dbt-platform-tools |     0.1.0     |      1.0.0       |        ✖        |"
     ) in result.output
 
     assert (

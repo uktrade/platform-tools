@@ -3,7 +3,8 @@ import json
 import time
 from urllib.request import urlopen
 
-PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-platform-tools/json"
+# Todo: Rename once new package published
+PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-copilot-tools/json"
 OK = 0
 FAIL = 1
 
