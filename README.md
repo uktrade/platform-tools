@@ -52,7 +52,7 @@ play nicely and will error. To allow pdb to work correctly, disable multiple pro
 
 You may want to test any CLI changes locally. 
 
-Run `poetry build` to build your package resulting in a package file (e.g. `dbt_copilot_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so.
+Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so.
 
 Copy the package file(s) to the directory where you would like to test your changes, and make sure you are in a virtual environment. Run `copilot-helper --version` to check the installed package version (e.g. `0.1.39`).
 
