@@ -13,7 +13,6 @@ from dbt_copilot_helper.commands.pipeline import generate
 def test_copilot_helper_generate_creates_the_pipeline_configuration_and_addons(
     mock_generate, mock_make_addons
 ):
-    globals()["copilot_helper_file_version_checked"] = None
     CliRunner().invoke(copilot_helper_generate)
 
     assert mock_generate.called
@@ -30,7 +29,6 @@ def test_copilot_helper_generate_creates_the_pipeline_configuration_and_addons(
 def test_copilot_helper_generate_shows_a_warning_when_version_is_different_than_on_file(
     get_file_app_versions, secho
 ):
-    globals()["copilot_helper_file_version_checked"] = None
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
     CliRunner().invoke(copilot_helper_generate)
@@ -51,7 +49,6 @@ def test_copilot_helper_generate_shows_a_warning_when_version_is_different_than_
 def test_make_addons_shows_a_warning_when_version_is_different_than_on_file(
     mock_check_copilot_helper_version_mismatch, get_file_app_versions, secho
 ):
-    globals()["copilot_helper_file_version_checked"] = None
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
     CliRunner().invoke(make_addons)
@@ -69,7 +66,6 @@ def test_make_addons_shows_a_warning_when_version_is_different_than_on_file(
 def test_pipeline_generate_shows_a_warning_when_version_is_different_than_on_file(
     mock_check_copilot_helper_version_mismatch, get_file_app_versions, secho
 ):
-    globals()["copilot_helper_file_version_checked"] = None
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
     CliRunner().invoke(generate)

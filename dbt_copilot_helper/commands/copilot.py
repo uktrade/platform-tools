@@ -19,7 +19,6 @@ from dbt_copilot_helper.utils.files import mkfile
 from dbt_copilot_helper.utils.template import camel_case
 from dbt_copilot_helper.utils.template import setup_templates
 from dbt_copilot_helper.utils.validation import validate_addons
-from dbt_copilot_helper.utils.versioning import check_copilot_helper_version_mismatch
 from dbt_copilot_helper.utils.versioning import (
     check_copilot_helper_version_needs_update,
 )
@@ -195,9 +194,6 @@ def _generate_svc_overrides(base_path, templates, name):
 @copilot.command(deprecated=True, hidden=True)
 def make_addons():
     """Generate addons CloudFormation for each environment."""
-
-    # check for copilot-helper-version file compatibility
-    check_copilot_helper_version_mismatch()
 
     output_dir = Path(".").absolute()
 
