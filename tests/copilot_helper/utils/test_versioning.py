@@ -197,6 +197,7 @@ def test_check_copilot_helper_version_skips_when_running_local_version(version_c
 def test_check_copilot_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho
 ):
+    globals()["copilot_helper_file_version_checked"] = None
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
     check_copilot_helper_version_mismatch()

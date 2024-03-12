@@ -13,6 +13,7 @@ from dbt_copilot_helper.commands.pipeline import generate
 def test_copilot_helper_generate_creates_the_pipeline_configuration_and_addons(
     mock_generate, mock_make_addons
 ):
+    globals()["copilot_helper_file_version_checked"] = None
     CliRunner().invoke(copilot_helper_generate)
 
     assert mock_generate.called
