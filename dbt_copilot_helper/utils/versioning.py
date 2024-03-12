@@ -166,16 +166,14 @@ def check_copilot_helper_version_mismatch():
     if not running_as_installed_package():
         return
 
-    if not globals().get("copilot_helper_file_version_checked"):
-        globals()["copilot_helper_file_version_checked"] = True
-        app_version, on_file_version = get_file_app_versions()
+    app_version, on_file_version = get_file_app_versions()
 
-        if not check_version_on_file_compatibility(app_version, on_file_version):
-            message = (
-                f"WARNING: You are running copilot-helper v{string_version(app_version)} against "
-                f"v{string_version(on_file_version)} specified by .copilot-helper-version."
-            )
-            click.secho(message, fg="red")
+    if not check_version_on_file_compatibility(app_version, on_file_version):
+        message = (
+            f"WARNING: You are running copilot-helper v{string_version(app_version)} against "
+            f"v{string_version(on_file_version)} specified by .copilot-helper-version."
+        )
+        click.secho(message, fg="red")
 
 
 def running_as_installed_package():
