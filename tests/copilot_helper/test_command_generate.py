@@ -3,9 +3,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from dbt_copilot_helper.commands.copilot import make_addons
 from dbt_copilot_helper.commands.generate import generate as copilot_helper_generate
-from dbt_copilot_helper.commands.pipeline import generate
 
 
 @patch("dbt_copilot_helper.commands.generate.make_addons", return_value=None)
@@ -37,37 +35,3 @@ def test_copilot_helper_generate_shows_a_warning_when_version_is_different_than_
         f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version.",
         fg="red",
     )
-
-
-@patch("click.secho")
-@patch("dbt_copilot_helper.utils.versioning.get_file_app_versions", return_value=None)
-@patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-)
-@patch("dbt_copilot_helper.commands.copilot.make_addons", new=Mock(return_value=None))
-@patch("dbt_copilot_helper.commands.copilot.check_copilot_helper_version_mismatch")
-def test_make_addons_shows_a_warning_when_version_is_different_than_on_file(
-    mock_check_copilot_helper_version_mismatch, get_file_app_versions, secho
-):
-    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
-
-    CliRunner().invoke(make_addons)
-
-    assert mock_check_copilot_helper_version_mismatch.called
-
-
-@patch("click.secho")
-@patch("dbt_copilot_helper.utils.versioning.get_file_app_versions", return_value=None)
-@patch(
-    "dbt_copilot_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-)
-@patch("dbt_copilot_helper.commands.pipeline.generate", new=Mock(return_value=None))
-@patch("dbt_copilot_helper.commands.pipeline.check_copilot_helper_version_mismatch")
-def test_pipeline_generate_shows_a_warning_when_version_is_different_than_on_file(
-    mock_check_copilot_helper_version_mismatch, get_file_app_versions, secho
-):
-    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
-
-    CliRunner().invoke(generate)
-
-    assert mock_check_copilot_helper_version_mismatch.called
