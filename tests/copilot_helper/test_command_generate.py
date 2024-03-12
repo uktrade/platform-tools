@@ -28,6 +28,7 @@ def test_copilot_helper_generate_shows_a_warning_when_version_is_different_than_
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+    
     CliRunner().invoke(copilot_helper_generate)
 
     secho.assert_called_once_with(
