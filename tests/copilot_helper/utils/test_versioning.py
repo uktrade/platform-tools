@@ -143,14 +143,14 @@ def test_check_copilot_helper_version_needs_update(
     if expected_exception == IncompatibleMajorVersion:
         secho.assert_called_with(
             "You are running copilot-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-copilot-tools`.",
+            "--upgrade dbt-platform-tools`.",
             fg="red",
         )
 
     if expected_exception == IncompatibleMinorVersion:
         secho.assert_called_with(
             "You are running copilot-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-copilot-tools`.",
+            "--upgrade dbt-platform-tools`.",
             fg="yellow",
         )
 

@@ -26,8 +26,8 @@ phases:
       - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}"
       - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
-      # Install pyyaml and dbt-copilot-tools
-      - pip install PyYAML dbt-copilot-tools==$COPILOT_HELPER_VERSION
+      # Install pyyaml and dbt-platform-tools
+      - pip install PyYAML dbt-platform-tools==$COPILOT_HELPER_VERSION
       # Install dyff - yaml differ
       - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
       - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
@@ -51,7 +51,7 @@ phases:
             ./build-tools/dyff between --omit-header $FILE current-$FILE
           done;
           echo
-          echo 'Ensure you are running version ${COPILOT_HELPER_VERSION} with pip install dbt-copilot-tools==${COPILOT_HELPER_VERSION}'
+          echo 'Ensure you are running version ${COPILOT_HELPER_VERSION} with pip install dbt-platform-tools==${COPILOT_HELPER_VERSION}'
           echo 'And run copilot-helper copilot make-addons to regenerate your addons templates'
           exit 1
         fi

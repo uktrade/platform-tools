@@ -2,9 +2,9 @@
 
 ![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiS2t1L3UvQmVTbXZsOTVIOWxGanpwTTh4b3BNcUR4c0dNN2NoSUpGcVkzN0JEOFpvc2kwL2pGVC91TXNVcjFNK0d5eExia0R2SS9lZUhuWTZQOTlieVY0PSIsIml2UGFyYW1ldGVyU3BlYyI6Im5tS0pUVEwvT204WXdxT2wiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 
-## Using the dbt-copilot-tools package
+## Using the dbt-platform-tools package
 
-See [the package documentation](https://github.com/uktrade/copilot-tools/blob/main/commands/README.md) for detail on what the package is and how to use it.
+See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/commands/README.md) for detail on what the package is and how to use it.
 
 If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration/README.md) will also be relevant for you.
 
@@ -12,14 +12,14 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 3.9, 3.10, 3.11 and 3.12.
 
-## Contributing to the dbt-copilot-tools package
+## Contributing to the dbt-platform-tools package
 
 ### Getting started
 
 1. Clone the repository:
 
    ```
-   git clone https://github.com/uktrade/copilot-tools.git && cd copilot-tools
+   git clone https://github.com/uktrade/platform-tools.git && cd platform-tools
    ```
 
 2. Install the required dependencies:
@@ -62,11 +62,11 @@ Copy the package file(s) to the directory where you would like to test your chan
 Run `pip install <file>` and confirm the installation has worked by running `copilot-helper --version` which would output version `0.1.40` following our example.
 
 > [!IMPORTANT]
-> When testing is complete, do not forget to revert the `dbt-copilot-tools` installation back to what it was; e.g. `pip install dbt-copilot-tools==0.1.39`.
+> When testing is complete, do not forget to revert the `dbt-platform-tools` installation back to what it was; e.g. `pip install dbt-platform-tools==0.1.39`.
 
 ### Publishing
 
-To publish the Python package `dbt-copilot-tools`, you will need an API token.
+To publish the Python package `dbt-platform-tools`, you will need an API token.
 
 1. Acquire API token from [Passman](https://passman.ci.uktrade.digital/secret/cc82a3f7-ddfa-4312-ab56-1ff8528dadc8/).
    - Request access from the SRE team.
@@ -95,6 +95,6 @@ _Note: Make sure your Pull Request (PR) is approved and contains the version upg
 poetry publish
 ```
 
-Check the [PyPi Release history](https://pypi.org/project/dbt-copilot-tools/#history) to make sure the package has been updated.
+Check the [PyPi Release history](https://pypi.org/project/dbt-platform-tools/#history) to make sure the package has been updated.
 
 For an optional manual check, install the package locally and test everything works as expected.

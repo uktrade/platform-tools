@@ -75,12 +75,12 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 
 def get_app_versions():
-    package_info = requests.get("https://pypi.org/pypi/dbt-copilot-tools/json").json()
+    package_info = requests.get("https://pypi.org/pypi/dbt-platform-tools/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
 
-    return parse_version(version("dbt-copilot-tools")), parsed_released_versions[0]
+    return parse_version(version("dbt-platform-tools")), parsed_released_versions[0]
 
 
 def validate_version_compatibility(
@@ -129,7 +129,7 @@ def check_copilot_helper_version_needs_update():
     message = (
         f"You are running copilot-helper v{string_version(app_version)}, upgrade to "
         f"v{string_version(app_released_version)} by running run `pip install "
-        "--upgrade dbt-copilot-tools`."
+        "--upgrade dbt-platform-tools`."
     )
     try:
         validate_version_compatibility(app_version, app_released_version)

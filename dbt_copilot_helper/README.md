@@ -4,17 +4,17 @@ This package contains a set of tools in the form of a Command Line Interface (CL
 
 ## Getting started
 
-To use the Python package `dbt-copilot-tools`, follow the steps below.
+To use the Python package `dbt-platform-tools`, follow the steps below.
 
 ### Installation
 
 ```shell
-pip install dbt-copilot-tools
+pip install dbt-platform-tools
 ```
 
 ### Usage
 
-Check `dbt-copilot-tools` has installed successfully by executing `copilot-helper` in the terminal emulator. You should see an output similar to the following:
+Check `dbt-platform-tools` has installed successfully by executing `copilot-helper` in the terminal emulator. You should see an output similar to the following:
 
 ```shell
 $ copilot-helper
@@ -49,4 +49,4 @@ Commands:
   migrate-secrets  Migrate secrets from your gov paas application to...
 ```
 
-See the [Commands Reference](https://github.com/uktrade/copilot-tools/blob/main/dbt_copilot_helper/COMMANDS.md) for a list of all available subcommands.
+See the [Commands Reference](https://github.com/uktrade/platform-tools/blob/main/dbt_copilot_helper/COMMANDS.md) for a list of all available subcommands.

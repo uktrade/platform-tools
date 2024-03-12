@@ -31,7 +31,7 @@ def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
         "| copilot           |     1.0.0     |      1.0.0       " "|        ✔        |"
     ) in result.output
     assert (
-        "| dbt-copilot-tools |     1.0.0     |      1.0.0       " "|        ✔        |"
+        "| dbt-platform-tools |     1.0.0     |      1.0.0       " "|        ✔        |"
     ) in result.output
 
     assert (
@@ -62,7 +62,7 @@ def test_with_outdated_copilot_helper(fakefs, mock_tool_versions):
         "| copilot           |     1.0.0     |      1.0.0       " "|        ✔        |"
     ) in result.output
     assert (
-        "| dbt-copilot-tools |     0.1.0     |      1.0.0       " "|        ✖        |"
+        "| dbt-platform-tools |     0.1.0     |      1.0.0       " "|        ✖        |"
     ) in result.output
 
     assert (
@@ -89,7 +89,7 @@ Recommendations:
 
   - Upgrade AWS CLI to version 1.0.0.
   - Upgrade AWS Copilot to version 1.0.0.
-  - Upgrade dbt-copilot-tools to version 1.0.0 `pip install --upgrade dbt-copilot-tools==1.0.0`.
+  - Upgrade dbt-platform-tools to version 1.0.0 `pip install --upgrade dbt-platform-tools==1.0.0`.
     Post upgrade, run `copilot-helper copilot make-addons` to update your addon templates.
 """
         in result.output

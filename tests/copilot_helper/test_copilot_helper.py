@@ -12,7 +12,7 @@ class TestCopilotHelperCli:
         name, version = result.output.split()
 
         assert result.exit_code == 0
-        assert name == "dbt-copilot-tools"
+        assert name == "dbt-platform-tools"
         assert (re.compile(r"^\d+(\.\d+){2,}$")).match(version)
 
     def test_sub_commands(self):

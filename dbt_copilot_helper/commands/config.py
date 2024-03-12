@@ -14,11 +14,11 @@ no = "\033[91m✖\033[0m"
 maybe = "\033[93m?\033[0m"
 
 RECOMMENDATIONS = {
-    "dbt-copilot-tools-upgrade": (
-        "Upgrade dbt-copilot-tools to version {version} `pip install "
-        "--upgrade dbt-copilot-tools=={version}`."
+    "dbt-platform-tools-upgrade": (
+        "Upgrade dbt-platform-tools to version {version} `pip install "
+        "--upgrade dbt-platform-tools=={version}`."
     ),
-    "dbt-copilot-tools-upgrade-note": (
+    "dbt-platform-tools-upgrade-note": (
         "Post upgrade, run `copilot-helper copilot make-addons` to " "update your addon templates."
     ),
     "generic-tool-upgrade": "Upgrade {tool} to version {version}.",
@@ -74,7 +74,7 @@ def deployment():
         recommendations["storage.yml"] = (
             "The file `storage.yml` is incompatible with version "
             f"{versioning.string_version(app_released_version)} of "
-            "dbt-copilot-tools, move contents to `addons.yml` and "
+            "dbt-platform-tools, move contents to `addons.yml` and "
             "delete `storage.yml`."
         )
 
@@ -91,20 +91,20 @@ def deployment():
         except IncompatibleMajorVersion:
             local_compatible_symbol = no
             compatible = False
-            recommendations["dbt-copilot-tools-upgrade"] = RECOMMENDATIONS[
-                "dbt-copilot-tools-upgrade"
+            recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
+                "dbt-platform-tools-upgrade"
             ].format(version=versioning.string_version(app_released_version))
-            recommendations["dbt-copilot-tools-upgrade-note"] = RECOMMENDATIONS[
-                "dbt-copilot-tools-upgrade-note"
+            recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
+                "dbt-platform-tools-upgrade-note"
             ]
         except ValidationException:
             local_compatible_symbol = maybe
             compatible = False
-            recommendations["dbt-copilot-tools-upgrade"] = RECOMMENDATIONS[
-                "dbt-copilot-tools-upgrade"
+            recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
+                "dbt-platform-tools-upgrade"
             ].format(version=versioning.string_version(app_released_version))
-            recommendations["dbt-copilot-tools-upgrade-note"] = RECOMMENDATIONS[
-                "dbt-copilot-tools-upgrade-note"
+            recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
+                "dbt-platform-tools-upgrade-note"
             ]
 
         try:
@@ -181,7 +181,7 @@ def tool_versions():
     )
     tool_versions_table.add_row(
         [
-            "dbt-copilot-tools",
+            "dbt-platform-tools",
             versioning.string_version(app_version),
             versioning.string_version(app_released_version),
             no if app_version != app_released_version else yes,
@@ -203,11 +203,11 @@ def tool_versions():
         )
 
     if app_version != app_released_version:
-        recommendations["dbt-copilot-tools-upgrade"] = RECOMMENDATIONS[
-            "dbt-copilot-tools-upgrade"
+        recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
+            "dbt-platform-tools-upgrade"
         ].format(version=versioning.string_version(app_released_version))
-        recommendations["dbt-copilot-tools-upgrade-note"] = RECOMMENDATIONS[
-            "dbt-copilot-tools-upgrade-note"
+        recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
+            "dbt-platform-tools-upgrade-note"
         ]
 
     render_recommendations(recommendations)
