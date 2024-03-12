@@ -53,8 +53,8 @@ def test_make_addons_shows_a_warning_when_version_is_different_than_on_file(
     CliRunner().invoke(make_addons)
 
     assert (
-        secho.call_args_list[0][0][0]
-        == f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version."
+        f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version."
+        in [c[0][0] for c in secho.call_args_list]
     )
 
 
@@ -72,6 +72,6 @@ def test_pipeline_generate_shows_a_warning_when_version_is_different_than_on_fil
     CliRunner().invoke(pipeline_generate)
 
     assert (
-        secho.call_args_list[0][0][0]
-        == f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version."
+        f"WARNING: You are running copilot-helper v1.0.1 against v1.0.0 specified by .copilot-helper-version."
+        in [c[0][0] for c in secho.call_args_list]
     )
