@@ -245,6 +245,7 @@ PIPELINES_SCHEMA = Schema(
             {
                 "name": str,
                 "repository": str,
+                Optional("additional_ecr_repository"): str,
                 "services": list[str],
                 "pipelines": [
                     Or(
