@@ -418,7 +418,7 @@ export class TransformedStack extends cdk.Stack {
             path.join(pipelineRoot, 'manifest.yml'),
         ).toString('utf-8')) as PipelineManifest;
 
-        // Load dbt-platform-tools pipelines configurations
+        // Load dbt-platform-helper pipelines configurations
         this.pipelinesFile = parse(readFileSync(
             path.join(deployRepoRoot, 'pipelines.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
