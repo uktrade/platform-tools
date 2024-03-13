@@ -133,8 +133,9 @@ def test_validate_platform_helper_file_version(
     get_file_app_versions.return_value = (1, 0, 0), (1, 0, 0)
     template_name, raises, message = template_check
 
+    template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
+
     with pytest.raises(raises) as exception:
-        template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
         validate_platform_helper_file_version(template_path)
 
     if message:
