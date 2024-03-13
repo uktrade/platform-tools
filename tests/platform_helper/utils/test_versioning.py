@@ -169,14 +169,14 @@ def test_check_platform_helper_version_needs_update(
     if expected_exception == IncompatibleMajorVersion:
         secho.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-platform-tools`.",
+            "--upgrade dbt-platform-helper`.",
             fg="red",
         )
 
     if expected_exception == IncompatibleMinorVersion:
         secho.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-platform-tools`.",
+            "--upgrade dbt-platform-helper`.",
             fg="yellow",
         )
 

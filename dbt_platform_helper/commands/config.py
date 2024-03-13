@@ -14,11 +14,11 @@ no = "\033[91m✖\033[0m"
 maybe = "\033[93m?\033[0m"
 
 RECOMMENDATIONS = {
-    "dbt-platform-tools-upgrade": (
-        "Upgrade dbt-platform-tools to version {version} `pip install "
-        "--upgrade dbt-platform-tools=={version}`."
+    "dbt-platform-helper-upgrade": (
+        "Upgrade dbt-platform-helper to version {version} `pip install "
+        "--upgrade dbt-platform-helper=={version}`."
     ),
-    "dbt-platform-tools-upgrade-note": (
+    "dbt-platform-helper-upgrade-note": (
         "Post upgrade, run `platform-helper copilot make-addons` to " "update your addon templates."
     ),
     "generic-tool-upgrade": "Upgrade {tool} to version {version}.",
@@ -74,7 +74,7 @@ def deployment():
         recommendations["storage.yml"] = (
             "The file `storage.yml` is incompatible with version "
             f"{versioning.string_version(app_released_version)} of "
-            "dbt-platform-tools, move contents to `addons.yml` and "
+            "dbt-platform-helper, move contents to `addons.yml` and "
             "delete `storage.yml`."
         )
 
@@ -91,20 +91,20 @@ def deployment():
         except IncompatibleMajorVersion:
             local_compatible_symbol = no
             compatible = False
-            recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
-                "dbt-platform-tools-upgrade"
+            recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
+                "dbt-platform-helper-upgrade"
             ].format(version=versioning.string_version(app_released_version))
-            recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
-                "dbt-platform-tools-upgrade-note"
+            recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
+                "dbt-platform-helper-upgrade-note"
             ]
         except ValidationException:
             local_compatible_symbol = maybe
             compatible = False
-            recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
-                "dbt-platform-tools-upgrade"
+            recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
+                "dbt-platform-helper-upgrade"
             ].format(version=versioning.string_version(app_released_version))
-            recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
-                "dbt-platform-tools-upgrade-note"
+            recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
+                "dbt-platform-helper-upgrade-note"
             ]
 
         try:
@@ -181,7 +181,7 @@ def tool_versions():
     )
     tool_versions_table.add_row(
         [
-            "dbt-platform-tools",
+            "dbt-platform-helper",
             versioning.string_version(app_version),
             versioning.string_version(app_released_version),
             no if app_version != app_released_version else yes,
@@ -203,11 +203,11 @@ def tool_versions():
         )
 
     if app_version != app_released_version:
-        recommendations["dbt-platform-tools-upgrade"] = RECOMMENDATIONS[
-            "dbt-platform-tools-upgrade"
+        recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
+            "dbt-platform-helper-upgrade"
         ].format(version=versioning.string_version(app_released_version))
-        recommendations["dbt-platform-tools-upgrade-note"] = RECOMMENDATIONS[
-            "dbt-platform-tools-upgrade-note"
+        recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
+            "dbt-platform-helper-upgrade-note"
         ]
 
     render_recommendations(recommendations)
