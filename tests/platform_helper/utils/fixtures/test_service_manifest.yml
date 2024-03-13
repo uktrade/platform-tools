@@ -26,7 +26,7 @@ http:
 sidecars:
   nginx:
     port: 443
-    image: public.ecr.aws/uktrade/nginx-reverse-proxy:latest
+    image: public.ecr.aws/uktrade/nginx-dbt-platform:latest
     variables:
       SERVER: localhost:8000
 
