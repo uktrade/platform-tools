@@ -84,6 +84,11 @@ def get_app_versions():
     return parse_version(version("dbt-platform-tools")), parsed_released_versions[0]
 
 
+def get_file_app_versions():
+    version_from_file = Path(".platform-helper-version").read_text()
+    return parse_version(version("dbt-platform-tools")), parse_version(version_from_file)
+
+
 def validate_version_compatibility(
     app_version: Tuple[int, int, int], check_version: Tuple[int, int, int]
 ):
@@ -104,6 +109,15 @@ def validate_version_compatibility(
         raise IncompatibleMinorVersion(app_version_as_string, check_version_as_string)
 
 
+def check_version_on_file_compatibility(
+    app_version: Tuple[int, int, int], file_version: Tuple[int, int, int]
+):
+    app_major, app_minor, app_patch = app_version
+    file_major, file_minor, file_patch = file_version
+
+    return app_major == file_major and app_minor == file_minor and app_patch == file_patch
+
+
 def get_template_generated_with_version(template_file_path: str) -> Tuple[int, int, int]:
     try:
         template_contents = Path(template_file_path).read_text()
@@ -118,6 +132,13 @@ def get_template_generated_with_version(template_file_path: str) -> Tuple[int, i
 def validate_template_version(app_version: Tuple[int, int, int], template_file_path: str):
     validate_version_compatibility(
         app_version,
+        get_template_generated_with_version(template_file_path),
+    )
+
+
+def validate_platform_helper_file_version(template_file_path: str):
+    validate_version_compatibility(
+        get_file_app_versions()[1],
         get_template_generated_with_version(template_file_path),
     )
 
@@ -138,6 +159,20 @@ def check_platform_helper_version_needs_update():
         click.secho(message, fg="red")
     except IncompatibleMinorVersion:
         click.secho(message, fg="yellow")
+
+
+def check_platform_helper_version_mismatch():
+    if not running_as_installed_package():
+        return
+
+    app_version, on_file_version = get_file_app_versions()
+
+    if not check_version_on_file_compatibility(app_version, on_file_version):
+        message = (
+            f"WARNING: You are running platform-helper v{string_version(app_version)} against "
+            f"v{string_version(on_file_version)} specified by .platform-helper-version."
+        )
+        click.secho(message, fg="red")
 
 
 def running_as_installed_package():
