@@ -67,6 +67,14 @@ export class TransformedStack extends cdk.Stack {
             ]);
         }
 
+        const envVars = [
+            {name: 'AWS_ACCOUNT_ID', value: this.account},
+            {name: 'ECR_REPOSITORY', value: this.ecrRepository()},
+        ];
+        if (this.additionalEcrRepository()){
+            envVars.push({name: 'ADDITIONAL_ECR_REPOSITORY', value: this.additionalEcrRepository()});
+        }
+
         new cdk.aws_codebuild.CfnProject(this, 'ImageBuildProject', {
             name: `codebuild-${this.appName}-${this.pipelineManifest.name}`,
             description: `Publish images on push to ${this.codebaseConfiguration.repository}`,
@@ -92,10 +100,7 @@ export class TransformedStack extends cdk.Stack {
                 computeType: 'BUILD_GENERAL1_SMALL',
                 privilegedMode: true,
                 image: 'public.ecr.aws/uktrade/ci-image-builder',
-                environmentVariables: [
-                    {name: 'AWS_ACCOUNT_ID', value: this.account},
-                    {name: 'ECR_REPOSITORY', value: cdk.Fn.ref('ECRRepository')},
-                ],
+                environmentVariables: envVars,
             },
             source: {
                 type: 'GITHUB',
@@ -187,8 +192,8 @@ export class TransformedStack extends cdk.Stack {
                 },
                 {
                     name: 'ECR_REPOSITORY',
-                    value: cdk.Fn.ref('ECRRepository')
-                }
+                    value: this.ecrRepository()
+                },
             ]
         } as cdk.aws_codebuild.CfnProject.EnvironmentProperty;
 
@@ -214,6 +219,14 @@ export class TransformedStack extends cdk.Stack {
         }
     }
 
+    private ecrRepository(){
+        return cdk.Fn.ref('ECRRepository');
+    }
+
+    private additionalEcrRepository(){
+        return this.codebaseConfiguration.additional_ecr_repository || "";
+    }
+
     private createPipeline(index: number, pipelineConfig: PipelinesConfiguration['codebases'][0]['pipelines'][0], existingPipeline: cdk.aws_codepipeline.CfnPipeline) {
         const pipeline = new cdk.aws_codepipeline.CfnPipeline(this, `Pipeline${index + 1}`, {
             name: `pipeline-${this.appName}-${this.codebaseConfiguration.name}-${pipelineConfig.name}`,
@@ -227,7 +240,7 @@ export class TransformedStack extends cdk.Stack {
                             name: 'ImagePublished',
                             runOrder: 1,
                             configuration: {
-                                RepositoryName: cdk.Fn.ref('ECRRepository'),
+                                RepositoryName: this.ecrRepository(),
                                 ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`,
                             },
                             outputArtifacts: [{name: 'ECRMetadata'}],
@@ -256,7 +269,7 @@ export class TransformedStack extends cdk.Stack {
             name: 'ImagePublished',
             runOrder: 1,
             configuration: {
-                RepositoryName: cdk.Fn.ref('ECRRepository'),
+                RepositoryName: this.ecrRepository(),
                 ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`,
             },
             outputArtifacts: [{name: 'ECRMetadata'}],
@@ -352,7 +365,6 @@ export class TransformedStack extends cdk.Stack {
     private createEventRule(pipeline: cdk.aws_codepipeline.CfnPipeline, pipelineConfig: PipelinesConfiguration['codebases'][0]['pipelines'][0], suffix: string = '') {
         const watchImageTag = pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`;
         const ecrRepository = `${this.appName}/${this.codebaseConfiguration.name}`;
-
         new cdk.aws_events.CfnRule(this, `EventRule${suffix}`, {
             name: `trigger-${pipeline.name}`,
             description: `Trigger the ${pipeline.name} pipeline when a tag called '${watchImageTag}' is pushed to the repo '${ecrRepository}'`,
