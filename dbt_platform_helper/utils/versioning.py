@@ -114,9 +114,7 @@ def check_version_on_file_compatibility(
     app_major, app_minor, app_patch = app_version
     file_major, file_minor, file_patch = file_version
 
-    if app_major != file_major or app_minor != file_minor or app_patch != file_patch:
-        return False
-    return True
+    return app_major == file_major and app_minor == file_minor and app_patch == file_patch
 
 
 def get_template_generated_with_version(template_file_path: str) -> Tuple[int, int, int]:
