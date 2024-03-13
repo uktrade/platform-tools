@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Tuple
 from typing import Type
@@ -207,3 +208,18 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version.",
         fg="red",
     )
+
+
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package",
+    new=Mock(return_value=True),
+)
+@patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
+def test_check_platform_helper_version_skips_when_skip_environment_variable_is_set(
+    version_compatibility,
+):
+    os.environ["PLATFORM_TOOLS_SKIP_VERSION_CHECK"] = "true"
+
+    check_platform_helper_version_needs_update()
+
+    version_compatibility.assert_not_called()

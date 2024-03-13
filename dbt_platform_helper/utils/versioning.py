@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 from importlib.metadata import version
@@ -143,7 +144,7 @@ def validate_platform_helper_file_version(template_file_path: str):
 
 
 def check_platform_helper_version_needs_update():
-    if not running_as_installed_package():
+    if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
     app_version, app_released_version = get_app_versions()
