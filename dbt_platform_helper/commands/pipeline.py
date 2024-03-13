@@ -6,7 +6,9 @@ import click
 from yaml.parser import ParserError
 
 from dbt_platform_helper.utils.application import get_application_name
+from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
+from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import load_and_validate_config
@@ -56,9 +58,11 @@ def generate():
         )
 
     if "codebases" in pipeline_config:
+        account_id, _ = get_account_details()
+
         for codebase in pipeline_config["codebases"]:
             _generate_codebase_pipeline(
-                app_name, codestar_connection_arn, git_repo, codebase, templates
+                account_id, app_name, codestar_connection_arn, git_repo, codebase, templates
             )
 
 
@@ -82,22 +86,29 @@ def _validate_pipelines_configuration(pipeline_config):
                 )
 
 
-def _generate_codebase_pipeline(app_name, codestar_connection_arn, git_repo, codebase, templates):
+def _generate_codebase_pipeline(
+    account_id, app_name, codestar_connection_arn, git_repo, codebase, templates
+):
     base_path = Path(".")
     pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
-
     environments = []
     for pipelines in codebase["pipelines"]:
         environments += pipelines["environments"]
 
+    additional_ecr = codebase.get("additional_ecr_repository", None)
+    add_public_perms = additional_ecr and additional_ecr.startswith("public.ecr.aws")
+    additional_ecr_arn = get_public_repository_arn(additional_ecr) if add_public_perms else None
+
     template_data = {
+        "account_id": account_id,
         "app_name": app_name,
         "deploy_repo": git_repo,
         "codebase": codebase,
         "environments": environments,
         "codestar_connection_arn": codestar_connection_arn,
         "codestar_connection_id": codestar_connection_arn.split("/")[-1],
+        "additional_ecr_arn": additional_ecr_arn,
     }
     _create_file_from_template(
         base_path,
@@ -145,7 +156,8 @@ def _create_file_from_template(
     contents = templates.get_template(
         f"pipelines/{file_name if template_name is None else template_name}"
     ).render(template_data)
-    click.echo(mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True))
+    message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
+    click.echo(message)
 
 
 def _safe_load_config(filename, schema):

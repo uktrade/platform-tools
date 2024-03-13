@@ -83,8 +83,8 @@ variables:                    # Pass environment variables as key value pairs.
   OTEL_PROPAGATORS: xray
   OTEL_PYTHON_ID_GENERATOR: xray
   OTEL_SERVICE_NAME: ${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ name }}
-  OTEL_METRICS_EXPORTER: console,otlp
-  OTEL_TRACES_EXPORTER: console,otlp
+  OTEL_METRICS_EXPORTER: none
+  OTEL_TRACES_EXPORTER: otlp
   OTEL_TRACES_SAMPLER: traceidratio
   OTEL_TRACES_SAMPLER_ARG: "0.05"
 {%- for envvar, value in env_vars.items() %}

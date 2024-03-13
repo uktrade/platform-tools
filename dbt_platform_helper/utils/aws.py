@@ -39,9 +39,7 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
 
     sts = session.client("sts")
     try:
-        response = sts.get_caller_identity()
-        account_id = response["Account"]
-        user_id = response["UserId"]
+        account_id, user_id = get_account_details(sts)
         click.secho("Credentials are valid.", fg="green")
     except botocore.exceptions.SSOTokenLoadError:
         click.secho(
@@ -210,6 +208,24 @@ def get_codestar_connection_arn(app_name):
     for connection in response["Connections"]:
         if connection["ConnectionName"] == app_name:
             return connection["ConnectionArn"]
+
+
+def get_account_details(sts_client=None):
+    if not sts_client:
+        sts_client = get_aws_session_or_abort().client("sts")
+    response = sts_client.get_caller_identity()
+
+    return response["Account"], response["UserId"]
+
+
+def get_public_repository_arn(repository_uri):
+    session = get_aws_session_or_abort()
+    response = session.client("ecr-public", region_name="us-east-1").describe_repositories()
+    repository = [
+        repo for repo in response["repositories"] if repo["repositoryUri"] == repository_uri
+    ]
+
+    return repository[0]["repositoryArn"] if repository else None
 
 
 def get_load_balancer_domain_and_configuration(
