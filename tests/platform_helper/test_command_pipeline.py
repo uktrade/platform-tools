@@ -57,6 +57,49 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.get_account_details")
+@patch("dbt_platform_helper.commands.pipeline.get_public_repository_arn")
+def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
+    get_public_repository_arn, get_account_details, git_remote, get_aws_session_or_abort, fakefs
+):
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+    get_account_details.return_value = "000000000000", "abc1234"
+    get_public_repository_arn.return_value = (
+        "arn:aws:ecr-public::000000000000:repository/test-app/application"
+    )
+    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-public-repo.yml")
+    buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments()
+
+    result = CliRunner().invoke(generate)
+
+    expected_files_dir = Path(EXPECTED_FILES_DIR) / "pipeline" / "pipelines"
+    # Environments
+    assert_yaml_in_output_file_matches_expected(
+        buildspec, expected_files_dir / "environments" / "buildspec.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        manifest, expected_files_dir / "environments" / "manifest.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        cfn_patch, expected_files_dir / "environments" / "overrides/cfn.patches.yml"
+    )
+    assert_file_created_in_stdout(buildspec, result)
+    assert_file_created_in_stdout(manifest, result)
+    assert_file_created_in_stdout(cfn_patch, result)
+
+    # Codebases
+    output_files = setup_output_file_paths_for_codebases()
+    assert_yaml_in_output_file_matches_expected(
+        output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
+    )
+    for file in output_files:
+        assert_file_created_in_stdout(file, result)
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_environments_creates_the_pipeline_configuration(
     git_remote, get_aws_session_or_abort, fakefs
 ):
@@ -301,8 +344,8 @@ def setup_output_file_paths_for_codebases():
     )
 
 
-def setup_fixtures(fakefs):
+def setup_fixtures(fakefs, pipelines_file="pipeline/pipelines.yml"):
     fakefs.add_real_file(FIXTURES_DIR / "valid_bootstrap_config.yml", False, "bootstrap.yml")
-    fakefs.add_real_file(FIXTURES_DIR / "pipeline/pipelines.yml", False, "pipelines.yml")
+    fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, "pipelines.yml")
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
     fakefs.add_real_directory(EXPECTED_FILES_DIR / "pipeline" / "pipelines", True)

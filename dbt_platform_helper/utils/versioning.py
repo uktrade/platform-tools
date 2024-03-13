@@ -76,17 +76,17 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 
 def get_app_versions():
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-tools/json").json()
+    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
 
-    return parse_version(version("dbt-platform-tools")), parsed_released_versions[0]
+    return parse_version(version("dbt-platform-helper")), parsed_released_versions[0]
 
 
 def get_file_app_versions():
     version_from_file = Path(".platform-helper-version").read_text()
-    return parse_version(version("dbt-platform-tools")), parse_version(version_from_file)
+    return parse_version(version("dbt-platform-helper")), parse_version(version_from_file)
 
 
 def validate_version_compatibility(
@@ -151,7 +151,7 @@ def check_platform_helper_version_needs_update():
     message = (
         f"You are running platform-helper v{string_version(app_version)}, upgrade to "
         f"v{string_version(app_released_version)} by running run `pip install "
-        "--upgrade dbt-platform-tools`."
+        "--upgrade dbt-platform-helper`."
     )
     try:
         validate_version_compatibility(app_version, app_released_version)

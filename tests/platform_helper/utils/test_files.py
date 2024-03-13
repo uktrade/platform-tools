@@ -17,6 +17,7 @@ from tests.platform_helper.conftest import FIXTURES_DIR
     [
         (BOOTSTRAP_SCHEMA, "valid_bootstrap_config.yml"),
         (PIPELINES_SCHEMA, "pipeline/pipelines.yml"),
+        (PIPELINES_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
     ],
 )
 def test_load_and_validate_config_valid_file(schema, yaml_file):

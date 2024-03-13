@@ -339,6 +339,38 @@ def mock_codestar_connections_boto_client(get_aws_session_or_abort, connection_n
     }
 
 
+def mock_caller_id_boto_client(get_aws_session_or_abort, connection_names):
+    client = mock_aws_client(get_aws_session_or_abort)
+
+    client.get_caller_identity.return_value = {"Account": "000000000000"}
+
+
+def mock_ecr_public_repositories_boto_client(get_aws_session_or_abort):
+    client = mock_aws_client(get_aws_session_or_abort)
+
+    client.describe_repositories.return_value = {
+        "repositories": [
+            {
+                "repositoryArn": "arn:aws:ecr-public::000000000000:repository/my/app",
+                "registryId": "000000000000",
+                "repositoryName": "my/app",
+                "repositoryUri": "public.ecr.aws/abc123/my/app",
+            },
+            {
+                "repositoryArn": "arn:aws:ecr-public::000000000000:repository/my/app2",
+                "registryId": "000000000000",
+                "repositoryName": "my/app2",
+                "repositoryUri": "public.ecr.aws/abc123/my/app2",
+            },
+        ]
+    }
+
+
+def mock_get_caller_identity(get_aws_session_or_abort):
+    client = mock_aws_client(get_aws_session_or_abort)
+    client.get_caller_identity.return_value = {"Account": "000000000000", "UserId": "abc123"}
+
+
 def mock_aws_client(get_aws_session_or_abort, client=None):
     session = MagicMock(name="session-mock")
     session.profile_name = "foo"

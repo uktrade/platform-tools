@@ -23,8 +23,8 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 @click.group(cls=ClickDocOptGroup)
 @click.version_option(
-    version=version("dbt-platform-tools"),
-    message=f"dbt-platform-tools %(version)s",
+    version=version("dbt-platform-helper"),
+    message=f"dbt-platform-helper %(version)s",
 )
 def platform_helper():
     pass
