@@ -123,10 +123,7 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 
 def check_platform_helper_version_needs_update():
-    if (
-        not running_as_installed_package()
-        or os.getenv("PLATFORM_TOOLS_SKIP_VERSION_CHECK") == "true"
-    ):
+    if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
     app_version, app_released_version = get_app_versions()
