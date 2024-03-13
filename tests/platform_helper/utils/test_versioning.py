@@ -9,12 +9,14 @@ import pytest
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
+from dbt_platform_helper.utils.versioning import validate_platform_helper_file_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from dbt_platform_helper.utils.versioning import validate_version_compatibility
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -118,6 +120,28 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 
 @pytest.mark.parametrize(
+    "template_check",
+    [
+        ("addon_different_version.yml", IncompatibleMajorVersion, ""),
+        ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
+    ],
+)
+@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+def test_validate_platform_helper_file_version(
+    get_file_app_versions, template_check: Tuple[str, Type[BaseException], str]
+):
+    get_file_app_versions.return_value = (1, 0, 0), (1, 0, 0)
+    template_name, raises, message = template_check
+
+    with pytest.raises(raises) as exception:
+        template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
+        validate_platform_helper_file_version(template_path)
+
+    if message:
+        assert (message % template_path) == str(exception.value)
+
+
+@pytest.mark.parametrize(
     "expected_exception",
     [
         IncompatibleMajorVersion,
@@ -164,3 +188,21 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     check_platform_helper_version_needs_update()
 
     version_compatibility.assert_not_called()
+
+
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
+    get_file_app_versions, secho
+):
+    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+
+    check_platform_helper_version_mismatch()
+
+    secho.assert_called_with(
+        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version.",
+        fg="red",
+    )
