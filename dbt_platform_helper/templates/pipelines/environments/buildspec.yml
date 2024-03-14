@@ -19,7 +19,7 @@ phases:
           exit 1
         fi
       - COPILOT_VERSION=`cat .copilot-version`
-      - platform_helper_VERSION=`cat .platform-helper-version`
+      - PLATFORM_HELPER_VERSION=`cat .platform-helper-version`
       - mkdir ./build-tools
       - cd ./build-tools
       # Install copilot
@@ -27,7 +27,7 @@ phases:
       - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
       # Install pyyaml and dbt-platform-helper
-      - pip install PyYAML dbt-platform-helper==$platform_helper_VERSION
+      - pip install PyYAML dbt-platform-helper==$PLATFORM_HELPER_VERSION
       # Install dyff - yaml differ
       - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
       - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
@@ -35,7 +35,7 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR
-      - platform_helper_VERSION=`cat .platform-helper-version`
+      - PLATFORM_HELPER_VERSION=`cat .platform-helper-version`
       - cp -r copilot/ current-copilot/
       - platform-helper copilot make-addons
       - >
@@ -44,14 +44,14 @@ phases:
         done;
       - |
         if [[ "$(cat ./build-tools/file-differences)" = *[![:space:]]* ]]; then
-          echo 'Changes are introduced with version ${platform_helper_VERSION} of platform-helper:'
+          echo 'Changes are introduced with version ${PLATFORM_HELPER_VERSION} of platform-helper:'
           echo
           for FILE in $(ls copilot/**/addons/*.yml); do
             echo "Changes in $FILE:"
             ./build-tools/dyff between --omit-header $FILE current-$FILE
           done;
           echo
-          echo 'Ensure you are running version ${platform_helper_VERSION} with pip install dbt-platform-helper==${platform_helper_VERSION}'
+          echo 'Ensure you are running version ${PLATFORM_HELPER_VERSION} with pip install dbt-platform-helper==${PLATFORM_HELPER_VERSION}'
           echo 'And run platform-helper copilot make-addons to regenerate your addons templates'
           exit 1
         fi
