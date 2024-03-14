@@ -1,0 +1,188 @@
+# t-shirt sizes for addons that support configurable storage/cpu etc. such as RDS, Opensearch and Elasticache Redis
+
+redis:
+  # 0.5GB RAM, single node, no failover.
+  micro:
+    replicas: 0
+    instance: cache.t4g.micro
+
+  # 0.5GB RAM, highly-available.
+  micro-ha:
+    replicas: 2
+    instance: cache.t4g.micro
+
+  # 1.37GB RAM, single node, no failover.
+  tiny:
+    replicas: 0
+    instance: cache.t4g.small
+
+  # 1.37GB RAM, highly-available
+  tiny-ha:
+    replicas: 2
+    instance: cache.t4g.small
+
+  # 3.09GB RAM, single node, no failover.
+  small:
+    replicas: 0
+    instance: cache.t4g.medium
+
+  # 3.09GB RAM, highly-available
+  small-ha:
+    replicas: 2
+    instance: cache.t4g.medium
+
+  # 6.38GB RAM, single node, no failover.
+  medium:
+    replicas: 0
+    instance: cache.m6g.large
+
+  # 6.38GB RAM, highly-available
+  medium-ha:
+    replicas: 2
+    instance: 'cache.m6g.large'
+
+  # 12.93GB RAM, single node, no failover.
+  large:
+    replicas: 0
+    instance: cache.m6g.xlarge
+
+  # 12.93GB RAM, highly-available
+  large-ha:
+    replicas: 2
+    instance: cache.m6g.xlarge
+
+  # 26.04GB RAM, single node, no failover.
+  x-large:
+    replicas: 0
+    instance: cache.m6g.2xlarge
+
+  # 26.04GB RAM, highly-available
+  x-large-ha:
+    replicas: 2
+    instance: cache.m6g.2xlarge
+
+opensearch:
+  # 2 vCPU, 2GB RAM, volume size range 10-100GB
+  tiny:
+    volume_size: 80
+    instances: 1
+    master: false
+    instance: t3.small.search
+
+  # 2 vCPU, 4GB RAM, volume size range 10-200GB
+  small:
+    volume_size: 200
+    instances: 1
+    master: false
+    instance: t3.medium.search
+
+  # 2 nodes with 2 vCPU, 4GB RAM, volume size range 10-200GB
+  small-ha:
+    volume_size: 200
+    instances: 2
+    master: false
+    instance: t3.medium.search
+
+  # 2 vCPU, 8GB RAM, volume size range 10-512GB
+  medium:
+    volume_size: 512
+    instances: 1
+    master: false
+    instance: m6g.large.search
+
+  # 2 nodes with 2 vCPU, 8GB RAM, volume size range 10-512GB
+  medium-ha:
+    volume_size: 512
+    instances: 2
+    master: false
+    instance: m6g.large.search
+
+  # 4 vCPU, 16GB RAM, volume size range 10-1000GB
+  large:
+    volume_size: 1000
+    instances: 1
+    master: false
+    instance: m6g.xlarge.search
+
+  # 2 nodes with 4 vCPU, 16GB RAM, volume size range 10-1000GB
+  large-ha:
+    volume_size: 1000
+    instances: 2
+    master: false
+    instance: m6g.xlarge.search
+
+  # 8 vCPU, 32GB RAM, volume size range 10-1500GB
+  x-large:
+    volume_size: 1500
+    instances: 1
+    master: false
+    instance: m6g.2xlarge.search
+
+  # 2 nodes with 8 vCPU, 32GB RAM, volume size range 10-1500GB
+  x-large-ha:
+    volume_size: 1500
+    instances: 2
+    master: false
+    instance: m6g.2xlarge.search
+
+# RDS/Postgres Instances
+rds-postgres:
+  # 2v CPU, 1GB RAM, 20GB Storage
+  tiny:
+    volume_size: 20
+    multi_az: false
+    instance: db.t3.micro
+
+  # 2v CPU, 2GB RAM, 100GB Storage
+  small:
+    volume_size: 100
+    multi_az: false
+    instance: db.t3.small
+
+  # 2v CPU, 2GB RAM, 100GB Storage, multi AZ
+  small-ha:
+    volume_size: 100
+    multi_az: true
+    instance: db.t3.small
+
+  # 2v CPU, 8GB RAM, 100GB Storage
+  medium:
+    volume_size: 100
+    multi_az: false
+    instance: db.m5.large
+
+  # 2v CPU, 8GB RAM, 100GB Storage, multi AZ
+  medium-ha:
+    volume_size: 100
+    multi_az: true
+    instance: db.m5.large
+
+  # 8v CPU, 32GB RAM, 564GB Storage
+  large:
+    volume_size: 564
+    multi_az: false
+    instance: db.m5.2xlarge
+
+  # 8v CPU, 32GB RAM, 564GB Storage, multi AZ
+  large-ha:
+    volume_size: 564
+    multi_az: true
+    instance: db.m5.2xlarge
+
+  # 16v CPU, 64GB RAM, 2000GB Storage
+  x-large:
+    volume_size: 2000
+    multi_az: false
+    instance: db.m5.4xlarge
+
+  # 16v CPU, 64GB RAM, 2000GB Storage, multi AZ
+  x-large-ha:
+    volume_size: 2000
+    multi_az: true
+    instance: db.m5.4xlarge
+
+aurora-postgres: {}
+
+s3: {}
+
+s3-policy: {}

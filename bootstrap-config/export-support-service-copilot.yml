@@ -13,10 +13,13 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 1024
       paas: dit-staging/export-support-dev/export-support-dev
       url: export-support-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: true
+      memory: 2048
       paas: dit-services/export-support/export-support-prod
       url: www.get-help-selling-goods-services-abroad.service.gov.uk
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -43,7 +46,6 @@ services:
     DISABLE_COLLECTSTATIC: DISABLE_COLLECTSTATIC
     DJANGO_BASE_DIR: DJANGO_BASE_DIR
     DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
-    EECAN_ROLLOUT_FEATURE_FLAG: EECAN_ROLLOUT_FEATURE_FLAG
     FORM_URL: FORM_URL
     GA_MEASUREMENT_PROTOCOL_TRACK_EVENTS: GA_MEASUREMENT_PROTOCOL_TRACK_EVENTS
     GA_MEASUREMENT_PROTOCOL_UA: GA_MEASUREMENT_PROTOCOL_UA
@@ -51,7 +53,6 @@ services:
     GTM_COOKIES_WIN: GTM_COOKIES_WIN
     GTM_ID: GTM_ID
     GTM_PREVIEW: GTM_PREVIEW
-    OLD_EECAN_ROLLOUT_FEATURE_FLAG: OLD_EECAN_ROLLOUT_FEATURE_FLAG
     ROW_ROLLOUT_FEATURE_FLAG: ROW_ROLLOUT_FEATURE_FLAG
     SENTRY_DSN: SENTRY_DSN
     SENTRY_ENVIRONMENT: SENTRY_ENVIRONMENT

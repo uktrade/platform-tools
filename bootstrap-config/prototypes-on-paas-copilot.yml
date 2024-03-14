@@ -1,0 +1,28 @@
+app: prototypes-on-paas
+environments:
+  development:
+    certificate_arns:
+    - ACM-ARN-FOR-prototypes-on-paas-development.london.cloudapps.digital
+  production:
+    certificate_arns:
+    - ACM-ARN-FOR-prototypes-on-paas-production.london.cloudapps.digital
+    - ACM-ARN-FOR-pop.london.cloudapps.digital
+services:
+- env_vars: {}
+  environments:
+    development:
+      ipfilter: true
+      memory: 1024
+      paas: dit-staging/prototypes-on-paas-development/prototypes-on-paas-development
+      url: prototypes-on-paas-development.london.cloudapps.digital
+    production:
+      ipfilter: true
+      memory: 1024
+      paas: dit-services/prototypes-on-paas/prototypes-on-paas
+      url: pop.london.cloudapps.digital
+  image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
+  name: prototypes-on-paas
+  repo: git@github.com:uktrade/prototypes-on-paas.git
+  secrets:
+    redacted_message: redacted_message
+  type: public

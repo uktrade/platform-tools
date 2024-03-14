@@ -23,14 +23,18 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 4096
       paas: dit-staging/data-workspace-apps-dev/company-matching-service-dev
       url: company-matching-service-dev.london.cloudapps.digital
     prod:
+      count: 2
       ipfilter: false
+      memory: 10240
       paas: dit-services/data-workspace-apps/company-matching-service
       url: company-matching-service.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 4096
       paas: dit-staging/data-workspace-apps-staging/company-matching-service-staging
       url: company-matching-service-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -43,14 +47,17 @@ services:
   environments:
     dev:
       ipfilter: false
+      memory: 5120
       paas: dit-staging/data-workspace-apps-dev/countries-of-interest-service-dev
       url: countries-of-interest-service-dev.london.cloudapps.digital
     prod:
       ipfilter: false
+      memory: 4096
       paas: dit-services/data-workspace-apps/countries-of-interest-service
       url: countries-of-interest.london.cloudapps.digital
     staging:
-      ipfilter: false
+      ipfilter: true
+      memory: 4096
       paas: dit-staging/data-workspace-apps-staging/countries-of-interest-service-staging
       url: countries-of-interest-service-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -101,14 +108,17 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 16384
       paas: dit-staging/data-workspace-apps-dev/data-store-service-dev
       url: data-store-service-dev.london.cloudapps.digital
     prod:
       ipfilter: false
+      memory: 16384
       paas: dit-services/data-workspace-apps/data-store-service
       url: data-store-service.london.cloudapps.digital
     staging:
       ipfilter: true
+      memory: 16384
       paas: dit-staging/data-workspace-apps-staging/data-store-service-staging
       url: data-store-service-staging.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
@@ -154,6 +164,7 @@ services:
   environments:
     dev:
       ipfilter: true
+      memory: 256
       paas: dit-staging/data-workspace-apps-dev/data-workspace-prototypes-dev
       url: data-workspace-prototypes-dev.london.cloudapps.digital
   image_location: public.ecr.aws/uktrade/copilot-bootstrap:latest
