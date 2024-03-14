@@ -1,0 +1,79 @@
+# {% version_info %}
+# The manifest for the "{{ name }}" service.
+# Read the full specification for the "Backend Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/backend-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: {{ name }}
+type: Backend Service
+
+# Your service does not allow any traffic.
+
+# Configuration for your containers and service.
+image:
+  location: {{ image_location }}
+  # Your task should have a health check.
+  # Celery example: https://github.com/uktrade/copilot-python?tab=readme-ov-file#celery-health-check
+  healthcheck:
+    command: [ "CMD-SHELL", "launcher bash -c 'echo \"Dummy health check - please replace\"'" ]
+    interval: 10s
+    timeout: 5s
+    retries: 2
+    start_period: 10s
+
+cpu: 256       # Number of CPU units for the task.
+memory: 512    # Amount of memory in MiB used by the task.
+count: # See https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+  range: 2-10
+  cooldown:
+    in: 120s
+    out: 60s
+  cpu_percentage: 50
+exec: true     # Enable running commands in your container.
+network:
+  connect: true # Enable Service Connect for intra-environment traffic between services.
+  vpc:
+    placement: 'private'
+
+storage:
+  readonly_fs: true       # Limit to read-only access to mounted root filesystems.
+
+observability:
+  tracing: awsxray
+
+variables:                    # Pass environment variables as key value pairs.
+  PORT: 8080                  # The bootstrap container requires a $PORT env var
+  OTEL_PROPAGATORS: xray
+  OTEL_PYTHON_ID_GENERATOR: xray
+  OTEL_SERVICE_NAME: ${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ name }}
+  OTEL_METRICS_EXPORTER: none
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_TRACES_SAMPLER: traceidratio
+  OTEL_TRACES_SAMPLER_ARG: "0.05"
+{%- for envvar, value in env_vars.items() %}
+  {{ envvar }}: {{ value }}
+{%- endfor %}
+
+{% if secrets %}
+secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+  {%- for secret, value in secrets.items() %}
+  {{ secret }}: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ value }}{% endfor -%}
+{% else %}
+# secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+{% endif %}
+
+
+# You can override any of the values defined above by environment.
+environments:
+{%- for env_name, env in environments.items() %}
+  {{ env_name }}:
+    {%- if env.memory %}
+    memory: {{ env.memory }}
+    {%- endif %}
+    {%- if env.count and env.count is mapping %}
+    count: # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+      {{ env.count | to_yaml | indent(6) | trim }}
+    {%- elif env.count %}
+    count: {{ env.count }} # For options see https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+    {%- endif %}
+{%- endfor %}

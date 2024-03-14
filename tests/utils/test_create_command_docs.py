@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from click.testing import CliRunner
 
-from tests.copilot_helper.conftest import DOCS_DIR
+from tests.platform_helper.conftest import DOCS_DIR
 from utils.create_command_docs import docs
 
 
@@ -50,13 +50,13 @@ class TestCreateCommandDocsCli(TestCase):
 
     def test_check_invalid_cmd_option(self):
         result = self.runner.invoke(
-            docs, ["--module", "copilot_helper", "--cmd", "bar", "--output", "baz"]
+            docs, ["--module", "platform_helper", "--cmd", "bar", "--output", "baz"]
         )
 
         output = result.output
 
         assert result.exit_code != 0
-        assert "Error: Could not find command bar in copilot_helper module" in output
+        assert "Error: Could not find command bar in platform_helper module" in output
 
     def test_create_command_docs(self):
         output_path = f"{DOCS_DIR}/test-docs.md"
@@ -67,9 +67,9 @@ class TestCreateCommandDocsCli(TestCase):
             docs,
             [
                 "--module",
-                "copilot_helper",
+                "platform_helper",
                 "--cmd",
-                "copilot_helper",
+                "platform_helper",
                 "--output",
                 output_path,
             ],
@@ -90,7 +90,7 @@ class TestCreateCommandDocsCli(TestCase):
             docs,
             [
                 "--module",
-                "tests.copilot_helper.test-docs.example",
+                "tests.platform_helper.test-docs.example",
                 "--cmd",
                 "cli",
                 "--output",

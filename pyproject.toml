@@ -2,19 +2,19 @@
 line-length = 100
 
 [tool.poetry]
-name = "dbt-copilot-tools"
-version = "5.0.0"
+name = "dbt-platform-helper"
+version = "6.1.0"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
-readme = "dbt_copilot_helper/README.md"
+readme = "dbt_platform_helper/README.md"
 packages = [
-    { include = "dbt_copilot_helper" },
-    { include = "copilot_helper.py" }
+    { include = "dbt_platform_helper" },
+    { include = "platform_helper.py" }
 ]
 
 [tool.poetry.scripts]
-copilot-helper = "copilot_helper:copilot_helper"
+platform-helper = "platform_helper:platform_helper"
 
 [tool.poetry.dependencies]
 Jinja2 = "^3.1.3"
@@ -30,7 +30,7 @@ schema = "0.7.5"
 cfn-flip = "1.3.0"
 aiohttp = "^3.8.4"
 certifi = "^2023.07.22"
-cryptography = "^41.0.3"
+cryptography = ">=41.0.3,<43.0.0"
 jinja2-simple-tags = "^0.5.0"
 cfn-lint = "^0.80.2"
 requests = "^2.31.0"
