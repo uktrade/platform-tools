@@ -31,6 +31,8 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 echo -e "\nRun platform-helper copilot make-addons"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper copilot make-addons
 
+echo -e "\nRun platform-helper check-cloudformation lint"
+PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper check-cloudformation lint
 # echo -e "\nRun platform-helper pipeline generate"
 # platform-helper pipeline generate
 
