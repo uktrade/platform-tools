@@ -1,9 +1,14 @@
 import json
+import logging
+import time
+from urllib import request
+from urllib.error import HTTPError
 
 import boto3
 import psycopg2
-import requests
 from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
 
 
 def drop_user(cursor, username):
@@ -63,9 +68,27 @@ def create_or_update_user_secret(ssm, user_secret_name, user_secret_string, even
     return user_secret
 
 
+def send(event, body, logger, headers):
+    send = request.Request(event["ResponseURL"], data=body, headers=headers)
+    send.get_method = lambda: "PUT"
+
+    count = 0
+    while count < 5:
+        count += 1
+        try:
+            request.urlopen(send)
+            break
+        except HTTPError as ex:
+            if count < 5:
+                logger.warning(f"{ex} [{ex.url}] - Retry {count}")
+            else:
+                logger.error(f"{ex} [{ex.url}]")
+            time.sleep(count * 5)
+
+
 # borrowed from https://github.com/awslabs/aws-cloudformation-templates/blob/master/aws/services/CloudFormation/MacrosExamples/StackMetrics/lambda/cfnresponse.py
 # tweaked to use requests library
-def send(
+def send_response(
     event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=None
 ):
     responseUrl = event["ResponseURL"]
@@ -90,13 +113,14 @@ def send(
 
     headers = {"content-type": "", "content-length": str(len(json_responseBody))}
 
-    try:
-        response = requests.put(
-            responseUrl, data=json_responseBody.encode("utf-8"), headers=headers
-        )
-        print("Status code: " + response.reason)
-    except Exception as e:
-        print("send(..) failed executing requests.put(..): " + str(e))
+    send(event, json_responseBody.encode(), logger, headers)
+    # try:
+    #     response = requests.put(
+    #         responseUrl, data=json_responseBody.encode("utf-8"), headers=headers
+    #     )
+    #     print("Status code: " + response.reason)
+    # except Exception as e:
+    #     print("send(..) failed executing requests.put(..): " + str(e))
 
 
 def handler(event, context):
@@ -184,4 +208,4 @@ def handler(event, context):
     conn.close()
 
     print(json.dumps(response, default=str))
-    send(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
+    send_response(event, context, response["Status"], response["Data"], event["LogicalResourceId"])
