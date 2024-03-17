@@ -214,7 +214,7 @@ platform-helper check-cloudformation lint [-d <directory>] [-i <ignore_checks>]
 --directory <text>` _Defaults to copilot._
 
 - `-i
---ignore-checks <list>` _Defaults to []._
+--ignore-checks <text>` _Defaults to []._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

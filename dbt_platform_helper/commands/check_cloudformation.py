@@ -29,7 +29,7 @@ def check_cloudformation(ctx: click.Context, directory: str) -> None:
 
 @check_cloudformation.command()
 @click.option("-d", "--directory", type=str, default="copilot")
-@click.option("-i", "--ignore-checks", type=list, multiple=True, default=[])
+@click.option("-i", "--ignore-checks", type=str, multiple=True, default=[])
 @click.pass_context
 def lint(ctx: click.Context, directory: str, ignore_checks: list) -> bool:
     """Runs cfn-lint against the generated CloudFormation templates."""
