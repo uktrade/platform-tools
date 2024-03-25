@@ -307,13 +307,13 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2")
+REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1")
 
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
 
-OPENSEARCH_ENGINE_VERSIONS = Or("2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
 
 S3_BASE = {
     Optional("readonly"): bool,
