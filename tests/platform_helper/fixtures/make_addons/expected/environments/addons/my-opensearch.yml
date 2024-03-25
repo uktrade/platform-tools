@@ -45,10 +45,30 @@ Mappings:
       EngineVersion: 'OpenSearch_1.3'
     '2.3':
       EngineVersion: 'OpenSearch_2.3'
+    '2.5':
+      EngineVersion: 'OpenSearch_2.5'
+    '2.7':
+      EngineVersion: 'OpenSearch_2.7'
+    '2.9':
+      EngineVersion: 'OpenSearch_2.9'
+    '2.11':
+      EngineVersion: 'OpenSearch_2.11'
 
 Conditions:
-  myOpensearchEnableHA: !Not [!Equals [!FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
-  myOpensearchCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myOpensearchEnableHA:
+    !Not [
+      !Equals [
+        !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount],
+        1
+      ]
+    ]
+  myOpensearchCreateProdSubFilter:
+    !Or [
+      !Equals [!Ref Env, prod],
+      !Equals [!Ref Env, production],
+      !Equals [!Ref Env, PROD],
+      !Equals [!Ref Env, PRODUCTION]
+    ]
 
 Resources:
   myOpensearchOpenSearchSecret:
@@ -60,7 +80,7 @@ Resources:
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "opensearch"}'
-        GenerateStringKey: "password"
+        GenerateStringKey: 'password'
         ExcludePunctuation: false
         RequireEachIncludedType: true
         IncludeSpace: false
@@ -73,7 +93,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
-    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for my-opensearch to access OpenSearch.'
@@ -87,7 +108,8 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
-    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
@@ -99,26 +121,41 @@ Resources:
 
   myOpensearchOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    DeletionPolicy: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/myopensearch*'
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - 'es:ESHttp*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/myopensearch*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
         MasterUserOptions:
           MasterUserName:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:username}}" ]]
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchOpenSearchSecret,
+                ':SecretString:username}}'
+              ]
+            ]
           MasterUserPassword:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:password}}" ]]
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchOpenSearchSecret,
+                ':SecretString:password}}'
+              ]
+            ]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
@@ -132,24 +169,36 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, VolumeSize]
+        VolumeSize:
+          !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, VolumeSize]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !If [myOpensearchEnableHA, !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, DedicatedMaster], false]
-        InstanceCount: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled:
+          !If [
+            myOpensearchEnableHA,
+            !FindInMap [
+              myOpensearchEnvironmentConfigMap,
+              !Ref Env,
+              DedicatedMaster
+            ],
+            false
+          ]
+        InstanceCount:
+          !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceCount]
+        InstanceType:
+          !FindInMap [myOpensearchEnvironmentConfigMap, !Ref Env, InstanceType]
         ZoneAwarenessEnabled: !If [myOpensearchEnableHA, true, false]
         ZoneAwarenessConfig: !If
           - myOpensearchEnableHA
           - AvailabilityZoneCount: 2 #Fn::length always resolves to 1 despite there being subnets.
-          - !Ref "AWS::NoValue"
+          - !Ref 'AWS::NoValue'
       VPCOptions:
         SecurityGroupIds:
           - !Ref myOpensearchOpenSearchSecurityGroup
         SubnetIds: !If
           - myOpensearchEnableHA
-          - !Split [ ",", !Ref PrivateSubnets ]
-          - - !Select [ 0, !Split [ ',', !Ref PrivateSubnets ] ]
+          - !Split [',', !Ref PrivateSubnets]
+          - - !Select [0, !Split [',', !Ref PrivateSubnets]]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
@@ -175,16 +224,32 @@ Resources:
 
   myOpensearchOpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
-    DependsOn: 
+    DependsOn:
       - myOpensearchOpenSearchDomain
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/MY_OPENSEARCH"
+      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_OPENSEARCH'
       Type: String
       Value: !Sub
-        - "https://${username}:${password}@${url}"
+        - 'https://${username}:${password}@${url}'
         - url: !GetAtt myOpensearchOpenSearchDomain.DomainEndpoint
-          username: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:username}}" ]]
-          password: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchOpenSearchSecret, ":SecretString:password}}" ]]
+          username:
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchOpenSearchSecret,
+                ':SecretString:username}}'
+              ]
+            ]
+          password:
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchOpenSearchSecret,
+                ':SecretString:password}}'
+              ]
+            ]
 
   myOpensearchOpenSearchAuditLogGroup:
     Type: AWS::Logs::LogGroup
