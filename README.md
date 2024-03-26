@@ -6,7 +6,7 @@
 
 See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/README.md) for detail on what the package is and how to use it.
 
-If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/e6e02e08d13d78fa1f1bd14f9a5a69f21a26005e/docs/playbooks/migrating-from-govuk-paas/migration-guide.md) will also be relevant for you.
+If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/docs/playbooks/migrating-from-govuk-paas/migration-guide.md) will also be relevant for you.
 
 ### Supported Python versions
 
@@ -43,7 +43,7 @@ Run `poetry run pytest` in the root directory to run all tests.
 
 Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
 
-Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb (python debugger) does not play nicely and will error. 
+Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb (python debugger) does not play nicely and will error.
 
 To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
 
