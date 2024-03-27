@@ -1,12 +1,12 @@
-# Copilot Tools 
+# Platform Tools
 
 ![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiS2t1L3UvQmVTbXZsOTVIOWxGanpwTTh4b3BNcUR4c0dNN2NoSUpGcVkzN0JEOFpvc2kwL2pGVC91TXNVcjFNK0d5eExia0R2SS9lZUhuWTZQOTlieVY0PSIsIml2UGFyYW1ldGVyU3BlYyI6Im5tS0pUVEwvT204WXdxT2wiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 
 ## Using the dbt-platform-helper package
 
-See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/commands/README.md) for detail on what the package is and how to use it.
+See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/README.md) for detail on what the package is and how to use it.
 
-If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/gov-pass-to-copilot-migration/README.md) will also be relevant for you.
+If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](https://github.com/uktrade/platform-documentation/blob/main/docs/playbooks/migrating-from-govuk-paas/migration-guide.md) will also be relevant for you.
 
 ### Supported Python versions
 
@@ -43,14 +43,15 @@ Run `poetry run pytest` in the root directory to run all tests.
 
 Or, run `poetry run tox` in the root directory to run all tests for multiple Python versions. See the [`tox` configuration file](tox.ini).
 
-Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb does not 
-play nicely and will error. To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
+Note: by default the tests are run using multiple processes for speed. When running using multiple processes pdb (python debugger) does not play nicely and will error.
+
+To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
 
 `poetry run pytest --numprocesses 0`
 
 #### Manual testing
 
-You may want to test any CLI changes locally. 
+You may want to test any CLI changes locally.
 
 Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so.
 
