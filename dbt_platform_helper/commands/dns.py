@@ -254,7 +254,7 @@ def create_hosted_zones(client, base_domain, subdomain):
         parent_domain = domain_name.split(".", maxsplit=1)[1]
         parent_zone = f"{parent_domain}."
 
-        domain_zone_id, parent_zone_id = _check_paginated_zones(client, parent_zone, domain_zone)
+        domain_zone_id, parent_zone_id = _get_paginated_zones(client, parent_zone, domain_zone)
 
         if parent_zone_id is None:
             click.secho(
@@ -279,7 +279,7 @@ def _get_hosted_zones_paginator(client):
     return client.get_paginator("list_hosted_zones").paginate()
 
 
-def _check_paginated_zones(client, parent_zone, domain_zone):
+def _get_paginated_zones(client, parent_zone, domain_zone):
     domain_zone_id = parent_zone_id = None
 
     for page in _get_hosted_zones_paginator(client):
