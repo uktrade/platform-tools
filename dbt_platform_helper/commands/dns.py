@@ -275,11 +275,14 @@ def create_hosted_zones(client, base_domain, subdomain):
     return zone_ids
 
 
+def _get_hosted_zones_paginator(client):
+    return client.get_paginator("list_hosted_zones").paginate()
+
+
 def _check_paginated_zones(client, parent_zone, domain_zone):
-    zones_paginator = client.get_paginator("list_hosted_zones")
     domain_zone_id = parent_zone_id = None
 
-    for page in zones_paginator.paginate():
+    for page in _get_hosted_zones_paginator(client):
         # each page is a hosted zones response type object
         hosted_zones = {hz["Name"]: hz for hz in page["HostedZones"]}
 

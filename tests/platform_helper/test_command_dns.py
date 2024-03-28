@@ -13,6 +13,7 @@ from moto import mock_elbv2
 from moto import mock_sts
 
 from dbt_platform_helper.commands.dns import InvalidDomainException
+from dbt_platform_helper.commands.dns import _check_paginated_zones
 from dbt_platform_helper.commands.dns import add_records
 from dbt_platform_helper.commands.dns import assign
 from dbt_platform_helper.commands.dns import cdn_assign
@@ -395,6 +396,54 @@ def test_create_hosted_zones_is_idempotent(mock_click, route53_session):
     assert len(zones) == 2
     assert f"{base_domain}." in zones
     assert f"{subdomain}." in zones
+
+
+@patch("click.confirm")
+@patch(
+    "dbt_platform_helper.commands.dns._get_hosted_zones_paginator",
+    return_value=[
+        {"HostedZones": [{"Name": "web.domain", "Id": 1}]},
+        {
+            "HostedZones": [
+                {"Name": "uktrade.digital", "Id": 2},
+                {"Name": "dev.uktrade.digital", "Id": 3},
+            ]
+        },
+    ],
+)
+def test_check_paginated_zones_finds_across_pages(mock_click, route53_session):
+    base_domain = "uktrade.digital"
+    base_domain_id = 2
+    subdomain = "dev.uktrade.digital"
+    subdomain_id = 3
+
+    domain_zone_id, parent_zone_id = _check_paginated_zones(route53_session, base_domain, subdomain)
+
+    assert base_domain_id == parent_zone_id
+    assert subdomain_id == domain_zone_id
+
+
+@patch("click.confirm")
+@patch(
+    "dbt_platform_helper.commands.dns._get_hosted_zones_paginator",
+    return_value=[
+        {"HostedZones": [{"Name": "web.domain", "Id": 1}]},
+        {
+            "HostedZones": [
+                {"Name": "uktrade.domain", "Id": 2},
+                {"Name": "dev.domain.digital", "Id": 3},
+            ]
+        },
+    ],
+)
+def test_check_paginated_zones_returns_none(mock_click, route53_session):
+    base_domain = "uktrade.digital"
+    subdomain = "dev.uktrade.digital"
+
+    domain_zone_id, parent_zone_id = _check_paginated_zones(route53_session, base_domain, subdomain)
+
+    assert parent_zone_id is None
+    assert domain_zone_id is None
 
 
 @pytest.mark.parametrize(
