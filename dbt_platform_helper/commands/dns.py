@@ -277,23 +277,23 @@ def create_hosted_zones(client, base_domain, subdomain):
 
 def _check_paginated_zones(client, parent_zone, domain_zone):
     zones_paginator = client.get_paginator("list_hosted_zones")
-    domain_zone_id = res_parent_zone_id = None
+    domain_zone_id = parent_zone_id = None
 
     for page in zones_paginator.paginate():
         # each page is a hosted zones response type object
         hosted_zones = {hz["Name"]: hz for hz in page["HostedZones"]}
 
-        if parent_zone in hosted_zones and res_parent_zone_id is None:
-            res_parent_zone_id = hosted_zones[parent_zone]["Id"]
+        if parent_zone in hosted_zones and parent_zone_id is None:
+            parent_zone_id = hosted_zones[parent_zone]["Id"]
 
         if domain_zone in hosted_zones and domain_zone_id is None:
             domain_zone_id = hosted_zones[domain_zone]["Id"]
 
-        if all([res_parent_zone_id, domain_zone_id]):
+        if all([parent_zone_id, domain_zone_id]):
             # both were found, no need to further pagination
             break
 
-    return domain_zone_id, res_parent_zone_id
+    return domain_zone_id, parent_zone_id
 
 
 def _create_hosted_zone(client, domain_name, parent_zone, parent_zone_id):
