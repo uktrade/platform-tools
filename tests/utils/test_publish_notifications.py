@@ -37,13 +37,13 @@ class TestPublishNotify(unittest.TestCase):
             PublishNotify()
         self.assertEqual(f"'{environment_variable}' environment variable must be set", str(e.value))
 
-    def test_sending_progress_updates_when_notifications_off(self, webclient, time):
+    def test_sending_publish_notifications_when_notifications_off(self, webclient, time):
         notify = PublishNotify(False)
         notify.post_publish_update(self.version)
 
         self.assertFalse(hasattr(notify, "slack"))
 
-    def test_sending_all_build_stages_successful(self, webclient, time):
+    def test_sending_publish_notifications_successfully(self, webclient, time):
         notify = PublishNotify()
         notify.post_publish_update(self.version)
 
@@ -57,11 +57,6 @@ class TestPublishNotify(unittest.TestCase):
 
 
 def get_expected_message_blocks(version="", release_notes_url=""):
-    phase_messages = {
-        "success": "Success :large_green_circle: (15 s)",
-        "failure": "Failure :red_circle: (15 s)",
-    }
-
     return [
         blocks.SectionBlock(
             text=blocks.TextObject(
