@@ -1,19 +1,13 @@
 import os
 import unittest
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
 from parameterized import parameterized
 from slack_sdk.models import blocks
 
+from tests.utils.webclient import WebClient
 from utils.notify.publish_notification import PublishNotify
-
-
-class WebClient:
-    def __init__(self, token: str):
-        self.token = token
-        self.chat_postMessage = Mock(return_value={"ts": "first-message"})
 
 
 @patch("builtins.round", return_value=15)
@@ -54,6 +48,15 @@ class TestPublishNotify(unittest.TestCase):
             unfurl_links=False,
             unfurl_media=False,
         )
+
+    def test_version_provided_must_be_a_string(self, webclient, time):
+        with pytest.raises(TypeError):
+            notify = PublishNotify()
+            notify.post_publish_update(True)
+
+        with pytest.raises(TypeError):
+            notify = PublishNotify()
+            notify.post_publish_update(123)
 
 
 def get_expected_message_blocks(version="", release_notes_url=""):

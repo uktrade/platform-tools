@@ -1,8 +1,11 @@
+import os
 import sys
+from unittest.mock import patch
 
 import pytest
 
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
+from tests.utils.webclient import WebClient
 from utils.check_pypi import check_for_version_in_pypi_releases
 from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases
@@ -44,7 +47,10 @@ class FakeOpts:
         self.__dict__ = data
 
 
-def test_check_for_version_in_pypi_releases__print_version_only(capsys):
+@patch("utils.notify.publish_notification.WebClient", return_value=WebClient("slack-token"))
+def test_check_for_version_in_pypi_releases__print_version_only(webclient, capsys):
+    os.environ["SLACK_TOKEN"] = "slack-token"
+    os.environ["SLACK_CHANNEL_ID"] = "channel-id"
     opts = FakeOpts(retry_interval=1, max_attempts=1, version=True)
     exit_code = check_for_version_in_pypi_releases(
         opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"]
@@ -57,7 +63,10 @@ def test_check_for_version_in_pypi_releases__print_version_only(capsys):
     assert ["Version: 0.1.1"] == lines
 
 
-def test_check_for_version_in_pypi_releases__version_found_immediately(capsys):
+@patch("utils.notify.publish_notification.WebClient", return_value=WebClient("slack-token"))
+def test_check_for_version_in_pypi_releases__version_found_immediately(webclient, capsys):
+    os.environ["SLACK_TOKEN"] = "slack-token"
+    os.environ["SLACK_CHANNEL_ID"] = "channel-id"
     opts = FakeOpts(retry_interval=1, max_attempts=3, version=False)
     exit_code = check_for_version_in_pypi_releases(
         opts, "0.1.1", lambda: ["0.1.2", "0.1.21", "0.1.1"]
@@ -70,7 +79,10 @@ def test_check_for_version_in_pypi_releases__version_found_immediately(capsys):
     assert ["Version: 0.1.1", "Attempt 1 of 3: Version 0.1.1 has been found in PyPI."] == lines
 
 
-def test_check_for_version_in_pypi_releases__version_not_found(capsys):
+@patch("utils.notify.publish_notification.WebClient", return_value=WebClient("slack-token"))
+def test_check_for_version_in_pypi_releases__version_not_found(webclient, capsys):
+    os.environ["SLACK_TOKEN"] = "slack-token"
+    os.environ["SLACK_CHANNEL_ID"] = "channel-id"
     opts = FakeOpts(retry_interval=0.1, max_attempts=3, version=False)
     exit_code = check_for_version_in_pypi_releases(
         opts, "0.1.22", lambda: ["0.1.2", "0.1.21", "0.1.1"]
@@ -88,7 +100,10 @@ def test_check_for_version_in_pypi_releases__version_not_found(capsys):
     ] == lines
 
 
-def test_check_for_version_in_pypi_releases__version_found_on_the_third_attempt(capsys):
+@patch("utils.notify.publish_notification.WebClient", return_value=WebClient("slack-token"))
+def test_check_for_version_in_pypi_releases__version_found_on_the_third_attempt(webclient, capsys):
+    os.environ["SLACK_TOKEN"] = "slack-token"
+    os.environ["SLACK_CHANNEL_ID"] = "channel-id"
     opts = FakeOpts(retry_interval=0.1, max_attempts=5, version=False)
 
     call_no = {"calls": 0}

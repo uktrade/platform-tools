@@ -25,6 +25,8 @@ class PublishNotify:
                 raise ValueError(f"{e} environment variable must be set")
 
     def post_publish_update(self, version: str):
+        if not isinstance(version, str):
+            raise TypeError("Version must be of type string")
         if self.send_notifications:
             message_headline = "New platform-tools release"
             message_version = f"*Version*: <{version}>"

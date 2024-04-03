@@ -25,7 +25,7 @@ def check_for_version_in_pypi_releases(options, version, get_releases_fn):
     print("Version:", version)
     notify = PublishNotify()
     if options.version:
-        notify.post_publish_update(options.version)
+        notify.post_publish_update(version)
         return OK
     for i in range(options.max_attempts):
         print(f"Attempt {i + 1} of {options.max_attempts}: ", end="")
