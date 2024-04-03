@@ -40,6 +40,14 @@ Mappings:
       EngineVersion: 'OpenSearch_1.3'
     '2.3':
       EngineVersion: 'OpenSearch_2.3'
+    '2.5':
+      EngineVersion: 'OpenSearch_2.5'
+    '2.7':
+      EngineVersion: 'OpenSearch_2.7'
+    '2.9':
+      EngineVersion: 'OpenSearch_2.9'
+    '2.11':
+      EngineVersion: 'OpenSearch_2.11'
 
 Conditions:
   {{ addon_config.prefix }}EnableHA: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, InstanceCount], 1]]

@@ -28,6 +28,10 @@ Mappings:
 {%- endfor %}
 
   {{ addon_config.prefix }}EngineVersionMap:
+    '7.1':
+      CacheParameterGroupFamily: 'redis7.x'
+    '7.0':
+      CacheParameterGroupFamily: 'redis7.x'
     '6.2':
       CacheParameterGroupFamily: 'redis6.x'
     '6.0':

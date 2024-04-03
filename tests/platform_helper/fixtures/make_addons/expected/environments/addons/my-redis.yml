@@ -31,6 +31,10 @@ Mappings:
       DeletionPolicy: Delete
 
   myRedisEngineVersionMap:
+    '7.1':
+      CacheParameterGroupFamily: 'redis7.x'
+    '7.0':
+      CacheParameterGroupFamily: 'redis7.x'
     '6.2':
       CacheParameterGroupFamily: 'redis6.x'
     '6.0':
@@ -49,14 +53,26 @@ Mappings:
       CacheParameterGroupFamily: 'redis3.2'
 
 Conditions:
-  myRedisHasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [myRedisEnvironmentConfigMap, !Ref Env, NumReplicas], 0]]
-  myRedisCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myRedisHasAutomaticFailoverEnabled:
+    !Not [
+      !Equals [
+        !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, NumReplicas],
+        0
+      ]
+    ]
+  myRedisCreateProdSubFilter:
+    !Or [
+      !Equals [!Ref Env, prod],
+      !Equals [!Ref Env, production],
+      !Equals [!Ref Env, PROD],
+      !Equals [!Ref Env, PRODUCTION]
+    ]
 
 Resources:
-
   myRedisCacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'
-    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       CacheParameterGroupFamily: !FindInMap
@@ -68,44 +84,51 @@ Resources:
 
   myRedisCacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
-    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       Description: !Ref 'AWS::StackName'
-      SubnetIds: !Split [ ",", !Ref PrivateSubnets ]
+      SubnetIds: !Split [',', !Ref PrivateSubnets]
 
   myRedisSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
-    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: !Ref VpcId
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 6379
-        ToPort: 6379
-        SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref EnvironmentSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub 'copilot-${App}-${Env}-my-redis-Redis-SecurityGroup'
 
   myRedisReplicationGroup:
     Type: 'AWS::ElastiCache::ReplicationGroup'
-    DeletionPolicy: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, DeletionPolicy]
     UpdateReplacePolicy: Retain
     Properties:
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
-      AutomaticFailoverEnabled: !If [myRedisHasAutomaticFailoverEnabled, true, false]
+      AutomaticFailoverEnabled:
+        !If [myRedisHasAutomaticFailoverEnabled, true, false]
       MultiAZEnabled: !If [myRedisHasAutomaticFailoverEnabled, true, false]
-      CacheNodeType: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, CacheNodeType]
+      CacheNodeType:
+        !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, CacheNodeType]
       CacheParameterGroupName: !Ref myRedisCacheParameterGroup
       CacheSubnetGroupName: !Ref myRedisCacheSubnetGroupName
       Engine: redis
-      EngineVersion: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, EngineVersion]
-      NumNodeGroups: 1   # run in non clustered mode with 1 master and 0-5 replicas
-      ReplicasPerNodeGroup: !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, NumReplicas]
+      EngineVersion:
+        !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, EngineVersion]
+      NumNodeGroups: 1 # run in non clustered mode with 1 master and 0-5 replicas
+      ReplicasPerNodeGroup:
+        !FindInMap [myRedisEnvironmentConfigMap, !Ref Env, NumReplicas]
       PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
       LogDeliveryConfigurations:
         - DestinationDetails:
@@ -121,7 +144,7 @@ Resources:
           LogFormat: json
           LogType: engine-log
       SecurityGroupIds:
-      - !Ref myRedisSecurityGroup
+        - !Ref myRedisSecurityGroup
 
       TransitEncryptionEnabled: true
       # UpdatePolicy:
@@ -153,7 +176,7 @@ Resources:
   myRedisEndpointAddressParam:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_REDIS'   # Other services can retrieve the endpoint from this path.
+      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_REDIS' # Other services can retrieve the endpoint from this path.
       Type: String
       Value: !Sub
         - 'rediss://${url}:${port}'
