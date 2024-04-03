@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
-from tests.utils.webclient import WebClient
+from tests.test_doubles.webclient import WebClient
 from utils.check_pypi import check_for_version_in_pypi_releases
 from utils.check_pypi import get_current_version
 from utils.check_pypi import get_releases

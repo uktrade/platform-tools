@@ -6,7 +6,7 @@ import pytest
 from parameterized import parameterized
 from slack_sdk.models import blocks
 
-from tests.utils.webclient import WebClient
+from tests.test_doubles.webclient import WebClient
 from utils.notify.publish_notification import PublishNotify
 
 
