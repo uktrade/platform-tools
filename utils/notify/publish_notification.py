@@ -6,22 +6,15 @@ from slack_sdk.models import blocks
 RELEASE_NOTES_URL = "https://github.com/uktrade/platform-tools/releases/latest"
 
 
-class Settings:
-    channel: str
-    workspace: str
-
-
 class PublishNotify:
-    settings: Settings
 
     def __init__(self, send_notifications: bool = True):
-        self.settings = Settings()
         self.send_notifications = send_notifications
 
         if self.send_notifications:
             try:
                 self.slack = WebClient(token=os.environ["SLACK_TOKEN"])
-                self.settings.channel = os.environ["SLACK_CHANNEL_ID"]
+                self.channel = os.environ["SLACK_CHANNEL_ID"]
             except KeyError as e:
                 raise ValueError(f"{e} environment variable must be set")
 
@@ -46,7 +39,7 @@ class PublishNotify:
             ]
 
             self.slack.chat_postMessage(
-                channel=os.environ["SLACK_CHANNEL_ID"],
+                channel=self.channel,
                 blocks=message_blocks,
                 text=f"Publishing platform-tools v{version}",
                 unfurl_links=False,
