@@ -7,6 +7,7 @@ from parameterized import parameterized
 from slack_sdk.models import blocks
 
 from tests.test_doubles.webclient import WebClient
+from utils.notify.publish_notification import RELEASE_NOTES_URL
 from utils.notify.publish_notification import PublishNotify
 
 
@@ -17,7 +18,6 @@ class TestPublishNotify(unittest.TestCase):
         os.environ["SLACK_TOKEN"] = "slack-token"
         os.environ["SLACK_CHANNEL_ID"] = "channel-id"
         self.version = "0.0.0"
-        self.release_notes_url = "https://github.com/uktrade/platform-tools/releases/latest"
 
     @parameterized.expand(
         [
@@ -43,7 +43,7 @@ class TestPublishNotify(unittest.TestCase):
 
         notify.slack.chat_postMessage.assert_called_with(
             channel="channel-id",
-            blocks=get_expected_message_blocks(self.version, self.release_notes_url),
+            blocks=get_expected_message_blocks(self.version),
             text=f"Publishing platform-tools v{self.version}",
             unfurl_links=False,
             unfurl_media=False,
@@ -59,7 +59,7 @@ class TestPublishNotify(unittest.TestCase):
             notify.post_publish_update(123)
 
 
-def get_expected_message_blocks(version="", release_notes_url=""):
+def get_expected_message_blocks(version=""):
     return [
         blocks.SectionBlock(
             text=blocks.TextObject(
@@ -75,7 +75,7 @@ def get_expected_message_blocks(version="", release_notes_url=""):
                 ),
                 blocks.TextObject(
                     type="mrkdwn",
-                    text=f"<{release_notes_url}|Release Notes>",
+                    text=f"<{RELEASE_NOTES_URL}|Release Notes>",
                 ),
             ]
         ),

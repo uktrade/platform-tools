@@ -3,6 +3,8 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
+RELEASE_NOTES_URL = "https://github.com/uktrade/platform-tools/releases/latest"
+
 
 class Settings:
     channel: str
@@ -15,7 +17,6 @@ class PublishNotify:
     def __init__(self, send_notifications: bool = True):
         self.settings = Settings()
         self.send_notifications = send_notifications
-        self.release_notes_url = "https://github.com/uktrade/platform-tools/releases/latest"
 
         if self.send_notifications:
             try:
@@ -30,7 +31,7 @@ class PublishNotify:
         if self.send_notifications:
             message_headline = "New platform-tools release"
             message_version = f"*Version*: <{version}>"
-            message_release_notes = f"<{self.release_notes_url}|Release Notes>"
+            message_release_notes = f"<{RELEASE_NOTES_URL}|Release Notes>"
 
             message_blocks = [
                 blocks.SectionBlock(
