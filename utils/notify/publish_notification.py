@@ -5,6 +5,7 @@ from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
 RELEASE_NOTES_URL = "https://github.com/uktrade/platform-tools/releases/latest"
+OK = 0
 
 
 class PublishNotify:
@@ -64,6 +65,7 @@ def opts():
 def send_publish_notification_version(options):
     notifier = PublishNotify(options.send_notifications)
     notifier.post_publish_update(options.publish_version)
+    return OK
 
 
 if __name__ == "__main__":

@@ -9,6 +9,12 @@ from slack_sdk.models import blocks
 from tests.test_doubles.webclient import WebClient
 from utils.notify.publish_notification import RELEASE_NOTES_URL
 from utils.notify.publish_notification import PublishNotify
+from utils.notify.publish_notification import send_publish_notification_version
+
+
+class FakeOpts:
+    def __init__(self, **data):
+        self.__dict__ = data
 
 
 @patch("builtins.round", return_value=15)
@@ -48,6 +54,11 @@ class TestPublishNotify(unittest.TestCase):
             unfurl_links=False,
             unfurl_media=False,
         )
+
+    def test_send_publish_notification_version_from_cli(self, webclient, time):
+        opts = FakeOpts(send_notifications=True, publish_version=self.version)
+        exit_code = send_publish_notification_version(opts)
+        assert exit_code == 0
 
     def test_version_provided_must_be_a_string(self, webclient, time):
         with pytest.raises(TypeError):
