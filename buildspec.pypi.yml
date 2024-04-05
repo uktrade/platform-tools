@@ -4,6 +4,8 @@ env:
   shell: bash
   parameter-store:
     PYPI_TOKEN: "pypi-token"
+    SLACK_TOKEN: "/codebuild/slack_oauth_token"
+    SLACK_CHANNEL_ID: "/codebuild/slack_platform_helper_publish_oauth_channel"
 
 phases:
   install:
