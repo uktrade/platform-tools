@@ -144,7 +144,7 @@ def float_between_with_halfstep(lower, upper):
 
 
 ENV_NAME = Regex(
-    r"^[a-zA-Z][a-zA-Z0-9]*$",
+    r"^([a-zA-Z][a-zA-Z0-9]*|\*)$",
     error="Environment name {} is invalid: names must only contain alphanumeric characters.",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
@@ -426,9 +426,13 @@ class ConditionalSchema(Schema):
         if _is_conditional_schema:
             default_plan = None
             default_volume_size = None
-            if data["environments"].get("default", None):
-                default_plan = data["environments"]["default"].get("plan", None)
-                default_volume_size = data["environments"]["default"].get("volume_size", None)
+
+            default_environment_config = data["environments"].get(
+                "*", data["environments"].get("default", None)
+            )
+            if default_environment_config:
+                default_plan = default_environment_config.get("plan", None)
+                default_volume_size = default_environment_config.get("volume_size", None)
 
             for env in data["environments"]:
                 volume_size = data["environments"][env].get("volume_size", default_volume_size)

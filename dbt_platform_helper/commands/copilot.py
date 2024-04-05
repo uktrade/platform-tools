@@ -136,7 +136,7 @@ def _validate_and_normalise_config(config_file):
                 exit(1)
 
         environments = normalised_config[addon_name].pop("environments", {})
-        default = environments.pop("default", {})
+        default = environments.pop("*", environments.pop("default", {}))
 
         initial = _lookup_plan(addon_type, default)
 
@@ -191,6 +191,10 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
 
+def is_terraform_project() -> bool:
+    return Path("./terraform").is_dir()
+
+
 @copilot.command(deprecated=True, hidden=True)
 def make_addons():
     """
@@ -200,8 +204,8 @@ def make_addons():
     Generate addons CloudFormation for each environment.
     """
     output_dir = Path(".").absolute()
-
     ensure_cwd_is_repo_root()
+    is_terraform = is_terraform_project()
     templates = setup_templates()
     config = _get_config()
 
@@ -211,6 +215,9 @@ def make_addons():
     _generate_env_overrides(output_dir)
 
     click.echo("\n>>> Generating addons CloudFormation\n")
+
+    if is_terraform:
+        click.echo(click.style("Generating Terraform compatible addons", blink=True, fg="green"))
 
     env_addons_path = Path(f"copilot/environments/addons/")
     (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
@@ -267,16 +274,17 @@ def make_addons():
                 "BucketAccess", 1
             )[0]
 
-        _generate_env_addons(
-            addon_name,
-            addon_template_map,
-            config.items(),
-            env_addons_path,
-            environment_addon_config,
-            output_dir,
-            templates,
-            log_destination_arns,
-        )
+        if not is_terraform:
+            _generate_env_addons(
+                addon_name,
+                addon_template_map,
+                config.items(),
+                env_addons_path,
+                environment_addon_config,
+                output_dir,
+                templates,
+                log_destination_arns,
+            )
         _generate_service_addons(
             addon_config,
             addon_name,
@@ -288,13 +296,13 @@ def make_addons():
             log_destination_arns,
         )
 
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "rds-postgres"] and not is_terraform:
             click.secho(
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",
             )
 
-    if has_addons_parameters:
+    if has_addons_parameters and not is_terraform:
         template = templates.get_template("addons/env/addons.parameters.yml")
         contents = template.render({"has_postgres_addon": has_postgres_addon})
         click.echo(
