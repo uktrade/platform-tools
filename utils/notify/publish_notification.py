@@ -39,10 +39,6 @@ class PublishNotify:
                 ),
             ]
 
-            print(message_headline)
-            print(message_version)
-            print(message_release_notes)
-
             self.slack.chat_postMessage(
                 channel=self.channel,
                 blocks=message_blocks,
