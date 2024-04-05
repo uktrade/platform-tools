@@ -50,7 +50,7 @@ class PublishNotify:
 
 def opts():
     parser = argparse.ArgumentParser(
-        description="Tool to check PyPI for the presence of the platform-tools package"
+        description="Sends a notification about a new release of platform-helper to Slack"
     )
     parser.add_argument(
         "--send-notifications", help="Enables/disables notifications", type=bool, default=True
