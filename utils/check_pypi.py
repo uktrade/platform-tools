@@ -3,7 +3,6 @@ import json
 import time
 from urllib.request import urlopen
 
-# Todo: Take care of your TODOS
 PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-platform-helper/json"
 OK = 0
 FAIL = 1
