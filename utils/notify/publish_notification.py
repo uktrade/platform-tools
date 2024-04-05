@@ -43,7 +43,7 @@ class PublishNotify:
             self.slack.chat_postMessage(
                 channel=self.channel,
                 blocks=message_blocks,
-                text=f"Publishing platform-tools v{version}",
+                text=f"Publishing platform-helper v{version}",
                 unfurl_links=False,
                 unfurl_media=False,
             )

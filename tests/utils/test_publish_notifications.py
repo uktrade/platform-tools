@@ -50,7 +50,7 @@ class TestPublishNotify(unittest.TestCase):
         notify.slack.chat_postMessage.assert_called_with(
             channel="channel-id",
             blocks=get_expected_message_blocks(self.version),
-            text=f"Publishing platform-tools v{self.version}",
+            text=f"Publishing platform-helper v{self.version}",
             unfurl_links=False,
             unfurl_media=False,
         )
@@ -75,7 +75,7 @@ def get_expected_message_blocks(version=""):
         blocks.SectionBlock(
             text=blocks.TextObject(
                 type="mrkdwn",
-                text="New platform-tools release",
+                text="New platform-helper release",
             )
         ),
         blocks.ContextBlock(
