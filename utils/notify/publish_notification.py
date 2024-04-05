@@ -1,3 +1,4 @@
+import argparse
 import os
 
 from slack_sdk import WebClient
@@ -38,6 +39,10 @@ class PublishNotify:
                 ),
             ]
 
+            print(message_headline)
+            print(message_version)
+            print(message_release_notes)
+
             self.slack.chat_postMessage(
                 channel=self.channel,
                 blocks=message_blocks,
@@ -45,3 +50,25 @@ class PublishNotify:
                 unfurl_links=False,
                 unfurl_media=False,
             )
+
+
+def opts():
+    parser = argparse.ArgumentParser(
+        description="Tool to check PyPI for the presence of the platform-tools package"
+    )
+    parser.add_argument(
+        "--send-notifications", help="Enables/disables notifications", type=bool, default=True
+    )
+    parser.add_argument(
+        "--publish-version", help="Specifies the published version", type=str, default=None
+    )
+    return parser.parse_args()
+
+
+def send_publish_notification_version(options):
+    notifier = PublishNotify(options.send_notifications)
+    notifier.post_publish_update(options.publish_version)
+
+
+if __name__ == "__main__":
+    exit(send_publish_notification_version(opts()))

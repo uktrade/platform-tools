@@ -3,10 +3,8 @@ import json
 import time
 from urllib.request import urlopen
 
-from .notify.publish_notification import PublishNotify
-
-# Todo: Rename once new package published
-PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-copilot-tools/json"
+# Todo: Take care of your TODOS
+PYPI_RELEASES_URL = "https://pypi.org/pypi/dbt-platform-helper/json"
 OK = 0
 FAIL = 1
 
@@ -23,16 +21,13 @@ def opts():
 
 def check_for_version_in_pypi_releases(options, version, get_releases_fn):
     print("Version:", version)
-    notify = PublishNotify()
     if options.version:
-        notify.post_publish_update(version)
         return OK
     for i in range(options.max_attempts):
         print(f"Attempt {i + 1} of {options.max_attempts}: ", end="")
         releases = get_releases_fn()
         if version in releases:
             print(f"Version {version} has been found in PyPI.")
-            notify.post_publish_update(version)
             return OK
         if i + 1 < options.max_attempts:
             print(f"Package not yet found in PyPI. Retrying in {options.retry_interval}s.")
