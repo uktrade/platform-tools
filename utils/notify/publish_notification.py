@@ -1,9 +1,11 @@
+import argparse
 import os
 
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
 RELEASE_NOTES_URL = "https://github.com/uktrade/platform-tools/releases/latest"
+OK = 0
 
 
 class PublishNotify:
@@ -22,7 +24,7 @@ class PublishNotify:
         if not isinstance(version, str):
             raise TypeError("Version must be of type string")
         if self.send_notifications:
-            message_headline = "New platform-tools release"
+            message_headline = "New platform-helper release"
             message_version = f"*Version*: <{version}>"
             message_release_notes = f"<{RELEASE_NOTES_URL}|Release Notes>"
 
@@ -41,7 +43,30 @@ class PublishNotify:
             self.slack.chat_postMessage(
                 channel=self.channel,
                 blocks=message_blocks,
-                text=f"Publishing platform-tools v{version}",
+                text=f"Publishing platform-helper v{version}",
                 unfurl_links=False,
                 unfurl_media=False,
             )
+
+
+def opts():
+    parser = argparse.ArgumentParser(
+        description="Sends a notification about a new release of platform-helper to Slack"
+    )
+    parser.add_argument(
+        "--send-notifications", help="Enables/disables notifications", type=bool, default=True
+    )
+    parser.add_argument(
+        "--publish-version", help="Specifies the published version", type=str, default=None
+    )
+    return parser.parse_args()
+
+
+def send_publish_notification_version(options):
+    notifier = PublishNotify(options.send_notifications)
+    notifier.post_publish_update(options.publish_version)
+    return OK
+
+
+if __name__ == "__main__":
+    exit(send_publish_notification_version(opts()))
