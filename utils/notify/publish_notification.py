@@ -24,7 +24,7 @@ class PublishNotify:
         if not isinstance(version, str):
             raise TypeError("Version must be of type string")
         if self.send_notifications:
-            message_headline = "New platform-tools release"
+            message_headline = "New platform-helper release"
             message_version = f"*Version*: <{version}>"
             message_release_notes = f"<{RELEASE_NOTES_URL}|Release Notes>"
 
