@@ -1,0 +1,32 @@
+name: Create Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+#      - closed
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    concurrency: release
+
+#    if: github.event.pull_request.merged
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python Semantic Release
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+
+
