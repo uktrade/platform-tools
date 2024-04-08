@@ -64,6 +64,9 @@ logging_use_named_masks = false
 major_on_zero = true
 allow_zero_version = true
 tag_format = "{version}"
+version_toml = [
+    "pyproject.toml:tool.poetry.version",
+]
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"
@@ -74,7 +77,6 @@ prerelease = false
 match = "DBTP-777-automate-release-version"
 prerelease_token = "rc"
 prerelease = false
-draft = true
 
 [tool.semantic_release.commit_author]
 env = "GIT_COMMIT_AUTHOR"
@@ -97,4 +99,3 @@ env = "GH_TOKEN"
 [tool.semantic_release.publish]
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
-
