@@ -3,7 +3,11 @@
 # exit early if something goes wrong
 set -e
 
+PYPI_TOKEN=$1
 VERSION=$(python utils/check_pypi.py --version)
+
+export SLACK_TOKEN=$2
+export SLACK_CHANNEL_ID=$3
 
 if ! python utils/check_pypi.py
 then
