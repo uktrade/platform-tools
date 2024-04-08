@@ -51,6 +51,7 @@ class PublishNotify:
                 text=f"Publishing platform-helper v{version}",
                 unfurl_links=False,
                 unfurl_media=False,
+                username="platform-helper",
             )
 
 
@@ -74,7 +75,7 @@ def send_publish_notification_version(options):
 
 
 def validate_version_pattern(string: str) -> bool:
-    pattern = re.compile("^([0-9]+\.[0-9]+\.[0-9]+)$")
+    pattern = re.compile(r"^([0-9]+\.[0-9]+\.[0-9]+)$")
     if pattern.match(string):
         return True
     return False

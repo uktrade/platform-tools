@@ -57,6 +57,7 @@ class TestPublishNotify(unittest.TestCase):
             text=f"Publishing platform-helper v{self.version}",
             unfurl_links=False,
             unfurl_media=False,
+            username="platform-helper",
         )
 
     def test_sending_publish_notifications_successfully_with_invalid_version_format(
@@ -72,6 +73,7 @@ class TestPublishNotify(unittest.TestCase):
             text=f"Publishing platform-helper v{invalid_version}",
             unfurl_links=False,
             unfurl_media=False,
+            username="platform-helper",
         )
 
     def test_send_publish_notification_version_from_cli(self, webclient, time):
