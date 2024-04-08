@@ -1,10 +1,12 @@
 import argparse
 import os
+import re
 
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
-RELEASE_NOTES_URL = "https://github.com/uktrade/platform-tools/releases/latest"
+RELEASE_NOTES_URL_LATEST = "https://github.com/uktrade/platform-tools/releases/latest"
+RELEASE_NOTES_URL_TAG = "https://github.com/uktrade/platform-tools/releases/tag/"
 OK = 0
 
 
@@ -24,9 +26,12 @@ class PublishNotify:
         if not isinstance(version, str):
             raise TypeError("Version must be of type string")
         if self.send_notifications:
-            message_headline = "New platform-helper release"
-            message_version = f"*Version*: <{version}>"
-            message_release_notes = f"<{RELEASE_NOTES_URL}|Release Notes>"
+            message_headline = "New `platform-helper` release"
+            message_version = f"*Version*: {version}"
+            if validate_version_pattern(version):
+                message_release_notes = f"<{RELEASE_NOTES_URL_TAG}{version}|Release Notes>"
+            else:
+                message_release_notes = f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>"
 
             message_blocks = [
                 blocks.SectionBlock(
@@ -66,6 +71,13 @@ def send_publish_notification_version(options):
     notifier = PublishNotify(options.send_notifications)
     notifier.post_publish_update(options.publish_version)
     return OK
+
+
+def validate_version_pattern(string: str) -> bool:
+    pattern = re.compile("^([0-9]+\.[0-9]+\.[0-9]+)$")
+    if pattern.match(string):
+        return True
+    return False
 
 
 if __name__ == "__main__":

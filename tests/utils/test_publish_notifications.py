@@ -7,9 +7,11 @@ from parameterized import parameterized
 from slack_sdk.models import blocks
 
 from tests.test_doubles.webclient import WebClient
-from utils.notify.publish_notification import RELEASE_NOTES_URL
+from utils.notify.publish_notification import RELEASE_NOTES_URL_LATEST
+from utils.notify.publish_notification import RELEASE_NOTES_URL_TAG
 from utils.notify.publish_notification import PublishNotify
 from utils.notify.publish_notification import send_publish_notification_version
+from utils.notify.publish_notification import validate_version_pattern
 
 
 class FakeOpts:
@@ -43,7 +45,9 @@ class TestPublishNotify(unittest.TestCase):
 
         self.assertFalse(hasattr(notify, "slack"))
 
-    def test_sending_publish_notifications_successfully(self, webclient, time):
+    def test_sending_publish_notifications_successfully_with_valid_version_format(
+        self, webclient, time
+    ):
         notify = PublishNotify()
         notify.post_publish_update(self.version)
 
@@ -51,6 +55,21 @@ class TestPublishNotify(unittest.TestCase):
             channel="channel-id",
             blocks=get_expected_message_blocks(self.version),
             text=f"Publishing platform-helper v{self.version}",
+            unfurl_links=False,
+            unfurl_media=False,
+        )
+
+    def test_sending_publish_notifications_successfully_with_invalid_version_format(
+        self, webclient, time
+    ):
+        invalid_version = "1.2"
+        notify = PublishNotify()
+        notify.post_publish_update(invalid_version)
+
+        notify.slack.chat_postMessage.assert_called_with(
+            channel="channel-id",
+            blocks=get_expected_message_blocks_invalid_version_supplied(invalid_version),
+            text=f"Publishing platform-helper v{invalid_version}",
             unfurl_links=False,
             unfurl_media=False,
         )
@@ -69,24 +88,55 @@ class TestPublishNotify(unittest.TestCase):
             notify = PublishNotify()
             notify.post_publish_update(123)
 
+    def test_check_version_pattern_valid_pattern(self, webclient, time):
+        version = "1.2.3"
+        assert validate_version_pattern(version)
+
+    def test_check_version_pattern_invalid_pattern(self, webclient, time):
+        version = "1.2"
+        assert not validate_version_pattern(version)
+
 
 def get_expected_message_blocks(version=""):
     return [
         blocks.SectionBlock(
             text=blocks.TextObject(
                 type="mrkdwn",
-                text="New platform-helper release",
+                text="New `platform-helper` release",
             )
         ),
         blocks.ContextBlock(
             elements=[
                 blocks.TextObject(
                     type="mrkdwn",
-                    text=f"*Version*: <{version}>",
+                    text=f"*Version*: {version}",
                 ),
                 blocks.TextObject(
                     type="mrkdwn",
-                    text=f"<{RELEASE_NOTES_URL}|Release Notes>",
+                    text=f"<{RELEASE_NOTES_URL_TAG}{version}|Release Notes>",
+                ),
+            ]
+        ),
+    ]
+
+
+def get_expected_message_blocks_invalid_version_supplied(version=""):
+    return [
+        blocks.SectionBlock(
+            text=blocks.TextObject(
+                type="mrkdwn",
+                text="New `platform-helper` release",
+            )
+        ),
+        blocks.ContextBlock(
+            elements=[
+                blocks.TextObject(
+                    type="mrkdwn",
+                    text=f"*Version*: {version}",
+                ),
+                blocks.TextObject(
+                    type="mrkdwn",
+                    text=f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>",
                 ),
             ]
         ),
