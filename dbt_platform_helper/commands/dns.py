@@ -253,13 +253,19 @@ def create_hosted_zones(client, base_domain, subdomain):
         domain_zone = f"{domain_name}."
         parent_domain = domain_name.split(".", maxsplit=1)[1]
         parent_zone = f"{parent_domain}."
-        hosted_zone_response = client.list_hosted_zones_by_name()
-        hosted_zones = {hz["Name"]: hz for hz in hosted_zone_response["HostedZones"]}
-        parent_zone_id = _get_zone_id_or_abort(hosted_zones, parent_zone)
 
-        if domain_zone in hosted_zones:
+        domain_zone_id, parent_zone_id = _get_paginated_zones(client, parent_zone, domain_zone)
+
+        if parent_zone_id is None:
+            click.secho(
+                f"The hosted zone: {parent_zone} does not exist in your AWS domain account",
+                fg="red",
+            )
+            exit()
+
+        if domain_zone_id is not None:
             click.secho(f"Hosted zone '{domain_zone}' already exists", fg="yellow")
-            zone_ids[domain_name] = hosted_zones[domain_zone]["Id"]
+            zone_ids[domain_name] = domain_zone_id
         else:
             subdomain_zone_id = _create_hosted_zone(
                 client, domain_name, parent_zone, parent_zone_id
@@ -267,6 +273,30 @@ def create_hosted_zones(client, base_domain, subdomain):
             zone_ids[domain_name] = subdomain_zone_id
 
     return zone_ids
+
+
+def _get_hosted_zones_paginator(client):
+    return client.get_paginator("list_hosted_zones").paginate()
+
+
+def _get_paginated_zones(client, parent_zone, domain_zone):
+    domain_zone_id = parent_zone_id = None
+
+    for page in _get_hosted_zones_paginator(client):
+        # each page is a hosted zones response type object
+        hosted_zones = {hz["Name"]: hz for hz in page["HostedZones"]}
+
+        if parent_zone in hosted_zones and parent_zone_id is None:
+            parent_zone_id = hosted_zones[parent_zone]["Id"]
+
+        if domain_zone in hosted_zones and domain_zone_id is None:
+            domain_zone_id = hosted_zones[domain_zone]["Id"]
+
+        if all([parent_zone_id, domain_zone_id]):
+            # both were found, no need to further pagination
+            break
+
+    return domain_zone_id, parent_zone_id
 
 
 def _create_hosted_zone(client, domain_name, parent_zone, parent_zone_id):
@@ -427,17 +457,6 @@ def create_required_zones_and_certs(domain_client, project_client, subdomain, ba
     cert_zone_id = get_certificate_zone_id(hosted_zones)
 
     return create_cert(project_client, domain_client, subdomain, cert_zone_id)
-
-
-def _get_zone_id_or_abort(hosted_zones, zone):
-    """Zones have the '.' suffix."""
-    if zone not in hosted_zones:
-        click.secho(
-            f"The hosted zone: {zone} does not exist in your AWS domain account {hosted_zones}",
-            fg="red",
-        )
-        exit()
-    return hosted_zones[zone]["Id"]
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)

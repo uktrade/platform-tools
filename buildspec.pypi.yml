@@ -4,6 +4,8 @@ env:
   shell: bash
   parameter-store:
     PYPI_TOKEN: "pypi-token"
+    SLACK_TOKEN: "/codebuild/slack_oauth_token"
+    SLACK_CHANNEL_ID: "/codebuild/slack_platform_helper_publish_oauth_channel"
 
 phases:
   install:
@@ -36,6 +38,9 @@ phases:
            poetry publish
            echo Checking the package has reached PyPI
            python utils/check_pypi.py --max-attempts 20
+           echo -e "\nSending slack notification"
+           VERSION_NUMBER=($VERSION)
+           python utils/notify/publish_notification.py --publish-version ${VERSION_NUMBER[1]}
          else
            echo ${VERSION} of the package has already been published
          fi
