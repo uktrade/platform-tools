@@ -127,7 +127,7 @@ For an optional manual check, install the package locally and test everything wo
 - On approval, merge to main
 - This will trigger a codebuild project called `platform-tools-test` in the _platform-tools_ AWS account to run. 
   This codebuild project runs on every `push / pull request created /pull request updated` event emitted by Github. It runs the regression tests
-- On _platform-tools_ Github, go to [`Releases`](https://github.com/uktrade/platform-tools) page and create a new draft release
+- On _platform-tools_ Github, go to [`Releases`](https://github.com/uktrade/platform-tools/releases) page and create a new draft release
 - To create a new tag, enter a version number that matches the `dbt-platform-helper` package version from the _pyproject.toml_ file, then click create new tag
 - You can generate the Github release notes automatically from the commit messages or add manually
   - Release notes should contain a link to the relevant pull request for convenience, eg: (#100)
