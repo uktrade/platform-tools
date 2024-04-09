@@ -3,7 +3,7 @@ line-length = 100
 
 [tool.poetry]
 name = "dbt-platform-helper"
-version = "6.1.0"
+version = "6.2.1"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
@@ -40,6 +40,7 @@ tomlkit = "^0.12.2"
 checkov = "^3.1.67"
 psycopg2 = "^2.9.9"
 responses = "^0.25.0"
+slack-sdk = "^3.27.1"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^4.1.12"}

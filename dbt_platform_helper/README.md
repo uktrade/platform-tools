@@ -49,4 +49,4 @@ Commands:
   migrate-secrets  Migrate secrets from your gov paas application to...
 ```
 
-See the [Commands Reference](https://github.com/uktrade/platform-helper/blob/main/dbt_platform_helper/COMMANDS.md) for a list of all available subcommands.
+See the [Commands Reference](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/COMMANDS.md) for a list of all available subcommands.

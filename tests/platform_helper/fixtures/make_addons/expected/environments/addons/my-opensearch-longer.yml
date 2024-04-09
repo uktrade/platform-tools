@@ -45,10 +45,34 @@ Mappings:
       EngineVersion: 'OpenSearch_1.3'
     '2.3':
       EngineVersion: 'OpenSearch_2.3'
+    '2.5':
+      EngineVersion: 'OpenSearch_2.5'
+    '2.7':
+      EngineVersion: 'OpenSearch_2.7'
+    '2.9':
+      EngineVersion: 'OpenSearch_2.9'
+    '2.11':
+      EngineVersion: 'OpenSearch_2.11'
 
 Conditions:
-  myOpensearchLongerEnableHA: !Not [!Equals [!FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceCount], 1]]
-  myOpensearchLongerCreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+  myOpensearchLongerEnableHA:
+    !Not [
+      !Equals [
+        !FindInMap [
+          myOpensearchLongerEnvironmentConfigMap,
+          !Ref Env,
+          InstanceCount
+        ],
+        1
+      ]
+    ]
+  myOpensearchLongerCreateProdSubFilter:
+    !Or [
+      !Equals [!Ref Env, prod],
+      !Equals [!Ref Env, production],
+      !Equals [!Ref Env, PROD],
+      !Equals [!Ref Env, PRODUCTION]
+    ]
 
 Resources:
   myOpensearchLongerOpenSearchSecret:
@@ -60,7 +84,7 @@ Resources:
       Description: !Sub OpenSearch main user secret for ${AWS::StackName}
       GenerateSecretString:
         SecretStringTemplate: '{"username": "opensearch"}'
-        GenerateStringKey: "password"
+        GenerateStringKey: 'password'
         ExcludePunctuation: false
         RequireEachIncludedType: true
         IncludeSpace: false
@@ -73,7 +97,12 @@ Resources:
     Metadata:
       'aws:copilot:description': 'A security group to access OS'
     Type: AWS::EC2::SecurityGroup
-    DeletionPolicy: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [
+        myOpensearchLongerEnvironmentConfigMap,
+        !Ref Env,
+        DeletionPolicy
+      ]
     UpdateReplacePolicy: Retain
     Properties:
       GroupDescription: 'The Security Group for my-opensearch-longer to access OpenSearch.'
@@ -87,7 +116,12 @@ Resources:
     Metadata:
       'aws:copilot:description': 'Allow ingress from containers in my application to the OpenSearch cluster'
     Type: AWS::EC2::SecurityGroupIngress
-    DeletionPolicy: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [
+        myOpensearchLongerEnvironmentConfigMap,
+        !Ref Env,
+        DeletionPolicy
+      ]
     UpdateReplacePolicy: Retain
     Properties:
       Description: Ingress Security Group from Fargate containers
@@ -99,32 +133,55 @@ Resources:
 
   myOpensearchLongerOpenSearchDomain:
     Type: 'AWS::OpenSearchService::Domain'
-    DeletionPolicy: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DeletionPolicy]
+    DeletionPolicy:
+      !FindInMap [
+        myOpensearchLongerEnvironmentConfigMap,
+        !Ref Env,
+        DeletionPolicy
+      ]
     UpdateReplacePolicy: Retain
     Properties:
       AccessPolicies:
         Version: '2012-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'es:ESHttp*'
-          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/myopensearchlon*'
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - 'es:ESHttp*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/myopensearchlon*'
       AdvancedSecurityOptions:
         Enabled: true
         InternalUserDatabaseEnabled: true
         MasterUserOptions:
           MasterUserName:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchLongerOpenSearchSecret, ":SecretString:username}}" ]]
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchLongerOpenSearchSecret,
+                ':SecretString:username}}'
+              ]
+            ]
           MasterUserPassword:
-            !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchLongerOpenSearchSecret, ":SecretString:password}}" ]]
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchLongerOpenSearchSecret,
+                ':SecretString:password}}'
+              ]
+            ]
       DomainEndpointOptions:
         EnforceHTTPS: true
         TLSSecurityPolicy: 'Policy-Min-TLS-1-2-2019-07'
       EngineVersion: !FindInMap
         - myOpensearchLongerEngineVersionMap
-        - !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, EngineVersion]
+        - !FindInMap [
+            myOpensearchLongerEnvironmentConfigMap,
+            !Ref Env,
+            EngineVersion
+          ]
         - EngineVersion
       NodeToNodeEncryptionOptions:
         Enabled: true
@@ -132,24 +189,48 @@ Resources:
         Enabled: true
       EBSOptions:
         EBSEnabled: true
-        VolumeSize: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, VolumeSize]
+        VolumeSize:
+          !FindInMap [
+            myOpensearchLongerEnvironmentConfigMap,
+            !Ref Env,
+            VolumeSize
+          ]
         VolumeType: gp2
       ClusterConfig:
-        DedicatedMasterEnabled: !If [myOpensearchLongerEnableHA, !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, DedicatedMaster], false]
-        InstanceCount: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceCount]
-        InstanceType: !FindInMap [myOpensearchLongerEnvironmentConfigMap, !Ref Env, InstanceType]
+        DedicatedMasterEnabled:
+          !If [
+            myOpensearchLongerEnableHA,
+            !FindInMap [
+              myOpensearchLongerEnvironmentConfigMap,
+              !Ref Env,
+              DedicatedMaster
+            ],
+            false
+          ]
+        InstanceCount:
+          !FindInMap [
+            myOpensearchLongerEnvironmentConfigMap,
+            !Ref Env,
+            InstanceCount
+          ]
+        InstanceType:
+          !FindInMap [
+            myOpensearchLongerEnvironmentConfigMap,
+            !Ref Env,
+            InstanceType
+          ]
         ZoneAwarenessEnabled: !If [myOpensearchLongerEnableHA, true, false]
         ZoneAwarenessConfig: !If
           - myOpensearchLongerEnableHA
           - AvailabilityZoneCount: 2 #Fn::length always resolves to 1 despite there being subnets.
-          - !Ref "AWS::NoValue"
+          - !Ref 'AWS::NoValue'
       VPCOptions:
         SecurityGroupIds:
           - !Ref myOpensearchLongerOpenSearchSecurityGroup
         SubnetIds: !If
           - myOpensearchLongerEnableHA
-          - !Split [ ",", !Ref PrivateSubnets ]
-          - - !Select [ 0, !Split [ ',', !Ref PrivateSubnets ] ]
+          - !Split [',', !Ref PrivateSubnets]
+          - - !Select [0, !Split [',', !Ref PrivateSubnets]]
       SoftwareUpdateOptions:
         AutoSoftwareUpdateEnabled: true
       LogPublishingOptions:
@@ -175,16 +256,32 @@ Resources:
 
   myOpensearchLongerOpenSearchEndpointConfigParam:
     Type: AWS::SSM::Parameter
-    DependsOn: 
+    DependsOn:
       - myOpensearchLongerOpenSearchDomain
     Properties:
-      Name: !Sub "/copilot/${App}/${Env}/secrets/MY_OPENSEARCH_LONGER"
+      Name: !Sub '/copilot/${App}/${Env}/secrets/MY_OPENSEARCH_LONGER'
       Type: String
       Value: !Sub
-        - "https://${username}:${password}@${url}"
+        - 'https://${username}:${password}@${url}'
         - url: !GetAtt myOpensearchLongerOpenSearchDomain.DomainEndpoint
-          username: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchLongerOpenSearchSecret, ":SecretString:username}}" ]]
-          password: !Join [ "",  [ '{{resolve:secretsmanager:', !Ref myOpensearchLongerOpenSearchSecret, ":SecretString:password}}" ]]
+          username:
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchLongerOpenSearchSecret,
+                ':SecretString:username}}'
+              ]
+            ]
+          password:
+            !Join [
+              '',
+              [
+                '{{resolve:secretsmanager:',
+                !Ref myOpensearchLongerOpenSearchSecret,
+                ':SecretString:password}}'
+              ]
+            ]
 
   myOpensearchLongerOpenSearchAuditLogGroup:
     Type: AWS::Logs::LogGroup
