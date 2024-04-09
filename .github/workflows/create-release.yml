@@ -3,8 +3,7 @@ name: Create Release
 on:
   push:
     branches:
-#      - main
-      - DBTP-777-automate-release-version
+      - main
 
 permissions:
   contents: write
@@ -17,4 +16,5 @@ jobs:
       - uses: google-github-actions/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: python
+          config-file: release-config.json
+          manifest-file: release-manifest.json
