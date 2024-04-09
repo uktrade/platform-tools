@@ -99,3 +99,54 @@ poetry publish
 Check the [PyPi Release history](https://pypi.org/project/dbt-platform-helper/#history) to make sure the package has been updated.
 
 For an optional manual check, install the package locally and test everything works as expected.
+
+## Releases
+
+### Release structure
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) in our pull request titles. These become the release commit messages in the `main` branch. The advantage of this is that it's clear from a list of commits, what kind of changes they include (_fix=patch, feat=minor, !=breaking change_) and most importantly whether commits include breaking changes
+- Use [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) to document and manage releases
+- Non-breaking changes already in the `main` branch should be released before merging a breaking change
+- Minor and patch releases should always include zero downtime
+- Documentation for releases with breaking changes should include the upgrade path
+- Where possible the upgrade path should allow for zero downtime, if this is not possible, it should be flagged up big and visible
+- Pull the release information from GitHub Releases into the DBT Platform Documentation (currently WIP)
+- Clicking "Publish release" in GitHub should automatically:
+  - Run the full regression pipeline (currently WIP)
+  - Automate version bumping based on the types in the commit messages (currently WIP)
+  - Publish the package to PyPI
+  - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
+  - Push a notification to the development community via the #developers channel in Slack
+
+### Release procedure - Manual steps
+
+- Create a new branch
+- Ensure you have incremented the `dbt-platform-helper` package version in the root _pyproject.toml_ file. This new version will be released to PyPi and therefore should not already exist as a release version in [PyPI release history](https://pypi.org/project/dbt-platform-helper/#history)
+- During the release process, we run both unit tests and regression tests
+- Create a PR and have it reviewed
+- On approval, merge to main
+- This will trigger a codebuild project called `platform-tools-test` in the _platform-tools_ AWS account to run. 
+  This codebuild project runs on every `push / pull request created /pull request updated` event emitted by Github. It runs the regression tests
+- On _platform-tools_ Github, go to [`Releases`](https://github.com/uktrade/platform-tools) page and create a new draft release
+- To create a new tag, enter a version number that matches the `dbt-platform-helper` package version from the _pyproject.toml_ file, then click create new tag
+- You can generate the Github release notes automatically from the commit messages or add manually
+  - Release notes should contain a link to the relevant pull request for convenience, eg: (#100)
+  - You can remove references to usernames in each commit
+  - Commits should be ordered by [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) syntax under the headings Features and Patches
+  - Publishing this new release will emit a Github `release` event that triggers a codebuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPi
+  - A successful run merges your changes to the main branch (NO that's not true? Its already in main... so what are the consequences if the buildspec-pypi.yml failed?? )
+
+------------
+
+### Release procedure - Publish to Pypi
+
+  Successful completion of the codebuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI.
+  
+  This build process involves the following steps:
+
+  - Retrieving a list of prior releases from the `dbt-platform-helper` PyPI project repository.
+  - Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file exists in the list of releases obtained from PyPI.
+  - If the version does not exist in the PyPI release list, the application is built and published to PyPI as a new release with the version stated in the application _pyproject.toml_ file
+  - Next the script again checks if the updated version number is included in the PyPI release list.
+  If found, it indicates that the new package version exists in PyPI.
+  - A Slack message is sent to the `#developers` channel to notify others that the platform-helper tool has been updated
