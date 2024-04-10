@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import unittest
 from io import BytesIO
 from unittest.mock import MagicMock
@@ -22,6 +23,7 @@ from dbt_platform_helper.custom_resources.app_user import handler
 from dbt_platform_helper.custom_resources.app_user import send
 
 
+@pytest.mark.skipif(sys.version_info != (3, 11), reason="Lambda uses 3.11 at runtime")
 class TestAppUserCustomResource(unittest.TestCase):
     def setUp(self):
         self.cursor = MagicMock()
