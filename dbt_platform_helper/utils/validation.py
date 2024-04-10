@@ -498,4 +498,5 @@ SCHEMA_MAP = {
     "subscription-filter": no_param_schema("subscription-filter"),
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
+    "alb": no_param_schema("alb"),
 }

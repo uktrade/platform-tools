@@ -175,6 +175,7 @@ class TestMakeAddonCommand:
     ):
         """Test that make_addons generates the expected directories and file
         contents."""
+
         # Arrange
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
@@ -184,6 +185,7 @@ class TestMakeAddonCommand:
             addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
+        # fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
 
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -255,7 +257,7 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 4
+            len(actual_files) == len(all_expected_files) + 5
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
     @pytest.mark.parametrize(
@@ -305,11 +307,13 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @mock_s3
     @mock_sts
     @mock_iam
     def test_terraform_compatible_make_addons_success(
         self,
+        mock_get_session,
         fakefs,
         addon_file,
         expected_service_addons,
@@ -317,6 +321,8 @@ class TestMakeAddonCommand:
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
+        mock_aws_client(mock_get_session)
+
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
@@ -348,7 +354,16 @@ class TestMakeAddonCommand:
         ]
 
         for f in expected_service_files:
-            expected_file = Path("expected", f)
+            if "s3" in str(f):
+                # Use the terraform-* fixtures for s3
+                parts = (
+                    "expected",
+                    *f.parts[:-1],
+                    f"terraform-{f.name}",
+                )
+                expected_file = Path(*parts)
+            else:
+                expected_file = Path("expected", f)
 
             expected = yaml.safe_load(expected_file.read_text())
             actual = yaml.safe_load(Path("copilot", f).read_text())
@@ -381,7 +396,7 @@ class TestMakeAddonCommand:
         ]
 
         assert (
-            len(actual_files) == len(all_expected_files) + 4
+            len(actual_files) == len(all_expected_files) + 5
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
     @freeze_time("2023-08-22 16:00:00")
@@ -430,13 +445,17 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     def test_make_addons_removes_old_addons_files(
         self,
+        mock_get_session,
         fakefs,
     ):
         """Tests that old addons files are cleaned up before generating new
         ones."""
+
         # Arrange
+        mock_aws_client(mock_get_session)
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
@@ -524,6 +543,7 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_s3
     @mock_sts
     @mock_iam
@@ -537,6 +557,9 @@ class TestMakeAddonCommand:
     ):
         """Test that deletion policy defaults and overrides are applied
         correctly."""
+
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+
         addon_file_contents = yaml.safe_load(addon_file)
         if deletion_policy_override:
             for env in addon_file_contents[addon_name]["environments"]:
@@ -788,6 +811,8 @@ invalid-entry:
             contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
         )
 
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
@@ -825,6 +850,7 @@ invalid-entry:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_s3
     @mock_sts
     @mock_iam
@@ -844,6 +870,7 @@ invalid-entry:
                     f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
                 )
 
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -897,9 +924,11 @@ invalid-entry:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     def test_addon_instructions_with_postgres_addon_types(
         self, fakefs, addon_file_contents, addon_type, secret_name
     ):
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(addon_file_contents, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -932,6 +961,7 @@ invalid-entry:
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
         fakefs.create_file(ADDON_CONFIG_FILENAME)
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
 
         fakefs.create_file(
             "./copilot/environments/development/manifest.yml",

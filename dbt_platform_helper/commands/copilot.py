@@ -10,6 +10,8 @@ from pathlib import PosixPath
 import click
 import yaml
 
+from dbt_platform_helper.utils.application import get_application_name
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -195,6 +197,26 @@ def is_terraform_project() -> bool:
     return Path("./terraform").is_dir()
 
 
+def _get_s3_kms_alias_arns(session, application_name, extension_name):
+    application = load_application(application_name, session)
+
+    arns = {}
+
+    for environment_name, environment in application.environments.items():
+        client = environment.session.client("kms")
+
+        alias_name = f"alias/{application_name}-{environment_name}-{extension_name}-key"
+
+        try:
+            response = client.describe_key(KeyId=alias_name)
+        except client.exceptions.NotFoundException:
+            pass
+        else:
+            arns[environment_name] = response["KeyMetadata"]["Arn"]
+
+    return arns
+
+
 @copilot.command(deprecated=True, hidden=True)
 def make_addons():
     """
@@ -208,6 +230,10 @@ def make_addons():
     is_terraform = is_terraform_project()
     templates = setup_templates()
     config = _get_config()
+
+    session = get_aws_session_or_abort()
+
+    application_name = get_application_name()
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
@@ -261,6 +287,7 @@ def make_addons():
         services.append(environment_addon_config)
 
         service_addon_config = {
+            "application_name": application_name,
             "name": addon_config.get("name", None) or addon_name,
             "prefix": camel_case(addon_name),
             "environments": environments,
@@ -270,9 +297,17 @@ def make_addons():
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
-            service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
-                "BucketAccess", 1
-            )[0]
+            if is_terraform:
+                s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, addon_name)
+
+                for environment_name in environments:
+                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
+                        environment_name, "kms-key-not-found"
+                    )
+            else:
+                service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
+                    "BucketAccess", 1
+                )[0]
 
         if not is_terraform:
             _generate_env_addons(
@@ -294,6 +329,7 @@ def make_addons():
             service_addon_config,
             templates,
             log_destination_arns,
+            is_terraform=is_terraform,
         )
 
         if addon_type in ["aurora-postgres", "rds-postgres"] and not is_terraform:
@@ -363,6 +399,7 @@ def _generate_service_addons(
     service_addon_config,
     templates,
     log_destination_arns,
+    is_terraform,
 ):
     # generate svc addons
     for addon in addon_template_map[addon_type].get("svc", []):
@@ -375,6 +412,7 @@ def _generate_service_addons(
                 {
                     "addon_config": service_addon_config,
                     "log_destination": log_destination_arns,
+                    "is_terraform": is_terraform,
                 }
             )
 
