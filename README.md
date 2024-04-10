@@ -120,16 +120,15 @@ For an optional manual check, install the package locally and test everything wo
 
 ### Release procedure - Manual steps
 
-- Create a new branch
-- Increment the `dbt-platform-helper` package version in the root _pyproject.toml_ file. This new version will be released to PyPI and therefore should not already exist as a released version in [PyPI release history](https://pypi.org/project/dbt-platform-helper/#history)
-- During the release process, we run both unit tests and regression tests
+- Your work should be on a new branch
 - Create a PR and have it reviewed
 - On approval, merge to main
 - This will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
-- On _platform-tools_ GitHub, go to [`Releases`](https://github.com/uktrade/platform-tools) page and create a new draft release
-- To create a new tag, enter a version number that matches the `dbt-platform-helper` package version from the _pyproject.toml_ file, then click create new tag
-- You can generate the GitHub release notes automatically from the commit messages or add manually
-  - Release notes should contain a link to the relevant pull request for convenience, eg: (#100)
+- We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to main
+  - During the release process, we run both unit tests and regression tests
+  - The _release PR_ is updated with next version number and release notes
+  - When the _release PR_ is merged, a GitHub release is created with tagged version and release notes
+- Release notes should be formatted to contain a link to the relevant pull request for convenience, eg: (#100)
   - You can remove references to usernames in each commit
   - Commits should be ordered by [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) syntax under the headings Features and Patches
   - Publishing this new release will emit a GitHub `release` event that triggers a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
