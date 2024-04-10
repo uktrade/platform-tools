@@ -74,7 +74,7 @@ To publish the Python package `dbt-platform-helper`, you will need an API token.
    - _Note: You will need access to the `platform` group in Passman._
 2. Run `poetry config pypi-token.pypi <token>` to add the token to your Poetry configuration.
 
-Update the version, as the same version cannot be published to PyPi.
+Update the version, as the same version cannot be published to PyPI.
 
 ```
 poetry version patch
@@ -96,7 +96,7 @@ _Note: Make sure your Pull Request (PR) is approved and contains the version upg
 poetry publish
 ```
 
-Check the [PyPi Release history](https://pypi.org/project/dbt-platform-helper/#history) to make sure the package has been updated.
+Check the [PyPI Release history](https://pypi.org/project/dbt-platform-helper/#history) to make sure the package has been updated.
 
 For an optional manual check, install the package locally and test everything works as expected.
 
@@ -121,31 +121,30 @@ For an optional manual check, install the package locally and test everything wo
 ### Release procedure - Manual steps
 
 - Create a new branch
-- Ensure you have incremented the `dbt-platform-helper` package version in the root _pyproject.toml_ file. This new version will be released to PyPi and therefore should not already exist as a release version in [PyPI release history](https://pypi.org/project/dbt-platform-helper/#history)
+- Increment the `dbt-platform-helper` package version in the root _pyproject.toml_ file. This new version will be released to PyPI and therefore should not already exist as a released version in [PyPI release history](https://pypi.org/project/dbt-platform-helper/#history)
 - During the release process, we run both unit tests and regression tests
 - Create a PR and have it reviewed
 - On approval, merge to main
-- This will trigger a codebuild project called `platform-tools-test` in the _platform-tools_ AWS account to run. 
-  This codebuild project runs on every `push / pull request created /pull request updated` event emitted by Github. It runs the regression tests
-- On _platform-tools_ Github, go to [`Releases`](https://github.com/uktrade/platform-tools/releases) page and create a new draft release
+- This will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
+- On _platform-tools_ GitHub, go to [`Releases`](https://github.com/uktrade/platform-tools) page and create a new draft release
 - To create a new tag, enter a version number that matches the `dbt-platform-helper` package version from the _pyproject.toml_ file, then click create new tag
-- You can generate the Github release notes automatically from the commit messages or add manually
+- You can generate the GitHub release notes automatically from the commit messages or add manually
   - Release notes should contain a link to the relevant pull request for convenience, eg: (#100)
   - You can remove references to usernames in each commit
   - Commits should be ordered by [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) syntax under the headings Features and Patches
-  - Publishing this new release will emit a Github `release` event that triggers a codebuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPi
-  - A successful run merges your changes to the main branch (NO that's not true? Its already in main... so what are the consequences if the buildspec-pypi.yml failed?? )
+  - Publishing this new release will emit a GitHub `release` event that triggers a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
+  - A successful run publishes the new version to PyPI
 
 ------------
 
-### Release procedure - Publish to Pypi
+### Release procedure - Publish to PyPI
 
-  Successful completion of the codebuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI.
+  Successful completion of the CodeBuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI.
   
   This build process involves the following steps:
 
   - Retrieving a list of prior releases from the `dbt-platform-helper` PyPI project repository.
-  - Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file exists in the list of releases obtained from PyPI.
+  - Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file does not exist in the list of releases obtained from PyPI.
   - If the version does not exist in the PyPI release list, the application is built and published to PyPI as a new release with the version stated in the application _pyproject.toml_ file
   - Next the script again checks if the updated version number is included in the PyPI release list.
   If found, it indicates that the new package version exists in PyPI.
