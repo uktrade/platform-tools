@@ -1,17 +1,20 @@
 import json
+import logging
 import unittest
-from multiprocessing import context
+from io import BytesIO
 from unittest.mock import MagicMock
+from unittest.mock import call
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 import boto3
 import pytest
-import responses
 from moto import mock_resourcegroupstaggingapi
 from moto import mock_secretsmanager
 from moto import mock_ssm
 from parameterized import parameterized
 
+from dbt_platform_helper.custom_resources import app_user
 from dbt_platform_helper.custom_resources.app_user import create_db_user
 from dbt_platform_helper.custom_resources.app_user import create_or_update_user_secret
 from dbt_platform_helper.custom_resources.app_user import drop_user
@@ -38,8 +41,11 @@ class TestAppUserCustomResource(unittest.TestCase):
             },
             "LogicalResourceId": "123LogicalResourceId",
             "StackId": "123/TestStackId",
+            "ResponseURL": "https://test.url",
+            "RequestId": "test-id-123",
         }
         cls.context = MagicMock()
+        cls.context.log_stream_name = "test-log-stream"
         cls.conn = MagicMock()
         cls.cursor = MagicMock()
 
@@ -125,67 +131,63 @@ class TestAppUserCustomResource(unittest.TestCase):
         assert parameter["Version"] == 2
         assert parameter["Value"] == json.dumps(user_secret_string)
 
-    @responses.activate
-    def test_send(self):
-        event = {
-            "ResponseURL": "https://test.url",
-            "StackId": 123,
-            "RequestId": 1234,
-            "LogicalResourceId": 12345,
-        }
-        context = MagicMock()
-        context.log_stream_name = "test-log-stream"
-        responseStatus = 200
-        responseData = {"some": "test data"}
-        physicalResourceId = 123456
-        noEcho = True
-        reason = "Success"
-        response = responses.Response(method="PUT", url="https://test.url")
-        responses.add(response)
+    @patch("urllib.request.urlopen", return_value=None)
+    def test_send(self, urlopen):
+        test_url = "https://test.url"
+        event = {"ResponseURL": test_url}
+        body = {"some": "test data"}
+        logger = logging.getLogger(app_user.__name__)
+        headers = {"Test": "header"}
 
-        send(event, context, responseStatus, responseData, physicalResourceId, noEcho, reason)
+        send(event, body, logger, headers)
 
-        assert len(responses.calls) == 1
-        assert responses.calls[0].request.url == "https://test.url/"
-        assert responses.calls[0].request.headers["content-type"] == ""
-        assert (
-            responses.calls[0].request.body.decode()
-            == '{"Status": 200, "Reason": "Success", "PhysicalResourceId": 123456, "StackId": 123, "RequestId": 1234, "LogicalResourceId": 12345, "NoEcho": true, "Data": {"some": "test data"}}'
+        sent_request = urlopen.call_args_list[0].args[0]
+        urlopen.assert_called_once()
+        assert sent_request.headers == headers
+        assert sent_request.full_url == "https://test.url"
+        assert sent_request.data == body
+        assert sent_request.get_method() == "PUT"
+
+    @patch("time.sleep", return_value=None)
+    @patch(
+        "urllib.request.urlopen",
+        side_effect=HTTPError("https://example.com", 404, "Not Found", None, BytesIO(b"Some Data")),
+    )
+    def test_send_failure_retries_5_times(self, urlopen, sleep):
+        logger = logging.getLogger(app_user.__name__)
+        logger.warning = MagicMock(logger.warning)
+        logger.error = MagicMock(logger.error)
+
+        event = {"ResponseURL": "https://test.url"}
+
+        send(event, {}, logger, {})
+
+        self.assertEqual(5, urlopen.call_count)
+        logger.warning.assert_has_calls(
+            [
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 1"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 2"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 3"),
+                call("HTTP Error 404: Not Found [https://example.com] - Retry 4"),
+            ]
         )
-
-    @responses.activate
-    def test_send_exception(self):
-        event = {
-            "ResponseURL": "https://test.url",
-            "StackId": 123,
-            "RequestId": 1234,
-            "LogicalResourceId": 12345,
-        }
-        context = MagicMock()
-        context.log_stream_name = "test-log-stream"
-        responseStatus = 200
-        responseData = {"some": "test data"}
-        physicalResourceId = 123456
-        noEcho = True
-        reason = "Success"
-        response = responses.Response(
-            method="PUT", url="https://test.url", body=Exception("summut went wrong")
+        logger.error.assert_called_with("HTTP Error 404: Not Found [https://example.com]")
+        sleep.assert_has_calls(
+            [
+                call(5),
+                call(10),
+                call(15),
+                call(20),
+            ]
         )
-        responses.add(response)
-
-        send(event, context, responseStatus, responseData, physicalResourceId, noEcho, reason)
-
-        captured = self.capsys.readouterr()
-
-        assert "send(..) failed executing requests.put(..): summut went wrong" in captured.out
 
     @parameterized.expand(["Create", "Update"])
     @patch("dbt_platform_helper.custom_resources.app_user.create_db_user")
-    @patch("dbt_platform_helper.custom_resources.app_user.send")
+    @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
     @mock_secretsmanager
     @mock_ssm
-    def test_handler(self, request_type, mock_connect, mock_send, mock_create_db_user):
+    def test_handler(self, request_type, mock_connect, mock_send_response, mock_create_db_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
             Name=self.secret_name, SecretString=self.secret_string
@@ -195,7 +197,7 @@ class TestAppUserCustomResource(unittest.TestCase):
         mock_connect.return_value = self.conn
         self.conn.cursor = self.cursor
 
-        handler(self.event, context)
+        handler(self.event, self.context)
 
         ssm = boto3.client("ssm")
         user_password = json.loads(ssm.get_parameter(Name=self.secret_name)["Parameter"]["Value"])[
@@ -208,16 +210,16 @@ class TestAppUserCustomResource(unittest.TestCase):
         captured = self.capsys.readouterr()
         data = json.loads(captured.out.split("\n")[2])["Data"]
 
-        mock_send.assert_called_once_with(
-            self.event, context, "SUCCESS", data, self.event["LogicalResourceId"]
+        mock_send_response.assert_called_once_with(
+            self.event, self.context, "SUCCESS", data, self.event["LogicalResourceId"]
         )
 
     @patch("dbt_platform_helper.custom_resources.app_user.drop_user")
-    @patch("dbt_platform_helper.custom_resources.app_user.send")
+    @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
     @mock_secretsmanager
     @mock_ssm
-    def test_handler_delete(self, mock_connect, mock_send, mock_drop_user):
+    def test_handler_delete(self, mock_connect, mock_send_response, mock_drop_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
             Name=self.secret_name, SecretString=self.secret_string
@@ -229,21 +231,21 @@ class TestAppUserCustomResource(unittest.TestCase):
         mock_connect.return_value = self.conn
         self.conn.cursor = self.cursor
 
-        handler(self.event, context)
+        handler(self.event, self.context)
 
         captured = self.capsys.readouterr()
         data = json.loads(captured.out.split("\n")[2])["Data"]
 
         mock_drop_user.assert_called_once_with(self.cursor(), "test-user")
-        mock_send.assert_called_once_with(
-            self.event, context, "SUCCESS", data, self.event["LogicalResourceId"]
+        mock_send_response.assert_called_once_with(
+            self.event, self.context, "SUCCESS", data, self.event["LogicalResourceId"]
         )
         assert len(ssm.describe_parameters()["Parameters"]) == 0
 
-    @patch("dbt_platform_helper.custom_resources.app_user.send")
+    @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
     @mock_secretsmanager
-    def test_handler_invalid_request_type(self, mock_connect, mock_send):
+    def test_handler_invalid_request_type(self, mock_connect, mock_send_response):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
             Name=self.secret_name, SecretString=self.secret_string
@@ -253,20 +255,20 @@ class TestAppUserCustomResource(unittest.TestCase):
         mock_connect.return_value = self.conn
         self.conn.cursor = self.cursor
 
-        handler(self.event, context)
+        handler(self.event, self.context)
 
         captured = self.capsys.readouterr()
         data = json.loads(captured.out.split("\n")[2])["Data"]
 
-        mock_send.assert_called_once_with(
-            self.event, context, "FAILED", data, self.event["LogicalResourceId"]
+        mock_send_response.assert_called_once_with(
+            self.event, self.context, "FAILED", data, self.event["LogicalResourceId"]
         )
 
     @patch("dbt_platform_helper.custom_resources.app_user.create_db_user", side_effect=Exception())
-    @patch("dbt_platform_helper.custom_resources.app_user.send")
+    @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
     @mock_secretsmanager
-    def test_handler_exception(self, mock_connect, mock_send, mock_create_db_user):
+    def test_handler_exception(self, mock_connect, mock_send_response, mock_create_db_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
             Name=self.secret_name, SecretString=self.secret_string
@@ -276,11 +278,11 @@ class TestAppUserCustomResource(unittest.TestCase):
         mock_connect.return_value = self.conn
         self.conn.cursor = self.cursor
 
-        handler(self.event, context)
+        handler(self.event, self.context)
 
         captured = self.capsys.readouterr()
         data = json.loads(captured.out.split("\n")[2])["Data"]
 
-        mock_send.assert_called_once_with(
-            self.event, context, "FAILED", data, self.event["LogicalResourceId"]
+        mock_send_response.assert_called_once_with(
+            self.event, self.context, "FAILED", data, self.event["LogicalResourceId"]
         )

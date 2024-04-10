@@ -114,13 +114,6 @@ def send_response(
     headers = {"content-type": "", "content-length": str(len(json_responseBody))}
 
     send(event, json_responseBody.encode(), logger, headers)
-    # try:
-    #     response = requests.put(
-    #         responseUrl, data=json_responseBody.encode("utf-8"), headers=headers
-    #     )
-    #     print("Status code: " + response.reason)
-    # except Exception as e:
-    #     print("send(..) failed executing requests.put(..): " + str(e))
 
 
 def handler(event, context):
