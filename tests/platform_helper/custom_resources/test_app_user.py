@@ -15,6 +15,9 @@ from moto import mock_secretsmanager
 from moto import mock_ssm
 from parameterized import parameterized
 
+if sys.version_info != (3, 11):
+    pytest.skip("Lambda uses 3.11 at runtime", allow_module_level=True)
+
 from dbt_platform_helper.custom_resources import app_user
 from dbt_platform_helper.custom_resources.app_user import create_db_user
 from dbt_platform_helper.custom_resources.app_user import create_or_update_user_secret
@@ -23,7 +26,6 @@ from dbt_platform_helper.custom_resources.app_user import handler
 from dbt_platform_helper.custom_resources.app_user import send
 
 
-@pytest.mark.skipif(sys.version_info != (3, 11), reason="Lambda uses 3.11 at runtime")
 class TestAppUserCustomResource(unittest.TestCase):
     def setUp(self):
         self.cursor = MagicMock()
