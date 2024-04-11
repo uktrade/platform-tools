@@ -44,7 +44,7 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             {% if is_terraform %}
-            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, KmsKeyArn]
             {% else %}
             Resource:
               Fn::ImportValue:

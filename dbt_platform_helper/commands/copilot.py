@@ -100,6 +100,7 @@ def _validate_and_normalise_config(config_file):
         return {}
 
     errors = validate_addons(config)
+
     if errors:
         click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
         for addon, error in errors.items():
@@ -201,7 +202,6 @@ def _get_s3_kms_alias_arns(session, application_name, extension_name):
     application = load_application(application_name, session)
 
     arns = {}
-
     for environment_name, environment in application.environments.items():
         client = environment.session.client("kms")
 
@@ -225,12 +225,13 @@ def make_addons():
 
     Generate addons CloudFormation for each environment.
     """
+
     output_dir = Path(".").absolute()
     ensure_cwd_is_repo_root()
     is_terraform = is_terraform_project()
+
     templates = setup_templates()
     config = _get_config()
-
     session = get_aws_session_or_abort()
 
     application_name = get_application_name()
@@ -299,7 +300,6 @@ def make_addons():
         if addon_type in ["s3", "s3-policy"]:
             if is_terraform:
                 s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, addon_name)
-
                 for environment_name in environments:
                     environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
                         environment_name, "kms-key-not-found"
