@@ -122,17 +122,16 @@ For an optional manual check, install the package locally and test everything wo
 
 #### Publishing GitHub release
 
-- Publishing a GitHub release should automatically:
-  - Run the full regression pipeline (currently WIP)
-  - Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
-  - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
-  - Push a notification to the development community via the #developers channel in Slack
+Publishing a GitHub release should automatically:
+
+- Run the full regression pipeline (currently WIP)
+- Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
+- Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
+- Push a notification to the development community via the #developers channel in Slack
 
 #### Publishing to PyPI
 
-Successful completion of the CodeBuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI.
-  
-This build process involves the following steps:
+Successful completion of the CodeBuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI. This build process involves the following steps:
 
 - Retrieving a list of prior releases from the `dbt-platform-helper` PyPI project repository.
 - Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file does not exist in the list of releases obtained from PyPI.
@@ -149,6 +148,6 @@ If found, it indicates that the new package version exists in PyPI.
 4. A _release PR_ will automatically be created when changes are merged to main
    - The _release PR_ is updated with next version number and release notes based on the commits since the last release
 5. Merge the _release PR_ to create a draft GitHub release
-6. Ensure the release notes contain an upgrade path for breaking changes
+6. Ensure the release notes contain an upgrade path for any breaking changes
 7. Publish the GitHub release 
-8. Check PyPI for new published version
+8. Check PyPI for the new published version
