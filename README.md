@@ -67,7 +67,7 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 
 ### Publishing
 
-To publish the Python package `dbt-platform-helper`, you will need an API token.
+Publishing to PyPI happens automatically when a GitHub Release is published. To publish the Python package `dbt-platform-helper` manually, you will need an API token.
 
 1. Acquire API token from [Passman](https://passman.ci.uktrade.digital/secret/cc82a3f7-ddfa-4312-ab56-1ff8528dadc8/).
    - Request access from the SRE team.
