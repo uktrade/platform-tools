@@ -480,10 +480,16 @@ OPENSEARCH_SCHEMA = ConditionalSchema(
                 Optional("deletion_policy"): DELETION_POLICY,
                 Optional("plan"): OPENSEARCH_PLANS,
                 Optional("volume_size"): int,
+                Optional("apply_immediately"): bool,
+                Optional("automatic_failover_enabled"): bool,
+                Optional("instance"): str,
+                Optional("multi_az_enabled"): bool,
+                Optional("replicas"): int,
             }
         },
     }
 )
+
 
 MONITORING_SCHEMA = Schema(
     {
