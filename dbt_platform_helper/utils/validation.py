@@ -416,6 +416,11 @@ REDIS_SCHEMA = Schema(
                 Optional("engine"): REDIS_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
                 Optional("deletion_policy"): DELETION_POLICY,
+                Optional("apply_immediately"): bool,
+                Optional("automatic_failover_enabled"): bool,
+                Optional("instance"): str,
+                Optional("multi_az_enabled"): bool,
+                Optional("replicas"): int,
             }
         },
     }
@@ -480,11 +485,15 @@ OPENSEARCH_SCHEMA = ConditionalSchema(
                 Optional("deletion_policy"): DELETION_POLICY,
                 Optional("plan"): OPENSEARCH_PLANS,
                 Optional("volume_size"): int,
-                Optional("apply_immediately"): bool,
-                Optional("automatic_failover_enabled"): bool,
+                Optional("ebs_throughput"): int,
+                Optional("ebs_volume_type"): str,
                 Optional("instance"): str,
-                Optional("multi_az_enabled"): bool,
-                Optional("replicas"): int,
+                Optional("instances"): int,
+                Optional("master"): bool,
+                Optional("es_app_log_retention_in_days"): int,
+                Optional("index_slow_log_retention_in_days"): int,
+                Optional("audit_log_retention_in_days"): int,
+                Optional("search_slow_log_retention_in_days"): int,
             }
         },
     }
