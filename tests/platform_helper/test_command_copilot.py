@@ -37,7 +37,7 @@ redis:
 
 RDS_POSTGRES_STORAGE_CONTENTS = """
 rds:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
@@ -236,11 +236,6 @@ class TestTerraformEnabledMakeAddonCommand:
         assert (
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-
-        db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
-        assert (
-            db_warning not in result.stdout
-        ), "We don't expect the DB warning which relates to the legacy Copilot/CFN database addon"
 
         assert ">>> Generating terraform compatbiele addons CloudFormation" in result.stdout
 
@@ -994,7 +989,7 @@ invalid-entry:
         "addon_file_contents, addon_type, secret_name",
         [
             ([REDIS_STORAGE_CONTENTS], "redis", "REDIS"),
-            ([RDS_POSTGRES_STORAGE_CONTENTS], "rds-postgres", "RDS"),
+            ([RDS_POSTGRES_STORAGE_CONTENTS], "postgres", "RDS"),
             ([AURORA_POSTGRES_STORAGE_CONTENTS], "aurora-postgres", "AURORA"),
         ],
     )

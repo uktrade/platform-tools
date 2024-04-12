@@ -266,7 +266,7 @@ def make_addons():
         environments = addon_config.pop("environments")
         if addon_template_map[addon_type].get("requires_addons_parameters", False):
             has_addons_parameters = True
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "postgres"]:
             has_postgres_addon = True
 
         for environment_name, environment_config in environments.items():
@@ -332,7 +332,7 @@ def make_addons():
             is_terraform=is_terraform,
         )
 
-        if addon_type in ["aurora-postgres", "rds-postgres"] and not is_terraform:
+        if addon_type in ["aurora-postgres", "postgres"] and not is_terraform:
             click.secho(
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",

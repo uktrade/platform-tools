@@ -420,7 +420,6 @@ REDIS_SCHEMA = Schema(
                 Optional("automatic_failover_enabled"): bool,
                 Optional("instance"): str,
                 Optional("multi_az_enabled"): bool,
-                Optional("replicas"): int,
             }
         },
     }
