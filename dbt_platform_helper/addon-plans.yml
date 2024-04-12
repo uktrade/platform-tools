@@ -186,3 +186,5 @@ aurora-postgres: {}
 s3: {}
 
 s3-policy: {}
+
+alb: {}

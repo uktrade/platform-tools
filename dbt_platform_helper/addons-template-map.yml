@@ -47,3 +47,5 @@ vpc:
   requires_addons_parameters: true
   env:
     - template: addons/env/vpc.yml
+alb:
+  requires_addons_parameters: false

@@ -241,10 +241,10 @@ def make_addons():
 
     _generate_env_overrides(output_dir)
 
-    click.echo("\n>>> Generating addons CloudFormation\n")
-
     if is_terraform:
-        click.echo(click.style("Generating Terraform compatible addons", blink=True, fg="green"))
+        click.echo("\n>>> Generating terraform compatbiele addons CloudFormation\n")
+    else:
+        click.echo("\n>>> Generating addons CloudFormation\n")
 
     env_addons_path = Path(f"copilot/environments/addons/")
     (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)

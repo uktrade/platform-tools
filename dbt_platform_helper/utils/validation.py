@@ -144,7 +144,7 @@ def float_between_with_halfstep(lower, upper):
 
 
 ENV_NAME = Regex(
-    r"^([a-zA-Z][a-zA-Z0-9]*|\*)$",
+    r"^([a-z][a-zA-Z0-9]*|\*)$",
     error="Environment name {} is invalid: names must only contain alphanumeric characters.",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
@@ -481,6 +481,19 @@ MONITORING_SCHEMA = Schema(
     }
 )
 
+ALB_SCHEMA = Schema(
+    {
+        "type": "alb",
+        Optional("environments"): {
+            ENV_NAME: {
+                Optional("domain_prefix"): str,
+                Optional("env_root"): str,
+                Optional("cdn_domains_list"): dict,
+            }
+        },
+    }
+)
+
 
 def no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
@@ -498,5 +511,5 @@ SCHEMA_MAP = {
     "subscription-filter": no_param_schema("subscription-filter"),
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
-    "alb": no_param_schema("alb"),
+    "alb": ALB_SCHEMA,
 }
