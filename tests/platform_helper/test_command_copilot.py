@@ -155,6 +155,145 @@ class TestTerraformEnabledMakeAddonCommand:
             == kms_key_arn
         )
 
+    @pytest.mark.parametrize(
+        "addon_file, expected_service_addons",
+        [
+            (
+                "s3_addons.yml",
+                [
+                    "appconfig-ipfilter.yml",
+                    "subscription-filter.yml",
+                    "my-s3-bucket.yml",
+                    "my-s3-bucket-with-an-object.yml",
+                    "my-s3-bucket-bucket-access.yml",
+                ],
+            ),
+            (
+                "opensearch_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+            (
+                "rds_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+            (
+                "redis_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+            (
+                "aurora_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+            (
+                "monitoring_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+        ],
+    )
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_platform_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @mock_s3
+    @mock_sts
+    @mock_iam
+    def test_terraform_compatible_make_addons_success(
+        self,
+        mock_get_session,
+        fakefs,
+        addon_file,
+        expected_service_addons,
+    ):
+        """Test that make_addons generates the expected directories and file
+        contents."""
+        # Arrange
+        mock_aws_client(mock_get_session)
+
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        fakefs.add_real_file(
+            addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
+        )
+        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
+
+        # make-addons will generate terraform compatible addons if it detects a ./terraform directory
+        fakefs.create_dir("./terraform")
+
+        # Act
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert (
+            result.exit_code == 0
+        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
+
+        db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
+        assert (
+            db_warning not in result.stdout
+        ), "We don't expect the DB warning which relates to the legacy Copilot/CFN database addon"
+
+        assert ">>> Generating terraform compatbiele addons CloudFormation" in result.stdout
+
+        expected_service_files = [
+            Path("web/addons", filename) for filename in expected_service_addons
+        ]
+
+        for f in expected_service_files:
+            if "s3" in str(f):
+                # Use the terraform-* fixtures for s3
+                parts = (
+                    "expected",
+                    *f.parts[:-1],
+                    f"terraform-{f.name}",
+                )
+                expected_file = Path(*parts)
+            else:
+                expected_file = Path("expected", f)
+
+            expected = yaml.safe_load(expected_file.read_text())
+            actual = yaml.safe_load(Path("copilot", f).read_text())
+
+            assert sorted(expected) == sorted(
+                actual
+            ), f"The file {f} did not have the expected content"
+
+            assert actual == expected
+
+        assert not any(
+            Path("./copilot/environments/addons/").iterdir()
+        ), "./copilot/environments/addons/ should be empty"
+
+        env_override_files = setup_override_files_for_environments()
+        for file in env_override_files:
+            assert f"{file} created" in result.stdout
+
+        all_expected_files = expected_service_files + env_override_files
+
+        expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
+        actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
+        assert actual_svc_overrides_file == expected_svc_overrides_file
+
+        copilot_dir = Path("copilot")
+        actual_files = [
+            Path(d, f).relative_to(copilot_dir)
+            for d, _, files in os.walk(copilot_dir)
+            for f in files
+        ]
+
+        assert (
+            len(actual_files) == len(all_expected_files) + 5
+        ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
+
     # def test_warning_message_for_missing_kms_arn():
     #     pass
 
@@ -326,145 +465,6 @@ class TestMakeAddonCommand:
         for file in env_override_files:
             assert f"{file} created" in result.stdout
         all_expected_files += env_override_files
-
-        expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
-        actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
-        assert actual_svc_overrides_file == expected_svc_overrides_file
-
-        copilot_dir = Path("copilot")
-        actual_files = [
-            Path(d, f).relative_to(copilot_dir)
-            for d, _, files in os.walk(copilot_dir)
-            for f in files
-        ]
-
-        assert (
-            len(actual_files) == len(all_expected_files) + 5
-        ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
-
-    @pytest.mark.parametrize(
-        "addon_file, expected_service_addons",
-        [
-            (
-                "s3_addons.yml",
-                [
-                    "appconfig-ipfilter.yml",
-                    "subscription-filter.yml",
-                    "my-s3-bucket.yml",
-                    "my-s3-bucket-with-an-object.yml",
-                    "my-s3-bucket-bucket-access.yml",
-                ],
-            ),
-            (
-                "opensearch_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-            (
-                "rds_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-            (
-                "redis_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-            (
-                "aurora_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-            (
-                "monitoring_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-        ],
-    )
-    @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
-    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch(
-        "dbt_platform_helper.commands.copilot.get_log_destination_arn",
-        new=Mock(
-            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
-        ),
-    )
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_s3
-    @mock_sts
-    @mock_iam
-    def test_terraform_compatible_make_addons_success(
-        self,
-        mock_get_session,
-        fakefs,
-        addon_file,
-        expected_service_addons,
-    ):
-        """Test that make_addons generates the expected directories and file
-        contents."""
-        # Arrange
-        mock_aws_client(mock_get_session)
-
-        addons_dir = FIXTURES_DIR / "make_addons"
-        fakefs.add_real_directory(
-            addons_dir / "config/copilot", read_only=False, target_path="copilot"
-        )
-        fakefs.add_real_file(
-            addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
-        )
-        fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
-
-        # make-addons will generate terraform compatible addons if it detects a ./terraform directory
-        fakefs.create_dir("./terraform")
-
-        # Act
-        result = CliRunner().invoke(copilot, ["make-addons"])
-
-        assert (
-            result.exit_code == 0
-        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-
-        db_warning = "Note: The key DATABASE_CREDENTIALS may need to be changed"
-        assert (
-            db_warning not in result.stdout
-        ), "We don't expect the DB warning which relates to the legacy Copilot/CFN database addon"
-
-        assert "Generating Terraform compatible addons" in result.stdout
-
-        expected_service_files = [
-            Path("web/addons", filename) for filename in expected_service_addons
-        ]
-
-        for f in expected_service_files:
-            if "s3" in str(f):
-                # Use the terraform-* fixtures for s3
-                parts = (
-                    "expected",
-                    *f.parts[:-1],
-                    f"terraform-{f.name}",
-                )
-                expected_file = Path(*parts)
-            else:
-                expected_file = Path("expected", f)
-
-            expected = yaml.safe_load(expected_file.read_text())
-            actual = yaml.safe_load(Path("copilot", f).read_text())
-
-            assert sorted(expected) == sorted(
-                actual
-            ), f"The file {f} did not have the expected content"
-
-            assert actual == expected
-
-        assert not any(
-            Path("./copilot/environments/addons/").iterdir()
-        ), "./copilot/environments/addons/ should be empty"
-
-        env_override_files = setup_override_files_for_environments()
-        for file in env_override_files:
-            assert f"{file} created" in result.stdout
-
-        all_expected_files = expected_service_files + env_override_files
 
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
