@@ -323,6 +323,7 @@ S3_BASE = {
             "bucket_name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("retention_policy"): RETENTION_POLICY,
+            Optional("versioning"): bool,
         }
     },
 }
