@@ -126,7 +126,7 @@ opensearch:
     instance: m6g.2xlarge.search
 
 # RDS/Postgres Instances
-rds-postgres:
+postgres:
   # 2v CPU, 1GB RAM, 20GB Storage
   tiny:
     volume_size: 20
@@ -145,6 +145,14 @@ rds-postgres:
     multi_az: true
     instance: db.t3.small
 
+  # 2v CPU, 2GB RAM, 100GB Storage, multi AZ
+  small-high-io:
+    volume_size: 100
+    multi_az: true
+    instance: db.t3.small
+    storage_type: io1
+    iops: 40000
+
   # 2v CPU, 8GB RAM, 100GB Storage
   medium:
     volume_size: 100
@@ -156,6 +164,14 @@ rds-postgres:
     volume_size: 100
     multi_az: true
     instance: db.m5.large
+
+  # 2v CPU, 8GB RAM, 100GB Storage, multi AZ
+  medium-high-io:
+    volume_size: 100
+    multi_az: true
+    instance: db.m5.large
+    storage_type: io1
+    iops: 40000
 
   # 8v CPU, 32GB RAM, 564GB Storage
   large:
@@ -169,6 +185,14 @@ rds-postgres:
     multi_az: true
     instance: db.m5.2xlarge
 
+  # 8v CPU, 32GB RAM, 564GB Storage, multi AZ
+  large-high-io:
+    volume_size: 564
+    multi_az: true
+    instance: db.m5.2xlarge
+    storage_type: io1
+    iops: 40000
+
   # 16v CPU, 64GB RAM, 2000GB Storage
   x-large:
     volume_size: 2000
@@ -181,10 +205,18 @@ rds-postgres:
     multi_az: true
     instance: db.m5.4xlarge
 
-aurora-postgres: {}
+  # 16v CPU, 64GB RAM, 2000GB Storage, multi AZ
+  x-large-high-io:
+    volume_size: 2000
+    multi_az: true
+    instance: db.m5.4xlarge
+    storage_type: io1
+    iops: 40000
 
 s3: {}
 
 s3-policy: {}
+
+monitoring: {}
 
 alb: {}
