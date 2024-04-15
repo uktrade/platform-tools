@@ -280,7 +280,7 @@ NUMBER = Or(int, float)
 DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
 DELETION_POLICY = Or("Delete", "Retain")
 DELETION_PROTECTION = bool
-RDS_PLANS = Or(
+POSTGRES_PLANS = Or(
     "tiny",
     "small",
     "small-ha",
@@ -294,7 +294,7 @@ RDS_PLANS = Or(
     "x-large-ha",
     "x-large-high-io",
 )
-RDS_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
+POSTGRES_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
 
 RETENTION_POLICY = Or(
     None,
@@ -381,21 +381,21 @@ AURORA_SCHEMA = Schema(
     }
 )
 
-RDS_SCHEMA = Schema(
+POSTGRES_SCHEMA = Schema(
     {
         "type": "postgres",
         "version": NUMBER,
         Optional("deletion_policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
-                Optional("plan"): RDS_PLANS,
+                Optional("plan"): POSTGRES_PLANS,
                 Optional("volume_size"): int_between(20, 10000),
                 Optional("iops"): int_between(1000, 9950),
                 Optional("snapshot_id"): str,
                 Optional("deletion_policy"): DB_DELETION_POLICY,
                 Optional("deletion_protection"): DELETION_PROTECTION,
                 Optional("multi_az"): bool,
-                Optional("storage_type"): RDS_STORAGE_TYPES,
+                Optional("storage_type"): POSTGRES_STORAGE_TYPES,
             }
         },
         Optional("objects"): [
@@ -532,7 +532,7 @@ SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
     "aurora-postgres": AURORA_SCHEMA,
-    "postgres": RDS_SCHEMA,
+    "postgres": POSTGRES_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,
     "monitoring": MONITORING_SCHEMA,
