@@ -285,9 +285,6 @@ class TestTerraformEnabledMakeAddonCommand:
             len(actual_files) == len(all_expected_files) + 5
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
-    # def test_warning_message_for_missing_kms_arn():
-    #     pass
-
 
 class TestMakeAddonCommand:
     @patch(
