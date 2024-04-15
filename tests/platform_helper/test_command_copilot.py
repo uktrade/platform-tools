@@ -237,7 +237,7 @@ class TestTerraformEnabledMakeAddonCommand:
             result.exit_code == 0
         ), f"The exit code should have been 0 (success) but was {result.exit_code}"
 
-        assert ">>> Generating terraform compatbiele addons CloudFormation" in result.stdout
+        assert ">>> Generating Terraform compatible addons CloudFormation" in result.stdout
 
         expected_service_files = [
             Path("web/addons", filename) for filename in expected_service_addons
