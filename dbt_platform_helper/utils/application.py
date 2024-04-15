@@ -105,6 +105,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
             json.loads(p["Value"]) for p in response["Parameters"] if is_environment_key(p["Name"])
         ]
     }
+
     return application
 
 
