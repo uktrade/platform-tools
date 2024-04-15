@@ -35,7 +35,7 @@ redis:
       plan: small
 """
 
-RDS_POSTGRES_STORAGE_CONTENTS = """
+POSTGRES_STORAGE_CONTENTS = """
 rds:
   type: postgres
   version: 14.4
@@ -178,10 +178,6 @@ class TestTerraformEnabledMakeAddonCommand:
             ),
             (
                 "redis_addons.yml",
-                ["appconfig-ipfilter.yml", "subscription-filter.yml"],
-            ),
-            (
-                "aurora_addons.yml",
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
             ),
             (
@@ -598,7 +594,7 @@ class TestMakeAddonCommand:
         [
             (S3_STORAGE_CONTENTS, "s3"),
             (REDIS_STORAGE_CONTENTS, "redis"),
-            (RDS_POSTGRES_STORAGE_CONTENTS, "rds"),
+            (POSTGRES_STORAGE_CONTENTS, "rds"),
             (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora"),
             (OPENSEARCH_STORAGE_CONTENTS, "opensearch"),
         ],
@@ -905,13 +901,13 @@ invalid-entry:
         "addon_file_contents, has_postgres_addon",
         [
             ([REDIS_STORAGE_CONTENTS], False),
-            ([RDS_POSTGRES_STORAGE_CONTENTS], True),
+            ([POSTGRES_STORAGE_CONTENTS], True),
             ([AURORA_POSTGRES_STORAGE_CONTENTS], True),
             ([OPENSEARCH_STORAGE_CONTENTS], False),
             # Check when we have a mix of addons...
             (
                 [
-                    RDS_POSTGRES_STORAGE_CONTENTS,
+                    POSTGRES_STORAGE_CONTENTS,
                     OPENSEARCH_STORAGE_CONTENTS,
                     S3_STORAGE_CONTENTS,
                 ],
@@ -989,7 +985,7 @@ invalid-entry:
         "addon_file_contents, addon_type, secret_name",
         [
             ([REDIS_STORAGE_CONTENTS], "redis", "REDIS"),
-            ([RDS_POSTGRES_STORAGE_CONTENTS], "postgres", "RDS"),
+            ([POSTGRES_STORAGE_CONTENTS], "postgres", "RDS"),
             ([AURORA_POSTGRES_STORAGE_CONTENTS], "aurora-postgres", "AURORA"),
         ],
     )
