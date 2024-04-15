@@ -145,7 +145,7 @@ def float_between_with_halfstep(lower, upper):
 
 ENV_NAME = Regex(
     r"^([a-z][a-zA-Z0-9]*|\*)$",
-    error="Environment name {} is invalid: names must only contain alphanumeric characters.",
+    error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
