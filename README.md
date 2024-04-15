@@ -67,7 +67,7 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 
 ### Publishing
 
-To publish the Python package `dbt-platform-helper`, you will need an API token.
+Publishing to PyPI happens automatically when a GitHub Release is published. To publish the Python package `dbt-platform-helper` manually, you will need an API token.
 
 1. Acquire API token from [Passman](https://passman.ci.uktrade.digital/secret/cc82a3f7-ddfa-4312-ab56-1ff8528dadc8/).
    - Request access from the SRE team.
@@ -110,41 +110,44 @@ For an optional manual check, install the package locally and test everything wo
 - Minor and patch releases should always include zero downtime
 - Documentation for releases with breaking changes should include the upgrade path
 - Where possible the upgrade path should allow for zero downtime, if this is not possible, it should be flagged up big and visible
-- Pull the release information from GitHub Releases into the DBT Platform Documentation (currently WIP)
-- Clicking "Publish release" in GitHub should automatically:
-  - Run the full regression pipeline (currently WIP)
-  - Automate version bumping based on the types in the commit messages (currently WIP)
-  - Publish the package to PyPI
-  - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
-  - Push a notification to the development community via the #developers channel in Slack
 
-### Release procedure - Manual steps
+### Release Automation
 
-- Your work should be on a new branch
-- Create a PR and have it reviewed
-- On approval, merge to main
-- This will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
-- We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to main
-  - During the release process, we run both unit tests and regression tests
-  - The _release PR_ is updated with next version number and release notes
-  - When the _release PR_ is merged, a GitHub release is created with tagged version and release notes
-- Release notes should be formatted to contain a link to the relevant pull request for convenience, eg: (#100)
-  - You can remove references to usernames in each commit
-  - Commits should be ordered by [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) syntax under the headings Features and Patches
-  - Publishing this new release will emit a GitHub `release` event that triggers a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
-  - A successful run publishes the new version to PyPI
+#### Merging to main
 
-------------
+- Merging to `main` will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
+- We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to `main`
+  - The _release PR_ will automatically update the _pyproject.toml_ version number and generate release notes based on the commits merged since the last release
+  - Merging the _release PR_ will create a draft GitHub release for the next version with release notes
 
-### Release procedure - Publish to PyPI
+#### Publishing GitHub release
 
-  Successful completion of the CodeBuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI.
-  
-  This build process involves the following steps:
+Publishing a GitHub release should automatically:
 
-  - Retrieving a list of prior releases from the `dbt-platform-helper` PyPI project repository.
-  - Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file does not exist in the list of releases obtained from PyPI.
-  - If the version does not exist in the PyPI release list, the application is built and published to PyPI as a new release with the version stated in the application _pyproject.toml_ file
-  - Next the script again checks if the updated version number is included in the PyPI release list.
-  If found, it indicates that the new package version exists in PyPI.
-  - A Slack message is sent to the `#developers` channel to notify others that the platform-helper tool has been updated
+- Run the full regression pipeline (currently WIP)
+- Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
+- Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
+- Push a notification to the development community via the #developers channel in Slack
+
+#### Publishing to PyPI
+
+Successful completion of the CodeBuild project `platform-tools-build` in the _platform-tools_ AWS account executes the _buildspec-pypi.yml_ file which publishes the new application version to PyPI. This build process involves the following steps:
+
+- Retrieving a list of prior releases from the `dbt-platform-helper` PyPI project repository.
+- Verifying if the `dbt-platform-helper` package version in the root _pyproject.toml_ file does not exist in the list of releases obtained from PyPI.
+- If the version does not exist in the PyPI release list, the application is built and published to PyPI as a new release with the version stated in the application _pyproject.toml_ file
+- Next the script again checks if the updated version number is included in the PyPI release list.
+If found, it indicates that the new package version exists in PyPI.
+- A Slack message is sent to the `#developers` channel to notify others that the platform-helper tool has been updated
+
+### Release procedure
+
+1. Work on a new branch
+2. Create a PR and have it reviewed
+3. On approval, merge to `main`
+4. A _release PR_ will automatically be created when changes are merged to main
+   - The _release PR_ is updated with next version number and release notes based on the commits since the last release
+5. Merge the _release PR_ to create a draft GitHub release
+6. Ensure the release notes contain an upgrade path for any breaking changes
+7. Publish the GitHub release 
+8. Check PyPI for the new published version
