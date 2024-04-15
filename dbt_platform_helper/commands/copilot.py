@@ -242,7 +242,7 @@ def make_addons():
     _generate_env_overrides(output_dir)
 
     if is_terraform:
-        click.echo("\n>>> Generating terraform compatbiele addons CloudFormation\n")
+        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
     else:
         click.echo("\n>>> Generating addons CloudFormation\n")
 
