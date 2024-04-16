@@ -13,7 +13,7 @@ my-redis:
 ##### RDS postgres example:
 
 my-rds-db:
-  type: rds-postgres
+  type: postgres
 
   environments:
     default:

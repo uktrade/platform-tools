@@ -36,7 +36,7 @@ Resources:
       {%- if config.type == "aurora-postgres" %}
         - !GetAtt {{ prefix }}DBClusterSecurityGroup.GroupId
       {%- endif -%}
-      {%- if config.type == "rds-postgres" %}
+      {%- if config.type == "postgres" %}
         - !GetAtt {{ prefix }}SecurityGroup.GroupId
       {%- endif -%}
     {%- endfor %}

@@ -10,6 +10,8 @@ from pathlib import PosixPath
 import click
 import yaml
 
+from dbt_platform_helper.utils.application import get_application_name
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -98,6 +100,7 @@ def _validate_and_normalise_config(config_file):
         return {}
 
     errors = validate_addons(config)
+
     if errors:
         click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
         for addon, error in errors.items():
@@ -136,7 +139,7 @@ def _validate_and_normalise_config(config_file):
                 exit(1)
 
         environments = normalised_config[addon_name].pop("environments", {})
-        default = environments.pop("default", {})
+        default = environments.pop("*", environments.pop("default", {}))
 
         initial = _lookup_plan(addon_type, default)
 
@@ -191,6 +194,29 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
 
+def is_terraform_project() -> bool:
+    return Path("./terraform").is_dir()
+
+
+def _get_s3_kms_alias_arns(session, application_name, extension_name):
+    application = load_application(application_name, session)
+
+    arns = {}
+    for environment_name, environment in application.environments.items():
+        client = environment.session.client("kms")
+
+        alias_name = f"alias/{application_name}-{environment_name}-{extension_name}-key"
+
+        try:
+            response = client.describe_key(KeyId=alias_name)
+        except client.exceptions.NotFoundException:
+            pass
+        else:
+            arns[environment_name] = response["KeyMetadata"]["Arn"]
+
+    return arns
+
+
 @copilot.command(deprecated=True, hidden=True)
 def make_addons():
     """
@@ -199,18 +225,26 @@ def make_addons():
 
     Generate addons CloudFormation for each environment.
     """
-    output_dir = Path(".").absolute()
 
+    output_dir = Path(".").absolute()
     ensure_cwd_is_repo_root()
+    is_terraform = is_terraform_project()
+
     templates = setup_templates()
     config = _get_config()
+    session = get_aws_session_or_abort()
+
+    application_name = get_application_name()
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
     _generate_env_overrides(output_dir)
 
-    click.echo("\n>>> Generating addons CloudFormation\n")
+    if is_terraform:
+        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
+    else:
+        click.echo("\n>>> Generating addons CloudFormation\n")
 
     env_addons_path = Path(f"copilot/environments/addons/")
     (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
@@ -232,7 +266,7 @@ def make_addons():
         environments = addon_config.pop("environments")
         if addon_template_map[addon_type].get("requires_addons_parameters", False):
             has_addons_parameters = True
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "postgres"]:
             has_postgres_addon = True
 
         for environment_name, environment_config in environments.items():
@@ -254,6 +288,7 @@ def make_addons():
         services.append(environment_addon_config)
 
         service_addon_config = {
+            "application_name": application_name,
             "name": addon_config.get("name", None) or addon_name,
             "prefix": camel_case(addon_name),
             "environments": environments,
@@ -263,20 +298,28 @@ def make_addons():
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
-            service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
-                "BucketAccess", 1
-            )[0]
+            if is_terraform:
+                s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, addon_name)
+                for environment_name in environments:
+                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
+                        environment_name, "kms-key-not-found"
+                    )
+            else:
+                service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
+                    "BucketAccess", 1
+                )[0]
 
-        _generate_env_addons(
-            addon_name,
-            addon_template_map,
-            config.items(),
-            env_addons_path,
-            environment_addon_config,
-            output_dir,
-            templates,
-            log_destination_arns,
-        )
+        if not is_terraform:
+            _generate_env_addons(
+                addon_name,
+                addon_template_map,
+                config.items(),
+                env_addons_path,
+                environment_addon_config,
+                output_dir,
+                templates,
+                log_destination_arns,
+            )
         _generate_service_addons(
             addon_config,
             addon_name,
@@ -286,15 +329,16 @@ def make_addons():
             service_addon_config,
             templates,
             log_destination_arns,
+            is_terraform=is_terraform,
         )
 
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "postgres"] and not is_terraform:
             click.secho(
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",
             )
 
-    if has_addons_parameters:
+    if has_addons_parameters and not is_terraform:
         template = templates.get_template("addons/env/addons.parameters.yml")
         contents = template.render({"has_postgres_addon": has_postgres_addon})
         click.echo(
@@ -355,6 +399,7 @@ def _generate_service_addons(
     service_addon_config,
     templates,
     log_destination_arns,
+    is_terraform,
 ):
     # generate svc addons
     for addon in addon_template_map[addon_type].get("svc", []):
@@ -367,6 +412,7 @@ def _generate_service_addons(
                 {
                     "addon_config": service_addon_config,
                     "log_destination": log_destination_arns,
+                    "is_terraform": is_terraform,
                 }
             )
 

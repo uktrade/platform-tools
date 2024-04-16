@@ -144,8 +144,8 @@ def float_between_with_halfstep(lower, upper):
 
 
 ENV_NAME = Regex(
-    r"^[a-zA-Z][a-zA-Z0-9]*$",
-    error="Environment name {} is invalid: names must only contain alphanumeric characters.",
+    r"^([a-z][a-zA-Z0-9]*|\*)$",
+    error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
@@ -280,9 +280,21 @@ NUMBER = Or(int, float)
 DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
 DELETION_POLICY = Or("Delete", "Retain")
 DELETION_PROTECTION = bool
-RDS_PLANS = Or(
-    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
+POSTGRES_PLANS = Or(
+    "tiny",
+    "small",
+    "small-ha",
+    "small-high-io",
+    "medium",
+    "medium-high-io",
+    "large",
+    "large-ha",
+    "large-high-io",
+    "x-large",
+    "x-large-ha",
+    "x-large-high-io",
 )
+POSTGRES_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
 
 RETENTION_POLICY = Or(
     None,
@@ -323,6 +335,7 @@ S3_BASE = {
             "bucket_name": validate_s3_bucket_name,
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("retention_policy"): RETENTION_POLICY,
+            Optional("versioning"): bool,
         }
     },
 }
@@ -368,19 +381,21 @@ AURORA_SCHEMA = Schema(
     }
 )
 
-RDS_SCHEMA = Schema(
+POSTGRES_SCHEMA = Schema(
     {
-        "type": "rds-postgres",
+        "type": "postgres",
         "version": NUMBER,
         Optional("deletion_policy"): DB_DELETION_POLICY,
         Optional("environments"): {
             ENV_NAME: {
-                Optional("plan"): RDS_PLANS,
+                Optional("plan"): POSTGRES_PLANS,
                 Optional("volume_size"): int_between(20, 10000),
                 Optional("iops"): int_between(1000, 9950),
                 Optional("snapshot_id"): str,
                 Optional("deletion_policy"): DB_DELETION_POLICY,
                 Optional("deletion_protection"): DELETION_PROTECTION,
+                Optional("multi_az"): bool,
+                Optional("storage_type"): POSTGRES_STORAGE_TYPES,
             }
         },
         Optional("objects"): [
@@ -401,6 +416,10 @@ REDIS_SCHEMA = Schema(
                 Optional("engine"): REDIS_ENGINE_VERSIONS,
                 Optional("replicas"): int_between(0, 5),
                 Optional("deletion_policy"): DELETION_POLICY,
+                Optional("apply_immediately"): bool,
+                Optional("automatic_failover_enabled"): bool,
+                Optional("instance"): str,
+                Optional("multi_az_enabled"): bool,
             }
         },
     }
@@ -426,9 +445,13 @@ class ConditionalSchema(Schema):
         if _is_conditional_schema:
             default_plan = None
             default_volume_size = None
-            if data["environments"].get("default", None):
-                default_plan = data["environments"]["default"].get("plan", None)
-                default_volume_size = data["environments"]["default"].get("volume_size", None)
+
+            default_environment_config = data["environments"].get(
+                "*", data["environments"].get("default", None)
+            )
+            if default_environment_config:
+                default_plan = default_environment_config.get("plan", None)
+                default_volume_size = default_environment_config.get("volume_size", None)
 
             for env in data["environments"]:
                 volume_size = data["environments"][env].get("volume_size", default_volume_size)
@@ -461,10 +484,20 @@ OPENSEARCH_SCHEMA = ConditionalSchema(
                 Optional("deletion_policy"): DELETION_POLICY,
                 Optional("plan"): OPENSEARCH_PLANS,
                 Optional("volume_size"): int,
+                Optional("ebs_throughput"): int,
+                Optional("ebs_volume_type"): str,
+                Optional("instance"): str,
+                Optional("instances"): int,
+                Optional("master"): bool,
+                Optional("es_app_log_retention_in_days"): int,
+                Optional("index_slow_log_retention_in_days"): int,
+                Optional("audit_log_retention_in_days"): int,
+                Optional("search_slow_log_retention_in_days"): int,
             }
         },
     }
 )
+
 
 MONITORING_SCHEMA = Schema(
     {
@@ -472,6 +505,19 @@ MONITORING_SCHEMA = Schema(
         Optional("environments"): {
             ENV_NAME: {
                 Optional("enable_ops_center"): bool,
+            }
+        },
+    }
+)
+
+ALB_SCHEMA = Schema(
+    {
+        "type": "alb",
+        Optional("environments"): {
+            ENV_NAME: {
+                Optional("domain_prefix"): str,
+                Optional("env_root"): str,
+                Optional("cdn_domains_list"): dict,
             }
         },
     }
@@ -486,7 +532,7 @@ SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
     "aurora-postgres": AURORA_SCHEMA,
-    "rds-postgres": RDS_SCHEMA,
+    "postgres": POSTGRES_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,
     "monitoring": MONITORING_SCHEMA,
@@ -494,4 +540,5 @@ SCHEMA_MAP = {
     "subscription-filter": no_param_schema("subscription-filter"),
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
+    "alb": ALB_SCHEMA,
 }
