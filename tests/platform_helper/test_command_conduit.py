@@ -1100,7 +1100,7 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     validate_version.assert_called_once()
     start_conduit.assert_not_called()
     secho.assert_called_once_with(
-        """Addon type "nope" is not supported, we support: opensearch, rds-postgres, aurora-postgres, redis.""",
+        """Addon type "nope" is not supported, we support: opensearch, rds-postgres, aurora-postgres, postgres, redis.""",
         fg="red",
     )
 
