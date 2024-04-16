@@ -15,15 +15,6 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 
 
-def test_getting_an_application_name_from_bootstrap(fakefs):
-    fakefs.add_real_file(
-        Path(__file__).parent.parent.joinpath("fixtures/valid_bootstrap_config.yml"),
-        True,
-        "bootstrap.yml",
-    )
-    assert get_application_name() == "test-app"
-
-
 def test_getting_an_application_name_from_workspace(fakefs):
     fakefs.add_real_file(
         Path(__file__).parent.parent.joinpath("fixtures/valid_workspace.yml"),
@@ -36,7 +27,10 @@ def test_getting_an_application_name_from_workspace(fakefs):
 @patch("dbt_platform_helper.utils.application.abort_with_error", return_value=None)
 def test_getting_an_application_name_when_no_workspace_or_bootstrap(abort_with_error, fakefs):
     get_application_name()
-    abort_with_error.assert_called_with("No valid bootstrap.yml or copilot/.workspace file found")
+
+    abort_with_error.assert_called_with(
+        "Cannot get application name. No copilot/.workspace file found"
+    )
 
 
 @patch("dbt_platform_helper.utils.application.get_profile_name_from_account_id", return_value="foo")

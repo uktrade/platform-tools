@@ -2,9 +2,6 @@
 
 - [platform-helper](#platform-helper)
 - [platform-helper bootstrap](#platform-helper-bootstrap)
-- [platform-helper bootstrap make-config](#platform-helper-bootstrap-make-config)
-- [platform-helper bootstrap migrate-secrets](#platform-helper-bootstrap-migrate-secrets)
-- [platform-helper bootstrap copy-secrets](#platform-helper-bootstrap-copy-secrets)
 - [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
 - [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
 - [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
@@ -73,98 +70,11 @@ platform-helper <command> [--version]
 ## Usage
 
 ```
-platform-helper bootstrap (make-config|migrate-secrets|copy-secrets) 
+platform-helper bootstrap () 
 ```
 
 ## Options
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`copy-secrets` ↪](#platform-helper-bootstrap-copy-secrets)
-- [`make-config` ↪](#platform-helper-bootstrap-make-config)
-- [`migrate-secrets` ↪](#platform-helper-bootstrap-migrate-secrets)
-
-# platform-helper bootstrap make-config
-
-[↩ Parent](#platform-helper-bootstrap)
-
-    Generate Copilot boilerplate code.
-
-## Usage
-
-```
-platform-helper bootstrap make-config [-d <directory>] 
-```
-
-## Options
-
-- `-d
---directory <text>` _Defaults to .._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper bootstrap migrate-secrets
-
-[↩ Parent](#platform-helper-bootstrap)
-
-    Migrate secrets from your GOV.UK PaaS application to DBT PaaS.
-
-    You need to be authenticated via Cloud Foundry CLI and the AWS CLI to use this command.
-
-    If you're using AWS profiles, use the AWS_PROFILE environment variable to indicate the which
-    profile to use, e.g.:
-
-    AWS_PROFILE=myaccount copilot-bootstrap.py ...
-
-## Usage
-
-```
-platform-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                          --env <environment> [--svc <service>] 
-                                          [--overwrite] [--dry-run] 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name
-- `--env <text>`
-  - Migrate secrets from a specific environment
-- `--svc <text>`
-  - Migrate secrets from a specific service
-- `--overwrite <boolean>` _Defaults to False._
-  - Overwrite existing secrets?
-- `--dry-run <boolean>` _Defaults to False._
-  - dry run
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper bootstrap copy-secrets
-
-[↩ Parent](#platform-helper-bootstrap)
-
-    Copy secrets from one environment to a new environment.
-
-## Usage
-
-```
-platform-helper bootstrap copy-secrets <source_environment> <target_environment> 
-                                       --project-profile <project_profile> 
-```
-
-## Arguments
-
-- `source_environment <text>`
-- `target_environment <text>`
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

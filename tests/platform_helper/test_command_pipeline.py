@@ -259,26 +259,14 @@ def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_m
     ) in result.output
 
 
-def test_pipeline_generate_with_no_bootstrap_yml_or_workspace_fails_with_message(fakefs):
+def test_pipeline_generate_with_no_workspace_file_fails_with_message(fakefs):
     setup_fixtures(fakefs)
-    os.remove("bootstrap.yml")
     os.remove("copilot/.workspace")
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
-
-
-def test_pipeline_generate_with_invalid_bootstrap_yml_and_no_workspace_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    Path("bootstrap.yml").write_text("{invalid data")
-    os.remove("copilot/.workspace")
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
+    assert "Cannot get application name. No copilot/.workspace file found" in result.output
 
 
 @freeze_time("2023-08-22 16:00:00")
