@@ -7,7 +7,6 @@ import yaml
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.validation import BOOTSTRAP_SCHEMA
 from dbt_platform_helper.utils.validation import PIPELINES_SCHEMA
 from tests.platform_helper.conftest import FIXTURES_DIR
 
@@ -15,7 +14,7 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 @pytest.mark.parametrize(
     "schema,yaml_file",
     [
-        (BOOTSTRAP_SCHEMA, "valid_bootstrap_config.yml"),
+        # (BOOTSTRAP_SCHEMA, "valid_bootstrap_config.yml"),
         (PIPELINES_SCHEMA, "pipeline/pipelines.yml"),
         (PIPELINES_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
     ],

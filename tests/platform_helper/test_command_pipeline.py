@@ -183,20 +183,20 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
         assert_file_overwritten_in_stdout(file, result)
 
 
-@freeze_time("2023-08-22 16:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_with_no_bootstrap_yml_succeeds(
-    git_remote, get_aws_session_or_abort, fakefs
-):
-    setup_fixtures(fakefs)
-    os.remove("bootstrap.yml")
-    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 0
+# @freeze_time("2023-08-22 16:00:00")
+# @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+# @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+# @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+# def test_pipeline_generate_with_no_bootstrap_yml_succeeds(
+#     git_remote, get_aws_session_or_abort, fakefs
+# ):
+#     setup_fixtures(fakefs)
+#     os.remove("bootstrap.yml")
+#     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+#
+#     result = CliRunner().invoke(generate)
+#
+#     assert result.exit_code == 0
 
 
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
@@ -333,7 +333,7 @@ def setup_output_file_paths_for_codebases():
 
 
 def setup_fixtures(fakefs, pipelines_file="pipeline/pipelines.yml"):
-    fakefs.add_real_file(FIXTURES_DIR / "valid_bootstrap_config.yml", False, "bootstrap.yml")
+    # fakefs.add_real_file(FIXTURES_DIR / "valid_bootstrap_config.yml", False, "bootstrap.yml")
     fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, "pipelines.yml")
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
     fakefs.add_real_directory(EXPECTED_FILES_DIR / "pipeline" / "pipelines", True)
