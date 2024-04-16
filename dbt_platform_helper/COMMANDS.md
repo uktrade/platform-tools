@@ -1,7 +1,6 @@
 # Commands Reference
 
 - [platform-helper](#platform-helper)
-- [platform-helper bootstrap](#platform-helper-bootstrap)
 - [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
 - [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
 - [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
@@ -51,7 +50,6 @@ platform-helper <command> [--version]
 ## Commands
 
 - [`application` ↪](#platform-helper-application)
-- [`bootstrap` ↪](#platform-helper-bootstrap)
 - [`cdn` ↪](#platform-helper-cdn)
 - [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
@@ -62,21 +60,6 @@ platform-helper <command> [--version]
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`pipeline` ↪](#platform-helper-pipeline)
-
-# platform-helper bootstrap
-
-[↩ Parent](#platform-helper)
-
-## Usage
-
-```
-platform-helper bootstrap () 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
 
 # platform-helper check-cloudformation
 

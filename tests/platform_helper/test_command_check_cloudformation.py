@@ -51,6 +51,7 @@ def copilot_directory() -> Path:
 def application_under_test(copilot_directory):
     ensure_directory_does_not_exist(copilot_directory)
     os.chdir(copilot_directory.parent)
+    # Todo: Understand implications of not running make_config
     # CliRunner().invoke(make_config)
     CliRunner().invoke(make_addons)
     yield

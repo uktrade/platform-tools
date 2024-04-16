@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 
 
-import click
 from cloudfoundry_client.client import CloudFoundryClient
-
-from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 
 
 def secret_should_be_skipped(secret_name):
@@ -33,9 +27,9 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
     return dict(env_vars)
 
 
-@click.group(chain=True, cls=ClickDocOptGroup)
-def bootstrap():
-    check_platform_helper_version_needs_update()
+# @click.group(chain=True, cls=ClickDocOptGroup)
+# def bootstrap():
+#     check_platform_helper_version_needs_update()
 
 
 # @bootstrap.command()

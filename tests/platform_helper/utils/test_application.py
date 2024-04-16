@@ -25,7 +25,7 @@ def test_getting_an_application_name_from_workspace(fakefs):
 
 
 @patch("dbt_platform_helper.utils.application.abort_with_error", return_value=None)
-def test_getting_an_application_name_when_no_workspace_or_bootstrap(abort_with_error, fakefs):
+def test_getting_an_application_name_when_no_workspace_file(abort_with_error, fakefs):
     get_application_name()
 
     abort_with_error.assert_called_with(
