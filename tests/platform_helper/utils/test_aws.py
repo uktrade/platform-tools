@@ -6,10 +6,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
-from moto import mock_ec2
-from moto import mock_ecs
-from moto import mock_elbv2
-from moto import mock_ssm
+from moto import mock_aws
 
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
@@ -90,7 +87,7 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
     "overwrite, exists",
     [(False, False), (False, True)],
 )
-@mock_ssm
+@mock_aws
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_set_ssm_param(mock_get_aws_session_or_abort, overwrite, exists):
     mocked_ssm = boto3.client("ssm")
@@ -126,7 +123,7 @@ def test_set_ssm_param(mock_get_aws_session_or_abort, overwrite, exists):
     assert result.items() >= expected_response.items()
 
 
-@mock_ssm
+@mock_aws
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_set_ssm_param_with_existing_secret(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
@@ -164,7 +161,7 @@ def test_set_ssm_param_with_existing_secret(mock_get_aws_session_or_abort):
     assert result == "overwritten value"
 
 
-@mock_ssm
+@mock_aws
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_set_ssm_param_with_overwrite_but_not_exists(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
@@ -203,7 +200,7 @@ def test_set_ssm_param_with_overwrite_but_not_exists(mock_get_aws_session_or_abo
     )
 
 
-@mock_ssm
+@mock_aws
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_set_ssm_param_tags(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
@@ -237,7 +234,7 @@ def test_set_ssm_param_tags(mock_get_aws_session_or_abort):
     }
 
 
-@mock_ssm
+@mock_aws
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_set_ssm_param_tags_with_existing_secret(mock_get_aws_session_or_abort):
     mocked_ssm = boto3.client("ssm")
@@ -371,7 +368,7 @@ def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):
     assert str(error.value) == "No profile found for account 999999999"
 
 
-@mock_ecs
+@mock_aws
 def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     with pytest.raises(SystemExit):
         get_load_balancer_domain_and_configuration(
@@ -389,7 +386,7 @@ def test_get_load_balancer_domain_and_configuration_no_clusters(capfd):
     )
 
 
-@mock_ecs
+@mock_aws
 def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     boto3.Session().client("ecs").create_cluster(
         clusterName=f"{HYPHENATED_APPLICATION_NAME}-{ALPHANUMERIC_ENVIRONMENT_NAME}-{CLUSTER_NAME_SUFFIX}"
@@ -411,9 +408,7 @@ def test_get_load_balancer_domain_and_configuration_no_services(capfd):
     )
 
 
-@mock_elbv2
-@mock_ec2
-@mock_ecs
+@mock_aws
 @pytest.mark.parametrize(
     "svc_name",
     [
