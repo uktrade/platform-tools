@@ -31,13 +31,13 @@ def platform_helper():
 
 
 platform_helper.add_command(application_commands)
+platform_helper.add_command(cdn_commands)
 platform_helper.add_command(check_cloudformation_commands)
 platform_helper.add_command(codebase_commands)
 platform_helper.add_command(conduit_commands)
 platform_helper.add_command(config_commands)
 platform_helper.add_command(copilot_commands)
 platform_helper.add_command(domain_commands)
-platform_helper.add_command(cdn_commands)
 platform_helper.add_command(environment_commands)
 platform_helper.add_command(generate_commands)
 platform_helper.add_command(pipeline_commands)

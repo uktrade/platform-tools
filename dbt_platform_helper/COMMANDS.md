@@ -4,6 +4,10 @@
 - [platform-helper application](#platform-helper-application)
 - [platform-helper application container-stats](#platform-helper-application-container-stats)
 - [platform-helper application task-stats](#platform-helper-application-task-stats)
+- [platform-helper cdn](#platform-helper-cdn)
+- [platform-helper cdn assign](#platform-helper-cdn-assign)
+- [platform-helper cdn delete](#platform-helper-cdn-delete)
+- [platform-helper cdn list](#platform-helper-cdn-list)
 - [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
 - [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
 - [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
@@ -21,10 +25,6 @@
 - [platform-helper domain](#platform-helper-domain)
 - [platform-helper domain configure](#platform-helper-domain-configure)
 - [platform-helper domain assign](#platform-helper-domain-assign)
-- [platform-helper cdn](#platform-helper-cdn)
-- [platform-helper cdn assign](#platform-helper-cdn-assign)
-- [platform-helper cdn delete](#platform-helper-cdn-delete)
-- [platform-helper cdn list](#platform-helper-cdn-list)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
@@ -137,6 +137,105 @@ platform-helper application task-stats --env <environment> --app <application> [
 
 - `--network <boolean>` _Defaults to False._
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn
+
+[↩ Parent](#platform-helper)
+
+## Usage
+
+```
+platform-helper cdn (assign|delete|list) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`assign` ↪](#platform-helper-cdn-assign)
+- [`delete` ↪](#platform-helper-cdn-delete)
+- [`list` ↪](#platform-helper-cdn-list)
+
+# platform-helper cdn assign
+
+[↩ Parent](#platform-helper-cdn)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn assign --project-profile <project_profile> --env <environment> 
+                           --app <application> --svc <service> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn delete
+
+[↩ Parent](#platform-helper-cdn)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn delete --project-profile <project_profile> --env <environment> 
+                           --app <application> --svc <service> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn list
+
+[↩ Parent](#platform-helper-cdn)
+
+    List CDN domain name attached to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn list --project-profile <project_profile> --env <environment> 
+                         --app <application> --svc <service> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -514,105 +613,6 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn
-
-[↩ Parent](#platform-helper)
-
-## Usage
-
-```
-platform-helper cdn (assign|delete|list) 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`assign` ↪](#platform-helper-cdn-assign)
-- [`delete` ↪](#platform-helper-cdn-delete)
-- [`list` ↪](#platform-helper-cdn-list)
-
-# platform-helper cdn assign
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn assign --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn delete
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn delete --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn list
-
-[↩ Parent](#platform-helper-cdn)
-
-    List CDN domain name attached to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn list --project-profile <project_profile> --env <environment> 
-                         --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
