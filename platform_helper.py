@@ -4,7 +4,6 @@ from importlib.metadata import version
 
 import click
 
-from dbt_platform_helper.commands.application import application as application_commands
 from dbt_platform_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
@@ -17,6 +16,7 @@ from dbt_platform_helper.commands.dns import domain as domain_commands
 from dbt_platform_helper.commands.environment import environment as environment_commands
 from dbt_platform_helper.commands.generate import generate as generate_commands
 from dbt_platform_helper.commands.pipeline import pipeline as pipeline_commands
+from dbt_platform_helper.commands.secrets import secrets as secrets_commands
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -39,7 +39,7 @@ platform_helper.add_command(cdn_commands)
 platform_helper.add_command(environment_commands)
 platform_helper.add_command(generate_commands)
 platform_helper.add_command(pipeline_commands)
-platform_helper.add_command(application_commands)
+platform_helper.add_command(secrets_commands)
 
 if __name__ == "__main__":
     platform_helper()

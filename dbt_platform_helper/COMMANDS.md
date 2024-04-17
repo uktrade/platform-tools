@@ -28,9 +28,8 @@
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
-- [platform-helper application](#platform-helper-application)
-- [platform-helper application container-stats](#platform-helper-application-container-stats)
-- [platform-helper application task-stats](#platform-helper-application-task-stats)
+- [platform-helper secrets](#platform-helper-secrets)
+- [platform-helper secrets copy](#platform-helper-secrets-copy)
 
 # platform-helper
 
@@ -49,7 +48,6 @@ platform-helper <command> [--version]
 
 ## Commands
 
-- [`application` ↪](#platform-helper-application)
 - [`cdn` ↪](#platform-helper-cdn)
 - [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
@@ -60,6 +58,7 @@ platform-helper <command> [--version]
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`pipeline` ↪](#platform-helper-pipeline)
+- [`secrets` ↪](#platform-helper-secrets)
 
 # platform-helper check-cloudformation
 
@@ -665,16 +664,14 @@ platform-helper pipeline generate
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper application
+# platform-helper secrets
 
 [↩ Parent](#platform-helper)
-
-    Application metrics.
 
 ## Usage
 
 ```
-platform-helper application (container-stats|task-stats) 
+platform-helper secrets copy 
 ```
 
 ## Options
@@ -684,59 +681,29 @@ platform-helper application (container-stats|task-stats)
 
 ## Commands
 
-- [`container-stats` ↪](#platform-helper-application-container-stats)
-- [`task-stats` ↪](#platform-helper-application-task-stats)
+- [`copy` ↪](#platform-helper-secrets-copy)
 
-# platform-helper application container-stats
+# platform-helper secrets copy
 
-[↩ Parent](#platform-helper-application)
+[↩ Parent](#platform-helper-secrets)
 
-    Command to get application container level metrics.
-
-## Usage
-
-```
-platform-helper application container-stats --env <environment> --app <application> 
-                                            [--storage] [--network] 
-```
-
-## Options
-
-- `--env <text>`
-
-- `--app <text>`
-
-- `--storage <boolean>` _Defaults to False._
-
-- `--network <boolean>` _Defaults to False._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper application task-stats
-
-[↩ Parent](#platform-helper-application)
-
-    Command to get application task level metrics.
+    Copy secrets from one environment to a new environment.
 
 ## Usage
 
 ```
-platform-helper application task-stats --env <environment> --app <application> [--disk] 
-                                       [--storage] [--network] 
+platform-helper secrets copy <source_environment> <target_environment> 
+                             --project-profile <project_profile> 
 ```
+
+## Arguments
+
+- `source_environment <text>`
+- `target_environment <text>`
 
 ## Options
 
-- `--env <text>`
-
-- `--app <text>`
-
-- `--disk <boolean>` _Defaults to False._
-
-- `--storage <boolean>` _Defaults to False._
-
-- `--network <boolean>` _Defaults to False._
-
+- `--project-profile <text>`
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
