@@ -6,7 +6,6 @@ from shutil import rmtree
 import pytest
 from click.testing import CliRunner
 
-# from dbt_platform_helper.commands.bootstrap import make_config
 from dbt_platform_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )

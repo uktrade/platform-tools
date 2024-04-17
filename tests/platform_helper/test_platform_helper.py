@@ -19,7 +19,6 @@ class TestCopilotHelperCli:
         from platform_helper import platform_helper
 
         assert list(platform_helper.commands.keys()) == [
-            # "bootstrap",
             "check-cloudformation",
             "codebase",
             "conduit",

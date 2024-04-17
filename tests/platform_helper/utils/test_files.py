@@ -14,7 +14,6 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 @pytest.mark.parametrize(
     "schema,yaml_file",
     [
-        # (BOOTSTRAP_SCHEMA, "valid_bootstrap_config.yml"),
         (PIPELINES_SCHEMA, "pipeline/pipelines.yml"),
         (PIPELINES_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
     ],

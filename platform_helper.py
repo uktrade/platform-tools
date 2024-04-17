@@ -5,8 +5,6 @@ from importlib.metadata import version
 import click
 
 from dbt_platform_helper.commands.application import application as application_commands
-
-# from dbt_platform_helper.commands.bootstrap import bootstrap as bootstrap_commands
 from dbt_platform_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
@@ -31,7 +29,6 @@ def platform_helper():
     pass
 
 
-# platform_helper.add_command(bootstrap_commands)
 platform_helper.add_command(check_cloudformation_command)
 platform_helper.add_command(codebase_commands)
 platform_helper.add_command(conduit_commands)
