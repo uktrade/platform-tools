@@ -85,7 +85,7 @@ def test_load_and_validate_config_invalid_file():
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch(
-    "dbt_platform_helper.commands.bootstrap.get_app_versions",
+    "dbt_platform_helper.utils.versioning.get_app_versions",
     new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
 )
 def test_make_config(tmp_path):
