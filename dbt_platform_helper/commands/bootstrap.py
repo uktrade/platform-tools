@@ -23,8 +23,7 @@ from dbt_platform_helper.utils.validation import BOOTSTRAP_SCHEMA
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
-from dbt_platform_helper.utils.versioning import get_app_versions
-from dbt_platform_helper.utils.versioning import string_version
+from dbt_platform_helper.utils.versioning import generate_platform_helper_version_file
 
 
 def secret_should_be_skipped(secret_name):
@@ -69,8 +68,7 @@ def make_config(directory="."):
     click.echo(">>> Generating Copilot configuration files\n")
 
     # add .platform-helper-version file
-    copilot_version = string_version(get_app_versions()[0])
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{copilot_version}"))
+    generate_platform_helper_version_file(directory)
 
     # create copilot directory
     (base_path / "copilot").mkdir(parents=True, exist_ok=True)

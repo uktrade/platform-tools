@@ -12,6 +12,7 @@ import requests
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.utils.files import mkfile
 
 
 def string_version(input_version: Union[Tuple[int, int, int], None]) -> str:
@@ -141,6 +142,14 @@ def validate_platform_helper_file_version(template_file_path: str):
         get_file_app_versions()[1],
         get_template_generated_with_version(template_file_path),
     )
+
+
+def generate_platform_helper_version_file(directory="."):
+    base_path = Path(directory)
+
+    # add .platform-helper-version file
+    copilot_version = string_version(get_app_versions()[0])
+    click.echo(mkfile(base_path, ".platform-helper-version", f"{copilot_version}"))
 
 
 def check_platform_helper_version_needs_update():
