@@ -91,7 +91,6 @@ def copy(project_profile, source_environment, target_environment):
 @secrets.command()
 @click.argument("app", type=str, required=True)
 @click.argument("env", type=str, required=True)
-# Todo: There are no tests for this command which used to be `platform-helper copilot get-env-secrets
 def list(app, env):
     """List secret names and values for an environment."""
 

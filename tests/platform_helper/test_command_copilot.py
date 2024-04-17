@@ -1101,3 +1101,15 @@ def setup_override_files_for_environments():
         overrides_dir / "stack.ts",
         overrides_dir / "tsconfig.json",
     ]
+
+
+def create_test_manifests(addon_file_contents, fakefs):
+    fakefs.create_file(
+        ADDON_CONFIG_FILENAME,
+        contents=" ".join(addon_file_contents),
+    )
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+    )
+    fakefs.create_file("copilot/environments/development/manifest.yml")
