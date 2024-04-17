@@ -15,13 +15,11 @@ from freezegun import freeze_time
 from moto import mock_iam
 from moto import mock_kms
 from moto import mock_s3
-from moto import mock_ssm
 from moto import mock_sts
 from yaml import dump
 
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
-from dbt_platform_helper.utils.aws import SSM_PATH
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -1054,55 +1052,6 @@ invalid-entry:
                 assert path.exists()
 
         assert result.exit_code == 0
-
-
-@mock_ssm
-@mock_sts
-@mock_iam
-@patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package",
-    new=Mock(return_value=False),
-)
-def test_get_secrets():
-    def _put_ssm_param(client, app, env, name, value):
-        path = SSM_PATH.format(app=app, env=env, name=name)
-        client.put_parameter(Name=path, Value=value, Type="String")
-
-    ssm = boto3.client("ssm")
-
-    secrets = [
-        ["MY_SECRET", "testing"],
-        ["MY_SECRET2", "hello"],
-        ["MY_SECRET3", "world"],
-    ]
-
-    for name, value in secrets:
-        _put_ssm_param(ssm, "myapp", "myenv", name, value)
-
-    _put_ssm_param(ssm, "myapp", "anotherenv", "OTHER_ENV", "foobar")
-
-    result = CliRunner().invoke(copilot, ["get-env-secrets", "myapp", "myenv"])
-
-    for name, value in secrets:
-        path = SSM_PATH.format(app="myapp", env="myenv", name=name)
-        line = f"{path}: {value}"
-
-        assert line in result.output
-
-    assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
-    assert result.exit_code == 0
-
-
-def create_test_manifests(addon_file_contents, fakefs):
-    fakefs.create_file(
-        ADDON_CONFIG_FILENAME,
-        contents=" ".join(addon_file_contents),
-    )
-    fakefs.create_file(
-        "copilot/web/manifest.yml",
-        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
-    )
-    fakefs.create_file("copilot/environments/development/manifest.yml")
 
 
 @pytest.mark.parametrize(

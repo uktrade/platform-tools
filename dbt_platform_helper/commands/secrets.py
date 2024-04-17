@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 
 from dbt_platform_helper.utils.application import get_application_name
+from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
@@ -85,6 +86,36 @@ def copy(project_profile, source_environment, target_environment):
                 )
             else:
                 raise e
+
+
+@secrets.command()
+@click.argument("app", type=str, required=True)
+@click.argument("env", type=str, required=True)
+# Todo: There are no tests for this command which used to be `platform-helper copilot get-env-secrets
+def list(app, env):
+    """List secret names and values for an environment."""
+
+    session = get_aws_session_or_abort()
+    client = session.client("ssm")
+
+    path = SSM_BASE_PATH.format(app=app, env=env)
+
+    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
+    secrets = []
+
+    # TODO: refactor shared code with get_ssm_secret_names
+    while True:
+        response = client.get_parameters_by_path(**params)
+
+        for secret in response["Parameters"]:
+            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
+
+        if "NextToken" in response:
+            params["NextToken"] = response["NextToken"]
+        else:
+            break
+
+    print("\n".join(sorted(secrets)))
 
 
 if __name__ == "__main__":

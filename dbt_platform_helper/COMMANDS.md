@@ -21,7 +21,6 @@
 - [platform-helper config validate](#platform-helper-config-validate)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
-- [platform-helper copilot get-env-secrets](#platform-helper-copilot-get-env-secrets)
 - [platform-helper domain](#platform-helper-domain)
 - [platform-helper domain configure](#platform-helper-domain-configure)
 - [platform-helper domain assign](#platform-helper-domain-assign)
@@ -33,6 +32,7 @@
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
 - [platform-helper secrets](#platform-helper-secrets)
 - [platform-helper secrets copy](#platform-helper-secrets-copy)
+- [platform-helper secrets list](#platform-helper-secrets-list)
 
 # platform-helper
 
@@ -490,7 +490,7 @@ platform-helper config validate
 ## Usage
 
 ```
-platform-helper copilot (make-addons|get-env-secrets) 
+platform-helper copilot make-addons 
 ```
 
 ## Options
@@ -500,7 +500,6 @@ platform-helper copilot (make-addons|get-env-secrets)
 
 ## Commands
 
-- [`get-env-secrets` ↪](#platform-helper-copilot-get-env-secrets)
 - [`make-addons` ↪](#platform-helper-copilot-make-addons)
 
 # platform-helper copilot make-addons
@@ -517,28 +516,6 @@ platform-helper copilot (make-addons|get-env-secrets)
 ```
 platform-helper copilot make-addons 
 ```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper copilot get-env-secrets
-
-[↩ Parent](#platform-helper-copilot)
-
-    List secret names and values for an environment.
-
-## Usage
-
-```
-platform-helper copilot get-env-secrets <application> <environment> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
 
 ## Options
 
@@ -751,7 +728,7 @@ platform-helper pipeline generate
 ## Usage
 
 ```
-platform-helper secrets copy 
+platform-helper secrets (copy|list) 
 ```
 
 ## Options
@@ -762,6 +739,7 @@ platform-helper secrets copy
 ## Commands
 
 - [`copy` ↪](#platform-helper-secrets-copy)
+- [`list` ↪](#platform-helper-secrets-list)
 
 # platform-helper secrets copy
 
@@ -785,5 +763,27 @@ platform-helper secrets copy <source_environment> <target_environment>
 
 - `--project-profile <text>`
   - AWS account profile name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper secrets list
+
+[↩ Parent](#platform-helper-secrets)
+
+    List secret names and values for an environment.
+
+## Usage
+
+```
+platform-helper secrets list <application> <environment> 
+```
+
+## Arguments
+
+- `app <text>`
+- `env <text>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
