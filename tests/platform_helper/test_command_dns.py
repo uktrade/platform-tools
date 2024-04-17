@@ -6,11 +6,7 @@ import pytest
 from botocore import stub
 from botocore.stub import Stubber
 from click.testing import CliRunner
-from moto import mock_acm
-from moto import mock_ec2
-from moto import mock_ecs
-from moto import mock_elbv2
-from moto import mock_sts
+from moto import mock_aws
 
 from dbt_platform_helper.commands.dns import InvalidDomainException
 from dbt_platform_helper.commands.dns import _get_paginated_zones
@@ -852,11 +848,7 @@ def setup_alb_listener(conditions, multiple):
     )
 
 
-@mock_sts
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-@mock_acm
+@mock_aws
 def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
     conditions = [{"Field": "host-header", "Values": ["test.com"]}]
 
@@ -882,11 +874,7 @@ def test_cdn_add_if_domain_already_exists(alias_session, aws_credentials):
     assert "test.com already exists, exiting" in result.output
 
 
-@mock_sts
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-@mock_acm
+@mock_aws
 @patch("dbt_platform_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
 @patch("dbt_platform_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
 def test_cdn_add(alias_session, aws_credentials):
@@ -919,11 +907,7 @@ def test_cdn_add(alias_session, aws_credentials):
     assert "Domains now configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
 
 
-@mock_sts
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-@mock_acm
+@mock_aws
 @patch("dbt_platform_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
 @patch("dbt_platform_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
 def test_cdn_delete(alias_session, aws_credentials):
@@ -955,11 +939,7 @@ def test_cdn_delete(alias_session, aws_credentials):
     assert "deleting web.dev.uktrade.digital\nDomains now configured: ['test.com']" in result.output
 
 
-@mock_sts
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-@mock_acm
+@mock_aws
 def test_cdn_list(alias_session, aws_credentials):
     conditions = [
         {
@@ -988,11 +968,7 @@ def test_cdn_list(alias_session, aws_credentials):
     assert "Domains currently configured: ['test.com', 'web.dev.uktrade.digital']" in result.output
 
 
-@mock_sts
-@mock_elbv2
-@mock_ec2
-@mock_ecs
-@mock_acm
+@mock_aws
 @patch("dbt_platform_helper.commands.dns.get_aws_session_or_abort", return_value=boto3.Session())
 @patch("dbt_platform_helper.commands.dns.create_required_zones_and_certs", return_value="arn:12345")
 def test_cdn_add_multiple_domains(alias_session, aws_credentials):
