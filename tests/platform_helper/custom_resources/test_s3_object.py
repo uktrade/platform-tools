@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-from moto import mock_s3
+from moto import mock_aws
 from parameterized import parameterized
 
 from dbt_platform_helper.custom_resources import s3_object
@@ -115,7 +115,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
 
     @parameterized.expand([("Create",), ("Update",)])
     @patch("urllib.request.urlopen", return_value=None)
-    @mock_s3
+    @mock_aws
     def test_resource_creation_puts_an_object_in_s3_and_reports_success(
         self, request_type, urlopen
     ):
@@ -142,7 +142,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
         self.assertEqual(f"s3://bucket-name/object-with-contents", sent_body["PhysicalResourceId"])
 
     @patch("urllib.request.urlopen", return_value=None)
-    @mock_s3
+    @mock_aws
     def test_resource_delete_removes_an_object_from_s3_and_reports_success(self, urlopen):
         s3_client = boto3.client("s3", "eu-west-2")
         bucket = self._resource_properties["S3Bucket"]
@@ -174,7 +174,7 @@ class TestS3ObjectCustomResource(unittest.TestCase):
 
     @parameterized.expand([("Create", "Put"), ("Update", "Put"), ("Delete", "Delete")])
     @patch("urllib.request.urlopen", return_value=None)
-    @mock_s3
+    @mock_aws
     def test_resource_action_failure_reports_failure(self, request_type, request_action, urlopen):
         event = self._event.copy()
         event["RequestType"] = request_type

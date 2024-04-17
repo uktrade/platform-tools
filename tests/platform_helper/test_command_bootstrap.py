@@ -12,8 +12,7 @@ import pytest
 from click.testing import CliRunner
 from cloudfoundry_client.common_objects import JsonObject
 from freezegun import freeze_time
-from moto import mock_ssm
-from moto import mock_sts
+from moto import mock_aws
 from oauth2_client.credentials_manager import OAuthError
 from schema import SchemaError
 
@@ -141,7 +140,7 @@ def test_make_config(tmp_path):
     assert os.path.exists(str(tmp_path / "copilot/test-backend-service/addons"))
 
 
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 @pytest.mark.xdist_group(name="fileaccess")
 def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentials, tmp_path):
@@ -164,7 +163,7 @@ def test_migrate_secrets_login_failure(mock_client, alias_session, aws_credentia
     assert "Please log in with: cf login" in result.output
 
 
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and an environment not found in that
@@ -180,7 +179,7 @@ def test_migrate_secrets_env_not_in_config(client, alias_session, aws_credential
     assert f"staging is not an environment in bootstrap.yml" in result.output
 
 
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_service_not_in_config(client, alias_session, aws_credentials, tmp_path):
     """Test that, given a config file path and a secret not found in that file,
@@ -204,8 +203,7 @@ def test_migrate_secrets_service_not_in_config(client, alias_session, aws_creden
         ({"TEST_SECRET": "TEST_SECRET"}, "TEST_SECRET"),
     ],
 )
-@mock_ssm
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.bootstrap.get_paas_env_vars")
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_param_doesnt_exist(
@@ -236,8 +234,7 @@ def test_migrate_secrets_param_doesnt_exist(
     assert_secret_exists_with_value("TEST_SECRET", param_value)
 
 
-@mock_ssm
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_param_already_exists(
@@ -268,8 +265,7 @@ def test_migrate_secrets_param_already_exists(
     assert response["Parameter"]["Version"] == 1
 
 
-@mock_ssm
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_overwrite(
@@ -309,8 +305,7 @@ def test_migrate_secrets_overwrite(
     assert response["Parameter"]["Version"] == 2
 
 
-@mock_ssm
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.bootstrap.get_paas_env_vars", return_value={})
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_dry_run(
@@ -337,8 +332,7 @@ def test_migrate_secrets_dry_run(
         client.get_parameter(Name="/copilot/test-app/test/secrets/TEST_SECRET")
 
 
-@mock_ssm
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.bootstrap.get_paas_env_vars")
 @patch("dbt_platform_helper.utils.cloudfoundry.CloudFoundryClient")
 def test_migrate_secrets_skips_aws_secrets(
@@ -393,7 +387,7 @@ def test_copy_secrets_profile_not_configured(clear_session_cache, tmp_path):
     assert """AWS profile "foo" is not configured.""" in result.output
 
 
-@mock_sts
+@mock_aws
 def test_copy_secrets_without_new_environment_directory(alias_session, aws_credentials, tmp_path):
     switch_to_tmp_dir_and_copy_config_file(tmp_path, FIXTURES_DIR / "valid_bootstrap_config.yml")
     os.mkdir(f"{tmp_path}/copilot")
@@ -414,8 +408,7 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
 @pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_platform_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.bootstrap.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
@@ -461,8 +454,7 @@ def test_copy_secrets(
 @pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_platform_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.bootstrap.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets_skips_aws_secrets(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
@@ -497,8 +489,7 @@ def test_copy_secrets_skips_aws_secrets(
 @pytest.mark.parametrize("bootstrap_exists", [True, False])
 @patch("dbt_platform_helper.commands.bootstrap.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.bootstrap.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets_with_existing_secret(
     set_ssm_param, get_ssm_secrets, bootstrap_exists, alias_session, aws_credentials, tmp_path
 ):
