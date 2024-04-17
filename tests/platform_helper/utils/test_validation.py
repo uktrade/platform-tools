@@ -6,9 +6,7 @@ import boto3
 import pytest
 import yaml
 from botocore.exceptions import ClientError
-from moto import mock_iam
-from moto import mock_s3
-from moto import mock_sts
+from moto import mock_aws
 from schema import SchemaError
 
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
@@ -333,9 +331,7 @@ def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_co
     assert BUCKET_NAME_IN_USE_TEMPLATE.format(f"bucket-name-{http_code}") in capfd.readouterr().out
 
 
-@mock_s3
-@mock_sts
-@mock_iam
+@mock_aws
 def test_warn_on_s3_bucket_name_availability_success_200(capfd):
     client = boto3.client("s3")
     client.create_bucket(
@@ -346,9 +342,7 @@ def test_warn_on_s3_bucket_name_availability_success_200(capfd):
     assert "Warning:" not in capfd.readouterr().out
 
 
-@mock_s3
-@mock_sts
-@mock_iam
+@mock_aws
 def test_warn_on_s3_bucket_name_availability(clear_session_cache, capfd):
     warn_on_s3_bucket_name_availability("brand-new-bucket")
     assert "Warning:" not in capfd.readouterr().out

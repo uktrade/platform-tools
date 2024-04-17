@@ -6,9 +6,7 @@ from unittest.mock import patch
 
 import boto3
 from click.testing import CliRunner
-from moto import mock_iam
-from moto import mock_ssm
-from moto import mock_sts
+from moto import mock_aws
 
 from dbt_platform_helper.commands.secrets import copy
 from dbt_platform_helper.commands.secrets import list
@@ -16,7 +14,7 @@ from dbt_platform_helper.utils.aws import SSM_PATH
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
-@mock_sts
+@mock_aws
 def test_copy_secrets_without_new_environment_directory(alias_session, aws_credentials, tmp_path):
     os.chdir(tmp_path)
     copilot_dir = tmp_path / "copilot"
@@ -33,8 +31,7 @@ def test_copy_secrets_without_new_environment_directory(alias_session, aws_crede
 
 @patch("dbt_platform_helper.commands.secrets.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.secrets.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path):
     get_ssm_secrets.return_value = [
         (
@@ -75,8 +72,7 @@ def test_copy_secrets(set_ssm_param, get_ssm_secrets, alias_session, aws_credent
 
 @patch("dbt_platform_helper.commands.secrets.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.secrets.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets_skips_aws_secrets(
     set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
 ):
@@ -108,8 +104,7 @@ def test_copy_secrets_skips_aws_secrets(
 
 @patch("dbt_platform_helper.commands.secrets.get_ssm_secrets")
 @patch("dbt_platform_helper.commands.secrets.set_ssm_param")
-@mock_ssm
-@mock_sts
+@mock_aws
 def test_copy_secrets_with_existing_secret(
     set_ssm_param, get_ssm_secrets, alias_session, aws_credentials, tmp_path
 ):
@@ -135,9 +130,7 @@ def test_copy_secrets_with_existing_secret(
     )
 
 
-@mock_ssm
-@mock_sts
-@mock_iam
+@mock_aws
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=False),

@@ -12,10 +12,7 @@ import yaml
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from freezegun import freeze_time
-from moto import mock_iam
-from moto import mock_kms
-from moto import mock_s3
-from moto import mock_sts
+from moto import mock_aws
 from yaml import dump
 
 from dbt_platform_helper.commands.copilot import copilot
@@ -106,10 +103,7 @@ class TestTerraformEnabledMakeAddonCommand:
     )
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_sts
-    @mock_s3
-    @mock_iam
-    @mock_kms
+    @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self, mock_get_session, mock_get_session2, fakefs, kms_key_exists, kms_key_arn
     ):
@@ -197,9 +191,7 @@ class TestTerraformEnabledMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
         mock_get_session,
@@ -367,9 +359,7 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_make_addons_success(
         self,
         mock_get_session,
@@ -479,9 +469,7 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @mock_iam
-    @mock_sts
-    @mock_s3
+    @mock_aws
     @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
         client = mock_aws_client(mock_get_session)
@@ -615,9 +603,7 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_make_addons_deletion_policy(
         self,
         fakefs,
@@ -689,9 +675,7 @@ class TestMakeAddonCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -725,9 +709,7 @@ invalid-entry:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -759,9 +741,7 @@ example-invalid-file:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -793,9 +773,7 @@ invalid-environment:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -922,9 +900,7 @@ invalid-entry:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_file_contents, has_postgres_addon
     ):

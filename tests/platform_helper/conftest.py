@@ -9,13 +9,7 @@ import botocore
 import certifi
 import pytest
 import yaml
-from moto import mock_acm
-from moto import mock_cloudformation
-from moto import mock_ec2
-from moto import mock_ecs
-from moto import mock_iam
-from moto import mock_route53
-from moto import mock_secretsmanager
+from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
@@ -119,21 +113,21 @@ def aws_credentials(monkeypatch):
 
 @pytest.fixture(scope="function")
 def acm_session(aws_credentials):
-    with mock_acm():
+    with mock_aws():
         session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
         yield session.client("acm")
 
 
 @pytest.fixture(scope="function")
 def route53_session(aws_credentials):
-    with mock_route53():
+    with mock_aws():
         session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
         yield session.client("route53")
 
 
 @pytest.fixture
 def alias_session(aws_credentials):
-    with mock_iam():
+    with mock_aws():
         session = boto3.session.Session(region_name="eu-west-2")
         session.client("iam").create_account_alias(AccountAlias="foo")
 
@@ -142,7 +136,7 @@ def alias_session(aws_credentials):
 
 @pytest.fixture(scope="function")
 def mocked_cluster():
-    with mock_ecs():
+    with mock_aws():
         yield boto3.client("ecs").create_cluster(
             tags=[
                 {"key": "copilot-application", "value": "test-application"},
@@ -155,7 +149,7 @@ def mocked_cluster():
 @pytest.fixture(scope="function")
 def mock_cluster_client_task(mocked_cluster):
     def _setup(addon_type, agent_last_status="RUNNING", task_running=True):
-        with mock_ec2():
+        with mock_aws():
             mocked_ecs_client = boto3.client("ecs")
             mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
@@ -267,7 +261,7 @@ def mock_tool_versions():
 @pytest.fixture(scope="function")
 def mock_stack():
     def _create_stack(addon_name):
-        with mock_cloudformation():
+        with mock_aws():
             with open(FIXTURES_DIR / "test_cloudformation_template.yml") as f:
                 template = yaml.safe_load(f)
             cf = boto3.client("cloudformation")
