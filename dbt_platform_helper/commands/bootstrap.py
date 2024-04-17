@@ -67,7 +67,6 @@ def make_config(directory="."):
 
     click.echo(">>> Generating Copilot configuration files\n")
 
-    # add .platform-helper-version file
     generate_platform_helper_version_file(directory)
 
     # create copilot directory
