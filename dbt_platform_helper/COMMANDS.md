@@ -1,6 +1,9 @@
 # Commands Reference
 
 - [platform-helper](#platform-helper)
+- [platform-helper application](#platform-helper-application)
+- [platform-helper application container-stats](#platform-helper-application-container-stats)
+- [platform-helper application task-stats](#platform-helper-application-task-stats)
 - [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
 - [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
 - [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
@@ -48,6 +51,7 @@ platform-helper <command> [--version]
 
 ## Commands
 
+- [`application` ↪](#platform-helper-application)
 - [`cdn` ↪](#platform-helper-cdn)
 - [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
@@ -59,6 +63,82 @@ platform-helper <command> [--version]
 - [`generate` ↪](#platform-helper-generate)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
+
+# platform-helper application
+
+[↩ Parent](#platform-helper)
+
+    Application metrics.
+
+## Usage
+
+```
+platform-helper application (container-stats|task-stats) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`container-stats` ↪](#platform-helper-application-container-stats)
+- [`task-stats` ↪](#platform-helper-application-task-stats)
+
+# platform-helper application container-stats
+
+[↩ Parent](#platform-helper-application)
+
+    Command to get application container level metrics.
+
+## Usage
+
+```
+platform-helper application container-stats --env <environment> --app <application> 
+                                            [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper application task-stats
+
+[↩ Parent](#platform-helper-application)
+
+    Command to get application task level metrics.
+
+## Usage
+
+```
+platform-helper application task-stats --env <environment> --app <application> [--disk] 
+                                       [--storage] [--network] 
+```
+
+## Options
+
+- `--env <text>`
+
+- `--app <text>`
+
+- `--disk <boolean>` _Defaults to False._
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
 
 # platform-helper check-cloudformation
 
