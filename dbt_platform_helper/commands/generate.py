@@ -16,7 +16,9 @@ def generate(ctx: click.Context):
 
     Wraps pipeline generate and make-addons.
     """
-
     check_platform_helper_version_mismatch()
-    ctx.invoke(pipeline_generate)
-    ctx.invoke(make_addons)
+    try:
+        ctx.invoke(pipeline_generate)
+        ctx.invoke(make_addons)
+    except Exception as e:
+        print(f"Error occurred while calling invoke: {e}")

@@ -6,6 +6,15 @@ from click.testing import CliRunner
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 
 
+@patch("dbt_platform_helper.commands.generate.click.Context.invoke", return_value=None)
+def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons_using_invoke(
+    mock_invoke,
+):
+    CliRunner().invoke(platform_helper_generate)
+
+    assert mock_invoke.called
+
+
 @patch("dbt_platform_helper.commands.generate.make_addons", return_value=None)
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", return_value=None)
 def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
