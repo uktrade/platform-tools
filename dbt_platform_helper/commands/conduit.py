@@ -50,6 +50,7 @@ CONDUIT_ADDON_TYPES = [
     "opensearch",
     "rds-postgres",
     "aurora-postgres",
+    "postgres",
     "redis",
 ]
 CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]

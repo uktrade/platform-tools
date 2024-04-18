@@ -6,12 +6,7 @@ import boto3
 import pytest
 from cfn_tools import load_yaml
 from click.testing import CliRunner
-from moto import mock_cloudformation
-from moto import mock_ecs
-from moto import mock_iam
-from moto import mock_resourcegroupstaggingapi
-from moto import mock_secretsmanager
-from moto import mock_ssm
+from moto import mock_aws
 
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import mock_connection_secret_name
@@ -35,7 +30,7 @@ def test_normalise_secret_name(test_string):
     assert normalise_secret_name(test_string[0]) == test_string[1]
 
 
-@mock_resourcegroupstaggingapi
+@mock_aws
 def test_get_cluster_arn(mocked_cluster, mock_application):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
@@ -46,7 +41,7 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
     )
 
 
-@mock_ecs
+@mock_aws
 def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
     """Test that, given app and environment strings, get_cluster_arn raises an
     exception when no cluster tagged with these strings exists."""
@@ -57,8 +52,7 @@ def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
         get_cluster_arn(mock_application, "staging")
 
 
-@mock_secretsmanager
-@mock_ssm
+@mock_aws
 def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn returns an ARN from secrets manager."""
@@ -79,7 +73,7 @@ def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     )
 
 
-@mock_ssm
+@mock_aws
 def test_get_connection_secret_arn_from_parameter_store(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn returns an ARN from parameter store."""
@@ -101,8 +95,7 @@ def test_get_connection_secret_arn_from_parameter_store(mock_application):
     )
 
 
-@mock_secretsmanager
-@mock_ssm
+@mock_aws
 def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
     """Test that, given app, environment and secret name strings,
     get_connection_secret_arn raises an exception when no matching secret exists
@@ -297,8 +290,7 @@ def test_addon_client_is_running_when_no_client_agent_running(
         )
 
 
-@mock_iam
-@mock_cloudformation
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name",
     ["postgres", "redis", "opensearch", "rds-postgres"],
@@ -347,9 +339,7 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
     assert policy_document == mock_policy
 
 
-@mock_iam
-@mock_ssm
-@mock_cloudformation
+@mock_aws
 @pytest.mark.parametrize(
     "addon_type, addon_name, parameter_suffix",
     [
@@ -409,7 +399,7 @@ def test_update_conduit_stack_resources(
     )
 
 
-@mock_ssm
+@mock_aws
 def test_get_or_create_task_name(mock_application):
     """Test that get_or_create_task_name retrieves the task name from the
     parameter store when it has been stored."""
@@ -429,7 +419,7 @@ def test_get_or_create_task_name(mock_application):
     assert task_name == mock_task_name(addon_name)
 
 
-@mock_ssm
+@mock_aws
 def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     """Test that get_or_create_task_name creates the task name and appends it
     with a 12 digit lowercase alphanumeric string when it does not exist in the
@@ -445,7 +435,7 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "access",
     [
@@ -896,7 +886,7 @@ def test_start_conduit_with_access_permissions(
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_type, addon_name",
     [
@@ -934,7 +924,7 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -978,7 +968,7 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -1025,7 +1015,7 @@ def test_conduit_command_when_no_connection_secret_exists(
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -1072,7 +1062,7 @@ def test_conduit_command_when_client_task_fails_to_start(
     )
 
 
-@mock_ssm
+@mock_aws
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
@@ -1100,12 +1090,12 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     validate_version.assert_called_once()
     start_conduit.assert_not_called()
     secho.assert_called_once_with(
-        """Addon type "nope" is not supported, we support: opensearch, rds-postgres, aurora-postgres, redis.""",
+        """Addon type "nope" is not supported, we support: opensearch, rds-postgres, aurora-postgres, postgres, redis.""",
         fg="red",
     )
 
 
-@mock_ssm
+@mock_aws
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
@@ -1138,7 +1128,7 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name",
     [
@@ -1177,7 +1167,7 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_type, addon_name, access",
     [
@@ -1216,7 +1206,7 @@ def test_conduit_command_flags(
     )
 
 
-@mock_ssm
+@mock_aws
 @pytest.mark.parametrize(
     "addon_name, expected_type",
     [
@@ -1236,7 +1226,7 @@ def test_get_addon_type(addon_name, expected_type, mock_application):
     assert addon_type == expected_type
 
 
-@mock_ssm
+@mock_aws
 def test_get_addon_type_when_addon_not_found(mock_application):
     """Test that get_addon_type raises the expected error when the addon is not
     found in the config file."""
@@ -1249,7 +1239,7 @@ def test_get_addon_type_when_addon_not_found(mock_application):
         get_addon_type(mock_application, "development", "custom-name-postgres")
 
 
-@mock_ssm
+@mock_aws
 def test_get_addon_type_when_parameter_not_found(mock_application):
     """Test that get_addon_type raises the expected error when the addon config
     parameter is not found."""

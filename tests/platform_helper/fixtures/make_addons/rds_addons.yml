@@ -1,7 +1,7 @@
 ##### RDS postgres example:
 
 my-rds-db:
-  type: rds-postgres
+  type: postgres
   version: 14.4
 
   environments:

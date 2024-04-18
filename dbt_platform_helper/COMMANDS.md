@@ -1,10 +1,13 @@
 # Commands Reference
 
 - [platform-helper](#platform-helper)
-- [platform-helper bootstrap](#platform-helper-bootstrap)
-- [platform-helper bootstrap make-config](#platform-helper-bootstrap-make-config)
-- [platform-helper bootstrap migrate-secrets](#platform-helper-bootstrap-migrate-secrets)
-- [platform-helper bootstrap copy-secrets](#platform-helper-bootstrap-copy-secrets)
+- [platform-helper application](#platform-helper-application)
+- [platform-helper application container-stats](#platform-helper-application-container-stats)
+- [platform-helper application task-stats](#platform-helper-application-task-stats)
+- [platform-helper cdn](#platform-helper-cdn)
+- [platform-helper cdn assign](#platform-helper-cdn-assign)
+- [platform-helper cdn delete](#platform-helper-cdn-delete)
+- [platform-helper cdn list](#platform-helper-cdn-list)
 - [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
 - [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
 - [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
@@ -18,23 +21,18 @@
 - [platform-helper config validate](#platform-helper-config-validate)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
-- [platform-helper copilot get-env-secrets](#platform-helper-copilot-get-env-secrets)
 - [platform-helper domain](#platform-helper-domain)
 - [platform-helper domain configure](#platform-helper-domain-configure)
 - [platform-helper domain assign](#platform-helper-domain-assign)
-- [platform-helper cdn](#platform-helper-cdn)
-- [platform-helper cdn assign](#platform-helper-cdn-assign)
-- [platform-helper cdn delete](#platform-helper-cdn-delete)
-- [platform-helper cdn list](#platform-helper-cdn-list)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
-- [platform-helper application](#platform-helper-application)
-- [platform-helper application container-stats](#platform-helper-application-container-stats)
-- [platform-helper application task-stats](#platform-helper-application-task-stats)
+- [platform-helper secrets](#platform-helper-secrets)
+- [platform-helper secrets copy](#platform-helper-secrets-copy)
+- [platform-helper secrets list](#platform-helper-secrets-list)
 
 # platform-helper
 
@@ -54,7 +52,6 @@ platform-helper <command> [--version]
 ## Commands
 
 - [`application` ↪](#platform-helper-application)
-- [`bootstrap` ↪](#platform-helper-bootstrap)
 - [`cdn` ↪](#platform-helper-cdn)
 - [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
@@ -65,15 +62,18 @@ platform-helper <command> [--version]
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`pipeline` ↪](#platform-helper-pipeline)
+- [`secrets` ↪](#platform-helper-secrets)
 
-# platform-helper bootstrap
+# platform-helper application
 
 [↩ Parent](#platform-helper)
+
+    Application metrics.
 
 ## Usage
 
 ```
-platform-helper bootstrap (make-config|migrate-secrets|copy-secrets) 
+platform-helper application (container-stats|task-stats) 
 ```
 
 ## Options
@@ -83,88 +83,159 @@ platform-helper bootstrap (make-config|migrate-secrets|copy-secrets)
 
 ## Commands
 
-- [`copy-secrets` ↪](#platform-helper-bootstrap-copy-secrets)
-- [`make-config` ↪](#platform-helper-bootstrap-make-config)
-- [`migrate-secrets` ↪](#platform-helper-bootstrap-migrate-secrets)
+- [`container-stats` ↪](#platform-helper-application-container-stats)
+- [`task-stats` ↪](#platform-helper-application-task-stats)
 
-# platform-helper bootstrap make-config
+# platform-helper application container-stats
 
-[↩ Parent](#platform-helper-bootstrap)
+[↩ Parent](#platform-helper-application)
 
-    Generate Copilot boilerplate code.
-
-## Usage
-
-```
-platform-helper bootstrap make-config [-d <directory>] 
-```
-
-## Options
-
-- `-d
---directory <text>` _Defaults to .._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper bootstrap migrate-secrets
-
-[↩ Parent](#platform-helper-bootstrap)
-
-    Migrate secrets from your GOV.UK PaaS application to DBT PaaS.
-
-    You need to be authenticated via Cloud Foundry CLI and the AWS CLI to use this command.
-
-    If you're using AWS profiles, use the AWS_PROFILE environment variable to indicate the which
-    profile to use, e.g.:
-
-    AWS_PROFILE=myaccount copilot-bootstrap.py ...
+    Command to get application container level metrics.
 
 ## Usage
 
 ```
-platform-helper bootstrap migrate-secrets --project-profile <project_profile> 
-                                          --env <environment> [--svc <service>] 
-                                          [--overwrite] [--dry-run] 
+platform-helper application container-stats --env <environment> --app <application> 
+                                            [--storage] [--network] 
 ```
 
 ## Options
 
-- `--project-profile <text>`
-  - AWS account profile name
 - `--env <text>`
-  - Migrate secrets from a specific environment
-- `--svc <text>`
-  - Migrate secrets from a specific service
-- `--overwrite <boolean>` _Defaults to False._
-  - Overwrite existing secrets?
-- `--dry-run <boolean>` _Defaults to False._
-  - dry run
+
+- `--app <text>`
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper bootstrap copy-secrets
+# platform-helper application task-stats
 
-[↩ Parent](#platform-helper-bootstrap)
+[↩ Parent](#platform-helper-application)
 
-    Copy secrets from one environment to a new environment.
+    Command to get application task level metrics.
 
 ## Usage
 
 ```
-platform-helper bootstrap copy-secrets <source_environment> <target_environment> 
-                                       --project-profile <project_profile> 
+platform-helper application task-stats --env <environment> --app <application> [--disk] 
+                                       [--storage] [--network] 
 ```
 
-## Arguments
+## Options
 
-- `source_environment <text>`
-- `target_environment <text>`
+- `--env <text>`
+
+- `--app <text>`
+
+- `--disk <boolean>` _Defaults to False._
+
+- `--storage <boolean>` _Defaults to False._
+
+- `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn
+
+[↩ Parent](#platform-helper)
+
+## Usage
+
+```
+platform-helper cdn (assign|delete|list) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`assign` ↪](#platform-helper-cdn-assign)
+- [`delete` ↪](#platform-helper-cdn-delete)
+- [`list` ↪](#platform-helper-cdn-list)
+
+# platform-helper cdn assign
+
+[↩ Parent](#platform-helper-cdn)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn assign --project-profile <project_profile> --env <environment> 
+                           --app <application> --svc <service> 
+```
 
 ## Options
 
 - `--project-profile <text>`
-  - AWS account profile name
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn delete
+
+[↩ Parent](#platform-helper-cdn)
+
+    Assigns a CDN domain name to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn delete --project-profile <project_profile> --env <environment> 
+                           --app <application> --svc <service> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper cdn list
+
+[↩ Parent](#platform-helper-cdn)
+
+    List CDN domain name attached to application loadbalancer.
+
+## Usage
+
+```
+platform-helper cdn list --project-profile <project_profile> --env <environment> 
+                         --app <application> --svc <service> 
+```
+
+## Options
+
+- `--project-profile <text>`
+  - AWS account profile name for certificates account
+- `--env <text>`
+  - AWS Copilot environment name
+- `--app <text>`
+  - Application Name
+- `--svc <text>`
+  - Service Name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -419,7 +490,7 @@ platform-helper config validate
 ## Usage
 
 ```
-platform-helper copilot (make-addons|get-env-secrets) 
+platform-helper copilot make-addons 
 ```
 
 ## Options
@@ -429,7 +500,6 @@ platform-helper copilot (make-addons|get-env-secrets)
 
 ## Commands
 
-- [`get-env-secrets` ↪](#platform-helper-copilot-get-env-secrets)
 - [`make-addons` ↪](#platform-helper-copilot-make-addons)
 
 # platform-helper copilot make-addons
@@ -446,28 +516,6 @@ platform-helper copilot (make-addons|get-env-secrets)
 ```
 platform-helper copilot make-addons 
 ```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper copilot get-env-secrets
-
-[↩ Parent](#platform-helper-copilot)
-
-    List secret names and values for an environment.
-
-## Usage
-
-```
-platform-helper copilot get-env-secrets <application> <environment> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
 
 ## Options
 
@@ -542,105 +590,6 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
   - AWS account profile name for Route53 domains account
 - `--project-profile <text>`
   - AWS account profile name for application account
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn
-
-[↩ Parent](#platform-helper)
-
-## Usage
-
-```
-platform-helper cdn (assign|delete|list) 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`assign` ↪](#platform-helper-cdn-assign)
-- [`delete` ↪](#platform-helper-cdn-delete)
-- [`list` ↪](#platform-helper-cdn-list)
-
-# platform-helper cdn assign
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn assign --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn delete
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn delete --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn list
-
-[↩ Parent](#platform-helper-cdn)
-
-    List CDN domain name attached to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn list --project-profile <project_profile> --env <environment> 
-                         --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -772,16 +721,14 @@ platform-helper pipeline generate
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper application
+# platform-helper secrets
 
 [↩ Parent](#platform-helper)
-
-    Application metrics.
 
 ## Usage
 
 ```
-platform-helper application (container-stats|task-stats) 
+platform-helper secrets (copy|list) 
 ```
 
 ## Options
@@ -791,59 +738,52 @@ platform-helper application (container-stats|task-stats)
 
 ## Commands
 
-- [`container-stats` ↪](#platform-helper-application-container-stats)
-- [`task-stats` ↪](#platform-helper-application-task-stats)
+- [`copy` ↪](#platform-helper-secrets-copy)
+- [`list` ↪](#platform-helper-secrets-list)
 
-# platform-helper application container-stats
+# platform-helper secrets copy
 
-[↩ Parent](#platform-helper-application)
+[↩ Parent](#platform-helper-secrets)
 
-    Command to get application container level metrics.
+    Copy secrets from one environment to a new environment.
 
 ## Usage
 
 ```
-platform-helper application container-stats --env <environment> --app <application> 
-                                            [--storage] [--network] 
+platform-helper secrets copy <source_environment> <target_environment> 
+                             --project-profile <project_profile> 
 ```
+
+## Arguments
+
+- `source_environment <text>`
+- `target_environment <text>`
 
 ## Options
 
-- `--env <text>`
-
-- `--app <text>`
-
-- `--storage <boolean>` _Defaults to False._
-
-- `--network <boolean>` _Defaults to False._
-
+- `--project-profile <text>`
+  - AWS account profile name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper application task-stats
+# platform-helper secrets list
 
-[↩ Parent](#platform-helper-application)
+[↩ Parent](#platform-helper-secrets)
 
-    Command to get application task level metrics.
+    List secret names and values for an environment.
 
 ## Usage
 
 ```
-platform-helper application task-stats --env <environment> --app <application> [--disk] 
-                                       [--storage] [--network] 
+platform-helper secrets list <application> <environment> 
 ```
 
+## Arguments
+
+- `app <text>`
+- `env <text>`
+
 ## Options
-
-- `--env <text>`
-
-- `--app <text>`
-
-- `--disk <boolean>` _Defaults to False._
-
-- `--storage <boolean>` _Defaults to False._
-
-- `--network <boolean>` _Defaults to False._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

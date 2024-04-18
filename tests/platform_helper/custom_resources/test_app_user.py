@@ -10,9 +10,7 @@ from urllib.error import HTTPError
 
 import boto3
 import pytest
-from moto import mock_resourcegroupstaggingapi
-from moto import mock_secretsmanager
-from moto import mock_ssm
+from moto import mock_aws
 from parameterized import parameterized
 
 if sys.version_info != (3, 11):
@@ -101,8 +99,7 @@ class TestAppUserCustomResource(unittest.TestCase):
 
         conn.commit.assert_called_once()
 
-    @mock_resourcegroupstaggingapi
-    @mock_ssm
+    @mock_aws
     def test_create_or_update_user_secret(self):
         ssm = boto3.client("ssm")
         user_secret_name = "/test/secret"
@@ -121,7 +118,7 @@ class TestAppUserCustomResource(unittest.TestCase):
         assert parameter["Value"] == json.dumps(user_secret_string)
         assert parameter_described["Description"] == "used for testing"
 
-    @mock_ssm
+    @mock_aws
     def test_create_or_update_user_secret_overwrites(self):
         user_secret_name = "/test/secret"
         user_secret_string = {"username": "test_user", "password": "test_password"}
@@ -189,8 +186,7 @@ class TestAppUserCustomResource(unittest.TestCase):
     @patch("dbt_platform_helper.custom_resources.app_user.create_db_user")
     @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
-    @mock_secretsmanager
-    @mock_ssm
+    @mock_aws
     def test_handler(self, request_type, mock_connect, mock_send_response, mock_create_db_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
@@ -221,8 +217,7 @@ class TestAppUserCustomResource(unittest.TestCase):
     @patch("dbt_platform_helper.custom_resources.app_user.drop_user")
     @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
-    @mock_secretsmanager
-    @mock_ssm
+    @mock_aws
     def test_handler_delete(self, mock_connect, mock_send_response, mock_drop_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
@@ -248,7 +243,7 @@ class TestAppUserCustomResource(unittest.TestCase):
 
     @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
-    @mock_secretsmanager
+    @mock_aws
     def test_handler_invalid_request_type(self, mock_connect, mock_send_response):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(
@@ -271,7 +266,7 @@ class TestAppUserCustomResource(unittest.TestCase):
     @patch("dbt_platform_helper.custom_resources.app_user.create_db_user", side_effect=Exception())
     @patch("dbt_platform_helper.custom_resources.app_user.send_response")
     @patch("dbt_platform_helper.custom_resources.app_user.psycopg2.connect")
-    @mock_secretsmanager
+    @mock_aws
     def test_handler_exception(self, mock_connect, mock_send_response, mock_create_db_user):
         secretsmanager = boto3.client("secretsmanager")
         secret_id = secretsmanager.create_secret(

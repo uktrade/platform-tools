@@ -1,62 +1,62 @@
 ##### RDS postgres example:
 
 my-rds-db-invalid-param:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   im_invalid: true
 
 my-rds-db-missing-version:
-  type: rds-postgres
+  type: postgres
 
 my-rds-db-bad-deletion-policy:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   deletion_policy: 77
 
 my-rds-db-bad-plan:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       plan: cunning
 
 my-rds-db-volume-too-small:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       volume_size: 1
 
 my-rds-db-volume-too-big:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       volume_size: 8000000
 
 my-rds-db-volume-not-an-int:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       volume_size: two hundred
 
 my-rds-db-snapshot_id_should_be_a_str:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       snapshot_id: false
 
 my-rds-db-invalid-policy:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
       deletion_policy: "None"
 
 my-rds-db-protection-should-be-bool:
-  type: rds-postgres
+  type: postgres
   version: 14.4
   environments:
     default:
