@@ -1,9 +1,7 @@
 from unittest.mock import patch
 
 from click.testing import CliRunner
-from moto import mock_ecs
-from moto import mock_logs
-from moto import mock_sts
+from moto import mock_aws
 
 from dbt_platform_helper.commands.application import container_stats
 from dbt_platform_helper.commands.application import task_stats
@@ -155,9 +153,7 @@ results = {
 #     assert result["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-@mock_logs
-@mock_ecs
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.application.get_query_results", return_value=results)
 def test_stats(alias_session):
     runner = CliRunner()
@@ -177,9 +173,7 @@ def test_stats(alias_session):
     )
 
 
-@mock_logs
-@mock_ecs
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.application.get_query_results", return_value=results)
 def test_stats_all_options(alias_session):
     runner = CliRunner()
@@ -206,9 +200,7 @@ def test_stats_all_options(alias_session):
     )
 
 
-@mock_logs
-@mock_ecs
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.application.get_query_results", return_value=results)
 def test_container_stats(alias_session):
     runner = CliRunner()
@@ -232,9 +224,7 @@ def test_container_stats(alias_session):
     )
 
 
-@mock_logs
-@mock_ecs
-@mock_sts
+@mock_aws
 @patch("dbt_platform_helper.commands.application.get_query_results", return_value=results)
 def test_container_stats_all_options(alias_session):
     runner = CliRunner()
