@@ -183,22 +183,6 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
         assert_file_overwritten_in_stdout(file, result)
 
 
-@freeze_time("2023-08-22 16:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_with_no_bootstrap_yml_succeeds(
-    git_remote, get_aws_session_or_abort, fakefs
-):
-    setup_fixtures(fakefs)
-    os.remove("bootstrap.yml")
-    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 0
-
-
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
@@ -259,26 +243,14 @@ def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_m
     ) in result.output
 
 
-def test_pipeline_generate_with_no_bootstrap_yml_or_workspace_fails_with_message(fakefs):
+def test_pipeline_generate_with_no_workspace_file_fails_with_message(fakefs):
     setup_fixtures(fakefs)
-    os.remove("bootstrap.yml")
     os.remove("copilot/.workspace")
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
-
-
-def test_pipeline_generate_with_invalid_bootstrap_yml_and_no_workspace_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    Path("bootstrap.yml").write_text("{invalid data")
-    os.remove("copilot/.workspace")
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert "Error: No valid bootstrap.yml or copilot/.workspace file found" in result.output
+    assert "Cannot get application name. No copilot/.workspace file found" in result.output
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -345,7 +317,6 @@ def setup_output_file_paths_for_codebases():
 
 
 def setup_fixtures(fakefs, pipelines_file="pipeline/pipelines.yml"):
-    fakefs.add_real_file(FIXTURES_DIR / "valid_bootstrap_config.yml", False, "bootstrap.yml")
     fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, "pipelines.yml")
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
     fakefs.add_real_directory(EXPECTED_FILES_DIR / "pipeline" / "pipelines", True)

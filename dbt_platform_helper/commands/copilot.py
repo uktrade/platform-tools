@@ -12,7 +12,6 @@ import yaml
 
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
@@ -457,32 +456,3 @@ def _cleanup_old_files(config, output_dir, env_addons_path):
         for f in svc_addons_dir.iterdir():
             if f.is_file():
                 f.unlink()
-
-
-@copilot.command()
-@click.argument("app", type=str, required=True)
-@click.argument("env", type=str, required=True)
-def get_env_secrets(app, env):
-    """List secret names and values for an environment."""
-
-    session = get_aws_session_or_abort()
-    client = session.client("ssm")
-
-    path = SSM_BASE_PATH.format(app=app, env=env)
-
-    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
-    secrets = []
-
-    # TODO: refactor shared code with get_ssm_secret_names
-    while True:
-        response = client.get_parameters_by_path(**params)
-
-        for secret in response["Parameters"]:
-            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
-
-        if "NextToken" in response:
-            params["NextToken"] = response["NextToken"]
-        else:
-            break
-
-    print("\n".join(sorted(secrets)))
