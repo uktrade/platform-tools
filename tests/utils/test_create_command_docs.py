@@ -1,5 +1,3 @@
-import os
-import shutil
 from pathlib import Path
 from unittest import TestCase
 
@@ -82,10 +80,8 @@ class TestCreateCommandDocsCli(TestCase):
         assert result.exit_code == 0
         assert "Markdown docs have been successfully saved to " + output_path in output
 
-    def test_create_command_docs_template_output(self, tmp_path):
-        os.chdir(tmp_path)
-        output_path = f"{tmp_path}/example.md"
-        shutil.copyfile(f"{DOCS_DIR}/example.py", f"{tmp_path}/example.py")
+    def test_create_command_docs_template_output(self):
+        output_path = f"{DOCS_DIR}/example.md"
         expected_output_path = f"{DOCS_DIR}/expected_output.md"
 
         assert not Path(output_path).is_file()
@@ -94,7 +90,7 @@ class TestCreateCommandDocsCli(TestCase):
             docs,
             [
                 "--module",
-                "example",
+                "tests.platform_helper.test-docs.example",
                 "--cmd",
                 "cli",
                 "--output",
