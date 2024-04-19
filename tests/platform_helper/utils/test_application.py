@@ -5,23 +5,13 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
-from moto import mock_ssm
-from moto import mock_sts
+from moto import mock_aws
 
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
-
-
-def test_getting_an_application_name_from_bootstrap(fakefs):
-    fakefs.add_real_file(
-        Path(__file__).parent.parent.joinpath("fixtures/valid_bootstrap_config.yml"),
-        True,
-        "bootstrap.yml",
-    )
-    assert get_application_name() == "test-app"
 
 
 def test_getting_an_application_name_from_workspace(fakefs):
@@ -34,9 +24,12 @@ def test_getting_an_application_name_from_workspace(fakefs):
 
 
 @patch("dbt_platform_helper.utils.application.abort_with_error", return_value=None)
-def test_getting_an_application_name_when_no_workspace_or_bootstrap(abort_with_error, fakefs):
+def test_getting_an_application_name_when_no_workspace_file(abort_with_error, fakefs):
     get_application_name()
-    abort_with_error.assert_called_with("No valid bootstrap.yml or copilot/.workspace file found")
+
+    abort_with_error.assert_called_with(
+        "Cannot get application name. No copilot/.workspace file found"
+    )
 
 
 @patch("dbt_platform_helper.utils.application.get_profile_name_from_account_id", return_value="foo")
@@ -81,8 +74,7 @@ class ApplicationTest(TestCase):
             str(application), "Application test with environments one:111111111, two:222222222"
         )
 
-    @mock_ssm
-    @mock_sts
+    @mock_aws
     @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
     def test_loading_an_application_with_environments(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
@@ -169,8 +161,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.name, "test")
         self.assertEqual(str(application), "Application test with environments one:111111111")
 
-    @mock_ssm
-    @mock_sts
+    @mock_aws
     @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
     def test_loading_an_empty_application(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
@@ -192,8 +183,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.name, "test")
         self.assertEqual(str(application), "Application test with no environments")
 
-    @mock_ssm
-    @mock_sts
+    @mock_aws
     def test_loading_an_empty_application_passing_in_the_name_and_session(
         self, get_aws_session_or_abort, get_profile_name_from_account_id
     ):
@@ -218,7 +208,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.environments["my_env"].name, "my_env")
         self.assertEqual(application.environments["my_env"].session, session)
 
-    @mock_ssm
+    @mock_aws
     @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
     def test_loading_an_application_in_a_different_account(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id

@@ -12,16 +12,11 @@ import yaml
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from freezegun import freeze_time
-from moto import mock_iam
-from moto import mock_kms
-from moto import mock_s3
-from moto import mock_ssm
-from moto import mock_sts
+from moto import mock_aws
 from yaml import dump
 
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
-from dbt_platform_helper.utils.aws import SSM_PATH
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -108,10 +103,7 @@ class TestTerraformEnabledMakeAddonCommand:
     )
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_sts
-    @mock_s3
-    @mock_iam
-    @mock_kms
+    @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self, mock_get_session, mock_get_session2, fakefs, kms_key_exists, kms_key_arn
     ):
@@ -199,9 +191,7 @@ class TestTerraformEnabledMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
         mock_get_session,
@@ -369,9 +359,7 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_make_addons_success(
         self,
         mock_get_session,
@@ -481,9 +469,7 @@ class TestMakeAddonCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @mock_iam
-    @mock_sts
-    @mock_s3
+    @mock_aws
     @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
         client = mock_aws_client(mock_get_session)
@@ -617,9 +603,7 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_make_addons_deletion_policy(
         self,
         fakefs,
@@ -691,9 +675,7 @@ class TestMakeAddonCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -727,9 +709,7 @@ invalid-entry:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -761,9 +741,7 @@ example-invalid-file:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -795,9 +773,7 @@ invalid-environment:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
             ADDON_CONFIG_FILENAME,
@@ -924,9 +900,7 @@ invalid-entry:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
-    @mock_s3
-    @mock_sts
-    @mock_iam
+    @mock_aws
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_file_contents, has_postgres_addon
     ):
@@ -1056,55 +1030,6 @@ invalid-entry:
         assert result.exit_code == 0
 
 
-@mock_ssm
-@mock_sts
-@mock_iam
-@patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package",
-    new=Mock(return_value=False),
-)
-def test_get_secrets():
-    def _put_ssm_param(client, app, env, name, value):
-        path = SSM_PATH.format(app=app, env=env, name=name)
-        client.put_parameter(Name=path, Value=value, Type="String")
-
-    ssm = boto3.client("ssm")
-
-    secrets = [
-        ["MY_SECRET", "testing"],
-        ["MY_SECRET2", "hello"],
-        ["MY_SECRET3", "world"],
-    ]
-
-    for name, value in secrets:
-        _put_ssm_param(ssm, "myapp", "myenv", name, value)
-
-    _put_ssm_param(ssm, "myapp", "anotherenv", "OTHER_ENV", "foobar")
-
-    result = CliRunner().invoke(copilot, ["get-env-secrets", "myapp", "myenv"])
-
-    for name, value in secrets:
-        path = SSM_PATH.format(app="myapp", env="myenv", name=name)
-        line = f"{path}: {value}"
-
-        assert line in result.output
-
-    assert SSM_PATH.format(app="myapp", env="anotherenv", name="OTHER_ENV") not in result.output
-    assert result.exit_code == 0
-
-
-def create_test_manifests(addon_file_contents, fakefs):
-    fakefs.create_file(
-        ADDON_CONFIG_FILENAME,
-        contents=" ".join(addon_file_contents),
-    )
-    fakefs.create_file(
-        "copilot/web/manifest.yml",
-        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
-    )
-    fakefs.create_file("copilot/environments/development/manifest.yml")
-
-
 @pytest.mark.parametrize(
     "service_type, expected",
     [
@@ -1152,3 +1077,15 @@ def setup_override_files_for_environments():
         overrides_dir / "stack.ts",
         overrides_dir / "tsconfig.json",
     ]
+
+
+def create_test_manifests(addon_file_contents, fakefs):
+    fakefs.create_file(
+        ADDON_CONFIG_FILENAME,
+        contents=" ".join(addon_file_contents),
+    )
+    fakefs.create_file(
+        "copilot/web/manifest.yml",
+        contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+    )
+    fakefs.create_file("copilot/environments/development/manifest.yml")
