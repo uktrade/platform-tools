@@ -179,7 +179,7 @@ def check_platform_helper_version_mismatch():
             f"WARNING: You are running platform-helper v{string_version(app_version)} against "
             f"v{string_version(on_file_version)} specified by .platform-helper-version."
         )
-        click.secho(message, fg="red")
+        click.echo(message)
 
 
 def running_as_installed_package():
