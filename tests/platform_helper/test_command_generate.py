@@ -25,6 +25,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
         # Run the test case
         result = CliRunner().invoke(platform_helper_generate)
         print("RESULT IS >>>>>")
+        print(type(result))
         print(result)
 
         # Check the test result
