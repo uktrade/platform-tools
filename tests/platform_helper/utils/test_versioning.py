@@ -192,21 +192,20 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     version_compatibility.assert_not_called()
 
 
-@patch("click.secho")
+@patch("click.echo")
 @patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    get_file_app_versions, secho
+    get_file_app_versions, echo
 ):
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
     check_platform_helper_version_mismatch()
 
-    secho.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version.",
-        fg="red",
+    echo.assert_called_with(
+        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version."
     )
 
 
