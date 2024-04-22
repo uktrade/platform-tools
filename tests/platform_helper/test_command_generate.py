@@ -1,3 +1,4 @@
+import time
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -39,8 +40,8 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 ):
     get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
-    res = CliRunner().invoke(platform_helper_generate)
-    print(res.output)
+    CliRunner().invoke(platform_helper_generate)
+    time.sleep(1)
     echo.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version."
     )
