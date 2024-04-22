@@ -24,6 +24,8 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
     ) as mock_generate:
         # Run the test case
         result = CliRunner().invoke(platform_helper_generate)
+        print("RESULT IS >>>>>")
+        print(result)
 
         # Check the test result
         assert result.exit_code == 0
@@ -45,6 +47,8 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
         get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
 
         CliRunner().invoke(platform_helper_generate)
+        print("SECHO IS >>>>>>")
+        print(secho)
 
         secho.assert_called_once_with(
             f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version.",
@@ -90,4 +94,3 @@ def test_platform_helper_generate_does_not_override_version_file_if_exists(tmp_p
 
     assert version_file_path.exists()
     assert version_file_path.read_text() == contents
-    
