@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import logging
+
 import click
 
 from dbt_platform_helper.commands.copilot import make_addons
@@ -17,6 +19,7 @@ def generate(ctx: click.Context):
 
     Wraps pipeline generate and make-addons.
     """
+    logging.basicConfig(level=logging.DEBUG)
 
     generate_platform_helper_version_file()
     check_platform_helper_version_mismatch()
@@ -24,4 +27,4 @@ def generate(ctx: click.Context):
         ctx.invoke(pipeline_generate)
         ctx.invoke(make_addons)
     except Exception as e:
-        print(f"Error occurred while calling invoke: {e}")
+        logging.error(f"Error occurred while calling invoke: {e}")

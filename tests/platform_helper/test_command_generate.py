@@ -29,8 +29,8 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
         # Check the test result
         assert result.exit_code == 0
-        assert mock_generate.called
-        assert mock_make_addons.called
+        assert mock_generate.call_count == 1
+        assert mock_make_addons.call_count == 1
 
 
 def test_platform_helper_generate_shows_a_warning_when_version_is_different_than_on_file():
