@@ -18,9 +18,9 @@ def test_platform_helper_generate_calls_invoke(
 
 def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons():
     with patch(
-        "dbt_platform_helper.commands.generate.make_addons", return_value=None
+        "dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None)
     ) as mock_make_addons, patch(
-        "dbt_platform_helper.commands.generate.pipeline_generate", return_value=None
+        "dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None)
     ) as mock_generate:
         # Run the test case
         result = CliRunner().invoke(platform_helper_generate)
@@ -28,7 +28,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
         print(result)
 
         # Check the test result
-        # assert result.exit_code == 0
+        assert result.exit_code == 0
         assert mock_generate.call_count == 1
         assert mock_make_addons.call_count == 1
 
