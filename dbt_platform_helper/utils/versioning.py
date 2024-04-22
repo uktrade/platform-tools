@@ -170,20 +170,16 @@ def check_platform_helper_version_needs_update():
 
 def check_platform_helper_version_mismatch():
     if not running_as_installed_package():
-        print("NOT RUNNING AS INSTALLED PACKAGE")
         return
 
-    print("RUNNING AS INSTALLED PACKAGE")
     app_version, on_file_version = get_file_app_versions()
 
     if not check_version_on_file_compatibility(app_version, on_file_version):
-        print("NOT CHECK VERSION ON FILE COMPATIBILITY")
         message = (
             f"WARNING: You are running platform-helper v{string_version(app_version)} against "
             f"v{string_version(on_file_version)} specified by .platform-helper-version."
         )
         click.secho(message, fg="red")
-    print("CHECK VERSION ON FILE COMPATIBILITY")
 
 
 def running_as_installed_package():
