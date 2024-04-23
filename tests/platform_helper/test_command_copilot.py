@@ -1078,7 +1078,6 @@ def setup_override_files_for_environments():
         overrides_dir / "bin" / "override.ts",
         overrides_dir / ".gitignore",
         overrides_dir / "cdk.json",
-        overrides_dir / "log_resource_policy.json",
         overrides_dir / "package-lock.json",
         overrides_dir / "package.json",
         overrides_dir / "README.md",
