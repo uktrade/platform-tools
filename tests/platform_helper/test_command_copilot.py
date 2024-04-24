@@ -1104,7 +1104,7 @@ def test_vpc_generate(fakefs):
     )["Subnet"]
     addons_dir = FIXTURES_DIR / "make_addons"
     fakefs.add_real_directory(addons_dir / "config/copilot", read_only=False, target_path="copilot")
-    yuamel = ruamel.yaml.YAML(typ="rt", preserve_comments=True)
+    yuamel = ruamel.yaml.YAML(typ="rt")
     current_manifest = yuamel.load(
         Path("copilot/environments/development/manifest.yml").read_text()
     )
