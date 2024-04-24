@@ -255,11 +255,19 @@ class TestTerraformEnabledMakeAddonCommand:
             Path("./copilot/environments/addons/").iterdir()
         ), "./copilot/environments/addons/ should be empty"
 
-        env_override_files = setup_override_files_for_environments()
-        for file in env_override_files:
-            assert f"{file} created" in result.stdout
+        env_override_file = Path("./copilot/environments/overrides/cfn.patches.yml")
+        assert f"{env_override_file} created" in result.stdout
 
-        all_expected_files = expected_service_files + env_override_files
+        expected_env_overrides_file = Path(
+            "expected/environments/overrides/cfn.patches.yml"
+        ).read_text()
+        actual_env_overrides_file = Path(
+            "copilot/environments/overrides/cfn.patches.yml"
+        ).read_text()
+
+        assert actual_env_overrides_file == expected_env_overrides_file
+
+        all_expected_files = expected_service_files + [env_override_file]
 
         expected_svc_overrides_file = Path("expected/web/overrides/cfn.patches.yml").read_text()
         actual_svc_overrides_file = Path("copilot/web/overrides/cfn.patches.yml").read_text()
