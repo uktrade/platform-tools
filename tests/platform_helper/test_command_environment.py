@@ -1,9 +1,15 @@
+from pathlib import Path
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import boto3
 import pytest
+import ruamel.yaml
 from click.testing import CliRunner
+from moto import mock_aws
+
+from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 class TestEnvironmentOfflineCommand:
@@ -307,6 +313,104 @@ class TestEnvironmentOnlineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
+
+
+class TestUpdateVpcConfig:
+    @mock_aws
+    def test_vpc_generate(self, fakefs):
+        from dbt_platform_helper.commands.environment import update_vpc_config
+
+        vpc = boto3.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": "testaccount-development"},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        public_subnet = boto3.client("ec2").create_subnet(
+            CidrBlock="10.0.128.0/24",
+            VpcId=vpc["VpcId"],
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "public"},
+                    ],
+                },
+            ],
+        )["Subnet"]
+        private_subnet = boto3.client("ec2").create_subnet(
+            CidrBlock="10.0.1.0/24",
+            VpcId=vpc["VpcId"],
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "private"},
+                    ],
+                },
+            ],
+        )["Subnet"]
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+        yuamel = ruamel.yaml.YAML(typ="rt")
+        current_manifest = yuamel.load(
+            Path("copilot/environments/development/manifest.yml").read_text()
+        )
+        expected_manifest = current_manifest.copy()
+        expected_manifest["network"] = {
+            "vpc": {
+                "id": vpc["VpcId"],
+                "subnets": {
+                    "public": [{"id": public_subnet["SubnetId"]}],
+                    "private": [{"id": private_subnet["SubnetId"]}],
+                },
+            }
+        }
+
+        result = CliRunner().invoke(update_vpc_config)
+
+        assert (
+            "\n>>> Updating development environment manifest.yml with current VPC and subnet ids\n"
+            in result.output
+        )
+        assert (
+            yuamel.load(Path("copilot/environments/development/manifest.yml").read_text())
+            == expected_manifest
+        )
+
+    @mock_aws
+    def test_vpc_generate_manifest_not_found(self, fakefs):
+        from dbt_platform_helper.commands.environment import update_vpc_config
+
+        vpc = boto3.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": "testaccount-envwithnomanifestfile"},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        addons_dir = FIXTURES_DIR / "make_addons"
+        fakefs.add_real_directory(
+            addons_dir / "config/copilot", read_only=False, target_path="copilot"
+        )
+
+        result = CliRunner().invoke(update_vpc_config)
+
+        assert (
+            "envwithnomanifestfile environment manifest file not found. You may need to run `copilot env init --name envwithnomanifestfile` to generate this file."
+            in result.output
+        )
 
 
 class TestFindLoadBalancer:

@@ -8,7 +8,6 @@ from pathlib import Path
 from pathlib import PosixPath
 
 import click
-import ruamel.yaml
 import yaml
 
 from dbt_platform_helper.utils.application import get_application_name
@@ -468,57 +467,3 @@ def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
         for f in svc_addons_dir.iterdir():
             if f.is_file():
                 f.unlink()
-
-
-@copilot.command
-def vpc_generate():
-    """Update or add VPC configuration in copilot environment manifest files."""
-
-    ensure_cwd_is_repo_root()
-    session = get_aws_session_or_abort()
-    envs = list_copilot_local_environments()
-    vpcs = session.client("ec2").describe_vpcs()["Vpcs"]
-
-    for vpc in vpcs:
-        # skip unnamed vpcs
-        if "Tags" not in vpc.keys() or not [
-            tag["Value"] for tag in vpc["Tags"] if tag["Key"] == "Name"
-        ]:
-            continue
-
-        # expects string format "accountname-envname"
-        vpc_name = [tag["Value"] for tag in vpc["Tags"] if tag["Key"] == "Name"][0]
-        env_name = vpc_name.split("-")[-1]
-
-        if env_name in envs:
-            yuamel = ruamel.yaml.YAML(typ="rt")
-            click.echo(
-                f"\n>>> Updating {env_name} environment manifest.yml with current VPC and subnet ids\n"
-            )
-            env_manifest_path = Path(f"copilot/environments/{env_name}/manifest.yml")
-
-            with open(env_manifest_path, "r") as manifest_file:
-                config = yuamel.load(manifest_file)
-                new_data = config.copy()
-
-            subnets = session.client("ec2").describe_subnets(
-                Filters=[{"Name": "vpc-id", "Values": [vpc["VpcId"]]}]
-            )["Subnets"]
-            public_tag = {"Key": "subnet_type", "Value": "public"}
-            public = [
-                {"id": subnet["SubnetId"]} for subnet in subnets if public_tag in subnet["Tags"]
-            ]
-            private_tag = {"Key": "subnet_type", "Value": "private"}
-            private = [
-                {"id": subnet["SubnetId"]} for subnet in subnets if private_tag in subnet["Tags"]
-            ]
-            new_data["network"] = {
-                "vpc": {"id": vpc["VpcId"], "subnets": {"public": public, "private": private}}
-            }
-
-            with open(env_manifest_path, "w") as manifest_file:
-                yuamel.dump(new_data, manifest_file)
-        else:
-            click.echo(
-                f"{env_name} environment manifest file not found. You may need to run `copilot env init --name {env_name}` to generate this file."
-            )

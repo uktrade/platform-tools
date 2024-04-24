@@ -21,13 +21,13 @@
 - [platform-helper config validate](#platform-helper-config-validate)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
-- [platform-helper copilot vpc-generate](#platform-helper-copilot-vpc-generate)
 - [platform-helper domain](#platform-helper-domain)
 - [platform-helper domain configure](#platform-helper-domain-configure)
 - [platform-helper domain assign](#platform-helper-domain-assign)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
+- [platform-helper environment update-vpc-config](#platform-helper-environment-update-vpc-config)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
@@ -491,7 +491,7 @@ platform-helper config validate
 ## Usage
 
 ```
-platform-helper copilot (make-addons|vpc-generate) 
+platform-helper copilot make-addons 
 ```
 
 ## Options
@@ -502,7 +502,6 @@ platform-helper copilot (make-addons|vpc-generate)
 ## Commands
 
 - [`make-addons` ↪](#platform-helper-copilot-make-addons)
-- [`vpc-generate` ↪](#platform-helper-copilot-vpc-generate)
 
 # platform-helper copilot make-addons
 
@@ -517,23 +516,6 @@ platform-helper copilot (make-addons|vpc-generate)
 
 ```
 platform-helper copilot make-addons 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper copilot vpc-generate
-
-[↩ Parent](#platform-helper-copilot)
-
-    Update or add VPC configuration in copilot environment manifest files.
-
-## Usage
-
-```
-platform-helper copilot vpc-generate 
 ```
 
 ## Options
@@ -621,7 +603,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|online) 
+platform-helper environment (offline|online|update-vpc-config) 
 ```
 
 ## Options
@@ -633,6 +615,7 @@ platform-helper environment (offline|online)
 
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
+- [`update-vpc-config` ↪](#platform-helper-environment-update-vpc-config)
 
 # platform-helper environment offline
 
@@ -674,6 +657,23 @@ platform-helper environment online --app <application> --env <environment>
 - `--app <text>`
 
 - `--env <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper environment update-vpc-config
+
+[↩ Parent](#platform-helper-environment)
+
+    Update or add VPC configuration in copilot environment manifest files.
+
+## Usage
+
+```
+platform-helper environment update-vpc-config 
+```
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

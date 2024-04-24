@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import boto3
 import pytest
-import ruamel.yaml
 import yaml
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
@@ -1071,96 +1070,6 @@ def test_is_service_empty_manifest(fakefs, capfd):
 
     assert excinfo.value.code == 1
     assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
-
-
-@mock_aws
-def test_vpc_generate(fakefs):
-    vpc = boto3.client("ec2").create_vpc(
-        CidrBlock="10.0.0.0/16",
-        TagSpecifications=[
-            {
-                "ResourceType": "vpc",
-                "Tags": [
-                    {"Key": "Name", "Value": "testaccount-development"},
-                ],
-            },
-        ],
-    )["Vpc"]
-    public_subnet = boto3.client("ec2").create_subnet(
-        CidrBlock="10.0.128.0/24",
-        VpcId=vpc["VpcId"],
-        TagSpecifications=[
-            {
-                "ResourceType": "subnet",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": "public"},
-                ],
-            },
-        ],
-    )["Subnet"]
-    private_subnet = boto3.client("ec2").create_subnet(
-        CidrBlock="10.0.1.0/24",
-        VpcId=vpc["VpcId"],
-        TagSpecifications=[
-            {
-                "ResourceType": "subnet",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": "private"},
-                ],
-            },
-        ],
-    )["Subnet"]
-    addons_dir = FIXTURES_DIR / "make_addons"
-    fakefs.add_real_directory(addons_dir / "config/copilot", read_only=False, target_path="copilot")
-    yuamel = ruamel.yaml.YAML(typ="rt")
-    current_manifest = yuamel.load(
-        Path("copilot/environments/development/manifest.yml").read_text()
-    )
-    expected_manifest = current_manifest.copy()
-    expected_manifest["network"] = {
-        "vpc": {
-            "id": vpc["VpcId"],
-            "subnets": {
-                "public": [{"id": public_subnet["SubnetId"]}],
-                "private": [{"id": private_subnet["SubnetId"]}],
-            },
-        }
-    }
-
-    result = CliRunner().invoke(copilot, ["vpc-generate"])
-
-    assert (
-        "\n>>> Updating development environment manifest.yml with current VPC and subnet ids\n"
-        in result.output
-    )
-    assert (
-        yuamel.load(Path("copilot/environments/development/manifest.yml").read_text())
-        == expected_manifest
-    )
-
-
-@mock_aws
-def test_vpc_generate_manifest_not_found(fakefs):
-    vpc = boto3.client("ec2").create_vpc(
-        CidrBlock="10.0.0.0/16",
-        TagSpecifications=[
-            {
-                "ResourceType": "vpc",
-                "Tags": [
-                    {"Key": "Name", "Value": "testaccount-envwithnomanifestfile"},
-                ],
-            },
-        ],
-    )["Vpc"]
-    addons_dir = FIXTURES_DIR / "make_addons"
-    fakefs.add_real_directory(addons_dir / "config/copilot", read_only=False, target_path="copilot")
-
-    result = CliRunner().invoke(copilot, ["vpc-generate"])
-
-    assert (
-        "envwithnomanifestfile environment manifest file not found. You may need to run `copilot env init --name envwithnomanifestfile` to generate this file."
-        in result.output
-    )
 
 
 def setup_override_files_for_environments():
