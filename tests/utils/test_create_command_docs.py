@@ -1,10 +1,21 @@
 from pathlib import Path
 from unittest import TestCase
 
+import pytest
 from click.testing import CliRunner
 
 from tests.platform_helper.conftest import DOCS_DIR
+from utils.create_command_docs import create_docs
 from utils.create_command_docs import docs
+
+
+@pytest.fixture
+def mock_create_docs(monkeypatch):
+    def mock_create_docs_func(base_command, output):
+        output = f"{DOCS_DIR}/example.md"
+        create_docs(base_command, output)
+
+    monkeypatch.setattr("utils.create_command_docs.create_docs", mock_create_docs_func)
 
 
 class TestCreateCommandDocsCli(TestCase):
@@ -80,6 +91,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert result.exit_code == 0
         assert "Markdown docs have been successfully saved to " + output_path in output
 
+    @pytest.mark.usefixtures("mock_create_docs")
     def test_create_command_docs_template_output(self):
         output_path = f"{DOCS_DIR}/example.md"
         expected_output_path = f"{DOCS_DIR}/expected_output.md"
@@ -97,7 +109,7 @@ class TestCreateCommandDocsCli(TestCase):
                 output_path,
             ],
         )
-
+        print(f"LOOK HERE: {open(output_path).read()}")
         output = open(output_path).read()
         expected_output = open(expected_output_path).read()
 
