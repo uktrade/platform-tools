@@ -1,6 +1,0 @@
-app: trade-access
-environments:
-  dev: {}
-  staging: {}
-  uat: {}
-services: []
