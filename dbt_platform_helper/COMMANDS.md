@@ -21,6 +21,7 @@
 - [platform-helper config validate](#platform-helper-config-validate)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
+- [platform-helper copilot vpc-generate](#platform-helper-copilot-vpc-generate)
 - [platform-helper domain](#platform-helper-domain)
 - [platform-helper domain configure](#platform-helper-domain-configure)
 - [platform-helper domain assign](#platform-helper-domain-assign)
@@ -490,7 +491,7 @@ platform-helper config validate
 ## Usage
 
 ```
-platform-helper copilot make-addons 
+platform-helper copilot (make-addons|vpc-generate) 
 ```
 
 ## Options
@@ -501,6 +502,7 @@ platform-helper copilot make-addons
 ## Commands
 
 - [`make-addons` ↪](#platform-helper-copilot-make-addons)
+- [`vpc-generate` ↪](#platform-helper-copilot-vpc-generate)
 
 # platform-helper copilot make-addons
 
@@ -515,6 +517,23 @@ platform-helper copilot make-addons
 
 ```
 platform-helper copilot make-addons 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper copilot vpc-generate
+
+[↩ Parent](#platform-helper-copilot)
+
+    Update or add VPC configuration in copilot environment manifest files.
+
+## Usage
+
+```
+platform-helper copilot vpc-generate 
 ```
 
 ## Options
