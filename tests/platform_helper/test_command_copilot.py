@@ -74,7 +74,7 @@ name: web
 type: Load Balanced Web Service
 """
 
-ADDON_CONFIG_FILENAME = "addons.yml"
+EXTENSION_CONFIG_FILENAME = "extensions.yml"
 
 
 class TestTerraformEnabledMakeAddonCommand:
@@ -209,7 +209,7 @@ class TestTerraformEnabledMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / addon_file, read_only=False, target_path=EXTENSION_CONFIG_FILENAME
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -388,7 +388,7 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / addon_file, read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / addon_file, read_only=False, target_path=EXTENSION_CONFIG_FILENAME
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -490,7 +490,7 @@ class TestMakeAddonCommand:
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
         )
         fakefs.add_real_file(
-            addons_dir / "s3_addons.yml", read_only=False, target_path=ADDON_CONFIG_FILENAME
+            addons_dir / "s3_addons.yml", read_only=False, target_path=EXTENSION_CONFIG_FILENAME
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -530,7 +530,7 @@ class TestMakeAddonCommand:
         fakefs.add_real_file(
             addons_dir / "redis_addons.yml",
             read_only=False,
-            target_path=ADDON_CONFIG_FILENAME,
+            target_path=EXTENSION_CONFIG_FILENAME,
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
@@ -651,7 +651,7 @@ class TestMakeAddonCommand:
         new=Mock(return_value=False),
     )
     def test_exit_if_no_copilot_directory(self, fakefs):
-        fakefs.create_file(ADDON_CONFIG_FILENAME)
+        fakefs.create_file(EXTENSION_CONFIG_FILENAME)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -667,7 +667,7 @@ class TestMakeAddonCommand:
         new=Mock(return_value=False),
     )
     def test_exit_if_no_local_copilot_services(self, fakefs):
-        fakefs.create_file(ADDON_CONFIG_FILENAME)
+        fakefs.create_file(EXTENSION_CONFIG_FILENAME)
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
@@ -686,7 +686,7 @@ class TestMakeAddonCommand:
     @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
+            EXTENSION_CONFIG_FILENAME,
             contents="""
 invalid-entry:
     type: s3-policy
@@ -720,7 +720,7 @@ invalid-entry:
     @mock_aws
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
+            EXTENSION_CONFIG_FILENAME,
             contents="""
 example-invalid-file:
     type: s3
@@ -752,7 +752,7 @@ example-invalid-file:
     @mock_aws
     def test_exit_with_error_if_invalid_environments(self, fakefs):
         fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
+            EXTENSION_CONFIG_FILENAME,
             contents="""
 invalid-environment:
     type: s3-policy
@@ -784,7 +784,7 @@ invalid-environment:
     @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
+            EXTENSION_CONFIG_FILENAME,
             contents="""
 my-s3-bucket-1:
   type: s3
@@ -811,7 +811,7 @@ my-s3-bucket-2:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert "Errors found in addons.yml:" in result.output
+        assert "Errors found in extensions.yml:" in result.output
         assert "'Delete' does not match 'ThisIsInvalid'" in result.output
         assert "Names cannot be prefixed 'sthree-'" in result.output
         assert "Names cannot be suffixed '-s3alias'" in result.output
@@ -831,7 +831,7 @@ my-s3-bucket-2:
         """
 
         fakefs.create_file(
-            ADDON_CONFIG_FILENAME,
+            EXTENSION_CONFIG_FILENAME,
             contents="""
 invalid-entry:
     type: s3-policy
@@ -861,7 +861,7 @@ invalid-entry:
         new=Mock(return_value=False),
     )
     def test_exit_if_no_local_copilot_environments(self, fakefs):
-        fakefs.create_file(ADDON_CONFIG_FILENAME)
+        fakefs.create_file(EXTENSION_CONFIG_FILENAME)
 
         fakefs.create_file(
             "copilot/web/manifest.yml",
@@ -1015,7 +1015,7 @@ invalid-entry:
     )
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
         services = ["web", "web-celery"]
-        fakefs.create_file(ADDON_CONFIG_FILENAME)
+        fakefs.create_file(EXTENSION_CONFIG_FILENAME)
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
 
         fakefs.create_file(
@@ -1089,7 +1089,7 @@ def setup_override_files_for_environments():
 
 def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file(
-        ADDON_CONFIG_FILENAME,
+        EXTENSION_CONFIG_FILENAME,
         contents=" ".join(addon_file_contents),
     )
     fakefs.create_file(
