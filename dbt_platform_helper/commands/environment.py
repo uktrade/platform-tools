@@ -148,7 +148,7 @@ def update_vpc_config():
     vpcs = session.client("ec2").describe_vpcs()["Vpcs"]
 
     for vpc in vpcs:
-        # skip unnamed vpcs
+        # skip unnamed VPCs
         if "Tags" not in vpc.keys() or not [
             tag["Value"] for tag in vpc["Tags"] if tag["Key"] == "Name"
         ]:
