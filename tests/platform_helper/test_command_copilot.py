@@ -74,7 +74,7 @@ name: web
 type: Load Balanced Web Service
 """
 
-ADDON_CONFIG_FILENAME = "addons.yml"
+ADDON_CONFIG_FILENAME = "extensions.yml"
 
 
 class TestTerraformEnabledMakeAddonCommand:
@@ -811,7 +811,7 @@ my-s3-bucket-2:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert "Errors found in addons.yml:" in result.output
+        assert "Errors found in extensions.yml:" in result.output
         assert "'Delete' does not match 'ThisIsInvalid'" in result.output
         assert "Names cannot be prefixed 'sthree-'" in result.output
         assert "Names cannot be suffixed '-s3alias'" in result.output
