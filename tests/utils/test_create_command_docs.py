@@ -10,9 +10,7 @@ from utils.create_command_docs import docs
 
 
 class TestCreateCommandDocsCli(TestCase):
-    @patchfs
-    def setUp(self, fs) -> None:
-        self.setUpPyfakefs()
+    def setUp(self) -> None:
         self.runner = CliRunner()
 
     def test_check_required_module_option(self):
