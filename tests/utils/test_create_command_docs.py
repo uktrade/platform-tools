@@ -56,7 +56,7 @@ class TestCreateCommandDocsCli(TestCase):
         assert "Error: Could not find command bar in platform_helper module" in output
 
     @patchfs
-    def test_create_command_docs_template_output(self, fs):
+    def test_create_command_docs_happy_path(self, fs):
         fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates")
         expected_output_path = "expected_output.md"
         fs.add_real_file(
