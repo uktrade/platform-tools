@@ -27,6 +27,13 @@ class TestCreateCommandDocsCli(TestCase):
         Path(f"{DOCS_DIR}/test-docs.md").unlink(missing_ok=True)
         Path(f"{DOCS_DIR}/example.md").unlink(missing_ok=True)
 
+    def teardown(self) -> None:
+        self._cleanup()
+
+    def _cleanup(self):
+        Path(f"{DOCS_DIR}/test-docs.md").unlink(missing_ok=True)
+        Path(f"{DOCS_DIR}/example.md").unlink(missing_ok=True)
+
     def test_check_required_module_option(self):
         result = self.runner.invoke(docs, ["--cmd", "bar", "--output", "baz"])
 
