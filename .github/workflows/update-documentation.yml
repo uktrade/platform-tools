@@ -1,0 +1,22 @@
+name: Trigger Documentation Update
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Trigger Workflow in uktrade/platform-documentation
+          uses: actions/github-script@v6
+          with:
+            github-token: ${{ secrets.ACTIONS_TOKEN }}
+            script: |
+              github.rest.actions.createWorkflowDispatch({
+                owner: 'uktrade',
+                repo: 'platform-documentation',
+                workflow_id: 'update-release-notes.yml',
+                ref: 'main'
+              })
