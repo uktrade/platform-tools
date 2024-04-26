@@ -28,14 +28,14 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         session = boto3.session.Session(profile_name=aws_profile)
     except botocore.exceptions.ProfileNotFound:
         click.secho(f"""AWS profile "{aws_profile}" is not configured.""", fg="red")
-        exit()
+        exit(1)
     except botocore.errorfactory.UnauthorizedException:
         click.secho(
             "The SSO session associated with this profile has expired or is otherwise invalid.  "
             "To refresh this SSO session run aws sso login with the corresponding profile",
             fg="red",
         )
-        exit()
+        exit(1)
 
     sts = session.client("sts")
     try:
@@ -46,21 +46,21 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
             f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
             fg="red",
         )
-        exit()
+        exit(1)
     except botocore.exceptions.UnauthorizedSSOTokenError:
         click.secho(
             "The SSO session associated with this profile has expired or is otherwise invalid.  "
             "To refresh this SSO session run aws sso login with the corresponding profile",
             fg="red",
         )
-        exit()
+        exit(1)
     except botocore.exceptions.TokenRetrievalError:
         click.secho(
             "The SSO Token associated with this profile has expired.  "
             "To refresh this SSO session run `aws sso login` with the corresponding profile",
             fg="red",
         )
-        exit()
+        exit(1)
 
     alias_client = session.client("iam")
     account_name = alias_client.list_account_aliases()["AccountAliases"]
