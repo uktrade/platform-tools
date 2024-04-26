@@ -6,8 +6,12 @@ from dbt_platform_helper.commands.aws import configure
 
 
 class TestAWSConfigureCommand:
-    @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", side_effect=SystemExit())
-    def test_not_logged_into_aws_exits_with_error(self, mock_session):
+    @patch(
+        "dbt_platform_helper.utils.aws.get_aws_session_or_abort",
+        return_value=None,
+        side_effect=SystemExit(),
+    )
+    def test_not_logged_into_aws_exits_with_error(self, mock_get_aws_session_or_abort):
 
         result = CliRunner().invoke(configure)
 
