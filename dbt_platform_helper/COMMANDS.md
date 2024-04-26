@@ -4,6 +4,8 @@
 - [platform-helper application](#platform-helper-application)
 - [platform-helper application container-stats](#platform-helper-application-container-stats)
 - [platform-helper application task-stats](#platform-helper-application-task-stats)
+- [platform-helper aws](#platform-helper-aws)
+- [platform-helper aws configure](#platform-helper-aws-configure)
 - [platform-helper cdn](#platform-helper-cdn)
 - [platform-helper cdn assign](#platform-helper-cdn-assign)
 - [platform-helper cdn delete](#platform-helper-cdn-delete)
@@ -52,6 +54,7 @@ platform-helper <command> [--version]
 ## Commands
 
 - [`application` ↪](#platform-helper-application)
+- [`aws` ↪](#platform-helper-aws)
 - [`cdn` ↪](#platform-helper-cdn)
 - [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
@@ -136,6 +139,42 @@ platform-helper application task-stats --env <environment> --app <application> [
 - `--storage <boolean>` _Defaults to False._
 
 - `--network <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper aws
+
+[↩ Parent](#platform-helper)
+
+    AWS commands.
+
+## Usage
+
+```
+platform-helper aws configure 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`configure` ↪](#platform-helper-aws-configure)
+
+# platform-helper aws configure
+
+[↩ Parent](#platform-helper-aws)
+
+## Usage
+
+```
+platform-helper aws configure 
+```
+
+## Options
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
