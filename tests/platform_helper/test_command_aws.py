@@ -39,9 +39,28 @@ class TestAWSConfigureCommand:
                 get_aws_session_or_abort(aws_profile=misconfigured_profile)
 
             assert exc_info.value.code == 1
-
             assert mock_secho.call_count > 0
             assert mock_secho.call_args[0][0] == expected_error_message
+
+    @patch("click.secho")
+    def test_get_aws_session_or_abort_with_invalid_credentials(self, mock_secho):
+        aws_profile = "existing_profile"
+        expected_error_message = f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
+
+        with patch("boto3.session.Session") as mock_session:
+            with patch(
+                "dbt_platform_helper.utils.aws.get_account_details"
+            ) as mock_get_account_details:
+                mock_get_account_details.side_effect = botocore.exceptions.SSOTokenLoadError(
+                    error_msg=expected_error_message
+                )
+
+                with pytest.raises(SystemExit) as exc_info:
+                    get_aws_session_or_abort(aws_profile=aws_profile)
+
+                assert exc_info.value.code == 1
+                assert mock_secho.call_count > 0
+                assert mock_secho.call_args[0][0] == expected_error_message
 
     # test_writes_aws_config_file
     # Should use fake filesystem
