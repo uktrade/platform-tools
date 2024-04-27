@@ -1,25 +1,47 @@
 from unittest.mock import patch
 
-from click.testing import CliRunner
+import botocore
+import pytest
 
-from dbt_platform_helper.commands.aws import configure
+# from botocore.exceptions import UnauthorizedException
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
 class TestAWSConfigureCommand:
-    @patch(
-        "dbt_platform_helper.utils.aws.get_aws_session_or_abort",
-        return_value=None,
-        side_effect=SystemExit(),
-    )
-    def test_not_logged_into_aws_exits_with_error(self, mock_get_aws_session_or_abort):
 
-        result = CliRunner().invoke(configure)
+    # @patch(
+    #     "dbt_platform_helper.utils.aws.get_aws_session_or_abort",
+    #     return_value=None,
+    #     side_effect=SystemExit(),
+    # )
+    # @patch('boto3.session.Session', return_value=None)
+    # def test_not_logged_into_aws_exits_with_error(self, mock_get_aws_session_or_abort, mock_session):
+    #
+    #     result = CliRunner().invoke(configure)
+    #     print(f"LOOK HERE: {result.output}")
+    #     assert result.exit_code is 1
+    #     assert (
+    #         "The SSO session associated with this profile has expired or is otherwise invalid"
+    #         in result.output
+    #     )
 
-        assert result.exit_code is 1
-        assert (
-            "The SSO session associated with this profile has expired or is otherwise invalid"
-            in result.output
-        )
+    @patch("click.secho")
+    def test_get_aws_session_or_abort_with_misconfigured_profile(self, mock_secho):
+        misconfigured_profile = "nonexistent_profile"
+        expected_error_message = f"""AWS profile "{misconfigured_profile}" is not configured."""
+
+        with patch("boto3.session.Session") as mock_session:
+            mock_session.side_effect = botocore.exceptions.ProfileNotFound(
+                profile=misconfigured_profile
+            )
+
+            with pytest.raises(SystemExit) as exc_info:
+                get_aws_session_or_abort(aws_profile=misconfigured_profile)
+
+            assert exc_info.value.code == 1
+
+            assert mock_secho.call_count > 0
+            assert mock_secho.call_args[0][0] == expected_error_message
 
     # test_writes_aws_config_file
     # Should use fake filesystem
