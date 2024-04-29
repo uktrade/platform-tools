@@ -35,4 +35,4 @@ region=eu-west-2
         result = CliRunner().invoke(configure)
 
         assert result.exit_code == 0
-        assert expected_output in Path("output_file").read_text()
+        assert expected_output in Path("aws_config").read_text()
