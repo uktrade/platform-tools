@@ -53,7 +53,7 @@ def test_validate_string(regex_pattern, valid_string, invalid_string):
         "s3_addons.yml",
         "s3_policy_addons.yml",
         "aurora_addons.yml",
-        "rds_addons.yml",
+        "postgres_addons.yml",
         "redis_addons.yml",
         "opensearch_addons.yml",
         "monitoring_addons.yml",
@@ -91,6 +91,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-s3-bucket-invalid-param-combo": r"retention_policy.*There are multiple keys present from the .*'days'.*'years'.* condition",
                 "my-s3-bucket-days-should-be-int": r"days.*should be instance of 'int'",
                 "my-s3-bucket-years-should-be-int": r"years.*should be instance of 'int'",
+                "my-s3-bucket-versioning-should-be-bool": r"environments.*versioning.*instance of 'bool'",
             },
         ),
         (
@@ -122,7 +123,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
             },
         ),
         (
-            "rds_addons_bad_data.yml",
+            "postgres_addons_bad_data.yml",
             {
                 "my-rds-db-invalid-param": r"Wrong key 'im_invalid' in",
                 "my-rds-db-missing-version": r"Missing key: 'version'",
@@ -134,6 +135,8 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-rds-db-snapshot_id_should_be_a_str": r"'environments'.*'default'.*snapshot_id.*False should be instance of 'str'",
                 "my-rds-db-invalid-policy": r"'environments'.*'default'.*deletion_policy.*'Snapshot' does not match 'None'",
                 "my-rds-db-protection-should-be-bool": r"'environments'.*'default'.*deletion_protection.*12 should be instance of 'bool'",
+                "my-rds-multi_az-should-be-bool": r"'environments'.*'default'.*multi_az.*10 should be instance of 'bool'",
+                "my-rds-storage_type-should-valid-option": r"'environments'.*'default'.*storage_type.*'io2' does not match 'floppydisc'",
             },
         ),
         (
@@ -144,6 +147,10 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-redis-bad-plan": r"environments.*default.*plan.*does not match 'enormous'",
                 "my-redis-too-many-replicas": r"environments.*default.*replicas.*should be an integer between 0 and 5",
                 "my-redis-bad-deletion-policy": r"environments.*default.*deletion_policy.*does not match 'Never'",
+                "my-redis-apply-immediately-should-be-bool": r"'environments'.*'default'.*apply_immediately.*should be instance of 'bool'",
+                "my-redis-automatic-failover-enabled-should-be-bool": r"'environments'.*'default'.*automatic_failover_enabled.*should be instance of 'bool'",
+                "my-redis-instance-should-be-string": r"'environments'.*'default'.*instance.*should be instance of 'str'",
+                "my-redis-multi-az-enabled-should-be-bool": r"'environments'.*'default'.*multi_az_enabled.*should be instance of 'bool'",
             },
         ),
         (
@@ -159,6 +166,12 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-opensearch-invalid-size-for-small": r"environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*",
                 "my-opensearch-invalid-size-for-large": r"environments.*production.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*",
                 "my-opensearch-invalid-deletion-policy": r"environments.*dev.*deletion_policy.*does not match 'Snapshot'",
+                "my-opensearch-instances-should-be-int": r"environments.*instances.*should be instance of 'int'",
+                "my-opensearch-master-should-be-bool": r"environments.*master.*should be instance of 'bool'",
+                "my-opensearch-es-app-log-retention-in-days-should-be-int": r"environments.*es_app_log_retention_in_days.*should be instance of 'int'",
+                "my-opensearch-index-slow-log-retention-in-days-should-be-int": r"environments.*index_slow_log_retention_in_days.*should be instance of 'int'",
+                "my-opensearch-audit-log-retention-in-days-should-be-int": r"environments.*audit_log_retention_in_days.*should be instance of 'int'",
+                "my-opensearch-search-slow-log-retention-in-days-should-be-int": r"environments.*search_slow_log_retention_in_days.*should be instance of 'int'",
             },
         ),
         (
@@ -177,6 +190,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-subscription-filter": r"Wrong key 'sub_filter_param' in",
                 "my-vpc": r"Wrong key 'vpc_param' in",
                 "my-xray": r"Wrong key 'xray_param' in",
+                "my-alb": r"Wrong key 'alb_param' in",
             },
         ),
     ],
