@@ -28,39 +28,30 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         session = boto3.session.Session(profile_name=aws_profile)
     except botocore.exceptions.ProfileNotFound:
         click.secho(f"""AWS profile "{aws_profile}" is not configured.""", fg="red")
-        exit()
-    except botocore.errorfactory.UnauthorizedException:
-        click.secho(
-            "The SSO session associated with this profile has expired or is otherwise invalid.  "
-            "To refresh this SSO session run aws sso login with the corresponding profile",
-            fg="red",
-        )
-        exit()
+        exit(1)
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "ExpiredToken":
+            click.secho(
+                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
+                fg="red",
+            )
+            exit(1)
 
     sts = session.client("sts")
     try:
         account_id, user_id = get_account_details(sts)
         click.secho("Credentials are valid.", fg="green")
-    except botocore.exceptions.SSOTokenLoadError:
+    except (
+        botocore.exceptions.UnauthorizedSSOTokenError,
+        botocore.exceptions.TokenRetrievalError,
+        botocore.exceptions.SSOTokenLoadError,
+    ):
         click.secho(
-            f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
-            fg="red",
-        )
-        exit()
-    except botocore.exceptions.UnauthorizedSSOTokenError:
-        click.secho(
-            "The SSO session associated with this profile has expired or is otherwise invalid.  "
-            "To refresh this SSO session run aws sso login with the corresponding profile",
-            fg="red",
-        )
-        exit()
-    except botocore.exceptions.TokenRetrievalError:
-        click.secho(
-            "The SSO Token associated with this profile has expired.  "
+            "The SSO session associated with this profile has expired or is otherwise invalid."
             "To refresh this SSO session run `aws sso login` with the corresponding profile",
             fg="red",
         )
-        exit()
+        exit(1)
 
     alias_client = session.client("iam")
     account_name = alias_client.list_account_aliases()["AccountAliases"]
