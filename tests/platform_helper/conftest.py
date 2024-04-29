@@ -32,7 +32,7 @@ def fakefs(fs):
     fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/addon-plans.yml")
-    fs.add_real_file(BASE_DIR / "dbt_platform_helper/default-addons.yml")
+    fs.add_real_file(BASE_DIR / "dbt_platform_helper/default-extensions.yml")
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/addons-template-map.yml")
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error

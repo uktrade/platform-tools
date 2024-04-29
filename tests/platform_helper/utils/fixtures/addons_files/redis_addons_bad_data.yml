@@ -25,3 +25,27 @@ my-redis-bad-deletion-policy:
   environments:
     default:
       deletion_policy: Never
+
+my-redis-apply-immediately-should-be-bool:
+  type: redis
+  environments:
+    default:
+      apply_immediately: "yes"
+
+my-redis-automatic-failover-enabled-should-be-bool:
+  type: redis
+  environments:
+    default:
+      automatic_failover_enabled: "no"
+
+my-redis-instance-should-be-string:
+  type: redis
+  environments:
+    default:
+      instance: 10
+
+my-redis-multi-az-enabled-should-be-bool:
+  type: redis
+  environments:
+    default:
+      multi_az_enabled: "yes"

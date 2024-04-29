@@ -39,7 +39,7 @@ export class TransformedStack extends cdk.Stack {
         const deployRepoRoot = path.join(process.cwd(), '..', '..', '..');
 
         const addonConfig = parse(readFileSync(
-            path.join(deployRepoRoot, 'addons.yml'),
+            path.join(deployRepoRoot, 'extensions.yml'),
         ).toString('utf-8'));
 
         new cdk.aws_ssm.CfnParameter(this, 'AddonConfig', {

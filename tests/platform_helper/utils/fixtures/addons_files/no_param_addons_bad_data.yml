@@ -13,3 +13,7 @@ my-vpc:
 my-xray:
   type: xray
   xray_param:
+
+my-alb:
+  type: alb
+  alb_param:

@@ -4,10 +4,9 @@
     ".": {
         "release-type": "python",
         "include-v-in-tag": false,
-        "draft": true,
+        "draft": false,
         "pull-request-header": ":robot: Next release",
-        "pull-request-footer": " ",
-        "bootstrap-sha": "a6cf9c8eb10ef9382a7b1a6e8c24c9c215bbd55e"
+        "pull-request-footer": " "
     }
   }
 }
