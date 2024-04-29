@@ -61,3 +61,17 @@ my-rds-db-protection-should-be-bool:
   environments:
     default:
       deletion_protection: 12
+
+my-rds-multi_az-should-be-bool:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      multi_az: 10
+
+my-rds-storage_type-should-valid-option:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      storage_type: "floppydisc"

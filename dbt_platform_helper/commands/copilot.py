@@ -224,7 +224,6 @@ def make_addons():
 
     Generate addons CloudFormation for each environment.
     """
-
     output_dir = Path(".").absolute()
     ensure_cwd_is_repo_root()
     is_terraform = is_terraform_project()
@@ -238,17 +237,19 @@ def make_addons():
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    _generate_env_overrides(output_dir)
-
     if is_terraform:
         click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
     else:
         click.echo("\n>>> Generating addons CloudFormation\n")
 
-    env_addons_path = Path(f"copilot/environments/addons/")
+    env_path = Path(f"copilot/environments/")
+    env_addons_path = env_path / "addons"
+    env_overrides_path = env_path / "overrides"
+
     (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
 
-    _cleanup_old_files(config, output_dir, env_addons_path)
+    _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
+    _generate_env_overrides(output_dir, is_terraform)
     custom_resources = _get_custom_resources()
 
     svc_names = list_copilot_local_services()
@@ -348,17 +349,18 @@ def make_addons():
 
 
 def _get_config():
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
-    project_config = _validate_and_normalise_config("addons.yml")
+    config = _validate_and_normalise_config(PACKAGE_DIR / "default-extensions.yml")
+    project_config = _validate_and_normalise_config("extensions.yml")
     config.update(project_config)
     return config
 
 
-def _generate_env_overrides(output_dir):
+def _generate_env_overrides(output_dir, is_terraform):
+    path = "templates/env/terraform-overrides" if is_terraform else "templates/env/overrides"
     click.echo("\n>>> Generating Environment overrides\n")
     overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
     overrides_path.mkdir(parents=True, exist_ok=True)
-    template_overrides_path = Path(__file__).parent.parent.joinpath("templates/env/overrides")
+    template_overrides_path = Path(__file__).parent.parent.joinpath(path)
     generate_override_files(Path("."), template_overrides_path, overrides_path)
 
 
@@ -440,10 +442,19 @@ def _get_custom_resources():
     return custom_resources
 
 
-def _cleanup_old_files(config, output_dir, env_addons_path):
-    for f in (output_dir / env_addons_path).iterdir():
-        if f.is_file():
-            f.unlink()
+def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
+    def _rmdir(path):
+        if not path.exists():
+            return
+        for f in path.iterdir():
+            if f.is_file():
+                f.unlink()
+            if f.is_dir():
+                _rmdir(f)
+                f.rmdir()
+
+    _rmdir(output_dir / env_addons_path)
+    _rmdir(output_dir / env_overrides_path)
 
     all_services = set()
     for services in [v["services"] for v in config.values() if "services" in v]:
