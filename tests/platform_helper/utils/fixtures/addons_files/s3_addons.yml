@@ -18,6 +18,7 @@ my-s3-bucket:
       retention_policy:
         mode: GOVERNANCE
         years: 1
+      versioning: true
 
 my-s3-bucket-with-an-object:
   type: s3

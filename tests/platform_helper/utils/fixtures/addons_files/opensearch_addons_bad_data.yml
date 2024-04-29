@@ -62,5 +62,38 @@ my-opensearch-invalid-deletion-policy:
     dev:
       deletion_policy: Snapshot
 
+my-opensearch-instances-should-be-int:
+  type: opensearch
+  environments:
+    dev:
+      instances: "yes"
 
+my-opensearch-master-should-be-bool:
+  type: opensearch
+  environments:
+    dev:
+      master: "yes"
 
+my-opensearch-es-app-log-retention-in-days-should-be-int:
+  type: opensearch
+  environments:
+    dev:
+      es_app_log_retention_in_days: true
+
+my-opensearch-index-slow-log-retention-in-days-should-be-int:
+  type: opensearch
+  environments:
+    dev:
+      index_slow_log_retention_in_days: true
+
+my-opensearch-audit-log-retention-in-days-should-be-int:
+  type: opensearch
+  environments:
+    dev:
+      audit_log_retention_in_days: true
+
+my-opensearch-search-slow-log-retention-in-days-should-be-int:
+  type: opensearch
+  environments:
+    dev:
+     search_slow_log_retention_in_days: true

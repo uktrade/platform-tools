@@ -13,3 +13,6 @@ my-vpc:
 my-xray:
   type: xray
   services: __all__
+
+my-alb:
+  type: alb

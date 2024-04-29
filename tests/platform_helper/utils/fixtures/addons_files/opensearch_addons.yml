@@ -6,6 +6,12 @@ my-opensearch:
       engine: "1.3"
       volume_size: 128
       deletion_policy: Delete
+      instances: 5
+      master: true
+      es_app_log_retention_in_days: 10
+      index_slow_log_retention_in_days: 10
+      audit_log_retention_in_days: 10
+      search_slow_log_retention_in_days: 10
     development:
       plan: small
       volume_size: 100
