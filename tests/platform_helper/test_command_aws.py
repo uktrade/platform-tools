@@ -2,12 +2,19 @@ from unittest.mock import patch
 
 import botocore
 import pytest
+from click.testing import CliRunner
 
-# from botocore.exceptions import UnauthorizedException
+from dbt_platform_helper.commands.aws import configure
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
 class TestAWSConfigureCommand:
+    @patch("dbt_platform_helper.commands.aws.get_aws_session_or_abort")
+    @patch("boto3.session.Session")
+    def test_get_aws_session_or_abort_is_called1(self, mock_session, mock_get_aws_session_or_abort):
+        result = CliRunner().invoke(configure)
+        assert result.exit_code == 0
+        assert mock_get_aws_session_or_abort.call_count > 0
 
     # @patch(
     #     "dbt_platform_helper.utils.aws.get_aws_session_or_abort",
@@ -29,7 +36,6 @@ class TestAWSConfigureCommand:
     def test_get_aws_session_or_abort_with_misconfigured_profile(self, mock_secho):
         misconfigured_profile = "nonexistent_profile"
         expected_error_message = f"""AWS profile "{misconfigured_profile}" is not configured."""
-
         with patch("boto3.session.Session") as mock_session:
             mock_session.side_effect = botocore.exceptions.ProfileNotFound(
                 profile=misconfigured_profile
@@ -45,7 +51,10 @@ class TestAWSConfigureCommand:
     @patch("click.secho")
     def test_get_aws_session_or_abort_with_invalid_credentials(self, mock_secho):
         aws_profile = "existing_profile"
-        expected_error_message = f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
+        expected_error_message = (
+            "The SSO session associated with this profile has expired or is otherwise invalid."
+            + "To refresh this SSO session run `aws sso login` with the corresponding profile"
+        )
 
         with patch("boto3.session.Session") as mock_session:
             with patch(
