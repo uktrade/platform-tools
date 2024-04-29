@@ -27,7 +27,7 @@
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
-- [platform-helper environment update-vpc-config](#platform-helper-environment-update-vpc-config)
+- [platform-helper environment generate](#platform-helper-environment-generate)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
@@ -603,7 +603,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|online|update-vpc-config) 
+platform-helper environment (offline|online|generate) 
 ```
 
 ## Options
@@ -613,9 +613,9 @@ platform-helper environment (offline|online|update-vpc-config)
 
 ## Commands
 
+- [`generate` ↪](#platform-helper-environment-generate)
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
-- [`update-vpc-config` ↪](#platform-helper-environment-update-vpc-config)
 
 # platform-helper environment offline
 
@@ -661,19 +661,20 @@ platform-helper environment online --app <application> --env <environment>
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper environment update-vpc-config
+# platform-helper environment generate
 
 [↩ Parent](#platform-helper-environment)
-
-    Update or add VPC configuration in copilot environment manifest files.
 
 ## Usage
 
 ```
-platform-helper environment update-vpc-config 
+platform-helper environment generate [--name <name>] 
 ```
 
 ## Options
+
+- `--name
+-n <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
