@@ -108,41 +108,6 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
 
 
 @pytest.mark.parametrize(
-    "addon_type, addon_name",
-    [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
-        ("redis", "custom-name-redis"),
-        ("opensearch", "custom-name-opensearch"),
-    ],
-)
-@patch("subprocess.call")
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-def test_create_addon_client_task(
-    get_connection_secret_arn, subprocess_call, addon_type, addon_name, mock_application
-):
-    """Test that, given app and environment strings, create_addon_client_task
-    calls get_connection_secret_arn with the default secret name and
-    subsequently subprocess.call with the correct secret ARN."""
-    from dbt_platform_helper.commands.conduit import create_addon_client_task
-
-    task_name = mock_task_name(addon_name)
-    create_addon_client_task(mock_application, "development", addon_type, addon_name, task_name)
-    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name)
-
-    get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
-    subprocess_call.assert_called_once_with(
-        "copilot task run --app test-application --env development "
-        f"--task-group-name {task_name} "
-        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
-        "--secrets CONNECTION_SECRET=test-arn "
-        "--platform-os linux "
-        "--platform-arch arm64",
-        shell=True,
-    )
-
-
-@pytest.mark.parametrize(
     "access",
     [
         "read",
@@ -185,6 +150,39 @@ def test_create_addon_client_task(
         "copilot task run --app test-application --env development "
         f"--task-group-name {task_name} "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
+        "--secrets CONNECTION_SECRET=test-arn "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
+
+
+@patch("subprocess.call")
+@patch("dbt_platform_helper.commands.conduit.is_terraform_project", return_value=True)
+@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+def test_create_addon_client_task_postgres_is_terraform(
+    mock_get_connection_secret_arn,
+    mock_is_terraform_project,
+    mock_subprocess_call,
+    mock_application,
+):
+    from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    addon_name = "custom-name-postgres"
+    task_name = mock_task_name(addon_name)
+    create_addon_client_task(
+        mock_application, "development", "postgres", addon_name, task_name, "admin"
+    )
+    secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name, "admin")
+    secret_name = f"{secret_name}_RDS_MASTER_ARN"
+
+    mock_get_connection_secret_arn.assert_called_once_with(
+        mock_application, "development", secret_name
+    )
+    mock_subprocess_call.assert_called_once_with(
+        "copilot task run --app test-application --env development "
+        f"--task-group-name {task_name} "
+        "--image public.ecr.aws/uktrade/tunnel:postgres "
         "--secrets CONNECTION_SECRET=test-arn "
         "--platform-os linux "
         "--platform-arch arm64",

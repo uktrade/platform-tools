@@ -8,6 +8,7 @@ import click
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
+from dbt_platform_helper.commands.copilot import is_terraform_project
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
@@ -168,6 +169,11 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
+
+    if addon_type == "postgres" and is_terraform_project():
+        secret_name = (
+            f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+        )
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
