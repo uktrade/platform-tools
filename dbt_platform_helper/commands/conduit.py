@@ -137,7 +137,7 @@ def get_cluster_arn(app: Application, env: str) -> str:
     raise NoClusterConduitError
 
 
-def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> str:
+def get_connection_secret_arn(app: Application, env: str, secret_name: str, addon_type: str) -> str:
     secrets_manager = app.environments[env].session.client("secretsmanager")
     ssm = app.environments[env].session.client("ssm")
 
@@ -149,6 +149,12 @@ def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> s
     try:
         return secrets_manager.describe_secret(SecretId=secret_name)["ARN"]
     except secrets_manager.exceptions.ResourceNotFoundException:
+        pass
+
+    try:
+        if addon_type == "postgres" and is_terraform_project():
+            return ssm.get_parameter(Name=secret_name, WithDecryption=True)["Parameter"]["Value"]
+    except ssm.exceptions.ParameterNotFound:
         pass
 
     raise SecretNotFoundConduitError(secret_name)
@@ -169,17 +175,14 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
-
-    if addon_type == "postgres" and is_terraform_project():
-        secret_name = (
-            f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
-        )
+        elif access == "admin" and is_terraform_project():
+            secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
+        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name, addon_type)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
