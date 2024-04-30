@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Dict
+from typing import List
 
 import click
 
@@ -7,6 +9,13 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
+
+
+def get_aws_accounts(client, creds) -> List[Dict[str, str]]:
+    aws_accounts_response = client.list_accounts(accessToken=creds.get("token"))
+    if len(aws_accounts_response.get("accountList", [])) == 0:
+        raise RuntimeError("Unable to retrieve AWS SSO account list\n")
+    return aws_accounts_response.get("accountList")
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
@@ -20,17 +29,10 @@ def configure():
     # Todo: doc comment
 
     session = get_aws_session_or_abort()
+    sso_client = session.client("sso")
+    credentials = session.get_credentials()
 
-    aws_sso_access_token = "TBC"
-
-    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sso.html
-    aws_accounts_response = session.client("sso").list_accounts(
-        accessToken=aws_sso_access_token,
-        maxResults=100,
-    )
-    if len(aws_accounts_response.get("accountList", [])) == 0:
-        raise RuntimeError("Unable to retrieve AWS SSO account list\n")
-    aws_accounts_response.get("accountList")
+    get_aws_accounts(sso_client, credentials)
 
     profile_configurations = """[default]
 region=eu-west-2
