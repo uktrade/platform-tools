@@ -32,8 +32,9 @@ echo -e "\nRun platform-helper copilot make-addons"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper copilot make-addons
 
 echo -e "\nRun platform-helper check-cloudformation lint"
-# see false positive issue https://github.com/aws-cloudformation/cfn-lint/issues/3100
-PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper check-cloudformation lint -i W1011
+# W3005 We get DoesNotExist errors if we remove the offending DependsOn from OpensearchDomain
+# W3045 This won't be an issue as we move to provisioning s3 extensions with terraform
+PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper check-cloudformation lint -i W3005 -i W3045
 # echo -e "\nRun platform-helper pipeline generate"
 # platform-helper pipeline generate
 
