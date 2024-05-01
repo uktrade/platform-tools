@@ -3,6 +3,7 @@ import random
 import string
 import subprocess
 import time
+import urllib.parse
 
 import click
 from cfn_tools import dump_yaml
@@ -165,8 +166,8 @@ def update_parameter_with_secret(session, parameter_name, secret_arn):
     secret_response = secrets_manager_client.get_secret_value(SecretId=secret_arn)
     secret_value = json.loads(secret_response["SecretString"])
 
-    parameter_data["username"] = secret_value["username"]
-    parameter_data["password"] = secret_value["password"]
+    parameter_data["username"] = urllib.parse.quote(secret_value["username"])
+    parameter_data["password"] = urllib.parse.quote(secret_value["password"])
 
     updated_parameter_value = json.dumps(parameter_data)
 
