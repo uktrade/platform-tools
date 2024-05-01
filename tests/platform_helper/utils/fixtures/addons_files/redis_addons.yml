@@ -8,3 +8,7 @@ my-redis:
       # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
       replicas: 4
       deletion_policy: Retain
+      apply_immediately: true
+      automatic_failover_enabled: true
+      instance: "t3.medium"
+      multi_az_enabled: true

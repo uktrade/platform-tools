@@ -10,7 +10,8 @@ from pathlib import PosixPath
 import click
 import yaml
 
-from dbt_platform_helper.utils.aws import SSM_BASE_PATH
+from dbt_platform_helper.utils.application import get_application_name
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
@@ -98,6 +99,7 @@ def _validate_and_normalise_config(config_file):
         return {}
 
     errors = validate_addons(config)
+
     if errors:
         click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
         for addon, error in errors.items():
@@ -136,7 +138,7 @@ def _validate_and_normalise_config(config_file):
                 exit(1)
 
         environments = normalised_config[addon_name].pop("environments", {})
-        default = environments.pop("default", {})
+        default = environments.pop("*", environments.pop("default", {}))
 
         initial = _lookup_plan(addon_type, default)
 
@@ -191,26 +193,63 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
 
+def is_terraform_project() -> bool:
+    return Path("./terraform").is_dir()
+
+
+def _get_s3_kms_alias_arns(session, application_name, extension_name):
+    application = load_application(application_name, session)
+
+    arns = {}
+    for environment_name, environment in application.environments.items():
+        client = environment.session.client("kms")
+
+        alias_name = f"alias/{application_name}-{environment_name}-{extension_name}-key"
+
+        try:
+            response = client.describe_key(KeyId=alias_name)
+        except client.exceptions.NotFoundException:
+            pass
+        else:
+            arns[environment_name] = response["KeyMetadata"]["Arn"]
+
+    return arns
+
+
 @copilot.command(deprecated=True, hidden=True)
 def make_addons():
-    """Generate addons CloudFormation for each environment."""
-    output_dir = Path(".").absolute()
+    """
+    WARNING: this command should not be used as a stand-alone.
+    Use `platform-helper generate` instead.
 
+    Generate addons CloudFormation for each environment.
+    """
+    output_dir = Path(".").absolute()
     ensure_cwd_is_repo_root()
+    is_terraform = is_terraform_project()
+
     templates = setup_templates()
     config = _get_config()
+    session = get_aws_session_or_abort()
+
+    application_name = get_application_name()
 
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    _generate_env_overrides(output_dir)
+    if is_terraform:
+        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
+    else:
+        click.echo("\n>>> Generating addons CloudFormation\n")
 
-    click.echo("\n>>> Generating addons CloudFormation\n")
+    env_path = Path(f"copilot/environments/")
+    env_addons_path = env_path / "addons"
+    env_overrides_path = env_path / "overrides"
 
-    env_addons_path = Path(f"copilot/environments/addons/")
     (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
 
-    _cleanup_old_files(config, output_dir, env_addons_path)
+    _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
+    _generate_env_overrides(output_dir, is_terraform)
     custom_resources = _get_custom_resources()
 
     svc_names = list_copilot_local_services()
@@ -227,7 +266,7 @@ def make_addons():
         environments = addon_config.pop("environments")
         if addon_template_map[addon_type].get("requires_addons_parameters", False):
             has_addons_parameters = True
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "postgres"]:
             has_postgres_addon = True
 
         for environment_name, environment_config in environments.items():
@@ -249,6 +288,7 @@ def make_addons():
         services.append(environment_addon_config)
 
         service_addon_config = {
+            "application_name": application_name,
             "name": addon_config.get("name", None) or addon_name,
             "prefix": camel_case(addon_name),
             "environments": environments,
@@ -258,20 +298,28 @@ def make_addons():
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
-            service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
-                "BucketAccess", 1
-            )[0]
+            if is_terraform:
+                s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, addon_name)
+                for environment_name in environments:
+                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
+                        environment_name, "kms-key-not-found"
+                    )
+            else:
+                service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
+                    "BucketAccess", 1
+                )[0]
 
-        _generate_env_addons(
-            addon_name,
-            addon_template_map,
-            config.items(),
-            env_addons_path,
-            environment_addon_config,
-            output_dir,
-            templates,
-            log_destination_arns,
-        )
+        if not is_terraform:
+            _generate_env_addons(
+                addon_name,
+                addon_template_map,
+                config.items(),
+                env_addons_path,
+                environment_addon_config,
+                output_dir,
+                templates,
+                log_destination_arns,
+            )
         _generate_service_addons(
             addon_config,
             addon_name,
@@ -281,15 +329,16 @@ def make_addons():
             service_addon_config,
             templates,
             log_destination_arns,
+            is_terraform=is_terraform,
         )
 
-        if addon_type in ["aurora-postgres", "rds-postgres"]:
+        if addon_type in ["aurora-postgres", "postgres"] and not is_terraform:
             click.secho(
                 "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
                 fg="yellow",
             )
 
-    if has_addons_parameters:
+    if has_addons_parameters and not is_terraform:
         template = templates.get_template("addons/env/addons.parameters.yml")
         contents = template.render({"has_postgres_addon": has_postgres_addon})
         click.echo(
@@ -300,17 +349,18 @@ def make_addons():
 
 
 def _get_config():
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-addons.yml")
-    project_config = _validate_and_normalise_config("addons.yml")
+    config = _validate_and_normalise_config(PACKAGE_DIR / "default-extensions.yml")
+    project_config = _validate_and_normalise_config("extensions.yml")
     config.update(project_config)
     return config
 
 
-def _generate_env_overrides(output_dir):
+def _generate_env_overrides(output_dir, is_terraform):
+    path = "templates/env/terraform-overrides" if is_terraform else "templates/env/overrides"
     click.echo("\n>>> Generating Environment overrides\n")
     overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
     overrides_path.mkdir(parents=True, exist_ok=True)
-    template_overrides_path = Path(__file__).parent.parent.joinpath("templates/env/overrides")
+    template_overrides_path = Path(__file__).parent.parent.joinpath(path)
     generate_override_files(Path("."), template_overrides_path, overrides_path)
 
 
@@ -350,6 +400,7 @@ def _generate_service_addons(
     service_addon_config,
     templates,
     log_destination_arns,
+    is_terraform,
 ):
     # generate svc addons
     for addon in addon_template_map[addon_type].get("svc", []):
@@ -362,6 +413,7 @@ def _generate_service_addons(
                 {
                     "addon_config": service_addon_config,
                     "log_destination": log_destination_arns,
+                    "is_terraform": is_terraform,
                 }
             )
 
@@ -390,10 +442,19 @@ def _get_custom_resources():
     return custom_resources
 
 
-def _cleanup_old_files(config, output_dir, env_addons_path):
-    for f in (output_dir / env_addons_path).iterdir():
-        if f.is_file():
-            f.unlink()
+def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
+    def _rmdir(path):
+        if not path.exists():
+            return
+        for f in path.iterdir():
+            if f.is_file():
+                f.unlink()
+            if f.is_dir():
+                _rmdir(f)
+                f.rmdir()
+
+    _rmdir(output_dir / env_addons_path)
+    _rmdir(output_dir / env_overrides_path)
 
     all_services = set()
     for services in [v["services"] for v in config.values() if "services" in v]:
@@ -406,32 +467,3 @@ def _cleanup_old_files(config, output_dir, env_addons_path):
         for f in svc_addons_dir.iterdir():
             if f.is_file():
                 f.unlink()
-
-
-@copilot.command()
-@click.argument("app", type=str, required=True)
-@click.argument("env", type=str, required=True)
-def get_env_secrets(app, env):
-    """List secret names and values for an environment."""
-
-    session = get_aws_session_or_abort()
-    client = session.client("ssm")
-
-    path = SSM_BASE_PATH.format(app=app, env=env)
-
-    params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
-    secrets = []
-
-    # TODO: refactor shared code with get_ssm_secret_names
-    while True:
-        response = client.get_parameters_by_path(**params)
-
-        for secret in response["Parameters"]:
-            secrets.append(f"{secret['Name']:<8}: {secret['Value']:<15}")
-
-        if "NextToken" in response:
-            params["NextToken"] = response["NextToken"]
-        else:
-            break
-
-    print("\n".join(sorted(secrets)))

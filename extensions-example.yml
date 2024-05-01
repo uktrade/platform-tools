@@ -1,0 +1,133 @@
+# extensions-example.yml
+
+##### general structure:
+
+# my-thing: # the name of addon item
+#   type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
+#   deletion_policy: X # options: Delete, Retain, Snapshot (redis, rds-postgres and aurora-postgres only). Optional. Defaults to Delete. Can be overriden per environment
+#
+#   environments:  # per environment configuration is defined here.
+#     default:   # the optional default key is used to apply a default value to all environments
+#       some_setting: x
+#       another_setting: y
+#       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
+#       deletion_protection: false # true|false rds-postgres and aurora-postgres only
+#
+#     production:  # you can override defaults on a per environment basis
+#       plan: some-other-plan  # some of the keys defined in an addon plan can also be overridden
+#       volume_size: 200 # default size depends on plan. See addon-plans.yaml. Optional.
+#       deletion_policy: Retain
+#       deletion_protection: true
+
+
+##### s3 bucket example:
+
+my-s3-bucket:
+  # currently no other features are supported such as bucket versioning, etc.  If you need additional features, you can use the s3-policy type to give a service access to an existing bucket.
+
+  type: s3   # creates an s3 bucket in each environment and gives the listed services permissions to access the bucket
+  readonly: true  # services are granted read only access to the bucket. Defaults to false. Optional.
+  services:  # services that require access to the bucket.
+    - "web"
+    - "web-celery"
+
+  environments:
+    # NOTE: [bucket names must be unique across all AWS accounts in the AWS (Standard Regions) Partition](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) and need to be defined for each environment
+    production:
+      bucket_name: my-bucket-prod
+      deletion_policy: Retain
+      retention_policy: # Optional
+        mode: GOVERNANCE # or COMPLIANCE (See https://aws.amazon.com/blogs/storage/protecting-data-with-amazon-s3-object-lock/)
+        days: 1
+        # years: 1 # Either days or years, but not both
+    staging:
+      bucket_name: my-bucket-staging
+    development:
+      bucket_name: my-bucket-dev
+
+
+##### s3-policy example:
+
+my-s3-bucket-bucket-access:
+  type: s3-policy  # Gives the listed services permissions to access a bucket created and managed outside of your DBT Platform configuration.
+                   # If the bucket is not in the same account as your service, see https://repost.aws/knowledge-center/cross-account-access-s3
+
+  services:  # services that require access to the bucket.
+    - "web"
+    - "web-celery"
+
+  environments:
+    default:
+      bucket_name: my-bucket
+
+
+##### Redis example:
+
+my-redis:
+  type: redis
+  deletion_policy: Delete # Delete|Retain|Snapshot. Optional.
+
+  environments:
+    default:
+      engine: '6.2' # available engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
+      plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.
+
+    production:
+      plan: medium-ha
+      replicas: 2 # 0-5. Optional
+      deletion_policy: Retain
+
+
+##### RDS postgres example:
+
+my-rds-db:
+  type: rds-postgres
+  version: 14.4
+  deletion_policy: Delete # Delete|Retain|Snapshot. Optional.
+
+  environments:
+    default:
+      plan: small-ha
+      volume_size: 100 # Default size depends on plan. See addon-plans.yaml. Optional.
+      deletion_protection: false # Optional.
+
+    production:
+      plan: large-ha
+      deletion_policy: Retain
+      deletion_protection: true
+
+
+##### Aurora serverless v2 example:
+
+my-aurora-db:
+  type: aurora-postgres
+  version: 14.4
+  deletion_policy: Delete # Delete|Retain|Snapshot. Optional.
+
+  environments:
+    default:
+      min_capacity: 0.5 # AllowedValues: from 0.5 through 128
+      max_capacity: 8   # AllowedValues: from 0.5 through 128
+      deletion_protection: false # Optional.
+
+    production:
+      deletion_policy: Retain
+      deletion_protection: true
+
+
+##### Opensearch example:
+
+my-opensearch:
+  type: opensearch
+  deletion_policy: Delete # Delete|Retain. Optional.
+
+  environments:
+    default:
+      plan: small
+      engine: "2.3" # supported engine versions as of 06/2023: 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
+      master: false # Enabled dedicated master node. Defaults to false. Optional.
+
+    production:
+      plan: large-ha
+      volume_size: 100
+      deletion_policy: Retain

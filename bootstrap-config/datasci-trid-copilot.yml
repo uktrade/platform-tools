@@ -1,5 +1,0 @@
-app: datasci-trid
-environments:
-  production: {}
-  staging: {}
-services: []

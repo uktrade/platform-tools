@@ -35,8 +35,9 @@ def test_get_current_version__fails_with_missing_version():
 def test_get_releases__success():
     releases = get_releases()
 
-    assert "0.1.1" in releases
-    assert "0.1.21" in releases
+    assert "6.0.0" in releases
+    assert "6.1.0" in releases
+    assert "6.2.0" in releases
 
 
 class FakeOpts:

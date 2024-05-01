@@ -23,6 +23,9 @@ Mappings:
 {% for env_name, config in addon_config.environments.items() %}
     {{ env_name }}:
       BucketName: '{{ config.bucket_name }}'
+    {% if is_terraform %}
+      KmsKeyArn: '{{ config.kms_key_arn }}'
+    {% endif %}
 {% endfor %}
 
 Resources:
@@ -40,9 +43,13 @@ Resources:
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
+            {% if is_terraform %}
+            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, KmsKeyArn]
+            {% else %}
             Resource:
               Fn::ImportValue:
                 !Sub "${App}-${Env}-{{ addon_config.kms_key_reference }}-KMSKeyARN"
+            {% endif %}
           - Sid: S3ObjectActions
             Effect: Allow
             Action:

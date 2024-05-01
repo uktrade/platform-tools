@@ -50,6 +50,7 @@ CONDUIT_ADDON_TYPES = [
     "opensearch",
     "rds-postgres",
     "aurora-postgres",
+    "postgres",
     "redis",
 ]
 CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
@@ -84,7 +85,7 @@ def get_addon_type(app: Application, env: str, addon_name: str) -> str:
         raise InvalidAddonTypeConduitError(addon_type)
 
     if "postgres" in addon_type:
-        addon_type = addon_type.split("-")[1]
+        addon_type = "postgres"
 
     return addon_type
 

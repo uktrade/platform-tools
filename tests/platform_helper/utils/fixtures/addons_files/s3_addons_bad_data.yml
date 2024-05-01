@@ -104,3 +104,10 @@ my-s3-bucket-years-should-be-int:
       retention_policy:
         mode: COMPLIANCE
         years: one
+
+my-s3-bucket-versioning-should-be-bool:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      versioning: "OK"

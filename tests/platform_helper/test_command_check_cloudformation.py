@@ -6,7 +6,6 @@ from shutil import rmtree
 import pytest
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.bootstrap import make_config
 from dbt_platform_helper.commands.check_cloudformation import (
     check_cloudformation as check_cloudformation_command,
 )
@@ -51,7 +50,6 @@ def copilot_directory() -> Path:
 def application_under_test(copilot_directory):
     ensure_directory_does_not_exist(copilot_directory)
     os.chdir(copilot_directory.parent)
-    CliRunner().invoke(make_config)
     CliRunner().invoke(make_addons)
     yield
     ensure_directory_does_not_exist(copilot_directory)
