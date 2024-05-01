@@ -304,7 +304,8 @@ def add_addon_config_parameter(param_value=None):
         Value=json.dumps(
             param_value
             or {
-                "custom-name-postgres": {"type": "aurora-postgres"},
+                "custom-name-postgres": {"type": "postgres"},
+                "custom-name-aurora-postgres": {"type": "aurora-postgres"},
                 "custom-name-rds-postgres": {"type": "aurora-postgres"},
                 "custom-name-opensearch": {"type": "opensearch"},
                 "custom-name-redis": {"type": "redis"},
