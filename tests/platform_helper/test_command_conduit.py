@@ -157,13 +157,11 @@ def test_create_addon_client_task(
     )
 
 
-@patch("subprocess.call")
+@patch("dbt_platform_helper.commands.conduit.create_postgres_admin_task")
 @patch("dbt_platform_helper.commands.conduit.is_terraform_project", return_value=True)
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
 def test_create_addon_client_task_postgres_is_terraform(
-    mock_get_connection_secret_arn,
     mock_is_terraform_project,
-    mock_subprocess_call,
+    mock_create_postgres_admin_task,
     mock_application,
 ):
     from dbt_platform_helper.commands.conduit import create_addon_client_task
@@ -174,19 +172,9 @@ def test_create_addon_client_task_postgres_is_terraform(
         mock_application, "development", "postgres", addon_name, task_name, "admin"
     )
     secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name, "admin")
-    secret_name = f"{secret_name}_RDS_MASTER_ARN"
 
-    mock_get_connection_secret_arn.assert_called_once_with(
-        mock_application, "development", secret_name
-    )
-    mock_subprocess_call.assert_called_once_with(
-        "copilot task run --app test-application --env development "
-        f"--task-group-name {task_name} "
-        "--image public.ecr.aws/uktrade/tunnel:postgres "
-        "--secrets CONNECTION_SECRET=test-arn "
-        "--platform-os linux "
-        "--platform-arch arm64",
-        shell=True,
+    mock_create_postgres_admin_task.assert_called_once_with(
+        mock_application, "development", secret_name, task_name, "postgres", addon_name
     )
 
 
