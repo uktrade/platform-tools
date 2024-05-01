@@ -218,13 +218,11 @@ def create_addon_client_task(
             create_postgres_admin_task(app, env, secret_name, task_name, addon_type, addon_name)
             return
 
-    connection_secret_arn = get_connection_secret_arn(app, env, secret_name)
-
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
+        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
