@@ -1,6 +1,7 @@
 # from configparser import ConfigParser
 import configparser
 import io
+from pathlib import Path
 from typing import Dict
 from typing import List
 
@@ -8,6 +9,7 @@ import click
 
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -19,6 +21,26 @@ def get_aws_accounts(client, token) -> List[Dict[str, str]]:
     if not account_list:
         raise RuntimeError("Unable to retrieve AWS SSO account list\n")
     return account_list
+
+
+def create_config_contents(accounts, config):
+    for account in accounts:
+        account_name = account["accountName"]
+        account_id = account["accountId"]
+        role_name = "AdministratorAccess"
+
+        profile_name = f"profile {account_name.lower().replace(" ", " - ")}"
+        config[profile_name] = {
+            "sso_start_url": "https://uktrade.awsapps.com/start",
+            "sso_region": "eu-west-2",
+            "sso_account_id": account_id,
+            "sso_role_name": role_name,
+            "region": "eu-west-2",
+        }
+    config_str = io.StringIO()
+    config.write(config_str)
+    config_string_value = config_str.getvalue()
+    return config_string_value
 
 
 def get_aws_credentials(client, token, account_id, role_name="AdministratorAccess"):
@@ -50,51 +72,16 @@ def aws():
 
 
 @aws.command()
-def configure(directory="."):
+def configure():
     # Todo: doc comment
 
     session = get_aws_session_or_abort()
     sso_client = session.client("sso")
     session_credentials = session.get_credentials()
-    config = configparser.ConfigParser()
+    config_parser = configparser.ConfigParser()
+    directory = "."
 
     accounts = get_aws_accounts(sso_client, session_credentials.get("token"))
-    for account in accounts:
-        account_name = account["accountName"]
-        account_id = account["accountId"]
-        role_name = "AdministratorAccess"
+    config_string_value = create_config_contents(accounts, config_parser)
 
-        profile_name = f"profile {account_name.lower().replace(" ", " - ")}"
-        config[profile_name] = {
-            "sso_start_url": "https://uktrade.awsapps.com/start",
-            "sso_region": "eu-west-2",
-            "sso_account_id": account_id,
-            "sso_role_name": role_name,
-            "region": "eu-west-2",
-        }
-    config_str = io.StringIO()
-    config.write(config_str)
-    config_string_value = config_str.getvalue()
-
-    # mkfile(Path(directory), "aws_test_config.ini", config)
-    with open("./aws_test_config.ini", "w") as configfile:
-        configfile.write(config_string_value)
-
-
-#     profile_configurations = """[profile test-account-1]
-# sso_start_url = https://uktrade.awsapps.com/start
-# sso_region = eu-west-2
-# sso_account_id = 123456789012
-# sso_role_name = AdministratorAccess
-# region = eu-west-2
-#
-# [profile test-account-2]
-# sso_start_url = https://uktrade.awsapps.com/start
-# sso_region = eu-west-2
-# sso_account_id = 234567890123
-# sso_role_name = AdministratorAccess
-# region = eu-west-2
-#
-# """
-#
-#     Path("aws_config").write_text(profile_configurations)
+    mkfile(Path(directory), "aws_test_config.ini", config_string_value)
