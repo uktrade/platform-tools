@@ -86,7 +86,7 @@ def get_addon_type(app: Application, env: str, addon_name: str) -> str:
         raise InvalidAddonTypeConduitError(addon_type)
 
     if "postgres" in addon_type:
-        addon_type = addon_type.split("-")[1]
+        addon_type = "postgres"
 
     return addon_type
 
@@ -160,6 +160,25 @@ def get_connection_secret_arn(app: Application, env: str, secret_name: str, addo
     raise SecretNotFoundConduitError(secret_name)
 
 
+def update_parameter_with_secret(session, parameter_name, secret_arn):
+    ssm_client = session.client("ssm")
+    secrets_manager_client = session.client("secretsmanager")
+    response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
+    parameter_value = response["Parameter"]["Value"]
+
+    parameter_data = json.loads(parameter_value)
+
+    secret_response = secrets_manager_client.get_secret_value(SecretId=secret_arn)
+    secret_value = json.loads(secret_response["SecretString"])
+
+    parameter_data["username"] = secret_value["username"]
+    parameter_data["password"] = secret_value["password"]
+
+    updated_parameter_value = json.dumps(parameter_data)
+
+    return updated_parameter_value
+
+
 def create_addon_client_task(
     app: Application,
     env: str,
@@ -176,13 +195,33 @@ def create_addon_client_task(
         elif access == "write":
             secret_name += "_APPLICATION_USER"
         elif access == "admin" and is_terraform_project():
-            secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+            session = app.environments[env].session
+            read_only_secret_name = secret_name + "_READ_ONLY_USER"
+            master_secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+            master_secret_arn = session.client("ssm").get_parameter(
+                Name=master_secret_name, WithDecryption=True
+            )["Parameter"]["Value"]
+            connection_string = update_parameter_with_secret(
+                session, read_only_secret_name, master_secret_arn
+            )
+            subprocess.call(
+                f"copilot task run --app {app.name} --env {env} "
+                f"--task-group-name {task_name} "
+                f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+                f"--env-vars CONNECTION_SECRET={connection_string} "
+                "--platform-os linux "
+                "--platform-arch arm64",
+                shell=True,
+            )
+            return
+
+    connection_secret_arn = get_connection_secret_arn(app, env, secret_name, addon_type)
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name, addon_type)} "
+        f"--secrets CONNECTION_SECRET={connection_secret_arn} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
