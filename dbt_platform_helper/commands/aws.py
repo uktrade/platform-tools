@@ -29,7 +29,8 @@ def create_config_contents(accounts, config):
         account_id = account["accountId"]
         role_name = "AdministratorAccess"
 
-        profile_name = f"profile {account_name.lower().replace(" ", " - ")}"
+        # fmt: off
+        profile_name = f"profile {account_name.lower().replace(" ", "-")}"
         config[profile_name] = {
             "sso_start_url": "https://uktrade.awsapps.com/start",
             "sso_region": "eu-west-2",
