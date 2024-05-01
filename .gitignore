@@ -35,3 +35,5 @@ tests/platform_helper/test-application-deploy/copilot
 
 dist
 
+*config.ini
+
