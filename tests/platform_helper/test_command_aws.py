@@ -1,6 +1,5 @@
 from pathlib import Path
 from unittest.mock import MagicMock
-from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
@@ -56,9 +55,8 @@ class TestAWSConfigureCommand:
     @patch("dbt_platform_helper.commands.aws.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.aws.get_aws_accounts")
     @patch("boto3.session.Session")
-    @patch("builtins.open", new_callable=mock_open, create=True)
     def test_config_file_creation_and_content(
-        self, mock_open_call, mock_session, mock_aws_accounts, mock_get_aws_session_or_abort, fakefs
+        self, mock_session, mock_aws_accounts, mock_get_aws_session_or_abort, fakefs
     ):
         mock_aws_accounts.return_value = [
             {"accountId": "123456789012", "accountName": "Test Account 1"},
@@ -80,6 +78,8 @@ sso_role_name = AdministratorAccess
 region = eu-west-2
 
 """
+
         result = CliRunner().invoke(configure)
+        config_path = Path("aws_test_config.ini").read_text()
         assert result.exit_code == 0
-        assert expected_output in Path("aws_test_config.ini").read_text()
+        assert expected_output in config_path

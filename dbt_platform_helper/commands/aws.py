@@ -30,7 +30,7 @@ def create_config_contents(accounts, config):
         role_name = "AdministratorAccess"
 
         # fmt: off
-        profile_name = f"profile {account_name.lower().replace(" ", "-")}"
+        profile_name = f"profile {account_name.lower().replace(' ', '-')}"
         config[profile_name] = {
             "sso_start_url": "https://uktrade.awsapps.com/start",
             "sso_region": "eu-west-2",
@@ -42,28 +42,6 @@ def create_config_contents(accounts, config):
     config.write(config_str)
     config_string_value = config_str.getvalue()
     return config_string_value
-
-
-def get_aws_credentials(client, token, account_id, role_name="AdministratorAccess"):
-    sts_creds = client.get_role_credentials(
-        accessToken=token,
-        roleName=role_name,
-        accountId=account_id,
-    )
-
-    if "roleCredentials" not in sts_creds:
-        raise RuntimeError("Unable to retrieve STS credentials")
-    credentials = sts_creds.get("roleCredentials")
-    if "accessKeyId" not in credentials:
-        raise RuntimeError("Unable to retrieve STS credentials")
-
-    return {
-        "aws_access_key_id": credentials["accessKeyId"],
-        "aws_secret_access_key": credentials["secretAccessKey"],
-        "aws_session_token": credentials["sessionToken"],
-        "expiration": credentials["expiration"],
-        "role": role_name,
-    }
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
@@ -84,5 +62,4 @@ def configure():
 
     accounts = get_aws_accounts(sso_client, session_credentials.get("token"))
     config_string_value = create_config_contents(accounts, config_parser)
-
-    mkfile(Path(directory), "aws_test_config.ini", config_string_value)
+    mkfile(Path(directory), "aws_test_config.ini", config_string_value, overwrite=True)
