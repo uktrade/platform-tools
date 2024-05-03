@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.2.0](https://github.com/uktrade/platform-tools/compare/8.1.0...8.2.0) (2024-05-03)
+
+
+### Features
+
+* DBTP-860 Add a command to generate/update environment manifest files with VPC/ALB config ([#412](https://github.com/uktrade/platform-tools/issues/412)) ([27f5f1f](https://github.com/uktrade/platform-tools/commit/27f5f1f8a9e5cf7e7a3b9e7ae50ca7b583c273d1))
+
 ## [8.1.0](https://github.com/uktrade/platform-tools/compare/8.0.0...8.1.0) (2024-05-02)
 
 
