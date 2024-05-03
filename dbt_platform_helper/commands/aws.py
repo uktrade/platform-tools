@@ -1,6 +1,8 @@
 # from configparser import ConfigParser
 import configparser
 import io
+import time
+import webbrowser
 from pathlib import Path
 from typing import Dict
 from typing import List
@@ -14,9 +16,10 @@ from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 
+REGION = "eu-west-2"
 start_url = "https://uktrade.awsapps.com/start"
-sso_client = boto3.client("sso", region_name="eu-west-2")
-sso_oidc_client = boto3.client("sso-oidc", region_name="eu-west-2")
+sso_client = boto3.client("sso", region_name=REGION)
+sso_oidc_client = boto3.client("sso-oidc", region_name=REGION)
 
 
 def create_oidc_application(oidc_client):
@@ -40,7 +43,32 @@ def initiate_device_code_flow(client, oidc_application, url):
 
     url = auth.get("verificationUriComplete")
     device_code = auth.get("deviceCode")
-    return url, device_code
+    expires_in = auth.get("expiresIn")
+    return url, device_code, expires_in
+
+
+def open_browser_for_auth(url, client_id, client_secret, device_code):
+    access_token = None
+    webbrowser.open(url, new=2)
+    for i in range(10):
+        time.sleep(1)
+        try:
+            access_token = get_access_token(client_id, client_secret, device_code)
+        except sso_oidc_client.exceptions.InvalidGrantException as e:
+            click.secho(e.response, fg="red")
+        if access_token:
+            break
+    return access_token
+
+
+def get_access_token(client_id, client_secret, device_code):
+    token_response = sso_oidc_client.create_token(
+        clientId=client_id,
+        clientSecret=client_secret,
+        grantType="urn:ietf:params:oauth:grant-type:device_code",
+        deviceCode=device_code,
+    )
+    return token_response
 
 
 def get_aws_accounts(client, token) -> List[Dict[str, str]]:
@@ -83,26 +111,25 @@ def configure():
     # Todo: doc comment
     # sso_client = session.client("sso")
     client_id, client_secret = create_oidc_application(sso_oidc_client)
-    url, device_code = initiate_device_code_flow(
+    url, device_code, expires_in = initiate_device_code_flow(
         sso_oidc_client, create_oidc_application(sso_oidc_client), start_url
     )
+
     click.secho(client_id, fg="yellow")
     click.secho(client_secret, fg="blue")
-    click.secho(device_code, fg="red")
     click.secho(url, fg="cyan")
+    click.secho(device_code, fg="red")
+    click.secho(expires_in, fg="yellow")
 
-    response = sso_oidc_client.create_token(
-        clientId=client_id,
-        clientSecret=client_secret,
-        grantType="urn:ietf:params:oauth:grant-type:device_code",
-        deviceCode=device_code,
-    )
-    sso_token = response.get("access_token")
-    click.secho(sso_token, fg="green")
+    # token_response = get_access_token(client_id, client_secret, device_code)
+    # sso_token = token_response.get("token")
+    token_response = open_browser_for_auth(url, client_id, client_secret, device_code)
+
+    click.secho(token_response, fg="green")
     config_parser = configparser.ConfigParser()
     directory = "."
 
-    accounts = get_aws_accounts(sso_client, sso_token)
+    accounts = get_aws_accounts(sso_client, token_response)
     config_string_value = create_config_contents(accounts, config_parser)
     mkfile(Path(directory), "aws_test_config.ini", config_string_value, overwrite=True)
 
