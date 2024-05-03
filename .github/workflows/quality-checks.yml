@@ -31,6 +31,9 @@ jobs:
         run: poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
+    
+      - name: Code coverage
+        uses: codecov/codecov-action@v4
 
   lint:
     name: Run lint checks
