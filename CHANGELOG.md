@@ -1,5 +1,19 @@
 # Changelog
 
+## [8.1.0](https://github.com/uktrade/platform-tools/compare/8.0.0...8.1.0) (2024-05-02)
+
+
+### Features
+
+* DBTP-779 - Trigger documentation update on new release ([#417](https://github.com/uktrade/platform-tools/issues/417)) ([22bb105](https://github.com/uktrade/platform-tools/commit/22bb10532e56b073fb13873373ffa80a69fa8988))
+
+
+### Bug Fixes
+
+* DBTP-953 Unable to set up conduit with admin user ([#423](https://github.com/uktrade/platform-tools/issues/423)) ([1c86195](https://github.com/uktrade/platform-tools/commit/1c86195d359c3f7c3d5b83bb9c586b81d9a6f176))
+* update Postgres addon type for Conduit ([#422](https://github.com/uktrade/platform-tools/issues/422)) ([2b43960](https://github.com/uktrade/platform-tools/commit/2b43960ac64d04ec8595916f7f6fe92fd97794d2))
+* Use fake file system for create command docs happy path test ([#414](https://github.com/uktrade/platform-tools/issues/414)) ([bcb9878](https://github.com/uktrade/platform-tools/commit/bcb98782fcbcee7b41cf735aaecc7a235875e3dc))
+
 ## [8.0.0](https://github.com/uktrade/platform-tools/compare/7.0.0...8.0.0) (2024-04-24)
 
 

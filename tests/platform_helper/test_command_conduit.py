@@ -107,35 +107,60 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
         get_connection_secret_arn(mock_application, "development", "POSTGRES")
 
 
-@pytest.mark.parametrize(
-    "addon_type, addon_name",
-    [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
-        ("redis", "custom-name-redis"),
-        ("opensearch", "custom-name-opensearch"),
-    ],
-)
+@mock_aws
+def test_update_parameter_with_secret():
+    from dbt_platform_helper.commands.conduit import update_parameter_with_secret
+
+    session = boto3.session.Session()
+    parameter_name = "test-parameter"
+    session.client("ssm").put_parameter(
+        Name=parameter_name,
+        Value='{"username": "read-only-user", "password": ">G12345", "host": "test.com", "port": 5432}',
+        Type="String",
+    )
+    secret_arn = session.client("secretsmanager").create_secret(
+        Name="master-secret", SecretString='{"username": "postgres", "password": ">G6789"}'
+    )["ARN"]
+
+    updated_paramater_value = update_parameter_with_secret(session, parameter_name, secret_arn)
+
+    assert (
+        updated_paramater_value
+        == '{"username": "postgres", "password": "%3EG6789", "host": "test.com", "port": 5432}'
+    )
+
+
+@mock_aws
 @patch("subprocess.call")
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-def test_create_addon_client_task(
-    get_connection_secret_arn, subprocess_call, addon_type, addon_name, mock_application
-):
-    """Test that, given app and environment strings, create_addon_client_task
-    calls get_connection_secret_arn with the default secret name and
-    subsequently subprocess.call with the correct secret ARN."""
-    from dbt_platform_helper.commands.conduit import create_addon_client_task
+@patch(
+    "dbt_platform_helper.commands.conduit.update_parameter_with_secret",
+    return_value="connection string",
+)
+def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call, mock_application):
+    from dbt_platform_helper.commands.conduit import create_postgres_admin_task
+    from dbt_platform_helper.commands.conduit import normalise_secret_name
 
-    task_name = mock_task_name(addon_name)
-    create_addon_client_task(mock_application, "development", addon_type, addon_name, task_name)
-    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name)
+    env = "development"
+    addon_name = "dummy-postgres"
+    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+    boto3.client("ssm").put_parameter(
+        Name=master_secret_name, Value="master-secret-arn", Type="String"
+    )
 
-    get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
-    subprocess_call.assert_called_once_with(
-        "copilot task run --app test-application --env development "
-        f"--task-group-name {task_name} "
-        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
-        "--secrets CONNECTION_SECRET=test-arn "
+    create_postgres_admin_task(
+        mock_application, env, "POSTGRES_SECRET_NAME", "test-task", "postgres", addon_name
+    )
+
+    mock_update_parameter.assert_called_once_with(
+        mock_application.environments[env].session,
+        "POSTGRES_SECRET_NAME_READ_ONLY_USER",
+        "master-secret-arn",
+    )
+    mock_subprocess_call.assert_called_once_with(
+        f"copilot task run --app {mock_application.name} --env {env} "
+        f"--task-group-name test-task "
+        "--image public.ecr.aws/uktrade/tunnel:postgres "
+        f"--env-vars CONNECTION_SECRET='connection string' "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -189,6 +214,27 @@ def test_create_addon_client_task(
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
+    )
+
+
+@patch("dbt_platform_helper.commands.conduit.create_postgres_admin_task")
+@patch("dbt_platform_helper.commands.conduit.is_terraform_project", return_value=True)
+def test_create_addon_client_task_postgres_is_terraform(
+    mock_is_terraform_project,
+    mock_create_postgres_admin_task,
+    mock_application,
+):
+    from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    addon_name = "custom-name-postgres"
+    task_name = mock_task_name(addon_name)
+    create_addon_client_task(
+        mock_application, "development", "postgres", addon_name, task_name, "admin"
+    )
+    secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name, "admin")
+
+    mock_create_postgres_admin_task.assert_called_once_with(
+        mock_application, "development", secret_name, task_name, "postgres", addon_name
     )
 
 
