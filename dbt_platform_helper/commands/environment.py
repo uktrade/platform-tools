@@ -6,7 +6,11 @@ import boto3
 import click
 
 from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -132,6 +136,74 @@ def online(app, env):
             f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
         )
         raise click.Abort
+
+
+def get_vpc_id(session, env_name):
+    vpc_name = f"{session.profile_name}-{env_name}"
+    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
+    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        click.secho(
+            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
+        )
+        raise click.Abort
+
+    return vpcs[0]["VpcId"]
+
+
+def get_subnet_ids(session, vpc_id):
+    subnets = session.client("ec2").describe_subnets(
+        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+    )["Subnets"]
+
+    if not subnets:
+        click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
+        raise click.Abort
+
+    public_tag = {"Key": "subnet_type", "Value": "public"}
+    public = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+    private_tag = {"Key": "subnet_type", "Value": "private"}
+    private = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
+
+    return public, private
+
+
+def get_cert_arn(session, env_name):
+    certs = session.client("acm").list_certificates()["CertificateSummaryList"]
+
+    for cert in certs:
+        if env_name in cert["DomainName"]:
+            return cert["CertificateArn"]
+
+    click.secho(f"No certificate found with domain name matching environment {env_name}.", fg="red")
+    raise click.Abort
+
+
+@environment.command()
+@click.option("--name", "-n", multiple=True)
+def generate(name):
+    ensure_cwd_is_repo_root()
+    session = get_aws_session_or_abort()
+    env_template = setup_templates().get_template("env/manifest.yml")
+
+    for env_name in name:
+        vpc_id = get_vpc_id(session, env_name)
+        pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
+        cert_arn = get_cert_arn(session, env_name)
+        contents = env_template.render(
+            {
+                "name": env_name,
+                "vpc_id": vpc_id,
+                "pub_subnet_ids": pub_subnet_ids,
+                "priv_subnet_ids": priv_subnet_ids,
+                "certificate_arn": cert_arn,
+            }
+        )
+
+        click.echo(
+            mkfile(".", f"copilot/environments/{env_name}/manifest.yml", contents, overwrite=True)
+        )
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:

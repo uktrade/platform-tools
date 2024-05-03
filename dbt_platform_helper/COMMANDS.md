@@ -27,6 +27,7 @@
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
+- [platform-helper environment generate](#platform-helper-environment-generate)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
@@ -602,7 +603,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|online) 
+platform-helper environment (offline|online|generate) 
 ```
 
 ## Options
@@ -612,6 +613,7 @@ platform-helper environment (offline|online)
 
 ## Commands
 
+- [`generate` ↪](#platform-helper-environment-generate)
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
 
@@ -655,6 +657,24 @@ platform-helper environment online --app <application> --env <environment>
 - `--app <text>`
 
 - `--env <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper environment generate
+
+[↩ Parent](#platform-helper-environment)
+
+## Usage
+
+```
+platform-helper environment generate [--name <name>] 
+```
+
+## Options
+
+- `--name
+-n <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
