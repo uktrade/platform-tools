@@ -32,6 +32,12 @@ jobs:
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
       
+      - name: "Upload coverage data"
+        uses: actions/upload-artifact@v3
+        with:
+          name: covdata
+          path: .coverage.*
+      
   codecov:
     name: Code coverage
     runs-on: ubuntu-latest
