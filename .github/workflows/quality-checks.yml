@@ -33,7 +33,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
     
       - name: Code coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
 
   lint:
     name: Run lint checks
