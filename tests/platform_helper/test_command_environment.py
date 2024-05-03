@@ -1,9 +1,20 @@
+from pathlib import Path
 from unittest.mock import ANY
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
+import boto3
+import click
 import pytest
+import yaml
 from click.testing import CliRunner
+from moto import mock_aws
+
+from tests.platform_helper.conftest import BASE_DIR
+
+# from dbt_platform_helper.commands.environment import get_cert_arn
+# from dbt_platform_helper.commands.environment import generate
 
 
 class TestEnvironmentOfflineCommand:
@@ -307,6 +318,291 @@ class TestEnvironmentOnlineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
+
+
+# class TestUpdateVpcConfig:
+#     @mock_aws
+#     def test_vpc_generate(self, fakefs):
+#         from dbt_platform_helper.commands.environment import update_vpc_config
+
+#         vpc = boto3.client("ec2").create_vpc(
+#             CidrBlock="10.0.0.0/16",
+#             TagSpecifications=[
+#                 {
+#                     "ResourceType": "vpc",
+#                     "Tags": [
+#                         {"Key": "Name", "Value": "testaccount-development"},
+#                     ],
+#                 },
+#             ],
+#         )["Vpc"]
+#         public_subnet = boto3.client("ec2").create_subnet(
+#             CidrBlock="10.0.128.0/24",
+#             VpcId=vpc["VpcId"],
+#             TagSpecifications=[
+#                 {
+#                     "ResourceType": "subnet",
+#                     "Tags": [
+#                         {"Key": "subnet_type", "Value": "public"},
+#                     ],
+#                 },
+#             ],
+#         )["Subnet"]
+#         private_subnet = boto3.client("ec2").create_subnet(
+#             CidrBlock="10.0.1.0/24",
+#             VpcId=vpc["VpcId"],
+#             TagSpecifications=[
+#                 {
+#                     "ResourceType": "subnet",
+#                     "Tags": [
+#                         {"Key": "subnet_type", "Value": "private"},
+#                     ],
+#                 },
+#             ],
+#         )["Subnet"]
+#         addons_dir = FIXTURES_DIR / "make_addons"
+#         fakefs.add_real_directory(
+#             addons_dir / "config/copilot", read_only=False, target_path="copilot"
+#         )
+#         yuamel = ruamel.yaml.YAML(typ="rt")
+#         current_manifest = yuamel.load(
+#             Path("copilot/environments/development/manifest.yml").read_text()
+#         )
+#         expected_manifest = current_manifest.copy()
+#         expected_manifest["network"] = {
+#             "vpc": {
+#                 "id": vpc["VpcId"],
+#                 "subnets": {
+#                     "public": [{"id": public_subnet["SubnetId"]}],
+#                     "private": [{"id": private_subnet["SubnetId"]}],
+#                 },
+#             }
+#         }
+
+#         result = CliRunner().invoke(update_vpc_config)
+
+#         assert (
+#             "\n>>> Updating development environment manifest.yml with current VPC and subnet ids\n"
+#             in result.output
+#         )
+#         assert (
+#             yuamel.load(Path("copilot/environments/development/manifest.yml").read_text())
+#             == expected_manifest
+#         )
+
+#     @mock_aws
+#     def test_vpc_generate_manifest_not_found(self, fakefs):
+#         from dbt_platform_helper.commands.environment import update_vpc_config
+
+#         vpc = boto3.client("ec2").create_vpc(
+#             CidrBlock="10.0.0.0/16",
+#             TagSpecifications=[
+#                 {
+#                     "ResourceType": "vpc",
+#                     "Tags": [
+#                         {"Key": "Name", "Value": "testaccount-envwithnomanifestfile"},
+#                     ],
+#                 },
+#             ],
+#         )["Vpc"]
+#         addons_dir = FIXTURES_DIR / "make_addons"
+#         fakefs.add_real_directory(
+#             addons_dir / "config/copilot", read_only=False, target_path="copilot"
+#         )
+
+#         result = CliRunner().invoke(update_vpc_config)
+
+#         assert (
+#             "envwithnomanifestfile environment manifest file not found. You may need to run `copilot env init --name envwithnomanifestfile` to generate this file."
+#             in result.output
+#         )
+
+
+class TestGenerate:
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_platform_helper.commands.environment.get_cert_arn", return_value="arn:aws:acm:test")
+    @patch(
+        "dbt_platform_helper.commands.environment.get_subnet_ids",
+        return_value=(["def456"], ["ghi789"]),
+    )
+    @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
+    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    def test_generate(
+        self, mock_get_aws_session, mock_get_vpc_id, mock_get_subnet_ids, mock_get_cert_arn, fakefs
+    ):
+        from dbt_platform_helper.commands.environment import generate
+
+        mocked_session = MagicMock()
+        mock_get_aws_session.return_value = mocked_session
+        fakefs.add_real_directory(
+            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
+        )
+        result = CliRunner().invoke(generate, ["--name", "test"])
+
+        actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
+        expected = yaml.safe_load(
+            Path("copilot/fixtures/test_environment_manifest.yml").read_text()
+        )
+
+        mock_get_vpc_id.assert_called_once_with(mocked_session, "test")
+        mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
+        mock_get_cert_arn.assert_called_once_with(mocked_session, "test")
+        assert actual == expected
+        assert "File copilot/environments/test/manifest.yml created" in result.output
+
+    # def get_vpc_id(session, env_name):
+    #     vpc_name = f"{session.profile_name}-{env_name}"
+    #     filters = [{'Name':'tag:Name', 'Values':[vpc_name]}]
+    #     vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    #     if not vpcs:
+    #         click.secho(f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red")
+    #         raise click.Abort
+
+    #     return vpcs[0]["VpcId"]
+
+    # def get_subnet_ids(session, vpc_id):
+    #     subnets = session.client("ec2").describe_subnets(
+    #         Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+    #     )["Subnets"]
+
+    #     if not subnets:
+    #         click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
+    #         raise click.Abort
+
+    #     public_tag = {"Key": "subnet_type", "Value": "public"}
+    #     public = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+    #     private_tag = {"Key": "subnet_type", "Value": "private"}
+    #     private = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
+
+    #     return public, private
+
+    # def get_cert_arn(session, env_name):
+    #     certs = session.client("acm").list_certificates()["CertificateSummaryList"]
+
+    #     for cert in certs:
+    #         if env_name in cert["DomainName"]:
+    #             return cert["CertificateArn"]
+
+    #     click.secho(f"No certificate found with domain name matching environment {env_name}.", fg="red")
+    #     click.Abort
+
+    @mock_aws
+    def test_get_vpc_id(self):
+        from dbt_platform_helper.commands.environment import get_vpc_id
+
+        session = boto3.session.Session()
+        vpc = session.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": "default-development"},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        expected_vpc_id = vpc["VpcId"]
+
+        actual_vpc_id = get_vpc_id(session, "development")
+
+        assert expected_vpc_id == actual_vpc_id
+
+    @mock_aws
+    def test_get_vpc_id_failure(self, capsys):
+        from dbt_platform_helper.commands.environment import get_vpc_id
+
+        with pytest.raises(click.Abort):
+            get_vpc_id(boto3.session.Session(), "development")
+
+        captured = capsys.readouterr()
+
+        assert "No VPC found with name default-development in AWS account default." in captured.out
+
+    @mock_aws
+    def test_get_subnet_ids(self):
+        from dbt_platform_helper.commands.environment import get_subnet_ids
+
+        session = boto3.session.Session()
+        vpc = session.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": "default-development"},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        public_subnet = session.client("ec2").create_subnet(
+            CidrBlock="10.0.128.0/24",
+            VpcId=vpc["VpcId"],
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "public"},
+                    ],
+                },
+            ],
+        )["Subnet"]
+        private_subnet = session.client("ec2").create_subnet(
+            CidrBlock="10.0.1.0/24",
+            VpcId=vpc["VpcId"],
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "private"},
+                    ],
+                },
+            ],
+        )["Subnet"]
+
+        public, private = get_subnet_ids(session, vpc["VpcId"])
+
+        assert public == [public_subnet["SubnetId"]]
+        assert private == [private_subnet["SubnetId"]]
+
+    @mock_aws
+    def test_get_subnet_ids_failure(self, capsys):
+        from dbt_platform_helper.commands.environment import get_subnet_ids
+
+        with pytest.raises(click.Abort):
+            get_subnet_ids(boto3.session.Session(), "123")
+
+        captured = capsys.readouterr()
+
+        assert "No subnets found for VPC with id: 123." in captured.out
+
+    @mock_aws
+    def test_get_cert_arn(self):
+        from dbt_platform_helper.commands.environment import get_cert_arn
+
+        session = boto3.session.Session()
+        expected_arn = session.client("acm").request_certificate(DomainName="development.com")[
+            "CertificateArn"
+        ]
+
+        actual_arn = get_cert_arn(session, "development")
+
+        assert expected_arn == actual_arn
+
+    @mock_aws
+    def test_cert_arn_failure(self, capsys):
+        from dbt_platform_helper.commands.environment import get_cert_arn
+
+        with pytest.raises(click.Abort):
+            get_cert_arn(boto3.session.Session(), "development")
+
+        captured = capsys.readouterr()
+
+        assert (
+            "No certificate found with domain name matching environment development."
+            in captured.out
+        )
 
 
 class TestFindLoadBalancer:

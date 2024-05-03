@@ -7,16 +7,24 @@
 name: {{ name }}
 type: Environment
 
+network:
+  vpc:
+    id: {{ vpc_id }}
+    subnets:
+      public:
+{%- for id in pub_subnet_ids %}
+        - id: {{ id }}
+{%- endfor %}
+      private:
+{%- for id in priv_subnet_ids %}
+        - id: {{ id }}
+{%- endfor %}
+
 # Configure the load balancers in your environment, once created.
 http:
   public:
-    access_logs:
-      bucket_name: dbt-access-logs
-      prefix: {{ app_name }}/{{ name }}
-{% if certificate_arn %}
     certificates:
       - {{ certificate_arn }}
-{% endif %}
 #   private:
 
 # Configure observability for your environment resources.

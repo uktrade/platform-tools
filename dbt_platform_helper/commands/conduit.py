@@ -3,11 +3,13 @@ import random
 import string
 import subprocess
 import time
+import urllib.parse
 
 import click
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
+from dbt_platform_helper.commands.copilot import is_terraform_project
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
@@ -153,6 +155,50 @@ def get_connection_secret_arn(app: Application, env: str, secret_name: str) -> s
     raise SecretNotFoundConduitError(secret_name)
 
 
+def update_parameter_with_secret(session, parameter_name, secret_arn):
+    ssm_client = session.client("ssm")
+    secrets_manager_client = session.client("secretsmanager")
+    response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
+    parameter_value = response["Parameter"]["Value"]
+
+    parameter_data = json.loads(parameter_value)
+
+    secret_response = secrets_manager_client.get_secret_value(SecretId=secret_arn)
+    secret_value = json.loads(secret_response["SecretString"])
+
+    parameter_data["username"] = urllib.parse.quote(secret_value["username"])
+    parameter_data["password"] = urllib.parse.quote(secret_value["password"])
+
+    updated_parameter_value = json.dumps(parameter_data)
+
+    return updated_parameter_value
+
+
+def create_postgres_admin_task(
+    app: Application, env: str, secret_name: str, task_name: str, addon_type: str, addon_name: str
+):
+    session = app.environments[env].session
+    read_only_secret_name = secret_name + "_READ_ONLY_USER"
+    master_secret_name = (
+        f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+    )
+    master_secret_arn = session.client("ssm").get_parameter(
+        Name=master_secret_name, WithDecryption=True
+    )["Parameter"]["Value"]
+    connection_string = update_parameter_with_secret(
+        session, read_only_secret_name, master_secret_arn
+    )
+    subprocess.call(
+        f"copilot task run --app {app.name} --env {env} "
+        f"--task-group-name {task_name} "
+        f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+        f"--env-vars CONNECTION_SECRET='{connection_string}' "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
+
+
 def create_addon_client_task(
     app: Application,
     env: str,
@@ -168,6 +214,9 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
+        elif access == "admin" and is_terraform_project():
+            create_postgres_admin_task(app, env, secret_name, task_name, addon_type, addon_name)
+            return
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
