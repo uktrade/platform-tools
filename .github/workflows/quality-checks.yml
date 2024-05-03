@@ -28,7 +28,7 @@ jobs:
           poetry install
 
       - name: Run pytest
-        run: poetry run pytest
+        run: coverage run -m poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
       
