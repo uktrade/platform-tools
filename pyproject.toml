@@ -39,6 +39,7 @@ semver = "^3.0.2"
 tomlkit = "^0.12.2"
 checkov = "^3.1.67"
 slack-sdk = "^3.27.1"
+coverage = "^7.5.0"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.5"}

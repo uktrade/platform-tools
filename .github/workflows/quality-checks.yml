@@ -32,8 +32,30 @@ jobs:
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
       
-      - name: Code coverage
-        uses: codecov/codecov-action@v3  
+  codecov:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+      - name: "Download coverage data"
+        uses: actions/download-artifact@v3
+        with:
+          name: covdata
+      - name: "Combine"
+        run: |
+          coverage run -m pytest
+          export TOTAL=$(python -c "import json;print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
+          echo "total=$TOTAL" >> $GITHUB_ENV
+          echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
+  
 
   lint:
     name: Run lint checks
