@@ -346,7 +346,7 @@ class TestGenerate:
             Path("copilot/fixtures/test_environment_manifest.yml").read_text()
         )
 
-        mock_get_vpc_id.assert_called_once_with(mocked_session, "test")
+        mock_get_vpc_id.assert_called_once_with(mocked_session, "test", None)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "test")
         assert actual == expected
@@ -374,6 +374,10 @@ class TestGenerate:
         actual_vpc_id = get_vpc_id(session, "prod")
 
         assert expected_vpc_id == actual_vpc_id
+
+        vpc_id_from_name = get_vpc_id(session, "not-an-env", vpc_name=vpc_name)
+
+        assert expected_vpc_id == vpc_id_from_name
 
     @mock_aws
     def test_get_vpc_id_failure(self, capsys):
