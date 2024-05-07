@@ -144,6 +144,10 @@ def get_vpc_id(session, env_name):
     vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
 
     if not vpcs:
+        filters[0]["Values"] = [session.profile_name]
+        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
         click.secho(
             f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
         )

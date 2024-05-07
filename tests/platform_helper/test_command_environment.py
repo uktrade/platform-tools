@@ -320,104 +320,6 @@ class TestEnvironmentOnlineCommand:
         remove_maintenance_page.assert_not_called()
 
 
-# class TestUpdateVpcConfig:
-#     @mock_aws
-#     def test_vpc_generate(self, fakefs):
-#         from dbt_platform_helper.commands.environment import update_vpc_config
-
-#         vpc = boto3.client("ec2").create_vpc(
-#             CidrBlock="10.0.0.0/16",
-#             TagSpecifications=[
-#                 {
-#                     "ResourceType": "vpc",
-#                     "Tags": [
-#                         {"Key": "Name", "Value": "testaccount-development"},
-#                     ],
-#                 },
-#             ],
-#         )["Vpc"]
-#         public_subnet = boto3.client("ec2").create_subnet(
-#             CidrBlock="10.0.128.0/24",
-#             VpcId=vpc["VpcId"],
-#             TagSpecifications=[
-#                 {
-#                     "ResourceType": "subnet",
-#                     "Tags": [
-#                         {"Key": "subnet_type", "Value": "public"},
-#                     ],
-#                 },
-#             ],
-#         )["Subnet"]
-#         private_subnet = boto3.client("ec2").create_subnet(
-#             CidrBlock="10.0.1.0/24",
-#             VpcId=vpc["VpcId"],
-#             TagSpecifications=[
-#                 {
-#                     "ResourceType": "subnet",
-#                     "Tags": [
-#                         {"Key": "subnet_type", "Value": "private"},
-#                     ],
-#                 },
-#             ],
-#         )["Subnet"]
-#         addons_dir = FIXTURES_DIR / "make_addons"
-#         fakefs.add_real_directory(
-#             addons_dir / "config/copilot", read_only=False, target_path="copilot"
-#         )
-#         yuamel = ruamel.yaml.YAML(typ="rt")
-#         current_manifest = yuamel.load(
-#             Path("copilot/environments/development/manifest.yml").read_text()
-#         )
-#         expected_manifest = current_manifest.copy()
-#         expected_manifest["network"] = {
-#             "vpc": {
-#                 "id": vpc["VpcId"],
-#                 "subnets": {
-#                     "public": [{"id": public_subnet["SubnetId"]}],
-#                     "private": [{"id": private_subnet["SubnetId"]}],
-#                 },
-#             }
-#         }
-
-#         result = CliRunner().invoke(update_vpc_config)
-
-#         assert (
-#             "\n>>> Updating development environment manifest.yml with current VPC and subnet ids\n"
-#             in result.output
-#         )
-#         assert (
-#             yuamel.load(Path("copilot/environments/development/manifest.yml").read_text())
-#             == expected_manifest
-#         )
-
-#     @mock_aws
-#     def test_vpc_generate_manifest_not_found(self, fakefs):
-#         from dbt_platform_helper.commands.environment import update_vpc_config
-
-#         vpc = boto3.client("ec2").create_vpc(
-#             CidrBlock="10.0.0.0/16",
-#             TagSpecifications=[
-#                 {
-#                     "ResourceType": "vpc",
-#                     "Tags": [
-#                         {"Key": "Name", "Value": "testaccount-envwithnomanifestfile"},
-#                     ],
-#                 },
-#             ],
-#         )["Vpc"]
-#         addons_dir = FIXTURES_DIR / "make_addons"
-#         fakefs.add_real_directory(
-#             addons_dir / "config/copilot", read_only=False, target_path="copilot"
-#         )
-
-#         result = CliRunner().invoke(update_vpc_config)
-
-#         assert (
-#             "envwithnomanifestfile environment manifest file not found. You may need to run `copilot env init --name envwithnomanifestfile` to generate this file."
-#             in result.output
-#         )
-
-
 class TestGenerate:
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch("dbt_platform_helper.commands.environment.get_cert_arn", return_value="arn:aws:acm:test")
@@ -450,45 +352,9 @@ class TestGenerate:
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
-    # def get_vpc_id(session, env_name):
-    #     vpc_name = f"{session.profile_name}-{env_name}"
-    #     filters = [{'Name':'tag:Name', 'Values':[vpc_name]}]
-    #     vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    #     if not vpcs:
-    #         click.secho(f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red")
-    #         raise click.Abort
-
-    #     return vpcs[0]["VpcId"]
-
-    # def get_subnet_ids(session, vpc_id):
-    #     subnets = session.client("ec2").describe_subnets(
-    #         Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-    #     )["Subnets"]
-
-    #     if not subnets:
-    #         click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
-    #         raise click.Abort
-
-    #     public_tag = {"Key": "subnet_type", "Value": "public"}
-    #     public = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
-    #     private_tag = {"Key": "subnet_type", "Value": "private"}
-    #     private = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
-
-    #     return public, private
-
-    # def get_cert_arn(session, env_name):
-    #     certs = session.client("acm").list_certificates()["CertificateSummaryList"]
-
-    #     for cert in certs:
-    #         if env_name in cert["DomainName"]:
-    #             return cert["CertificateArn"]
-
-    #     click.secho(f"No certificate found with domain name matching environment {env_name}.", fg="red")
-    #     click.Abort
-
+    @pytest.mark.parametrize("vpc_name", ["default", "default-development"])
     @mock_aws
-    def test_get_vpc_id(self):
+    def test_get_vpc_id(self, vpc_name):
         from dbt_platform_helper.commands.environment import get_vpc_id
 
         session = boto3.session.Session()
@@ -498,7 +364,7 @@ class TestGenerate:
                 {
                     "ResourceType": "vpc",
                     "Tags": [
-                        {"Key": "Name", "Value": "default-development"},
+                        {"Key": "Name", "Value": vpc_name},
                     ],
                 },
             ],
