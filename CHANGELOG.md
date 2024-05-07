@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.2.1](https://github.com/uktrade/platform-tools/compare/8.2.0...8.2.1) (2024-05-07)
+
+
+### Bug Fixes
+
+* env generate vpc name not found bug ([#426](https://github.com/uktrade/platform-tools/issues/426)) ([2acf0fc](https://github.com/uktrade/platform-tools/commit/2acf0fcb1e3169dccf91254c83b5089b40860163))
+
 ## [8.2.0](https://github.com/uktrade/platform-tools/compare/8.1.0...8.2.0) (2024-05-03)
 
 
