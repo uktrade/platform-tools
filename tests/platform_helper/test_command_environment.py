@@ -352,7 +352,7 @@ class TestGenerate:
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
-    @pytest.mark.parametrize("vpc_name", ["default", "default-development"])
+    @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
     @mock_aws
     def test_get_vpc_id(self, vpc_name):
         from dbt_platform_helper.commands.environment import get_vpc_id
@@ -371,7 +371,7 @@ class TestGenerate:
         )["Vpc"]
         expected_vpc_id = vpc["VpcId"]
 
-        actual_vpc_id = get_vpc_id(session, "development")
+        actual_vpc_id = get_vpc_id(session, "prod")
 
         assert expected_vpc_id == actual_vpc_id
 
