@@ -138,10 +138,16 @@ def online(app, env):
         raise click.Abort
 
 
-def get_vpc_id(session, env_name):
-    vpc_name = f"{session.profile_name}-{env_name}"
+def get_vpc_id(session, env_name, vpc_name=None):
+    if not vpc_name:
+        vpc_name = f"{session.profile_name}-{env_name}"
+
     filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
     vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        filters[0]["Values"] = [session.profile_name]
+        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
 
     if not vpcs:
         click.secho(
@@ -181,14 +187,15 @@ def get_cert_arn(session, env_name):
 
 
 @environment.command()
-@click.option("--name", "-n", multiple=True)
-def generate(name):
+@click.option("--vpc-name")
+@click.option("--name", "-n", multiple=True, required=True)
+def generate(name, vpc_name):
     ensure_cwd_is_repo_root()
     session = get_aws_session_or_abort()
     env_template = setup_templates().get_template("env/manifest.yml")
 
     for env_name in name:
-        vpc_id = get_vpc_id(session, env_name)
+        vpc_id = get_vpc_id(session, env_name, vpc_name)
         pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
         cert_arn = get_cert_arn(session, env_name)
         contents = env_template.render(
