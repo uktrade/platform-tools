@@ -1,6 +1,12 @@
+import os
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
 
+from dbt_platform_helper.commands.config import aws
 from dbt_platform_helper.commands.config import validate
 
 
@@ -95,3 +101,74 @@ Recommendations:
 """
         in result.output
     )
+
+
+@patch("dbt_platform_helper.commands.config.retrieve_aws_accounts")
+@patch("dbt_platform_helper.commands.config.get_access_token")
+@patch("dbt_platform_helper.commands.config.webbrowser.open")
+@patch("dbt_platform_helper.commands.config.get_device_code")
+@patch("dbt_platform_helper.commands.config.create_oidc_application")
+@patch("boto3.client")
+def test_aws(
+    mock_boto3_client,
+    mock_create_oidc_application,
+    mock_get_device_code,
+    mock_webbrowser_open,
+    mock_get_access_token,
+    mock_retrieve_aws_accounts,
+    fakefs,
+):
+    client_return_value = Mock()
+    mock_boto3_client.return_value = client_return_value
+    mock_retrieve_aws_accounts.return_value = [
+        {"accountName": "test-account", "accountId": "abc123"}
+    ]
+    mock_oidc_app = Mock()
+    mock_create_oidc_application.return_value = mock_oidc_app
+    device_code_url_return_value = Mock()
+    device_code_code_return_value = Mock()
+    mock_get_device_code.return_value = (
+        device_code_url_return_value,
+        device_code_code_return_value,
+    )
+    access_code_return_value = Mock()
+    mock_get_access_token.return_value = access_code_return_value
+    config_file_path = os.path.expanduser("~/.aws/config")
+    os.chmod(config_file_path, 0o777)
+
+    result = CliRunner().invoke(aws, input="y\ny\n")
+
+    expected_calls = [
+        call("sso-oidc", region_name="eu-west-2"),
+        call("sso", region_name="eu-west-2"),
+    ]
+    mock_boto3_client.assert_has_calls(expected_calls)
+    mock_create_oidc_application.assert_called_once_with(client_return_value)
+    mock_get_device_code.assert_called_once_with(
+        client_return_value, mock_oidc_app, "https://uktrade.awsapps.com/start"
+    )
+    mock_webbrowser_open.assert_called_once_with(device_code_url_return_value)
+    mock_get_access_token.assert_called_once_with(
+        device_code_code_return_value, client_return_value, mock_oidc_app
+    )
+    mock_retrieve_aws_accounts.assert_called_once_with(
+        client_return_value, access_code_return_value
+    )
+
+    expected_config = (
+        "\n#\n"
+        "# uktrade\n"
+        "#\n\n"
+        "[sso-session uktrade]\n"
+        "sso_start_url = https://uktrade.awsapps.com/start#/\n"
+        "sso_region = eu-west-2\n"
+        "sso_registration_scopes = sso:account:access\n"
+        "[profile test-account]\n"
+        "sso_session = uktrade\n"
+        "sso_account_id = abc123\n"
+        "sso_role_name = AdministratorAccess\n"
+        "region = eu-west-2\n"
+        "output = json\n"
+    )
+    with open(os.path.expanduser("~/.aws/config")) as f:
+        assert f.read() == expected_config
