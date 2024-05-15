@@ -142,11 +142,18 @@ def _validate_and_normalise_config(config_file):
 
         initial = _lookup_plan(addon_type, default)
 
-        if not set(environments.keys()).issubset(set(env_names)):
+        missing_envs = set(environments.keys()) - set(env_names)
+        if missing_envs:
             click.echo(
                 click.style(
-                    f"Environment keys listed in {addon_name} do not match ./copilot/environments",
+                    f"Environment keys listed in {addon_name} do not match those defined in ./copilot/environments.",
                     fg="red",
+                )
+            ),
+            click.echo(
+                click.style(
+                    f"  Missing environments: {', '.join(sorted(missing_envs))}",
+                    fg="white",
                 ),
             )
             exit(1)

@@ -44,7 +44,7 @@ aurora:
   type: aurora-postgres
   version: 14.4
   environments:
-    default:
+    "*":
       min_capacity: 0.5
       max_capacity: 8
 """
@@ -759,6 +759,8 @@ invalid-environment:
     environments:
         doesnotexist:
             bucket_name: test-bucket
+        alsodoesnotexist:
+            bucket_name: test-bucket-2
 """,
         )
 
@@ -773,9 +775,10 @@ invalid-environment:
 
         assert result.exit_code == 1
         assert (
-            "Environment keys listed in invalid-environment do not match ./copilot/environments"
+            "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
             in result.output
         )
+        assert "Missing environments: alsodoesnotexist, doesnotexist" in result.output
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
