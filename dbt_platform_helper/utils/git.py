@@ -13,6 +13,6 @@ def extract_repository_name(repository_url):
     if not repository_url:
         return
 
-    _, repo = repository_url.split("@")[1].split(":")
+    repo = re.search(r"[^/:]*?/[^/]*?\.git\Z", repository_url).group()
 
     return re.sub(r".git$", "", repo)
