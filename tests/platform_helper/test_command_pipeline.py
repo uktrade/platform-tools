@@ -264,7 +264,8 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
     setup_fixtures(fakefs)
 
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    del pipelines["accounts"]
+    del pipelines["environments"][0]["accounts"]
+    del pipelines["environments"][1]["accounts"]
     Path("pipelines.yml").write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
