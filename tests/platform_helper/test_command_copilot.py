@@ -657,9 +657,8 @@ class TestMakeAddonCommand:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nCannot find copilot directory. Run this command in the root of the deployment "
-            "repository.\n"
+            "Cannot find copilot directory. Run this command in the root of the deployment repository."
+            in result.output
         )
 
     @patch(
@@ -674,10 +673,7 @@ class TestMakeAddonCommand:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nNo services found in ./copilot/; exiting\n"
-        )
+        assert "No services found in ./copilot/; exiting" in result.output
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
@@ -876,10 +872,7 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nNo environments found in ./copilot/environments; exiting\n"
-        )
+        assert "No environments found in ./copilot/environments; exiting" in result.output
 
     @pytest.mark.parametrize(
         "addon_file_contents, has_postgres_addon",

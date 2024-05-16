@@ -120,6 +120,7 @@ def _validate_and_normalise_config(config_file):
         exit(1)
 
     normalised_config = {}
+    config_has_errors = False
     for addon_name, addon_config in config.items():
         addon_type = addon_config["type"]
         normalised_config[addon_name] = copy.deepcopy(addon_config)
@@ -135,7 +136,7 @@ def _validate_and_normalise_config(config_file):
                         fg="red",
                     ),
                 )
-                exit(1)
+                config_has_errors = True
 
         environments = normalised_config[addon_name].pop("environments", {})
         default = environments.pop("*", environments.pop("default", {}))
@@ -156,7 +157,10 @@ def _validate_and_normalise_config(config_file):
                     fg="white",
                 ),
             )
-            exit(1)
+            config_has_errors = True
+
+        if config_has_errors:
+            continue
 
         normalised_environments = {}
 
@@ -169,6 +173,9 @@ def _validate_and_normalise_config(config_file):
             )
 
         normalised_config[addon_name]["environments"] = normalised_environments
+
+    if config_has_errors:
+        exit(1)
 
     return normalised_config
 
@@ -223,14 +230,9 @@ def _get_s3_kms_alias_arns(session, application_name, extension_name):
     return arns
 
 
-@copilot.command(deprecated=True, hidden=True)
+@copilot.command()
 def make_addons():
-    """
-    WARNING: this command should not be used as a stand-alone.
-    Use `platform-helper generate` instead.
-
-    Generate addons CloudFormation for each environment.
-    """
+    """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
     ensure_cwd_is_repo_root()
     is_terraform = is_terraform_project()
