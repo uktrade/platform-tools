@@ -234,10 +234,19 @@ BOOTSTRAP_SCHEMA = Schema(
 
 PIPELINES_SCHEMA = Schema(
     {
-        Optional("accounts"): list[str],
         Optional("environments"): [
             {
                 "name": str,
+                Optional("accounts"): {
+                    "deploy": {
+                        "name": str,
+                        "id": str,
+                    },
+                    "dns": {
+                        "name": str,
+                        "id": str,
+                    },
+                },
                 Optional("requires_approval"): bool,
             },
         ],

@@ -31,6 +31,8 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 echo -e "\nRun platform-helper generate"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
+# Todo: Add comemnts to cover the rest of the current process
+
 # echo -e "\nRun copilot env init"
 # copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 
