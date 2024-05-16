@@ -31,15 +31,23 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 echo -e "\nRun platform-helper generate"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
-# Todo: Add comemnts to cover the rest of the current process
+# echo -e "\nDeploy environment pipeline"
+# Command TBC
 
 # echo -e "\nRun copilot env init"
 # copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 
-# deploy pipelines
+# echo -e "\nDeploy codebase pipeline"
+# copilot pipeline deploy
 
-# deploy env (ideally with pipelines)
+# echo -e "\nDeploy environment"
+# (ideally with new pipeline, but for now)
+# copilot env deploy
+# cd terraform/<environment> && terraform init && terraform apply
 
-# deploy services (ideally with pipelines)
+# deploy services (ideally with pipeline)
+# platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> --commit <commit_hash>
 
 # run smoke tests
+# From the demodjango codebase, run...
+# ./smoke_tests.sh <environment>
