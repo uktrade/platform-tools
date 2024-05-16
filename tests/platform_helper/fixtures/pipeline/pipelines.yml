@@ -1,10 +1,20 @@
-accounts:
-  - 111111111
-  - 222222222
-
 environments:
   - name: dev
+    accounts:
+      deploy:
+        name: "dev-deploy-account"
+        id: "1111111111"
+      dns:
+        name: "dev-dns-account"
+        id: "2222222222"
   - name: prod
+    accounts:
+      deploy:
+        name: "prod-deploy-account"
+        id: "3333333333"
+      dns:
+        name: "prod-dns-account"
+        id: "4444444444"
     requires_approval: true
 
 codebases:
