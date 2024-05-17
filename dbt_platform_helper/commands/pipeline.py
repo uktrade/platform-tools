@@ -28,13 +28,9 @@ def pipeline():
     check_platform_helper_version_needs_update()
 
 
-@pipeline.command(deprecated=True, hidden=True)
+@pipeline.command()
 def generate():
-    """
-    WARNING: this command should not be used as a stand-alone.
-    Use `platform-helper generate` instead.
-
-    Given a pipelines.yml file, generate environment and service deployment
+    """Given a pipelines.yml file, generate environment and service deployment
     pipelines."""
     templates = setup_templates()
 
