@@ -19,6 +19,7 @@
 - [platform-helper conduit](#platform-helper-conduit)
 - [platform-helper config](#platform-helper-config)
 - [platform-helper config validate](#platform-helper-config-validate)
+- [platform-helper config aws](#platform-helper-config-aws)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
 - [platform-helper domain](#platform-helper-domain)
@@ -455,7 +456,7 @@ platform-helper conduit <addon_name>
 ## Usage
 
 ```
-platform-helper config validate 
+platform-helper config (validate|aws) 
 ```
 
 ## Options
@@ -465,6 +466,7 @@ platform-helper config validate
 
 ## Commands
 
+- [`aws` ↪](#platform-helper-config-aws)
 - [`validate` ↪](#platform-helper-config-validate)
 
 # platform-helper config validate
@@ -480,6 +482,29 @@ platform-helper config validate
 ```
 
 ## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper config aws
+
+[↩ Parent](#platform-helper-config)
+
+    Writes a local config file containing all the AWS profiles to which the
+    logged in user has access.
+
+    If no `--file-path` is specified, defaults to `~/.aws/config`.
+
+## Usage
+
+```
+platform-helper config aws [--file-path <file_path>] 
+```
+
+## Options
+
+- `--file-path
+-fp <text>` _Defaults to ~/.aws/config._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
