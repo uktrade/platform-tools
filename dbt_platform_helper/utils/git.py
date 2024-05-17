@@ -13,6 +13,9 @@ def extract_repository_name(repository_url):
     if not repository_url:
         return
 
-    repo = re.search(r"[^/:]*?/[^/]*?\.git\Z", repository_url).group()
+    if repository_url.startswith("https"):
+        repo = repository_url.split("//")[1].split("/", maxsplit=1)[1]
+    else:
+        repo = repository_url.split(":")[1]
 
     return re.sub(r".git$", "", repo)
