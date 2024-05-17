@@ -532,9 +532,6 @@ platform-helper copilot make-addons
 
 [↩ Parent](#platform-helper-copilot)
 
-    WARNING: this command should not be used as a stand-alone.
-    Use `platform-helper generate` instead.
-
     Generate addons CloudFormation for each environment.
 
 ## Usage
@@ -750,9 +747,6 @@ platform-helper pipeline generate
 # platform-helper pipeline generate
 
 [↩ Parent](#platform-helper-pipeline)
-
-    WARNING: this command should not be used as a stand-alone.
-    Use `platform-helper generate` instead.
 
     Given a pipelines.yml file, generate environment and service deployment
     pipelines.
