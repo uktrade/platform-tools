@@ -278,6 +278,9 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
         assert Path(file).exists(), f"File {file} does not exist"
 
 
+# Todo: Add test to validate that environment pipeline config is not generated for Terraform based applications
+
+
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
     def get_yaml(content):
         return yaml.safe_load(content)
