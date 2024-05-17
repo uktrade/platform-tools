@@ -6,11 +6,11 @@ def git_remote():
     git_repo = subprocess.run(
         ["git", "remote", "get-url", "origin"], capture_output=True, text=True
     ).stdout.strip()
+    return extract_repository_name(git_repo)
 
-    if not git_repo:
+
+def extract_repository_name(repository_url):
+    if not repository_url:
         return
 
-    # Temporary hacked in line from Ben's branch to enable work in this branch to continue
-    repo = re.search(r"[^/:]*?/[^/]*?\.git\Z", git_repo).group()
-
-    return re.sub(r".git$", "", repo)
+    return re.search(r"([^/:]*/[^/]*)\.git", repository_url).group(1)
