@@ -157,7 +157,7 @@ PIPELINES_SCHEMA = Schema(
         Optional("environments"): [
             {
                 "name": str,
-                Optional("accounts"): {
+                "accounts": {
                     "deploy": {
                         "name": str,
                         "id": str,

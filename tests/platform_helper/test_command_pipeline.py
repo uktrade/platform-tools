@@ -253,32 +253,6 @@ def test_pipeline_generate_with_no_workspace_file_fails_with_message(fakefs):
     assert "Cannot get application name. No copilot/.workspace file found" in result.output
 
 
-@freeze_time("2023-08-22 16:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
-    git_remote, get_aws_command_or_abort, fakefs
-):
-    mock_codestar_connections_boto_client(get_aws_command_or_abort, ["test-app"])
-    setup_fixtures(fakefs)
-
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    del pipelines["environments"][0]["accounts"]
-    del pipelines["environments"][1]["accounts"]
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
-
-    CliRunner().invoke(generate)
-
-    environments_files = setup_output_file_paths_for_environments()
-    for file in environments_files:
-        assert Path(file).exists()
-
-    codebase_files = setup_output_file_paths_for_codebases()
-    for file in codebase_files:
-        assert Path(file).exists(), f"File {file} does not exist"
-
-
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
     def get_yaml(content):
         return yaml.safe_load(content)
