@@ -746,17 +746,25 @@ example-invalid-file:
         new=Mock(return_value=False),
     )
     @mock_aws
-    def test_exit_with_error_if_invalid_environments(self, fakefs):
+    def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             EXTENSION_CONFIG_FILENAME,
             contents="""
 invalid-environment:
     type: s3-policy
+    services:
+        - does-not-exist
+        - also-does-not-exist
     environments:
         doesnotexist:
             bucket_name: test-bucket
         alsodoesnotexist:
             bucket_name: test-bucket-2
+invalid-environment-2:
+    type: s3
+    environments:
+        andanotherdoesnotexist:
+            bucket_name: test-bucket
 """,
         )
 
@@ -775,6 +783,15 @@ invalid-environment:
             in result.output
         )
         assert "Missing environments: alsodoesnotexist, doesnotexist" in result.output
+        assert (
+            "Environment keys listed in invalid-environment-2 do not match those defined in ./copilot/environments"
+            in result.output
+        )
+        assert "Missing environments: andanotherdoesnotexist" in result.output
+        assert (
+            "Services listed in invalid-environment.services do not exist in ./copilot/"
+            in result.output
+        )
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
