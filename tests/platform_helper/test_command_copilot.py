@@ -44,7 +44,7 @@ aurora:
   type: aurora-postgres
   version: 14.4
   environments:
-    default:
+    "*":
       min_capacity: 0.5
       max_capacity: 8
 """
@@ -657,9 +657,8 @@ class TestMakeAddonCommand:
 
         assert result.exit_code == 1
         assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nCannot find copilot directory. Run this command in the root of the deployment "
-            "repository.\n"
+            "Cannot find copilot directory. Run this command in the root of the deployment repository."
+            in result.output
         )
 
     @patch(
@@ -674,10 +673,7 @@ class TestMakeAddonCommand:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nNo services found in ./copilot/; exiting\n"
-        )
+        assert "No services found in ./copilot/; exiting" in result.output
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
@@ -750,14 +746,24 @@ example-invalid-file:
         new=Mock(return_value=False),
     )
     @mock_aws
-    def test_exit_with_error_if_invalid_environments(self, fakefs):
+    def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             EXTENSION_CONFIG_FILENAME,
             contents="""
 invalid-environment:
     type: s3-policy
+    services:
+        - does-not-exist
+        - also-does-not-exist
     environments:
         doesnotexist:
+            bucket_name: test-bucket
+        alsodoesnotexist:
+            bucket_name: test-bucket-2
+invalid-environment-2:
+    type: s3
+    environments:
+        andanotherdoesnotexist:
             bucket_name: test-bucket
 """,
         )
@@ -773,7 +779,17 @@ invalid-environment:
 
         assert result.exit_code == 1
         assert (
-            "Environment keys listed in invalid-environment do not match ./copilot/environments"
+            "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
+            in result.output
+        )
+        assert "Missing environments: alsodoesnotexist, doesnotexist" in result.output
+        assert (
+            "Environment keys listed in invalid-environment-2 do not match those defined in ./copilot/environments"
+            in result.output
+        )
+        assert "Missing environments: andanotherdoesnotexist" in result.output
+        assert (
+            "Services listed in invalid-environment.services do not exist in ./copilot/"
             in result.output
         )
 
@@ -873,10 +889,7 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert (
-            result.output
-            == "DeprecationWarning: The command 'make-addons' is deprecated.\nNo environments found in ./copilot/environments; exiting\n"
-        )
+        assert "No environments found in ./copilot/environments; exiting" in result.output
 
     @pytest.mark.parametrize(
         "addon_file_contents, has_postgres_addon",
