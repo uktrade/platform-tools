@@ -154,19 +154,10 @@ seconds_validator = validate_string(r"^\d+s$")
 
 PIPELINES_SCHEMA = Schema(
     {
+        Optional("accounts"): list[str],
         Optional("environments"): [
             {
                 "name": str,
-                "accounts": {
-                    "deploy": {
-                        "name": str,
-                        "id": str,
-                    },
-                    "dns": {
-                        "name": str,
-                        "id": str,
-                    },
-                },
                 Optional("requires_approval"): bool,
             },
         ],
