@@ -50,7 +50,7 @@ def generate():
 
     codestar_connection_arn = get_codestar_connection_arn(app_name)
     if codestar_connection_arn is None:
-        abort_with_error("There is no CodeStar Connection to use")
+        abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
     if "environments" in pipeline_config:
         _generate_environments_pipeline(

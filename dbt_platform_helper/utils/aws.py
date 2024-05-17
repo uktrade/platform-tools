@@ -193,11 +193,9 @@ def check_response(response):
 
 
 def get_codestar_connection_arn(app_name):
-    print("In get_codestar_connection_arn()")
     session = get_aws_session_or_abort()
     response = session.client("codestar-connections").list_connections()
-    print(response)
-    print(response["Connections"])
+
     for connection in response["Connections"]:
         if connection["ConnectionName"] == app_name:
             return connection["ConnectionArn"]

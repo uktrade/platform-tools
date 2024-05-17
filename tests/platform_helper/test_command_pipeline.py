@@ -194,7 +194,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: There is no CodeStar Connection to use" in result.output
+    assert 'Error: There is no CodeStar Connection named "test-app" to use' in result.output
 
 
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value=None)
