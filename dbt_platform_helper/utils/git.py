@@ -1,3 +1,21 @@
+# import re
+# import subprocess
+#
+#
+# def git_remote():
+#     git_repo = subprocess.run(
+#         ["git", "remote", "get-url", "origin"], capture_output=True, text=True
+#     ).stdout.strip()
+#
+#     if not git_repo:
+#         return
+#
+#     _, repo = git_repo.split("@")[1].split(":")
+#
+#     return re.sub(r".git$", "", repo)
+
+# Todo: This will go away once Ben's work is merged
+
 import re
 import subprocess
 
@@ -6,10 +24,13 @@ def git_remote():
     git_repo = subprocess.run(
         ["git", "remote", "get-url", "origin"], capture_output=True, text=True
     ).stdout.strip()
+    return extract_repository_name(git_repo)
 
-    if not git_repo:
+
+def extract_repository_name(repository_url):
+    if not repository_url:
         return
 
-    _, repo = git_repo.split("@")[1].split(":")
+    repo = re.search(r"[^/:]*?/[^/]*?\.git\Z", repository_url).group()
 
     return re.sub(r".git$", "", repo)
