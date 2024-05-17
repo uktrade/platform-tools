@@ -13,4 +13,4 @@ def extract_repository_name(repository_url):
     if not repository_url:
         return
 
-    return re.search(r"([^/:]+?/[^/]+?)\.git", repository_url).group(1)
+    return re.search(r"([^/:]*/[^/]*)\.git", repository_url).group(1)
