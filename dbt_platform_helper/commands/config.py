@@ -1,6 +1,10 @@
+import os
+import webbrowser
 from pathlib import Path
 from typing import Dict
 
+import boto3
+import botocore
 import click
 from prettytable import PrettyTable
 
@@ -23,6 +27,19 @@ RECOMMENDATIONS = {
     ),
     "generic-tool-upgrade": "Upgrade {tool} to version {version}.",
 }
+
+SSO_START_URL = "https://uktrade.awsapps.com/start"
+
+AWS_CONFIG = """
+#
+# uktrade
+#
+
+[sso-session uktrade]
+sso_start_url = https://uktrade.awsapps.com/start#/
+sso_region = eu-west-2
+sso_registration_scopes = sso:account:access
+"""
 
 
 @click.group(cls=ClickDocOptGroup)
@@ -225,3 +242,93 @@ def render_recommendations(recommendations: Dict[str, str]):
                 click.secho(f"    {recommendations.get(f'{name}-note')}")
 
         click.secho()
+
+
+@config.command()
+@click.option("--file-path", "-fp", default="~/.aws/config")
+def aws(file_path):
+    """
+    Writes a local config file containing all the AWS profiles to which the
+    logged in user has access.
+
+    If no `--file-path` is specified, defaults to `~/.aws/config`.
+    """
+    sso_oidc_client = boto3.client("sso-oidc", region_name="eu-west-2")
+    sso_client = boto3.client("sso", region_name="eu-west-2")
+    oidc_app = create_oidc_application(sso_oidc_client)
+    verification_url, device_code = get_device_code(sso_oidc_client, oidc_app, SSO_START_URL)
+
+    if click.confirm(
+        "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?",
+        abort=True,
+    ):
+        webbrowser.open(verification_url)
+
+    if click.confirm("Have you completed the sign-in process in your browser?", abort=True):
+        access_token = get_access_token(device_code, sso_oidc_client, oidc_app)
+
+    aws_config_path = os.path.expanduser(file_path)
+
+    with open(aws_config_path, "w") as config_file:
+        config_file.write(AWS_CONFIG)
+
+        for account in retrieve_aws_accounts(sso_client, access_token):
+            config_file.write(f"[profile {account['accountName']}]\n")
+            config_file.write("sso_session = uktrade\n")
+            config_file.write(f"sso_account_id = {account['accountId']}\n")
+            config_file.write("sso_role_name = AdministratorAccess\n")
+            config_file.write("region = eu-west-2\n")
+            config_file.write("output = json\n")
+
+
+def create_oidc_application(sso_oidc_client):
+    print("Creating temporary AWS SSO OIDC application")
+    client = sso_oidc_client.register_client(
+        clientName="platform-helper",
+        clientType="public",
+    )
+    client_id = client.get("clientId")
+    client_secret = client.get("clientSecret")
+
+    return client_id, client_secret
+
+
+def get_device_code(sso_oidc_client, oidc_application, start_url):
+    print("Initiating device code flow")
+    authz = sso_oidc_client.start_device_authorization(
+        clientId=oidc_application[0],
+        clientSecret=oidc_application[1],
+        startUrl=start_url,
+    )
+    url = authz.get("verificationUriComplete")
+    deviceCode = authz.get("deviceCode")
+
+    return url, deviceCode
+
+
+def retrieve_aws_accounts(sso_client, aws_sso_token):
+    aws_accounts_response = sso_client.list_accounts(
+        accessToken=aws_sso_token,
+        maxResults=100,
+    )
+    if len(aws_accounts_response.get("accountList", [])) == 0:
+        raise RuntimeError("Unable to retrieve AWS SSO account list\n")
+    return aws_accounts_response.get("accountList")
+
+
+def get_access_token(device_code, sso_oidc_client, oidc_app):
+
+    try:
+        token_response = sso_oidc_client.create_token(
+            clientId=oidc_app[0],
+            clientSecret=oidc_app[1],
+            grantType="urn:ietf:params:oauth:grant-type:device_code",
+            deviceCode=device_code,
+        )
+
+        return token_response.get("accessToken")
+
+    except botocore.exceptions.ClientError as e:
+        breakpoint()
+        if e.response["Error"]["Code"] != "AuthorizationPendingException":
+            raise e
