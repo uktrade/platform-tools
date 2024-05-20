@@ -144,10 +144,12 @@ If found, it indicates that the new package version exists in PyPI.
 
 1. Work on a new branch
 2. Create a PR and have it reviewed
-3. On approval, merge to `main`
-4. A _release PR_ will automatically be created when changes are merged to main
+3. Once approved:
+   - If it is a breaking change, you must release any outstanding non breaking changes
+   - Merge to `main`
+5. A _release PR_ will automatically be created when changes are merged to main
    - The _release PR_ is updated with next version number and release notes based on the commits since the last release
-5. Merge the _release PR_ to create a draft GitHub release
-6. Ensure the release notes contain an upgrade path for any breaking changes
-7. Publish the GitHub release 
-8. Check PyPI for the new published version
+6. Merge the _release PR_ to create a draft GitHub release
+7. Ensure the release notes contain an upgrade path for any breaking changes
+8. Publish the GitHub release 
+9. Check PyPI for the new published version
