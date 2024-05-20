@@ -145,7 +145,7 @@ If found, it indicates that the new package version exists in PyPI.
 1. Work on a new branch
 2. Create a PR and have it reviewed
 3. Once approved:
-   - If it is a breaking change, you must release any outstanding non breaking changes
+   - If it is a breaking change, you must release any outstanding non breaking changes before merging
    - Merge to `main`
 5. A _release PR_ will automatically be created when changes are merged to main
    - The _release PR_ is updated with next version number and release notes based on the commits since the last release
