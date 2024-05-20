@@ -149,7 +149,7 @@ If found, it indicates that the new package version exists in PyPI.
    - Merge to `main`
 5. A _release PR_ will automatically be created when changes are merged to main
    - The _release PR_ is updated with next version number and release notes based on the commits since the last release
-6. Merge the _release PR_ to create a draft GitHub release
+6. Merge the _release PR_ to create a GitHub release
 7. Ensure the release notes contain an upgrade path for any breaking changes
 8. Publish the GitHub release 
 9. Check PyPI for the new published version
