@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 from yaml.parser import ParserError
 
+from dbt_platform_helper.commands.copilot import is_terraform_project
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -48,7 +49,7 @@ def generate():
     if codestar_connection_arn is None:
         abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
-    if "environments" in pipeline_config:
+    if not is_terraform_project() and "environments" in pipeline_config:
         _generate_environments_pipeline(
             app_name, codestar_connection_arn, git_repo, pipeline_config["environments"], templates
         )
