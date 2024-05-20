@@ -28,7 +28,7 @@ aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 
-echo -e "\nRun platform-helper generate"
+echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
 # echo -e "\nDeploy environment pipeline"
