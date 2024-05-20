@@ -151,5 +151,4 @@ If found, it indicates that the new package version exists in PyPI.
    - The _release PR_ is updated with next version number and release notes based on the commits since the last release
 6. Merge the _release PR_ to create a GitHub release
 7. Ensure the release notes contain an upgrade path for any breaking changes
-8. Publish the GitHub release 
-9. Check PyPI for the new published version
+8. Check PyPI for the new published version
