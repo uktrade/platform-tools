@@ -1,5 +1,24 @@
 # Changelog
 
+## [8.3.0](https://github.com/uktrade/platform-tools/compare/8.2.1...8.3.0) (2024-05-20)
+
+
+### Features
+
+* DBTP-933 Add option to Platform-helper to manage .aws/config file ([#428](https://github.com/uktrade/platform-tools/issues/428)) ([9b8e0a3](https://github.com/uktrade/platform-tools/commit/9b8e0a3356afb3b2deed7b490ce607ca2606341b))
+* DBTP-969 Allow HTTPS GitHub clones ([#432](https://github.com/uktrade/platform-tools/issues/432)) ([0b1085d](https://github.com/uktrade/platform-tools/commit/0b1085d92c859493b3a0e3ecc722282245c35e84))
+* Validation usability improvements ([#430](https://github.com/uktrade/platform-tools/issues/430)) ([ee80ed0](https://github.com/uktrade/platform-tools/commit/ee80ed04f3048b54d83da99ee35e5364cb07ff25))
+
+
+### Bug Fixes
+
+* DBTP-989 Make platform-helper generate skip generating AWS Copilot environment pipelines for Terraformed applications ([#431](https://github.com/uktrade/platform-tools/issues/431)) ([04b5092](https://github.com/uktrade/platform-tools/commit/04b509265ed5c4246e3fde15f1898f9c06ca528d))
+
+
+### Documentation
+
+* Mention releasing non-breaking changes before merging breaking changes ([#437](https://github.com/uktrade/platform-tools/issues/437)) ([bee47b6](https://github.com/uktrade/platform-tools/commit/bee47b6a4851e404faf170feb007a10b75b1bdb7))
+
 ## [8.2.1](https://github.com/uktrade/platform-tools/compare/8.2.0...8.2.1) (2024-05-07)
 
 
