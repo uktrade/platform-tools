@@ -154,10 +154,21 @@ seconds_validator = validate_string(r"^\d+s$")
 
 PIPELINES_SCHEMA = Schema(
     {
+        # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         Optional("accounts"): list[str],
         Optional("environments"): [
             {
                 "name": str,
+                Optional("accounts"): {
+                    "deploy": {
+                        "name": str,
+                        "id": str,
+                    },
+                    "dns": {
+                        "name": str,
+                        "id": str,
+                    },
+                },
                 Optional("requires_approval"): bool,
             },
         ],

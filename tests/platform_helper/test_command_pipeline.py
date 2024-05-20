@@ -42,13 +42,11 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_file_created_in_stdout(buildspec, result)
     assert_file_created_in_stdout(manifest, result)
     assert_file_created_in_stdout(cfn_patch, result)
-
     # Codebases
     output_files = setup_output_file_paths_for_codebases()
     assert_yaml_in_output_file_matches_expected(
         output_files[0], expected_files_dir / "application" / "manifest.yml"
     )
-
     for file in output_files:
         assert_file_created_in_stdout(file, result)
 
@@ -86,7 +84,6 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
     assert_file_created_in_stdout(buildspec, result)
     assert_file_created_in_stdout(manifest, result)
     assert_file_created_in_stdout(cfn_patch, result)
-
     # Codebases
     output_files = setup_output_file_paths_for_codebases()
     assert_yaml_in_output_file_matches_expected(
@@ -105,20 +102,14 @@ def test_pipeline_generate_with_only_environments_creates_the_pipeline_configura
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
     del pipelines["codebases"]
     Path("pipelines.yml").write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
-    environments_files = setup_output_file_paths_for_environments()
-    for file in environments_files:
-        assert Path(file).exists()
-
-    codebase_files = setup_output_file_paths_for_codebases()
-    for file in codebase_files:
-        assert not Path(file).exists()
+    assert_environment_pipeline_config_was_generated()
+    assert_codebase_pipeline_config_was_not_generated()
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -130,20 +121,31 @@ def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuratio
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
     del pipelines["environments"]
     Path("pipelines.yml").write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
-    environments_files = setup_output_file_paths_for_environments()
-    for file in environments_files:
-        assert not Path(file).exists()
+    assert_environment_pipeline_config_was_not_generated()
+    assert_codebase_pipeline_config_was_generated()
 
-    codebase_files = setup_output_file_paths_for_codebases()
-    for file in codebase_files:
-        assert Path(file).exists()
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_configuration(
+    git_remote, get_aws_session_or_abort, fakefs
+):
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-for-terraform.yml")
+    fakefs.create_dir("./terraform")
+
+    CliRunner().invoke(generate)
+
+    assert_environment_pipeline_config_was_not_generated()
+    assert_codebase_pipeline_config_was_generated()
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -172,7 +174,6 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
     setup_fixtures(fakefs)
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
-
     result = CliRunner().invoke(generate)
     for file in environments_files + codebases_files:
         assert_file_created_in_stdout(file, result)
@@ -194,7 +195,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Error: There is no CodeStar Connection to use" in result.output
+    assert 'Error: There is no CodeStar Connection named "test-app" to use' in result.output
 
 
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value=None)
@@ -262,20 +263,14 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
 ):
     mock_codestar_connections_boto_client(get_aws_command_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-
     pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
     del pipelines["accounts"]
     Path("pipelines.yml").write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
-    environments_files = setup_output_file_paths_for_environments()
-    for file in environments_files:
-        assert Path(file).exists()
-
-    codebase_files = setup_output_file_paths_for_codebases()
-    for file in codebase_files:
-        assert Path(file).exists(), f"File {file} does not exist"
+    assert_environment_pipeline_config_was_generated()
+    assert_codebase_pipeline_config_was_generated()
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
@@ -287,6 +282,26 @@ def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
 
     assert actual_content.partition("\n")[0].strip() == expected_content.partition("\n")[0].strip()
     assert get_yaml(actual_content) == get_yaml(expected_content)
+
+
+def assert_codebase_pipeline_config_was_generated():
+    for file in setup_output_file_paths_for_codebases():
+        assert Path(file).exists(), f"File {file} should exist"
+
+
+def assert_codebase_pipeline_config_was_not_generated():
+    for file in setup_output_file_paths_for_codebases():
+        assert not Path(file).exists(), f"File {file} should not exist"
+
+
+def assert_environment_pipeline_config_was_generated():
+    for file in setup_output_file_paths_for_environments():
+        assert Path(file).exists(), f"File {file} should exist"
+
+
+def assert_environment_pipeline_config_was_not_generated():
+    for file in setup_output_file_paths_for_environments():
+        assert not Path(file).exists(), f"File {file} should not exist"
 
 
 def setup_output_file_paths_for_environments():
