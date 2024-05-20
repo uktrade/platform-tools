@@ -148,6 +148,27 @@ def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuratio
 
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_configuration(
+    git_remote, get_aws_session_or_abort, fakefs
+):
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-for-terraform.yml")
+    fakefs.create_dir("./terraform")
+
+    CliRunner().invoke(generate)
+
+    environments_files = setup_output_file_paths_for_environments()
+    for file in environments_files:
+        assert not Path(file).exists()
+    codebase_files = setup_output_file_paths_for_codebases()
+    for file in codebase_files:
+        assert Path(file).exists()
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("boto3.client")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
@@ -276,9 +297,6 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
     codebase_files = setup_output_file_paths_for_codebases()
     for file in codebase_files:
         assert Path(file).exists(), f"File {file} does not exist"
-
-
-# Todo: Add test to validate that environment pipeline config is not generated for Terraform based applications
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
