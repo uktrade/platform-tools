@@ -11,7 +11,6 @@ from dbt_platform_helper.commands.pipeline import generate
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import assert_file_created_in_stdout
-from tests.platform_helper.conftest import assert_file_overwritten_in_stdout
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 
 
@@ -167,11 +166,12 @@ def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_overwrites_any_existing_config_files(
-    git_remote, get_aws_session_or_abort, fakefs
+def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones(
+    git_remote, get_aws_session_or_abort, fakefs, fs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
+    fs.create_file(FIXTURES_DIR / "unnecessary_file.yml")
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
     result = CliRunner().invoke(generate)
@@ -180,8 +180,12 @@ def test_pipeline_generate_overwrites_any_existing_config_files(
 
     result = CliRunner().invoke(generate)
 
+    assert "Deleting copilot/pipelines directory." in result.stdout
+
     for file in environments_files + codebases_files:
-        assert_file_overwritten_in_stdout(file, result)
+        assert_file_created_in_stdout(file, result)
+
+    assert not os.path.exists("copilot/pipelines/unnecessary_file.yml")
 
 
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
