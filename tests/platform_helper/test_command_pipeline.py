@@ -167,13 +167,11 @@ def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones(
-    git_remote, get_aws_session_or_abort, fakefs
+    git_remote, get_aws_session_or_abort, fakefs, fs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    fakefs.add_real_file(
-        FIXTURES_DIR / "unnecessary_file.yml", False, "copilot/pipelines/unnecessary_file.yml"
-    )
+    fs.create_file(FIXTURES_DIR / "unnecessary_file.yml")
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
     result = CliRunner().invoke(generate)
