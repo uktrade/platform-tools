@@ -449,6 +449,7 @@ ALB_SCHEMA = Schema(
                 Optional("domain_prefix"): str,
                 Optional("env_root"): str,
                 Optional("cdn_domains_list"): dict,
+                Optional("additional_address_list"): list,
             }
         },
     }
