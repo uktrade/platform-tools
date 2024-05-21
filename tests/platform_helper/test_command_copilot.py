@@ -1063,8 +1063,8 @@ invalid-entry:
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_aws
-    def test_validation_additional_address_list(self, fakefs):
-        """Testing."""
+    def test_alb_validation_additional_address_list(self, fakefs):
+        """ALB validation should allow additional address list (optional)"""
         fakefs.create_file(
             EXTENSION_CONFIG_FILENAME,
             contents="""
@@ -1091,6 +1091,52 @@ invalid-entry:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert "Wrong key 'additional_address_list'" not in result.output
+        assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
+    @mock_aws
+    def test_alb_validation_no_config_defined(self, fakefs):
+        """Prod should be allowed to be defined without a config specified."""
+        fakefs.create_file(
+            EXTENSION_CONFIG_FILENAME,
+            contents="""
+    alb:
+      type: alb
+      environments:
+        development:
+          cdn_domains_list: 
+            test.domain.uktrade.digital: "test.domain.uktrade.digital"
+          additional_address_list: ["another.domain"]
+        prod:
+          # tbd prod config
+    """,
+        )
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+
+        fakefs.create_file(
+            "./copilot/environments/development/manifest.yml",
+        )
+
+        fakefs.create_file(
+            "copilot/web/manifest.yml",
+            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
+        )
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert "Key 'prod' error" not in result.output
+        assert "None should be instance of 'dict'" not in result.output
         assert result.exit_code == 0
 
 
