@@ -1,5 +1,18 @@
 # Changelog
 
+## [8.4.0](https://github.com/uktrade/platform-tools/compare/8.3.0...8.4.0) (2024-05-22)
+
+
+### Features
+
+* Cleaning out pipelines config before regenerating ([#439](https://github.com/uktrade/platform-tools/issues/439)) ([421b8f9](https://github.com/uktrade/platform-tools/commit/421b8f9ceb22ee11d455d580589f08b67276c175))
+
+
+### Bug Fixes
+
+* DBTP-909 - Remove CloudWatch log resource policy ([#440](https://github.com/uktrade/platform-tools/issues/440)) ([0a3e167](https://github.com/uktrade/platform-tools/commit/0a3e167b79a243eeeb5a81a0bdc5d9d5129fd4c4))
+* Update get_s3_kms_alias_arns to check for environment name ([#442](https://github.com/uktrade/platform-tools/issues/442)) ([36e41e6](https://github.com/uktrade/platform-tools/commit/36e41e64293618ce0816a459a6fd7fa408abc3a9))
+
 ## [8.3.0](https://github.com/uktrade/platform-tools/compare/8.2.1...8.3.0) (2024-05-20)
 
 

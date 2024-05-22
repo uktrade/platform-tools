@@ -2,3 +2,6 @@
 - op: add
   path: /Resources/Cluster/Properties/ClusterName
   value: !Sub '${AppName}-${EnvironmentName}'
+
+- op: remove
+  path: /Resources/LogResourcePolicy
