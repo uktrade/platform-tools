@@ -1114,7 +1114,8 @@ invalid-entry:
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_aws
     def test_alb_validation_no_config_defined(self, fakefs, alb_file_content, addon_name):
-        """Prod should be allowed to be defined without a config specified."""
+        """Environments should be allowed to be defined without a config
+        specified."""
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(alb_file_content, fakefs)
 
