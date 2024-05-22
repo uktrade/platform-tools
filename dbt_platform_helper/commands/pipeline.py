@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from os import makedirs
 from pathlib import Path
+from shutil import rmtree
 
 import click
 from yaml.parser import ParserError
@@ -49,9 +50,20 @@ def generate():
     if codestar_connection_arn is None:
         abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
+    base_path = Path(".")
+    pipelines_dir = base_path / f"copilot/pipelines"
+
+    _clean_pipeline_config(pipelines_dir)
+
     if not is_terraform_project() and "environments" in pipeline_config:
         _generate_environments_pipeline(
-            app_name, codestar_connection_arn, git_repo, pipeline_config["environments"], templates
+            app_name,
+            codestar_connection_arn,
+            git_repo,
+            pipeline_config["environments"],
+            base_path,
+            pipelines_dir,
+            templates,
         )
 
     if "codebases" in pipeline_config:
@@ -59,8 +71,21 @@ def generate():
 
         for codebase in pipeline_config["codebases"]:
             _generate_codebase_pipeline(
-                account_id, app_name, codestar_connection_arn, git_repo, codebase, templates
+                account_id,
+                app_name,
+                codestar_connection_arn,
+                git_repo,
+                codebase,
+                base_path,
+                pipelines_dir,
+                templates,
             )
+
+
+def _clean_pipeline_config(pipelines_dir):
+    if pipelines_dir.exists():
+        click.echo("Deleting copilot/pipelines directory.")
+        rmtree(pipelines_dir)
 
 
 def _validate_pipelines_configuration(pipeline_config):
@@ -84,10 +109,15 @@ def _validate_pipelines_configuration(pipeline_config):
 
 
 def _generate_codebase_pipeline(
-    account_id, app_name, codestar_connection_arn, git_repo, codebase, templates
+    account_id,
+    app_name,
+    codestar_connection_arn,
+    git_repo,
+    codebase,
+    base_path,
+    pipelines_dir,
+    templates,
 ):
-    base_path = Path(".")
-    pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
     environments = []
     for pipelines in codebase["pipelines"]:
@@ -123,10 +153,8 @@ def _generate_codebase_pipeline(
 
 
 def _generate_environments_pipeline(
-    app_name, codestar_connection_arn, git_repo, configuration, templates
+    app_name, codestar_connection_arn, git_repo, configuration, base_path, pipelines_dir, templates
 ):
-    base_path = Path(".")
-    pipelines_dir = base_path / f"copilot/pipelines"
     makedirs(pipelines_dir / "environments/overrides", exist_ok=True)
 
     template_data = {
