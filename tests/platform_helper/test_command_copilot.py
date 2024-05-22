@@ -1118,7 +1118,7 @@ invalid-entry:
           cdn_domains_list: 
             test.domain.uktrade.digital: "domain.uktrade.digital"
         development:
-         # empty config
+          # empty config
     """,
         )
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
