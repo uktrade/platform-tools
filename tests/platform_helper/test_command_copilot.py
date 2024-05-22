@@ -69,6 +69,18 @@ s3:
       bucket_name: my-bucket-dev
 """
 
+ALB_CONFIG_CONTENTS = """
+alb:
+  type: alb
+  environments:
+    default:
+      cdn_domains_list: 
+        test.domain.uktrade.digital: "domain.uktrade.digital"
+      additional_address_list: ["another.domain"]
+    development:
+      # empty config
+"""
+
 WEB_SERVICE_CONTENTS = """
 name: web
 type: Load Balanced Web Service
@@ -1050,6 +1062,12 @@ invalid-entry:
 
         assert result.exit_code == 0
 
+    @pytest.mark.parametrize(
+        "alb_file_content, addon_name",
+        [
+            ([ALB_CONFIG_CONTENTS], "alb"),
+        ],
+    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
@@ -1063,36 +1081,25 @@ invalid-entry:
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_aws
-    def test_alb_validation_additional_address_list(self, fakefs):
+    def test_alb_validation_additional_address_list(self, fakefs, alb_file_content, addon_name):
         """ALB validation should allow additional address list (optional)"""
-        fakefs.create_file(
-            EXTENSION_CONFIG_FILENAME,
-            contents="""
-    alb:
-      type: alb
-      environments:
-        development:
-          cdn_domains_list: 
-            test.domain.uktrade.digital: "domain.uktrade.digital"
-          additional_address_list: ["another.domain"]
-    """,
-        )
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
-
-        fakefs.create_file(
-            "./copilot/environments/development/manifest.yml",
-        )
-
-        fakefs.create_file(
-            "copilot/web/manifest.yml",
-            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
-        )
+        create_test_manifests(alb_file_content, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert "Wrong key 'additional_address_list'" not in result.output
         assert result.exit_code == 0
+        assert ">>>>>>>>> alb" in result.output
+        extensions_contents = Path("/extensions.yml").read_text()
+        assert ALB_CONFIG_CONTENTS in extensions_contents
 
+    @pytest.mark.parametrize(
+        "alb_file_content, addon_name",
+        [
+            ([ALB_CONFIG_CONTENTS], "alb"),
+        ],
+    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
@@ -1106,37 +1113,19 @@ invalid-entry:
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_aws
-    def test_alb_validation_no_config_defined(self, fakefs):
+    def test_alb_validation_no_config_defined(self, fakefs, alb_file_content, addon_name):
         """Prod should be allowed to be defined without a config specified."""
-        fakefs.create_file(
-            EXTENSION_CONFIG_FILENAME,
-            contents="""
-    alb:
-      type: alb
-      environments:
-        default:
-          cdn_domains_list: 
-            test.domain.uktrade.digital: "domain.uktrade.digital"
-        development:
-          # empty config
-    """,
-        )
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
-
-        fakefs.create_file(
-            "./copilot/environments/development/manifest.yml",
-        )
-
-        fakefs.create_file(
-            "copilot/web/manifest.yml",
-            contents=" ".join([yaml.dump(yaml.safe_load(WEB_SERVICE_CONTENTS))]),
-        )
+        create_test_manifests(alb_file_content, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert "Key 'development' error" not in result.output
         assert "None should be instance of 'dict'" not in result.output
         assert result.exit_code == 0
+        assert ">>>>>>>>> alb" in result.output
+        extensions_contents = Path("/extensions.yml").read_text()
+        assert ALB_CONFIG_CONTENTS in extensions_contents
 
 
 @pytest.mark.parametrize(
