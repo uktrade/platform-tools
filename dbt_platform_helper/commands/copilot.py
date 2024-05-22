@@ -213,17 +213,19 @@ def is_terraform_project() -> bool:
 
 def _get_s3_kms_alias_arns(session, application_name, config):
     application = load_application(application_name, session)
-
+    kms_client = session.client("kms")
     arns = {}
-    for environment_name, environment in application.environments.items():
-        if environment_name in config:
-            bucket_name = config[environment_name]["bucket_name"]
-            client = environment.session.client("kms")
-            alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
+
+    for environment_name in application.environments:
+        if environment_name not in config:
+            continue
+
+        bucket_name = config[environment_name]["bucket_name"]
+        alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
         try:
-            response = client.describe_key(KeyId=alias_name)
-        except client.exceptions.NotFoundException:
+            response = kms_client.describe_key(KeyId=alias_name)
+        except kms_client.exceptions.NotFoundException:
             pass
         else:
             arns[environment_name] = response["KeyMetadata"]["Arn"]
