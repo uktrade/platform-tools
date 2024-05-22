@@ -1134,7 +1134,7 @@ invalid-entry:
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
-        assert "Key 'prod' error" not in result.output
+        assert "Key 'development' error" not in result.output
         assert "None should be instance of 'dict'" not in result.output
         assert result.exit_code == 0
 
