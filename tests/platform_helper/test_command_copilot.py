@@ -1116,7 +1116,7 @@ invalid-entry:
       environments:
         default:
           cdn_domains_list: 
-            test.domain.uktrade.digital: "test.domain.uktrade.digital"
+            test.domain.uktrade.digital: "domain.uktrade.digital"
         development:
          # empty config
     """,
