@@ -445,12 +445,15 @@ ALB_SCHEMA = Schema(
     {
         "type": "alb",
         Optional("environments"): {
-            ENV_NAME: {
-                Optional("domain_prefix"): str,
-                Optional("env_root"): str,
-                Optional("cdn_domains_list"): dict,
-                Optional("additional_address_list"): list,
-            }
+            ENV_NAME: Or(
+                {
+                    Optional("domain_prefix"): str,
+                    Optional("env_root"): str,
+                    Optional("cdn_domains_list"): dict,
+                    Optional("additional_address_list"): list,
+                },
+                None,
+            )
         },
     }
 )

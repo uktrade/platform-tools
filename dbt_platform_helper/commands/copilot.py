@@ -168,6 +168,9 @@ def _validate_and_normalise_config(config_file):
             normalised_environments[env] = _normalise_keys(initial)
 
         for env_name, env_config in environments.items():
+            env_config = (
+                {} if env_config is None else env_config
+            )  # ensures an env config can be nullable
             normalised_environments[env_name].update(
                 _lookup_plan(addon_type, _normalise_keys(env_config))
             )

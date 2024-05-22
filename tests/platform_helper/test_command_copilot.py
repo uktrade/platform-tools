@@ -1114,12 +1114,11 @@ invalid-entry:
     alb:
       type: alb
       environments:
-        development:
+        default:
           cdn_domains_list: 
             test.domain.uktrade.digital: "test.domain.uktrade.digital"
-          additional_address_list: ["another.domain"]
-        prod:
-          # tbd prod config
+        development:
+         # empty config
     """,
         )
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
