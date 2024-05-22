@@ -1073,7 +1073,7 @@ invalid-entry:
       environments:
         development:
           cdn_domains_list: 
-            test.domain.uktrade.digital: "test.domain.uktrade.digital"
+            test.domain.uktrade.digital: "domain.uktrade.digital"
           additional_address_list: ["another.domain"]
     """,
         )
