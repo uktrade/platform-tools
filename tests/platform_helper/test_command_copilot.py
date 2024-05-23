@@ -1050,6 +1050,45 @@ invalid-entry:
 
         assert result.exit_code == 0
 
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
+    @mock_aws
+    def test_alb_validation(self, fakefs):
+        """
+        ALB validation should:
+          - validate additional address list (optional)
+          - allow environment with empty config
+        """
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+        alb_file_content = """
+alb:
+  type: alb
+  environments:
+    default:
+      cdn_domains_list: 
+        test.domain.uktrade.digital: "domain.uktrade.digital"
+      additional_address_list: ["another.domain"]
+    development:
+      # empty to verify it can handle an environment with no config
+"""
+        create_test_manifests([alb_file_content], fakefs)
+
+        result = CliRunner().invoke(copilot, ["make-addons"])
+
+        assert ">>>>>>>>> alb" in result.output
+        extensions_contents = Path("/extensions.yml").read_text()
+        assert alb_file_content in extensions_contents
+
 
 @pytest.mark.parametrize(
     "service_type, expected",
