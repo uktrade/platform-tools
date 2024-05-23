@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.4.1](https://github.com/uktrade/platform-tools/compare/8.4.0...8.4.1) (2024-05-23)
+
+
+### Bug Fixes
+
+* platform-helper generate ALB bugfixes ([#438](https://github.com/uktrade/platform-tools/issues/438)) ([3ba7471](https://github.com/uktrade/platform-tools/commit/3ba747110ec080d736344d279b3130b6fba08ec4))
+
 ## [8.4.0](https://github.com/uktrade/platform-tools/compare/8.3.0...8.4.0) (2024-05-22)
 
 
