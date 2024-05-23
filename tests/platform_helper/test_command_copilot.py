@@ -69,18 +69,6 @@ s3:
       bucket_name: my-bucket-dev
 """
 
-ALB_CONFIG_CONTENTS = """
-alb:
-  type: alb
-  environments:
-    default:
-      cdn_domains_list: 
-        test.domain.uktrade.digital: "domain.uktrade.digital"
-      additional_address_list: ["another.domain"]
-    development:
-      # empty config
-"""
-
 WEB_SERVICE_CONTENTS = """
 name: web
 type: Load Balanced Web Service
@@ -1076,7 +1064,11 @@ invalid-entry:
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
     @mock_aws
     def test_alb_validation(self, fakefs):
-        """ALB validation should allow additional address list (optional)"""
+        """
+        ALB validation should:
+          - validate additional address list (optional)
+          - allow environment with empty config
+        """
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         alb_file_content = """
 alb:
@@ -1089,13 +1081,13 @@ alb:
     development:
       # empty to verify it can handle an environment with no config
 """
-        create_test_manifests(alb_file_content, fakefs)
+        create_test_manifests([alb_file_content], fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert ">>>>>>>>> alb" in result.output
         extensions_contents = Path("/extensions.yml").read_text()
-        assert ALB_CONFIG_CONTENTS in extensions_contents
+        assert alb_file_content in extensions_contents
 
 
 @pytest.mark.parametrize(
