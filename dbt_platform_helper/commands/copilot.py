@@ -213,6 +213,7 @@ def is_terraform_project() -> bool:
 
 def _get_s3_kms_alias_arns(session, application_name, config):
     application = load_application(application_name, session)
+    # create kms client
     kms_client = session.client("kms")
     arns = {}
 
