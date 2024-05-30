@@ -76,7 +76,7 @@ class TestNotify(unittest.TestCase):
         )
         self.assertEqual(actual_elements[2].text, f"<{get_build_url(build_arn)}|Build Logs>")
 
-    def test_sending_progress_updates_with_optional_build_arn(self, webclient):  # , time):
+    def test_sending_progress_updates_with_optional_build_arn(self, webclient):
         build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
         CliRunner().invoke(
             environment_progress,
@@ -95,7 +95,7 @@ class TestNotify(unittest.TestCase):
         self.assertEqual(len(actual_elements), 1)
         self.assertEqual(actual_elements[0].text, f"<{get_build_url(build_arn)}|Build Logs>")
 
-    def test_sending_progress_updates_with_optional_repository(self, webclient):  # , time):
+    def test_sending_progress_updates_with_optional_repository(self, webclient):
         repository = "my-repo"
         CliRunner().invoke(
             environment_progress,
@@ -116,9 +116,7 @@ class TestNotify(unittest.TestCase):
             actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
         )
 
-    def test_sending_progress_updates_with_optional_repository_and_commit(
-        self, webclient
-    ):  # , time):
+    def test_sending_progress_updates_with_optional_repository_and_commit(self, webclient):
         repository = "my-repo"
         commit = "abc1234"
         CliRunner().invoke(
@@ -145,3 +143,48 @@ class TestNotify(unittest.TestCase):
             actual_elements[1].text,
             f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>",
         )
+
+    def test_sending_progress_updates_with_optional_slack_ref(self, webclient):
+        build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
+        repository = "my-repo"
+        commit = "abc1234"
+        CliRunner().invoke(
+            environment_progress,
+            [
+                "my-slack-channel-id",
+                "my-slack-token",
+                "The very important thing everyone should know",
+                "--build-arn",
+                build_arn,
+                "--repository",
+                repository,
+                "--commit-sha",
+                commit,
+                "--slack-ref",
+                "10000.10",
+            ],
+        )
+        post_calls = webclient().chat_postMessage.call_args_list
+        update_calls = webclient().chat_update.call_args_list
+        self.assertEqual(len(post_calls), 0)
+        self.assertEqual(len(update_calls), 1)
+
+        call_args = update_calls[0].kwargs
+        self.assertEqual(call_args["channel"], "my-slack-channel-id")
+        self.assertEqual(call_args["text"], "The very important thing everyone should know")
+        self.assertEqual(call_args["unfurl_links"], False)
+        self.assertEqual(call_args["unfurl_media"], False)
+        self.assertEqual(call_args["ts"], "10000.10")
+        self.assertEqual(
+            call_args["blocks"][0].text.text, "The very important thing everyone should know"
+        )
+        actual_elements = call_args["blocks"][1].elements
+        self.assertEqual(len(actual_elements), 3)
+        self.assertEqual(
+            actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
+        )
+        self.assertEqual(
+            actual_elements[1].text,
+            f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>",
+        )
+        self.assertEqual(actual_elements[2].text, f"<{get_build_url(build_arn)}|Build Logs>")

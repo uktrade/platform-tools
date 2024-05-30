@@ -21,21 +21,17 @@ def notify():
 @click.option("--build-arn")
 @click.option("--repository")
 @click.option("--commit-sha")
-@click.option(
-    "--slack-ref",
-    default=None,
-    help="Slack message reference",
-)
+@click.option("--slack-ref", help="Slack message reference")
 def environment_progress(
-    slack_channel_id, slack_token, message, build_arn, repository, commit_sha, slack_ref: str | None
+    slack_channel_id: str,
+    slack_token: str,
+    message: str,
+    build_arn: str,
+    repository: str,
+    commit_sha: str,
+    slack_ref: str,
 ):
     slack = get_slack_client(slack_token)
-    # os.environ["SLACK_TOKEN"]
-    # channel = os.environ["SLACK_CHANNEL_ID"]
-    # application = os.environ["APPLICATION"]
-    # build_arn = os.environ["CODEBUILD_BUILD_ARN"]
-    # repository = os.environ["REPOSITORY"]
-    # commit_sha = os.environ["CODEBUILD_RESOLVED_SOURCE_VERSION"][:7]
 
     context_elements = []
     if repository:
@@ -67,7 +63,6 @@ def environment_progress(
         "unfurl_media": False,
     }
 
-    # breakpoint()
     if slack_ref:
         args["ts"] = slack_ref
         response = slack.chat_update(**args)
@@ -96,9 +91,7 @@ def add_comment(
     title: str,
     send_to_main_channel: bool,
 ):
-    # token = os.environ["SLACK_TOKEN"]
     slack = get_slack_client(slack_token)
-    # channel = os.environ["SLACK_CHANNEL_ID"]
 
     slack.chat_postMessage(
         channel=slack_channel_id,
