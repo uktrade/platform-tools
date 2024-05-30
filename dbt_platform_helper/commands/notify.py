@@ -31,8 +31,18 @@ def environment_progress(
     commit_sha: str,
     slack_ref: str,
 ):
-    slack = get_slack_client(slack_token)
+    args = _get_slack_args(build_arn, commit_sha, message, repository, slack_channel_id)
+    slack = _get_slack_client(slack_token)
 
+    if slack_ref:
+        response = slack.chat_update(ts=slack_ref, **args)
+    else:
+        response = slack.chat_postMessage(ts=slack_ref, **args)
+
+    print(response["ts"])
+
+
+def _get_slack_args(build_arn, commit_sha, message, repository, slack_channel_id):
     context_elements = []
     if repository:
         context_elements.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
@@ -40,20 +50,22 @@ def environment_progress(
             context_elements.append(
                 f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
             )
-
     if build_arn:
         context_elements.append(f"<{get_build_url(build_arn)}|Build Logs>")
-
     message_blocks = [
         blocks.SectionBlock(
             text=blocks.TextObject(type="mrkdwn", text=message),
         ),
-        blocks.ContextBlock(
-            elements=[
-                blocks.TextObject(type="mrkdwn", text=element) for element in context_elements
-            ]
-        ),
     ]
+
+    if context_elements:
+        message_blocks.append(
+            blocks.ContextBlock(
+                elements=[
+                    blocks.TextObject(type="mrkdwn", text=element) for element in context_elements
+                ]
+            )
+        )
 
     args = {
         "channel": slack_channel_id,
@@ -62,17 +74,10 @@ def environment_progress(
         "unfurl_links": False,
         "unfurl_media": False,
     }
-
-    if slack_ref:
-        args["ts"] = slack_ref
-        response = slack.chat_update(**args)
-    else:
-        response = slack.chat_postMessage(**args)
-
-    print(response["ts"])
+    return args
 
 
-def get_slack_client(token):
+def _get_slack_client(token):
     return WebClient(token=token)
 
 
@@ -91,7 +96,7 @@ def add_comment(
     title: str,
     send_to_main_channel: bool,
 ):
-    slack = get_slack_client(slack_token)
+    slack = _get_slack_client(slack_token)
 
     slack.chat_postMessage(
         channel=slack_channel_id,

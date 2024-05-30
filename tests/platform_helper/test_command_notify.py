@@ -8,7 +8,7 @@ from dbt_platform_helper.commands.notify import environment_progress
 from dbt_platform_helper.commands.notify import get_build_url
 
 
-@patch("dbt_platform_helper.commands.notify.get_slack_client")
+@patch("dbt_platform_helper.commands.notify._get_slack_client")
 class TestNotify(unittest.TestCase):
     def test_getting_build_url(self, webclient):
         self.assertEqual(
