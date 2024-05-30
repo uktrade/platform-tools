@@ -35,6 +35,9 @@
 - [platform-helper secrets](#platform-helper-secrets)
 - [platform-helper secrets copy](#platform-helper-secrets-copy)
 - [platform-helper secrets list](#platform-helper-secrets-list)
+- [platform-helper notify](#platform-helper-notify)
+- [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
+- [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 
 # platform-helper
 
@@ -63,6 +66,7 @@ platform-helper <command> [--version]
 - [`domain` ↪](#platform-helper-domain)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
+- [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
 
@@ -826,5 +830,93 @@ platform-helper secrets list <application> <environment>
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper notify
+
+[↩ Parent](#platform-helper)
+
+    Send Slack notifications
+
+## Usage
+
+```
+platform-helper notify (environment-progress|add-comment) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`add-comment` ↪](#platform-helper-notify-add-comment)
+- [`environment-progress` ↪](#platform-helper-notify-environment-progress)
+
+# platform-helper notify environment-progress
+
+[↩ Parent](#platform-helper-notify)
+
+    Send environment progress notifications
+
+## Usage
+
+```
+platform-helper notify environment-progress <slack_channel_id> <slack_token> 
+                                            <message> 
+                                            [--build-arn <build_arn>] 
+                                            [--repository <repository>] 
+                                            [--commit-sha <commit_sha>] 
+                                            [--slack-ref <slack_ref>] 
+```
+
+## Arguments
+
+- `slack-channel-id <text>`
+- `slack-token <text>`
+- `message <text>`
+
+## Options
+
+- `--build-arn <text>`
+
+- `--repository <text>`
+
+- `--commit-sha <text>`
+
+- `--slack-ref <text>`
+  - Slack message reference
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper notify add-comment
+
+[↩ Parent](#platform-helper-notify)
+
+    Add comment to a notification
+
+## Usage
+
+```
+platform-helper notify add-comment <slack_channel_id> <slack_token> 
+                                   <slack_ref> <message> 
+                                   [--title <title>] [--send-to-main-channel <send_to_main_channel>] 
+```
+
+## Arguments
+
+- `slack-channel-id <text>`
+- `slack-token <text>`
+- `slack-ref <text>`
+- `message <text>`
+
+## Options
+
+- `--title <text>`
+  - Message title
+- `--send-to-main-channel <boolean>` _Defaults to False._
+  - Send to main channel
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
