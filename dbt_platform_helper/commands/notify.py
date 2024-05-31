@@ -42,7 +42,9 @@ def environment_progress(
     print(response["ts"])
 
 
-def _get_slack_args(build_arn, commit_sha, message, repository, slack_channel_id):
+def _get_slack_args(
+    build_arn: str, commit_sha: str, message: str, repository: str, slack_channel_id: str
+):
     context_elements = []
     if repository:
         context_elements.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
@@ -77,7 +79,7 @@ def _get_slack_args(build_arn, commit_sha, message, repository, slack_channel_id
     return args
 
 
-def _get_slack_client(token):
+def _get_slack_client(token: str):
     return WebClient(token=token)
 
 
@@ -109,7 +111,7 @@ def add_comment(
     )
 
 
-def get_build_url(build_arn):
+def get_build_url(build_arn: str):
     try:
         arn = ARN(build_arn)
         url = (

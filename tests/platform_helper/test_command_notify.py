@@ -124,7 +124,7 @@ def test_environment_progress(
     ),
 )
 @patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_add_comment(webclient, title, broadcast, expected_text):
+def test_add_comment(webclient, title: str, broadcast: bool, expected_text: str):
     cli_args = [
         "my-slack-channel-id",
         "my-slack-token",
