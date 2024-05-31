@@ -39,6 +39,7 @@ AWS_CONFIG = """
 sso_start_url = https://uktrade.awsapps.com/start#/
 sso_region = eu-west-2
 sso_registration_scopes = sso:account:access
+
 """
 
 

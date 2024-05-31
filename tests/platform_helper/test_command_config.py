@@ -163,6 +163,7 @@ def test_aws(
         "sso_start_url = https://uktrade.awsapps.com/start#/\n"
         "sso_region = eu-west-2\n"
         "sso_registration_scopes = sso:account:access\n"
+        "\n"
         "[profile test-account]\n"
         "sso_session = uktrade\n"
         "sso_account_id = abc123\n"
