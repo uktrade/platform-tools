@@ -1,5 +1,17 @@
 # Changelog
 
+## [8.5.0](https://github.com/uktrade/platform-tools/compare/8.4.1...8.5.0) (2024-05-31)
+
+
+### Features
+
+* Add slack notification commands ([#448](https://github.com/uktrade/platform-tools/issues/448)) ([ddd33fb](https://github.com/uktrade/platform-tools/commit/ddd33fb11bdb932f306c3d0443ad8b3504918146))
+
+
+### Bug Fixes
+
+* redis and opensearch parameters missing ENDPOINT suffix ([#446](https://github.com/uktrade/platform-tools/issues/446)) ([99f1c3f](https://github.com/uktrade/platform-tools/commit/99f1c3f2a3a396585580e115172ac262a8d4ff61))
+
 ## [8.4.1](https://github.com/uktrade/platform-tools/compare/8.4.0...8.4.1) (2024-05-23)
 
 
