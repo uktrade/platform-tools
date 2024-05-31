@@ -136,7 +136,7 @@ def test_aws(
     config_file_path = os.path.expanduser("~/.aws/config")
     os.chmod(config_file_path, 0o777)
 
-    result = CliRunner().invoke(aws, input="y\ny\n")
+    result = CliRunner().invoke(aws, input="y\ny\ny\n")
 
     expected_calls = [
         call("sso-oidc", region_name="eu-west-2"),
