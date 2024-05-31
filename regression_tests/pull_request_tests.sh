@@ -36,6 +36,7 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 #   cd terraform/environments/toolspr
 #   terraform init
 #   terraform apply
+#   cd ../../../
 #   copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 #   copilot env deploy --name toolspr
 
