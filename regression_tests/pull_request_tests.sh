@@ -32,11 +32,11 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 # Command TBC, but we should trigger a demodjango-toolspr-environment-pipeline
 # Todo: Create demodjango-toolspr-environment-pipeline
 # In the meantime, run the following from the demodjango-deploy codebase on your machine...
-#   platform-helper environment generate --name toolspr --vpc-name platform-sandbox-dev
 #   cd terraform/environments/toolspr
 #   terraform init
 #   terraform apply
 #   cd ../../../
+#   platform-helper environment generate --name toolspr --vpc-name platform-sandbox-dev
 #   copilot env init --name toolspr --profile $AWS_PROFILE --default-config
 #   copilot env deploy --name toolspr
 
