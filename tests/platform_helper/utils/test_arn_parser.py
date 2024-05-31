@@ -3,8 +3,8 @@ import unittest
 import pytest
 from parameterized import parameterized
 
+from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.arn_parser import ARN
-from dbt_platform_helper.utils.arn_parser import ValidationError
 
 
 class TestArnParser(unittest.TestCase):
@@ -29,5 +29,5 @@ class TestArnParser(unittest.TestCase):
         ]
     )
     def test_arn_parser_raises_error_if_arn_not_valid(self, arn):
-        with pytest.raises(ValidationError, match=f"Invalid ARN: {arn}"):
+        with pytest.raises(ValidationException, match=f"Invalid ARN: {arn}"):
             ARN(arn)

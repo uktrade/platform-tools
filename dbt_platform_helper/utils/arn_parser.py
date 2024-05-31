@@ -1,5 +1,4 @@
-class ValidationError(Exception):
-    pass
+from dbt_platform_helper.exceptions import ValidationException
 
 
 class ARN:
@@ -10,7 +9,7 @@ class ARN:
         arn_parts = arn.split(":", 7)
 
         if len(arn_parts) != 7:
-            raise ValidationError(f"Invalid ARN: {arn}")
+            raise ValidationException(f"Invalid ARN: {arn}")
 
         # parse and store ARN parts
         # arn:partition:service:region:account-id:resource-type:resource-id
