@@ -33,7 +33,7 @@ aws configure --profile "$AWS_PROFILE" set output "json"
 # Todo: Create demodjango-toolspr-environment-pipeline
 # In the meantime, run the following from the demodjango-deploy codebase on your machine...
 #   cd terraform/environments/toolspr
-#   terraform init
+#   terraform init -upgrade
 #   terraform apply
 #   cd ../../../
 #   platform-helper environment generate --name toolspr --vpc-name platform-sandbox-dev
