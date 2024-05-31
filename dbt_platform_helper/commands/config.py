@@ -269,16 +269,20 @@ def aws(file_path):
 
     aws_config_path = os.path.expanduser(file_path)
 
-    with open(aws_config_path, "w") as config_file:
-        config_file.write(AWS_CONFIG)
+    if click.confirm(
+        f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?",
+        abort=True,
+    ):
+        with open(aws_config_path, "w") as config_file:
+            config_file.write(AWS_CONFIG)
 
-        for account in retrieve_aws_accounts(sso_client, access_token):
-            config_file.write(f"[profile {account['accountName']}]\n")
-            config_file.write("sso_session = uktrade\n")
-            config_file.write(f"sso_account_id = {account['accountId']}\n")
-            config_file.write("sso_role_name = AdministratorAccess\n")
-            config_file.write("region = eu-west-2\n")
-            config_file.write("output = json\n")
+            for account in retrieve_aws_accounts(sso_client, access_token):
+                config_file.write(f"[profile {account['accountName']}]\n")
+                config_file.write("sso_session = uktrade\n")
+                config_file.write(f"sso_account_id = {account['accountId']}\n")
+                config_file.write("sso_role_name = AdministratorAccess\n")
+                config_file.write("region = eu-west-2\n")
+                config_file.write("output = json\n")
 
 
 def create_oidc_application(sso_oidc_client):
