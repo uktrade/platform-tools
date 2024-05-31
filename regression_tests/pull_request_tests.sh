@@ -28,26 +28,32 @@ aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 
+# echo -e "\nRun deploy environment pipeline"
+# Command TBC, but we should trigger a demodjango-toolspr-environment-pipeline
+# Todo: Create demodjango-toolspr-environment-pipeline
+# In the meantime, run the following from the demodjango-deploy codebase on your machine...
+#   platform-helper environment generate --name toolspr --vpc-name platform-sandbox-dev
+#   cd terraform/environments/toolspr
+#   terraform init
+#   terraform apply
+#   copilot env init --name toolspr --profile $AWS_PROFILE --default-config
+#   copilot env deploy --name toolspr
+
 echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
-# echo -e "\nDeploy environment pipeline"
-# Command TBC
-
-# echo -e "\nRun copilot env init"
-# copilot env init --name toolspr --profile $AWS_PROFILE --default-config
-
 # echo -e "\nDeploy codebase pipeline"
-# copilot pipeline deploy
+# Run the following from the demodjango-deploy codebase on your machine...
+#   copilot pipeline deploy
 
-# echo -e "\nDeploy environment"
-# (ideally with new pipeline, but for now)
-# copilot env deploy
-# cd terraform/<environment> && terraform init && terraform apply
+# echo -e "\nDeploy services"
+# (ideally with pipeline)
+# platform-helper codebase deploy --app demodjango --env toolspr --codebase application --commit <commit_hash>
+# In the meantime, run the following from the demodjango-deploy codebase on your machine...
+#   IMAGE_TAG=tag-latest copilot svc deploy --name celery-worker --env toolspr
+#   IMAGE_TAG=tag-latest copilot svc deploy --name celery-beat --env toolspr
+#   IMAGE_TAG=tag-latest copilot svc deploy --name web --env toolspr
 
-# deploy services (ideally with pipeline)
-# platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> --commit <commit_hash>
-
-# run smoke tests
-# From the demodjango codebase, run...
-# ./smoke_tests.sh <environment>
+# echo -e "\nRun smoke tests"
+# From the demodjango codebase on your machine, run...
+#   ./smoke_tests.sh toolspr
