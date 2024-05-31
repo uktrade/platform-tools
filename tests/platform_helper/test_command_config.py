@@ -169,6 +169,7 @@ def test_aws(
         "sso_role_name = AdministratorAccess\n"
         "region = eu-west-2\n"
         "output = json\n"
+        "\n"
     )
     with open(os.path.expanduser("~/.aws/config")) as f:
         assert f.read() == expected_config

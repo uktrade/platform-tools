@@ -282,6 +282,7 @@ def aws(file_path):
                 config_file.write(f"sso_account_id = {account['accountId']}\n")
                 config_file.write("sso_role_name = AdministratorAccess\n")
                 config_file.write("region = eu-west-2\n")
+                config_file.write("output = json\n")
                 config_file.write("\n")
 
 
