@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.notify import add_comment
@@ -28,12 +29,12 @@ class TestNotify(unittest.TestCase):
         )
 
         calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
+        assert len(calls) == 1
         call_args = calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The very important thing everyone should know")
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
+        assert call_args["channel"] == "my-slack-channel-id"
+        assert call_args["text"] == "The very important thing everyone should know"
+        assert call_args["unfurl_links"] == False
+        assert call_args["unfurl_media"] == False
         self.assertEqual(
             call_args["blocks"][0].text.text, "The very important thing everyone should know"
         )
@@ -57,17 +58,17 @@ class TestNotify(unittest.TestCase):
             ],
         )
         calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
+        assert len(calls) == 1
         call_args = calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The very important thing everyone should know")
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
+        assert call_args["channel"] == "my-slack-channel-id"
+        assert call_args["text"] == "The very important thing everyone should know"
+        assert call_args["unfurl_links"] == False
+        assert call_args["unfurl_media"] == False
         self.assertEqual(
             call_args["blocks"][0].text.text, "The very important thing everyone should know"
         )
         actual_elements = call_args["blocks"][1].elements
-        self.assertEqual(len(actual_elements), 3)
+        assert len(actual_elements) == 3
         self.assertEqual(
             actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
         )
@@ -75,7 +76,7 @@ class TestNotify(unittest.TestCase):
             actual_elements[1].text,
             f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>",
         )
-        self.assertEqual(actual_elements[2].text, f"<{get_build_url(build_arn)}|Build Logs>")
+        assert actual_elements[2].text == f"<{get_build_url(build_arn)}|Build Logs>"
 
     def test_sending_progress_updates_with_optional_build_arn(self, webclient):
         build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
@@ -90,11 +91,11 @@ class TestNotify(unittest.TestCase):
             ],
         )
         calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
+        assert len(calls) == 1
         call_args = calls[0].kwargs
         actual_elements = call_args["blocks"][1].elements
-        self.assertEqual(len(actual_elements), 1)
-        self.assertEqual(actual_elements[0].text, f"<{get_build_url(build_arn)}|Build Logs>")
+        assert len(actual_elements) == 1
+        assert actual_elements[0].text == f"<{get_build_url(build_arn)}|Build Logs>"
 
     def test_sending_progress_updates_with_optional_repository(self, webclient):
         repository = "my-repo"
@@ -109,10 +110,10 @@ class TestNotify(unittest.TestCase):
             ],
         )
         calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
+        assert len(calls) == 1
         call_args = calls[0].kwargs
         actual_elements = call_args["blocks"][1].elements
-        self.assertEqual(len(actual_elements), 1)
+        assert len(actual_elements) == 1
         self.assertEqual(
             actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
         )
@@ -133,10 +134,10 @@ class TestNotify(unittest.TestCase):
             ],
         )
         calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
+        assert len(calls) == 1
         call_args = calls[0].kwargs
         actual_elements = call_args["blocks"][1].elements
-        self.assertEqual(len(actual_elements), 2)
+        assert len(actual_elements) == 2
         self.assertEqual(
             actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
         )
@@ -167,20 +168,20 @@ class TestNotify(unittest.TestCase):
         )
         post_calls = webclient().chat_postMessage.call_args_list
         update_calls = webclient().chat_update.call_args_list
-        self.assertEqual(len(post_calls), 0)
-        self.assertEqual(len(update_calls), 1)
+        assert len(post_calls) == 0
+        assert len(update_calls) == 1
 
         call_args = update_calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The very important thing everyone should know")
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
-        self.assertEqual(call_args["ts"], "10000.10")
+        assert call_args["channel"] == "my-slack-channel-id"
+        assert call_args["text"] == "The very important thing everyone should know"
+        assert call_args["unfurl_links"] == False
+        assert call_args["unfurl_media"] == False
+        assert call_args["ts"] == "10000.10"
         self.assertEqual(
             call_args["blocks"][0].text.text, "The very important thing everyone should know"
         )
         actual_elements = call_args["blocks"][1].elements
-        self.assertEqual(len(actual_elements), 3)
+        assert len(actual_elements) == 3
         self.assertEqual(
             actual_elements[0].text, f"*Repository*: <https://github.com/{repository}|{repository}>"
         )
@@ -188,74 +189,41 @@ class TestNotify(unittest.TestCase):
             actual_elements[1].text,
             f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>",
         )
-        self.assertEqual(actual_elements[2].text, f"<{get_build_url(build_arn)}|Build Logs>")
+        assert actual_elements[2].text == f"<{get_build_url(build_arn)}|Build Logs>"
 
-    def test_adding_comments_no_options_set(self, webclient):
-        CliRunner().invoke(
-            add_comment,
-            [
-                "my-slack-channel-id",
-                "my-slack-token",
-                "1234.56",
-                "The comment",
-            ],
-        )
 
-        calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
-        call_args = calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The comment")
-        self.assertFalse(call_args["reply_broadcast"])
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
-        self.assertEqual(call_args["thread_ts"], "1234.56")
-        self.assertEqual(call_args["blocks"][0].text.text, "The comment")
+@pytest.mark.parametrize(
+    "title, broadcast, expected_text",
+    (
+        (None, False, "The comment"),
+        (None, True, "The comment"),
+        ("My title", False, "My title"),
+        ("My title", True, "My title"),
+    ),
+)
+@patch("dbt_platform_helper.commands.notify._get_slack_client")
+def test_adding_comments_no_options_set(webclient, title, broadcast, expected_text):
+    cli_args = [
+        "my-slack-channel-id",
+        "my-slack-token",
+        "1234.56",
+        "The comment",
+    ]
 
-    def test_adding_comments_title_overrides_message_text(self, webclient):
-        CliRunner().invoke(
-            add_comment,
-            [
-                "my-slack-channel-id",
-                "my-slack-token",
-                "1234.56",
-                "The comment",
-                "--title",
-                "The Title",
-            ],
-        )
+    if broadcast:
+        cli_args.extend(["--send-to-main-channel", "true"])
+    if title:
+        cli_args.extend(["--title", title])
 
-        calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
-        call_args = calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The Title")
-        self.assertFalse(call_args["reply_broadcast"])
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
-        self.assertEqual(call_args["thread_ts"], "1234.56")
-        self.assertEqual(call_args["blocks"][0].text.text, "The comment")
+    CliRunner().invoke(add_comment, cli_args)
 
-    def test_adding_comments_send_to_main_channel(self, webclient):
-        CliRunner().invoke(
-            add_comment,
-            [
-                "my-slack-channel-id",
-                "my-slack-token",
-                "1234.56",
-                "The comment",
-                "--send-to-main-channel",
-                "true",
-            ],
-        )
-
-        calls = webclient().chat_postMessage.call_args_list
-        self.assertEqual(len(calls), 1)
-        call_args = calls[0].kwargs
-        self.assertEqual(call_args["channel"], "my-slack-channel-id")
-        self.assertEqual(call_args["text"], "The comment")
-        self.assertTrue(call_args["reply_broadcast"])
-        self.assertEqual(call_args["unfurl_links"], False)
-        self.assertEqual(call_args["unfurl_media"], False)
-        self.assertEqual(call_args["thread_ts"], "1234.56")
-        self.assertEqual(call_args["blocks"][0].text.text, "The comment")
+    calls = webclient().chat_postMessage.call_args_list
+    assert len(calls) == 1
+    call_args = calls[0].kwargs
+    assert call_args["channel"] == "my-slack-channel-id"
+    assert call_args["text"] == expected_text
+    assert call_args["reply_broadcast"] == broadcast
+    assert call_args["unfurl_links"] == False
+    assert call_args["unfurl_media"] == False
+    assert call_args["thread_ts"] == "1234.56"
+    assert call_args["blocks"][0].text.text == "The comment"
