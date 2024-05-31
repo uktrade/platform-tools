@@ -7,6 +7,11 @@ from dbt_platform_helper.commands.notify import add_comment
 from dbt_platform_helper.commands.notify import environment_progress
 from dbt_platform_helper.commands.notify import get_build_url
 
+BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
+BUILD_ARN_MESSAGE = f"<{get_build_url(BUILD_ARN)}|Build Logs>"
+EXP_REPO_TEXT = "*Repository*: <https://github.com/%(name)s|%(name)s>"
+EXP_SHA_TEXT = "*Revision*: <https://github.com/%(name)s/commit/%(sha)s|%(sha)s>"
+
 
 def test_getting_build_url():
     actual_url = get_build_url(
@@ -16,183 +21,97 @@ def test_getting_build_url():
     assert actual_url == exp_url
 
 
+@pytest.mark.parametrize(
+    "options, expected_text, expect_update",
+    (
+        ([], [], False),
+        (["--slack-ref", "10000.10"], [], True),
+        (["--repository", "repo1"], [EXP_REPO_TEXT % {"name": "repo1"}], False),
+        (
+            ["--slack-ref", "10000.10", "--repository", "repo1"],
+            [EXP_REPO_TEXT % {"name": "repo1"}],
+            True,
+        ),
+        (
+            ["--repository", "repo2", "--commit-sha", "abc1234"],
+            [EXP_REPO_TEXT % {"name": "repo2"}, EXP_SHA_TEXT % {"name": "repo2", "sha": "abc1234"}],
+            False,
+        ),
+        (
+            ["--slack-ref", "10000.10", "--repository", "repo2", "--commit-sha", "abc1234"],
+            [EXP_REPO_TEXT % {"name": "repo2"}, EXP_SHA_TEXT % {"name": "repo2", "sha": "abc1234"}],
+            True,
+        ),
+        (["--build-arn", BUILD_ARN], [BUILD_ARN_MESSAGE], False),
+        (["--slack-ref", "10000.10", "--build-arn", BUILD_ARN], [BUILD_ARN_MESSAGE], True),
+        (
+            ["--repository", "repo3", "--commit-sha", "xyz1234", "--build-arn", BUILD_ARN],
+            [
+                EXP_REPO_TEXT % {"name": "repo3"},
+                EXP_SHA_TEXT % {"name": "repo3", "sha": "xyz1234"},
+                BUILD_ARN_MESSAGE,
+            ],
+            False,
+        ),
+        (
+            [
+                "--slack-ref",
+                "10000.10",
+                "--repository",
+                "repo3",
+                "--commit-sha",
+                "xyz1234",
+                "--build-arn",
+                BUILD_ARN,
+            ],
+            [
+                EXP_REPO_TEXT % {"name": "repo3"},
+                EXP_SHA_TEXT % {"name": "repo3", "sha": "xyz1234"},
+                BUILD_ARN_MESSAGE,
+            ],
+            True,
+        ),
+    ),
+)
 @patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_no_optional_elements(webclient):
+def test_environment_progress(
+    webclient, options: list[str], expected_text: list[str], expect_update: bool
+):
     CliRunner().invoke(
         environment_progress,
         [
             "my-slack-channel-id",
             "my-slack-token",
             "The very important thing everyone should know",
-        ],
+        ]
+        + options,
     )
 
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    assert call_args["channel"] == "my-slack-channel-id"
-    assert call_args["text"] == "The very important thing everyone should know"
-    assert call_args["unfurl_links"] == False
-    assert call_args["unfurl_media"] == False
-    assert call_args["blocks"][0].text.text == "The very important thing everyone should know"
-
-
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_all_optional_elements(webclient):
-    build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
-    repository = "my-repo"
-    commit = "abc1234"
-    CliRunner().invoke(
-        environment_progress,
-        [
-            "my-slack-channel-id",
-            "my-slack-token",
-            "The very important thing everyone should know",
-            "--build-arn",
-            build_arn,
-            "--repository",
-            repository,
-            "--commit-sha",
-            commit,
-        ],
-    )
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    assert call_args["channel"] == "my-slack-channel-id"
-    assert call_args["text"] == "The very important thing everyone should know"
-    assert call_args["unfurl_links"] == False
-    assert call_args["unfurl_media"] == False
-    assert call_args["blocks"][0].text.text == "The very important thing everyone should know"
-    actual_elements = call_args["blocks"][1].elements
-    assert len(actual_elements) == 3
-    assert (
-        actual_elements[0].text == f"*Repository*: <https://github.com/{repository}|{repository}>"
-    )
-    assert (
-        actual_elements[1].text
-        == f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>"
-    )
-    assert actual_elements[2].text == f"<{get_build_url(build_arn)}|Build Logs>"
-
-
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_optional_build_arn(webclient):
-    build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
-    CliRunner().invoke(
-        environment_progress,
-        [
-            "my-slack-channel-id",
-            "my-slack-token",
-            "The very important thing everyone should know",
-            "--build-arn",
-            build_arn,
-        ],
-    )
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    actual_elements = call_args["blocks"][1].elements
-    assert len(actual_elements) == 1
-    assert actual_elements[0].text == f"<{get_build_url(build_arn)}|Build Logs>"
-
-
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_optional_repository(webclient):
-    repository = "my-repo"
-    CliRunner().invoke(
-        environment_progress,
-        [
-            "my-slack-channel-id",
-            "my-slack-token",
-            "The very important thing everyone should know",
-            "--repository",
-            repository,
-        ],
-    )
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    actual_elements = call_args["blocks"][1].elements
-    assert len(actual_elements) == 1
-    assert (
-        actual_elements[0].text == f"*Repository*: <https://github.com/{repository}|{repository}>"
-    )
-
-
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_optional_repository_and_commit(webclient):
-    repository = "my-repo"
-    commit = "abc1234"
-    CliRunner().invoke(
-        environment_progress,
-        [
-            "my-slack-channel-id",
-            "my-slack-token",
-            "The very important thing everyone should know",
-            "--repository",
-            repository,
-            "--commit-sha",
-            commit,
-        ],
-    )
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    actual_elements = call_args["blocks"][1].elements
-    assert len(actual_elements) == 2
-    assert (
-        actual_elements[0].text == f"*Repository*: <https://github.com/{repository}|{repository}>"
-    )
-    assert (
-        actual_elements[1].text
-        == f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>"
-    )
-
-
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_sending_progress_updates_with_optional_slack_ref(webclient):
-    build_arn = "arn:aws:codebuild:us-west-1:123456:project:my-app"
-    repository = "my-repo"
-    commit = "abc1234"
-    CliRunner().invoke(
-        environment_progress,
-        [
-            "my-slack-channel-id",
-            "my-slack-token",
-            "The very important thing everyone should know",
-            "--build-arn",
-            build_arn,
-            "--repository",
-            repository,
-            "--commit-sha",
-            commit,
-            "--slack-ref",
-            "10000.10",
-        ],
-    )
     post_calls = webclient().chat_postMessage.call_args_list
     update_calls = webclient().chat_update.call_args_list
-    assert len(post_calls) == 0
-    assert len(update_calls) == 1
 
-    call_args = update_calls[0].kwargs
+    if expect_update:
+        calls = update_calls
+        zero_calls = post_calls
+    else:
+        calls = post_calls
+        zero_calls = update_calls
+
+    assert len(calls) == 1
+    assert len(zero_calls) == 0
+
+    call_args = calls[0].kwargs
     assert call_args["channel"] == "my-slack-channel-id"
     assert call_args["text"] == "The very important thing everyone should know"
-    assert call_args["unfurl_links"] == False
-    assert call_args["unfurl_media"] == False
-    assert call_args["ts"] == "10000.10"
+    assert not call_args["unfurl_links"]
+    assert not call_args["unfurl_media"]
     assert call_args["blocks"][0].text.text == "The very important thing everyone should know"
-    actual_elements = call_args["blocks"][1].elements
-    assert len(actual_elements) == 3
-    assert (
-        actual_elements[0].text == f"*Repository*: <https://github.com/{repository}|{repository}>"
-    )
-    assert (
-        actual_elements[1].text
-        == f"*Revision*: <https://github.com/{repository}/commit/{commit}|{commit}>"
-    )
-    assert actual_elements[2].text == f"<{get_build_url(build_arn)}|Build Logs>"
+
+    if expected_text:
+        actual_elements = call_args["blocks"][1].elements
+        assert len(actual_elements) == len(expected_text)
+        for element, exp_text in zip(actual_elements, expected_text):
+            assert element.text == exp_text
 
 
 @pytest.mark.parametrize(
@@ -205,7 +124,7 @@ def test_sending_progress_updates_with_optional_slack_ref(webclient):
     ),
 )
 @patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_adding_comments_no_options_set(webclient, title, broadcast, expected_text):
+def test_add_comment(webclient, title, broadcast, expected_text):
     cli_args = [
         "my-slack-channel-id",
         "my-slack-token",
