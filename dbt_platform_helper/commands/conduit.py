@@ -97,6 +97,8 @@ def get_parameter_name(
 ) -> str:
     if addon_type == "postgres":
         return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_{access.upper()}"
+    elif addon_type == "redis" or addon_type == "opensearch":
+        return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}_ENDPOINT"
     else:
         return f"/copilot/{app.name}/{env}/conduits/{normalise_secret_name(addon_name)}"
 

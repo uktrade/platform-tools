@@ -16,6 +16,7 @@ from dbt_platform_helper.commands.dns import cdn as cdn_commands
 from dbt_platform_helper.commands.dns import domain as domain_commands
 from dbt_platform_helper.commands.environment import environment as environment_commands
 from dbt_platform_helper.commands.generate import generate as generate_commands
+from dbt_platform_helper.commands.notify import notify as notify_commands
 from dbt_platform_helper.commands.pipeline import pipeline as pipeline_commands
 from dbt_platform_helper.commands.secrets import secrets as secrets_commands
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -42,6 +43,7 @@ platform_helper.add_command(environment_commands)
 platform_helper.add_command(generate_commands)
 platform_helper.add_command(pipeline_commands)
 platform_helper.add_command(secrets_commands)
+platform_helper.add_command(notify_commands)
 
 if __name__ == "__main__":
     platform_helper()

@@ -136,7 +136,7 @@ def test_aws(
     config_file_path = os.path.expanduser("~/.aws/config")
     os.chmod(config_file_path, 0o777)
 
-    result = CliRunner().invoke(aws, input="y\ny\n")
+    result = CliRunner().invoke(aws, input="y\ny\ny\n")
 
     expected_calls = [
         call("sso-oidc", region_name="eu-west-2"),
@@ -163,12 +163,14 @@ def test_aws(
         "sso_start_url = https://uktrade.awsapps.com/start#/\n"
         "sso_region = eu-west-2\n"
         "sso_registration_scopes = sso:account:access\n"
+        "\n"
         "[profile test-account]\n"
         "sso_session = uktrade\n"
         "sso_account_id = abc123\n"
         "sso_role_name = AdministratorAccess\n"
         "region = eu-west-2\n"
         "output = json\n"
+        "\n"
     )
     with open(os.path.expanduser("~/.aws/config")) as f:
         assert f.read() == expected_config

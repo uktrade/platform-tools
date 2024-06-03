@@ -281,6 +281,8 @@ def mock_parameter_name(app, addon_type, addon_name, access: str = "read"):
     addon_name = addon_name.replace("-", "_").upper()
     if addon_type == "postgres":
         return f"/copilot/{app.name}/development/conduits/{addon_name}_{access.upper()}"
+    elif addon_type == "redis" or addon_type == "opensearch":
+        return f"/copilot/{app.name}/development/conduits/{addon_name}_ENDPOINT"
     else:
         return f"/copilot/{app.name}/development/conduits/{addon_name}"
 
