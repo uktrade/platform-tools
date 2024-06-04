@@ -22,11 +22,19 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAcc
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
 
-echo -e "\nConfigure AWS Profile"
-export AWS_PROFILE="platform-tools"
-aws configure --profile "$AWS_PROFILE" set account_id "$AWS_ACCOUNT_ID"
-aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
-aws configure --profile "$AWS_PROFILE" set output "json"
+# Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
+
+echo -e "\nConfigure platform-tools AWS Profile"
+platformToolsAwsProfile="platform-tools"
+aws configure --profile "$platformToolsAwsProfile" set account_id "$PLATFORM_TOOLS_AWS_ACCOUNT_ID"
+aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
+aws configure --profile "$platformToolsAwsProfile" set output "json"
+
+echo -e "\nConfigure platform-sandbox AWS Profile"
+platformSandboxAwsProfile="platform-sandbox"
+aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
+aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
 # echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
