@@ -36,6 +36,8 @@ aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_S
 aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
+cat "${HOME}/.aws/config"
+
 # echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
