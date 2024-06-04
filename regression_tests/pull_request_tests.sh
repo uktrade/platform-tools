@@ -29,16 +29,7 @@ aws configure --profile "$AWS_PROFILE" set region "eu-west-2"
 aws configure --profile "$AWS_PROFILE" set output "json"
 
 # echo -e "\nRun deploy environment pipeline"
-# Command TBC, but we should trigger a demodjango-toolspr-environment-pipeline
-# Todo: Create demodjango-toolspr-environment-pipeline
-# In the meantime, run the following from the demodjango-deploy codebase on your machine...
-#   cd terraform/environments/toolspr
-#   terraform init -upgrade
-#   terraform apply
-#   cd ../../../
-#   platform-helper environment generate --name toolspr --vpc-name platform-sandbox-dev
-#   copilot env init --name toolspr --profile $AWS_PROFILE --default-config
-#   copilot env deploy --name toolspr
+aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
 echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
