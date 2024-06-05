@@ -38,10 +38,14 @@ aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
 cat "${HOME}/.aws/config"
 
+aws sts get-caller-identity
+
 echo -e "\nAssume role to trigger environment pipeline"
 aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull_request-regression-tests-$(date +%s)"
+
+aws sts get-caller-identity
 
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox --debug
