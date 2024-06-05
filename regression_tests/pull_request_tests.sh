@@ -51,6 +51,7 @@ export AWS_ACCOUNT_ID="$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
 export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
 export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
 export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
+export AWS_PROFILE=platform-sandbox
 
 aws sts get-caller-identity
 
