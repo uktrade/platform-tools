@@ -41,13 +41,13 @@ cat "${HOME}/.aws/config"
 aws sts get-caller-identity
 
 echo -e "\nAssume role to trigger environment pipeline"
-# aws sts assume-role \
-#     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
-#     --role-session-name "pull_request-regression-tests-$(date +%s)"
-ASSUME_ROLE_ARN="arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools"
-aws configure set profile.assumerole.role_arn "$ASSUME_ROLE_ARN"
-aws configure set profile.assumerole.credential_source EcsContainer
-AWS_PROFILE=assumerole aws sts get-caller-identity
+temp_role=$(aws sts assume-role \
+    --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
+    --role-session-name "pull-request-regression-tests-$(date +%s)")
+
+export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
 
 aws sts get-caller-identity
 
