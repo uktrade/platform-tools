@@ -57,6 +57,8 @@ aws sts get-caller-identity
 
 env | grep AWS
 
+aws codepipeline list-pipelines --profile platform-sandbox
+
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
