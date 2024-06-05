@@ -47,6 +47,9 @@ aws sts assume-role \
 
 aws sts get-caller-identity
 
+export AWS_PROFILE=platform-sandbox
+export AWS_ACCOUNT_ID=563763463626
+
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox --debug
 
