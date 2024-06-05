@@ -3,10 +3,10 @@
 # exit early if something goes wrong
 set -e
 
-echo -e "\nBuild and install platform-helper"
-poetry build --no-interaction --format sdist --no-ansi
-pip install "dist/$(ls -t1 dist | head -1)"
-platform-helper --version
+# echo -e "\nBuild and install platform-helper"
+# poetry build --no-interaction --format sdist --no-ansi
+# pip install "dist/$(ls -t1 dist | head -1)"
+# platform-helper --version
 
 echo -e "\nGet CodeStar connection details"
 codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
@@ -51,11 +51,13 @@ export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
 
 aws sts get-caller-identity
 
+env | grep AWS
+
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
-echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
-PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
+# echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
+# PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
 # echo -e "\nDeploy codebase pipeline"
 # Run the following from the demodjango-deploy codebase on your machine...
