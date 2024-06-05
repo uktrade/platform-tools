@@ -38,7 +38,12 @@ aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
 cat "${HOME}/.aws/config"
 
-# echo -e "\nRun deploy environment pipeline"
+echo -e "\nAssume role to trigger environment pipeline"
+aws sts assume-role \
+    --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
+    --role-session-name "pull_request-regression-tests-$(date +%s)"
+
+echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
 echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
