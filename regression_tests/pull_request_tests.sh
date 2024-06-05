@@ -44,7 +44,7 @@ aws sts assume-role \
     --role-session-name "pull_request-regression-tests-$(date +%s)"
 
 echo -e "\nRun deploy environment pipeline"
-aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
+aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox --debug
 
 echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
