@@ -74,7 +74,7 @@ echo 'aws codepipeline list-pipelines --profile platform-tools'
 aws codepipeline list-pipelines --profile platform-tools
 
 echo 'aws codepipeline list-pipelines --profile platform-sandbox'
-aws codepipeline list-pipelines --profile platform-sandbox
+aws codepipeline list-pipelines --profile platform-sandbox --debug
 
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
