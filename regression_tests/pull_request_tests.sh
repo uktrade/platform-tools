@@ -73,8 +73,6 @@ echo
 echo 'aws configure list-profiles'
 aws configure list-profiles
 
-codebuild-breakpoint
-
 echo
 echo 'aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
 aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
