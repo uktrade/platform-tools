@@ -652,7 +652,9 @@ platform-helper environment (offline|online|generate)
 ## Usage
 
 ```
-platform-helper environment offline --app <application> --env <environment> [--template (default|migration)] 
+platform-helper environment offline --app <application> --env <environment> --svc <service> 
+                                    [--template (default|migration)] 
+                                    [--allowed-ip <allowed_ip>] 
 ```
 
 ## Options
@@ -661,8 +663,13 @@ platform-helper environment offline --app <application> --env <environment> [--t
 
 - `--env <text>`
 
+- `--svc <text>` _Defaults to web._
+
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.
+- `--allowed-ip
+-ip <text>`
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

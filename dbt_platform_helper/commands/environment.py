@@ -4,6 +4,7 @@ from typing import Union
 
 import boto3
 import click
+import requests
 
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -27,13 +28,15 @@ def environment():
 @environment.command()
 @click.option("--app", type=str, required=True)
 @click.option("--env", type=str, required=True)
+@click.option("--svc", type=str, required=True, default="web")
 @click.option(
     "--template",
     type=click.Choice(AVAILABLE_TEMPLATES),
     default="default",
     help="The maintenance page you wish to put up.",
 )
-def offline(app, env, template):
+@click.option("--allowed-ip", "-ip", type=str, multiple=True)
+def offline(app, env, svc, template, allowed_ip):
     """Take load-balanced web services offline with a maintenance page."""
     application = load_application(app)
     application_environment = application.environments.get(env)
@@ -68,7 +71,16 @@ def offline(app, env, template):
             if current_maintenance_page and remove_current_maintenance_page:
                 remove_maintenance_page(application_environment.session, https_listener)
 
-            add_maintenance_page(application_environment.session, https_listener, template)
+            allowed_ips = list(allowed_ip)
+            add_maintenance_page(
+                application_environment.session,
+                https_listener,
+                app,
+                env,
+                svc,
+                allowed_ips,
+                template,
+            )
             click.secho(
                 f"Maintenance page '{template}' added for environment {env} in application {app}",
                 fg="green",
@@ -251,6 +263,50 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
+def find_target_group(app: str, env: str, svc: str) -> str:
+    # response = lb_client.describe_target_groups(LoadBalancerArn=load_balancer_arn)
+    rg_tagging_client = boto3.client("resourcegroupstaggingapi")
+    response = rg_tagging_client.get_resources(
+        TagFilters=[
+            {
+                "Key": "copilot-application",
+                "Values": [
+                    app,
+                ],
+                "Key": "copilot-environment",
+                "Values": [
+                    env,
+                ],
+                "Key": "copilot-service",
+                "Values": [
+                    svc,
+                ],
+            },
+        ],
+        ResourceTypeFilters=[
+            "elasticloadbalancing:targetgroup",
+        ],
+    )
+    for resource in response["ResourceTagMappingList"]:
+        tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+
+        if (
+            "copilot-service" in tags
+            and tags["copilot-service"] == svc
+            and "copilot-environment" in tags
+            and tags["copilot-environment"] == env
+            and "copilot-application" in tags
+            and tags["copilot-application"] == app
+        ):
+            return resource["ResourceARN"]
+
+    click.secho(
+        f"No target group found for application: {app}, environment: {env}, service: {svc}",
+        fg="red",
+    )
+    raise click.Abort
+
+
 def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
     lb_client = session.client("elbv2")
 
@@ -266,16 +322,10 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
     return maintenance_page_type
 
 
-def remove_maintenance_page(session: boto3.Session, listener_arn: str):
-    lb_client = session.client("elbv2")
-
-    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    rules = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])["TagDescriptions"]
-
-    current_rule_arn = None
+def delete_listener_rule(rules: dict, tag_name: str, lb_client):
     for rule in rules:
         tags = {t["Key"]: t["Value"] for t in rule["Tags"]}
-        if tags.get("name") == "MaintenancePage":
+        if tags.get("name") == tag_name:
             current_rule_arn = rule["ResourceArn"]
 
     if not current_rule_arn:
@@ -284,13 +334,58 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     lb_client.delete_rule(RuleArn=current_rule_arn)
 
 
-def add_maintenance_page(session: boto3.Session, listener_arn: str, template: str = "default"):
+def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     lb_client = session.client("elbv2")
-    maintenance_page_content = get_maintenance_page_template(template)
 
+    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+    rules = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])["TagDescriptions"]
+
+    for name in ["MaintenancePage", "AllowedIps"]:
+        delete_listener_rule(rules, name, lb_client)
+
+
+def get_public_ip():
+    response = requests.get("https://api.ipify.org")
+    return response.text
+
+
+def create_allowed_ips_rule(lb_client, listener_arn, allowed_ips, target_group_arn):
     lb_client.create_rule(
         ListenerArn=listener_arn,
         Priority=1,
+        Conditions=[
+            {
+                "Field": "http-header",
+                "HttpHeaderConfig": {"HttpHeaderName": "X-Forwarded-For", "Values": allowed_ips},
+            }
+        ],
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Tags=[
+            {"Key": "name", "Value": "AllowedIps"},
+        ],
+    )
+
+
+def add_maintenance_page(
+    session: boto3.Session,
+    listener_arn: str,
+    app: str,
+    env: str,
+    svc: str,
+    allowed_ips: tuple,
+    template: str = "default",
+):
+    lb_client = session.client("elbv2")
+    maintenance_page_content = get_maintenance_page_template(template)
+    user_ip = get_public_ip()
+    target_group_arn = find_target_group(app, env, svc)
+    allowed_ips = list(allowed_ips) + [user_ip]
+
+    create_allowed_ips_rule(lb_client, listener_arn, allowed_ips, target_group_arn)
+
+    lb_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=2,
         Conditions=[
             {
                 "Field": "path-pattern",
