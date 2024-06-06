@@ -50,7 +50,6 @@ temp_role=$(aws sts assume-role \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
 echo "$temp_role"
 
-
 export AWS_ACCOUNT_ID="$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
 export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
 export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
@@ -65,14 +64,6 @@ aws --version
 echo
 echo 'aws sts get-caller-identity'
 aws sts get-caller-identity
-
-echo
-echo 'AWS_PROFILE=platform-tools aws sts get-caller-identity'
-AWS_PROFILE=platform-tools aws sts get-caller-identity
-
-echo
-echo 'AWS_PROFILE=platform-sandbox aws sts get-caller-identity'
-AWS_PROFILE=platform-sandbox aws sts get-caller-identity
 
 echo
 echo 'env | grep AWS'
