@@ -36,9 +36,11 @@ aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_S
 aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
+echo
 echo 'cat "${HOME}/.aws/config"'
 cat "${HOME}/.aws/config"
 
+echo
 echo 'aws sts get-caller-identity'
 aws sts get-caller-identity
 
@@ -55,27 +57,39 @@ export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccess
 export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
 export AWS_PROFILE=platform-sandbox
 
+echo
+echo 'aws --version'
+aws --version
+
+echo
 echo 'aws sts get-caller-identity'
 aws sts get-caller-identity
 
+echo
 echo 'AWS_PROFILE=platform-tools aws sts get-caller-identity'
 AWS_PROFILE=platform-tools aws sts get-caller-identity
 
+echo
 echo 'AWS_PROFILE=platform-sandbox aws sts get-caller-identity'
 AWS_PROFILE=platform-sandbox aws sts get-caller-identity
 
+echo
 echo 'env | grep AWS'
 env | grep AWS
 
+echo
 echo 'aws configure list-profiles'
 aws configure list-profiles
 
+echo
 echo 'aws codepipeline list-pipelines --profile platform-tools'
 aws codepipeline list-pipelines --profile platform-tools
 
+echo
 echo 'aws codepipeline list-pipelines --profile platform-sandbox'
 aws codepipeline list-pipelines --profile platform-sandbox --debug
 
+echo
 echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
