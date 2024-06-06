@@ -40,9 +40,9 @@ echo -e "\nAssume role to trigger environment pipeline"
 assumedRole=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
-export AWS_ACCESS_KEY_ID=$(echo $assumedRole | jq -r .Credentials.AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $assumedRole | jq -r .Credentials.SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $assumedRole | jq -r .Credentials.SessionToken)
+# export AWS_ACCESS_KEY_ID=$(echo $assumedRole | jq -r .Credentials.AccessKeyId)
+# export AWS_SECRET_ACCESS_KEY=$(echo $assumedRole | jq -r .Credentials.SecretAccessKey)
+# export AWS_SESSION_TOKEN=$(echo $assumedRole | jq -r .Credentials.SessionToken)
 
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 # # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
