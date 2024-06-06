@@ -25,6 +25,7 @@ cd ./demodjango-deploy/
 
 # Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
 
+# Todo: extract a method to create these profiles
 echo -e "\nConfigure platform-tools AWS Profile"
 platformToolsAwsProfile="platform-tools"
 aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_ID"
@@ -46,6 +47,99 @@ assumedRole=$(aws sts assume-role \
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 # # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
 # PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
+
+# Todo: Decide where the Terraform for the things we need in the platform-sandbox account should live
+
+# Todo: Terraform IAM stuff
+#In platform-sandbox....
+#
+#    regression-tests-assume-role-for-platform-tools
+#
+#        Trust policy...
+#        {
+#            "Version": "2012-10-17",
+#            "Statement": [
+#                {
+#                    "Effect": "Allow",
+#                    "Principal": {
+#                        "AWS": "arn:aws:iam::<platform_tools_account_id>:role/codebuild-platform-tools-test-service-role"
+#                    },
+#                    "Action": "sts:AssumeRole",
+#                    "Condition": {}
+#                }
+#            ]
+#        }
+#
+#        Permission policy...
+#        {
+#            "Version": "2012-10-17",
+#            "Statement": [
+#                {
+#                    "Sid": "allow-start-toolspr-environment-pipeline",
+#                    "Effect": "Allow",
+#                    "Action": "lambda:InvokeFunction",
+#                    "Resource": "arn:aws:lambda:eu-west-2:<platform_sandbox_account_id>:function:start-toolspr-environment-pipeline"
+#                }
+#            ]
+#        }
+#
+#In platform-tools...
+#
+#    codebuild-platform-tools-test-service-role > regression-tests (policy)
+#
+#        {
+#            "Version": "2012-10-17",
+#            "Statement": [
+#                {
+#                    "Sid": "TBC",
+#                    "Effect": "Allow",
+#                    "Action": "lambda:InvokeFunction",
+#                    "Resource": "arn:aws:lambda:eu-west-2:<platform_sandbox_account_id>:function:start-toolspr-environment-pipeline"
+#                },
+#                {
+#                    "Sid": "TBC",
+#                    "Effect": "Allow",
+#                    "Action": "sts:AssumeRole",
+#                    "Resource": "arn:aws:iam::<platform_sandbox_account_id>:role/regression-tests-assume-role-for-platform-tools"
+#                }
+#            ]
+#        }
+
+# Todo: Terraform the Lambda function
+#In platform-sandbox...
+#
+#    Python 3.12
+#
+#    import json
+#    import boto3
+#
+#    def lambda_handler(event, context):
+#        client = boto3.client('codepipeline')
+#
+#        response = client.start_pipeline_execution(
+#            name='demodjango-environment-pipeline-TOOLSPR'
+#        )
+#
+#        return {
+#            'statusCode': response.get("ResponseMetadata").get("HTTPStatusCode"),
+#            'body': response
+#        }
+#
+#    Needs to allows access to the things from the other account, speak to JOhn, https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html#permissions-resource-xaccountinvoke
+#
+#    It's policy will need to be allowed to start the pipeline...
+#
+#    {
+#        "Version": "2012-10-17",
+#        "Statement": [
+#            {
+#                "Sid": "VisualEditor0",
+#                "Effect": "Allow",
+#                "Action": "codepipeline:StartPipelineExecution",
+#                "Resource": "arn:aws:codepipeline:eu-west-2:<platform_sandbox_account_id>:demodjango-environment-pipeline-TOOLSPR"
+#            }
+#        ]
+#    }
 
 echo -e "\nStart deploy environment pipeline"
 aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
