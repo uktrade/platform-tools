@@ -458,6 +458,18 @@ ALB_SCHEMA = Schema(
     }
 )
 
+PROMETHEUS_POLICY_SCHEMA = Schema(
+    {
+        "type": "prometheus-policy",
+        Optional("services"): Or("__all__", [str]),
+        Optional("environments"): {
+            ENV_NAME: {
+                "role_arn": str,
+            }
+        },
+    }
+)
+
 
 def no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
@@ -476,4 +488,5 @@ SCHEMA_MAP = {
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
     "alb": ALB_SCHEMA,
+    "prometheus-policy": PROMETHEUS_POLICY_SCHEMA,
 }
