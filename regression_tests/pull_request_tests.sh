@@ -30,11 +30,11 @@ aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_
 aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformToolsAwsProfile" set output "json"
 
-echo -e "\nConfigure platform-sandbox AWS Profile"
-platformSandboxAwsProfile="platform-sandbox"
-aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
-aws configure --profile "$platformSandboxAwsProfile" set output "json"
+# echo -e "\nConfigure platform-sandbox AWS Profile"
+# platformSandboxAwsProfile="platform-sandbox"
+# aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+# aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
+# aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
 echo
 echo 'cat "${HOME}/.aws/config"'
