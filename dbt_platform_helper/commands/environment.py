@@ -6,6 +6,7 @@ import boto3
 import click
 import requests
 
+from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -38,16 +39,7 @@ def environment():
 @click.option("--allowed-ip", "-ip", type=str, multiple=True)
 def offline(app, env, svc, template, allowed_ip):
     """Take load-balanced web services offline with a maintenance page."""
-    application = load_application(app)
-    application_environment = application.environments.get(env)
-
-    if not application_environment:
-        click.secho(
-            f"The environment {env} was not found in the application {app}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
-        )
-        raise click.Abort
+    application_environment = get_app_environment(app, env)
 
     try:
         https_listener = find_https_listener(application_environment.session, app, env)
@@ -104,18 +96,70 @@ def offline(app, env, svc, template, allowed_ip):
 @environment.command()
 @click.option("--app", type=str, required=True)
 @click.option("--env", type=str, required=True)
-def online(app, env):
-    """Remove a maintenance page from an environment."""
-    application = load_application(app)
-    application_environment = application.environments.get(env)
+@click.option("--svc", type=str, required=True, default="web")
+@click.argument("allowed-ips", nargs=-1)
+def allow_ips(app, env, svc, allowed_ips):
+    application_environment = get_app_environment(app, env)
 
-    if not application_environment:
+    try:
+        https_listener = find_https_listener(application_environment.session, app, env)
+        current_maintenance_page = get_maintenance_page(
+            application_environment.session, https_listener
+        )
+        if not current_maintenance_page:
+            click.secho(
+                f"There is no maintenance page currently deployed. To create one, run `platform-helper environment offline --app {app} --env {env} --svc {svc}",
+                fg="red",
+            )
+            raise click.Abort
+
+    except LoadBalancerNotFoundError:
         click.secho(
-            f"The environment {env} was not found in the application {app}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
+            f"No load balancer found for environment {env} in the application {app}.", fg="red"
         )
         raise click.Abort
+
+    except ListenerNotFoundError:
+        click.secho(
+            f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
+        )
+        raise click.Abort
+
+    elbv2_client = application_environment.session.client("elbv2")
+    allowed_ips = list(allowed_ips)
+    listener_rule = get_listener_rule_by_tag(elbv2_client, https_listener, "name", "AllowedIps")
+
+    if not listener_rule:
+        target_group_arn = find_target_group(app, env, svc)
+        create_allowed_ips_rule(elbv2_client, https_listener, allowed_ips, target_group_arn)
+    else:
+        x_forwarded_condition = [
+            condition
+            for condition in listener_rule["Conditions"]
+            if condition["Field"] == "http-header"
+            and condition["HttpHeaderConfig"]["HttpHeaderName"] == "X-Forwarded-For"
+        ][0]
+        current_values = x_forwarded_condition["HttpHeaderConfig"]["Values"]
+        elbv2_client.modify_rule(
+            RuleArn=listener_rule["RuleArn"],
+            Conditions=[
+                {
+                    "Field": "http-header",
+                    "HttpHeaderConfig": {
+                        "HttpHeaderName": "X-Forwarded-For",
+                        "Values": current_values + allowed_ips,
+                    },
+                }
+            ],
+        )
+
+
+@environment.command()
+@click.option("--app", type=str, required=True)
+@click.option("--env", type=str, required=True)
+def online(app, env):
+    """Remove a maintenance page from an environment."""
+    application_environment = get_app_environment(app, env)
 
     try:
         https_listener = find_https_listener(application_environment.session, app, env)
@@ -148,6 +192,33 @@ def online(app, env):
             f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
         )
         raise click.Abort
+
+
+def get_app_environment(app_name: str, env_name: str) -> Environment:
+    application = load_application(app_name)
+    application_environment = application.environments.get(env_name)
+
+    if not application_environment:
+        click.secho(
+            f"The environment {env_name} was not found in the application {app_name}. "
+            f"It either does not exist, or has not been deployed.",
+            fg="red",
+        )
+        raise click.Abort
+
+    return application_environment
+
+
+def get_listener_rule_by_tag(elbv2_client, listener_arn, tag_key, tag_value):
+    response = elbv2_client.describe_rules(ListenerArn=listener_arn)
+    for rule in response["Rules"]:
+        rule_arn = rule["RuleArn"]
+
+        tags_response = elbv2_client.describe_tags(ResourceArns=[rule_arn])
+        for tag_description in tags_response["TagDescriptions"]:
+            for tag in tag_description["Tags"]:
+                if tag["Key"] == tag_key and tag["Value"] == tag_value:
+                    return rule
 
 
 def get_vpc_id(session, env_name, vpc_name=None):
