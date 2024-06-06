@@ -83,16 +83,20 @@ echo 'aws configure list-profiles'
 aws configure list-profiles
 
 echo
-echo 'aws codepipeline list-pipelines --profile platform-tools'
-aws codepipeline list-pipelines --profile platform-tools
+echo 'aws lambda invoke --function-name start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
+aws lambda invoke --function-name start-toolspr-environment-pipeline --profile platform-sandbox response.json
 
-echo
-echo 'aws codepipeline list-pipelines --profile platform-sandbox'
-aws codepipeline list-pipelines --profile platform-sandbox
-
-echo
-echo -e "\nRun deploy environment pipeline"
-aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
+# echo
+# echo 'aws codepipeline list-pipelines --profile platform-tools'
+# aws codepipeline list-pipelines --profile platform-tools
+#
+# echo
+# echo 'aws codepipeline list-pipelines --profile platform-sandbox'
+# aws codepipeline list-pipelines --profile platform-sandbox
+#
+# echo
+# echo -e "\nRun deploy environment pipeline"
+# aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 # PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
