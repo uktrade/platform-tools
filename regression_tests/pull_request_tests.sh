@@ -26,7 +26,7 @@ cd ./demodjango-deploy/
 
 echo -e "\nConfigure platform-tools AWS Profile"
 platformToolsAwsProfile="platform-tools"
-aws configure --profile "$platformToolsAwsProfile" set account_id "$PLATFORM_TOOLS_AWS_ACCOUNT_ID"
+aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_ID"
 aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformToolsAwsProfile" set output "json"
 
