@@ -70,6 +70,9 @@ env | grep AWS
 echo 'aws configure list-profiles'
 aws configure list-profiles
 
+echo 'aws codepipeline list-pipelines --profile platform-tools'
+aws codepipeline list-pipelines --profile platform-tools
+
 echo 'aws codepipeline list-pipelines --profile platform-sandbox'
 aws codepipeline list-pipelines --profile platform-sandbox
 
