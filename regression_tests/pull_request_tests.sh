@@ -50,12 +50,12 @@ temp_role=$(aws sts assume-role \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
 echo "$temp_role"
 
-export AWS_ACCOUNT_ID="$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
-export AWS_DEFAULT_PROFILE=platform-sandbox
-export AWS_PROFILE=platform-sandbox
+# export AWS_ACCOUNT_ID="$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+# export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+# export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+# export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
+# export AWS_DEFAULT_PROFILE=platform-sandbox
+# export AWS_PROFILE=platform-sandbox
 
 echo
 echo 'aws --version'
@@ -72,6 +72,8 @@ env | grep AWS
 echo
 echo 'aws configure list-profiles'
 aws configure list-profiles
+
+codebuild-breakpoint
 
 echo
 echo 'aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
