@@ -67,6 +67,9 @@ AWS_PROFILE=platform-sandbox aws sts get-caller-identity
 echo 'env | grep AWS'
 env | grep AWS
 
+echo 'aws configure list-profiles'
+aws configure list-profiles
+
 echo 'aws codepipeline list-pipelines --profile platform-sandbox'
 aws codepipeline list-pipelines --profile platform-sandbox
 
