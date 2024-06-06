@@ -3,6 +3,7 @@
 # exit early if something goes wrong
 set -e
 
+# Todo: Re-enable this...
 # echo -e "\nBuild and install platform-helper"
 # poetry build --no-interaction --format sdist --no-ansi
 # pip install "dist/$(ls -t1 dist | head -1)"
@@ -44,6 +45,7 @@ assumedRole=$(aws sts assume-role \
 # export AWS_SECRET_ACCESS_KEY=$(echo $assumedRole | jq -r .Credentials.SecretAccessKey)
 # export AWS_SESSION_TOKEN=$(echo $assumedRole | jq -r .Credentials.SessionToken)
 
+# Todo: Re-enable this...
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 # # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
 # PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
