@@ -30,11 +30,11 @@ aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_
 aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformToolsAwsProfile" set output "json"
 
-# echo -e "\nConfigure platform-sandbox AWS Profile"
-# platformSandboxAwsProfile="platform-sandbox"
-# aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-# aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
-# aws configure --profile "$platformSandboxAwsProfile" set output "json"
+echo -e "\nConfigure platform-sandbox AWS Profile"
+platformSandboxAwsProfile="platform-sandbox"
+aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
+aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
 echo
 echo 'cat "${HOME}/.aws/config"'
@@ -74,8 +74,8 @@ echo 'aws configure list-profiles'
 aws configure list-profiles
 
 echo
-echo 'aws lambda invoke --function-name start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
-aws lambda invoke --function-name start-toolspr-environment-pipeline --profile platform-sandbox response.json
+echo 'aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
+aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
 
 # echo
 # echo 'aws codepipeline list-pipelines --profile platform-tools'
