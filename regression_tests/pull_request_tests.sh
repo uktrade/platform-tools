@@ -36,65 +36,22 @@ aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_S
 aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
 aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
-echo
-echo 'cat "${HOME}/.aws/config"'
-cat "${HOME}/.aws/config"
-
-echo
-echo 'aws sts get-caller-identity'
-aws sts get-caller-identity
-
 echo -e "\nAssume role to trigger environment pipeline"
-temp_role=$(aws sts assume-role \
+assumedRole=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
-echo "$temp_role"
-
-# export AWS_ACCOUNT_ID="$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-export AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
-# export AWS_DEFAULT_PROFILE=platform-sandbox
-# export AWS_PROFILE=platform-sandbox
-
-echo
-echo 'aws --version'
-aws --version
-
-echo
-echo 'aws sts get-caller-identity'
-aws sts get-caller-identity
-
-echo
-echo 'env | grep AWS'
-env | grep AWS
-
-echo
-echo 'aws configure list-profiles'
-aws configure list-profiles
-
-echo
-echo 'aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox delete-me.json'
-aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
-
-# echo
-# echo 'aws codepipeline list-pipelines --profile platform-tools'
-# aws codepipeline list-pipelines --profile platform-tools
-#
-# echo
-# echo 'aws codepipeline list-pipelines --profile platform-sandbox'
-# aws codepipeline list-pipelines --profile platform-sandbox
-#
-# echo
-# echo -e "\nRun deploy environment pipeline"
-# aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
+export AWS_ACCESS_KEY_ID=$(echo $assumedRole | jq -r .Credentials.AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $assumedRole | jq -r .Credentials.SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $assumedRole | jq -r .Credentials.SessionToken)
 
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
+# # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
 # PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
-# echo -e "\nDeploy codebase pipeline"
-# Run the following from the demodjango-deploy codebase on your machine...
-#   copilot pipeline deploy
+echo -e "\nStart deploy environment pipeline"
+aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
+
+# Todo: Wait for pipeline to complete, check status etc.
 
 # echo -e "\nDeploy services"
 # (ideally with pipeline)
