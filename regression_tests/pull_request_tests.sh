@@ -26,17 +26,34 @@ cd ./demodjango-deploy/
 # Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
 
 # Todo: extract a method to create these profiles
-echo -e "\nConfigure platform-tools AWS Profile"
-platformToolsAwsProfile="platform-tools"
-aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_ID"
-aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
-aws configure --profile "$platformToolsAwsProfile" set output "json"
+# echo -e "\nConfigure platform-tools AWS Profile"
+# platformToolsAwsProfile="platform-tools"
+# aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_ID"
+# aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
+# aws configure --profile "$platformToolsAwsProfile" set output "json"
 
-echo -e "\nConfigure platform-sandbox AWS Profile"
-platformSandboxAwsProfile="platform-sandbox"
-aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
-aws configure --profile "$platformSandboxAwsProfile" set output "json"
+# echo -e "\nConfigure platform-sandbox AWS Profile"
+# platformSandboxAwsProfile="platform-sandbox"
+# aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+# aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
+# aws configure --profile "$platformSandboxAwsProfile" set output "json"
+
+# Function to configure an AWS profile
+configure_aws_profile() {
+  local profile_name=$1
+  local account_id=$2
+
+  echo -e "\nConfigure $profile_name AWS Profile"
+  aws configure --profile "$profile_name" set account_id "$account_id"
+  aws configure --profile "$profile_name" set region "eu-west-2"
+  aws configure --profile "$profile_name" set output "json"
+}
+
+# Configure platform-tools profile
+configure_aws_profile "platform-tools" "$AWS_ACCOUNT_ID"
+
+# Configure platform-sandbox profile
+configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
 
 echo -e "\nAssume role to trigger environment pipeline"
 assumedRole=$(aws sts assume-role \
@@ -51,7 +68,7 @@ assumedRole=$(aws sts assume-role \
 # Todo: Decide where the Terraform for the things we need in the platform-sandbox account should live
 
 # Todo: Terraform IAM stuff
-#In platform-sandbox....
+#In platform-sandbox.... (Added to terraform tools/env/prod/iam.tf)
 #
 #    regression-tests-assume-role-for-platform-tools
 #
@@ -83,29 +100,29 @@ assumedRole=$(aws sts assume-role \
 #            ]
 #        }
 #
-#In platform-tools...
+#In platform-tools... (Added to terraform-tools/env/prod/iam.tf)
 #
 #    codebuild-platform-tools-test-service-role > regression-tests (policy)
 #
-#        {
-#            "Version": "2012-10-17",
-#            "Statement": [
-#                {
-#                    "Sid": "TBC",
-#                    "Effect": "Allow",
-#                    "Action": "lambda:InvokeFunction",
-#                    "Resource": "arn:aws:lambda:eu-west-2:<platform_sandbox_account_id>:function:start-toolspr-environment-pipeline"
-#                },
-#                {
-#                    "Sid": "TBC",
-#                    "Effect": "Allow",
-#                    "Action": "sts:AssumeRole",
-#                    "Resource": "arn:aws:iam::<platform_sandbox_account_id>:role/regression-tests-assume-role-for-platform-tools"
-#                }
-#            ]
-#        }
+      #  {
+      #      "Version": "2012-10-17",
+      #      "Statement": [
+      #          {
+      #              "Sid": "TBC",
+      #              "Effect": "Allow",
+      #              "Action": "lambda:InvokeFunction",
+      #              "Resource": "arn:aws:lambda:eu-west-2:<platform_sandbox_account_id>:function:start-toolspr-environment-pipeline"
+      #          },
+      #          {
+      #              "Sid": "TBC",
+      #              "Effect": "Allow",
+      #              "Action": "sts:AssumeRole",
+      #              "Resource": "arn:aws:iam::<platform_sandbox_account_id>:role/regression-tests-assume-role-for-platform-tools"
+      #          }
+      #      ]
+      #  }
 
-# Todo: Terraform the Lambda function
+# Todo: Terraform the Lambda function (Added to terraform-tools/env/prod/lambda.tf)
 #In platform-sandbox...
 #
 #    Python 3.12
@@ -140,6 +157,24 @@ assumedRole=$(aws sts assume-role \
 #            }
 #        ]
 #    }
+
+#     Resource based policy
+
+      # {
+      #   "Version": "2012-10-17",
+      #   "Id": "default",
+      #   "Statement": [
+      #     {
+      #       "Sid": "AllowInvokeFunction",
+      #       "Effect": "Allow",
+      #       "Principal": {
+      #         "AWS": "arn:aws:iam::<platform_tools_account_id>:role/codebuild-platform-tools-test-service-role"
+      #       },
+      #       "Action": "lambda:InvokeFunction",
+      #       "Resource": "arn:aws:lambda:eu-west-2:<platform_sandbox_account_id>:function:start-toolspr-environment-pipeline"
+      #     }
+      #   ]
+      # }
 
 echo -e "\nStart deploy environment pipeline"
 aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
