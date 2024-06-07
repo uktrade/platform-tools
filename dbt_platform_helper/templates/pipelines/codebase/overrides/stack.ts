@@ -54,6 +54,14 @@ export class TransformedStack extends cdk.Stack {
         );
 
         for (const branch of watchedBranches) {
+            // sanitise branch here (remove *, don't include end $ in regex)
+            // branch === feat/* string should be ^refs/heads/feat/.*
+            let sanitisedBranch = branch,
+                pattern = `^refs/heads/${sanitisedBranch}$`
+            if (sanitisedBranch?.endsWith('*')){
+                sanitisedBranch = sanitisedBranch?.replace('*', '.*')
+                pattern = `^refs/heads/${sanitisedBranch}`
+            }
             filterGroups.push([
                 {type: 'EVENT', pattern: 'PUSH'},
                 {type: 'HEAD_REF', pattern: `^refs/heads/${branch}$`},
