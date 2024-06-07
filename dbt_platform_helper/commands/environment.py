@@ -394,6 +394,8 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
 
 
 def delete_listener_rule(rules: dict, tag_name: str, lb_client):
+    current_rule_arn = None
+
     for rule in rules:
         tags = {t["Key"]: t["Value"] for t in rule["Tags"]}
         if tags.get("name") == tag_name:

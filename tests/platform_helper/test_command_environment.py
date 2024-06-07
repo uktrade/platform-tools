@@ -41,7 +41,9 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
-        add_maintenance_page.assert_called_with(ANY, "https_listener", "default")
+        add_maintenance_page.assert_called_with(
+            ANY, "https_listener", "test-application", "development", "web", [], "default"
+        )
 
         assert (
             "Maintenance page 'default' added for environment development in "
@@ -73,7 +75,9 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
-        add_maintenance_page.assert_called_with(ANY, "https_listener", "migration")
+        add_maintenance_page.assert_called_with(
+            ANY, "https_listener", "test-application", "development", "web", [], "migration"
+        )
 
         assert (
             "Maintenance page 'migration' added for environment development in "
@@ -115,7 +119,9 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
-        add_maintenance_page.assert_called_with(ANY, "https_listener", "default")
+        add_maintenance_page.assert_called_with(
+            ANY, "https_listener", "test-application", "development", "web", [], "default"
+        )
 
         assert (
             "Maintenance page 'default' added for environment development in "
@@ -584,7 +590,9 @@ class TestRemoveMaintenancePage:
         from dbt_platform_helper.commands.environment import remove_maintenance_page
 
         boto_mock = MagicMock()
-        boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
+        boto_mock.client().describe_rules.return_value = {
+            "Rules": [{"RuleArn": "rule_arn"}, {"RuleArn": "allowed_ips_rule_arn"}]
+        }
         boto_mock.client().describe_tags.return_value = {
             "TagDescriptions": [
                 {
@@ -593,7 +601,14 @@ class TestRemoveMaintenancePage:
                         {"Key": "name", "Value": "MaintenancePage"},
                         {"Key": "type", "Value": "default"},
                     ],
-                }
+                },
+                {
+                    "ResourceArn": "allowed_ips_rule_arn",
+                    "Tags": [
+                        {"Key": "name", "Value": "AllowedIps"},
+                        {"Key": "type", "Value": "default"},
+                    ],
+                },
             ]
         }
         boto_mock.client().delete_rule.return_value = None
@@ -603,18 +618,23 @@ class TestRemoveMaintenancePage:
 
 class TestAddMaintenancePage:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
+    @patch("dbt_platform_helper.commands.environment.find_target_group")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
-    def test_adding_existing_template(self, get_maintenance_page_template, template):
+    def test_adding_existing_template(
+        self, get_maintenance_page_template, find_target_group, template
+    ):
         from dbt_platform_helper.commands.environment import add_maintenance_page
 
         boto_mock = MagicMock()
         get_maintenance_page_template.return_value = template
-
-        add_maintenance_page(boto_mock, "listener_arn", template)
+        find_target_group.return_value = "target_group_arn"
+        add_maintenance_page(
+            boto_mock, "listener_arn", "test-application", "development", "web", [], template
+        )
 
         boto_mock.client().create_rule.assert_called_with(
             ListenerArn="listener_arn",
-            Priority=1,
+            Priority=2,
             Conditions=[
                 {
                     "Field": "path-pattern",
