@@ -54,17 +54,20 @@ export class TransformedStack extends cdk.Stack {
         );
 
         for (const branch of watchedBranches) {
-            // sanitise branch here (remove *, don't include end $ in regex)
-            // branch === feat/* string should be ^refs/heads/feat/.*
             let sanitisedBranch = branch,
-                pattern = `^refs/heads/${sanitisedBranch}$`
-            if (sanitisedBranch?.endsWith('*')){
-                sanitisedBranch = sanitisedBranch?.replace('*', '.*')
-                pattern = `^refs/heads/${sanitisedBranch}`
+                pattern = `^refs/heads/${sanitisedBranch}$`;
+
+            if (sanitisedBranch?.endsWith('/*')){
+                sanitisedBranch?.replace('*', '.*');
+                pattern = `^refs/heads/${sanitisedBranch}`;
+            } else if (sanitisedBranch?.endsWith('*')) {
+                sanitisedBranch?.replace('*', '');
+                pattern = `^refs/heads/${sanitisedBranch}`;
             }
+
             filterGroups.push([
                 {type: 'EVENT', pattern: 'PUSH'},
-                {type: 'HEAD_REF', pattern: `^refs/heads/${branch}$`},
+                {type: 'HEAD_REF', pattern: pattern},
             ]);
         }
 
@@ -249,7 +252,7 @@ export class TransformedStack extends cdk.Stack {
                             runOrder: 1,
                             configuration: {
                                 RepositoryName: this.ecrRepository(),
-                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`,
+                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch.replace(/\//gi, '-')}`,
                             },
                             outputArtifacts: [{name: 'ECRMetadata'}],
                             actionTypeId: {
