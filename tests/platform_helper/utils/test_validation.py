@@ -29,7 +29,12 @@ def load_addons(addons_file):
 
 @pytest.mark.parametrize(
     "regex_pattern, valid_string, invalid_string",
-    [(r"^\d+-\d+$", "1-10", "20-21-23"), (r"^\d+s$", "10s", "10seconds")],
+    [
+        (r"^\d+-\d+$", "1-10", "20-21-23"),
+        (r"^\d+s$", "10s", "10seconds"),
+        (r"^((?!\*).)*(\*)?$", "test/valid/branch", "test*invalid/branch"),
+        (r"^((?!\*).)*(\*)?$", "test/valid/branch*", "test*invalid/branch*"),
+    ],
 )
 def test_validate_string(regex_pattern, valid_string, invalid_string):
     validator = validate_string(regex_pattern)

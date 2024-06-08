@@ -152,6 +152,8 @@ ENV_NAME = Regex(
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
 
+branch_wildcard_validator = validate_string(r"^((?!\*).)*(\*)?$")
+
 PIPELINES_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
@@ -182,7 +184,7 @@ PIPELINES_SCHEMA = Schema(
                     Or(
                         {
                             "name": str,
-                            "branch": str,
+                            "branch": branch_wildcard_validator,
                             "environments": [
                                 {
                                     "name": str,
