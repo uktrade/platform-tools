@@ -22,44 +22,80 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAcc
 
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
+#----------------------------------------------
 
-# Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
+# Todo: Replace manually added TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
+# -- Can we not use the environment variables added to the platform-tools-test codebuild project in the terraform-tools repo?
 
 # Todo: extract a method to create these profiles
-# echo -e "\nConfigure platform-tools AWS Profile"
-# platformToolsAwsProfile="platform-tools"
-# aws configure --profile "$platformToolsAwsProfile" set account_id "$AWS_ACCOUNT_ID"
-# aws configure --profile "$platformToolsAwsProfile" set region "eu-west-2"
-# aws configure --profile "$platformToolsAwsProfile" set output "json"
-
-# echo -e "\nConfigure platform-sandbox AWS Profile"
-# platformSandboxAwsProfile="platform-sandbox"
-# aws configure --profile "$platformSandboxAwsProfile" set account_id "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
-# aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
-# aws configure --profile "$platformSandboxAwsProfile" set output "json"
-
-# Function to configure an AWS profile
 configure_aws_profile() {
   local profile_name=$1
-  local account_id=$2
+  local access_key_id=$2
+  local secret_access_key=$3
+  local session_token_key=$4
 
   echo -e "\nConfigure $profile_name AWS Profile"
+  # populates the ~/.aws/credentials file & platform-sandbox profile
+  aws configure set aws_access_key_id "$access_key_id" --profile "$profile_name"
+  aws configure set aws_secret_access_key "$secret_access_key" --profile "$profile_name"
+  aws configure set aws_session_token "$session_token_key" --profile "$profile_name"
+  
   # Doesn't look like account_id is a valid option to configure
-  aws configure set account_id "$account_id" --profile "$profile_name"
+  # aws configure set account_id "$account_id" --profile "$profile_name"
+  
+  # populates the ~/.aws/config file & platform-sandbox profile
   aws configure set region "eu-west-2" --profile "$profile_name"
   aws configure set output "json" --profile "$profile_name"
 }
 
-# Configure platform-tools profile
-configure_aws_profile "platform-tools" "$AWS_ACCOUNT_ID"
+#----------------------------------------------
+# Would be obsolete if we can get the ID passsed in from codebuild project
+platform_tools_caller=$(aws sts get-caller-identity)
+echo "$platform_tools_caller"
 
-# Configure platform-sandbox profile
-configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
+echo "TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID: $TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID"
+#----------------------------------------------
 
-echo -e "\nAssume role to trigger environment pipeline"
-assumedRole=$(aws sts assume-role \
+# An error occurred (AccessDenied) when calling the AssumeRole operation: User: arn:aws:sts::763451185160:assumed-role/codebuild-platform-tools-test-service-role/AWSCodeBuild-19a590d0-983c-4449-b7f7-ae4d1d598202 is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::763451185160:role/codebuild-platform-tools-test-service-role
+# echo -e "\nAssume platform-tools role to trigger environment pipeline"
+# temp_role=$(aws sts assume-role \
+#     --role-arn "arn:aws:iam::$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID:role/codebuild-platform-tools-test-service-role" \
+#     --role-session-name "codebuild-pull-request-regression-tests-$(date +%s)")
+# echo "$temp_role"
+
+# PLATFORM_TOOLS_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+# PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+
+
+# # Configure platform-tools profile
+# configure_aws_profile "platform-tools" "$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY"
+# cat "${HOME}/.aws/credentials"
+# cat "${HOME}/.aws/config"
+
+#------------------------------------------------
+
+echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
+temp_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
+echo "$temp_role"
+
+PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
+
+# Configure platform-sandbox profile
+configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY" "$PLATFORM_SANDBOX_AWS_SESSION_TOKEN"
+cat "${HOME}/.aws/credentials"
+cat "${HOME}/.aws/config"
+#------------------------------------------------
+
+aws sts get-caller-identity # This returns platform-tools still
+
+echo -e "\nRun deploy environment pipeline"
+# Successfully runs the pipeline
+aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
 # Todo: Re-enable this...
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
@@ -70,6 +106,7 @@ assumedRole=$(aws sts assume-role \
 # -------------------------------------------------------------------------------------------------------
 # Todo: Terraform IAM stuff
 #In platform-sandbox.... (Added to terraform tools/env/prod/iam.tf)
+# Added the StartCodePipelineExecution action
 #
 #    regression-tests-assume-role-for-platform-tools
 #
@@ -84,7 +121,13 @@ assumedRole=$(aws sts assume-role \
 #                    },
 #                    "Action": "sts:AssumeRole",
 #                    "Condition": {}
-#                }
+#                },
+      #          {
+      #              "Sid": "StartCodePipelineExecution",
+      #              "Effect": "Allow",
+      #              "Action": "codepipeline:StartPipelineExecution",
+      #              "Resource": "arn:aws:codepipeline:eu-west-2:563763463626:demodjango-environment-pipeline-TOOLSPR"
+      # }
 #            ]
 #        }
 #
@@ -179,8 +222,8 @@ assumedRole=$(aws sts assume-role \
       #   ]
       # }
 # -------------------------------------------------------------------------------------------------------
-echo -e "\nStart deploy environment pipeline"
-aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
+# echo -e "\nStart deploy environment pipeline"
+# aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
 
 # Todo: Wait for pipeline to complete, check status etc.
 
