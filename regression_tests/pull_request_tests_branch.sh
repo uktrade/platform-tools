@@ -23,7 +23,7 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAcc
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
 
-# Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
+# Todo: Replace manually added TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
 
 # Todo: extract a method to create these profiles
 # echo -e "\nConfigure platform-tools AWS Profile"
@@ -71,12 +71,12 @@ configure_aws_profile() {
 platform_tools_caller=(aws sts get-caller-identity)
 echo "$platform_tools_caller"
 
-export PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
-echo "PLATFORM_TOOLS_ACCOUNT_ID: $PLATFORM_TOOLS_AWS_ACCOUNT_ID"
+export TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
+echo "TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID: $TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID"
 
 echo -e "\nAssume platform-tools role to trigger environment pipeline"
 temp_role=$(aws sts assume-role \
-    --role-arn "arn:aws:iam::$PLATFORM_TOOLS_AWS_ACCOUNT_ID:role/codebuild-platform-tools-test-service-role" \
+    --role-arn "arn:aws:iam::$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID:role/codebuild-platform-tools-test-service-role" \
     --role-session-name "codebuild-pull-request-regression-tests-$(date +%s)")
 echo "$temp_role"
 
@@ -85,10 +85,9 @@ export PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentia
 
 
 # Configure platform-tools profile
-configure_aws_profile "platform-tools" "$PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID"
+configure_aws_profile "platform-tools" "$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID"
 
 #------------------------------------------------
-PLATFORM_SANDBOX_AWS_ACCOUNT_ID=563763463626
 
 echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
 temp_role=$(aws sts assume-role \
