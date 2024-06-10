@@ -17,3 +17,7 @@ codebases:
         branch: hotfix*
         environments:
           - name: hotfix
+      - name: other
+        branch: other/*
+        environments:
+          - name: other
