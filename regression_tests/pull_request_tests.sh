@@ -4,10 +4,10 @@
 set -e
 # ./regression_tests/pull_request_tests.sh: line 8: poetry: command not found
 # Todo: Re-enable this...
-echo -e "\nBuild and install platform-helper"
-poetry build --no-interaction --format sdist --no-ansi
-pip install "dist/$(ls -t1 dist | head -1)"
-platform-helper --version
+# echo -e "\nBuild and install platform-helper"
+# poetry build --no-interaction --format sdist --no-ansi
+# pip install "dist/$(ls -t1 dist | head -1)"
+# platform-helper --version
 
 echo -e "\nGet CodeStar connection details"
 codestarConnections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
