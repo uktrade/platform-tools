@@ -44,9 +44,10 @@ configure_aws_profile() {
   local account_id=$2
 
   echo -e "\nConfigure $profile_name AWS Profile"
-  aws configure --profile "$profile_name" set account_id "$account_id"
-  aws configure --profile "$profile_name" set region "eu-west-2"
-  aws configure --profile "$profile_name" set output "json"
+  # Doesn't look like account_id is a valid option to configure
+  aws configure set account_id "$account_id" --profile "$profile_name"
+  aws configure set region "eu-west-2" --profile "$profile_name"
+  aws configure set output "json" --profile "$profile_name"
 }
 
 # Configure platform-tools profile
@@ -66,7 +67,7 @@ assumedRole=$(aws sts assume-role \
 # PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
 # Todo: Decide where the Terraform for the things we need in the platform-sandbox account should live
-
+# -------------------------------------------------------------------------------------------------------
 # Todo: Terraform IAM stuff
 #In platform-sandbox.... (Added to terraform tools/env/prod/iam.tf)
 #
@@ -100,6 +101,7 @@ assumedRole=$(aws sts assume-role \
 #            ]
 #        }
 #
+# -------------------------------------------------------------------------------------------------------
 #In platform-tools... (Added to terraform-tools/env/prod/iam.tf)
 #
 #    codebuild-platform-tools-test-service-role > regression-tests (policy)
@@ -122,6 +124,7 @@ assumedRole=$(aws sts assume-role \
       #      ]
       #  }
 
+# -------------------------------------------------------------------------------------------------------
 # Todo: Terraform the Lambda function (Added to terraform-tools/env/prod/lambda.tf)
 #In platform-sandbox...
 #
@@ -175,7 +178,7 @@ assumedRole=$(aws sts assume-role \
       #     }
       #   ]
       # }
-
+# -------------------------------------------------------------------------------------------------------
 echo -e "\nStart deploy environment pipeline"
 aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
 
