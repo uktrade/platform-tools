@@ -54,20 +54,17 @@ export class TransformedStack extends cdk.Stack {
         );
 
         for (const branch of watchedBranches) {
-            let sanitisedBranch = branch,
-                pattern = `^refs/heads/${sanitisedBranch}$`;
+            let sanitisedBranch = branch;
 
-            if (sanitisedBranch?.endsWith('/*')){
+            if (branch?.endsWith('*')){
                 sanitisedBranch?.replace('*', '.*');
-                pattern = `^refs/heads/${sanitisedBranch}`;
-            } else if (sanitisedBranch?.endsWith('*')) {
-                sanitisedBranch?.replace('*', '');
-                pattern = `^refs/heads/${sanitisedBranch}`;
+            } else {
+                sanitisedBranch = sanitisedBranch?.concat('$');
             }
 
             filterGroups.push([
                 {type: 'EVENT', pattern: 'PUSH'},
-                {type: 'HEAD_REF', pattern: pattern},
+                {type: 'HEAD_REF', pattern: `^refs/heads/${sanitisedBranch}`},
             ]);
         }
 
