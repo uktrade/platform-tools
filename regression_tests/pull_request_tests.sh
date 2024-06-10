@@ -68,10 +68,10 @@ configure_aws_profile() {
 }
 
 #----------------------------------------------
-platform_tools_caller=(aws sts get-caller-identity)
+platform_tools_caller=$(aws sts get-caller-identity)
 echo "$platform_tools_caller"
 
-export TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
+TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
 echo "TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID: $TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID"
 
 echo -e "\nAssume platform-tools role to trigger environment pipeline"
@@ -80,12 +80,14 @@ temp_role=$(aws sts assume-role \
     --role-session-name "codebuild-pull-request-regression-tests-$(date +%s)")
 echo "$temp_role"
 
-export PLATFORM_TOOLS_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
-export PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+PLATFORM_TOOLS_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
 
 
 # Configure platform-tools profile
-configure_aws_profile "platform-tools" "$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID"
+configure_aws_profile "platform-tools" "$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY"
+cat "${HOME}/.aws/credentials"
+cat "${HOME}/.aws/config"
 
 #------------------------------------------------
 
@@ -95,11 +97,13 @@ temp_role=$(aws sts assume-role \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
 echo "$temp_role"
 
-export PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
-export PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
 
 # Configure platform-sandbox profile
 configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY"
+cat "${HOME}/.aws/credentials"
+cat "${HOME}/.aws/config"
 #------------------------------------------------
 
 aws sts get-caller-identity
