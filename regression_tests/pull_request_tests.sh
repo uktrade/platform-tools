@@ -23,7 +23,7 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$awsAcc
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
 
-# Todo: Replace manually added PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
+# Todo: Replace manually added TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID and PLATFORM_SANDBOX_AWS_ACCOUNT_ID environment variables
 
 # Todo: extract a method to create these profiles
 # echo -e "\nConfigure platform-tools AWS Profile"
@@ -38,28 +38,78 @@ cd ./demodjango-deploy/
 # aws configure --profile "$platformSandboxAwsProfile" set region "eu-west-2"
 # aws configure --profile "$platformSandboxAwsProfile" set output "json"
 
+# platformSandboxAwsProfile="platform-sandbox"
+# # Configure AWS CLI profile
+# echo -e "\nConfigure $AWS_PROFILE AWS Profile"
+# # populates the ~/.aws/credentials file
+# aws configure set aws_access_key_id "$ACCESS_KEY_ID" --profile "$AWS_PROFILE"
+# aws configure set aws_secret_access_key "$SECRET_ACCESS_KEY" --profile "$AWS_PROFILE"
+# # populates the ~/.aws/config file & platform-sandbox profile
+# aws configure set region "eu-west-2" --profile "$AWS_PROFILE"
+# aws configure set output "json" --profile "$AWS_PROFILE"
+
 # Function to configure an AWS profile
 configure_aws_profile() {
   local profile_name=$1
-  local account_id=$2
+  local access_key_id=$2
+  local secret_access_key=$2
 
   echo -e "\nConfigure $profile_name AWS Profile"
+  # populates the ~/.aws/credentials file
+  aws configure set aws_access_key_id "$access_key_id" --profile "$profile_name"
+  aws configure set aws_secret_access_key "$secret_access_key" --profile "$profile_name"
+  
   # Doesn't look like account_id is a valid option to configure
-  aws configure set account_id "$account_id" --profile "$profile_name"
+  # aws configure set account_id "$account_id" --profile "$profile_name"
+  
+  # populates the ~/.aws/config file & platform-sandbox profile
   aws configure set region "eu-west-2" --profile "$profile_name"
   aws configure set output "json" --profile "$profile_name"
 }
 
+#----------------------------------------------
+platform_tools_caller=(aws sts get-caller-identity)
+echo "$platform_tools_caller"
+
+export TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID=$(echo "$platform_tools_caller" | jq -r .Account)
+echo "TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID: $TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID"
+
+echo -e "\nAssume platform-tools role to trigger environment pipeline"
+temp_role=$(aws sts assume-role \
+    --role-arn "arn:aws:iam::$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID:role/codebuild-platform-tools-test-service-role" \
+    --role-session-name "codebuild-pull-request-regression-tests-$(date +%s)")
+echo "$temp_role"
+
+export PLATFORM_TOOLS_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+export PLATFORM_TOOLS_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+
+
 # Configure platform-tools profile
-configure_aws_profile "platform-tools" "$AWS_ACCOUNT_ID"
+configure_aws_profile "platform-tools" "$TEST_PLATFORM_TOOLS_AWS_ACCOUNT_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID" "$PLATFORM_TOOLS_AWS_ACCESS_KEY_ID"
 
-# Configure platform-sandbox profile
-configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCOUNT_ID"
+#------------------------------------------------
 
-echo -e "\nAssume role to trigger environment pipeline"
-assumedRole=$(aws sts assume-role \
+echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
+temp_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
+echo "$temp_role"
+
+export PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
+export PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+
+# Configure platform-sandbox profile
+configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY"
+#------------------------------------------------
+
+aws sts get-caller-identity
+
+echo -e "\nRun deploy environment pipeline"
+aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
+
+# export AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
+# export AWS_DEFAULT_PROFILE=platform-sandbox
+# export AWS_PROFILE=platform-sandbox
 
 # Todo: Re-enable this...
 # echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
