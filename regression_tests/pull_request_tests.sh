@@ -2,7 +2,7 @@
 
 # exit early if something goes wrong
 set -e
-
+# ./regression_tests/pull_request_tests.sh: line 8: poetry: command not found
 # Todo: Re-enable this...
 echo -e "\nBuild and install platform-helper"
 poetry build --no-interaction --format sdist --no-ansi
@@ -62,9 +62,9 @@ assumedRole=$(aws sts assume-role \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
 
 # Todo: Re-enable this...
-echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
+# echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
 # # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
-PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
+# PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
 # Todo: Decide where the Terraform for the things we need in the platform-sandbox account should live
 # -------------------------------------------------------------------------------------------------------
