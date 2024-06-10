@@ -335,7 +335,6 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
 
 
 def find_target_group(app: str, env: str, svc: str) -> str:
-    # response = lb_client.describe_target_groups(LoadBalancerArn=load_balancer_arn)
     rg_tagging_client = boto3.client("resourcegroupstaggingapi")
     response = rg_tagging_client.get_resources(
         TagFilters=[
@@ -393,7 +392,7 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
     return maintenance_page_type
 
 
-def delete_listener_rule(rules: dict, tag_name: str, lb_client):
+def delete_listener_rule(rules: list, tag_name: str, lb_client):
     current_rule_arn = None
 
     for rule in rules:

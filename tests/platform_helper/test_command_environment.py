@@ -861,3 +861,175 @@ class TestEnvironmentMaintenanceTemplates:
 
         contents = get_maintenance_page_template(template)
         assert "\n" not in contents
+
+
+class TestCommandHelperMethods:
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_get_app_environment(self, mock_load_application):
+        from dbt_platform_helper.commands.environment import get_app_environment
+        from dbt_platform_helper.utils.application import Application
+
+        development = Mock()
+        application = Application(name="test-application")
+        application.environments = {"development": development}
+        mock_load_application.return_value = application
+
+        app_environment = get_app_environment("test-application", "development")
+
+        assert app_environment == development
+
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_get_app_environment_does_not_exist(self, mock_load_application, capsys):
+        from dbt_platform_helper.commands.environment import get_app_environment
+        from dbt_platform_helper.utils.application import Application
+
+        CliRunner()
+        application = Application(name="test-application")
+        mock_load_application.return_value = application
+
+        with pytest.raises(click.Abort):
+            get_app_environment("test-application", "development")
+
+        captured = capsys.readouterr()
+
+        assert (
+            "The environment development was not found in the application test-application."
+            in captured.out
+        )
+
+    def _create_subnet(self, session):
+        ec2 = session.client("ec2")
+        vpc_id = ec2.create_vpc(CidrBlock="10.0.0.0/16")["Vpc"]["VpcId"]
+
+        return (
+            vpc_id,
+            ec2.create_subnet(VpcId=vpc_id, CidrBlock="10.0.1.0/24")["Subnet"]["SubnetId"],
+        )
+
+    def _create_listener(self, elbv2_client):
+        _, subnet_id = self._create_subnet(boto3.Session())
+        load_balancer_arn = elbv2_client.create_load_balancer(
+            Name="test-load-balancer", Subnets=[subnet_id]
+        )["LoadBalancers"][0]["LoadBalancerArn"]
+        return elbv2_client.create_listener(
+            LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}]
+        )["Listeners"][0]["ListenerArn"]
+
+    def _create_listener_rule(self):
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        rule_response = elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "path-pattern", "PathPatternConfig": {"Values": ["/test-path"]}}],
+            Priority=1,
+            Actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "MessageBody": "test response",
+                        "StatusCode": "200",
+                        "ContentType": "text/plain",
+                    },
+                }
+            ],
+        )
+
+        return rule_response["Rules"][0]["RuleArn"], elbv2_client, listener_arn
+
+    def _create_target_group(self):
+        ec2_client = boto3.client("ec2")
+        vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
+        vpc_id = vpc_response["Vpc"]["VpcId"]
+
+        return boto3.client("elbv2").create_target_group(
+            Name="test-target-group",
+            Protocol="HTTPS",
+            Port=123,
+            VpcId=vpc_id,
+            Tags=[
+                {"Key": "copilot-application", "Value": "test-application"},
+                {"Key": "copilot-environment", "Value": "development"},
+                {"Key": "copilot-service", "Value": "web"},
+            ],
+        )["TargetGroups"][0]["TargetGroupArn"]
+
+    @mock_aws
+    def test_get_listener_rule_by_tag(self):
+        from dbt_platform_helper.commands.environment import get_listener_rule_by_tag
+
+        rule_arn, elbv2_client, listener_arn = self._create_listener_rule()
+
+        rule = get_listener_rule_by_tag(elbv2_client, listener_arn, "test-key", "test-value")
+
+        assert rule["RuleArn"] == rule_arn
+
+    @mock_aws
+    def test_find_target_group(self):
+        from dbt_platform_helper.commands.environment import find_target_group
+
+        target_group_arn = self._create_target_group()
+
+        assert find_target_group("test-application", "development", "web") == target_group_arn
+
+    @mock_aws
+    def test_find_target_group_not_found(self, capsys):
+        from dbt_platform_helper.commands.environment import find_target_group
+
+        with pytest.raises(click.Abort):
+            find_target_group("test-application", "development", "web")
+
+        captured = capsys.readouterr()
+
+        assert (
+            "No target group found for application: test-application, environment: development, service: web"
+            in captured.out
+        )
+
+    @mock_aws
+    def test_delete_listener_rule(self):
+        from dbt_platform_helper.commands.environment import delete_listener_rule
+
+        rule_arn, elbv2_client, listener_arn = self._create_listener_rule()
+        rules = [{"ResourceArn": rule_arn, "Tags": [{"Key": "name", "Value": "test-tag"}]}]
+
+        described_rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+
+        # sanity check that default and newly created rule both exist
+        assert len(described_rules) == 2
+
+        delete_listener_rule(rules, "test-tag", elbv2_client)
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+
+        assert len(rules) == 1
+
+    @patch("dbt_platform_helper.commands.environment.requests.get")
+    def test_get_public_ip(self, mock_get):
+        from dbt_platform_helper.commands.environment import get_public_ip
+
+        mock_response = MagicMock()
+        mock_response.text = "123.123.123.123"
+        mock_get.return_value = mock_response
+
+        result = get_public_ip()
+
+        assert result == "123.123.123.123"
+
+    @mock_aws
+    def test_create_allowed_ips_rule(self):
+        from dbt_platform_helper.commands.environment import create_allowed_ips_rule
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 1
+
+        create_allowed_ips_rule(
+            elbv2_client, listener_arn, ["1.2.3.4", "5.6.7.8"], target_group_arn
+        )
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 2  # 1 default + 1 created
+        assert rules[0]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
