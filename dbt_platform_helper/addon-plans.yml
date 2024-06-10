@@ -220,3 +220,5 @@ s3-policy: {}
 monitoring: {}
 
 alb: {}
+
+prometheus-policy: {}
