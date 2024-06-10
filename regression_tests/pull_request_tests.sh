@@ -52,12 +52,14 @@ cd ./demodjango-deploy/
 configure_aws_profile() {
   local profile_name=$1
   local access_key_id=$2
-  local secret_access_key=$2
+  local secret_access_key=$3
+  local session_token_key=$4
 
   echo -e "\nConfigure $profile_name AWS Profile"
   # populates the ~/.aws/credentials file
   aws configure set aws_access_key_id "$access_key_id" --profile "$profile_name"
   aws configure set aws_secret_access_key "$secret_access_key" --profile "$profile_name"
+  aws configure set aws_session_token "$session_token_key" --profile "$profile_name"
   
   # Doesn't look like account_id is a valid option to configure
   # aws configure set account_id "$account_id" --profile "$profile_name"
@@ -100,9 +102,10 @@ echo "$temp_role"
 
 PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $temp_role | jq -r .Credentials.AccessKeyId)
 PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $temp_role | jq -r .Credentials.SecretAccessKey)
+PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $temp_role | jq -r .Credentials.SessionToken)
 
 # Configure platform-sandbox profile
-configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY"
+configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY" "$PLATFORM_SANDBOX_AWS_SESSION_TOKEN"
 cat "${HOME}/.aws/credentials"
 cat "${HOME}/.aws/config"
 #------------------------------------------------
