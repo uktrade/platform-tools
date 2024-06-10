@@ -237,8 +237,8 @@ aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline
       #   ]
       # }
 # -------------------------------------------------------------------------------------------------------
-echo -e "\nStart deploy environment pipeline"
-aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
+# echo -e "\nStart deploy environment pipeline"
+# aws lambda invoke --function-name arn:aws:lambda:eu-west-2:$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:function:start-toolspr-environment-pipeline --profile platform-sandbox response.json
 
 # Todo: Wait for pipeline to complete, check status etc.
 
