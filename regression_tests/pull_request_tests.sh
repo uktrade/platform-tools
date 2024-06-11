@@ -20,11 +20,10 @@ configure_aws_profile() {
 # exit early if something goes wrong
 set -e
 
-# Todo: Re-enable this...
-# echo -e "\nBuild and install platform-helper"
-# poetry build --no-interaction --format sdist --no-ansi
-# pip install "dist/$(ls -t1 dist | head -1)"
-# platform-helper --version
+echo -e "\nBuild and install platform-helper"
+poetry build --no-interaction --format sdist --no-ansi
+pip install "dist/$(ls -t1 dist | head -1)"
+platform-helper --version
 
 echo -e "\nGet CodeStar connection details"
 codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
@@ -40,11 +39,9 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$aws_ac
 echo -e "\ncd demodjango-deploy"
 cd ./demodjango-deploy/
 
-# Todo: Re-enable this...
-# echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
-# # The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
-# PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
-#----------------------------------------------
+echo -e "\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)"
+# The commands are run elsewhere in pipelines, but this gives us faster, more granular feedback
+PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper generate
 
 echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
 assumed_role=$(aws sts assume-role \
