@@ -57,7 +57,8 @@ PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.Ses
 echo -e "\nConfigure platform-sandbox profile"
 configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY" "$PLATFORM_SANDBOX_AWS_SESSION_TOKEN"
 
-./stages/run_environment_pipeline.sh
+cd ..
+./regression_tests/stages/run_environment_pipeline.sh
 
 # echo -e "\nDeploy services"
 # (ideally with pipeline)

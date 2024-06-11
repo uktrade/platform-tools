@@ -16,5 +16,4 @@ phases:
   build:
     commands:
       - echo -e "\nRunning regression tests"
-      - cd ./regression_tests
-      - ./pull_request_tests.sh
+      - ./regression_tests/pull_request_tests.sh
