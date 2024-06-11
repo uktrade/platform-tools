@@ -65,7 +65,7 @@ count=0
 
 while  count -le 10 ;
 do
-   count++
+   count=$((count+1))
    echo $count
 done 
 
