@@ -219,6 +219,8 @@ def create_addon_client_task(
         elif access == "admin" and is_terraform_project():
             create_postgres_admin_task(app, env, secret_name, task_name, addon_type, addon_name)
             return
+    elif addon_type == "redis" or addon_type == "opensearch":
+        secret_name += "_ENDPOINT"
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
