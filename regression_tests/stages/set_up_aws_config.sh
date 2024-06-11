@@ -8,8 +8,8 @@ PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.Acc
 PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
 PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
+echo -e "\nConfigure platform-sandbox AWS Profile"
 profile_name="platform-sandbox"
-echo -e "\nConfigure $profile_name AWS Profile"
 # populates the ~/.aws/credentials file..
 aws configure set aws_access_key_id "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" --profile "$profile_name"
 aws configure set aws_secret_access_key "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY" --profile "$profile_name"

@@ -3,11 +3,11 @@
 # exit early if something goes wrong
 set -e
 
-#./regression_tests/stages/build_platform_helper.sh
+./regression_tests/stages/build_platform_helper.sh
 
-#./regression_tests/stages/clone_demodjango_deploy.sh
+./regression_tests/stages/clone_demodjango_deploy.sh
 
-#./regression_tests/stages/run_platform_helper_generate.sh
+./regression_tests/stages/run_platform_helper_generate.sh
 
 ./regression_tests/stages/set_up_aws_config.sh
 
