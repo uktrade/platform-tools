@@ -92,7 +92,7 @@ def deployment():
         recommendations["storage.yml"] = (
             "The file `storage.yml` is incompatible with version "
             f"{versioning.string_version(app_released_version)} of "
-            "dbt-platform-helper, move contents to `extensions.yml` and "
+            "dbt-platform-helper, move contents to `platform-config.yml` under a key 'extensions' and "
             "delete `storage.yml`."
         )
 

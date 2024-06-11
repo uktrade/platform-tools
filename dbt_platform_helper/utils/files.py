@@ -4,6 +4,8 @@ from pathlib import Path
 import click
 import yaml
 
+PLATFORM_CONFIG_FILE = "platform-config.yml"
+
 
 def load_and_validate_config(path, schema):
     conf = yaml.safe_load(Path(path).read_text())
@@ -63,3 +65,9 @@ def generate_override_files(base_path, file_path, output_dir):
 
     generate_files_for_dir("*")
     generate_files_for_dir("bin/*")
+
+
+def apply_defaults(config):
+    env_defaults = config.get("*", {})
+    raw_envs = {name: data if data else {} for name, data in config.items() if name != "*"}
+    return {name: {**env_defaults, **data} for name, data in raw_envs.items()}

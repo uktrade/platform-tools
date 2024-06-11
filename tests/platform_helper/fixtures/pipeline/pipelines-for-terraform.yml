@@ -1,5 +1,6 @@
+application: my-app
 environments:
-  - name: dev
+  dev:
     accounts:
       deploy:
         name: "dev-deploy-account"
@@ -7,7 +8,7 @@ environments:
       dns:
         name: "dev-dns-account"
         id: "2222222222"
-  - name: prod
+  prod:
     accounts:
       deploy:
         name: "prod-deploy-account"
@@ -17,7 +18,7 @@ environments:
         id: "4444444444"
     requires_approval: true
 
-codebases:
+codebase-pipelines:
   - name: application
     repository: organisation/repository
     services:

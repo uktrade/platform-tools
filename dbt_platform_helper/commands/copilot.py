@@ -14,6 +14,7 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
@@ -68,7 +69,7 @@ def copilot():
     check_platform_helper_version_needs_update()
 
 
-def _validate_and_normalise_config(config_file):
+def _validate_and_normalise_addons_config(config_file, key_in_config_file=None):
     """Load the addons.yaml file, validate it and return the normalised config
     dict."""
 
@@ -93,6 +94,9 @@ def _validate_and_normalise_config(config_file):
     # load and validate config
     with open(config_file, "r") as fd:
         config = yaml.safe_load(fd)
+
+    if config and key_in_config_file:
+        config = config[key_in_config_file]
 
     # empty file
     if not config:
@@ -364,8 +368,8 @@ def make_addons():
 
 
 def _get_config():
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-extensions.yml")
-    project_config = _validate_and_normalise_config("extensions.yml")
+    config = _validate_and_normalise_addons_config(PACKAGE_DIR / "default-extensions.yml")
+    project_config = _validate_and_normalise_addons_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)
     return config
 

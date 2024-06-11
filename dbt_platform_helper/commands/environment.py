@@ -4,6 +4,7 @@ from typing import Union
 
 import boto3
 import click
+import yaml
 
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -211,6 +212,23 @@ def generate(name, vpc_name):
         click.echo(
             mkfile(".", f"copilot/environments/{env_name}/manifest.yml", contents, overwrite=True)
         )
+
+
+@environment.command()
+def gen_x():
+    env_template = setup_templates().get_template("environments/main.tf")
+    conf = yaml.safe_load(Path("platform-config.yml").read_text())
+    env_defaults = conf["environments"]["*"]
+    raw_envs = {
+        name: data if data else {} for name, data in conf["environments"].items() if name != "*"
+    }
+    envs = {name: {**env_defaults, **data} for name, data in raw_envs.items()}
+
+    for name, config in envs.items():
+        template_data = {"application": conf["application"], "environment": name, "config": config}
+        contents = env_template.render(template_data)
+
+        click.echo(mkfile(".", f"terraform/environments/{name}/main.tf", contents, overwrite=True))
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:

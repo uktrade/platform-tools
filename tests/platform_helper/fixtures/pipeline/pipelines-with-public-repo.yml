@@ -1,13 +1,14 @@
+application: my-app
 accounts:
   - 111111111
   - 222222222
 
 environments:
-  - name: dev
-  - name: prod
+  dev:
+  prod:
     requires_approval: true
 
-codebases:
+codebase-pipelines:
   - name: application
     repository: organisation/repository
     additional_ecr_repository: public.ecr.aws/uktrade-platform-sandbox/demodjango/application

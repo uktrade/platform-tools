@@ -1,5 +1,6 @@
-monitoring:
-  type: monitoring
-  environments:
-    development:
-      enable_ops_center: false
+extensions:
+  monitoring:
+    type: monitoring
+    environments:
+      development:
+        enable_ops_center: false

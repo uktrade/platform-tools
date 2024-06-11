@@ -152,27 +152,196 @@ ENV_NAME = Regex(
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
 
-PIPELINES_SCHEMA = Schema(
+NUMBER = Or(int, float)
+DELETION_POLICY = Or("Delete", "Retain")
+DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
+DELETION_PROTECTION = bool
+
+REDIS_PLANS = Or(
+    "micro",
+    "micro-ha",
+    "tiny",
+    "tiny-ha",
+    "small",
+    "small-ha",
+    "medium",
+    "medium-ha",
+    "large",
+    "large-ha",
+    "x-large",
+    "x-large-ha",
+)
+
+REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1")
+
+REDIS_DEFINITION = {
+    "type": "redis",
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("plan"): REDIS_PLANS,
+            Optional("engine"): REDIS_ENGINE_VERSIONS,
+            Optional("replicas"): int_between(0, 5),
+            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("apply_immediately"): bool,
+            Optional("automatic_failover_enabled"): bool,
+            Optional("instance"): str,
+            Optional("multi_az_enabled"): bool,
+        }
+    },
+}
+
+POSTGRES_PLANS = Or(
+    "tiny",
+    "small",
+    "small-ha",
+    "small-high-io",
+    "medium",
+    "medium-high-io",
+    "large",
+    "large-ha",
+    "large-high-io",
+    "x-large",
+    "x-large-ha",
+    "x-large-high-io",
+)
+POSTGRES_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
+
+RETENTION_POLICY = Or(
+    None,
+    {
+        "mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("days", "years", only_one=True): int,
+    },
+)
+POSTGRES_DEFINITION = {
+    "type": "postgres",
+    "version": NUMBER,
+    Optional("deletion_policy"): DB_DELETION_POLICY,
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("plan"): POSTGRES_PLANS,
+            Optional("volume_size"): int_between(20, 10000),
+            Optional("iops"): int_between(1000, 9950),
+            Optional("snapshot_id"): str,
+            Optional("deletion_policy"): DB_DELETION_POLICY,
+            Optional("deletion_protection"): DELETION_PROTECTION,
+            Optional("multi_az"): bool,
+            Optional("storage_type"): POSTGRES_STORAGE_TYPES,
+        }
+    },
+    Optional("objects"): [
+        {
+            "key": str,
+            Optional("body"): str,
+        }
+    ],
+}
+
+S3_BASE = {
+    Optional("readonly"): bool,
+    Optional("services"): Or("__all__", [str]),
+    Optional("environments"): {
+        ENV_NAME: {
+            "bucket_name": validate_s3_bucket_name,
+            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("retention_policy"): RETENTION_POLICY,
+            Optional("versioning"): bool,
+        }
+    },
+}
+
+_S3_POLICY_DEFINITION = dict(S3_BASE)
+_S3_POLICY_DEFINITION.update({"type": "s3-policy"})
+
+S3_DEFINITION = dict(S3_BASE)
+S3_DEFINITION.update(
+    {
+        "type": "s3",
+        Optional("objects"): [
+            {
+                "key": str,
+                Optional("body"): str,
+            }
+        ],
+    }
+)
+
+MONITORING_DEFINITION = {
+    "type": "monitoring",
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("enable_ops_center"): bool,
+        }
+    },
+}
+
+OPENSEARCH_PLANS = Or(
+    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
+)
+
+OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+
+OPENSEARCH_DEFINITION = {
+    "type": "opensearch",
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
+            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("plan"): OPENSEARCH_PLANS,
+            Optional("volume_size"): int,
+            Optional("ebs_throughput"): int,
+            Optional("ebs_volume_type"): str,
+            Optional("instance"): str,
+            Optional("instances"): int,
+            Optional("master"): bool,
+            Optional("es_app_log_retention_in_days"): int,
+            Optional("index_slow_log_retention_in_days"): int,
+            Optional("audit_log_retention_in_days"): int,
+            Optional("search_slow_log_retention_in_days"): int,
+        }
+    },
+}
+
+ALB_DEFINITION = {
+    "type": "alb",
+    Optional("environments"): {
+        ENV_NAME: Or(
+            {
+                Optional("domain_prefix"): str,
+                Optional("env_root"): str,
+                Optional("cdn_domains_list"): dict,
+                Optional("additional_address_list"): list,
+            },
+            None,
+        )
+    },
+}
+
+PLATFORM_CONFIG_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
+        "application": str,
         Optional("accounts"): list[str],
-        Optional("environments"): [
-            {
-                "name": str,
-                Optional("accounts"): {
-                    "deploy": {
-                        "name": str,
-                        "id": str,
+        Optional("environments"): {
+            str: Or(
+                None,
+                {
+                    Optional("accounts"): {
+                        "deploy": {
+                            "name": str,
+                            "id": str,
+                        },
+                        "dns": {
+                            "name": str,
+                            "id": str,
+                        },
                     },
-                    "dns": {
-                        "name": str,
-                        "id": str,
-                    },
+                    Optional("requires_approval"): bool,
+                    Optional("vpc"): str,
                 },
-                Optional("requires_approval"): bool,
-            },
-        ],
-        Optional("codebases"): [
+            ),
+        },
+        Optional("codebase-pipelines"): [
             {
                 "name": str,
                 "repository": str,
@@ -204,91 +373,30 @@ PIPELINES_SCHEMA = Schema(
                 ],
             },
         ],
-    },
-)
-
-NUMBER = Or(int, float)
-DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
-DELETION_POLICY = Or("Delete", "Retain")
-DELETION_PROTECTION = bool
-POSTGRES_PLANS = Or(
-    "tiny",
-    "small",
-    "small-ha",
-    "small-high-io",
-    "medium",
-    "medium-high-io",
-    "large",
-    "large-ha",
-    "large-high-io",
-    "x-large",
-    "x-large-ha",
-    "x-large-high-io",
-)
-POSTGRES_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
-
-RETENTION_POLICY = Or(
-    None,
-    {
-        "mode": Or("GOVERNANCE", "COMPLIANCE"),
-        Or("days", "years", only_one=True): int,
-    },
-)
-
-REDIS_PLANS = Or(
-    "micro",
-    "micro-ha",
-    "tiny",
-    "tiny-ha",
-    "small",
-    "small-ha",
-    "medium",
-    "medium-ha",
-    "large",
-    "large-ha",
-    "x-large",
-    "x-large-ha",
-)
-
-REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1")
-
-OPENSEARCH_PLANS = Or(
-    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
-)
-
-OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
-
-S3_BASE = {
-    Optional("readonly"): bool,
-    Optional("services"): Or("__all__", [str]),
-    Optional("environments"): {
-        ENV_NAME: {
-            "bucket_name": validate_s3_bucket_name,
-            Optional("deletion_policy"): DELETION_POLICY,
-            Optional("retention_policy"): RETENTION_POLICY,
-            Optional("versioning"): bool,
-        }
-    },
-}
-
-_S3_POLICY_DEFINITION = dict(S3_BASE)
-_S3_POLICY_DEFINITION.update({"type": "s3-policy"})
-S3_POLICY_SCHEMA = Schema(_S3_POLICY_DEFINITION)
-
-_S3_DEFINITION = dict(S3_BASE)
-_S3_DEFINITION.update(
-    {
-        "type": "s3",
-        Optional("objects"): [
-            {
-                "key": str,
-                Optional("body"): str,
+        Optional("extensions"): {
+            str: Or(
+                REDIS_DEFINITION,
+                POSTGRES_DEFINITION,
+                S3_DEFINITION,
+                MONITORING_DEFINITION,
+                OPENSEARCH_DEFINITION,
+                ALB_DEFINITION,
+            )
+        },
+        Optional("environment-pipelines"): {
+            str: {
+                Optional("branch", default="main"): str,
+                "slack_channel": str,
+                "trigger": str,
+                "environments": {str: Or({}, None)},
             }
-        ],
+        },
     }
 )
-S3_SCHEMA = Schema(_S3_DEFINITION)
 
+
+S3_SCHEMA = Schema(S3_DEFINITION)
+S3_POLICY_SCHEMA = Schema(_S3_POLICY_DEFINITION)
 AURORA_SCHEMA = Schema(
     {
         "type": "aurora-postgres",
@@ -312,49 +420,8 @@ AURORA_SCHEMA = Schema(
     }
 )
 
-POSTGRES_SCHEMA = Schema(
-    {
-        "type": "postgres",
-        "version": NUMBER,
-        Optional("deletion_policy"): DB_DELETION_POLICY,
-        Optional("environments"): {
-            ENV_NAME: {
-                Optional("plan"): POSTGRES_PLANS,
-                Optional("volume_size"): int_between(20, 10000),
-                Optional("iops"): int_between(1000, 9950),
-                Optional("snapshot_id"): str,
-                Optional("deletion_policy"): DB_DELETION_POLICY,
-                Optional("deletion_protection"): DELETION_PROTECTION,
-                Optional("multi_az"): bool,
-                Optional("storage_type"): POSTGRES_STORAGE_TYPES,
-            }
-        },
-        Optional("objects"): [
-            {
-                "key": str,
-                Optional("body"): str,
-            }
-        ],
-    }
-)
-
-REDIS_SCHEMA = Schema(
-    {
-        "type": "redis",
-        Optional("environments"): {
-            ENV_NAME: {
-                Optional("plan"): REDIS_PLANS,
-                Optional("engine"): REDIS_ENGINE_VERSIONS,
-                Optional("replicas"): int_between(0, 5),
-                Optional("deletion_policy"): DELETION_POLICY,
-                Optional("apply_immediately"): bool,
-                Optional("automatic_failover_enabled"): bool,
-                Optional("instance"): str,
-                Optional("multi_az_enabled"): bool,
-            }
-        },
-    }
-)
+POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
+REDIS_SCHEMA = Schema(REDIS_DEFINITION)
 
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 OPENSEARCH_MAX_VOLUME_SIZE = {
@@ -406,57 +473,9 @@ class ConditionalSchema(Schema):
         return data
 
 
-OPENSEARCH_SCHEMA = ConditionalSchema(
-    {
-        "type": "opensearch",
-        Optional("environments"): {
-            ENV_NAME: {
-                Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
-                Optional("deletion_policy"): DELETION_POLICY,
-                Optional("plan"): OPENSEARCH_PLANS,
-                Optional("volume_size"): int,
-                Optional("ebs_throughput"): int,
-                Optional("ebs_volume_type"): str,
-                Optional("instance"): str,
-                Optional("instances"): int,
-                Optional("master"): bool,
-                Optional("es_app_log_retention_in_days"): int,
-                Optional("index_slow_log_retention_in_days"): int,
-                Optional("audit_log_retention_in_days"): int,
-                Optional("search_slow_log_retention_in_days"): int,
-            }
-        },
-    }
-)
-
-
-MONITORING_SCHEMA = Schema(
-    {
-        "type": "monitoring",
-        Optional("environments"): {
-            ENV_NAME: {
-                Optional("enable_ops_center"): bool,
-            }
-        },
-    }
-)
-
-ALB_SCHEMA = Schema(
-    {
-        "type": "alb",
-        Optional("environments"): {
-            ENV_NAME: Or(
-                {
-                    Optional("domain_prefix"): str,
-                    Optional("env_root"): str,
-                    Optional("cdn_domains_list"): dict,
-                    Optional("additional_address_list"): list,
-                },
-                None,
-            )
-        },
-    }
-)
+OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
+MONITORING_SCHEMA = Schema(MONITORING_DEFINITION)
+ALB_SCHEMA = Schema(ALB_DEFINITION)
 
 
 def no_param_schema(schema_type):

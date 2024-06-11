@@ -29,6 +29,7 @@
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
 - [platform-helper environment generate](#platform-helper-environment-generate)
+- [platform-helper environment gen-x](#platform-helper-environment-gen-x)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
@@ -629,7 +630,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|online|generate) 
+platform-helper environment (offline|online|generate|gen-x) 
 ```
 
 ## Options
@@ -639,6 +640,7 @@ platform-helper environment (offline|online|generate)
 
 ## Commands
 
+- [`gen-x` ↪](#platform-helper-environment-gen-x)
 - [`generate` ↪](#platform-helper-environment-generate)
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
@@ -707,6 +709,21 @@ platform-helper environment generate --name <name> [--vpc-name <vpc_name>]
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
+# platform-helper environment gen-x
+
+[↩ Parent](#platform-helper-environment)
+
+## Usage
+
+```
+platform-helper environment gen-x 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
 # platform-helper generate
 
 [↩ Parent](#platform-helper)
@@ -752,8 +769,8 @@ platform-helper pipeline generate
 
 [↩ Parent](#platform-helper-pipeline)
 
-    Given a pipelines.yml file, generate environment and service deployment
-    pipelines.
+    Given a platform-config.yml file, generate environment and service
+    deployment pipelines.
 
 ## Usage
 

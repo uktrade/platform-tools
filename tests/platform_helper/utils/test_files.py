@@ -4,19 +4,20 @@ from pathlib import Path
 import pytest
 import yaml
 
+from dbt_platform_helper.utils.files import apply_defaults
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.validation import PIPELINES_SCHEMA
+from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 @pytest.mark.parametrize(
     "schema,yaml_file",
     [
-        (PIPELINES_SCHEMA, "pipeline/pipelines.yml"),
-        (PIPELINES_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
-        (PIPELINES_SCHEMA, "pipeline/pipelines-for-terraform.yml"),
+        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config.yml"),
+        (PLATFORM_CONFIG_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
+        (PLATFORM_CONFIG_SCHEMA, "pipeline/pipelines-for-terraform.yml"),
     ],
 )
 def test_load_and_validate_config_valid_file(schema, yaml_file):
@@ -81,3 +82,34 @@ def test_generate_override_files(fakefs):
     assert ".gitignore" in os.listdir("/output")
     assert "code.ts" in os.listdir("/output/bin")
     assert "node_modules" not in os.listdir("/output")
+
+
+def test_apply_defaults():
+    config = {
+        "*": {"a": "aaa", "b": {"c": "ccc"}},
+        "one": None,
+        "two": {},
+        "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+    }
+
+    result = apply_defaults(config)
+
+    assert result == {
+        "one": {"a": "aaa", "b": {"c": "ccc"}},
+        "two": {"a": "aaa", "b": {"c": "ccc"}},
+        "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+    }
+
+
+def test_apply_defaults_with_no_defaults():
+    config = {
+        "one": None,
+        "two": {},
+        "three": {
+            "a": "aaa",
+        },
+    }
+
+    result = apply_defaults(config)
+
+    assert result == {"one": {}, "two": {}, "three": {"a": "aaa"}}

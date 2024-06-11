@@ -13,9 +13,6 @@ from moto import mock_aws
 
 from tests.platform_helper.conftest import BASE_DIR
 
-# from dbt_platform_helper.commands.environment import get_cert_arn
-# from dbt_platform_helper.commands.environment import generate
-
 
 class TestEnvironmentOfflineCommand:
     @patch(
