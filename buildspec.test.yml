@@ -8,9 +8,9 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - echo -e "\nInstalling dependencies"
-      - pip install poetry
-      - poetry install
+      # - echo -e "\nInstalling dependencies"
+      # - pip install poetry
+      # - poetry install
 
   build:
     commands:
