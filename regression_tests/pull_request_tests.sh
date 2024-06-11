@@ -57,17 +57,7 @@ PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.Ses
 echo -e "\nConfigure platform-sandbox profile"
 configure_aws_profile "platform-sandbox" "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" "$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY" "$PLATFORM_SANDBOX_AWS_SESSION_TOKEN"
 
-echo -e "\nRun deploy environment pipeline"
-aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
-
-# Todo: Wait for pipeline to complete, check status etc.
-count=0
-
-while  count -le 10 ;
-do
-   count=$((count+1))
-   echo $count
-done 
+./stages/run_environment_pipeline.sh
 
 # echo -e "\nDeploy services"
 # (ideally with pipeline)
