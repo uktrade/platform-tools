@@ -193,6 +193,13 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-alb": r"Wrong key 'alb_param' in",
             },
         ),
+        (
+            "prometheus_policy_addons_bad_data.yml",
+            {
+                "my-prometheus-policy-wrong-key": r"Missing key: 'role_arn'",
+                "my-prometheus-policy-wrong-type": r"Key 'role_arn' error.*should be instance of 'str'",
+            },
+        ),
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")

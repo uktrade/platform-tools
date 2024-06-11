@@ -74,6 +74,17 @@ name: web
 type: Load Balanced Web Service
 """
 
+PROMETHEUS_WRITE_POLICY_CONTENTS = """
+prometheus:
+  type: prometheus-write-policy
+  services:
+    - "web"
+  role_arn: arn:nonprod:fake:fake:fake:fake
+  environments:
+    production:
+      role_arn: role_arn: arn:prod:fake:fake:fake:fake
+"""
+
 EXTENSION_CONFIG_FILENAME = "extensions.yml"
 
 
@@ -175,6 +186,10 @@ class TestTerraformEnabledMakeAddonCommand:
             (
                 "monitoring_addons.yml",
                 ["appconfig-ipfilter.yml", "subscription-filter.yml"],
+            ),
+            (
+                "prometheus_policy_addons.yml",
+                ["appconfig-ipfilter.yml", "subscription-filter.yml", "prometheus.yml"],
             ),
         ],
     )
@@ -1075,7 +1090,7 @@ alb:
   type: alb
   environments:
     default:
-      cdn_domains_list: 
+      cdn_domains_list:
         test.domain.uktrade.digital: "domain.uktrade.digital"
       additional_address_list: ["another.domain"]
     development:
