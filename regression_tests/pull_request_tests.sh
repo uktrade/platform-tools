@@ -63,9 +63,9 @@ aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline
 # Todo: Wait for pipeline to complete, check status etc.
 count=0
 
-while  $count -le 10 ;
+while  count -le 10 ;
 do
-   $count++
+   count++
    echo $count
 done 
 
