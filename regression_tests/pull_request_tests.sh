@@ -7,6 +7,8 @@ set -e
 
 ./regression_tests/stages/clone_demodjango_deploy.sh
 
+# Todo: Run platform-helper environment generate
+
 ./regression_tests/stages/run_platform_helper_generate.sh
 
 ./regression_tests/stages/set_up_aws_config.sh
