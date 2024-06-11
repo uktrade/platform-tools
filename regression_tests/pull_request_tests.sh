@@ -61,6 +61,13 @@ echo -e "\nRun deploy environment pipeline"
 aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox
 
 # Todo: Wait for pipeline to complete, check status etc.
+count=0
+
+while  $count -le 10 ;
+do
+   $count++
+   echo $count
+done 
 
 # echo -e "\nDeploy services"
 # (ideally with pipeline)
