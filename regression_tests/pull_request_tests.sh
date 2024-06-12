@@ -15,7 +15,7 @@ set -e
 
 ./regression_tests/stages/run_environment_pipeline.sh
 
-#./regression_tests/stages/run_codebase_pipeline.sh
+./regression_tests/stages/run_codebase_pipeline.sh
 
 # echo -e "\nRun smoke tests"
 # From the demodjango codebase on your machine, run...
