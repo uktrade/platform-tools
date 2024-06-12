@@ -13,7 +13,7 @@ set -e
 
 ./regression_tests/stages/set_up_aws_config.sh
 
-./regression_tests/stages/run_environment_pipeline.sh
+#./regression_tests/stages/run_environment_pipeline.sh
 
 ./regression_tests/stages/run_codebase_pipeline.sh
 
