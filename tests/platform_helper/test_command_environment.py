@@ -42,7 +42,7 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], "default"
+            ANY, "https_listener", "test-application", "development", "web", [], False, "default"
         )
 
         assert (
@@ -76,7 +76,7 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], "migration"
+            ANY, "https_listener", "test-application", "development", "web", [], False, "migration"
         )
 
         assert (
@@ -120,7 +120,7 @@ class TestEnvironmentOfflineCommand:
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], "default"
+            ANY, "https_listener", "test-application", "development", "web", [], False, "default"
         )
 
         assert (
@@ -237,12 +237,12 @@ class TestEnvironmentAllowIpsCommand:
         return_value="target_group_arn",
     )
     @patch(
-        "dbt_platform_helper.commands.environment.create_allowed_ips_rule",
+        "dbt_platform_helper.commands.environment.create_header_rule",
         return_value="target_group_arn",
     )
     def test_allow_ips_success_create(
         self,
-        mock_create_allowed_ips_rule,
+        mock_create_header_rule,
         mock_find_target_group,
         mock_get_listener_rule_by_tag,
         mock_get_maintenance_page,
@@ -269,9 +269,15 @@ class TestEnvironmentAllowIpsCommand:
             mock_client(), "https_listener", "name", "AllowedIps"
         )
         mock_find_target_group.assert_called_once_with("test-application", "development", "web")
-        mock_create_allowed_ips_rule.assert_called_once_with(
-            mock_client(), "https_listener", ["0.1.2.3", "4.5.6.7"], "target_group_arn"
+        mock_create_header_rule.assert_called_once_with(
+            mock_client(),
+            "https_listener",
+            "target_group_arn",
+            "X-Forwarded-For",
+            ["0.1.2.3", "4.5.6.7"],
+            "AllowedIps",
         )
+
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
@@ -803,21 +809,38 @@ class TestRemoveMaintenancePage:
 
 class TestAddMaintenancePage:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
+    @patch("dbt_platform_helper.commands.environment.create_header_rule")
+    @patch("dbt_platform_helper.commands.environment.get_public_ip")
     @patch("dbt_platform_helper.commands.environment.find_target_group")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
     def test_adding_existing_template(
-        self, get_maintenance_page_template, find_target_group, template
+        self,
+        get_maintenance_page_template,
+        find_target_group,
+        get_public_ip,
+        create_header_rule,
+        template,
     ):
         from dbt_platform_helper.commands.environment import add_maintenance_page
 
         boto_mock = MagicMock()
         get_maintenance_page_template.return_value = template
         find_target_group.return_value = "target_group_arn"
+        get_public_ip.return_value = "0.1.2.3"
+
         add_maintenance_page(
-            boto_mock, "listener_arn", "test-application", "development", "web", [], template
+            boto_mock, "listener_arn", "test-application", "development", "web", [], False, template
         )
 
-        boto_mock.client().create_rule.assert_called_with(
+        create_header_rule.assert_called_once_with(
+            boto_mock.client(),
+            "listener_arn",
+            "target_group_arn",
+            "X-Forwarded-For",
+            ["0.1.2.3"],
+            "AllowedIps",
+        )
+        boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
             Priority=2,
             Conditions=[
@@ -840,6 +863,72 @@ class TestAddMaintenancePage:
                 {"Key": "name", "Value": "MaintenancePage"},
                 {"Key": "type", "Value": template},
             ],
+        )
+
+    @patch("dbt_platform_helper.commands.environment.random.choices", return_value=["a", "b", "c"])
+    @patch("dbt_platform_helper.commands.environment.create_header_rule")
+    @patch(
+        "dbt_platform_helper.commands.environment.find_target_group",
+        return_value="target_group_arn",
+    )
+    @patch(
+        "dbt_platform_helper.commands.environment.get_maintenance_page_template",
+        return_value="default",
+    )
+    def test_ip_filter_true(
+        self,
+        mock_get_maintenance_page_template,
+        mock_find_target_group,
+        mock_create_header_rule,
+        mock_random,
+        capsys,
+    ):
+        from dbt_platform_helper.commands.environment import add_maintenance_page
+
+        boto_mock = MagicMock()
+
+        add_maintenance_page(
+            boto_mock, "listener_arn", "test-application", "development", "web", [], True, "default"
+        )
+
+        mock_create_header_rule.assert_called_once_with(
+            boto_mock.client(),
+            "listener_arn",
+            "target_group_arn",
+            "Bypass-Key",
+            ["abc"],
+            "BypassIpFilter",
+        )
+        boto_mock.client().create_rule.assert_called_once_with(
+            ListenerArn="listener_arn",
+            Priority=2,
+            Conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                }
+            ],
+            Actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": "default",
+                    },
+                }
+            ],
+            Tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": "default"},
+            ],
+        )
+
+        captured = capsys.readouterr()
+
+        assert (
+            "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ "
+            in captured.out
         )
 
 
@@ -1017,8 +1106,8 @@ class TestCommandHelperMethods:
         assert result == "123.123.123.123"
 
     @mock_aws
-    def test_create_allowed_ips_rule(self):
-        from dbt_platform_helper.commands.environment import create_allowed_ips_rule
+    def test_create_header_rule(self, capsys):
+        from dbt_platform_helper.commands.environment import create_header_rule
 
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
@@ -1026,10 +1115,22 @@ class TestCommandHelperMethods:
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 1
 
-        create_allowed_ips_rule(
-            elbv2_client, listener_arn, ["1.2.3.4", "5.6.7.8"], target_group_arn
+        create_header_rule(
+            elbv2_client,
+            listener_arn,
+            target_group_arn,
+            "X-Forwarded-For",
+            ["1.2.3.4", "5.6.7.8"],
+            "AllowedIps",
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 2  # 1 default + 1 created
         assert rules[0]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+
+        captured = capsys.readouterr()
+
+        assert (
+            f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
+            in captured.out
+        )

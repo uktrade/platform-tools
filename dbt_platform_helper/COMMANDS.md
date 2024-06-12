@@ -657,6 +657,7 @@ platform-helper environment (offline|allow-ips|online|generate)
 platform-helper environment offline --app <application> --env <environment> --svc <service> 
                                     [--template (default|migration)] 
                                     [--allowed-ip <allowed_ip>] 
+                                    [--ip-filter <ip_filter>] 
 ```
 
 ## Options
@@ -671,6 +672,8 @@ platform-helper environment offline --app <application> --env <environment> --sv
   - The maintenance page you wish to put up.
 - `--allowed-ip
 -ip <text>`
+
+- `--ip-filter <boolean>` _Defaults to False._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

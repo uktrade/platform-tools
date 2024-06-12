@@ -1,4 +1,6 @@
+import random
 import re
+import string
 from pathlib import Path
 from typing import Union
 
@@ -37,7 +39,8 @@ def environment():
     help="The maintenance page you wish to put up.",
 )
 @click.option("--allowed-ip", "-ip", type=str, multiple=True)
-def offline(app, env, svc, template, allowed_ip):
+@click.option("--ip-filter", type=bool, default=False)
+def offline(app, env, svc, template, allowed_ip, ip_filter):
     """Take load-balanced web services offline with a maintenance page."""
     application_environment = get_app_environment(app, env)
 
@@ -71,6 +74,7 @@ def offline(app, env, svc, template, allowed_ip):
                 env,
                 svc,
                 allowed_ips,
+                ip_filter,
                 template,
             )
             click.secho(
@@ -131,7 +135,14 @@ def allow_ips(app, env, svc, allowed_ips):
 
     if not listener_rule:
         target_group_arn = find_target_group(app, env, svc)
-        create_allowed_ips_rule(elbv2_client, https_listener, allowed_ips, target_group_arn)
+        create_header_rule(
+            elbv2_client,
+            https_listener,
+            target_group_arn,
+            "X-Forwarded-For",
+            allowed_ips,
+            "AllowedIps",
+        )
     else:
         x_forwarded_condition = [
             condition
@@ -392,7 +403,7 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
     return maintenance_page_type
 
 
-def delete_listener_rule(rules: list, tag_name: str, lb_client):
+def delete_listener_rule(rules: list, tag_name: str, lb_client: boto3.client):
     current_rule_arn = None
 
     for rule in rules:
@@ -401,9 +412,11 @@ def delete_listener_rule(rules: list, tag_name: str, lb_client):
             current_rule_arn = rule["ResourceArn"]
 
     if not current_rule_arn:
-        raise ListenerRuleNotFoundError()
+        return current_rule_arn
 
     lb_client.delete_rule(RuleArn=current_rule_arn)
+
+    return current_rule_arn
 
 
 def remove_maintenance_page(session: boto3.Session, listener_arn: str):
@@ -412,8 +425,11 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
     rules = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])["TagDescriptions"]
 
-    for name in ["MaintenancePage", "AllowedIps"]:
-        delete_listener_rule(rules, name, lb_client)
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter"]:
+        deleted = delete_listener_rule(rules, name, lb_client)
+
+        if name == "MaintenancePage" and not deleted:
+            raise ListenerRuleNotFoundError()
 
 
 def get_public_ip():
@@ -421,20 +437,32 @@ def get_public_ip():
     return response.text
 
 
-def create_allowed_ips_rule(lb_client, listener_arn, allowed_ips, target_group_arn):
+def create_header_rule(
+    lb_client: boto3.client,
+    listener_arn: str,
+    target_group_arn: str,
+    header_name: str,
+    values: list,
+    rule_name: str,
+):
     lb_client.create_rule(
         ListenerArn=listener_arn,
         Priority=1,
         Conditions=[
             {
                 "Field": "http-header",
-                "HttpHeaderConfig": {"HttpHeaderName": "X-Forwarded-For", "Values": allowed_ips},
+                "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
             }
         ],
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         Tags=[
-            {"Key": "name", "Value": "AllowedIps"},
+            {"Key": "name", "Value": rule_name},
         ],
+    )
+
+    click.secho(
+        f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        fg="green",
     )
 
 
@@ -445,15 +473,35 @@ def add_maintenance_page(
     env: str,
     svc: str,
     allowed_ips: tuple,
+    ip_filter: bool,
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
     maintenance_page_content = get_maintenance_page_template(template)
-    user_ip = get_public_ip()
     target_group_arn = find_target_group(app, env, svc)
-    allowed_ips = list(allowed_ips) + [user_ip]
 
-    create_allowed_ips_rule(lb_client, listener_arn, allowed_ips, target_group_arn)
+    if not ip_filter:
+        user_ip = get_public_ip()
+        allowed_ips = list(allowed_ips) + [user_ip]
+
+        create_header_rule(
+            lb_client, listener_arn, target_group_arn, "X-Forwarded-For", allowed_ips, "AllowedIps"
+        )
+    else:
+        bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+        create_header_rule(
+            lb_client,
+            listener_arn,
+            target_group_arn,
+            "Bypass-Key",
+            [bypass_value],
+            "BypassIpFilter",
+        )
+
+        click.secho(
+            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
+            fg="green",
+        )
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
