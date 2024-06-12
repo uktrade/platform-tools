@@ -54,9 +54,17 @@ export class TransformedStack extends cdk.Stack {
         );
 
         for (const branch of watchedBranches) {
+            let sanitisedBranch = branch;
+
+            if (branch?.endsWith('*')){
+                sanitisedBranch?.replace('*', '.*');
+            } else {
+                sanitisedBranch = sanitisedBranch?.concat('$');
+            }
+
             filterGroups.push([
                 {type: 'EVENT', pattern: 'PUSH'},
-                {type: 'HEAD_REF', pattern: `^refs/heads/${branch}$`},
+                {type: 'HEAD_REF', pattern: `^refs/heads/${sanitisedBranch}`},
             ]);
         }
 
@@ -241,7 +249,7 @@ export class TransformedStack extends cdk.Stack {
                             runOrder: 1,
                             configuration: {
                                 RepositoryName: this.ecrRepository(),
-                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`,
+                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch.replace(/\//gi, '-')}`,
                             },
                             outputArtifacts: [{name: 'ECRMetadata'}],
                             actionTypeId: {
