@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo -e "\nTrigger environment pipeline"
 pipeline_execution_id=$(aws codepipeline start-pipeline-execution --name demodjango-environment-pipeline-TOOLSPR --profile platform-sandbox | jq -r .pipelineExecutionId)
 echo "Environment pipeline started with pipeline execution ID: $pipeline_execution_id"
