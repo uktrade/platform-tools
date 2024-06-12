@@ -22,6 +22,8 @@ function run_pipeline() {
       pipeline_status=$(aws codepipeline get-pipeline-execution --pipeline-name "$pipeline_name" --pipeline-execution-id "$pipeline_execution_id" --profile platform-sandbox | jq -r .pipelineExecution.status)
       echo "$pipeline_type pipeline status after $elapsed seconds: $pipeline_status"
 
+      # Todo: Exit early if it's failed
+
       if [[ elapsed -gt timeout ]]; then
         echo "Error: $pipeline_type pipeline not completed in $timeout seconds"
         exit 1
