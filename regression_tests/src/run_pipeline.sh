@@ -14,6 +14,8 @@ function run_pipeline() {
     start=$( date +%s )
 
     echo -e "\nWait for $pipeline_type_lowercase pipeline to complete"
+    pipeline_status="InProgress"
+    
     while [ "$pipeline_status" == "InProgress" ];
     do
       sleep 10
