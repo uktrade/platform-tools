@@ -25,6 +25,7 @@ phases:
       - poetry run tox
       - echo -e "\nRunning regression tests"
       # Todo: Swap this out for the full regression tests when we have them
+      # Todo: Do we need to allow this pipeline's service role to assume the role in platform-sandbox?
       - ./regression_tests/pull_request_tests.sh
       - echo -e "\nBuild and publish to PyPi"
       - ./publish_to_pypi.sh ${PYPI_TOKEN} ${SLACK_TOKEN} ${SLACK_CHANNEL_ID}
