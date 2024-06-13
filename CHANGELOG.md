@@ -1,5 +1,17 @@
 # Changelog
 
+## [8.6.0](https://github.com/uktrade/platform-tools/compare/8.5.0...8.6.0) (2024-06-10)
+
+
+### Features
+
+* Add prometheus-policy extension type ([#456](https://github.com/uktrade/platform-tools/issues/456)) ([e2b37ab](https://github.com/uktrade/platform-tools/commit/e2b37ab251a86d7ef65b276434522589bec078ed))
+
+
+### Bug Fixes
+
+* DBTP-1053 - Fix opensearch conduit parameter path ([#458](https://github.com/uktrade/platform-tools/issues/458)) ([b7e7b07](https://github.com/uktrade/platform-tools/commit/b7e7b0776f72300384a952a6daae54b95415718a))
+
 ## [8.5.0](https://github.com/uktrade/platform-tools/compare/8.4.1...8.5.0) (2024-05-31)
 
 

@@ -1,0 +1,34 @@
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+
+Mappings:
+  {{ addon_config.prefix }}EnvironmentConfigMap:
+    # Create an entry for each environment
+{% for env_name, config in addon_config.environments.items() %}
+    {{ env_name }}:
+      RoleArn: '{{ config.role_arn }}'
+{% endfor %}
+
+Resources:
+  PromCrossAccountPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RoleArn]
+Outputs:
+  AMPAccessPolicyArn:
+    Description: "Allow the task to assume the prometheus writer role in the central account"
+    Value: !Ref PromCrossAccountPolicy

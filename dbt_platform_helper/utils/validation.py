@@ -152,6 +152,8 @@ ENV_NAME = Regex(
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
 
+branch_wildcard_validator = validate_string(r"^((?!\*).)*(\*)?$")
+
 PIPELINES_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
@@ -182,7 +184,7 @@ PIPELINES_SCHEMA = Schema(
                     Or(
                         {
                             "name": str,
-                            "branch": str,
+                            "branch": branch_wildcard_validator,
                             "environments": [
                                 {
                                     "name": str,
@@ -458,6 +460,18 @@ ALB_SCHEMA = Schema(
     }
 )
 
+PROMETHEUS_POLICY_SCHEMA = Schema(
+    {
+        "type": "prometheus-policy",
+        Optional("services"): Or("__all__", [str]),
+        Optional("environments"): {
+            ENV_NAME: {
+                "role_arn": str,
+            }
+        },
+    }
+)
+
 
 def no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
@@ -476,4 +490,5 @@ SCHEMA_MAP = {
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
     "alb": ALB_SCHEMA,
+    "prometheus-policy": PROMETHEUS_POLICY_SCHEMA,
 }

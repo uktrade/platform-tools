@@ -28,23 +28,33 @@ def load_addons(addons_file):
 
 
 @pytest.mark.parametrize(
-    "regex_pattern, valid_string, invalid_string",
-    [(r"^\d+-\d+$", "1-10", "20-21-23"), (r"^\d+s$", "10s", "10seconds")],
+    "regex_pattern, valid_strings, invalid_strings",
+    [
+        (r"^\d+-\d+$", ["1-10"], ["20-21-23"]),
+        (r"^\d+s$", ["10s"], ["10seconds"]),
+        (
+            r"^((?!\*).)*(\*)?$",
+            ["test/valid/branch", "test/valid/branch*", "test/valid/branch-other"],
+            ["test*invalid/branch", "test*invalid/branch*"],
+        ),
+    ],
 )
-def test_validate_string(regex_pattern, valid_string, invalid_string):
+def test_validate_string(regex_pattern, valid_strings, invalid_strings):
     validator = validate_string(regex_pattern)
 
-    assert validator(valid_string) == valid_string
+    for valid_string in valid_strings:
+        assert validator(valid_string) == valid_string
 
-    with pytest.raises(SchemaError) as err:
-        validator(invalid_string)
+    for invalid_string in invalid_strings:
+        with pytest.raises(SchemaError) as err:
+            validator(invalid_string)
 
-    assert (
-        err.value.args[0]
-        == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For "
-        "more details on valid string patterns see: "
-        "https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
-    )
+        assert (
+            err.value.args[0]
+            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For "
+            "more details on valid string patterns see: "
+            "https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+        )
 
 
 @pytest.mark.parametrize(
@@ -191,6 +201,13 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-vpc": r"Wrong key 'vpc_param' in",
                 "my-xray": r"Wrong key 'xray_param' in",
                 "my-alb": r"Wrong key 'alb_param' in",
+            },
+        ),
+        (
+            "prometheus_policy_addons_bad_data.yml",
+            {
+                "my-prometheus-policy-wrong-key": r"Missing key: 'role_arn'",
+                "my-prometheus-policy-wrong-type": r"Key 'role_arn' error.*should be instance of 'str'",
             },
         ),
     ],
