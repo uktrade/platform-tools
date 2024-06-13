@@ -7,11 +7,11 @@ set -e
 
 ./regression_tests/stages/clone_demodjango_deploy.sh
 
-# Todo: Run platform-helper environment generate
+./regression_tests/stages/set_up_aws_config.sh
+
+./regression_tests/stages/run_platform_helper_environment_generate.sh
 
 ./regression_tests/stages/run_platform_helper_generate.sh
-
-./regression_tests/stages/set_up_aws_config.sh
 
 ./regression_tests/stages/run_environment_pipeline.sh
 
@@ -27,4 +27,6 @@ set -e
 # From the demodjango codebase on your machine, run...
 #   ./smoke_tests.sh toolspr
 
-# Slack alert if it fails on the main branch
+# Update trigger to run it from all four codebases on merge to main
+
+# Todo: Slack alert if it fails on the main branch
