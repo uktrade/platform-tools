@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from dbt_platform_helper.utils.files import apply_defaults
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
@@ -86,30 +87,50 @@ def test_generate_override_files(fakefs):
 
 def test_apply_defaults():
     config = {
-        "*": {"a": "aaa", "b": {"c": "ccc"}},
-        "one": None,
-        "two": {},
-        "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+        "application": "my-app",
+        "environments": {
+            "*": {"a": "aaa", "b": {"c": "ccc"}},
+            "one": None,
+            "two": {},
+            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+        },
     }
 
-    result = apply_defaults(config)
+    result = apply_environment_defaults(config)
 
     assert result == {
-        "one": {"a": "aaa", "b": {"c": "ccc"}},
-        "two": {"a": "aaa", "b": {"c": "ccc"}},
-        "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+        "application": "my-app",
+        "environments": {
+            "one": {"a": "aaa", "b": {"c": "ccc"}},
+            "two": {"a": "aaa", "b": {"c": "ccc"}},
+            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+        },
     }
 
 
 def test_apply_defaults_with_no_defaults():
     config = {
-        "one": None,
-        "two": {},
-        "three": {
-            "a": "aaa",
+        "application": "my-app",
+        "environments": {
+            "one": None,
+            "two": {},
+            "three": {
+                "a": "aaa",
+            },
         },
     }
 
-    result = apply_defaults(config)
+    result = apply_environment_defaults(config)
 
-    assert result == {"one": {}, "two": {}, "three": {"a": "aaa"}}
+    assert result == {
+        "application": "my-app",
+        "environments": {"one": {}, "two": {}, "three": {"a": "aaa"}},
+    }
+
+
+@pytest.mark.parametrize("create_terraform_dir", [True, False])
+def test_is_terraform_project(fakefs, create_terraform_dir):
+    if create_terraform_dir:
+        fakefs.create_dir("./terraform")
+
+    assert is_terraform_project() == create_terraform_dir

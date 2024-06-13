@@ -237,6 +237,27 @@ POSTGRES_DEFINITION = {
     ],
 }
 
+AURORA_DEFINITION = {
+    "type": "aurora-postgres",
+    "version": NUMBER,
+    Optional("deletion_policy"): DB_DELETION_POLICY,
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
+            Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
+            Optional("snapshot_id"): str,
+            Optional("deletion_policy"): DB_DELETION_POLICY,
+            Optional("deletion_protection"): DELETION_PROTECTION,
+        }
+    },
+    Optional("objects"): [
+        {
+            "key": str,
+            Optional("body"): str,
+        }
+    ],
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("services"): Or("__all__", [str]),
@@ -250,8 +271,8 @@ S3_BASE = {
     },
 }
 
-_S3_POLICY_DEFINITION = dict(S3_BASE)
-_S3_POLICY_DEFINITION.update({"type": "s3-policy"})
+S3_POLICY_DEFINITION = dict(S3_BASE)
+S3_POLICY_DEFINITION.update({"type": "s3-policy"})
 
 S3_DEFINITION = dict(S3_BASE)
 S3_DEFINITION.update(
@@ -278,8 +299,19 @@ MONITORING_DEFINITION = {
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
-
 OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+OPENSEARCH_MIN_VOLUME_SIZE = 10
+OPENSEARCH_MAX_VOLUME_SIZE = {
+    "tiny": 100,
+    "small": 200,
+    "small-ha": 200,
+    "medium": 512,
+    "medium-ha": 512,
+    "large": 1000,
+    "large-ha": 1000,
+    "x-large": 1500,
+    "x-large-ha": 1500,
+}
 
 OPENSEARCH_DEFINITION = {
     "type": "opensearch",
@@ -376,8 +408,10 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
+                AURORA_DEFINITION,
                 POSTGRES_DEFINITION,
                 S3_DEFINITION,
+                S3_POLICY_DEFINITION,
                 MONITORING_DEFINITION,
                 OPENSEARCH_DEFINITION,
                 ALB_DEFINITION,
@@ -396,45 +430,10 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 
 
 S3_SCHEMA = Schema(S3_DEFINITION)
-S3_POLICY_SCHEMA = Schema(_S3_POLICY_DEFINITION)
-AURORA_SCHEMA = Schema(
-    {
-        "type": "aurora-postgres",
-        "version": NUMBER,
-        Optional("deletion_policy"): DB_DELETION_POLICY,
-        Optional("environments"): {
-            ENV_NAME: {
-                Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
-                Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
-                Optional("snapshot_id"): str,
-                Optional("deletion_policy"): DB_DELETION_POLICY,
-                Optional("deletion_protection"): DELETION_PROTECTION,
-            }
-        },
-        Optional("objects"): [
-            {
-                "key": str,
-                Optional("body"): str,
-            }
-        ],
-    }
-)
-
+S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
+AURORA_SCHEMA = Schema(AURORA_DEFINITION)
 POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
 REDIS_SCHEMA = Schema(REDIS_DEFINITION)
-
-OPENSEARCH_MIN_VOLUME_SIZE = 10
-OPENSEARCH_MAX_VOLUME_SIZE = {
-    "tiny": 100,
-    "small": 200,
-    "small-ha": 200,
-    "medium": 512,
-    "medium-ha": 512,
-    "large": 1000,
-    "large-ha": 1000,
-    "x-large": 1500,
-    "x-large-ha": 1500,
-}
 
 
 class ConditionalSchema(Schema):

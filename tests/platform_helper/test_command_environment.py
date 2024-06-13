@@ -348,6 +348,13 @@ class TestGenerate:
     ):
         from dbt_platform_helper.commands.environment import generate
 
+        default_conf = environment_config.get("*", {})
+        default_conf["accounts"] = {
+            "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+            "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+        }
+        environment_config["*"] = default_conf
+
         mocked_session = MagicMock()
         mock_get_aws_session.return_value = mocked_session
         fakefs.add_real_directory(
@@ -368,8 +375,10 @@ class TestGenerate:
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "test")
+
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
+        assert "File terraform/environments/test/main.tf created" in result.output
 
     def test_fail_early_if_platform_config_invalid(self, fakefs):
         from dbt_platform_helper.commands.environment import generate

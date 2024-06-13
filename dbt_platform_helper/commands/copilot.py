@@ -17,6 +17,7 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import generate_override_files
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
@@ -211,10 +212,6 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_path.mkdir(parents=True, exist_ok=True)
     overrides_file = overrides_path.joinpath("cfn.patches.yml")
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
-
-
-def is_terraform_project() -> bool:
-    return Path("./terraform").is_dir()
 
 
 def _get_s3_kms_alias_arns(session, application_name, config):

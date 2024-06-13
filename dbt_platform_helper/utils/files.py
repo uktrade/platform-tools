@@ -1,3 +1,4 @@
+from copy import deepcopy
 from os import makedirs
 from pathlib import Path
 
@@ -67,7 +68,25 @@ def generate_override_files(base_path, file_path, output_dir):
     generate_files_for_dir("bin/*")
 
 
-def apply_defaults(config):
-    env_defaults = config.get("*", {})
-    raw_envs = {name: data if data else {} for name, data in config.items() if name != "*"}
-    return {name: {**env_defaults, **data} for name, data in raw_envs.items()}
+def apply_environment_defaults(config):
+    if "environments" not in config:
+        return config
+
+    enriched_config = deepcopy(config)
+
+    environments = enriched_config["environments"]
+    env_defaults = environments.get("*", {})
+    without_defaults_entry = {
+        name: data if data else {} for name, data in environments.items() if name != "*"
+    }
+    defaulted_envs = {
+        name: {**env_defaults, **data} for name, data in without_defaults_entry.items()
+    }
+
+    enriched_config["environments"] = defaulted_envs
+
+    return enriched_config
+
+
+def is_terraform_project() -> bool:
+    return Path("./terraform").is_dir()

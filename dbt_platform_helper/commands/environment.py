@@ -11,7 +11,7 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.files import apply_defaults
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
@@ -193,7 +193,7 @@ def get_cert_arn(session, env_name):
 
 @environment.command()
 @click.option("--vpc-name", hidden=True)
-@click.option("--name", "-n", multiple=True, required=True)
+@click.option("--name", "-n", required=True)
 def generate(name, vpc_name):
     ensure_cwd_is_repo_root()
     if vpc_name:
@@ -211,44 +211,39 @@ def generate(name, vpc_name):
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
 
+    env_config = apply_environment_defaults(conf)["environments"][name]
+
+    _generate_copilot_environment_manifests(name, env_config)
+    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+
+
+def _generate_copilot_environment_manifests(name, env_config):
     session = get_aws_session_or_abort()
     env_template = setup_templates().get_template("env/manifest.yml")
-
-    for env_name in name:
-        vpc_name = apply_defaults(conf["environments"])[env_name].get("vpc", None)
-        vpc_id = get_vpc_id(session, env_name, vpc_name)
-        pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
-        cert_arn = get_cert_arn(session, env_name)
-        contents = env_template.render(
-            {
-                "name": env_name,
-                "vpc_id": vpc_id,
-                "pub_subnet_ids": pub_subnet_ids,
-                "priv_subnet_ids": priv_subnet_ids,
-                "certificate_arn": cert_arn,
-            }
-        )
-
-        click.echo(
-            mkfile(".", f"copilot/environments/{env_name}/manifest.yml", contents, overwrite=True)
-        )
+    vpc_name = env_config.get("vpc", None)
+    vpc_id = get_vpc_id(session, name, vpc_name)
+    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
+    cert_arn = get_cert_arn(session, name)
+    contents = env_template.render(
+        {
+            "name": name,
+            "vpc_id": vpc_id,
+            "pub_subnet_ids": pub_subnet_ids,
+            "priv_subnet_ids": priv_subnet_ids,
+            "certificate_arn": cert_arn,
+        }
+    )
+    click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
 
 
-@environment.command()
-def gen_x():
+def _generate_terraform_environment_manifests(application, env, env_config):
     env_template = setup_templates().get_template("environments/main.tf")
-    conf = yaml.safe_load(Path("platform-config.yml").read_text())
-    env_defaults = conf["environments"]["*"]
-    raw_envs = {
-        name: data if data else {} for name, data in conf["environments"].items() if name != "*"
-    }
-    envs = {name: {**env_defaults, **data} for name, data in raw_envs.items()}
 
-    for name, config in envs.items():
-        template_data = {"application": conf["application"], "environment": name, "config": config}
-        contents = env_template.render(template_data)
+    contents = env_template.render(
+        {"application": application, "environment": env, "config": env_config}
+    )
 
-        click.echo(mkfile(".", f"terraform/environments/{name}/main.tf", contents, overwrite=True))
+    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:

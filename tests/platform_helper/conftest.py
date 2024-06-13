@@ -433,6 +433,17 @@ extensions:
         plan: tiny
         apply_immediately: true
         
+  test-app-aurora:
+    type: aurora-postgres
+    version: 19.5
+    environments:
+      dev:
+        snapshot_id: abc123
+        deletion_protection: true
+      staging:
+        deletion_protection: true
+        deletion_policy: Retain
+
   test-app-postgres:
     type: postgres
     version: 16.2
@@ -458,14 +469,23 @@ extensions:
     environments:
       dev:
         bucket_name: test-app-dev
-    #     versioning: false
-    #   staging:
-    #     bucket_name: test-app-staging
-    #     versioning: false
-    # objects:
-    #   - key: healthcheck.txt
-    #     body: Demodjango is working.
+        versioning: false
+      staging:
+        bucket_name: test-app-staging
+        versioning: false
+    objects:
+      - key: healthcheck.txt
+        body: Demodjango is working.
 
+  test-app-s3-bucket:
+    type: s3-policy
+    services:
+      - web
+    environments:
+      dev:
+        bucket_name: test-app-policy-dev
+        versioning: false
+        
   test-app-monitoring:
     type: monitoring
     environments:
