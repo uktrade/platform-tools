@@ -4,4 +4,4 @@ set -e
 
 source ./regression_tests/src/run_pipeline.sh
 
-run_pipeline "Environment" "demodjango-environment-pipeline-TOOLSPR"
+run_pipeline "Environment" "demodjango-environment-pipeline-TOOLSPR" 600
