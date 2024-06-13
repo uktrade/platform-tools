@@ -5,13 +5,17 @@ from typing import Union
 import boto3
 import click
 import yaml
+from schema import SchemaError
 
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.files import apply_defaults
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
+from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -188,14 +192,30 @@ def get_cert_arn(session, env_name):
 
 
 @environment.command()
-@click.option("--vpc-name")
+@click.option("--vpc-name", hidden=True)
 @click.option("--name", "-n", multiple=True, required=True)
 def generate(name, vpc_name):
     ensure_cwd_is_repo_root()
+    if vpc_name:
+        click.secho(
+            f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}",
+            fg="red",
+        )
+        raise click.Abort
+
+    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+
+    try:
+        PLATFORM_CONFIG_SCHEMA.validate(conf)
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
     session = get_aws_session_or_abort()
     env_template = setup_templates().get_template("env/manifest.yml")
 
     for env_name in name:
+        vpc_name = apply_defaults(conf["environments"])[env_name].get("vpc", None)
         vpc_id = get_vpc_id(session, env_name, vpc_name)
         pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
         cert_arn = get_cert_arn(session, env_name)

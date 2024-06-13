@@ -11,6 +11,7 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import BASE_DIR
 
 
@@ -326,8 +327,24 @@ class TestGenerate:
     )
     @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @pytest.mark.parametrize(
+        "environment_config, expected_vpc",
+        [
+            ({"test": {}}, None),
+            ({"test": {"vpc": "vpc1"}}, "vpc1"),
+            ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
+            ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
+        ],
+    )
     def test_generate(
-        self, mock_get_aws_session, mock_get_vpc_id, mock_get_subnet_ids, mock_get_cert_arn, fakefs
+        self,
+        mock_get_aws_session,
+        mock_get_vpc_id,
+        mock_get_subnet_ids,
+        mock_get_cert_arn,
+        fakefs,
+        environment_config,
+        expected_vpc,
     ):
         from dbt_platform_helper.commands.environment import generate
 
@@ -336,6 +353,11 @@ class TestGenerate:
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
+        fakefs.create_file(
+            "platform-config.yml",
+            contents=yaml.dump({"application": "my-app", "environments": environment_config}),
+        )
+
         result = CliRunner().invoke(generate, ["--name", "test"])
 
         actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
@@ -343,11 +365,40 @@ class TestGenerate:
             Path("copilot/fixtures/test_environment_manifest.yml").read_text()
         )
 
-        mock_get_vpc_id.assert_called_once_with(mocked_session, "test", None)
+        mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "test")
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
+
+    def test_fail_early_if_platform_config_invalid(self, fakefs):
+        from dbt_platform_helper.commands.environment import generate
+
+        fakefs.add_real_directory(
+            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
+        )
+        fakefs.create_file("platform-config.yml", contents=yaml.dump({}))
+
+        result = CliRunner().invoke(generate, ["--name", "test"])
+
+        assert result.exit_code != 0
+        assert "Missing key: 'application'" in result.output
+
+    def test_fail_with_explanation_if_vpc_name_option_used(self, fakefs):
+        from dbt_platform_helper.commands.environment import generate
+
+        fakefs.add_real_directory(
+            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
+        )
+        fakefs.create_file("platform-config.yml", contents=yaml.dump({"application": "my-app"}))
+
+        result = CliRunner().invoke(generate, ["--name", "test", "--vpc-name", "other-vpc"])
+
+        assert result.exit_code != 0
+        assert (
+            f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}"
+            in result.output
+        )
 
     @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
     @mock_aws
