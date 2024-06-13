@@ -666,7 +666,7 @@ platform-helper environment offline --app <application> --env <environment> --sv
 
 - `--env <text>`
 
-- `--svc <text>` _Defaults to web._
+- `--svc <text>` _Defaults to ['web']._
 
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.

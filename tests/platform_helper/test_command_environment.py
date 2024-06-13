@@ -42,7 +42,14 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], False, "default"
+            ANY,
+            "https_listener",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            [],
+            False,
+            "default",
         )
 
         assert (
@@ -76,7 +83,14 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], False, "migration"
+            ANY,
+            "https_listener",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            [],
+            False,
+            "migration",
         )
 
         assert (
@@ -120,7 +134,14 @@ class TestEnvironmentOfflineCommand:
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
         add_maintenance_page.assert_called_with(
-            ANY, "https_listener", "test-application", "development", "web", [], False, "default"
+            ANY,
+            "https_listener",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            [],
+            False,
+            "default",
         )
 
         assert (
@@ -820,6 +841,7 @@ class TestAddMaintenancePage:
         get_public_ip,
         create_header_rule,
         template,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import add_maintenance_page
 
@@ -829,7 +851,14 @@ class TestAddMaintenancePage:
         get_public_ip.return_value = "0.1.2.3"
 
         add_maintenance_page(
-            boto_mock, "listener_arn", "test-application", "development", "web", [], False, template
+            boto_mock,
+            "listener_arn",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            [],
+            False,
+            template,
         )
 
         create_header_rule.assert_called_once_with(
@@ -882,13 +911,21 @@ class TestAddMaintenancePage:
         mock_create_header_rule,
         mock_random,
         capsys,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import add_maintenance_page
 
         boto_mock = MagicMock()
 
         add_maintenance_page(
-            boto_mock, "listener_arn", "test-application", "development", "web", [], True, "default"
+            boto_mock,
+            "listener_arn",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            [],
+            True,
+            "default",
         )
 
         mock_create_header_rule.assert_called_once_with(
@@ -1062,18 +1099,10 @@ class TestCommandHelperMethods:
         assert find_target_group("test-application", "development", "web") == target_group_arn
 
     @mock_aws
-    def test_find_target_group_not_found(self, capsys):
+    def test_find_target_group_not_found(self):
         from dbt_platform_helper.commands.environment import find_target_group
 
-        with pytest.raises(click.Abort):
-            find_target_group("test-application", "development", "web")
-
-        captured = capsys.readouterr()
-
-        assert (
-            "No target group found for application: test-application, environment: development, service: web"
-            in captured.out
-        )
+        assert find_target_group("test-application", "development", "web") is None
 
     @mock_aws
     def test_delete_listener_rule(self):

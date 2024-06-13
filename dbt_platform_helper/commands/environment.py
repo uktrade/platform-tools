@@ -2,6 +2,7 @@ import random
 import re
 import string
 from pathlib import Path
+from typing import List
 from typing import Union
 
 import boto3
@@ -9,6 +10,7 @@ import click
 import requests
 
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -31,7 +33,7 @@ def environment():
 @environment.command()
 @click.option("--app", type=str, required=True)
 @click.option("--env", type=str, required=True)
-@click.option("--svc", type=str, required=True, default="web")
+@click.option("--svc", type=str, required=True, multiple=True, default=["web"])
 @click.option(
     "--template",
     type=click.Choice(AVAILABLE_TEMPLATES),
@@ -42,7 +44,18 @@ def environment():
 @click.option("--ip-filter", type=bool, default=False)
 def offline(app, env, svc, template, allowed_ip, ip_filter):
     """Take load-balanced web services offline with a maintenance page."""
-    application_environment = get_app_environment(app, env)
+    application = get_application(app)
+    application_environment = get_app_environment(application, env)
+
+    if svc == "*":
+        services = [s for s in application.services if s.kind == "Load Balanced Web Service"]
+    else:
+        all_services = [get_app_service(app, s) for s in list(svc)]
+        services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
+
+    if not services:
+        click.secho(f"No services deployed yet to {app} environment {env}", fg="red")
+        raise click.Abort
 
     try:
         https_listener = find_https_listener(application_environment.session, app, env)
@@ -72,7 +85,7 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
                 https_listener,
                 app,
                 env,
-                svc,
+                services,
                 allowed_ips,
                 ip_filter,
                 template,
@@ -135,6 +148,10 @@ def allow_ips(app, env, svc, allowed_ips):
 
     if not listener_rule:
         target_group_arn = find_target_group(app, env, svc)
+
+        if not target_group_arn:
+            raise click.Abort
+
         create_header_rule(
             elbv2_client,
             https_listener,
@@ -205,8 +222,12 @@ def online(app, env):
         raise click.Abort
 
 
+def get_application(app_name: str):
+    return load_application(app_name)
+
+
 def get_app_environment(app_name: str, env_name: str) -> Environment:
-    application = load_application(app_name)
+    application = get_application(app_name)
     application_environment = application.environments.get(env_name)
 
     if not application_environment:
@@ -218,6 +239,21 @@ def get_app_environment(app_name: str, env_name: str) -> Environment:
         raise click.Abort
 
     return application_environment
+
+
+def get_app_service(app_name: str, svc_name: str) -> Service:
+    application = get_application(app_name)
+    application_service = application.services.get(svc_name)
+
+    if not application_service:
+        click.secho(
+            f"The service {svc_name} was not found in the application {app_name}. "
+            f"It either does not exist, or has not been deployed.",
+            fg="red",
+        )
+        raise click.Abort
+
+    return application_service
 
 
 def get_listener_rule_by_tag(elbv2_client, listener_arn, tag_key, tag_value):
@@ -385,7 +421,8 @@ def find_target_group(app: str, env: str, svc: str) -> str:
         f"No target group found for application: {app}, environment: {env}, service: {svc}",
         fg="red",
     )
-    raise click.Abort
+
+    return None
 
 
 def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
@@ -471,37 +508,48 @@ def add_maintenance_page(
     listener_arn: str,
     app: str,
     env: str,
-    svc: str,
+    services: List[Service],
     allowed_ips: tuple,
     ip_filter: bool,
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
     maintenance_page_content = get_maintenance_page_template(template)
-    target_group_arn = find_target_group(app, env, svc)
 
-    if not ip_filter:
-        user_ip = get_public_ip()
-        allowed_ips = list(allowed_ips) + [user_ip]
+    for svc in services:
+        target_group_arn = find_target_group(app, env, svc.name)
 
-        create_header_rule(
-            lb_client, listener_arn, target_group_arn, "X-Forwarded-For", allowed_ips, "AllowedIps"
-        )
-    else:
-        bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
-        create_header_rule(
-            lb_client,
-            listener_arn,
-            target_group_arn,
-            "Bypass-Key",
-            [bypass_value],
-            "BypassIpFilter",
-        )
+        # not all of an application's services are guaranteed to have been deployed to an environment
+        if not target_group_arn:
+            continue
 
-        click.secho(
-            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
-            fg="green",
-        )
+        if not ip_filter:
+            user_ip = get_public_ip()
+            allowed_ips = list(allowed_ips) + [user_ip]
+
+            create_header_rule(
+                lb_client,
+                listener_arn,
+                target_group_arn,
+                "X-Forwarded-For",
+                allowed_ips,
+                "AllowedIps",
+            )
+        else:
+            bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+            create_header_rule(
+                lb_client,
+                listener_arn,
+                target_group_arn,
+                "Bypass-Key",
+                [bypass_value],
+                "BypassIpFilter",
+            )
+
+            click.secho(
+                f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
+                fg="green",
+            )
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
