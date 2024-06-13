@@ -121,20 +121,37 @@ class TestTerraformEnabledMakeAddonCommand:
         client = mock_aws_client(mock_get_session)
         mock_aws_client(mock_get_session2, client)
 
-        client.get_parameters_by_path.return_value = {
-            "Parameters": [
-                {
-                    "Name": "/copilot/applications/test-app/environments/development",
-                    "Type": "SecureString",
-                    "Value": json.dumps(
-                        {
-                            "name": "development",
-                            "accountID": "000000000000",
-                        }
-                    ),
-                }
-            ]
-        }
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/environments/development",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "name": "development",
+                                "accountID": "000000000000",
+                            }
+                        ),
+                    }
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/components/web",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "app": "test-app",
+                                "name": "web",
+                                "type": "Load Balanced Web Service",
+                            }
+                        ),
+                    }
+                ]
+            },
+        ]
 
         if kms_key_exists:
             client.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
