@@ -843,7 +843,7 @@ class TestMakeAddonCommand:
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
-        assert "Errors found in platform-config.yml:" in result.output
+        assert f"Errors found in {PLATFORM_CONFIG_FILE}:" in result.output
         assert "'Delete' does not match 'ThisIsInvalid'" in result.output
         assert "Names cannot be prefixed 'sthree-'" in result.output
         assert "Names cannot be suffixed '-s3alias'" in result.output

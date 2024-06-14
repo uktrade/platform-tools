@@ -363,7 +363,7 @@ class TestGenerate:
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
         fakefs.create_file(
-            "platform-config.yml",
+            PLATFORM_CONFIG_FILE,
             contents=yaml.dump({"application": "my-app", "environments": environment_config}),
         )
         if is_terraform:
@@ -393,7 +393,7 @@ class TestGenerate:
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
-        fakefs.create_file("platform-config.yml", contents=yaml.dump({}))
+        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({}))
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 
@@ -406,7 +406,7 @@ class TestGenerate:
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
-        fakefs.create_file("platform-config.yml", contents=yaml.dump({"application": "my-app"}))
+        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my-app"}))
 
         result = CliRunner().invoke(generate, ["--name", "test", "--vpc-name", "other-vpc"])
 

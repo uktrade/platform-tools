@@ -70,9 +70,9 @@ def copilot():
     check_platform_helper_version_needs_update()
 
 
-def _validate_and_normalise_addons_config(config_file, key_in_config_file=None):
-    """Load the addons.yaml file, validate it and return the normalised config
-    dict."""
+def _validate_and_normalise_extensions_config(config_file, key_in_config_file=None):
+    """Load a config file, validate it against the extensions schemas and return
+    the normalised config dict."""
 
     def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
@@ -365,8 +365,8 @@ def make_addons():
 
 
 def _get_config():
-    config = _validate_and_normalise_addons_config(PACKAGE_DIR / "default-extensions.yml")
-    project_config = _validate_and_normalise_addons_config(PLATFORM_CONFIG_FILE, "extensions")
+    config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
+    project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)
     return config
 

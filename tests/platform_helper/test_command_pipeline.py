@@ -66,7 +66,7 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
     get_public_repository_arn.return_value = (
         "arn:aws:ecr-public::000000000000:repository/test-app/application"
     )
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-public-repo.yml")
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-with-public-repo.yml")
     buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments()
 
     result = CliRunner().invoke(generate)
@@ -121,7 +121,7 @@ def test_pipeline_generate_with_wildcarded_branch_creates_the_pipeline_configura
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-valid-wildcard-branch.yml")
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-with-valid-wildcard-branch.yml")
     pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
@@ -140,7 +140,9 @@ def test_pipeline_generate_with_invalid_wildcarded_branch_does_not_create_the_pi
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-invalid-wildcard-branch.yml")
+    setup_fixtures(
+        fakefs, pipelines_file="pipeline/platform-config-with-invalid-wildcard-branch.yml"
+    )
     pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
@@ -178,7 +180,7 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-for-terraform.yml")
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-for-terraform.yml")
     fakefs.create_dir("./terraform")
 
     CliRunner().invoke(generate)

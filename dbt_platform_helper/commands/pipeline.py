@@ -43,7 +43,7 @@ def generate():
 
     app_name = get_application_name()
 
-    pipeline_config = _safe_load_config("platform-config.yml", PLATFORM_CONFIG_SCHEMA)
+    pipeline_config = _safe_load_config(PLATFORM_CONFIG_FILE, PLATFORM_CONFIG_SCHEMA)
 
     _validate_pipelines_configuration(pipeline_config)
 

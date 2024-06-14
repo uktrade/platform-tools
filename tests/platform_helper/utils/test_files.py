@@ -17,8 +17,8 @@ from tests.platform_helper.conftest import FIXTURES_DIR
     "schema,yaml_file",
     [
         (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/pipelines-with-public-repo.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/pipelines-for-terraform.yml"),
+        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-with-public-repo.yml"),
+        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-for-terraform.yml"),
     ],
 )
 def test_load_and_validate_config_valid_file(schema, yaml_file):
