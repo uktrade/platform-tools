@@ -19,10 +19,10 @@ set -e
 
 ./regression_tests/stages/run_codebase_pipeline.sh
 
-# echo -e "\nRun smoke tests"
+# Todo: echo -e "\nRun smoke tests"
 # From the demodjango codebase on your machine, run...
 #   ./smoke_tests.sh toolspr
 
-# Update trigger to run it from all four codebases on merge to main
-
 # Todo: Slack alert if it fails on the main branch
+
+# Todo: Update trigger to run it from all four codebases on merge to main
