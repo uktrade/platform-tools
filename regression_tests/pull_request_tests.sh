@@ -3,7 +3,7 @@
 # exit early if something goes wrong
 set -e
 
-echo "Current platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
+echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
 ./regression_tests/stages/build_platform_helper.sh
 
@@ -26,5 +26,7 @@ echo "Current platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$
 #   ./smoke_tests.sh toolspr
 
 # Todo: Slack alert if it fails on the main branch
+
+# Todo: Prevent multiple triggerings resulting in overlapping test runs
 
 # Todo: Update trigger to run it from all four codebases on merge to main
