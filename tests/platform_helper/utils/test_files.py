@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 import yaml
 
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import file_compatibility_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import load_and_validate_config
@@ -134,3 +136,42 @@ def test_is_terraform_project(fakefs, create_terraform_dir):
         fakefs.create_dir("./terraform")
 
     assert is_terraform_project() == create_terraform_dir
+
+
+@pytest.mark.parametrize(
+    "files, expected_message",
+    [
+        (
+            ["storage.yml"],
+            f"`storage.yml` is no longer supported. Please move into a file `{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`.",
+        ),
+        (
+            ["extensions.yml"],
+            f"`extensions.yml` is no longer supported. Please move the contents into a file `{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`.",
+        ),
+        (
+            ["pipelines.yml"],
+            f"`pipelines.yml` is no longer supported. Please move the contents into a file `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "storage.yml"],
+            f"`storage.yml` is no longer supported. Please move into `{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`.",
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "extensions.yml"],
+            f"`extensions.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`.",
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
+            f"`pipelines.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+        ),
+    ],
+)
+def test_file_compatibility_check_fails(fakefs, capsys, files, expected_message):
+    for file in files:
+        fakefs.create_file(file)
+
+    with pytest.raises(SystemExit):
+        file_compatibility_check()
+
+    assert expected_message in capsys.readouterr().out

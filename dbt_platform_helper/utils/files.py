@@ -8,6 +8,32 @@ import yaml
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 
 
+def file_compatibility_check():
+    platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
+    qualifier = "" if platform_config_exists else "a file "
+
+    if Path("storage.yml").exists():
+        click.secho(
+            f"`storage.yml` is no longer supported. Please move into {qualifier}`{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`.",
+            bg="red",
+        )
+        exit(1)
+
+    if Path("extensions.yml").exists():
+        click.secho(
+            f"`extensions.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`.",
+            bg="red",
+        )
+        exit(1)
+
+    if Path("pipelines.yml").exists():
+        click.secho(
+            f"`pipelines.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+            bg="red",
+        )
+        exit(1)
+
+
 def load_and_validate_config(path, schema):
     conf = yaml.safe_load(Path(path).read_text())
 
