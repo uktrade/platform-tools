@@ -327,6 +327,7 @@ class TestGenerate:
     )
     @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @pytest.mark.parametrize("is_terraform", [True, False])
     @pytest.mark.parametrize(
         "environment_config, expected_vpc",
         [
@@ -343,6 +344,7 @@ class TestGenerate:
         mock_get_subnet_ids,
         mock_get_cert_arn,
         fakefs,
+        is_terraform,
         environment_config,
         expected_vpc,
     ):
@@ -364,6 +366,8 @@ class TestGenerate:
             "platform-config.yml",
             contents=yaml.dump({"application": "my-app", "environments": environment_config}),
         )
+        if is_terraform:
+            fakefs.create_dir("./terraform")
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 
@@ -378,7 +382,10 @@ class TestGenerate:
 
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
-        assert "File terraform/environments/test/main.tf created" in result.output
+        if is_terraform:
+            assert "File terraform/environments/test/main.tf created" in result.output
+        else:
+            assert "File terraform/environments/test/main.tf created" not in result.output
 
     def test_fail_early_if_platform_config_invalid(self, fakefs):
         from dbt_platform_helper.commands.environment import generate

@@ -13,6 +13,7 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
@@ -214,7 +215,8 @@ def generate(name, vpc_name):
     env_config = apply_environment_defaults(conf)["environments"][name]
 
     _generate_copilot_environment_manifests(name, env_config)
-    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+    if is_terraform_project():
+        _generate_terraform_environment_manifests(conf["application"], name, env_config)
 
 
 def _generate_copilot_environment_manifests(name, env_config):

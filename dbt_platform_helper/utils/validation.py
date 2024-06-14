@@ -349,62 +349,75 @@ ALB_DEFINITION = {
     },
 }
 
+ENVIRONMENTS_DEFINITION = {
+    str: Or(
+        None,
+        {
+            Optional("accounts"): {
+                "deploy": {
+                    "name": str,
+                    "id": str,
+                },
+                "dns": {
+                    "name": str,
+                    "id": str,
+                },
+            },
+            Optional("requires_approval"): bool,
+            Optional("vpc"): str,
+        },
+    ),
+}
+
+CODEBASE_PIPELINES_DEFINITION = [
+    {
+        "name": str,
+        "repository": str,
+        Optional("additional_ecr_repository"): str,
+        "services": list[str],
+        "pipelines": [
+            Or(
+                {
+                    "name": str,
+                    "branch": str,
+                    "environments": [
+                        {
+                            "name": str,
+                            Optional("requires_approval"): bool,
+                        }
+                    ],
+                },
+                {
+                    "name": str,
+                    "tag": bool,
+                    "environments": [
+                        {
+                            "name": str,
+                            Optional("requires_approval"): bool,
+                        }
+                    ],
+                },
+            ),
+        ],
+    },
+]
+
+ENVIRONMENT_PIPELINES_DEFINITION = {
+    str: {
+        Optional("branch", default="main"): str,
+        "slack_channel": str,
+        "trigger": str,
+        "environments": {str: Or({}, None)},
+    }
+}
+
 PLATFORM_CONFIG_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         "application": str,
         Optional("accounts"): list[str],
-        Optional("environments"): {
-            str: Or(
-                None,
-                {
-                    Optional("accounts"): {
-                        "deploy": {
-                            "name": str,
-                            "id": str,
-                        },
-                        "dns": {
-                            "name": str,
-                            "id": str,
-                        },
-                    },
-                    Optional("requires_approval"): bool,
-                    Optional("vpc"): str,
-                },
-            ),
-        },
-        Optional("codebase-pipelines"): [
-            {
-                "name": str,
-                "repository": str,
-                Optional("additional_ecr_repository"): str,
-                "services": list[str],
-                "pipelines": [
-                    Or(
-                        {
-                            "name": str,
-                            "branch": str,
-                            "environments": [
-                                {
-                                    "name": str,
-                                    Optional("requires_approval"): bool,
-                                }
-                            ],
-                        },
-                        {
-                            "name": str,
-                            "tag": bool,
-                            "environments": [
-                                {
-                                    "name": str,
-                                    Optional("requires_approval"): bool,
-                                }
-                            ],
-                        },
-                    ),
-                ],
-            },
-        ],
+        Optional("environments"): ENVIRONMENTS_DEFINITION,
+        Optional("codebase-pipelines"): CODEBASE_PIPELINES_DEFINITION,
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
@@ -417,14 +430,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
                 ALB_DEFINITION,
             )
         },
-        Optional("environment-pipelines"): {
-            str: {
-                Optional("branch", default="main"): str,
-                "slack_channel": str,
-                "trigger": str,
-                "environments": {str: Or({}, None)},
-            }
-        },
+        Optional("environment-pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
     }
 )
 
