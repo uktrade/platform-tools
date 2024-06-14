@@ -3,6 +3,8 @@
 # exit early if something goes wrong
 set -e
 
+echo "Current platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
+
 ./regression_tests/stages/build_platform_helper.sh
 
 ./regression_tests/stages/clone_demodjango_deploy.sh
