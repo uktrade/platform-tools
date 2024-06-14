@@ -37,7 +37,7 @@ The following tools are required to run the full test suite.
 - [checkov](https://www.checkov.io/)
 - [AWS Copilot](https://aws.github.io/copilot-cli/)
 
-#### Automated testing
+#### Unit tests
 
 Run `poetry run pytest` in the root directory to run all tests.
 
@@ -48,6 +48,20 @@ Note: by default the tests are run using multiple processes for speed. When runn
 To allow pdb to work correctly, disable multiple processes using the `--numprocesses 0` option:
 
 `poetry run pytest --numprocesses 0`
+
+#### Regression tests
+
+The regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run smoke tests.
+
+This is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
+
+You can trigger a regression test run for your branch using the following command...
+
+```shell
+aws codebuild start-build --project-name platform-tools-test --profile platform-tools --source-version <branch_name>
+```
+
+Note that this could be flaky if it runs at the same time as other people are doing the same for their branches, so communication within the team id crucial.
 
 #### Manual testing
 
