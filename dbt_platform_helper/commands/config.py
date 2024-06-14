@@ -12,7 +12,7 @@ from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.files import file_compatibility_check
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -89,13 +89,7 @@ def deployment():
 
     recommendations = {}
 
-    if Path("storage.yml").exists():
-        recommendations["storage.yml"] = (
-            "The file `storage.yml` is incompatible with version "
-            f"{versioning.string_version(app_released_version)} of "
-            f"dbt-platform-helper, move contents to `{PLATFORM_CONFIG_FILE}` under a key 'extensions' and "
-            "delete `storage.yml`."
-        )
+    file_compatibility_check()
 
     for template_file in addons_templates:
         generated_with_version = maybe

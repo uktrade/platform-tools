@@ -11,26 +11,25 @@ PLATFORM_CONFIG_FILE = "platform-config.yml"
 def file_compatibility_check():
     platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
     qualifier = "" if platform_config_exists else "a file "
+    errors = []
 
     if Path("storage.yml").exists():
-        click.secho(
-            f"`storage.yml` is no longer supported. Please move into {qualifier}`{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`.",
-            bg="red",
+        errors.append(
+            f"`storage.yml` is no longer supported. Please move into {qualifier}`{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`."
         )
-        exit(1)
 
     if Path("extensions.yml").exists():
-        click.secho(
-            f"`extensions.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`.",
-            bg="red",
+        errors.append(
+            f"`extensions.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`."
         )
-        exit(1)
 
     if Path("pipelines.yml").exists():
-        click.secho(
-            f"`pipelines.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-            bg="red",
+        errors.append(
+            f"`pipelines.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
         )
+
+    if errors:
+        click.secho("\n".join(errors), bg="red")
         exit(1)
 
 
