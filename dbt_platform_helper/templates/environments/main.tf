@@ -1,9 +1,10 @@
 locals {
-  environments = yamldecode(file("../../../platform-config.yml"))["environments"]
+  config = yamldecode(file("../../../platform-config.yml"))
+  environments = local.config["environments"]
   env_config   = { for name, config in local.environments : name => merge(lookup(local.environments, "*", {}), config) }
   args = {
     application    = "{{ application }}"
-    services       = yamldecode(file("../../../platform-config.yml"))["extensions"]
+    services       = local.config["extensions"]
     dns_account_id = local.env_config["{{ environment }}"]["accounts"]["dns"]["id"]
   }
 }
