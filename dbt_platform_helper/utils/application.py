@@ -123,7 +123,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
 
     application.services = {
         svc["name"]: Service(svc["name"], svc["type"])
-        for svc in [json.loads(p["Value"]) for p in response["Parameters"]]
+        for svc in [json.loads(parameter["Value"]) for parameter in response["Parameters"]]
     }
 
     return application
