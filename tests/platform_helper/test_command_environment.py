@@ -666,7 +666,7 @@ class TestRemoveMaintenancePage:
 
 
 class TestAddMaintenancePage:
-    @pytest.mark.parametrize("template", ["default", "migration"])
+    @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
     def test_adding_existing_template(self, get_maintenance_page_template, template):
         from dbt_platform_helper.commands.environment import add_maintenance_page
@@ -703,7 +703,7 @@ class TestAddMaintenancePage:
 
 
 class TestEnvironmentMaintenanceTemplates:
-    @pytest.mark.parametrize("template", ["default", "migration"])
+    @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     def test_template_length(self, template):
         from dbt_platform_helper.commands.environment import (
             get_maintenance_page_template,
@@ -712,7 +712,7 @@ class TestEnvironmentMaintenanceTemplates:
         contents = get_maintenance_page_template(template)
         assert len(contents) <= 1024
 
-    @pytest.mark.parametrize("template", ["default", "migration"])
+    @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     def test_template_no_new_lines(self, template):
         from dbt_platform_helper.commands.environment import (
             get_maintenance_page_template,

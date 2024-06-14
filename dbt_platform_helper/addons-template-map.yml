@@ -49,3 +49,7 @@ vpc:
     - template: addons/env/vpc.yml
 alb:
   requires_addons_parameters: false
+prometheus-policy:
+  requires_addons_parameters: false
+  svc:
+    - template: addons/svc/prometheus-policy.yml

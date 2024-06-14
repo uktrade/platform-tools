@@ -1,0 +1,24 @@
+application: my-app
+accounts:
+  - 111111111
+  - 222222222
+
+environments:
+  hotfix:
+  prod:
+    requires_approval: true
+
+codebase_pipelines:
+  - name: application
+    repository: organisation/repository
+    services:
+      - web
+    pipelines:
+      - name: main
+        branch: hotfix*
+        environments:
+          - name: hotfix
+      - name: other
+        branch: other/*
+        environments:
+          - name: other

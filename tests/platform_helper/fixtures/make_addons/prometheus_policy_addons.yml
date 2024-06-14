@@ -1,0 +1,12 @@
+extensions:
+  prometheus:
+    type: prometheus-policy
+
+    services:
+      - "web"
+
+    environments:
+      '*':
+        role_arn: "dev-prometheus-role-arn"
+      production:
+        role_arn: "prod-prometheus-role-arn"

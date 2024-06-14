@@ -1,0 +1,20 @@
+my-prometheus-policy-wrong-key:
+  type: prometheus-policy
+
+  services:
+    - "web"
+
+  environments:
+    dev:
+      wrong-key: donkey
+
+my-prometheus-policy-wrong-type:
+  type: prometheus-policy
+
+  services:
+    - "web"
+
+  environments:
+    dev:
+      role_arn:
+        - notalist: true

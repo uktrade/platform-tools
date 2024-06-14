@@ -117,6 +117,44 @@ def test_pipeline_generate_with_only_environments_creates_the_pipeline_configura
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_with_wildcarded_branch_creates_the_pipeline_configuration(
+    git_remote, get_aws_session_or_abort, fakefs
+):
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-valid-wildcard-branch.yml")
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 0
+    assert_environment_pipeline_config_was_generated()
+    assert_codebase_pipeline_config_was_generated()
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_with_invalid_wildcarded_branch_does_not_create_the_pipeline_configuration(
+    git_remote, get_aws_session_or_abort, fakefs
+):
+    mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
+    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-invalid-wildcard-branch.yml")
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code != 0
+    assert_environment_pipeline_config_was_not_generated()
+    assert_codebase_pipeline_config_was_not_generated()
+
+
+@freeze_time("2023-08-22 16:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuration(
     git_remote, get_aws_session_or_abort, fakefs
 ):

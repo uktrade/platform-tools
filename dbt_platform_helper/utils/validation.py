@@ -151,6 +151,7 @@ ENV_NAME = Regex(
 
 range_validator = validate_string(r"^\d+-\d+$")
 seconds_validator = validate_string(r"^\d+s$")
+branch_wildcard_validator = validate_string(r"^((?!\*).)*(\*)?$")
 
 NUMBER = Or(int, float)
 DELETION_POLICY = Or("Delete", "Retain")
@@ -349,6 +350,16 @@ ALB_DEFINITION = {
     },
 }
 
+PROMETHEUS_POLICY_DEFINITION = {
+    "type": "prometheus-policy",
+    Optional("services"): Or("__all__", [str]),
+    Optional("environments"): {
+        ENV_NAME: {
+            "role_arn": str,
+        }
+    },
+}
+
 ENVIRONMENTS_DEFINITION = {
     str: Or(
         None,
@@ -379,7 +390,7 @@ CODEBASE_PIPELINES_DEFINITION = [
             Or(
                 {
                     "name": str,
-                    "branch": str,
+                    "branch": branch_wildcard_validator,
                     "environments": [
                         {
                             "name": str,
@@ -428,6 +439,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
                 MONITORING_DEFINITION,
                 OPENSEARCH_DEFINITION,
                 ALB_DEFINITION,
+                PROMETHEUS_POLICY_DEFINITION,
             )
         },
         Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
@@ -481,6 +493,7 @@ class ConditionalSchema(Schema):
 OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
 MONITORING_SCHEMA = Schema(MONITORING_DEFINITION)
 ALB_SCHEMA = Schema(ALB_DEFINITION)
+PROMETHEUS_POLICY_SCHEMA = Schema(PROMETHEUS_POLICY_DEFINITION)
 
 
 def no_param_schema(schema_type):
@@ -500,4 +513,5 @@ SCHEMA_MAP = {
     "vpc": no_param_schema("vpc"),
     "xray": no_param_schema("xray"),
     "alb": ALB_SCHEMA,
+    "prometheus-policy": PROMETHEUS_POLICY_SCHEMA,
 }

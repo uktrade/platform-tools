@@ -294,6 +294,8 @@ def mock_connection_secret_name(mock_application, addon_type, addon_name, access
             return f"{secret_name}_READ_ONLY_USER"
         elif access == "write":
             return f"{secret_name}_APPLICATION_USER"
+    elif addon_type == "redis" or addon_type == "opensearch":
+        secret_name += "_ENDPOINT"
 
     return secret_name
 
