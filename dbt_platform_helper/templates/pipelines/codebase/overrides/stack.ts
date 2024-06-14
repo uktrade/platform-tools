@@ -18,7 +18,7 @@ export class TransformedStack extends cdk.Stack {
     private pipelineManifest: PipelineManifest;
     private codestarConnection: { arn: string; id: string; };
     private deployRepository: string;
-    private codebaseConfiguration: PipelinesConfiguration['codebases'][0];
+    private codebaseConfiguration: PipelinesConfiguration['codebase_pipelines'][0];
     private pipelinesFile: PipelinesConfiguration;
 
     constructor(scope: cdk.App, id: string, props: TransformedStackProps) {
@@ -227,7 +227,7 @@ export class TransformedStack extends cdk.Stack {
         return this.codebaseConfiguration.additional_ecr_repository || "";
     }
 
-    private createPipeline(index: number, pipelineConfig: PipelinesConfiguration['codebases'][0]['pipelines'][0], existingPipeline: cdk.aws_codepipeline.CfnPipeline) {
+    private createPipeline(index: number, pipelineConfig: PipelinesConfiguration['codebase_pipelines'][0]['pipelines'][0], existingPipeline: cdk.aws_codepipeline.CfnPipeline) {
         const pipeline = new cdk.aws_codepipeline.CfnPipeline(this, `Pipeline${index + 1}`, {
             name: `pipeline-${this.appName}-${this.codebaseConfiguration.name}-${pipelineConfig.name}`,
             roleArn: cdk.Fn.getAtt('PipelineRole', 'Arn').toString(),
@@ -362,7 +362,7 @@ export class TransformedStack extends cdk.Stack {
         });
     }
 
-    private createEventRule(pipeline: cdk.aws_codepipeline.CfnPipeline, pipelineConfig: PipelinesConfiguration['codebases'][0]['pipelines'][0], suffix: string = '') {
+    private createEventRule(pipeline: cdk.aws_codepipeline.CfnPipeline, pipelineConfig: PipelinesConfiguration['codebase_pipelines'][0]['pipelines'][0], suffix: string = '') {
         const watchImageTag = pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch}`;
         const ecrRepository = `${this.appName}/${this.codebaseConfiguration.name}`;
         new cdk.aws_events.CfnRule(this, `EventRule${suffix}`, {
@@ -432,7 +432,7 @@ export class TransformedStack extends cdk.Stack {
 
         // Load dbt-platform-helper pipelines configurations
         this.pipelinesFile = parse(readFileSync(
-            path.join(deployRepoRoot, 'pipelines.yml'),
+            path.join(deployRepoRoot, 'platform-config.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
 
         this.codebaseConfiguration = this.getFullCodebaseConfiguration();
@@ -442,13 +442,13 @@ export class TransformedStack extends cdk.Stack {
         const pipelineRoot = path.join(process.cwd(), '..');
         const deployRepoRoot = path.join(pipelineRoot, '..', '..', '..');
         const pipelinesFile = parse(readFileSync(
-            path.join(deployRepoRoot, 'pipelines.yml'),
+            path.join(deployRepoRoot, 'platform-config.yml'),
         ).toString('utf-8')) as PipelinesConfiguration;
 
-        const codebaseConfiguration = pipelinesFile.codebases.find(c => c.name === this.pipelineManifest.name);
+        const codebaseConfiguration = pipelinesFile.codebase_pipelines.find(c => c.name === this.pipelineManifest.name);
 
         if (!codebaseConfiguration) {
-            throw new Error(`Could not find a codebase configuration for ${this.pipelineManifest.name}, ensure ./pipelines.yml is up to date`);
+            throw new Error(`Could not find a codebase configuration for ${this.pipelineManifest.name}, ensure ./platform-config.yml is up to date`);
         }
 
         return codebaseConfiguration

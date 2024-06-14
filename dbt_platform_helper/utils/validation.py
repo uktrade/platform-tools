@@ -417,7 +417,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         "application": str,
         Optional("accounts"): list[str],
         Optional("environments"): ENVIRONMENTS_DEFINITION,
-        Optional("codebase-pipelines"): CODEBASE_PIPELINES_DEFINITION,
+        Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
@@ -430,7 +430,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
                 ALB_DEFINITION,
             )
         },
-        Optional("environment-pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
+        Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
     }
 )
 

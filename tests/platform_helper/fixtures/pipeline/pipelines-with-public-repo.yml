@@ -8,7 +8,7 @@ environments:
   prod:
     requires_approval: true
 
-codebase-pipelines:
+codebase_pipelines:
   - name: application
     repository: organisation/repository
     additional_ecr_repository: public.ecr.aws/uktrade-platform-sandbox/demodjango/application

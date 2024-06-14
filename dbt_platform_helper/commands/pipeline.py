@@ -25,7 +25,7 @@ from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 
-CODEBASE_PIPELINES_KEY = "codebase-pipelines"
+CODEBASE_PIPELINES_KEY = "codebase_pipelines"
 ENVIRONMENTS_KEY = "environments"
 
 

@@ -18,7 +18,7 @@ environments:
         id: "4444444444"
     requires_approval: true
 
-codebase-pipelines:
+codebase_pipelines:
   - name: application
     repository: organisation/repository
     services:

@@ -499,7 +499,7 @@ extensions:
         cdn_domains_list:
           dev.test-app.uktrade.digital: "test-app.uktrade.digital"
 
-environment-pipelines:
+environment_pipelines:
   main:
     slack_channel: "/codebuild/notification_channel"
     trigger: push
@@ -514,7 +514,7 @@ environment-pipelines:
     environments:
       test:
 
-codebase-pipelines:
+codebase_pipelines:
   - name: application
     repository: uktrade/test-app
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
