@@ -47,8 +47,10 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
     application = get_application(app)
     application_environment = get_app_environment(application, env)
 
-    if svc == "*":
-        services = [s for s in application.services if s.kind == "Load Balanced Web Service"]
+    if "*" in svc:
+        services = [
+            s for s in application.services.values() if s.kind == "Load Balanced Web Service"
+        ]
     else:
         all_services = [get_app_service(app, s) for s in list(svc)]
         services = [s for s in all_services if s.kind == "Load Balanced Web Service"]

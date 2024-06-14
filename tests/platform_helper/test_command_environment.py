@@ -11,6 +11,7 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
+from dbt_platform_helper.utils.application import Service
 from tests.platform_helper.conftest import BASE_DIR
 
 # from dbt_platform_helper.commands.environment import get_cert_arn
@@ -263,6 +264,56 @@ class TestEnvironmentOfflineCommand:
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
         add_maintenance_page.assert_not_called()
+
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    @patch(
+        "dbt_platform_helper.commands.environment.find_https_listener",
+        return_value="https_listener",
+    )
+    @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
+    @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
+    def test_successful_offline_multiple_services(
+        self,
+        add_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
+    ):
+        from dbt_platform_helper.commands.environment import offline
+
+        mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+        load_application.return_value = mock_application
+
+        result = CliRunner().invoke(
+            offline,
+            ["--app", "test-application", "--env", "development", "--svc", "*"],
+            input="y\n",
+        )
+
+        assert (
+            "You are about to enable the 'default' maintenance page for the development "
+            "environment in test-application."
+        ) in result.output
+        assert "Would you like to continue? [y/N]: y" in result.output
+
+        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_maintenance_page.assert_called_with(ANY, "https_listener")
+        add_maintenance_page.assert_called_with(
+            ANY,
+            "https_listener",
+            "test-application",
+            "development",
+            [mock_application.services["web"], mock_application.services["web2"]],
+            [],
+            False,
+            "default",
+        )
+
+        assert (
+            "Maintenance page 'default' added for environment development in "
+            "application test-application"
+        ) in result.output
 
 
 class TestEnvironmentAllowIpsCommand:
