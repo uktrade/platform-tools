@@ -53,7 +53,7 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 The regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run smoke tests.
 
-This is currently only trigger on merges to the `main` branch for this code base and on a schedule early every morning.
+This is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
 
 You can trigger a regression test run for your branch using the following command...
 
