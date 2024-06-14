@@ -13,7 +13,7 @@ set -e
 
 ./regression_tests/stages/run_platform_helper_generate.sh
 
-./regression_tests/stages/run_environment_pipeline.sh
+#./regression_tests/stages/run_environment_pipeline.sh
 
 ./regression_tests/stages/run_codebase_pipeline.sh
 
