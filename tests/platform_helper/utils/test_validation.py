@@ -402,3 +402,4 @@ def test_validate_s3_bucket_name_multiple_failures():
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 def test_validate_success(valid_platform_config):
     PLATFORM_CONFIG_SCHEMA.validate(valid_platform_config)
+    # No assertions - validate will error if config is invalid.

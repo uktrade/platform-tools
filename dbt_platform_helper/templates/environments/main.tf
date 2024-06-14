@@ -1,9 +1,9 @@
 locals {
   environments = yamldecode(file("../../../platform-config.yml"))["environments"]
-  env_config    = { for name, config in local.environments : name => merge(lookup(local.environments, "*", {}), config) }
+  env_config   = { for name, config in local.environments : name => merge(lookup(local.environments, "*", {}), config) }
   args = {
-    application = "{{ application }}"
-    services    = yamldecode(file("../../../platform-config.yml"))["extensions"]
+    application    = "{{ application }}"
+    services       = yamldecode(file("../../../platform-config.yml"))["extensions"]
     dns_account_id = local.env_config["{{ environment }}"]["accounts"]["dns"]["id"]
   }
 }
@@ -28,7 +28,6 @@ terraform {
 
 module "extensions" {
   source = "git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=1"
-  # source = "../../../../terraform-platform-modules/extensions"
 
   args        = local.args
   environment = "{{ environment }}"

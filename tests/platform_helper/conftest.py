@@ -502,7 +502,7 @@ extensions:
 environment_pipelines:
   main:
     slack_channel: "/codebuild/notification_channel"
-    trigger: push
+    trigger_on_push: true
     environments:
       dev:
       staging:
@@ -510,7 +510,7 @@ environment_pipelines:
   test:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
-    trigger: none
+    trigger_on_push: false
     environments:
       test:
 

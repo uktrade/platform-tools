@@ -406,7 +406,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
     str: {
         Optional("branch", default="main"): str,
         "slack_channel": str,
-        "trigger": str,
+        "trigger_on_push": bool,
         "environments": {str: Or({}, None)},
     }
 }
