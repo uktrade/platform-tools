@@ -315,9 +315,6 @@ class TestEnvironmentOfflineCommand:
             "application test-application"
         ) in result.output
 
-    def test_successful_offline_ip_filter(self):
-        pass
-
 
 class TestEnvironmentAllowIpsCommand:
     @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
