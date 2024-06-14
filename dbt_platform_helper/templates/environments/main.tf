@@ -1,3 +1,4 @@
+# {% version_info %}
 locals {
   config = yamldecode(file("../../../platform-config.yml"))
   environments = local.config["environments"]
@@ -13,7 +14,7 @@ terraform {
   required_version = "~> 1.8"
   backend "s3" {
     bucket         = "terraform-platform-state-{{ config.accounts.deploy.name }}"
-    key            = "tfstate/application/demodjango-{{environment}}.tfstate"
+    key            = "tfstate/application/{{ application }}-{{ environment }}.tfstate"
     region         = "eu-west-2"
     encrypt        = true
     kms_key_id     = "alias/terraform-platform-state-s3-key-{{ config.accounts.deploy.name }}"
