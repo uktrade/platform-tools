@@ -657,7 +657,7 @@ platform-helper environment (offline|allow-ips|online|generate)
 platform-helper environment offline --app <application> --env <environment> --svc <service> 
                                     [--template (default|migration)] 
                                     [--allowed-ip <allowed_ip>] 
-                                    [--ip-filter <ip_filter>] 
+                                    [--ip-filter] 
 ```
 
 ## Options

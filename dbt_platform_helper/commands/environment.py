@@ -41,7 +41,7 @@ def environment():
     help="The maintenance page you wish to put up.",
 )
 @click.option("--allowed-ip", "-ip", type=str, multiple=True)
-@click.option("--ip-filter", type=bool, default=False)
+@click.option("--ip-filter", is_flag=True)
 def offline(app, env, svc, template, allowed_ip, ip_filter):
     """Take load-balanced web services offline with a maintenance page."""
     application = get_application(app)
