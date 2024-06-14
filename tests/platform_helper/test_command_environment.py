@@ -18,6 +18,7 @@ from tests.platform_helper.conftest import BASE_DIR
 
 
 class TestEnvironmentOfflineCommand:
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
@@ -25,9 +26,16 @@ class TestEnvironmentOfflineCommand:
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline(
-        self, add_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        add_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import offline
+
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             offline, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -57,6 +65,7 @@ class TestEnvironmentOfflineCommand:
             "application test-application"
         ) in result.output
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
@@ -64,9 +73,16 @@ class TestEnvironmentOfflineCommand:
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline_with_custom_template(
-        self, add_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        add_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import offline
+
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             offline,
@@ -98,6 +114,7 @@ class TestEnvironmentOfflineCommand:
             "application test-application"
         ) in result.output
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
@@ -113,9 +130,12 @@ class TestEnvironmentOfflineCommand:
         remove_maintenance_page,
         get_maintenance_page,
         find_https_listener,
+        load_application,
         mock_application,
     ):
         from dbt_platform_helper.commands.environment import offline
+
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             offline, ["--app", "test-application", "--env", "development"], input="y\n"
