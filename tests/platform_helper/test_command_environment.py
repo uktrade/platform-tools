@@ -385,8 +385,10 @@ class TestGenerate:
         assert "File copilot/environments/test/manifest.yml created" in result.output
         if is_terraform:
             assert "File terraform/environments/test/main.tf created" in result.output
+            assert Path("terraform/environments/test/main.tf").exists()
         else:
             assert "File terraform/environments/test/main.tf created" not in result.output
+            assert not Path("terraform/environments/test/main.tf").exists()
 
     def test_fail_early_if_platform_config_invalid(self, fakefs):
         from dbt_platform_helper.commands.environment import generate

@@ -653,8 +653,7 @@ class TestMakeAddonCommand:
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
-        if not result.exit_code == 0:
-            breakpoint()
+        assert result.exit_code == 0
 
         manifest = yaml.safe_load(
             Path(f"/copilot/environments/addons/{addon_name}.yml").read_text()

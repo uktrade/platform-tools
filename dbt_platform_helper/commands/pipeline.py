@@ -159,7 +159,7 @@ def _generate_codebase_pipeline(
     )
 
 
-def _generate_environments_pipeline(
+def _generate_copilot_environments_pipeline(
     app_name, codestar_connection_arn, git_repo, configuration, base_path, pipelines_dir, templates
 ):
     makedirs(pipelines_dir / "environments/overrides", exist_ok=True)
