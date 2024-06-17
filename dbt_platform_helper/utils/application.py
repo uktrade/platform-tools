@@ -33,13 +33,24 @@ class Environment:
         return self.sessions[self.account_id]
 
 
+class Service:
+    name: str
+    kind: str
+
+    def __init__(self, name: str, kind: str):
+        self.name = name
+        self.kind = kind
+
+
 class Application:
     name: str
     environments: Dict[str, Environment]
+    services: Dict[str, Service]
 
     def __init__(self, name: str):
         self.name = name
         self.environments = {}
+        self.services = {}
 
     def __str__(self):
         output = f"Application {self.name} with"
@@ -102,6 +113,17 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
         for env in [
             json.loads(p["Value"]) for p in response["Parameters"] if is_environment_key(p["Name"])
         ]
+    }
+
+    response = ssm_client.get_parameters_by_path(
+        Path=f"/copilot/applications/{application.name}/components",
+        Recursive=False,
+        WithDecryption=False,
+    )
+
+    application.services = {
+        svc["name"]: Service(svc["name"], svc["type"])
+        for svc in [json.loads(parameter["Value"]) for parameter in response["Parameters"]]
     }
 
     return application
