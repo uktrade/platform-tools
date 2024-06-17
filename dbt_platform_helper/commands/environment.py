@@ -21,7 +21,7 @@ from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 
-AVAILABLE_TEMPLATES = ["default", "migration"]
+AVAILABLE_TEMPLATES = ["default", "migration", "dmas-migration"]
 
 
 @click.group(cls=ClickDocOptGroup)

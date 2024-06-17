@@ -1,5 +1,22 @@
 # Changelog
 
+## [8.7.0](https://github.com/uktrade/platform-tools/compare/8.6.0...8.7.0) (2024-06-17)
+
+
+### Features
+
+* DBTP-612 allow wildcard in branch names ([#457](https://github.com/uktrade/platform-tools/issues/457)) ([9b9aaf2](https://github.com/uktrade/platform-tools/commit/9b9aaf2fa3832ddbb9ec3a972501d0286cdcfba9))
+
+
+### Bug Fixes
+
+* add dmas-migration to available environment template options ([#468](https://github.com/uktrade/platform-tools/issues/468)) ([6e98ca1](https://github.com/uktrade/platform-tools/commit/6e98ca13bde76612ead0622cd56fee9490dc3e41))
+
+
+### Documentation
+
+* Fix typo in README ([#464](https://github.com/uktrade/platform-tools/issues/464)) ([3ce139f](https://github.com/uktrade/platform-tools/commit/3ce139f4c643821928c4ac248f366d45de243f39))
+
 ## [8.6.0](https://github.com/uktrade/platform-tools/compare/8.5.0...8.6.0) (2024-06-10)
 
 
