@@ -5,11 +5,13 @@ set -e
 
 echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
-./regression_tests/stages/build_platform_helper.sh
+./regression_tests/stages/set_up_git_config.sh
 
-./regression_tests/stages/clone_demodjango_deploy.sh
+# ./regression_tests/stages/set_up_aws_config.sh
 
-./regression_tests/stages/set_up_aws_config.sh
+# ./regression_tests/stages/build_platform_helper.sh
+
+# ./regression_tests/stages/clone_demodjango_deploy.sh
 
 # ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
@@ -17,9 +19,9 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 
 # Todo: Run copilot pipeline deploy
 
-./regression_tests/stages/run_environment_pipeline.sh
+# ./regression_tests/stages/run_environment_pipeline.sh
 
-./regression_tests/stages/run_codebase_pipeline.sh
+# ./regression_tests/stages/run_codebase_pipeline.sh
 
 # Todo: echo -e "\nRun smoke tests"
 # From the demodjango codebase on your machine, run...
