@@ -367,7 +367,7 @@ def make_addons():
 
 def _get_config():
     config_file_check()
-    config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
+    default_config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
     project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)
     return config
