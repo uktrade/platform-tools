@@ -225,7 +225,7 @@ def test_file_compatibility_check_fails_if_platform_config_not_present(
         ),
     ],
 )
-def test_file_compatibility_check_warns_if_platform_config_exists(
+def test_file_compatibility_check_warns_if_platform_config_and_legacy_config_files_exist(
     fakefs, capsys, files, expected_messages
 ):
     for file in files:
