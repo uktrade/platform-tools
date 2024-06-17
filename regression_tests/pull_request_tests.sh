@@ -5,7 +5,7 @@ set -e
 
 echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
-./regression_tests/stages/set_up_git_config.sh
+source ./regression_tests/stages/set_up_git_config.sh
 echo "Base url: $GIT_CLONE_BASE_URL"
 # ./regression_tests/stages/set_up_aws_config.sh
 
