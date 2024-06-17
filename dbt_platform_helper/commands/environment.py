@@ -490,16 +490,44 @@ def create_header_rule(
     header_name: str,
     values: list,
     rule_name: str,
+    priority: int,
 ):
+    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+    for rule in rules:
+        for action in rule["Actions"]:
+            if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
+                conditions = rule["Conditions"]
+
+    conditions = [
+        {i: condition[i] for i in condition if i != "Values"}
+        for condition in conditions
+        if condition["Field"] == "host-header"
+    ]
+
+    conditions[0]["HostHeaderConfig"]["Values"] = [
+        v for v in conditions[0]["HostHeaderConfig"]["Values"] if not "internal" in v
+    ]
+    # conditions = [{k: v for k, v in condition.items() if k in ["HostHeaderConfig", "PathPatternConfig"]} for condition in conditions]
+    print(
+        [
+            {
+                "Field": "http-header",
+                "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
+            }
+        ]
+        + conditions
+    )
+
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=1,
+        Priority=priority,
         Conditions=[
             {
                 "Field": "http-header",
                 "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
             }
-        ],
+        ]
+        + conditions,
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         Tags=[
             {"Key": "name", "Value": rule_name},
@@ -525,7 +553,7 @@ def add_maintenance_page(
     lb_client = session.client("elbv2")
     maintenance_page_content = get_maintenance_page_template(template)
 
-    for svc in services:
+    for index, svc in enumerate(services):
         target_group_arn = find_target_group(app, env, svc.name, session)
 
         # not all of an application's services are guaranteed to have been deployed to an environment
@@ -535,15 +563,16 @@ def add_maintenance_page(
         if not ip_filter:
             user_ip = get_public_ip()
             allowed_ips = list(allowed_ips) + [user_ip]
-
-            create_header_rule(
-                lb_client,
-                listener_arn,
-                target_group_arn,
-                "X-Forwarded-For",
-                allowed_ips,
-                "AllowedIps",
-            )
+            for ip_index, ip in enumerate(allowed_ips):
+                create_header_rule(
+                    lb_client,
+                    listener_arn,
+                    target_group_arn,
+                    "X-Forwarded-For",
+                    [ip],
+                    "AllowedIps",
+                    (index + 1) * (ip_index + 1),
+                )
         else:
             bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             create_header_rule(
@@ -553,6 +582,7 @@ def add_maintenance_page(
                 "Bypass-Key",
                 [bypass_value],
                 "BypassIpFilter",
+                index + 1,
             )
 
             click.secho(
@@ -562,7 +592,7 @@ def add_maintenance_page(
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=2,
+        Priority=1000,
         Conditions=[
             {
                 "Field": "path-pattern",
