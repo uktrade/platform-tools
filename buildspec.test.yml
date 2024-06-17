@@ -10,7 +10,7 @@ phases:
         python --version
       - echo -e "\nInstalling dependencies"
       - pip install poetry
-      # - poetry install
+      - poetry install
 
   build:
     commands:
