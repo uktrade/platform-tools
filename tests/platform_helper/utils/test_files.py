@@ -144,56 +144,33 @@ def test_is_terraform_project(fakefs, create_terraform_dir):
         (
             ["storage.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move into a file `{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`."
+                f"`storage.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
             ],
         ),
         (
             ["extensions.yml"],
             [
-                f"`extensions.yml` is no longer supported. Please move the contents into a file `{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`."
+                f"`extensions.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
             ],
         ),
         (
             ["pipelines.yml"],
             [
-                f"`pipelines.yml` is no longer supported. Please move the contents into a file `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "storage.yml"],
-            [
-                f"`storage.yml` is no longer supported. Please move into `{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "extensions.yml"],
-            [
-                f"`extensions.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
-            [
-                f"`pipelines.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
+                f"`pipelines.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
             ],
         ),
         (
             ["storage.yml", "pipelines.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move into a file `{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`.",
-                f"`pipelines.yml` is no longer supported. Please move the contents into a file `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
-            [
-                f"`pipelines.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-                f"`extensions.yml` is no longer supported. Please move the contents into `{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`.",
+                f"`storage.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
+                f"`pipelines.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
             ],
         ),
     ],
 )
-def test_file_compatibility_check_fails(fakefs, capsys, files, expected_messages):
+def test_file_compatibility_check_fails_if_platform_config_not_present(
+    fakefs, capsys, files, expected_messages
+):
     for file in files:
         fakefs.create_file(file)
 
@@ -205,10 +182,46 @@ def test_file_compatibility_check_fails(fakefs, capsys, files, expected_messages
     for expected_message in expected_messages:
         assert expected_message in console_message
 
-    # if Path("storage.yml").exists():
-    #     recommendations["storage.yml"] = (
-    #         "The file `storage.yml` is incompatible with version "
-    #         f"{versioning.string_version(app_released_version)} of "
-    #         f"dbt-platform-helper, move contents to `{PLATFORM_CONFIG_FILE}` under a key 'extensions' and "
-    #         "delete `storage.yml`."
-    #     )
+
+@pytest.mark.parametrize(
+    "files, expected_messages",
+    [
+        (
+            [PLATFORM_CONFIG_FILE, "storage.yml"],
+            [
+                f"`storage.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "extensions.yml"],
+            [
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+            ],
+        ),
+    ],
+)
+def test_file_compatibility_check_warns_if_platform_config_exists(
+    fakefs, capsys, files, expected_messages
+):
+    for file in files:
+        fakefs.create_file(file)
+
+    file_compatibility_check()
+
+    console_message = capsys.readouterr().out
+
+    for expected_message in expected_messages:
+        assert expected_message in console_message

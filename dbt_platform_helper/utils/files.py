@@ -7,30 +7,29 @@ import yaml
 
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 
+CONFIG_FILE_MESSAGES = {
+    "storage.yml": " under the key 'extensions'",
+    "extensions.yml": " under the key 'extensions'",
+    "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
+}
+
 
 def file_compatibility_check():
     platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
-    qualifier = "" if platform_config_exists else "a file "
     errors = []
 
-    if Path("storage.yml").exists():
-        errors.append(
-            f"`storage.yml` is no longer supported. Please move into {qualifier}`{PLATFORM_CONFIG_FILE}` under the key `extensions` and delete `storage.yml`."
-        )
-
-    if Path("extensions.yml").exists():
-        errors.append(
-            f"`extensions.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}` and delete `extensions.yml`."
-        )
-
-    if Path("pipelines.yml").exists():
-        errors.append(
-            f"`pipelines.yml` is no longer supported. Please move the contents into {qualifier}`{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
-        )
+    for file in CONFIG_FILE_MESSAGES.keys():
+        if Path(file).exists():
+            if platform_config_exists:
+                message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            else:
+                message = f"`{file}` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`{CONFIG_FILE_MESSAGES[file]} and delete `{file}`."
+            errors.append(message)
 
     if errors:
         click.secho("\n".join(errors), bg="red")
-        exit(1)
+        if not platform_config_exists:
+            exit(1)
 
 
 def load_and_validate_config(path, schema):
