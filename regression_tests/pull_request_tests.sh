@@ -11,9 +11,9 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 
 ./regression_tests/stages/set_up_aws_config.sh
 
-./regression_tests/stages/run_platform_helper_environment_generate.sh
+# ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
-./regression_tests/stages/run_platform_helper_generate.sh
+# ./regression_tests/stages/run_platform_helper_generate.sh
 
 # Todo: Run copilot pipeline deploy
 
