@@ -8,7 +8,6 @@ env:
 phases:
   install:
     commands:
-      - echo "Temporarily bork build early" && exit 1
       - echo -e "\nSetting local Python versions"
       - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
       - |
@@ -20,11 +19,13 @@ phases:
 
   build:
     commands:
+      - echo "Temporarily bork build early" && exit 1
       - echo -e "\nRunning regression tests"
       - ./regression_tests/pull_request_tests.sh
 
   post_build:
     commands:
+      - echo "POSTBUILD IS HERE"
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]
         then
