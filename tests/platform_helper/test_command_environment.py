@@ -360,7 +360,9 @@ class TestEnvironmentAllowIpsCommand:
         mock_get_listener_rule_by_tag.assert_called_once_with(
             mock_client(), "https_listener", "name", "AllowedIps"
         )
-        mock_find_target_group.assert_called_once_with("test-application", "development", "web")
+        mock_find_target_group.assert_called_once_with(
+            "test-application", "development", "web", mock_session
+        )
         mock_create_header_rule.assert_called_once_with(
             mock_client(),
             "https_listener",
@@ -1171,13 +1173,19 @@ class TestCommandHelperMethods:
 
         target_group_arn = self._create_target_group()
 
-        assert find_target_group("test-application", "development", "web") == target_group_arn
+        assert (
+            find_target_group("test-application", "development", "web", boto3.session.Session())
+            == target_group_arn
+        )
 
     @mock_aws
     def test_find_target_group_not_found(self):
         from dbt_platform_helper.commands.environment import find_target_group
 
-        assert find_target_group("test-application", "development", "web") is None
+        assert (
+            find_target_group("test-application", "development", "web", boto3.session.Session())
+            is None
+        )
 
     @mock_aws
     def test_delete_listener_rule(self):

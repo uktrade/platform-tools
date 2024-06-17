@@ -151,7 +151,7 @@ def allow_ips(app, env, svc, allowed_ips):
     current_values = []
 
     if not listener_rule:
-        target_group_arn = find_target_group(app, env, svc)
+        target_group_arn = find_target_group(app, env, svc, application_environment.session)
 
         if not target_group_arn:
             raise click.Abort
@@ -390,8 +390,8 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
-def find_target_group(app: str, env: str, svc: str) -> str:
-    rg_tagging_client = boto3.client("resourcegroupstaggingapi")
+def find_target_group(app: str, env: str, svc: str, session: boto3.Session) -> str:
+    rg_tagging_client = session.client("resourcegroupstaggingapi")
     response = rg_tagging_client.get_resources(
         TagFilters=[
             {
@@ -526,7 +526,7 @@ def add_maintenance_page(
     maintenance_page_content = get_maintenance_page_template(template)
 
     for svc in services:
-        target_group_arn = find_target_group(app, env, svc.name)
+        target_group_arn = find_target_group(app, env, svc.name, session)
 
         # not all of an application's services are guaranteed to have been deployed to an environment
         if not target_group_arn:
