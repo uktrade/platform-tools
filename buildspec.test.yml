@@ -1,8 +1,14 @@
 version: 0.2
 
+env:
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+    SLACK_CHANNEL_ID: /codebuild/slack_channel_id_test_command_output
+
 phases:
   install:
     commands:
+      - echo "Temporarily bork build early" && exit 1
       - echo -e "\nSetting local Python versions"
       - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
       - |
@@ -16,3 +22,12 @@ phases:
     commands:
       - echo -e "\nRunning regression tests"
       - ./regression_tests/pull_request_tests.sh
+
+  post_build:
+    commands:
+      - |
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]
+        then
+          MESSAGE="Regression tests have failed for the TODO branch, environment etc."
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+        fi
