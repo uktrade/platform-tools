@@ -118,6 +118,7 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
 @click.option("--svc", type=str, required=True, default="web")
 @click.argument("allowed-ips", nargs=-1)
 def allow_ips(app, env, svc, allowed_ips):
+    """Allow selected ip addresses to bypass a service's maintenance page."""
     application_environment = get_app_environment(app, env)
 
     try:

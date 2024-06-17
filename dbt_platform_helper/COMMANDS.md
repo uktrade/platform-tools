@@ -682,6 +682,8 @@ platform-helper environment offline --app <application> --env <environment> --sv
 
 [↩ Parent](#platform-helper-environment)
 
+    Allow selected ip addresses to bypass a service's maintenance page.
+
 ## Usage
 
 ```
