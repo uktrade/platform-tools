@@ -27,6 +27,7 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 # From the demodjango codebase on your machine, run...
 #   ./smoke_tests.sh toolspr
 
+echo -e "\nCommand to run smoke tests from pull_request_tests.sh"
 ./regression_tests/stages/run_demodjango_smoke_tests.sh
 
 # Todo: Slack alert if it fails on the main branch
