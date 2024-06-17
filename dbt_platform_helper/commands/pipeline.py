@@ -63,7 +63,7 @@ def generate():
     _clean_pipeline_config(pipelines_dir)
 
     if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
-        _generate_environments_pipeline(
+        _generate_copilot_environments_pipeline(
             app_name,
             codestar_connection_arn,
             git_repo,
