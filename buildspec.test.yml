@@ -30,7 +30,7 @@ phases:
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]
         then
-          TITLE=":alert: Regression tests have failed for the TODO branch, environment etc."
+          TITLE=":alert: DBT Platform regression tests have failed!"
           MESSAGE="[View Build ${CODEBUILD_BUILD_NUMBER}](https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/platform-tools-test%3A${CODEBUILD_BUILD_ID}?region=eu-west-2)"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}" --title "${TITLE}"
         fi
