@@ -27,6 +27,7 @@
 - [platform-helper domain assign](#platform-helper-domain-assign)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
+- [platform-helper environment allow-ips](#platform-helper-environment-allow-ips)
 - [platform-helper environment online](#platform-helper-environment-online)
 - [platform-helper environment generate](#platform-helper-environment-generate)
 - [platform-helper generate](#platform-helper-generate)
@@ -629,7 +630,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|online|generate) 
+platform-helper environment (offline|allow-ips|online|generate) 
 ```
 
 ## Options
@@ -639,6 +640,7 @@ platform-helper environment (offline|online|generate)
 
 ## Commands
 
+- [`allow-ips` ↪](#platform-helper-environment-allow-ips)
 - [`generate` ↪](#platform-helper-environment-generate)
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
@@ -652,7 +654,10 @@ platform-helper environment (offline|online|generate)
 ## Usage
 
 ```
-platform-helper environment offline --app <application> --env <environment> [--template (default|migration)] 
+platform-helper environment offline --app <application> --env <environment> --svc <service> 
+                                    [--template (default|migration|dmas-migration)] 
+                                    [--allowed-ip <allowed_ip>] 
+                                    [--ip-filter] 
 ```
 
 ## Options
@@ -661,8 +666,43 @@ platform-helper environment offline --app <application> --env <environment> [--t
 
 - `--env <text>`
 
+- `--svc <text>` _Defaults to ['web']._
+
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.
+- `--allowed-ip
+-ip <text>`
+
+- `--ip-filter <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper environment allow-ips
+
+[↩ Parent](#platform-helper-environment)
+
+    Allow selected ip addresses to bypass a service's maintenance page.
+
+## Usage
+
+```
+platform-helper environment allow-ips [<allowed_ips>] 
+                                      --app <application> --env <environment> --svc <service> 
+```
+
+## Arguments
+
+- `allowed-ips <text>`
+
+## Options
+
+- `--app <text>`
+
+- `--env <text>`
+
+- `--svc <text>` _Defaults to web._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

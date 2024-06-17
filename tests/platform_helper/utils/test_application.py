@@ -135,26 +135,36 @@ class ApplicationTest(TestCase):
         mock_session = MagicMock(name="session-mock")
         mock_session.client.return_value = mock_client
         mock_client.get_caller_identity.return_value = {"Account": "111111111"}
-        mock_client.get_parameters_by_path.return_value = {
-            "Parameters": [
-                {
-                    "Name": f"/copilot/applications/test/environments/one",
-                    "Value": json.dumps({"name": "one", "accountID": "111111111"}),
-                },
-                {
-                    "Name": f"/copilot/applications/test/environments/two/addons",
-                    "Value": json.dumps(
-                        {"demodjango-redis": {"type": "redis", "environments": {}}}
-                    ),
-                },
-                {
-                    "Name": f"/copilot/applications/test/environments/two/something/else",
-                    "Value": json.dumps(
-                        {"demodjango-redis": {"type": "redis", "environments": {}}}
-                    ),
-                },
-            ]
-        }
+        mock_client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": f"/copilot/applications/test/environments/one",
+                        "Value": json.dumps({"name": "one", "accountID": "111111111"}),
+                    },
+                    {
+                        "Name": f"/copilot/applications/test/environments/two/addons",
+                        "Value": json.dumps(
+                            {"demodjango-redis": {"type": "redis", "environments": {}}}
+                        ),
+                    },
+                    {
+                        "Name": f"/copilot/applications/test/environments/two/something/else",
+                        "Value": json.dumps(
+                            {"demodjango-redis": {"type": "redis", "environments": {}}}
+                        ),
+                    },
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/components/web",
+                        "Value": '{"app": "demoddjango", "name": "web", "type": "Load Balanced Web Service"}',
+                    }
+                ]
+            },
+        ]
 
         application = load_application(default_session=mock_session)
 
@@ -192,14 +202,28 @@ class ApplicationTest(TestCase):
         session.client.return_value = client
 
         client.get_caller_identity.return_value = {"Account": "abc_123"}
-        client.get_parameters_by_path.return_value = {
-            "Parameters": [
-                {
-                    "Name": "/copilot/applications/another-test/environments/my_env",
-                    "Value": '{"name": "my_env", "accountID": "abc_123"}',
-                }
-            ]
-        }
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/environments/my_env",
+                        "Value": '{"name": "my_env", "accountID": "abc_123"}',
+                    }
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/components/web",
+                        "Value": '{"app": "demoddjango", "name": "web", "type": "Load Balanced Web Service"}',
+                    },
+                    {
+                        "Name": "/copilot/applications/another-test/components/web2",
+                        "Value": '{"app": "demoddjango", "name": "web2", "type": "Load Balanced Web Service"}',
+                    },
+                ]
+            },
+        ]
 
         application = load_application(app="another-test", default_session=session)
 
@@ -207,6 +231,10 @@ class ApplicationTest(TestCase):
         self.assertEqual(len(application.environments), 1)
         self.assertEqual(application.environments["my_env"].name, "my_env")
         self.assertEqual(application.environments["my_env"].session, session)
+        self.assertEqual(application.services["web"].name, "web")
+        self.assertEqual(application.services["web"].kind, "Load Balanced Web Service")
+        self.assertEqual(application.services["web2"].name, "web2")
+        self.assertEqual(application.services["web2"].kind, "Load Balanced Web Service")
 
     @mock_aws
     @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
