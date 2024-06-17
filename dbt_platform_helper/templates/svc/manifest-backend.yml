@@ -1,3 +1,4 @@
+# {% extra_header %}
 # {% version_info %}
 # The manifest for the "{{ name }}" service.
 # Read the full specification for the "Backend Service" type at:
