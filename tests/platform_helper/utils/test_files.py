@@ -130,12 +130,18 @@ def test_apply_defaults_with_no_defaults():
     }
 
 
-@pytest.mark.parametrize("create_terraform_dir", [True, False])
-def test_is_terraform_project(fakefs, create_terraform_dir):
-    if create_terraform_dir:
-        fakefs.create_dir("./terraform")
+@pytest.mark.parametrize(
+    "platform_config_content, expected_result",
+    [
+        ("application: my-app\nlegacy_project: True", False),
+        ("application: my-app\nlegacy_project: False", True),
+        ("application: my-app", True),
+    ],
+)
+def test_is_terraform_project(fakefs, platform_config_content, expected_result):
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=platform_config_content)
 
-    assert is_terraform_project() == create_terraform_dir
+    assert is_terraform_project() == expected_result
 
 
 @pytest.mark.parametrize(

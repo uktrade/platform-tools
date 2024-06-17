@@ -399,6 +399,7 @@ def valid_platform_config():
     return yaml.safe_load(
         """
 application: test-app
+legacy_project: true
 
 environments:
   "*":

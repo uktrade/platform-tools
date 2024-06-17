@@ -1,4 +1,5 @@
 application: my-app
+legacy_project: True
 accounts:
   - 111111111
   - 222222222

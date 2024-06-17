@@ -138,7 +138,6 @@ class TestTerraformEnabledMakeAddonCommand:
                 error_response={}, operation_name="describe_key"
             )
 
-        fakefs.create_dir("./terraform")
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
@@ -200,6 +199,7 @@ class TestTerraformEnabledMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=True))
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
@@ -221,9 +221,6 @@ class TestTerraformEnabledMakeAddonCommand:
             addons_dir / addon_file, read_only=False, target_path=PLATFORM_CONFIG_FILE
         )
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
-
-        # make-addons will generate terraform compatible addons if it detects a ./terraform directory
-        fakefs.create_dir("./terraform")
 
         # Act
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -376,6 +373,9 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     @mock_aws
     def test_make_addons_success(
         self,
@@ -488,6 +488,9 @@ class TestMakeAddonCommand:
     )
     @mock_aws
     @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
         client = mock_aws_client(mock_get_session)
         client.head_bucket.side_effect = ClientError({"Error": {"Code": "400"}}, "HeadBucket")
@@ -522,6 +525,9 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -620,6 +626,9 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     @mock_aws
     def test_make_addons_deletion_policy(
         self,
@@ -661,6 +670,9 @@ class TestMakeAddonCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     def test_exit_if_no_copilot_directory(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -675,6 +687,9 @@ class TestMakeAddonCommand:
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
     )
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
@@ -892,6 +907,9 @@ class TestMakeAddonCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -934,6 +952,9 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     @mock_aws
     def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
         self, fakefs, addon_config, has_postgres_addon
@@ -1076,6 +1097,9 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
+    @patch(
+        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
+    )
     @mock_aws
     def test_alb_validation(self, fakefs):
         """

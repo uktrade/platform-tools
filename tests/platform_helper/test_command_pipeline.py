@@ -181,7 +181,6 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-for-terraform.yml")
-    fakefs.create_dir("./terraform")
 
     CliRunner().invoke(generate)
 

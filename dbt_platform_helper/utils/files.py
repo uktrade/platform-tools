@@ -118,4 +118,5 @@ def apply_environment_defaults(config):
 
 
 def is_terraform_project() -> bool:
-    return Path("./terraform").is_dir()
+    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    return not config.get("legacy_project", False)

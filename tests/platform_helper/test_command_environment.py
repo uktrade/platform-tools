@@ -327,6 +327,7 @@ class TestGenerate:
     )
     @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.environment.is_terraform_project")
     @pytest.mark.parametrize("is_terraform", [True, False])
     @pytest.mark.parametrize(
         "environment_config, expected_vpc",
@@ -339,6 +340,7 @@ class TestGenerate:
     )
     def test_generate(
         self,
+        mock_is_terraform_project,
         mock_get_aws_session,
         mock_get_vpc_id,
         mock_get_subnet_ids,
@@ -366,8 +368,7 @@ class TestGenerate:
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump({"application": "my-app", "environments": environment_config}),
         )
-        if is_terraform:
-            fakefs.create_dir("./terraform")
+        mock_is_terraform_project.return_value = is_terraform
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 

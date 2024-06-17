@@ -426,6 +426,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         "application": str,
+        Optional("legacy_project", default=False): bool,
         Optional("accounts"): list[str],
         Optional("environments"): ENVIRONMENTS_DEFINITION,
         Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
