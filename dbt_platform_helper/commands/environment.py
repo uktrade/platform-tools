@@ -45,7 +45,7 @@ def environment():
 def offline(app, env, svc, template, allowed_ip, ip_filter):
     """Take load-balanced web services offline with a maintenance page."""
     application = get_application(app)
-    application_environment = get_app_environment(application, env)
+    application_environment = get_app_environment(app, env)
 
     if "*" in svc:
         services = [
