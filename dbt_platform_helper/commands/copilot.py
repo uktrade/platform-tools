@@ -19,6 +19,7 @@ from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.files import obsolete_config_file_check
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import validate_addons
@@ -365,6 +366,7 @@ def make_addons():
 
 
 def _get_config():
+    obsolete_config_file_check()
     config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
     project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)

@@ -12,7 +12,7 @@ from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import file_compatibility_check
+from dbt_platform_helper.utils.files import obsolete_config_file_check
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -89,7 +89,7 @@ def deployment():
 
     recommendations = {}
 
-    file_compatibility_check()
+    obsolete_config_file_check()
 
     for template_file in addons_templates:
         generated_with_version = maybe

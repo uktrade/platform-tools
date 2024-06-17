@@ -17,6 +17,7 @@ from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.files import obsolete_config_file_check
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import setup_templates
@@ -43,6 +44,7 @@ def generate():
 
     app_name = get_application_name()
 
+    obsolete_config_file_check()
     pipeline_config = _safe_load_config(PLATFORM_CONFIG_FILE, PLATFORM_CONFIG_SCHEMA)
 
     _validate_pipelines_configuration(pipeline_config)

@@ -14,7 +14,7 @@ CONFIG_FILE_MESSAGES = {
 }
 
 
-def file_compatibility_check():
+def obsolete_config_file_check():
     platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
     errors = []
 

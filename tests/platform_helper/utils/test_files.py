@@ -6,11 +6,11 @@ import yaml
 
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import file_compatibility_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.files import obsolete_config_file_check
 from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from tests.platform_helper.conftest import FIXTURES_DIR
 
@@ -175,7 +175,7 @@ def test_file_compatibility_check_fails_if_platform_config_not_present(
         fakefs.create_file(file)
 
     with pytest.raises(SystemExit):
-        file_compatibility_check()
+        obsolete_config_file_check()
 
     console_message = capsys.readouterr().out
 
@@ -219,7 +219,7 @@ def test_file_compatibility_check_warns_if_platform_config_exists(
     for file in files:
         fakefs.create_file(file)
 
-    file_compatibility_check()
+    obsolete_config_file_check()
 
     console_message = capsys.readouterr().out
 

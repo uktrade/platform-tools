@@ -15,6 +15,7 @@ from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.files import obsolete_config_file_check
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.versioning import (
@@ -204,6 +205,7 @@ def generate(name, vpc_name):
         )
         raise click.Abort
 
+    obsolete_config_file_check()
     conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
     try:
