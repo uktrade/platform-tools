@@ -13,11 +13,11 @@ from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.files import obsolete_config_file_check
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import setup_templates
@@ -44,7 +44,7 @@ def generate():
 
     app_name = get_application_name()
 
-    obsolete_config_file_check()
+    config_file_check()
     pipeline_config = _safe_load_config(PLATFORM_CONFIG_FILE, PLATFORM_CONFIG_SCHEMA)
 
     _validate_pipelines_configuration(pipeline_config)
@@ -195,7 +195,5 @@ def _create_file_from_template(
 def _safe_load_config(filename, schema):
     try:
         return load_and_validate_config(filename, schema)
-    except FileNotFoundError:
-        abort_with_error(f"There is no {filename}")
     except ParserError:
         abort_with_error(f"The {filename} file is invalid")

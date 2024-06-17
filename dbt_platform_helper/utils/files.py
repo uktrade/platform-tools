@@ -14,7 +14,7 @@ CONFIG_FILE_MESSAGES = {
 }
 
 
-def obsolete_config_file_check():
+def config_file_check():
     platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
     errors = []
 
@@ -25,6 +25,11 @@ def obsolete_config_file_check():
             else:
                 message = f"`{file}` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`{CONFIG_FILE_MESSAGES[file]} and delete `{file}`."
             errors.append(message)
+
+    if not errors and not platform_config_exists:
+        errors.append(
+            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        )
 
     if errors:
         click.secho("\n".join(errors), bg="red")
