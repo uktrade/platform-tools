@@ -27,6 +27,8 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 # From the demodjango codebase on your machine, run...
 #   ./smoke_tests.sh toolspr
 
+./regression_tests/stages/run_demodjango_smoke_tests.sh
+
 # Todo: Slack alert if it fails on the main branch
 
 # Todo: Prevent multiple triggerings resulting in overlapping test runs
