@@ -156,26 +156,26 @@ def test_is_terraform_project(fakefs, platform_config_content, expected_result):
         (
             ["storage.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
             ],
         ),
         (
             ["extensions.yml"],
             [
-                f"`extensions.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
+                f"`extensions.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
             ],
         ),
         (
             ["pipelines.yml"],
             [
-                f"`pipelines.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
             ],
         ),
         (
             ["storage.yml", "pipelines.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
-                f"`pipelines.yml` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
             ],
         ),
     ],

@@ -23,7 +23,7 @@ def config_file_check():
             if platform_config_exists:
                 message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
             else:
-                message = f"`{file}` is no longer supported. Please move into a file named `{PLATFORM_CONFIG_FILE}`{CONFIG_FILE_MESSAGES[file]} and delete `{file}`."
+                message = f"`{file}` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`{CONFIG_FILE_MESSAGES[file]} and delete `{file}`."
             errors.append(message)
 
     if not errors and not platform_config_exists:
