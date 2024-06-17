@@ -8,4 +8,3 @@ git clone "https://codestar-connections.eu-west-2.amazonaws.com/git-http/$aws_ac
 
 cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 echo "Current demodjango-deploy branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
-
