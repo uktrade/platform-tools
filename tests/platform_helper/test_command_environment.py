@@ -433,6 +433,10 @@ class TestEnvironmentAllowIpsCommand:
             ],
         )
         assert result.exit_code == 0
+        assert (
+            f"The following ips now have access to the web service: 8.9.10.11, 0.1.2.3, 4.5.6.7"
+            in result.output
+        )
 
     @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
     @patch(
@@ -1231,6 +1235,6 @@ class TestCommandHelperMethods:
         captured = capsys.readouterr()
 
         assert (
-            f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
+            f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\n\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )

@@ -148,6 +148,7 @@ def allow_ips(app, env, svc, allowed_ips):
     elbv2_client = application_environment.session.client("elbv2")
     allowed_ips = list(allowed_ips)
     listener_rule = get_listener_rule_by_tag(elbv2_client, https_listener, "name", "AllowedIps")
+    current_values = []
 
     if not listener_rule:
         target_group_arn = find_target_group(app, env, svc)
@@ -183,6 +184,11 @@ def allow_ips(app, env, svc, allowed_ips):
                 }
             ],
         )
+
+    click.secho(
+        f"The following ips now have access to the {svc} service: {', '.join(current_values + allowed_ips)}",
+        fg="green",
+    )
 
 
 @environment.command()
@@ -501,7 +507,7 @@ def create_header_rule(
     )
 
     click.secho(
-        f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
         fg="green",
     )
 
