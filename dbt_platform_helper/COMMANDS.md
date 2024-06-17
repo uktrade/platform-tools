@@ -652,7 +652,7 @@ platform-helper environment (offline|online|generate)
 ## Usage
 
 ```
-platform-helper environment offline --app <application> --env <environment> [--template (default|migration)] 
+platform-helper environment offline --app <application> --env <environment> [--template (default|migration|dmas-migration)] 
 ```
 
 ## Options
