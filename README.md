@@ -61,7 +61,7 @@ You can trigger a regression test run for your branch using the following comman
 aws codebuild start-build --project-name platform-tools-test --profile platform-tools --source-version <branch_name>
 ```
 
-Note that this could be flaky if it runs at the same time as other people are doing the same for their branches, so communication within the team id crucial.
+Note that this could be flaky if it runs at the same time as other people are doing the same for their branches, so communication within the team is crucial.
 
 #### Manual testing
 
