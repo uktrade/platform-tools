@@ -88,6 +88,7 @@ def mock_application():
 
         from dbt_platform_helper.utils.application import Application
         from dbt_platform_helper.utils.application import Environment
+        from dbt_platform_helper.utils.application import Service
 
         sessions = {
             "000000000": boto3,
@@ -98,6 +99,7 @@ def mock_application():
         application.environments["development"] = Environment("development", "000000000", sessions)
         application.environments["staging"] = Environment("staging", "111111111", sessions)
         application.environments["production"] = Environment("production", "222222222", sessions)
+        application.services["web"] = Service("web", "Load Balanced Web Service")
 
         load_application.return_value = application
 
