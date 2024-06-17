@@ -30,6 +30,6 @@ phases:
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]
         then
-          MESSAGE="Regression tests have failed for the TODO branch, environment etc."
+          MESSAGE=":alert: Regression tests have failed for the TODO branch, environment etc."
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
