@@ -13,8 +13,8 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - echo "CODEBUILD_SOURCE_VERSION: ${CODEBUILD_SOURCE_VERSION}"
-      - echo "rev parse: $(git rev-parse --abbrev-ref HEAD)"
+      - echo "CODEBUILD_SOURCE_VERSION ${CODEBUILD_SOURCE_VERSION}"
+      - echo "rev parse $(git rev-parse --abbrev-ref HEAD)"
       - |
         if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           echo "main"
