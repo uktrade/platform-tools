@@ -7,9 +7,9 @@ from typing import Union
 
 import boto3
 import click
+import requests
 import yaml
 from schema import SchemaError
-import requests
 
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
