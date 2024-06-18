@@ -318,7 +318,6 @@ def retrieve_aws_accounts(sso_client, aws_sso_token):
 
 
 def get_access_token(device_code, sso_oidc_client, oidc_app):
-
     try:
         token_response = sso_oidc_client.create_token(
             clientId=oidc_app[0],
@@ -330,6 +329,5 @@ def get_access_token(device_code, sso_oidc_client, oidc_app):
         return token_response.get("accessToken")
 
     except botocore.exceptions.ClientError as e:
-        breakpoint()
         if e.response["Error"]["Code"] != "AuthorizationPendingException":
             raise e

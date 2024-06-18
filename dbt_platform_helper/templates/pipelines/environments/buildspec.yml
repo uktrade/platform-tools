@@ -1,3 +1,4 @@
+# {% extra_header %}
 # {% version_info %}
 # Buildspec runs in the build stage of your environment pipeline to generate the environment CloudFormation stack config.
 version: 0.2
