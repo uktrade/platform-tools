@@ -28,10 +28,9 @@ phases:
     commands:
       - echo "POSTBUILD IS HERE"
       - |
-        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]
-        then
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           MESSAGE=<< DELIMITER
-          :alert: DBT Platform regression tests have failed!"
+          :alert: DBT Platform regression tests have failed!
           <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/platform-tools-test%3A${CODEBUILD_BUILD_ID}?region=eu-west-2|View Build ${CODEBUILD_BUILD_NUMBER}>
           DELIMITER
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
