@@ -1,3 +1,4 @@
+# {% extra_header %}
 # {% version_info %}
 # Give the source stage a more meaningful name
 - op: replace
