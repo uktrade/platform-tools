@@ -1,3 +1,4 @@
+# {% extra_header %}
 # {% version_info %}
 locals {
   config = yamldecode(file("../../../platform-config.yml"))
