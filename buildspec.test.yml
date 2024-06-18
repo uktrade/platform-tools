@@ -14,13 +14,12 @@ phases:
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
       - echo -e "\nInstalling dependencies"
-      # - pip install poetry
-      # - poetry install
+      - pip install poetry
+      - poetry install
       - pip install dbt-platform-helper
 
   build:
     commands:
-      - echo "Temporarily bork build early" && exit 1
       - echo -e "\nRunning regression tests"
       - ./regression_tests/pull_request_tests.sh
 
