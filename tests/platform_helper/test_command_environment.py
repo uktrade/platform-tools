@@ -945,11 +945,11 @@ class TestAddMaintenancePage:
             "X-Forwarded-For",
             ["0.1.2.3"],
             "AllowedIps",
-            1,
+            100,
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=1000,
+            Priority=20000,
             Conditions=[
                 {
                     "Field": "path-pattern",
@@ -1017,7 +1017,7 @@ class TestAddMaintenancePage:
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=1000,
+            Priority=20000,
             Conditions=[
                 {
                     "Field": "path-pattern",

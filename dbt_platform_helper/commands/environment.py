@@ -561,7 +561,7 @@ def add_maintenance_page(
                     "X-Forwarded-For",
                     [ip],
                     "AllowedIps",
-                    (index + 1) * (ip_index + 1),
+                    (index + 1) * (ip_index + 100),
                 )
         else:
             bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
@@ -582,7 +582,7 @@ def add_maintenance_page(
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=1000,
+        Priority=20000,
         Conditions=[
             {
                 "Field": "path-pattern",
