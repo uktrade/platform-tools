@@ -945,10 +945,11 @@ class TestAddMaintenancePage:
             "X-Forwarded-For",
             ["0.1.2.3"],
             "AllowedIps",
+            1,
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=2,
+            Priority=1000,
             Conditions=[
                 {
                     "Field": "path-pattern",
@@ -1012,10 +1013,11 @@ class TestAddMaintenancePage:
             "Bypass-Key",
             ["abc"],
             "BypassIpFilter",
+            1,
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=2,
+            Priority=1000,
             Conditions=[
                 {
                     "Field": "path-pattern",
@@ -1224,8 +1226,15 @@ class TestCommandHelperMethods:
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
         target_group_arn = self._create_target_group()
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 1
+        assert len(rules) == 2
 
         create_header_rule(
             elbv2_client,
@@ -1234,11 +1243,13 @@ class TestCommandHelperMethods:
             "X-Forwarded-For",
             ["1.2.3.4", "5.6.7.8"],
             "AllowedIps",
+            333,
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 2  # 1 default + 1 created
-        assert rules[0]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
+        assert rules[1]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
 

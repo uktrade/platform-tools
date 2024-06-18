@@ -507,16 +507,6 @@ def create_header_rule(
     conditions[0]["HostHeaderConfig"]["Values"] = [
         v for v in conditions[0]["HostHeaderConfig"]["Values"] if not "internal" in v
     ]
-    # conditions = [{k: v for k, v in condition.items() if k in ["HostHeaderConfig", "PathPatternConfig"]} for condition in conditions]
-    print(
-        [
-            {
-                "Field": "http-header",
-                "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
-            }
-        ]
-        + conditions
-    )
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
