@@ -13,6 +13,17 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
+      - echo "${CODEBUILD_SOURCE_VERSION}"
+      - echo "$(git rev-parse --abbrev-ref HEAD)"
+      - |
+        if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          echo "main"
+        fi
+      - |
+        if [ "$(git rev-parse --abbrev-ref HEAD)" == "DBTP-681-slack-notifications" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          echo "DBTP-681-slack-notifications"
+        fi
+      - exit 0
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
@@ -25,9 +36,8 @@ phases:
 
   post_build:
     commands:
-      - echo "POSTBUILD IS HERE"
       - |
-        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+        if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
