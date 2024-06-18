@@ -1,3 +1,4 @@
+# {% extra_header %}
 # {% version_info %}
 # The manifest for the "{{ name }}" environment.
 # Read the full specification for the "Environment" type at:

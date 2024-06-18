@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.8.0](https://github.com/uktrade/platform-tools/compare/8.7.0...8.8.0) (2024-06-17)
+
+
+### Features
+
+* support developers bypassing maintenance pages ([#453](https://github.com/uktrade/platform-tools/issues/453)) ([8cba322](https://github.com/uktrade/platform-tools/commit/8cba3228283ef11ea7361acc1335321996a56fef))
+
 ## [8.7.0](https://github.com/uktrade/platform-tools/compare/8.6.0...8.7.0) (2024-06-17)
 
 
