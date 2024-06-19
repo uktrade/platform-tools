@@ -102,15 +102,10 @@ jobs:
             $MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           fi
           echo " Here is the message to send to Slack ----> ${MESSAGE}"
-          
-          TEST_STRING="Test string"
-          echo "Type of MESAGE: $(declare -p TEST_STRING)"
-          echo "Type of MESAGE: $(declare -p MESSAGE)"
 
       - name: Run platform-helper
         run: |
           cd dbt_platform_helper
-          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${TEST_STRING}"
           poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
 
 
