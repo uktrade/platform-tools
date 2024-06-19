@@ -63,7 +63,7 @@ jobs:
         run: poetry run pre-commit run docs --all-files
         
   notify_slack:
-    name: Notify Slack On Failure
+    name: Notify slack on github action failure
     runs-on: ubuntu-latest
     needs: [tests, lint]
     if: needs.tests.result == 'failure' || needs.lint.result == 'failure'
@@ -80,13 +80,26 @@ jobs:
           pip install poetry
           poetry install
 
+      # - name: Send Slack notification
+      #   run: |
+      #     MESSAGE=""
+      #     for job in tests lint; do
+      #       if [ "${{ needs[ $job ].result }}" != "success" ]; then
+      #         if [ -n "$MESSAGE" ]; then
+      #           MESSAGE="$MESSAGE\n"
+      #         fi
+      #         MESSAGE="${MESSAGE}:alert: @here $job checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+      #       fi
+      #     done
+      #     echo "$MESSAGE"
+          
       - name: Send Slack notification
         run: |
+          MESSAGE=""
           if [ "${{ needs.tests.result }}" != "success" ]; then
             MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
-          fi
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            MESSAGE="${MESSAGE}\n:alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+          elif [ "${{ needs.lint.result }}" != "success" ]; then
+            MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           fi
           echo "$MESSAGE"
 
