@@ -94,33 +94,32 @@ jobs:
           poetry install
 
           MESSAGE=""
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}""
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: GitHub Actions @here the **Tests** job checks have failed in ${RUN_URL} :sob:"
+            MESSAGE=":alert: GitHub Actions @here the *Tests* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
             if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
-              MESSAGE+=" --- [Run pytest failed](${RUN_URL}#step:5:1)"
-              echo "Constructed message: ${MESSAGE}"
+              MESSAGE+=" --- Step 'Run pytest' failed."
             fi
           fi
           if [ "${{ needs.lint.result }}" != "success" ]; then
-            MESSAGE=":alert: GitHub Actions @here the **Lint** job checks have failed in ${RUN_URL} :sob:"
+            MESSAGE=":alert: GitHub Actions @here the *Lint* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
             if [ "${{ steps.run-black.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'black' failed."
+              MESSAGE+=" --- Failing step: 'black'"
             fi
             if [ "${{ steps.run-mixed-line-ending.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'mixed-line-ending' failed."
+              MESSAGE+=" --- Failing step: 'mixed-line-ending'"
             fi
             if [ "${{ steps.run-detect-private-key.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'detect-private-key' failed."
+              MESSAGE+=" --- Failing step: 'detect-private-key'"
             fi
             if [ "${{ steps.run-autoflake.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'autoflake' failed."
+              MESSAGE+=" --- Failing step: 'autoflake'"
             fi
             if [ "${{ steps.run-docformatter.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'docformatter' failed."
+              MESSAGE+=" --- Failing step: 'docformatter'"
             fi
             if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
-              MESSAGE+="\nStep 'docs' failed."
+              MESSAGE+=" --- Failing step: 'docs'"
             fi
           fi
 
