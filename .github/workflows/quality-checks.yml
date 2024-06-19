@@ -79,6 +79,7 @@ jobs:
         run: |
           pip install poetry
           poetry install
+          pip install dbt-platform-helper
 
       # - name: Send Slack notification
       #   run: |
@@ -105,7 +106,6 @@ jobs:
 
       - name: Run platform-helper
         run: |
-          cd dbt_platform_helper
-          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
+          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
 
 
