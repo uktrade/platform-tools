@@ -108,6 +108,6 @@ jobs:
 
       - name: Run platform-helper
         run: |
-          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
+          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" $MESSAGE
 
 
