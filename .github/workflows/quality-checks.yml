@@ -82,9 +82,9 @@ jobs:
           
           MESSAGE="initial unset value"
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+            MESSAGE=":alert: GitHub Actions @here Tests job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
           elif [ "${{ needs.lint.result }}" != "success" ]; then
-            $MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+            $MESSAGE=":alert: GitHub Actions @here Lint job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
           fi
           
           echo "Here is the message to send to Slack ----> ${MESSAGE}"
