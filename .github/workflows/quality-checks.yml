@@ -94,15 +94,20 @@ jobs:
           poetry install
 
           MESSAGE=""
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}""
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          
           if [ "${{ needs.tests.result }}" != "success" ]; then
             MESSAGE=":alert: GitHub Actions @here the *Tests* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
             if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Step 'Run pytest' failed."
+              MESSAGE+=" --- Failing step: 'Run pytest'"
             fi
           fi
+
           if [ "${{ needs.lint.result }}" != "success" ]; then
-            MESSAGE=":alert: GitHub Actions @here the *Lint* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
+            # Append to MESSAGE using += to concatenate strings in Bash
+            MESSAGE+=":alert: GitHub Actions @here the *Lint* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
+
+            # Check each linting step individually
             if [ "${{ steps.run-black.outcome }}" != "success" ]; then
               MESSAGE+=" --- Failing step: 'black'"
             fi
@@ -122,5 +127,5 @@ jobs:
               MESSAGE+=" --- Failing step: 'docs'"
             fi
           fi
-
+          
           poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
