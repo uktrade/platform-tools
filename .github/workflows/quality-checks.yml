@@ -94,11 +94,12 @@ jobs:
           poetry install
 
           MESSAGE=""
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}""
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           if [ "${{ needs.tests.result }}" != "success" ]; then
             MESSAGE=":alert: GitHub Actions @here the **Tests** job checks have failed in ${RUN_URL} :sob:"
             if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
               MESSAGE+=" --- [Run pytest failed](${RUN_URL}#step:5:1)"
+              echo "Constructed message: ${MESSAGE}"
             fi
           fi
           if [ "${{ needs.lint.result }}" != "success" ]; then
