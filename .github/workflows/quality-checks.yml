@@ -106,6 +106,6 @@ jobs:
       - name: Run platform-helper
         run: |
           cd dbt_platform_helper
-          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
+          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "HELLO"
 
 
