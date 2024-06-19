@@ -96,18 +96,17 @@ jobs:
           
       - name: Send Slack notification
         run: |
-          MESSAGE=""
+          MESSAGE="initial unset value"
           if [ "${{ needs.tests.result }}" != "success" ]; then
             MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           elif [ "${{ needs.lint.result }}" != "success" ]; then
             $MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           fi
           
-          MESSAGE="TEST STRING"
           echo "Here is the message to send to Slack ----> ${MESSAGE}"
 
       - name: Run platform-helper
         run: |
-          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" $MESSAGE
+          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
 
 
