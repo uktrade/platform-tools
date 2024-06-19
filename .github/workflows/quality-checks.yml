@@ -97,15 +97,16 @@ jobs:
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: GitHub Actions @here the *Tests* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
+            MESSAGE=":alert: @here GitHub Actions - the *Tests* job checks in the ${{ github.workflow }} workflow in ${{ github.repository }} have failed."
             if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
               MESSAGE+=" --- Failing step: 'Run pytest'"
             fi
+            MESSAGE+=" ${RUN_URL}"
           fi
 
           if [ "${{ needs.lint.result }}" != "success" ]; then
             # Append to MESSAGE using += to concatenate strings in Bash
-            MESSAGE+=":alert: GitHub Actions @here the *Lint* job checks in the ${{ github.workflow }} have failed in ${RUN_URL} :sob:"
+            MESSAGE=":alert: @here GitHub Actions - the *Lint* job checks in the ${{ github.workflow }} workflow in ${{ github.repository }} have failed. in ${RUN_URL}"
 
             # Check each linting step individually
             if [ "${{ steps.run-black.outcome }}" != "success" ]; then
@@ -126,6 +127,7 @@ jobs:
             if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
               MESSAGE+=" --- Failing step: 'docs'"
             fi
+            MESSAGE+=" ${RUN_URL}"
           fi
           
           poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
