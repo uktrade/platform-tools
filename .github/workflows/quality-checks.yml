@@ -79,23 +79,7 @@ jobs:
         run: |
           pip install poetry
           poetry install
-          pip install dbt-platform-helper
-
-      # - name: Send Slack notification
-      #   run: |
-      #     MESSAGE=""
-      #     for job in tests lint; do
-      #       if [ "${{ needs[ $job ].result }}" != "success" ]; then
-      #         if [ -n "$MESSAGE" ]; then
-      #           MESSAGE="$MESSAGE\n"
-      #         fi
-      #         MESSAGE="${MESSAGE}:alert: @here $job checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
-      #       fi
-      #     done
-      #     echo "$MESSAGE"
           
-      - name: Send Slack notification
-        run: |
           MESSAGE="initial unset value"
           if [ "${{ needs.tests.result }}" != "success" ]; then
             MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
@@ -105,6 +89,6 @@ jobs:
           
           echo "Here is the message to send to Slack ----> ${MESSAGE}"
 
-          platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
+          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
 
 
