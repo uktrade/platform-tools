@@ -40,9 +40,8 @@ def environment():
     default="default",
     help="The maintenance page you wish to put up.",
 )
-@click.option("--allowed-ip", "-ip", type=str, multiple=True)
-@click.option("--ip-filter", is_flag=True)
-def offline(app, env, svc, template, allowed_ip, ip_filter):
+@click.option("--vpc", type=str)
+def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     application = get_application(app)
     application_environment = get_app_environment(app, env)
@@ -81,7 +80,8 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
             if current_maintenance_page and remove_current_maintenance_page:
                 remove_maintenance_page(application_environment.session, https_listener)
 
-            allowed_ips = list(allowed_ip)
+            allowed_ips = get_env_ips(vpc)
+
             add_maintenance_page(
                 application_environment.session,
                 https_listener,
@@ -89,7 +89,6 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
                 env,
                 services,
                 allowed_ips,
-                ip_filter,
                 template,
             )
             click.secho(
@@ -325,6 +324,21 @@ def get_cert_arn(session, env_name):
     raise click.Abort
 
 
+def get_env_ips(vpc: str, application_environment: Environment):
+    vpc_name = vpc if vpc else application_environment.account_id
+    ssm_client = application_environment.session.client("ssm")
+
+    try:
+        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/ADDITIONAL_IP_LIST")["Parameter"][
+            "Value"
+        ]
+    except ssm_client.exceptions.ParameterNotFound:
+        click.secho(f"No parameter found with name: /{vpc_name}/ADDITIONAL_IP_LIST")
+        click.Abort
+
+    return [ip.strip() for ip in param_value.split(",")]
+
+
 @environment.command()
 @click.option("--vpc-name")
 @click.option("--name", "-n", multiple=True, required=True)
@@ -537,11 +551,11 @@ def add_maintenance_page(
     env: str,
     services: List[Service],
     allowed_ips: tuple,
-    ip_filter: bool,
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
     maintenance_page_content = get_maintenance_page_template(template)
+    bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
     for index, svc in enumerate(services):
         target_group_arn = find_target_group(app, env, svc.name, session)
@@ -550,35 +564,33 @@ def add_maintenance_page(
         if not target_group_arn:
             continue
 
-        if not ip_filter:
-            user_ip = get_public_ip()
-            allowed_ips = list(allowed_ips) + [user_ip]
-            for ip_index, ip in enumerate(allowed_ips):
-                create_header_rule(
-                    lb_client,
-                    listener_arn,
-                    target_group_arn,
-                    "X-Forwarded-For",
-                    [ip],
-                    "AllowedIps",
-                    (index + 1) * (ip_index + 100),
-                )
-        else:
-            bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+        user_ip = get_public_ip()
+        allowed_ips = list(allowed_ips) + [user_ip]
+        for ip_index, ip in enumerate(allowed_ips):
             create_header_rule(
                 lb_client,
                 listener_arn,
                 target_group_arn,
-                "Bypass-Key",
-                [bypass_value],
-                "BypassIpFilter",
-                index + 1,
+                "X-Forwarded-For",
+                [ip],
+                "AllowedIps",
+                (index + 1) * (ip_index + 100),
             )
 
-            click.secho(
-                f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
-                fg="green",
-            )
+        create_header_rule(
+            lb_client,
+            listener_arn,
+            target_group_arn,
+            "Bypass-Key",
+            [bypass_value],
+            "BypassIpFilter",
+            index + 1,
+        )
+
+        click.secho(
+            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
+            fg="green",
+        )
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
