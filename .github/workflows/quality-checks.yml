@@ -106,7 +106,7 @@ jobs:
 
           if [ "${{ needs.lint.result }}" != "success" ]; then
             # Append to MESSAGE using += to concatenate strings in Bash
-            MESSAGE=":alert: @here GitHub Actions - the *Lint* job checks in the ${{ github.workflow }} workflow in ${{ github.repository }} have failed. in ${RUN_URL}"
+            MESSAGE=":alert: @here GitHub Actions - the *Lint* job checks in the ${{ github.workflow }} workflow in ${{ github.repository }} have failed."
 
             # Check each linting step individually
             if [ "${{ steps.run-black.outcome }}" != "success" ]; then
