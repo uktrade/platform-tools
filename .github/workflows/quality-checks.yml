@@ -102,7 +102,9 @@ jobs:
           elif [ "${{ needs.lint.result }}" != "success" ]; then
             $MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           fi
-          echo " Here is the message to send to Slack ----> ${MESSAGE}"
+          
+          $MESSAGE="TEST STRING"
+          echo "Here is the message to send to Slack ----> ${MESSAGE}"
 
       - name: Run platform-helper
         run: |
