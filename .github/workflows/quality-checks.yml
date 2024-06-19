@@ -12,22 +12,27 @@ jobs:
         python-version: ["3.12", "3.11", "3.10", "3.9"]
 
     steps:
-      - uses: actions/checkout@v4
+      - id: checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - id: setup-python
+        name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Display Python version
+      - id: display-python-version
+        name: Display Python version
         run: python --version
 
-      - name: Install dependencies
+      - id: install-dependencies
+        name: Install dependencies
         run: |
           pip install poetry
           poetry install
 
-      - name: Run pytest
+      - id: run-pytest
+        name: Run pytest
         run: poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
@@ -37,36 +42,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - id: checkout
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - id: install-dependencies
+        name: Install dependencies
         run: |
           pip install poetry
           poetry install
 
-      - name: black
+      - id: run-black
+        name: black
         run: poetry run pre-commit run black --all-files
 
-      - name: mixed-line-ending
+      - id: run-mixed-line-ending
+        name: mixed-line-ending
         run: poetry run pre-commit run mixed-line-ending --all-files
 
-      - name: detect-private-key
+      - id: run-detect-private-key
+        name: detect-private-key
         run: poetry run pre-commit run detect-private-key --all-files
 
-      - name: autoflake
+      - id: run-autoflake
+        name: autoflake
         run: poetry run pre-commit run autoflake --all-files
 
-      - name: docformatter
+      - id: run-docformatter
+        name: docformatter
         run: poetry run pre-commit run docformatter --all-files
 
-      - name: docs
+      - id: run-docs
+        name: docs
         run: poetry run pre-commit run docs --all-files
         
   notify_slack:
-    name: Notify slack on github action failure
+    name: Notify Slack on GitHub Action Failure
     runs-on: ubuntu-latest
     needs: [tests, lint]
-    if: ${{ always() && (needs.tests.result != 'success' || needs.lint.result != 'success') }}
+    if: ${{ always() }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,20 +88,38 @@ jobs:
         with:
           python-version: "3.x" # Specify the required Python version
 
-      - name: Install dependencies
+      - name: Send Slack notification
         run: |
           pip install poetry
           poetry install
-          
+
           MESSAGE="initial unset value"
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: GitHub Actions @here Tests job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
-          elif [ "${{ needs.lint.result }}" != "success" ]; then
-            $MESSAGE=":alert: GitHub Actions @here Lint job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
+            MESSAGE=":alert: GitHub Actions @here the **Tests** job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
+            if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'Run pytest' failed."
+            fi
           fi
-          
-          echo "Here is the message to send to Slack ----> ${MESSAGE}"
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            MESSAGE=":alert: GitHub Actions @here the **Lint** job checks have failed in https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }} :sob:"
+            if [ "${{ steps.run-black.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'black' failed."
+            fi
+            if [ "${{ steps.run-mixed-line-ending.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'mixed-line-ending' failed."
+            fi
+            if [ "${{ steps.run-detect-private-key.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'detect-private-key' failed."
+            fi
+            if [ "${{ steps.run-autoflake.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'autoflake' failed."
+            fi
+            if [ "${{ steps.run-docformatter.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'docformatter' failed."
+            fi
+            if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
+              MESSAGE+="\nStep 'docs' failed."
+            fi
+          fi
 
           poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
-
-
