@@ -97,11 +97,11 @@ jobs:
         run: |
           MESSAGE=""
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+            $MESSAGE=":alert: @here Tests have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           elif [ "${{ needs.lint.result }}" != "success" ]; then
-            MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
+            $MESSAGE=":alert: @here Lint checks have failed in <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions> :sob:"
           fi
-          echo "${MESSAGE}"
+          echo " Here is the message to send to Slack ----> ${MESSAGE}"
 
       - name: Run platform-helper
         run: |
