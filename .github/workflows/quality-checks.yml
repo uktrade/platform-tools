@@ -97,7 +97,7 @@ jobs:
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
           if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: @here GitHub Actions - the *'Tests'* job checks in the '*${{ github.workflow }}*' workflow in ${{ github.repository }} have failed"
+            MESSAGE=":alert: @here GitHub Actions - the *'Tests'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
             if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
               MESSAGE+=" --- Failing step: *'Run pytest'*"
             fi
@@ -106,7 +106,7 @@ jobs:
 
           if [ "${{ needs.lint.result }}" != "success" ]; then
             # Append to MESSAGE using += to concatenate strings in Bash
-            MESSAGE=":alert: @here GitHub Actions - the *'Lint'* job checks in the '${{ github.workflow }}' workflow in ${{ github.repository }} have failed"
+            MESSAGE=":alert: @here GitHub Actions - the *'Lint'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
 
             # Check each linting step individually
             if [ "${{ steps.run-black.outcome }}" != "success" ]; then
