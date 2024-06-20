@@ -16,7 +16,6 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import config_file_check
-from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
@@ -242,7 +241,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
-    ensure_cwd_is_repo_root()
+    config_file_check()
     is_terraform = is_terraform_project()
 
     templates = setup_templates()
@@ -366,7 +365,6 @@ def make_addons():
 
 
 def _get_config():
-    config_file_check()
     config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
     project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)

@@ -67,19 +67,6 @@ def mkfile(base_path, file_path, contents, overwrite=False):
     return f"File {file_path} {action}"
 
 
-def ensure_cwd_is_repo_root():
-    """Exit if we're not in the root of the repo."""
-    # TODO: We should probably think about deprecating this check. The config_file_check will also fail if we are not in the
-    # project root, so will be a better check.
-
-    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
-        click.secho(
-            "Cannot find copilot directory. Run this command in the root of the deployment repository.",
-            bg="red",
-        )
-        exit(1)
-
-
 def generate_override_files(base_path, file_path, output_dir):
     def generate_files_for_dir(pattern):
         for file in file_path.glob(pattern):

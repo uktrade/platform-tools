@@ -689,14 +689,12 @@ class TestMakeAddonCommand:
     @patch(
         "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
     )
-    def test_exit_if_no_copilot_directory(self, fakefs):
-        fakefs.create_file(PLATFORM_CONFIG_FILE)
-
+    def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
 
         assert result.exit_code == 1
         assert (
-            "Cannot find copilot directory. Run this command in the root of the deployment repository."
+            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
             in result.output
         )
 
