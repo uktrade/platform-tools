@@ -19,7 +19,6 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import config_file_check
-from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
@@ -336,7 +335,6 @@ def get_cert_arn(session, env_name):
 @click.option("--vpc-name", hidden=True)
 @click.option("--name", "-n", required=True)
 def generate(name, vpc_name):
-    ensure_cwd_is_repo_root()
     if vpc_name:
         click.secho(
             f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}",
@@ -361,8 +359,11 @@ def generate(name, vpc_name):
 @environment.command()
 @click.option("--name", "-n", required=True)
 def generate_terraform(name):
-    ensure_cwd_is_repo_root()
     config_file_check()
+    if not is_terraform_project():
+        click.secho("This is not a terraform project. Exiting.", fg="red")
+        exit(1)
+
     conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
     try:
@@ -372,8 +373,7 @@ def generate_terraform(name):
         raise click.Abort
 
     env_config = apply_environment_defaults(conf)["environments"][name]
-    if is_terraform_project():
-        _generate_terraform_environment_manifests(conf["application"], name, env_config)
+    _generate_terraform_environment_manifests(conf["application"], name, env_config)
 
 
 def _generate_copilot_environment_manifests(name, env_config):

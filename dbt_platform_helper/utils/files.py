@@ -69,6 +69,8 @@ def mkfile(base_path, file_path, contents, overwrite=False):
 
 def ensure_cwd_is_repo_root():
     """Exit if we're not in the root of the repo."""
+    # TODO: We should probably think about deprecating this check. The config_file_check will also fail if we are not in the
+    # project root, so will be a better check.
 
     if not Path("./copilot").exists() or not Path("./copilot").is_dir():
         click.secho(
