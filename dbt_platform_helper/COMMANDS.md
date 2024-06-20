@@ -30,6 +30,7 @@
 - [platform-helper environment allow-ips](#platform-helper-environment-allow-ips)
 - [platform-helper environment online](#platform-helper-environment-online)
 - [platform-helper environment generate](#platform-helper-environment-generate)
+- [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
 - [platform-helper generate](#platform-helper-generate)
 - [platform-helper pipeline](#platform-helper-pipeline)
 - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
@@ -630,7 +631,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment (offline|allow-ips|online|generate) 
+platform-helper environment <command> 
 ```
 
 ## Options
@@ -642,6 +643,7 @@ platform-helper environment (offline|allow-ips|online|generate)
 
 - [`allow-ips` ↪](#platform-helper-environment-allow-ips)
 - [`generate` ↪](#platform-helper-environment-generate)
+- [`generate-terraform` ↪](#platform-helper-environment-generate-terraform)
 - [`offline` ↪](#platform-helper-environment-offline)
 - [`online` ↪](#platform-helper-environment-online)
 
@@ -740,6 +742,24 @@ platform-helper environment generate --name <name> [--vpc-name <vpc_name>]
 ## Options
 
 - `--vpc-name <text>`
+
+- `--name
+-n <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper environment generate-terraform
+
+[↩ Parent](#platform-helper-environment)
+
+## Usage
+
+```
+platform-helper environment generate-terraform --name <name> 
+```
+
+## Options
 
 - `--name
 -n <text>`

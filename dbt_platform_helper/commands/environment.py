@@ -356,6 +356,22 @@ def generate(name, vpc_name):
     env_config = apply_environment_defaults(conf)["environments"][name]
 
     _generate_copilot_environment_manifests(name, env_config)
+
+
+@environment.command()
+@click.option("--name", "-n", required=True)
+def generate_terraform(name):
+    ensure_cwd_is_repo_root()
+    config_file_check()
+    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+
+    try:
+        PLATFORM_CONFIG_SCHEMA.validate(conf)
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
+    env_config = apply_environment_defaults(conf)["environments"][name]
     if is_terraform_project():
         _generate_terraform_environment_manifests(conf["application"], name, env_config)
 
