@@ -215,10 +215,13 @@ def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    fs.create_file(FIXTURES_DIR / "unnecessary_file.yml")
+    fs.create_dir("copilot/pipelines")
+    fs.create_file("copilot/pipelines/unnecessary_file.yml")
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
+
     result = CliRunner().invoke(generate)
+
     for file in environments_files + codebases_files:
         assert_file_created_in_stdout(file, result)
 
