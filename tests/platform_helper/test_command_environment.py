@@ -1218,3 +1218,31 @@ class TestCommandHelperMethods:
             f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\n\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )
+
+    @pytest.mark.parametrize(
+        "vpc, param_value, expected",
+        [
+            (
+                "vpc1",
+                "192.168.1.1,192.168.1.2,192.168.1.3",
+                ["192.168.1.1", "192.168.1.2", "192.168.1.3"],
+            ),
+            (
+                "vpc2",
+                " 192.168.2.1 , 192.168.2.2 , 192.168.2.3 ",
+                ["192.168.2.1", "192.168.2.2", "192.168.2.3"],
+            ),
+        ],
+    )
+    @mock_aws
+    def test_get_env_ips(self, vpc, param_value, expected, mock_application):
+        from dbt_platform_helper.commands.environment import get_env_ips
+
+        boto3.client("ssm").put_parameter(
+            Name=f"/{vpc}/ADDITIONAL_IP_LIST", Value=param_value, Type="String"
+        )
+        environment = mock_application.environments["development"]
+
+        result = get_env_ips(vpc, environment)
+
+        assert result == expected
