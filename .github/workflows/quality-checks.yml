@@ -75,59 +75,59 @@ jobs:
         name: docs
         run: poetry run pre-commit run docs --all-files
         
-  # notify_slack:
-  #   name: Notify Slack on GitHub Action Failure
-  #   runs-on: ubuntu-latest
-  #   needs: [tests, lint]
-  #   if: ${{ always() }}
-  #   steps:
-  #     - uses: actions/checkout@v4
+  notify_slack:
+    name: Notify Slack on GitHub Action Failure
+    runs-on: ubuntu-latest
+    needs: [tests, lint]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x" # Specify the required Python version
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x" # Specify the required Python version
 
-  #     - name: Send Slack notification
-  #       run: |
-  #         pip install poetry
-  #         poetry install
+      - name: Send Slack notification
+        run: |
+          pip install poetry
+          poetry install
 
-  #         MESSAGE=""
-  #         RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE=""
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
-  #         if [ "${{ needs.tests.result }}" != "success" ]; then
-  #           MESSAGE=":alert: @here GitHub Actions - the *'Tests'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
-  #           if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: *'Run pytest'*"
-  #           fi
-  #           MESSAGE+=" ${RUN_URL}"
-  #         fi
+          if [ "${{ needs.tests.result }}" != "success" ]; then
+            MESSAGE=":alert: @here GitHub Actions - the *'Tests'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
+            if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: *'Run pytest'*"
+            fi
+            MESSAGE+=" ${RUN_URL}"
+          fi
 
-  #         if [ "${{ needs.lint.result }}" != "success" ]; then
-  #           # Append to MESSAGE using += to concatenate strings in Bash
-  #           MESSAGE=":alert: @here GitHub Actions - the *'Lint'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            # Append to MESSAGE using += to concatenate strings in Bash
+            MESSAGE=":alert: @here GitHub Actions - the *'Lint'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
 
-  #           # Check each linting step individually
-  #           if [ "${{ steps.run-black.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'black'"
-  #           fi
-  #           if [ "${{ steps.run-mixed-line-ending.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'mixed-line-ending'"
-  #           fi
-  #           if [ "${{ steps.run-detect-private-key.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'detect-private-key'"
-  #           fi
-  #           if [ "${{ steps.run-autoflake.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'autoflake'"
-  #           fi
-  #           if [ "${{ steps.run-docformatter.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'docformatter'"
-  #           fi
-  #           if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
-  #             MESSAGE+=" --- Failing step: 'docs'"
-  #           fi
-  #           MESSAGE+=" ${RUN_URL}"
-  #         fi
+            # Check each linting step individually
+            if [ "${{ steps.run-black.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'black'"
+            fi
+            if [ "${{ steps.run-mixed-line-ending.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'mixed-line-ending'"
+            fi
+            if [ "${{ steps.run-detect-private-key.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'detect-private-key'"
+            fi
+            if [ "${{ steps.run-autoflake.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'autoflake'"
+            fi
+            if [ "${{ steps.run-docformatter.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'docformatter'"
+            fi
+            if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
+              MESSAGE+=" --- Failing step: 'docs'"
+            fi
+            MESSAGE+=" ${RUN_URL}"
+          fi
           
-  #         poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
+          poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
