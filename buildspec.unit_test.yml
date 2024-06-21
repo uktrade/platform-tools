@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+    SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
+
+phases:
+  install:
+    commands:
+      - echo -e "\nSetting local Python versions"
+      - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
+      - |
+        echo -e "\nCheck we are using the latest installed Python 3.x"
+        python --version
+      - echo -e "\nInstalling dependencies"
+      - pip install poetry
+      - poetry install
+      - pip install dbt-platform-helper
+
+  build:
+    commands:
+      - echo -e "\nRunning pytest unit tests"
+      - poetry run tox
+
+        
+
+  post_build:
+    commands:
+      - |
+        if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+        
+        MESSAGE=":alert: @here Unit tests have failed after merge to main in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-regression-unit-tests/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}>" 
+            
+        poetry run platform-helper notify environment-progress \
+          "C06TA0JS2R1" \
+          "$SLACK_TOKEN" \
+          "$MESSAGE" \
+          --build-arn "$CODEBUILD_BUILD_ARN" \
+          --repository "$CODEBUILD_SOURCE_REPO_URL" \
+          --commit-sha"$CODEBUILD_RESOLVED_SOURCE_VERSION" \
+        fi
