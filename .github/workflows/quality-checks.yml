@@ -136,7 +136,6 @@ jobs:
             "${{ secrets.SLACK_CHANNEL_ID }}" \
             "${{ secrets.SLACK_TOKEN }}" \
             "${MESSAGE}" \
-            --repository "${{ github.repository }}" \
             --commit-sha "${{ github.sha }}"
             
           
