@@ -130,8 +130,6 @@ jobs:
             MESSAGE+=" ${RUN_URL}"
           fi
           
-          # poetry run platform-helper notify add-comment "${{ secrets.SLACK_CHANNEL_ID }}" "${{ secrets.SLACK_TOKEN }}" "" "${MESSAGE}"
-          
           poetry run platform-helper notify environment-progress \
             "${{ secrets.SLACK_CHANNEL_ID }}" \
             "${{ secrets.SLACK_TOKEN }}" \
