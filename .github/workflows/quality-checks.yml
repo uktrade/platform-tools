@@ -12,27 +12,22 @@ jobs:
         python-version: ["3.12", "3.11", "3.10", "3.9"]
 
     steps:
-      - id: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - id: setup-python
-        name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - id: display-python-version
-        name: Display Python version
+      - name: Display Python version
         run: python --version
 
-      - id: install-dependencies
-        name: Install dependencies
+      - name: Install dependencies
         run: |
           pip install poetry
           poetry install
 
-      - id: run-pytest
-        name: Run pytest
+      - name: Run pytest
         run: poetry run pytest
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
@@ -42,99 +37,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - id: checkout
-        uses: actions/checkout@v4
-
-      - id: install-dependencies
-        name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
-
-      - id: run-black
-        name: black
-        run: poetry run pre-commit run black --all-files
-
-      - id: run-mixed-line-ending
-        name: mixed-line-ending
-        run: poetry run pre-commit run mixed-line-ending --all-files
-
-      - id: run-detect-private-key
-        name: detect-private-key
-        run: poetry run pre-commit run detect-private-key --all-files
-
-      - id: run-autoflake
-        name: autoflake
-        run: poetry run pre-commit run autoflake --all-files
-
-      - id: run-docformatter
-        name: docformatter
-        run: poetry run pre-commit run docformatter --all-files
-
-      - id: run-docs
-        name: docs
-        run: poetry run pre-commit run docs --all-files
-        
-  notify_slack:
-    name: Notify Slack on GitHub Action Failure
-    runs-on: ubuntu-latest
-    needs: [tests, lint]
-    if: ${{ always() }}
-    steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x" # Specify the required Python version
-
-      - name: Send Slack notification
+      - name: Install dependencies
         run: |
           pip install poetry
           poetry install
 
-          MESSAGE=""
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          
-          if [ "${{ needs.tests.result }}" != "success" ]; then
-            MESSAGE=":alert: @here GitHub Actions - the *'Tests'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
-            if [ "${{ steps.run-pytest.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: *'Run pytest'*"
-            fi
-            MESSAGE+=" ${RUN_URL}"
-          fi
+      - name: black
+        run: poetry run pre-commit run black --all-files
 
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            # Append to MESSAGE using += to concatenate strings in Bash
-            MESSAGE=":alert: @here GitHub Actions - the *'Lint'* job checks in the *'${{ github.workflow }}'* workflow in ${{ github.repository }} have failed"
+      - name: mixed-line-ending
+        run: poetry run pre-commit run mixed-line-ending --all-files
 
-            # Check each linting step individually
-            if [ "${{ steps.run-black.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'black'"
-            fi
-            if [ "${{ steps.run-mixed-line-ending.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'mixed-line-ending'"
-            fi
-            if [ "${{ steps.run-detect-private-key.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'detect-private-key'"
-            fi
-            if [ "${{ steps.run-autoflake.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'autoflake'"
-            fi
-            if [ "${{ steps.run-docformatter.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'docformatter'"
-            fi
-            if [ "${{ steps.run-docs.outcome }}" != "success" ]; then
-              MESSAGE+=" --- Failing step: 'docs'"
-            fi
-            MESSAGE+=" ${RUN_URL}"
-          fi
-          
-          poetry run platform-helper notify environment-progress \
-            "${{ secrets.SLACK_CHANNEL_ID }}" \
-            "${{ secrets.SLACK_TOKEN }}" \
-            "${MESSAGE}" \
-            --commit-sha "${{ github.sha }}"
-            
-          
-          
+      - name: detect-private-key
+        run: poetry run pre-commit run detect-private-key --all-files
+
+      - name: autoflake
+        run: poetry run pre-commit run autoflake --all-files
+
+      - name: docformatter
+        run: poetry run pre-commit run docformatter --all-files
+
+      - name: docs
+        run: poetry run pre-commit run docs --all-files
