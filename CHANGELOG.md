@@ -1,5 +1,21 @@
 # Changelog
 
+## [9.0.0](https://github.com/uktrade/platform-tools/compare/8.8.0...9.0.0) (2024-06-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* Changed platform-helper to use the combined platform-config.yml file rather than individual config files. ([#461](https://github.com/uktrade/platform-tools/issues/461))
+
+### Features
+
+* Changed platform-helper to use the combined platform-config.yml file rather than individual config files. ([#461](https://github.com/uktrade/platform-tools/issues/461)) ([b9bbef2](https://github.com/uktrade/platform-tools/commit/b9bbef2574fa0c4da0d416d6d8d84ba985f97d41))
+
+
+### Bug Fixes
+
+* **pipeline:** codebase pipelines branch name may be undefined error ([#474](https://github.com/uktrade/platform-tools/issues/474)) ([41de810](https://github.com/uktrade/platform-tools/commit/41de810a21968b4ae3a847ebdce503477238f5c4))
+
 ## [8.8.0](https://github.com/uktrade/platform-tools/compare/8.7.0...8.8.0) (2024-06-17)
 
 
