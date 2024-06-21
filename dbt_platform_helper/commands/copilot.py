@@ -14,8 +14,10 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
@@ -68,9 +70,9 @@ def copilot():
     check_platform_helper_version_needs_update()
 
 
-def _validate_and_normalise_config(config_file):
-    """Load the addons.yaml file, validate it and return the normalised config
-    dict."""
+def _validate_and_normalise_extensions_config(config_file, key_in_config_file=None):
+    """Load a config file, validate it against the extensions schemas and return
+    the normalised config dict."""
 
     def _lookup_plan(addon_type, env_conf):
         plan = env_conf.pop("plan", None)
@@ -93,6 +95,9 @@ def _validate_and_normalise_config(config_file):
     # load and validate config
     with open(config_file, "r") as fd:
         config = yaml.safe_load(fd)
+
+    if config and key_in_config_file:
+        config = config[key_in_config_file]
 
     # empty file
     if not config:
@@ -209,10 +214,6 @@ def _generate_svc_overrides(base_path, templates, name):
     overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
 
-def is_terraform_project() -> bool:
-    return Path("./terraform").is_dir()
-
-
 def _get_s3_kms_alias_arns(session, application_name, config):
     application = load_application(application_name, session)
     # create kms client
@@ -240,7 +241,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
-    ensure_cwd_is_repo_root()
+    config_file_check()
     is_terraform = is_terraform_project()
 
     templates = setup_templates()
@@ -364,8 +365,8 @@ def make_addons():
 
 
 def _get_config():
-    config = _validate_and_normalise_config(PACKAGE_DIR / "default-extensions.yml")
-    project_config = _validate_and_normalise_config("extensions.yml")
+    config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
+    project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)
     return config
 

@@ -394,3 +394,157 @@ def assert_file_overwritten_in_stdout(output_file, result):
 @pytest.fixture()
 def clear_session_cache():
     AWS_SESSION_CACHE.clear()
+
+
+@pytest.fixture()
+def valid_platform_config():
+    return yaml.safe_load(
+        """
+application: test-app
+legacy_project: true
+
+environments:
+  "*":
+    accounts:
+      deploy:
+        name: "non-prod-acc"
+        id: "1122334455"
+      dns:
+        name: "non-prod-dns-acc"
+        id: "6677889900"
+    requires_approval: false
+    vpc: non-prod-vpc
+  dev:
+  test:
+  staging:
+  prod:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "prod-dns-acc"
+        id: "7777777777"
+    requires_approval: true
+    vpc: prod-vpc
+
+extensions:
+  # If you wish to deploy a subset of the backing services for testing, make sure any you don't need are commented out
+  test-app-redis:
+    type: redis
+    environments:
+      "*":
+        engine: '7.1'
+        plan: tiny
+        apply_immediately: true
+        
+  test-app-aurora:
+    type: aurora-postgres
+    version: 19.5
+    environments:
+      dev:
+        snapshot_id: abc123
+        deletion_protection: true
+      staging:
+        deletion_protection: true
+        deletion_policy: Retain
+
+  test-app-postgres:
+    type: postgres
+    version: 16.2
+    environments:
+      dev:
+        deletion_protection: true
+      staging:
+        deletion_protection: true
+        deletion_policy: Retain
+
+  test-app-opensearch:
+    type: opensearch
+    environments:
+      "*":
+        plan: small
+        engine: '1.3'
+        volume_size: 40
+
+  test-app-s3-bucket:
+    type: s3
+    services:
+      - web
+    environments:
+      dev:
+        bucket_name: test-app-dev
+        versioning: false
+      staging:
+        bucket_name: test-app-staging
+        versioning: false
+    objects:
+      - key: healthcheck.txt
+        body: Demodjango is working.
+
+  test-app-s3-bucket:
+    type: s3-policy
+    services:
+      - web
+    environments:
+      dev:
+        bucket_name: test-app-policy-dev
+        versioning: false
+        
+  test-app-monitoring:
+    type: monitoring
+    environments:
+      "*":
+        enable_ops_center: false
+
+  test-app-alb:
+    type: alb
+    environments:
+      dev:
+        cdn_domains_list:
+          dev.test-app.uktrade.digital: "test-app.uktrade.digital"
+
+environment_pipelines:
+  main:
+    slack_channel: "/codebuild/notification_channel"
+    trigger_on_push: true
+    environments:
+      dev:
+      staging:
+      prod:
+  test:
+    branch: my-feature-branch
+    slack_channel: "/codebuild/notification_channel"
+    trigger_on_push: false
+    environments:
+      test:
+        requires_approval: true
+        vpc: testing_vpc
+        accounts:
+          deploy:
+            name: "prod-acc"
+            id: "9999999999"
+          dns:
+            name: "prod-dns-acc"
+            id: "7777777777"
+
+codebase_pipelines:
+  - name: application
+    repository: uktrade/test-app
+    additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
+    services:
+      - celery-worker
+      - celery-beat
+      - web
+    pipelines:
+      - name: main
+        branch: main
+        environments:
+          - name: dev
+      - name: tagged
+        tag: true
+        environments:
+          - name: staging
+            requires_approval: true
+"""
+    )

@@ -186,6 +186,7 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call,
 )
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
 def test_create_addon_client_task(
     get_connection_secret_arn,
     subprocess_call,

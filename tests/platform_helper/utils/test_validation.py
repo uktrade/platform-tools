@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
@@ -11,6 +12,7 @@ from schema import SchemaError
 
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
+from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
@@ -412,3 +414,9 @@ def test_validate_s3_bucket_name_multiple_failures():
     ]
     for exp_error in exp_errors:
         assert exp_error in str(ex.value)
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+def test_validate_success(valid_platform_config):
+    PLATFORM_CONFIG_SCHEMA.validate(valid_platform_config)
+    # No assertions - validate will error if config is invalid.

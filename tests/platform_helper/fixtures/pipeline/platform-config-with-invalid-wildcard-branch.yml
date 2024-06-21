@@ -1,13 +1,15 @@
+application: my-app
+legacy_project: true
 accounts:
   - 111111111
   - 222222222
 
 environments:
-  - name: hotfix
-  - name: prod
+  hotfix:
+  prod:
     requires_approval: true
 
-codebases:
+codebase_pipelines:
   - name: application
     repository: organisation/repository
     services:

@@ -23,7 +23,7 @@ export interface PipelineManifest {
 
 export interface PipelinesConfiguration {
     accounts?: Array<string>;
-    codebases: Array<{
+    codebase_pipelines: Array<{
         name: string;
         repository: string;
         additional_ecr_repository?: string;

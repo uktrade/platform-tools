@@ -33,14 +33,14 @@ build:
 
 # This section defines the order of the environments your pipeline will deploy to.
 stages:
-{% for environment in pipeline_environments -%}
+{% for name, environment in pipeline_environments.items() -%}
   - # The name of the environment.
-    name: {{ environment.name }}
+    name: {{ name }}
     deployments:
       deploy-env:
-        template_path: infrastructure/{{ environment.name }}.env.yml
-        template_config: infrastructure/{{ environment.name }}.env.params.json
-        stack_name: {{ app_name }}-{{ environment.name }}
+        template_path: infrastructure/{{ name }}.env.yml
+        template_config: infrastructure/{{ name }}.env.params.json
+        stack_name: {{ app_name }}-{{ name }}
     # Optional: flag for manual approval action before deployment.
     {% if not environment.requires_approval %}# {% endif %}requires_approval: true
     # Optional: use test commands to validate this stage of your build.
