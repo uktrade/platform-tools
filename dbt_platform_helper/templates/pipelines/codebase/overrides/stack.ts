@@ -249,7 +249,7 @@ export class TransformedStack extends cdk.Stack {
                             runOrder: 1,
                             configuration: {
                                 RepositoryName: this.ecrRepository(),
-                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch.replace(/\//gi, '-')}`,
+                                ImageTag: pipelineConfig.tag ? 'tag-latest' : `branch-${pipelineConfig.branch?.replace(/\//gi, '-')}`,
                             },
                             outputArtifacts: [{name: 'ECRMetadata'}],
                             actionTypeId: {
