@@ -21,7 +21,7 @@ phases:
 
   build:
     commands:
-      - echo "Resolved source version is ${CODEBUILD_RESOLVED_SOURCE_VERSION}"
+      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION is ${CODEBUILD_RESOLVED_SOURCE_VERSION}"
       - echo -e "\nRunning pytest unit tests"
       - poetry run tox
 
