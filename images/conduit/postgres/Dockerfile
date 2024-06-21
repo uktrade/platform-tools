@@ -2,7 +2,10 @@ FROM public.ecr.aws/docker/library/debian:12-slim
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y jq procps postgresql-client && \
+    # Add repository for postgres version 16
+    apt-get install -y postgresql-common && \
+    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt-get install -y jq procps postgresql-client-16 && \
     # Start installing Cloud Foundry CLI and things for GOV.UK PaaS data migrations
     apt-get install -y apt-utils curl gnupg unzip && \
     curl -sS https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | gpg --dearmor > /etc/apt/trusted.gpg.d/cloudfoundry-cli.gpg && \
