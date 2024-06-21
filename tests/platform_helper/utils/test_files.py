@@ -178,26 +178,6 @@ def test_is_terraform_project(fakefs, platform_config_content, expected_result):
                 f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
             ],
         ),
-    ],
-)
-def test_file_compatibility_check_fails_if_platform_config_not_present(
-    fakefs, capsys, files, expected_messages
-):
-    for file in files:
-        fakefs.create_file(file)
-
-    with pytest.raises(SystemExit):
-        config_file_check()
-
-    console_message = capsys.readouterr().out
-
-    for expected_message in expected_messages:
-        assert expected_message in console_message
-
-
-@pytest.mark.parametrize(
-    "files, expected_messages",
-    [
         (
             [PLATFORM_CONFIG_FILE, "storage.yml"],
             [
@@ -225,13 +205,14 @@ def test_file_compatibility_check_fails_if_platform_config_not_present(
         ),
     ],
 )
-def test_file_compatibility_check_warns_if_platform_config_and_legacy_config_files_exist(
+def test_file_compatibility_check_fails_if_platform_config_not_present(
     fakefs, capsys, files, expected_messages
 ):
     for file in files:
         fakefs.create_file(file)
 
-    config_file_check()
+    with pytest.raises(SystemExit):
+        config_file_check()
 
     console_message = capsys.readouterr().out
 

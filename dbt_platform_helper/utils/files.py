@@ -33,8 +33,7 @@ def config_file_check():
 
     if errors:
         click.secho("\n".join(errors), bg="red")
-        if not platform_config_exists:
-            exit(1)
+        exit(1)
 
 
 def load_and_validate_config(path, schema):

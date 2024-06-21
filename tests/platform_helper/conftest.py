@@ -518,6 +518,15 @@ environment_pipelines:
     trigger_on_push: false
     environments:
       test:
+        requires_approval: true
+        vpc: testing_vpc
+        accounts:
+          deploy:
+            name: "prod-acc"
+            id: "9999999999"
+          dns:
+            name: "prod-dns-acc"
+            id: "7777777777"
 
 codebase_pipelines:
   - name: application
