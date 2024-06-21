@@ -29,7 +29,7 @@ phases:
   post_build:
     commands:
       - |
-        if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+        if [ "$(git rev-parse --abbrev-ref HEAD)" == "DBTP-1077-Slack-alerts-for-failing-GitHub-Actions-on-main-branches" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
         
         MESSAGE=":alert: @here Unit tests have failed after merge to main in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-regression-unit-tests/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}>" 
             
