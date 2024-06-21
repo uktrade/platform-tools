@@ -4,6 +4,7 @@ env:
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
     SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
+    SLACK_CHANNEL_TEST_ID: /codebuild/slack_channel_id_test_command_output
 
 phases:
   install:
@@ -33,7 +34,7 @@ phases:
         MESSAGE=":alert: @here Unit tests have failed after merge to main in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-regression-unit-tests/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}>" 
             
         poetry run platform-helper notify environment-progress \
-          "C06TA0JS2R1" \
+          "$SLACK_CHANNEL_TEST_ID" \
           "$SLACK_TOKEN" \
           "$MESSAGE" \
           --build-arn "$CODEBUILD_BUILD_ARN" \
