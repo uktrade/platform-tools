@@ -384,7 +384,7 @@ def mock_aws_client(get_aws_session_or_abort, client=None):
 
 
 def assert_file_created_in_stdout(output_file, result):
-    assert f"File {output_file.relative_to('.')} created" in result.stdout
+    assert f"File {output_file.relative_to('.')} created" in result.output
 
 
 def assert_file_overwritten_in_stdout(output_file, result):
