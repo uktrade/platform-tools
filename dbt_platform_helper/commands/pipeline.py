@@ -86,6 +86,7 @@ def _clean_pipeline_config(pipelines_dir):
     if pipelines_dir.exists():
         click.echo("Deleting copilot/pipelines directory.")
         rmtree(pipelines_dir)
+        click.echo("Deleted!")
 
 
 def _validate_pipelines_configuration(pipeline_config):
