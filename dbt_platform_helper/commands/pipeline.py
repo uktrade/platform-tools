@@ -85,8 +85,12 @@ def generate():
 def _clean_pipeline_config(pipelines_dir):
     if pipelines_dir.exists():
         click.echo("Deleting copilot/pipelines directory.")
-        rmtree(pipelines_dir)
-        click.echo("Deleted!")
+        try:
+            rmtree(pipelines_dir)
+            click.echo("Deleted!")
+        except Exception as e:
+            click.echo(f"Failed to delete {pipelines_dir}: {e}")
+            raise
 
 
 def _validate_pipelines_configuration(pipeline_config):
