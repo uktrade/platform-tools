@@ -619,10 +619,8 @@ def test_configure_with_no_manifests_exits_with_error(fakefs):
 @patch(
     "dbt_platform_helper.commands.dns.get_aws_session_or_abort",
 )
-@patch(
-    "dbt_platform_helper.commands.dns.ensure_cwd_is_repo_root",
-)
-def test_assign(ensure_cwd_is_repo_root, get_aws_session_or_abort):
+def test_assign(get_aws_session_or_abort, fakefs):
+    fakefs.create_dir("copilot")
     client = mock_aws_client(get_aws_session_or_abort)
     client.list_clusters.return_value = {
         "clusterArns": [],

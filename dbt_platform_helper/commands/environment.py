@@ -8,15 +8,21 @@ from typing import Union
 import boto3
 import click
 import requests
+import yaml
+from schema import SchemaError
 
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import config_file_check
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
+from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -340,30 +346,77 @@ def get_env_ips(vpc: str, application_environment: Environment):
 
 
 @environment.command()
-@click.option("--vpc-name")
-@click.option("--name", "-n", multiple=True, required=True)
+@click.option("--vpc-name", hidden=True)
+@click.option("--name", "-n", required=True)
 def generate(name, vpc_name):
-    ensure_cwd_is_repo_root()
+    if vpc_name:
+        click.secho(
+            f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}",
+            fg="red",
+        )
+        raise click.Abort
+
+    config_file_check()
+    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+
+    try:
+        PLATFORM_CONFIG_SCHEMA.validate(conf)
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
+    env_config = apply_environment_defaults(conf)["environments"][name]
+
+    _generate_copilot_environment_manifests(name, env_config)
+
+
+@environment.command()
+@click.option("--name", "-n", required=True)
+def generate_terraform(name):
+    config_file_check()
+    if not is_terraform_project():
+        click.secho("This is not a terraform project. Exiting.", fg="red")
+        exit(1)
+
+    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+
+    try:
+        PLATFORM_CONFIG_SCHEMA.validate(conf)
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
+    env_config = apply_environment_defaults(conf)["environments"][name]
+    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+
+
+def _generate_copilot_environment_manifests(name, env_config):
     session = get_aws_session_or_abort()
     env_template = setup_templates().get_template("env/manifest.yml")
+    vpc_name = env_config.get("vpc", None)
+    vpc_id = get_vpc_id(session, name, vpc_name)
+    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
+    cert_arn = get_cert_arn(session, name)
+    contents = env_template.render(
+        {
+            "name": name,
+            "vpc_id": vpc_id,
+            "pub_subnet_ids": pub_subnet_ids,
+            "priv_subnet_ids": priv_subnet_ids,
+            "certificate_arn": cert_arn,
+        }
+    )
+    click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
 
-    for env_name in name:
-        vpc_id = get_vpc_id(session, env_name, vpc_name)
-        pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
-        cert_arn = get_cert_arn(session, env_name)
-        contents = env_template.render(
-            {
-                "name": env_name,
-                "vpc_id": vpc_id,
-                "pub_subnet_ids": pub_subnet_ids,
-                "priv_subnet_ids": priv_subnet_ids,
-                "certificate_arn": cert_arn,
-            }
-        )
 
-        click.echo(
-            mkfile(".", f"copilot/environments/{env_name}/manifest.yml", contents, overwrite=True)
-        )
+def _generate_terraform_environment_manifests(application, env, env_config):
+    env_template = setup_templates().get_template("environments/main.tf")
+
+    contents = env_template.render(
+        {"application": application, "environment": env, "config": env_config}
+    )
+
+    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:

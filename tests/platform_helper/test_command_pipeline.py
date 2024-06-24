@@ -7,7 +7,9 @@ import yaml
 from click.testing import CliRunner
 from freezegun.api import freeze_time
 
+from dbt_platform_helper.commands.pipeline import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.commands.pipeline import generate
+from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import assert_file_created_in_stdout
@@ -64,7 +66,7 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
     get_public_repository_arn.return_value = (
         "arn:aws:ecr-public::000000000000:repository/test-app/application"
     )
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-public-repo.yml")
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-with-public-repo.yml")
     buildspec, cfn_patch, manifest = setup_output_file_paths_for_environments()
 
     result = CliRunner().invoke(generate)
@@ -101,9 +103,9 @@ def test_pipeline_generate_with_only_environments_creates_the_pipeline_configura
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    del pipelines["codebases"]
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    del pipelines[CODEBASE_PIPELINES_KEY]
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
@@ -119,12 +121,13 @@ def test_pipeline_generate_with_wildcarded_branch_creates_the_pipeline_configura
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-valid-wildcard-branch.yml")
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-with-valid-wildcard-branch.yml")
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
-    CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate)
 
+    assert result.exit_code == 0
     assert_environment_pipeline_config_was_generated()
     assert_codebase_pipeline_config_was_generated()
 
@@ -137,12 +140,15 @@ def test_pipeline_generate_with_invalid_wildcarded_branch_does_not_create_the_pi
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-with-invalid-wildcard-branch.yml")
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    setup_fixtures(
+        fakefs, pipelines_file="pipeline/platform-config-with-invalid-wildcard-branch.yml"
+    )
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
-    CliRunner().invoke(generate)
+    result = CliRunner().invoke(generate)
 
+    assert result.exit_code != 0
     assert_environment_pipeline_config_was_not_generated()
     assert_codebase_pipeline_config_was_not_generated()
 
@@ -156,9 +162,9 @@ def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuratio
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
     del pipelines["environments"]
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
@@ -174,8 +180,7 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
     git_remote, get_aws_session_or_abort, fakefs
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
-    setup_fixtures(fakefs, pipelines_file="pipeline/pipelines-for-terraform.yml")
-    fakefs.create_dir("./terraform")
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-for-terraform.yml")
 
     CliRunner().invoke(generate)
 
@@ -191,11 +196,14 @@ def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
     git_remote, mocked_boto3_client, fakefs
 ):
     setup_fixtures(fakefs)
-    Path("pipelines.yml").write_text(yaml.dump({}))
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
 
     result = CliRunner().invoke(generate)
 
-    assert "Error: No environment or codebase pipelines defined in pipelines.yml" in result.output
+    assert (
+        f"Error: No environment or codebase pipelines defined in {PLATFORM_CONFIG_FILE}"
+        in result.output
+    )
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -207,10 +215,13 @@ def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones
 ):
     mock_codestar_connections_boto_client(get_aws_session_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    fs.create_file(FIXTURES_DIR / "unnecessary_file.yml")
+    fs.create_dir("copilot/pipelines")
+    fs.create_file("copilot/pipelines/unnecessary_file.yml")
     environments_files = setup_output_file_paths_for_environments()
     codebases_files = setup_output_file_paths_for_codebases()
+
     result = CliRunner().invoke(generate)
+
     for file in environments_files + codebases_files:
         assert_file_created_in_stdout(file, result)
 
@@ -249,37 +260,39 @@ def test_pipeline_generate_with_no_repo_fails_with_message(git_remote, fakefs):
 
 def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(fakefs):
     setup_fixtures(fakefs)
-    os.remove("pipelines.yml")
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert "Error: There is no pipelines.yml" in result.output
-
-
-def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    Path("pipelines.yml").write_text("{invalid data")
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert "Error: The pipelines.yml file is invalid" in result.output
-
-
-def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
-    pipelines["codebases"][0]["pipelines"][1]["environments"] = [{"name": "dev"}] + pipelines[
-        "codebases"
-    ][0]["pipelines"][1]["environments"]
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    os.remove(PLATFORM_CONFIG_FILE)
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
     assert (
-        "Error: The pipelines.yml file is invalid, each environment can only be listed in a "
+        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        in result.output
+    )
+
+
+def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
+    setup_fixtures(fakefs)
+    Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert f"Error: The {PLATFORM_CONFIG_FILE} file is invalid" in result.output
+
+
+def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):
+    setup_fixtures(fakefs)
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    pipelines_section = pipelines[CODEBASE_PIPELINES_KEY][0]["pipelines"]
+    pipelines_section[1]["environments"] = [{"name": "dev"}] + pipelines_section[1]["environments"]
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
+
+    result = CliRunner().invoke(generate)
+
+    assert result.exit_code == 1
+    assert (
+        f"Error: The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be listed in a "
         "single pipeline"
     ) in result.output
 
@@ -303,9 +316,9 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
 ):
     mock_codestar_connections_boto_client(get_aws_command_or_abort, ["test-app"])
     setup_fixtures(fakefs)
-    pipelines = yaml.safe_load(Path("pipelines.yml").read_text())
+    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
     del pipelines["accounts"]
-    Path("pipelines.yml").write_text(yaml.dump(pipelines))
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
 
     CliRunner().invoke(generate)
 
@@ -371,7 +384,7 @@ def setup_output_file_paths_for_codebases():
     )
 
 
-def setup_fixtures(fakefs, pipelines_file="pipeline/pipelines.yml"):
-    fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, "pipelines.yml")
+def setup_fixtures(fakefs, pipelines_file=f"pipeline/{PLATFORM_CONFIG_FILE}"):
+    fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, PLATFORM_CONFIG_FILE)
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
     fakefs.add_real_directory(EXPECTED_FILES_DIR / "pipeline" / "pipelines", True)

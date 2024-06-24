@@ -9,10 +9,10 @@ import click
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
-from dbt_platform_helper.commands.copilot import is_terraform_project
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
+from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )

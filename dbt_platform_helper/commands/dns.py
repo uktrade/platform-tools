@@ -3,6 +3,7 @@
 import os
 import re
 import time
+from pathlib import Path
 
 import click
 import yaml
@@ -12,7 +13,6 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_load_balancer_configuration
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import ensure_cwd_is_repo_root
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -584,7 +584,12 @@ def assign(app, domain_profile, project_profile, svc, env):
     domain_session = get_aws_session_or_abort(domain_profile)
     project_session = get_aws_session_or_abort(project_profile)
 
-    ensure_cwd_is_repo_root()
+    if not Path("./copilot").exists() or not Path("./copilot").is_dir():
+        click.secho(
+            "Cannot find copilot directory. Run this command in the root of the deployment repository.",
+            bg="red",
+        )
+        exit(1)
     # Find the Load Balancer name.
     domain_name, load_balancer_configuration = get_load_balancer_domain_and_configuration(
         project_session, app, env, svc
