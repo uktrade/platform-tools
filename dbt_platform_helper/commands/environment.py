@@ -568,7 +568,7 @@ def add_maintenance_page(
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=20000,
+        Priority=20000,  # big number because we create multiple higher priority "AllowedIps" rules for each allowed ip for each service above.
         Conditions=[
             {
                 "Field": "path-pattern",
