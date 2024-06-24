@@ -27,7 +27,6 @@
 - [platform-helper domain assign](#platform-helper-domain-assign)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
-- [platform-helper environment allow-ips](#platform-helper-environment-allow-ips)
 - [platform-helper environment online](#platform-helper-environment-online)
 - [platform-helper environment generate](#platform-helper-environment-generate)
 - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
@@ -631,7 +630,7 @@ platform-helper domain assign --app <application> --env <environment> --svc <ser
 ## Usage
 
 ```
-platform-helper environment <command> 
+platform-helper environment (offline|online|generate|generate-terraform) 
 ```
 
 ## Options
@@ -641,7 +640,6 @@ platform-helper environment <command>
 
 ## Commands
 
-- [`allow-ips` ↪](#platform-helper-environment-allow-ips)
 - [`generate` ↪](#platform-helper-environment-generate)
 - [`generate-terraform` ↪](#platform-helper-environment-generate-terraform)
 - [`offline` ↪](#platform-helper-environment-offline)
@@ -672,34 +670,6 @@ platform-helper environment offline --app <application> --env <environment> --sv
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.
 - `--vpc <text>`
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper environment allow-ips
-
-[↩ Parent](#platform-helper-environment)
-
-    Allow selected ip addresses to bypass a service's maintenance page.
-
-## Usage
-
-```
-platform-helper environment allow-ips [<allowed_ips>] 
-                                      --app <application> --env <environment> --svc <service> 
-```
-
-## Arguments
-
-- `allowed-ips <text>`
-
-## Options
-
-- `--app <text>`
-
-- `--env <text>`
-
-- `--svc <text>` _Defaults to web._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
