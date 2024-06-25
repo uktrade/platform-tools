@@ -372,8 +372,7 @@ def generate_terraform(name):
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
 
-    env_config = apply_environment_defaults(conf)["environments"][name]
-    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+    _generate_terraform_environment_manifests(conf, name)
 
 
 def _generate_copilot_environment_manifests(name, env_config):
@@ -395,14 +394,24 @@ def _generate_copilot_environment_manifests(name, env_config):
     click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
 
 
-def _generate_terraform_environment_manifests(application, env, env_config):
+def _generate_terraform_environment_manifests(conf, name):
     env_template = setup_templates().get_template("environments/main.tf")
 
+    application = conf["application"]
+    env_config = apply_environment_defaults(conf)["environments"][name]
+    accounts = env_config.get("accounts")
+    if not accounts:
+        click.secho(
+            "Your environment configuration is missing an 'accounts' section. Please ensure it is present in your environment or in the default \"*\" environment"
+        )
+        click.get_current_context().abort()
+
+    account = accounts["deploy"]["name"]
     contents = env_template.render(
-        {"application": application, "environment": env, "config": env_config}
+        {"account": account, "application": application, "environment": name, "config": env_config}
     )
 
-    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
+    click.echo(mkfile(".", f"terraform/environments/{name}/main.tf", contents, overwrite=True))
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
