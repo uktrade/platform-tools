@@ -3,7 +3,9 @@
 ## SETUP Connection Profile
 mkdir -p /root/.opensearch-cli/
 
-echo $CONNECTION_SECRET | gawk '{
+function decode_url() { : "${*//+/ }"; echo "${_//%/\\x}"; }
+
+echo $(decode_url "$CONNECTION_SECRET") | gawk '{
   match($0, /^https:\/\/([A-Za-z0-9_]+):([^@]+)@(.+)$/, arr);
   print "profiles:"
   print "    - name: connection"
