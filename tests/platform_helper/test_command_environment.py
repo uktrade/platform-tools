@@ -768,6 +768,41 @@ class TestGenerate:
         assert result.exit_code != 0
         assert "Missing key: 'application'" in result.output
 
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=True)
+    def test_generate_terraform_errors_if_there_is_no_deploy_account_set(
+        self,
+        mock_is_terraform_project,
+        fakefs,
+    ):
+        from dbt_platform_helper.commands.environment import generate_terraform
+
+        environment_config = {
+            "*": {
+                "vpc": "vpc3",
+            },
+            "test": None,
+        }
+
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(
+                {
+                    "application": "my-app",
+                    "legacy_project": True,
+                    "environments": environment_config,
+                }
+            ),
+        )
+
+        result = CliRunner().invoke(generate_terraform, ["--name", "test"])
+
+        assert result.exit_code != 0
+        assert (
+            "Your environment configuration is missing an 'accounts' section. Please ensure it is present in your environment or in the default \"*\" environment"
+            in result.output
+        )
+
     def test_fail_with_explanation_if_vpc_name_option_used(self, fakefs):
         from dbt_platform_helper.commands.environment import generate
 

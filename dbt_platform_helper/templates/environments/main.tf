@@ -29,9 +29,15 @@ terraform {
   }
 }
 
-module "extensions" {
-  source = "git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=3"
+provider "aws" {
+  region = "eu-west-2"
+  name   = "{{ account }}"
+  alias  = "{{ account }}"
+}
 
+module "extensions" {
+  source      = "git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=3"
+  provider    = aws.{{ account}}
   args        = local.args
   environment = "{{ environment }}"
   vpc_name    = "{{ config.vpc }}"
