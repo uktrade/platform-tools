@@ -259,6 +259,12 @@ AURORA_DEFINITION = {
     ],
 }
 
+LIFECYCLE_RULE = {
+    Optional("filter_prefix"): str,
+    "expiration_days": int,
+    "enabled": bool,
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("services"): Or("__all__", [str]),
@@ -268,9 +274,11 @@ S3_BASE = {
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
+            Optional("lifecycle_rules"): [LIFECYCLE_RULE],
         }
     },
 }
+
 
 S3_POLICY_DEFINITION = dict(S3_BASE)
 S3_POLICY_DEFINITION.update({"type": "s3-policy"})

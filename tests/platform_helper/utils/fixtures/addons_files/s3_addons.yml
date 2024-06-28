@@ -35,3 +35,15 @@ my-s3-bucket-with-an-object:
         HEALTHCHECK WORKS!
     - key: empty.txt
 
+my-s3-bucket-with-a-lifecycle-rule:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket_name: my-bucket-dev
+      lifecycle_rules:
+        - filter_prefix: "bananas/"
+          expiration_days: 10
+          enabled: true
