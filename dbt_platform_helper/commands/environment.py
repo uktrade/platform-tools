@@ -46,9 +46,8 @@ def environment():
     default="default",
     help="The maintenance page you wish to put up.",
 )
-@click.option("--allowed-ip", "-ip", type=str, multiple=True)
-@click.option("--ip-filter", is_flag=True)
-def offline(app, env, svc, template, allowed_ip, ip_filter):
+@click.option("--vpc", type=str)
+def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     application = get_application(app)
     application_environment = get_app_environment(app, env)
@@ -87,7 +86,8 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
             if current_maintenance_page and remove_current_maintenance_page:
                 remove_maintenance_page(application_environment.session, https_listener)
 
-            allowed_ips = list(allowed_ip)
+            allowed_ips = get_env_ips(vpc)
+
             add_maintenance_page(
                 application_environment.session,
                 https_listener,
@@ -95,7 +95,6 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
                 env,
                 services,
                 allowed_ips,
-                ip_filter,
                 template,
             )
             click.secho(
@@ -116,85 +115,6 @@ def offline(app, env, svc, template, allowed_ip, ip_filter):
             f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
         )
         raise click.Abort
-
-
-@environment.command()
-@click.option("--app", type=str, required=True)
-@click.option("--env", type=str, required=True)
-@click.option("--svc", type=str, required=True, default="web")
-@click.argument("allowed-ips", nargs=-1)
-def allow_ips(app, env, svc, allowed_ips):
-    """Allow selected ip addresses to bypass a service's maintenance page."""
-    application_environment = get_app_environment(app, env)
-
-    try:
-        https_listener = find_https_listener(application_environment.session, app, env)
-        current_maintenance_page = get_maintenance_page(
-            application_environment.session, https_listener
-        )
-        if not current_maintenance_page:
-            click.secho(
-                f"There is no maintenance page currently deployed. To create one, run `platform-helper environment offline --app {app} --env {env} --svc {svc}",
-                fg="red",
-            )
-            raise click.Abort
-
-    except LoadBalancerNotFoundError:
-        click.secho(
-            f"No load balancer found for environment {env} in the application {app}.", fg="red"
-        )
-        raise click.Abort
-
-    except ListenerNotFoundError:
-        click.secho(
-            f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
-        )
-        raise click.Abort
-
-    elbv2_client = application_environment.session.client("elbv2")
-    allowed_ips = list(allowed_ips)
-    listener_rule = get_listener_rule_by_tag(elbv2_client, https_listener, "name", "AllowedIps")
-    current_values = []
-
-    if not listener_rule:
-        target_group_arn = find_target_group(app, env, svc)
-
-        if not target_group_arn:
-            raise click.Abort
-
-        create_header_rule(
-            elbv2_client,
-            https_listener,
-            target_group_arn,
-            "X-Forwarded-For",
-            allowed_ips,
-            "AllowedIps",
-        )
-    else:
-        x_forwarded_condition = [
-            condition
-            for condition in listener_rule["Conditions"]
-            if condition["Field"] == "http-header"
-            and condition["HttpHeaderConfig"]["HttpHeaderName"] == "X-Forwarded-For"
-        ][0]
-        current_values = x_forwarded_condition["HttpHeaderConfig"]["Values"]
-        elbv2_client.modify_rule(
-            RuleArn=listener_rule["RuleArn"],
-            Conditions=[
-                {
-                    "Field": "http-header",
-                    "HttpHeaderConfig": {
-                        "HttpHeaderName": "X-Forwarded-For",
-                        "Values": current_values + allowed_ips,
-                    },
-                }
-            ],
-        )
-
-    click.secho(
-        f"The following ips now have access to the {svc} service: {', '.join(current_values + allowed_ips)}",
-        fg="green",
-    )
 
 
 @environment.command()
@@ -331,6 +251,27 @@ def get_cert_arn(session, env_name):
     raise click.Abort
 
 
+def get_env_ips(vpc: str, application_environment: Environment):
+    account_name = (
+        application_environment.session.client("organizations")
+        .describe_account(AccountId=application_environment.account_id)
+        .get("Account")
+        .get("Name")
+    )
+    vpc_name = vpc if vpc else account_name
+    ssm_client = application_environment.session.client("ssm")
+
+    try:
+        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/ADDITIONAL_IP_LIST")["Parameter"][
+            "Value"
+        ]
+    except ssm_client.exceptions.ParameterNotFound:
+        click.secho(f"No parameter found with name: /{vpc_name}/ADDITIONAL_IP_LIST")
+        click.Abort
+
+    return [ip.strip() for ip in param_value.split(",")]
+
+
 @environment.command()
 @click.option("--vpc-name", hidden=True)
 @click.option("--name", "-n", required=True)
@@ -443,8 +384,8 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
-def find_target_group(app: str, env: str, svc: str) -> str:
-    rg_tagging_client = boto3.client("resourcegroupstaggingapi")
+def find_target_group(app: str, env: str, svc: str, session: boto3.Session) -> str:
+    rg_tagging_client = session.client("resourcegroupstaggingapi")
     response = rg_tagging_client.get_resources(
         TagFilters=[
             {
@@ -543,16 +484,34 @@ def create_header_rule(
     header_name: str,
     values: list,
     rule_name: str,
+    priority: int,
 ):
+    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+    for rule in rules:
+        for action in rule["Actions"]:
+            if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
+                conditions = rule["Conditions"]
+
+    conditions = [
+        {i: condition[i] for i in condition if i != "Values"}
+        for condition in conditions
+        if condition["Field"] == "host-header"
+    ]
+
+    conditions[0]["HostHeaderConfig"]["Values"] = [
+        v for v in conditions[0]["HostHeaderConfig"]["Values"] if not "internal" in v
+    ]
+
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=1,
+        Priority=priority,
         Conditions=[
             {
                 "Field": "http-header",
                 "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
             }
-        ],
+        ]
+        + conditions,
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         Tags=[
             {"Key": "name", "Value": rule_name},
@@ -572,50 +531,52 @@ def add_maintenance_page(
     env: str,
     services: List[Service],
     allowed_ips: tuple,
-    ip_filter: bool,
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
     maintenance_page_content = get_maintenance_page_template(template)
+    bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
-    for svc in services:
-        target_group_arn = find_target_group(app, env, svc.name)
+    for index, svc in enumerate(services):
+        target_group_arn = find_target_group(app, env, svc.name, session)
 
         # not all of an application's services are guaranteed to have been deployed to an environment
         if not target_group_arn:
             continue
 
-        if not ip_filter:
-            user_ip = get_public_ip()
-            allowed_ips = list(allowed_ips) + [user_ip]
-
+        user_ip = get_public_ip()
+        allowed_ips = list(allowed_ips) + [user_ip]
+        for ip_index, ip in enumerate(allowed_ips):
+            forwarded_rule_priority = (index + 1) * (ip_index + 100)
             create_header_rule(
                 lb_client,
                 listener_arn,
                 target_group_arn,
                 "X-Forwarded-For",
-                allowed_ips,
+                [ip],
                 "AllowedIps",
-            )
-        else:
-            bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
-            create_header_rule(
-                lb_client,
-                listener_arn,
-                target_group_arn,
-                "Bypass-Key",
-                [bypass_value],
-                "BypassIpFilter",
+                forwarded_rule_priority,
             )
 
-            click.secho(
-                f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
-                fg="green",
-            )
+        bypass_rule_priority = index + 1
+        create_header_rule(
+            lb_client,
+            listener_arn,
+            target_group_arn,
+            "Bypass-Key",
+            [bypass_value],
+            "BypassIpFilter",
+            bypass_rule_priority,
+        )
+
+        click.secho(
+            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/activities/holding-and-maintenance-pages/",
+            fg="green",
+        )
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=2,
+        Priority=20000,  # big number because we create multiple higher priority "AllowedIps" rules for each allowed ip for each service above.
         Conditions=[
             {
                 "Field": "path-pattern",
