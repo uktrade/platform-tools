@@ -1180,11 +1180,18 @@ class TestCommandHelperMethods:
     def test_get_env_ips(self, vpc, param_value, expected, mock_application):
         from dbt_platform_helper.commands.environment import get_env_ips
 
+        response = boto3.client("organizations").create_organization(FeatureSet="ALL")
+        response["Organization"]["Id"]
+        create_account_response = boto3.client("organizations").create_account(
+            Email="test-email@example.com", AccountName="test"
+        )
+        account_id = create_account_response["CreateAccountStatus"]["AccountId"]
+        mock_application.environments["development"].account_id = account_id
+        mock_application.environments["development"].sessions[account_id] = boto3
         boto3.client("ssm").put_parameter(
             Name=f"/{vpc}/ADDITIONAL_IP_LIST", Value=param_value, Type="String"
         )
         environment = mock_application.environments["development"]
-
         result = get_env_ips(vpc, environment)
 
         assert result == expected

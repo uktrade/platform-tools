@@ -252,7 +252,13 @@ def get_cert_arn(session, env_name):
 
 
 def get_env_ips(vpc: str, application_environment: Environment):
-    vpc_name = vpc if vpc else application_environment.account_id
+    account_name = (
+        application_environment.session.client("organizations")
+        .describe_account(AccountId=application_environment.account_id)
+        .get("Account")
+        .get("Name")
+    )
+    vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
 
     try:
