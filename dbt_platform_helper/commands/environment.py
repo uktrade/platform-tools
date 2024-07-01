@@ -562,7 +562,7 @@ def add_maintenance_page(
         )
 
         click.secho(
-            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ ",
+            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/activities/holding-and-maintenance-pages/",
             fg="green",
         )
 
