@@ -139,7 +139,7 @@ def container_stats(env, app, storage, network):
         storage_write = field[6]["value"]
         network_read = field[7]["value"]
         network_write = field[8]["value"]
-        cpu = f"{float(field[9]['value']):.1f}%"
+        cpu = "%.1f%%" % float(field[9]["value"])
         memory = f"{field[10]['value']}M"
 
         # Nothing to compare to at start.
@@ -286,7 +286,7 @@ def task_stats(env, app, disk, storage, network):
             f"{YELLOW}{task['value']}",
             f"{YELLOW}{task_def_revision['value']}",
             f"{YELLOW}{status['value']}",
-            f"{YELLOW}{f"{float(cpu['value']):.1f}" + '%'}",
+            f"{YELLOW}{'%.1f' % float(cpu['value']) + '%'}",
             f"{YELLOW}{memory['value'] + 'M'}",
         ]
 
