@@ -1,5 +1,13 @@
 # Changelog
 
+## [9.0.1](https://github.com/uktrade/platform-tools/compare/9.0.0...9.0.1) (2024-06-28)
+
+
+### Bug Fixes
+
+* DBTP-1093 - Add postgres version 16 to conduit image ([#477](https://github.com/uktrade/platform-tools/issues/477)) ([7d8747a](https://github.com/uktrade/platform-tools/commit/7d8747a2e4c39b8417d1c2b7a12d0ca56761d8e0))
+* DBTP-1504 - Fix unauthorised error in OpenSearch conduit CLI ([#483](https://github.com/uktrade/platform-tools/issues/483)) ([1248ddd](https://github.com/uktrade/platform-tools/commit/1248dddb942702930aaed8ae055839dd86a076e8))
+
 ## [9.0.0](https://github.com/uktrade/platform-tools/compare/8.8.0...9.0.0) (2024-06-21)
 
 
