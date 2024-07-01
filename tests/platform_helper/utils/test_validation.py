@@ -104,6 +104,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-s3-bucket-days-should-be-int": r"days.*should be instance of 'int'",
                 "my-s3-bucket-years-should-be-int": r"years.*should be instance of 'int'",
                 "my-s3-bucket-versioning-should-be-bool": r"environments.*versioning.*instance of 'bool'",
+                "my-s3-bucket-lifecycle-enabled-should-be-bool": r"environments.*lifecycle_rules.*enabled.*instance of 'bool'",
             },
         ),
         (
