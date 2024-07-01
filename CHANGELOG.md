@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.0.0](https://github.com/uktrade/platform-tools/compare/9.0.1...10.0.0) (2024-07-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update to use terraform-platform-modules 4 ([#482](https://github.com/uktrade/platform-tools/issues/482))
+
+### Features
+
+* Update to use terraform-platform-modules 4 ([#482](https://github.com/uktrade/platform-tools/issues/482)) ([1d91bc5](https://github.com/uktrade/platform-tools/commit/1d91bc5b54322141c1a3ee5db1bacb6b0e5f358b))
+
 ## [9.0.1](https://github.com/uktrade/platform-tools/compare/9.0.0...9.0.1) (2024-06-28)
 
 
