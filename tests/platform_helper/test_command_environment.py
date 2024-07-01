@@ -1174,6 +1174,11 @@ class TestCommandHelperMethods:
                 " 192.168.2.1 , 192.168.2.2 , 192.168.2.3 ",
                 ["192.168.2.1", "192.168.2.2", "192.168.2.3"],
             ),
+            (
+                None,
+                "192.168.1.1,192.168.1.2,192.168.1.3",
+                ["192.168.1.1", "192.168.1.2", "192.168.1.3"],
+            ),
         ],
     )
     @mock_aws
@@ -1188,6 +1193,7 @@ class TestCommandHelperMethods:
         account_id = create_account_response["CreateAccountStatus"]["AccountId"]
         mock_application.environments["development"].account_id = account_id
         mock_application.environments["development"].sessions[account_id] = boto3
+        vpc = vpc if vpc else "test"
         boto3.client("ssm").put_parameter(
             Name=f"/{vpc}/ADDITIONAL_IP_LIST", Value=param_value, Type="String"
         )
