@@ -541,6 +541,7 @@ def add_maintenance_page(
         user_ip = get_public_ip()
         allowed_ips = list(allowed_ips) + [user_ip]
         for ip_index, ip in enumerate(allowed_ips):
+            forwarded_rule_priority = (index + 1) * (ip_index + 100)
             create_header_rule(
                 lb_client,
                 listener_arn,
@@ -548,7 +549,7 @@ def add_maintenance_page(
                 "X-Forwarded-For",
                 [ip],
                 "AllowedIps",
-                (index + 1) * (ip_index + 100),
+                forwarded_rule_priority,
             )
 
         create_header_rule(
