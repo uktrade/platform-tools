@@ -1,5 +1,5 @@
 FROM public.ecr.aws/docker/library/debian:12-slim
-ARG OPENSEARCH_CLI_VERSION=1.1.0
+ARG OPENSEARCH_CLI_VERSION=1.2.0
 RUN apt-get update && apt-get install -y jq gawk procps unzip bash curl && apt-get clean
 
 # Shell and entrypoint
