@@ -552,6 +552,7 @@ def add_maintenance_page(
                 forwarded_rule_priority,
             )
 
+        bypass_rule_priority = index + 1
         create_header_rule(
             lb_client,
             listener_arn,
@@ -559,7 +560,7 @@ def add_maintenance_page(
             "Bypass-Key",
             [bypass_value],
             "BypassIpFilter",
-            index + 1,
+            bypass_rule_priority,
         )
 
         click.secho(
