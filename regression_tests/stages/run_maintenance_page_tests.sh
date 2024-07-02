@@ -2,6 +2,8 @@
 
 set -e
 
+echo "Running maintenance page tests"
+
 cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 
 # run offline for toolspr env
