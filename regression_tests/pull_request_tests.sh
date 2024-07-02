@@ -3,7 +3,7 @@
 # exit early if something goes wrong
 set -e
 
-targetEnvironment="gabe"
+export targetEnvironment="gabe"
 
 echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
