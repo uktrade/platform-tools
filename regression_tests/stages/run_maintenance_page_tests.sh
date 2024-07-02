@@ -1,6 +1,8 @@
-#!/bin/bash 
+#!/bin/bash
 
 set -e
+
+echo "Running maintenance page tests"
 
 echo -e "\nClone demodjango"
 git clone "${GIT_CLONE_BASE_URL}/demodjango-deploy.git"
@@ -50,18 +52,21 @@ else
     exit 1
 
 
-
-curl https://internal.${TARGET_ENVIRONMENT}.demodjango.uktrade.digital/
+# run offline for toolspr env
 
 # curl / check that maintenance page returns default message and code
+# TBC: Can we use the same tooling we've used for the smoke tests instead of curling etc.?
 
 # curl with bypass header and check 200
+# TBC: Should be able to set the header in and the rest basically be the regular smoke tests
 
 # check env ip is whitelisted
 
 # run online
 
-# curl for 200
+# curl for 200 - Probably covered by the smoke tests below
 
-# run smoke tests
+echo -e "\nCheck we can view the page (running smoke tests)"
+cd "${CODEBUILD_SRC_DIR}/demodjango"
+./smoke_tests.sh ${TARGET_ENVIRONMENT}
 
