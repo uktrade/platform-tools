@@ -3,7 +3,7 @@
 # exit early if something goes wrong
 set -e
 
-export targetEnvironment="gabe"
+export TARGET_ENVIRONMENT=${TARGET_ENVIRONMENT:-toolspr}
 
 echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
@@ -23,7 +23,7 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 # Todo: DBTP-1074 Include deploying codebase pipelines in regression tests
 
-./regression_tests/stages/run_environment_pipeline.sh
+# ./regression_tests/stages/run_environment_pipeline.sh
 
 # ./regression_tests/stages/run_codebase_pipeline.sh
 

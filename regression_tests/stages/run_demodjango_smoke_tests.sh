@@ -12,4 +12,4 @@ echo -e "\nInstall dependencies"
 poetry install
 
 echo -e "\nRun smoke tests"
-./smoke_tests.sh ${targetEnvironment}
+./smoke_tests.sh ${TARGET_ENVIRONMENT}
