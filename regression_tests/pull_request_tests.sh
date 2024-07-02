@@ -26,6 +26,9 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 # Todo: Uncomment before merge or to run in CodeBuild or to re-clone locally
 # ./regression_tests/stages/clone_demodjango_deploy.sh
 
+# Todo: Uncomment before merge or to run in CodeBuild or to re-clone locally
+# ./regression_tests/stages/clone_demodjango.sh
+
 ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
 ./regression_tests/stages/run_platform_helper_generate.sh
