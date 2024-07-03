@@ -41,6 +41,11 @@ sso_start_url = https://uktrade.awsapps.com/start#/
 sso_region = eu-west-2
 sso_registration_scopes = sso:account:access
 
+[default]
+sso_session = uktrade
+region = eu-west-2
+output = json
+
 """
 
 
