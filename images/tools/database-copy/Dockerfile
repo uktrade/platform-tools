@@ -5,7 +5,7 @@ RUN apt-get update && \
     # Add repository for postgres version 16
     apt-get install -y postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt-get install -y jq procps postgresql-client-16 && \
+    apt-get install -y curl unzip jq procps postgresql-client-16 && \
     # Start installing AWS CLI
     curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
