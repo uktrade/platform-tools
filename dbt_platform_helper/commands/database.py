@@ -18,16 +18,33 @@ def database():
 def copy(source_db: str, target_db: str):
     """Copy source database to target database."""
 
-    # Get source and target databases
     session = get_aws_session_or_abort()
-    source_db_instance = session.client("rds").describe_db_instances(
-        DBInstanceIdentifier=source_db
-    )["DBInstances"][0]
-    target_db_instance = session.client("rds").describe_db_instances(
-        DBInstanceIdentifier=target_db
-    )["DBInstances"][0]
+    rds = session.client("rds")
 
-    # Get application and environment from source database tags
+    try:
+        source_db_instance = rds.describe_db_instances(DBInstanceIdentifier=source_db)[
+            "DBInstances"
+        ][0]
+    except rds.exceptions.DBInstanceNotFoundFault:
+        click.secho(
+            f"""Source db {source_db} not found. Check the database identifier.""", fg="red"
+        )
+        exit(1)
+    try:
+        target_db_instance = rds.describe_db_instances(DBInstanceIdentifier=target_db)[
+            "DBInstances"
+        ][0]
+    except rds.exceptions.DBInstanceNotFoundFault:
+        click.secho(
+            f"""Target db {target_db} not found. Check the database identifier.""", fg="red"
+        )
+        exit(1)
+
+    # Check account
+    sts = session.client("sts")
+    account = sts.get_caller_identity()
+    print(account)
+
     application = None
     source_env = None
     target_env = None
@@ -42,6 +59,10 @@ def copy(source_db: str, target_db: str):
         if tag["Key"] == "copilot-environment":
             target_env = tag["Value"]
 
+    if target_env == "prod":
+        click.secho(f"""The --target-db option cannot be a production database.""", fg="red")
+        exit(1)
+
     if not click.confirm(
         click.style("Copying data from ", fg="yellow")
         + click.style(f"{source_db} ", fg="white", bold=True)
@@ -51,5 +72,7 @@ def copy(source_db: str, target_db: str):
         + click.style("Do you want to continue?", fg="yellow"),
     ):
         exit()
+
+    click.echo(f"""Copying data from {source_db} to {target_db}""")
 
     print(application, source_env, target_env)
