@@ -423,6 +423,7 @@ CODEBASE_PIPELINES_DEFINITION = [
 
 ENVIRONMENT_PIPELINES_DEFINITION = {
     str: {
+        "account": str,
         Optional("branch", default="main"): str,
         "slack_channel": str,
         "trigger_on_push": bool,
