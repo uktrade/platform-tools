@@ -519,7 +519,6 @@ environment_pipelines:
       staging:
       prod:
   test:
-    account: non-prod
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
