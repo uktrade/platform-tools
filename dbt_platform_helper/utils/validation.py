@@ -280,7 +280,6 @@ S3_BASE = {
     },
 }
 
-
 S3_POLICY_DEFINITION = dict(S3_BASE)
 S3_POLICY_DEFINITION.update({"type": "s3-policy"})
 
