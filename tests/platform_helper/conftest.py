@@ -453,6 +453,8 @@ extensions:
     type: postgres
     version: 16.2
     environments:
+      prod:
+        backup_retention_days: 10
       dev:
         deletion_protection: true
       staging:
@@ -475,6 +477,9 @@ extensions:
       dev:
         bucket_name: test-app-dev
         versioning: false
+        lifecycle_rules:
+          expiration_days: 1
+          enabled: true
       staging:
         bucket_name: test-app-staging
         versioning: false
