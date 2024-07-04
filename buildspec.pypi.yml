@@ -21,6 +21,7 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
+      - pip install slack_sdk
 
   build:
     commands:
@@ -30,7 +31,8 @@ phases:
   post_build:
     commands:
       - |
-        VERSION=$(python utils/check_pypi.py --version)
+        VERSION=$(python utils/check_pypi.py --version | cut -d ' ' -f 2)
+      - echo -e "Version is: ${VERSION}"
       - |
         if [ "$(git rev-parse --abbrev-ref HEAD)" == "DBTP-1094-platform-tools-PyPi-package-published-Slack-notification-not-working" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" == "1" ]; then
           MESSAGE=":tada: New 'platform-helper' release - *Version* ${VERSION}"
