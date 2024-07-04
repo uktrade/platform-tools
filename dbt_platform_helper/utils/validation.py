@@ -228,6 +228,7 @@ POSTGRES_DEFINITION = {
             Optional("deletion_protection"): DELETION_PROTECTION,
             Optional("multi_az"): bool,
             Optional("storage_type"): POSTGRES_STORAGE_TYPES,
+            Optional("backup_retention_days"): int_between(1, 35),
         }
     },
     Optional("objects"): [
