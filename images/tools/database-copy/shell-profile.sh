@@ -1,7 +1,5 @@
-echo "Welcome to the client container for postgres services."
-#echo $CONNECTION_SECRET | jq -rc '"Connecting to database \"\(.dbname)\" on \"\(.host)\""'
-#echo
+echo "Starting database copy."
 
-#psql "$(echo $CONNECTION_SECRET | jq -rc '"postgres://\(.username):\(.password)@\(.host):\(.port)/\(.dbname)"')"
+pg_dump $SOURCE_DB_CONNECTION | psql $TARGET_DB_CONNECTION main
 
-#exit
+exit
