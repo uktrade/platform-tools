@@ -100,7 +100,7 @@ def copy(source_db: str, target_db: str):
             f"copilot task run --app {app} --env {source_env} " f"--task-group-name {task_name} "
             # f"--image public.ecr.aws/uktrade/tunnel:database-copy "
             f"--dockerfile images/tools/database-copy/Dockerfile "
-            f'--env-vars SOURCE_DB_CONNECTION="{json.dumps(source_db_connection)}",TARGET_DB_CONNECTION="{json.dumps(target_db_connection)}" '
+            f"--env-vars SOURCE_DB_CONNECTION='{source_db_connection}',TARGET_DB_CONNECTION='{target_db_connection}' "
             "--platform-os linux "
             "--platform-arch arm64",
             shell=True,
@@ -127,4 +127,6 @@ def _get_connection_string(session: Session, app: str, env: str, db_identifier: 
         session, connection_string_parameter, master_secret_arn
     )
 
-    return connection_string
+    x = json.loads(connection_string)
+
+    return f"postgres://{x['username']}:{x['password']}@{x['host']}:{x['port']}/{x['dbname']}"
