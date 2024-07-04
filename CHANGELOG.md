@@ -1,5 +1,13 @@
 # Changelog
 
+## [10.1.0](https://github.com/uktrade/platform-tools/compare/10.0.0...10.1.0) (2024-07-04)
+
+
+### Features
+
+* Add defaults to AWS config ([#487](https://github.com/uktrade/platform-tools/issues/487)) ([ae66e93](https://github.com/uktrade/platform-tools/commit/ae66e9347c542cee77d933d9a80e89dbf529b8fe))
+* DBTP-1040 - add support for s3 lifecycle policies ([#485](https://github.com/uktrade/platform-tools/issues/485)) ([92c7dc8](https://github.com/uktrade/platform-tools/commit/92c7dc8649f7c3514ce3066e3c04488eaad0619e))
+
 ## [10.0.0](https://github.com/uktrade/platform-tools/compare/9.0.1...10.0.0) (2024-07-01)
 
 
