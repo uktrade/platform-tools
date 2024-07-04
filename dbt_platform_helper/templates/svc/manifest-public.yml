@@ -39,7 +39,7 @@ sidecars:
       APPCONFIG_PROFILES: ipfilter:default:default
       IPFILTER_ENABLED: {{ ipfilter }}
       EMAIL: sre@digital.trade.gov.uk
-      ADDITIONAL_IP_LIST: /${AWS_PROFILE}/ADDITIONAL_IP_LIST
+      ADDITIONAL_IP_LIST: /${AWS_PROFILE}/EGRESS_IPS
 
   appconfig:
     port: 2772

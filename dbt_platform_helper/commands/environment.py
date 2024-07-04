@@ -86,7 +86,7 @@ def offline(app, env, svc, template, vpc):
             if current_maintenance_page and remove_current_maintenance_page:
                 remove_maintenance_page(application_environment.session, https_listener)
 
-            allowed_ips = get_env_ips(vpc)
+            allowed_ips = get_env_ips(vpc, application_environment)
 
             add_maintenance_page(
                 application_environment.session,
@@ -252,22 +252,15 @@ def get_cert_arn(session, env_name):
 
 
 def get_env_ips(vpc: str, application_environment: Environment):
-    account_name = (
-        application_environment.session.client("organizations")
-        .describe_account(AccountId=application_environment.account_id)
-        .get("Account")
-        .get("Name")
-    )
+    account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
 
     try:
-        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/ADDITIONAL_IP_LIST")["Parameter"][
-            "Value"
-        ]
+        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/EGRESS_IPS")["Parameter"]["Value"]
     except ssm_client.exceptions.ParameterNotFound:
-        click.secho(f"No parameter found with name: /{vpc_name}/ADDITIONAL_IP_LIST")
-        click.Abort
+        click.secho(f"No parameter found with name: /{vpc_name}/EGRESS_IPS")
+        raise click.Abort
 
     return [ip.strip() for ip in param_value.split(",")]
 
@@ -487,31 +480,37 @@ def create_header_rule(
     priority: int,
 ):
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+
+    # Get current set of forwarding conditions for the target group
     for rule in rules:
         for action in rule["Actions"]:
             if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
                 conditions = rule["Conditions"]
 
+    # filter to host-header conditions
     conditions = [
         {i: condition[i] for i in condition if i != "Values"}
         for condition in conditions
         if condition["Field"] == "host-header"
     ]
 
+    # remove internal hosts
     conditions[0]["HostHeaderConfig"]["Values"] = [
-        v for v in conditions[0]["HostHeaderConfig"]["Values"] if not "internal" in v
+        v for v in conditions[0]["HostHeaderConfig"]["Values"]
     ]
+
+    # add new condition to existing conditions
+    combined_conditions = [
+        {
+            "Field": "http-header",
+            "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
+        }
+    ] + conditions
 
     lb_client.create_rule(
         ListenerArn=listener_arn,
         Priority=priority,
-        Conditions=[
-            {
-                "Field": "http-header",
-                "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
-            }
-        ]
-        + conditions,
+        Conditions=combined_conditions,
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         Tags=[
             {"Key": "name", "Value": rule_name},

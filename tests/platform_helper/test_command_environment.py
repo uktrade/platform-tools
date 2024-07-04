@@ -53,7 +53,7 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
-        get_env_ips.assert_called_with(None)
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
@@ -106,7 +106,7 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
-        get_env_ips.assert_called_with(None)
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
@@ -165,7 +165,7 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
-        get_env_ips.assert_called_with(None)
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
@@ -288,7 +288,7 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
-        get_env_ips.assert_called_with(None)
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
@@ -1192,12 +1192,33 @@ class TestCommandHelperMethods:
         )
         account_id = create_account_response["CreateAccountStatus"]["AccountId"]
         mock_application.environments["development"].account_id = account_id
-        mock_application.environments["development"].sessions[account_id] = boto3
+        mock_application.environments["development"].sessions[account_id] = boto3.session.Session()
         vpc = vpc if vpc else "test"
         boto3.client("ssm").put_parameter(
-            Name=f"/{vpc}/ADDITIONAL_IP_LIST", Value=param_value, Type="String"
+            Name=f"/{vpc}/EGRESS_IPS", Value=param_value, Type="String"
         )
         environment = mock_application.environments["development"]
         result = get_env_ips(vpc, environment)
 
         assert result == expected
+
+    @mock_aws
+    def test_get_env_ips_param_not_found(self, capsys, mock_application):
+        from dbt_platform_helper.commands.environment import get_env_ips
+
+        response = boto3.client("organizations").create_organization(FeatureSet="ALL")
+        response["Organization"]["Id"]
+        create_account_response = boto3.client("organizations").create_account(
+            Email="test-email@example.com", AccountName="test"
+        )
+        account_id = create_account_response["CreateAccountStatus"]["AccountId"]
+        mock_application.environments["development"].account_id = account_id
+        mock_application.environments["development"].sessions[account_id] = boto3.session.Session()
+        environment = mock_application.environments["development"]
+
+        with pytest.raises(click.Abort):
+            get_env_ips("vpc", environment)
+
+        captured = capsys.readouterr()
+
+        assert "No parameter found with name: /vpc/EGRESS_IPS\n" in captured.out
