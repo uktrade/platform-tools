@@ -9,8 +9,8 @@ VERSION=$(python utils/check_pypi.py --version)
 export SLACK_TOKEN=$2
 export SLACK_CHANNEL_ID=$3
 
-if ! python utils/check_pypi.py
-then
+# if ! python utils/check_pypi.py
+# then
   # echo Building Python package
   # poetry build
   # echo Publishing Python package ${VERSION}
@@ -21,6 +21,6 @@ then
   echo -e "\nSending slack notification"
   VERSION_NUMBER=($VERSION)
   python utils/notify/publish_notification.py --publish-version ${VERSION_NUMBER[1]}
-else
-  echo ${VERSION} of the package has already been published
-fi
+# else
+#   echo ${VERSION} of the package has already been published
+# fi
