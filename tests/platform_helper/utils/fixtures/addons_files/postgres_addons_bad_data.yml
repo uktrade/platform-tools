@@ -82,4 +82,3 @@ my-rds-backup-retention-too-high:
   environments:
     default:
       backup_retention_days: 36
-      
