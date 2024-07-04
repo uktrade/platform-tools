@@ -4,7 +4,9 @@ import subprocess
 import click
 from boto3 import Session
 
+from dbt_platform_helper.commands.conduit import add_stack_delete_policy_to_task_role
 from dbt_platform_helper.commands.conduit import addon_client_is_running
+from dbt_platform_helper.commands.conduit import connect_to_addon_client_task
 from dbt_platform_helper.commands.conduit import get_cluster_arn
 from dbt_platform_helper.commands.conduit import normalise_secret_name
 from dbt_platform_helper.commands.conduit import update_parameter_with_secret
@@ -86,7 +88,7 @@ def copy(source_db: str, target_db: str):
     ):
         exit()
 
-    click.echo(f"""Copying data from {source_db} to {target_db}""")
+    click.echo(f"""Starting task to copy data from {source_db} to {target_db}""")
 
     source_db_connection = _get_connection_string(session, app, source_env, source_db)
     target_db_connection = _get_connection_string(session, app, target_env, target_db)
@@ -105,14 +107,8 @@ def copy(source_db: str, target_db: str):
             "--platform-arch arm64",
             shell=True,
         )
-
-        # Might need these to cleanup the cloudformation stack
-        # add_stack_delete_policy_to_task_role(application, env, task_name)
-        # update_conduit_stack_resources(
-        #     application, env, addon_type, addon_name, task_name, parameter_name
-        # )
-
-    # connect_to_addon_client_task(application, source_env, cluster_arn, task_name)
+        add_stack_delete_policy_to_task_role(application, source_env, task_name)
+    connect_to_addon_client_task(application, source_env, cluster_arn, task_name)
 
 
 def _get_connection_string(session: Session, app: str, env: str, db_identifier: str) -> str:
@@ -128,5 +124,4 @@ def _get_connection_string(session: Session, app: str, env: str, db_identifier: 
     )
 
     x = json.loads(connection_string)
-
     return f"postgres://{x['username']}:{x['password']}@{x['host']}:{x['port']}/{x['dbname']}"
