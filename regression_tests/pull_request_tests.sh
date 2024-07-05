@@ -21,12 +21,12 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 # ./regression_tests/stages/set_up_aws_config.sh
 
 # Todo: Uncomment before merge or to run in CodeBuild or to rebuild locally after changes
-# ./regression_tests/stages/build_platform_helper.sh
+./regression_tests/stages/build_platform_helper.sh
 
 # Todo: Uncomment before merge or to run in CodeBuild or to re-clone locally
 # ./regression_tests/stages/clone_demodjango_deploy.sh
 
-# Todo: Uncomment before merge or to run in CodeBuild or to re-clone locally
+# # Todo: Uncomment before merge or to run in CodeBuild or to re-clone locally
 # ./regression_tests/stages/clone_demodjango.sh
 
 ./regression_tests/stages/run_platform_helper_environment_generate.sh
