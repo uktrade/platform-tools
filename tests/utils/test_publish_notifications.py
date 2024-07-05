@@ -48,7 +48,7 @@ class TestPublishNotify(unittest.TestCase):
         notify.post_publish_update(self.version)
 
         expected_message = (
-            f":tada: New `platform-helper` release - *Version*: {self.version} - "
+            f":tada: New `platform-helper` release\n\n*Version*: {self.version}\n\n"
             f"<{RELEASE_NOTES_URL_TAG}{self.version}|Release Notes>"
         )
 
@@ -73,7 +73,7 @@ class TestPublishNotify(unittest.TestCase):
         notify.post_publish_update(invalid_version)
 
         expected_message = (
-            f":tada: New `platform-helper` release - *Version*: {invalid_version} - "
+            f":tada: New `platform-helper` release\n\n*Version*: {invalid_version}\n\n"
             f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>"
         )
 
