@@ -32,10 +32,10 @@ phases:
     commands:
       - |
         VERSION=$(python utils/check_pypi.py --version | cut -d ' ' -f 2)
-      - echo -e "Version is: ${VERSION}"
+      - echo -e "Version is - ${VERSION}"
       - |
         if [ "$(git rev-parse --abbrev-ref HEAD)" == "DBTP-1094-platform-tools-PyPi-package-published-Slack-notification-not-working" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" == "1" ]; then
-          MESSAGE=":tada: New 'platform-helper' release - *Version* ${VERSION}"
+          MESSAGE=":tada: TEST New `platform-helper` release - *Version* ${VERSION}"
           
           platform-helper notify add-comment "${TEST_SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi

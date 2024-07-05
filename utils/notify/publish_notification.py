@@ -1,9 +1,7 @@
 import argparse
 import os
 import re
-
-from slack_sdk import WebClient
-from slack_sdk.models import blocks
+import subprocess
 
 RELEASE_NOTES_URL_LATEST = "https://github.com/uktrade/platform-tools/releases/latest"
 RELEASE_NOTES_URL_TAG = "https://github.com/uktrade/platform-tools/releases/tag/"
@@ -17,7 +15,7 @@ class PublishNotify:
 
         if self.send_notifications:
             try:
-                self.slack = WebClient(token=os.environ["SLACK_TOKEN"])
+                self.slack_token = os.environ["SLACK_TOKEN"]
                 self.channel = os.environ["SLACK_CHANNEL_ID"]
             except KeyError as e:
                 raise ValueError(f"{e} environment variable must be set")
@@ -33,26 +31,18 @@ class PublishNotify:
             else:
                 message_release_notes = f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>"
 
-            message_blocks = [
-                blocks.SectionBlock(
-                    text=blocks.TextObject(type="mrkdwn", text=message_headline),
-                ),
-                blocks.ContextBlock(
-                    elements=[
-                        blocks.TextObject(type="mrkdwn", text=message_version),
-                        blocks.TextObject(type="mrkdwn", text=message_release_notes),
-                    ]
-                ),
-            ]
+            message = f":tada: {message_headline} - {message_version} {message_release_notes}"
 
-            self.slack.chat_postMessage(
-                channel=self.channel,
-                blocks=message_blocks,
-                text=f"Publishing platform-helper v{version}",
-                unfurl_links=False,
-                unfurl_media=False,
-                username="platform-helper",
+            self.notify_slack(self.channel, self.slack_token, message)
+
+    def notify_slack(self, channel, token, message):
+        try:
+            subprocess.run(
+                ["platform-helper", "notify", "add-comment", channel, token, "", message],
+                check=True,
             )
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to send notification: {e}")
 
 
 def opts():
