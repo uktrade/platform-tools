@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.2.0](https://github.com/uktrade/platform-tools/compare/10.1.0...10.2.0) (2024-07-05)
+
+
+### Features
+
+* DBTP-1116 - Support configuration of the RDS backup retention period ([#491](https://github.com/uktrade/platform-tools/issues/491)) ([a431184](https://github.com/uktrade/platform-tools/commit/a431184fda45183f9ed287d2b9e685b86420d992))
+
 ## [10.1.0](https://github.com/uktrade/platform-tools/compare/10.0.0...10.1.0) (2024-07-04)
 
 
