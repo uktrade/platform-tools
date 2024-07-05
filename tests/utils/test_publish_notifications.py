@@ -4,9 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from parameterized import parameterized
-from slack_sdk.models import blocks
 
-from tests.test_doubles.webclient import WebClient
 from utils.notify.publish_notification import RELEASE_NOTES_URL_LATEST
 from utils.notify.publish_notification import RELEASE_NOTES_URL_TAG
 from utils.notify.publish_notification import PublishNotify
@@ -19,8 +17,7 @@ class FakeOpts:
         self.__dict__ = data
 
 
-@patch("builtins.round", return_value=15)
-@patch("utils.notify.publish_notification.WebClient", return_value=WebClient("slack-token"))
+@patch("subprocess.run")
 class TestPublishNotify(unittest.TestCase):
     def setUp(self):
         os.environ["SLACK_TOKEN"] = "slack-token"
@@ -33,55 +30,72 @@ class TestPublishNotify(unittest.TestCase):
             ("SLACK_CHANNEL_ID",),
         ]
     )
-    def test_raises_error_when_environment_not_set(self, webclient, time, environment_variable):
+    def test_raises_error_when_environment_not_set(self, mock_subprocess, environment_variable):
         del os.environ[environment_variable]
         with pytest.raises(ValueError) as e:
             PublishNotify()
         self.assertEqual(f"'{environment_variable}' environment variable must be set", str(e.value))
 
-    def test_sending_publish_notifications_when_notifications_off(self, webclient, time):
+    def test_sending_publish_notifications_when_notifications_off(self, mock_subprocess):
         notify = PublishNotify(False)
         notify.post_publish_update(self.version)
-
-        self.assertFalse(hasattr(notify, "slack"))
+        mock_subprocess.assert_not_called()
 
     def test_sending_publish_notifications_successfully_with_valid_version_format(
-        self, webclient, time
+        self, mock_subprocess
     ):
         notify = PublishNotify()
         notify.post_publish_update(self.version)
 
-        notify.slack.chat_postMessage.assert_called_with(
-            channel="channel-id",
-            blocks=get_expected_message_blocks(self.version),
-            text=f"Publishing platform-helper v{self.version}",
-            unfurl_links=False,
-            unfurl_media=False,
-            username="platform-helper",
+        expected_message = (
+            f":tada: New `platform-helper` release - *Version*: {self.version} - "
+            f"<{RELEASE_NOTES_URL_TAG}{self.version}|Release Notes>"
+        )
+
+        mock_subprocess.assert_called_with(
+            [
+                "platform-helper",
+                "notify",
+                "add-comment",
+                "channel-id",
+                "slack-token",
+                "",
+                expected_message,
+            ],
+            check=True,
         )
 
     def test_sending_publish_notifications_successfully_with_invalid_version_format(
-        self, webclient, time
+        self, mock_subprocess
     ):
         invalid_version = "1.2"
         notify = PublishNotify()
         notify.post_publish_update(invalid_version)
 
-        notify.slack.chat_postMessage.assert_called_with(
-            channel="channel-id",
-            blocks=get_expected_message_blocks_invalid_version_supplied(invalid_version),
-            text=f"Publishing platform-helper v{invalid_version}",
-            unfurl_links=False,
-            unfurl_media=False,
-            username="platform-helper",
+        expected_message = (
+            f":tada: New `platform-helper` release - *Version*: {invalid_version} - "
+            f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>"
         )
 
-    def test_send_publish_notification_version_from_cli(self, webclient, time):
+        mock_subprocess.assert_called_with(
+            [
+                "platform-helper",
+                "notify",
+                "add-comment",
+                "channel-id",
+                "slack-token",
+                "",
+                expected_message,
+            ],
+            check=True,
+        )
+
+    def test_send_publish_notification_version_from_cli(self, mock_subprocess):
         opts = FakeOpts(send_notifications=True, publish_version=self.version)
         exit_code = send_publish_notification_version(opts)
         assert exit_code == 0
 
-    def test_version_provided_must_be_a_string(self, webclient, time):
+    def test_version_provided_must_be_a_string(self, mock_subprocess):
         with pytest.raises(TypeError):
             notify = PublishNotify()
             notify.post_publish_update(True)
@@ -90,56 +104,14 @@ class TestPublishNotify(unittest.TestCase):
             notify = PublishNotify()
             notify.post_publish_update(123)
 
-    def test_check_version_pattern_valid_pattern(self, webclient, time):
+    def test_check_version_pattern_valid_pattern(self, mock_subprocess):
         version = "1.2.3"
         assert validate_version_pattern(version)
 
-    def test_check_version_pattern_invalid_pattern(self, webclient, time):
+    def test_check_version_pattern_invalid_pattern(self, mock_subprocess):
         version = "1.2"
         assert not validate_version_pattern(version)
 
 
-def get_expected_message_blocks(version=""):
-    return [
-        blocks.SectionBlock(
-            text=blocks.TextObject(
-                type="mrkdwn",
-                text="New `platform-helper` release",
-            )
-        ),
-        blocks.ContextBlock(
-            elements=[
-                blocks.TextObject(
-                    type="mrkdwn",
-                    text=f"*Version*: {version}",
-                ),
-                blocks.TextObject(
-                    type="mrkdwn",
-                    text=f"<{RELEASE_NOTES_URL_TAG}{version}|Release Notes>",
-                ),
-            ]
-        ),
-    ]
-
-
-def get_expected_message_blocks_invalid_version_supplied(version=""):
-    return [
-        blocks.SectionBlock(
-            text=blocks.TextObject(
-                type="mrkdwn",
-                text="New `platform-helper` release",
-            )
-        ),
-        blocks.ContextBlock(
-            elements=[
-                blocks.TextObject(
-                    type="mrkdwn",
-                    text=f"*Version*: {version}",
-                ),
-                blocks.TextObject(
-                    type="mrkdwn",
-                    text=f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>",
-                ),
-            ]
-        ),
-    ]
+if __name__ == "__main__":
+    unittest.main()
