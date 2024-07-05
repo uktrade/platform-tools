@@ -342,6 +342,7 @@ def generate(name, vpc_name):
         )
         raise click.Abort
 
+    session = get_aws_session_or_abort()
     config_file_check()
     conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
@@ -353,7 +354,7 @@ def generate(name, vpc_name):
 
     env_config = apply_environment_defaults(conf)["environments"][name]
 
-    _generate_copilot_environment_manifests(name, env_config)
+    _generate_copilot_environment_manifests(name, env_config, session)
 
 
 @environment.command()
@@ -377,7 +378,6 @@ def generate_terraform(name):
 
 
 def _generate_copilot_environment_manifests(name, env_config):
-    session = get_aws_session_or_abort()
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, name, vpc_name)
