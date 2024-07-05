@@ -12,6 +12,7 @@ my-rds-db:
       snapshot_id: test-snapshot-id
       multi_az: false
       storage_type: "gp2"
+      backup_retention_days: 14
     dev:
       deletion_policy: "Delete"
       deletion_protection: false
