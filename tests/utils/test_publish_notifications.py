@@ -111,7 +111,3 @@ class TestPublishNotify(unittest.TestCase):
     def test_check_version_pattern_invalid_pattern(self, mock_subprocess):
         version = "1.2"
         assert not validate_version_pattern(version)
-
-
-if __name__ == "__main__":
-    unittest.main()
