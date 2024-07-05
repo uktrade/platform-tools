@@ -6,7 +6,6 @@ env:
     PYPI_TOKEN: "pypi-token"
     SLACK_TOKEN: "/codebuild/slack_oauth_token"
     SLACK_CHANNEL_ID: "/codebuild/slack_platform_helper_publish_oauth_channel"
-    TEST_SLACK_CHANNEL_ID: "/codebuild/slack_channel_id_test_command_output"
     
 
 phases:
@@ -25,5 +24,5 @@ phases:
   build:
     commands:
       - echo -e "\nBuild and publish to PyPi"
-      - ./publish_to_pypi.sh ${PYPI_TOKEN} ${SLACK_TOKEN} ${TEST_SLACK_CHANNEL_ID}
+      - ./publish_to_pypi.sh ${PYPI_TOKEN} ${SLACK_TOKEN} ${SLACK_CHANNEL_ID}
       
