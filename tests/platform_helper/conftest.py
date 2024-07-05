@@ -469,7 +469,7 @@ extensions:
         engine: '1.3'
         volume_size: 40
 
-  test-app-s3-bucket:
+  test-app-s3-bucket-with-objects:
     type: s3
     services:
       - web
@@ -478,8 +478,8 @@ extensions:
         bucket_name: test-app-dev
         versioning: false
         lifecycle_rules:
-          expiration_days: 1
-          enabled: true
+          - expiration_days: 1
+            enabled: true
       staging:
         bucket_name: test-app-staging
         versioning: false
