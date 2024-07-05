@@ -377,7 +377,7 @@ def generate_terraform(name):
     _generate_terraform_environment_manifests(conf["application"], name, env_config)
 
 
-def _generate_copilot_environment_manifests(name, env_config):
+def _generate_copilot_environment_manifests(name, env_config, session):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, name, vpc_name)
