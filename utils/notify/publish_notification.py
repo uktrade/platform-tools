@@ -31,7 +31,7 @@ class PublishNotify:
             else:
                 message_release_notes = f"<{RELEASE_NOTES_URL_LATEST}|Release Notes>"
 
-            message = f":tada: {message_headline} - {message_version} {message_release_notes}"
+            message = f":tada: {message_headline} - {message_version} - {message_release_notes}"
 
             self.notify_slack(self.channel, self.slack_token, message)
 
