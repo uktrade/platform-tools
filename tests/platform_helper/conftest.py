@@ -511,13 +511,12 @@ extensions:
 
 environment_pipelines:
   main:
-    account: non-prod
+    account: non-prod-acc
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: true
     environments:
       dev:
       staging:
-      prod:
   test:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
@@ -554,3 +553,30 @@ codebase_pipelines:
             requires_approval: true
 """
     )
+
+
+@pytest.fixture
+def platform_env_config():
+    return {
+        "application": "my-app",
+        "environments": {
+            "*": {
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+                "requires_approval": False,
+                "vpc": "non-prod-vpc",
+            },
+            "dev": {},
+            "staging": {},
+            "prod": {
+                "accounts": {
+                    "deploy": {"name": "prod-acc", "id": "9999999999"},
+                    "dns": {"name": "prod-dns-acc", "id": "7777777777"},
+                },
+                "requires_approval": True,
+                "vpc": "prod-vpc",
+            },
+        },
+    }

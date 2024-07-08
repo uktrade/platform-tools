@@ -10,13 +10,14 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from schema import SchemaError
 
+from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
 from dbt_platform_helper.utils.validation import validate_addons
+from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
 from dbt_platform_helper.utils.validation import warn_on_s3_bucket_name_availability
@@ -419,6 +420,59 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
-def test_validate_success(valid_platform_config):
-    PLATFORM_CONFIG_SCHEMA.validate(valid_platform_config)
+def test_validate_platform_config_success(valid_platform_config):
+    validate_platform_config(valid_platform_config)
     # No assertions - validate will error if config is invalid.
+
+
+@pytest.mark.parametrize(
+    "account, envs",
+    [
+        ("non-prod", ["dev"]),
+        ("non-prod-acc", ["prod"]),
+        ("prod-acc", ["dev", "prod"]),
+        ("non-prod-acc", ["dev", "prod"]),
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts(
+    platform_env_config, account, envs
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": account,
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {env: {} for env in envs},
+        }
+    }
+
+    with pytest.raises(ValidationException) as ex:
+        validate_platform_config(platform_env_config)
+
+    assert "Pipeline main is misconfigured. Account 'non-prod' does not match the accounts in the environments it is trying to deploy [prod]."
+
+
+@pytest.mark.parametrize(
+    "account, envs",
+    [
+        ("non-prod-acc", ["dev"]),
+        ("non-prod-acc", ["dev", "staging"]),
+        ("prod-acc", ["prod"]),
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+def test_validate_platform_config_succeeds_if_pipeline_account_matches_environment_accounts(
+    platform_env_config, account, envs
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": account,
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {env: {} for env in envs},
+        }
+    }
+
+    # Should not error if config is sound.
+    validate_platform_config(platform_env_config)

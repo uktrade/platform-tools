@@ -9,7 +9,9 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.files import apply_environment_defaults
 
 
 def validate_string(regex_pattern: str):
@@ -423,7 +425,7 @@ CODEBASE_PIPELINES_DEFINITION = [
 
 ENVIRONMENT_PIPELINES_DEFINITION = {
     str: {
-        Optional("account", default="non_prod"): str,
+        Optional("account"): str,
         Optional("branch", default="main"): str,
         "slack_channel": str,
         "trigger_on_push": bool,
@@ -455,6 +457,26 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
     }
 )
+
+
+def validate_platform_config(config):
+    PLATFORM_CONFIG_SCHEMA.validate(config)
+    enriched_config = apply_environment_defaults(config)
+
+    for pipeline_name, pipeline in enriched_config.get("environment_pipelines", {}).items():
+        account = pipeline.get("account", None)
+        if account:
+            for env in pipeline.get("environments", {}).keys():
+                env_account = (
+                    enriched_config.get("environments", {})
+                    .get(env, {})
+                    .get("accounts", {})
+                    .get("deploy", {})
+                    .get("name")
+                )
+                if env_account and not env_account == account:
+                    message = "Pipeline main is misconfigured. Account 'non-prod' does not match the accounts in the environments it is trying to deploy [prod]."
+                    raise ValidationException(message)
 
 
 S3_SCHEMA = Schema(S3_DEFINITION)
