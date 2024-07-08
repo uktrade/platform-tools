@@ -10,9 +10,11 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from schema import SchemaError
 
+from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
@@ -421,6 +423,7 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_validate_platform_config_success(valid_platform_config):
     validate_platform_config(valid_platform_config)
     # No assertions - validate will error if config is invalid.
@@ -438,6 +441,7 @@ def test_validate_platform_config_success(valid_platform_config):
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts(
     mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
 ):
@@ -463,6 +467,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_multiple_pipelines(
     mock_abort_with_error, platform_env_config
 ):
@@ -499,6 +504,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_validate_platform_config_succeeds_if_pipeline_account_matches_environment_accounts(
     platform_env_config, account, envs
 ):
@@ -523,6 +529,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
         "pipeline/platform-config-for-terraform.yml",
     ],
 )
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_load_and_validate_config_valid_file(yaml_file):
     """Test that, given the path to a valid yaml file, load_and_validate_config
     returns the loaded yaml unmodified."""
@@ -534,3 +541,79 @@ def test_load_and_validate_config_valid_file(yaml_file):
         conf = yaml.safe_load(fd)
 
     assert validated == conf
+
+
+@pytest.mark.parametrize(
+    "files, expected_messages",
+    [
+        (
+            [],
+            [
+                f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            ],
+        ),
+        (
+            ["storage.yml"],
+            [
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
+            ],
+        ),
+        (
+            ["extensions.yml"],
+            [
+                f"`extensions.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
+            ],
+        ),
+        (
+            ["pipelines.yml"],
+            [
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
+            ],
+        ),
+        (
+            ["storage.yml", "pipelines.yml"],
+            [
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "storage.yml"],
+            [
+                f"`storage.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "extensions.yml"],
+            [
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+            ],
+        ),
+    ],
+)
+def test_file_compatibility_check_fails_if_platform_config_not_present(
+    fakefs, capsys, files, expected_messages
+):
+    for file in files:
+        fakefs.create_file(file)
+
+    with pytest.raises(SystemExit):
+        config_file_check()
+
+    console_message = capsys.readouterr().out
+
+    for expected_message in expected_messages:
+        assert expected_message in console_message

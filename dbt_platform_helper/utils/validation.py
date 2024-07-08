@@ -10,6 +10,7 @@ from schema import Or
 from schema import Regex
 from schema import Schema
 from schema import SchemaError
+from yaml.parser import ParserError
 
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.constants import CODEBASE_PIPELINES_KEY
@@ -465,6 +466,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 
 
 def validate_platform_config(config):
+    get_aws_session_or_abort()  # Ensure we have a valid session as validation requires it.
     PLATFORM_CONFIG_SCHEMA.validate(config)
     _validate_environment_pipelines(config)
     _validate_codebase_pipelines(config)
@@ -520,11 +522,41 @@ def _validate_codebase_pipelines(pipeline_config):
 
 
 def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
-    conf = yaml.safe_load(Path(path).read_text())
+    config_file_check(path)
+    try:
+        conf = yaml.safe_load(Path(path).read_text())
+        validate_platform_config(conf)
+        return conf
+    except ParserError:
+        abort_with_error(f"{PLATFORM_CONFIG_FILE} is invalid")
 
-    validate_platform_config(conf)
 
-    return conf
+def config_file_check(path=PLATFORM_CONFIG_FILE):
+    platform_config_exists = Path(path).exists()
+    errors = []
+
+    messages = {
+        "storage.yml": " under the key 'extensions'",
+        "extensions.yml": " under the key 'extensions'",
+        "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
+    }
+
+    for file in messages.keys():
+        if Path(file).exists():
+            if platform_config_exists:
+                message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            else:
+                message = f"`{file}` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`{messages[file]} and delete `{file}`."
+            errors.append(message)
+
+    if not errors and not platform_config_exists:
+        errors.append(
+            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        )
+
+    if errors:
+        click.secho("\n".join(errors), bg="red")
+        exit(1)
 
 
 S3_SCHEMA = Schema(S3_DEFINITION)

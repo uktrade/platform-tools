@@ -4,16 +4,13 @@ from pathlib import Path
 from shutil import rmtree
 
 import click
-from yaml.parser import ParserError
 
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
@@ -43,8 +40,7 @@ def generate():
 
     app_name = get_application_name()
 
-    config_file_check()
-    pipeline_config = _safe_load_config()
+    pipeline_config = load_and_validate_platform_config()
 
     git_repo = git_remote()
     if not git_repo:
@@ -167,10 +163,3 @@ def _create_file_from_template(
     ).render(template_data)
     message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
     click.echo(message)
-
-
-def _safe_load_config():
-    try:
-        return load_and_validate_platform_config()
-    except ParserError:
-        abort_with_error(f"{PLATFORM_CONFIG_FILE} is invalid")
