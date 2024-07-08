@@ -99,9 +99,9 @@ def copy(source_db: str, target_db: str):
 
     if not addon_client_is_running(application, source_env, cluster_arn, task_name):
         subprocess.call(
-            f"copilot task run --app {app} --env {source_env} " f"--task-group-name {task_name} "
-            # f"--image public.ecr.aws/uktrade/tunnel:database-copy "
-            f"--dockerfile images/tools/database-copy/Dockerfile "
+            f"copilot task run --app {app} --env {source_env} "
+            f"--task-group-name {task_name} "
+            f"--image public.ecr.aws/uktrade/tunnel:database-copy "
             f"--env-vars SOURCE_DB_CONNECTION='{source_db_connection}',TARGET_DB_CONNECTION='{target_db_connection}' "
             "--platform-os linux "
             "--platform-arch arm64",
