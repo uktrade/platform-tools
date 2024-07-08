@@ -491,7 +491,7 @@ def _validate_environment_pipelines(config):
                 if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:
-            bad_pipelines[pipeline_name] = {"account": account, "bad_envs": bad_envs}
+            bad_pipelines[pipeline_name] = {"account": pipeline_account, "bad_envs": bad_envs}
     if bad_pipelines:
         message = "The following pipelines are misconfigured:"
         for pipeline, detail in bad_pipelines.items():
