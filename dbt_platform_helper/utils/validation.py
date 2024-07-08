@@ -228,6 +228,7 @@ POSTGRES_DEFINITION = {
             Optional("deletion_protection"): DELETION_PROTECTION,
             Optional("multi_az"): bool,
             Optional("storage_type"): POSTGRES_STORAGE_TYPES,
+            Optional("backup_retention_days"): int_between(1, 35),
         }
     },
     Optional("objects"): [
@@ -259,6 +260,12 @@ AURORA_DEFINITION = {
     ],
 }
 
+LIFECYCLE_RULE = {
+    Optional("filter_prefix"): str,
+    "expiration_days": int,
+    "enabled": bool,
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("services"): Or("__all__", [str]),
@@ -268,6 +275,7 @@ S3_BASE = {
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
+            Optional("lifecycle_rules"): [LIFECYCLE_RULE],
         }
     },
 }

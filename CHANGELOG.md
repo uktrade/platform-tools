@@ -1,5 +1,39 @@
 # Changelog
 
+## [10.2.0](https://github.com/uktrade/platform-tools/compare/10.1.0...10.2.0) (2024-07-05)
+
+
+### Features
+
+* DBTP-1116 - Support configuration of the RDS backup retention period ([#491](https://github.com/uktrade/platform-tools/issues/491)) ([a431184](https://github.com/uktrade/platform-tools/commit/a431184fda45183f9ed287d2b9e685b86420d992))
+
+## [10.1.0](https://github.com/uktrade/platform-tools/compare/10.0.0...10.1.0) (2024-07-04)
+
+
+### Features
+
+* Add defaults to AWS config ([#487](https://github.com/uktrade/platform-tools/issues/487)) ([ae66e93](https://github.com/uktrade/platform-tools/commit/ae66e9347c542cee77d933d9a80e89dbf529b8fe))
+* DBTP-1040 - add support for s3 lifecycle policies ([#485](https://github.com/uktrade/platform-tools/issues/485)) ([92c7dc8](https://github.com/uktrade/platform-tools/commit/92c7dc8649f7c3514ce3066e3c04488eaad0619e))
+
+## [10.0.0](https://github.com/uktrade/platform-tools/compare/9.0.1...10.0.0) (2024-07-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update to use terraform-platform-modules 4 ([#482](https://github.com/uktrade/platform-tools/issues/482))
+
+### Features
+
+* Update to use terraform-platform-modules 4 ([#482](https://github.com/uktrade/platform-tools/issues/482)) ([1d91bc5](https://github.com/uktrade/platform-tools/commit/1d91bc5b54322141c1a3ee5db1bacb6b0e5f358b))
+
+## [9.0.1](https://github.com/uktrade/platform-tools/compare/9.0.0...9.0.1) (2024-06-28)
+
+
+### Bug Fixes
+
+* DBTP-1093 - Add postgres version 16 to conduit image ([#477](https://github.com/uktrade/platform-tools/issues/477)) ([7d8747a](https://github.com/uktrade/platform-tools/commit/7d8747a2e4c39b8417d1c2b7a12d0ca56761d8e0))
+* DBTP-1504 - Fix unauthorised error in OpenSearch conduit CLI ([#483](https://github.com/uktrade/platform-tools/issues/483)) ([1248ddd](https://github.com/uktrade/platform-tools/commit/1248dddb942702930aaed8ae055839dd86a076e8))
+
 ## [9.0.0](https://github.com/uktrade/platform-tools/compare/8.8.0...9.0.0) (2024-06-21)
 
 
