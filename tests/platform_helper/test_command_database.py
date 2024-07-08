@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import boto3
+import pytest
 from click.testing import CliRunner
 from moto import mock_aws
 
@@ -80,7 +81,122 @@ def test_copy(
     assert result.exit_code == 0
 
 
-def _setup_test_databases(db_identifier: str, app: Application, env: str):
+@pytest.mark.parametrize(
+    "source_env, target_env, error_message",
+    [
+        ("dev", "dev", "Source and target databases are the same."),
+        ("dev", "prod", "The --target-db option cannot be a production database."),
+    ],
+)
+@mock_aws
+@patch(
+    "dbt_platform_helper.commands.database.get_aws_session_or_abort", return_value=boto3.Session()
+)
+@patch("click.confirm")
+def test_copy_command_fails_with_incorrect_environment_config(
+    alias_session,
+    aws_credentials,
+    mock_application,
+    source_env,
+    target_env,
+    error_message,
+):
+    """Test that given source and target environments, the copy command fails
+    with the appropriate error message."""
+    from dbt_platform_helper.commands.database import copy
+
+    source_db = f"{mock_application.name}-{source_env}-{mock_application.name}-postgres"
+    target_db = f"{mock_application.name}-{target_env}-{mock_application.name}-postgres"
+
+    _setup_test_databases(source_db, mock_application, source_env)
+    _setup_test_databases(target_db, mock_application, target_env)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        copy,
+        [
+            "--source-db",
+            source_db,
+            "--target-db",
+            target_db,
+        ],
+    )
+
+    assert error_message in result.output
+    assert result.exit_code == 1
+
+
+@mock_aws
+@patch(
+    "dbt_platform_helper.commands.database.get_aws_session_or_abort", return_value=boto3.Session()
+)
+@patch("click.confirm")
+def test_copy_command_fails_with_incorrect_database_identifier(
+    alias_session,
+    aws_credentials,
+    mock_application,
+):
+    """Test that given an incorrect database identifier, the copy command fails
+    with the appropriate error message."""
+    from dbt_platform_helper.commands.database import copy
+
+    source_db = f"{mock_application.name}-development-{mock_application.name}-postgres"
+    target_db = f"{mock_application.name}-staging-{mock_application.name}-postgres"
+
+    _setup_test_databases("incorrect-identifier", mock_application, "development")
+    _setup_test_databases(target_db, mock_application, "staging")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        copy,
+        [
+            "--source-db",
+            source_db,
+            "--target-db",
+            target_db,
+        ],
+    )
+
+    assert f"Database {source_db} not found. Check the database identifier." in result.output
+    assert result.exit_code == 1
+
+
+@mock_aws
+@patch(
+    "dbt_platform_helper.commands.database.get_aws_session_or_abort", return_value=boto3.Session()
+)
+@patch("click.confirm")
+def test_copy_command_fails_if_tags_not_found(
+    alias_session,
+    aws_credentials,
+    mock_application,
+):
+    """Test that when the database does not have the correct tags, the copy
+    command fails with the appropriate error message."""
+    from dbt_platform_helper.commands.database import copy
+
+    source_db = f"{mock_application.name}-development-{mock_application.name}-postgres"
+    target_db = f"{mock_application.name}-staging-{mock_application.name}-postgres"
+
+    _setup_test_databases(source_db, mock_application, "development", False)
+    _setup_test_databases(target_db, mock_application, "staging")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        copy,
+        [
+            "--source-db",
+            source_db,
+            "--target-db",
+            target_db,
+        ],
+    )
+
+    assert f"Required database tags not found." in result.output
+    assert result.exit_code == 1
+
+
+def _setup_test_databases(db_identifier: str, app: Application, env: str, with_tags: bool = True):
     boto3.client("rds").create_db_instance(
         DBName="main",
         DBInstanceIdentifier=db_identifier,
@@ -89,27 +205,12 @@ def _setup_test_databases(db_identifier: str, app: Application, env: str):
         MasterUsername="postgres",
         MasterUserPassword="password",
         EngineVersion="16.2",
-        Tags=[
-            {"Key": "copilot-application", "Value": app.name},
-            {"Key": "copilot-environment", "Value": env},
-        ],
+        Tags=(
+            [
+                {"Key": "copilot-application", "Value": app.name},
+                {"Key": "copilot-environment", "Value": env},
+            ]
+            if with_tags
+            else []
+        ),
     )
-
-    # boto3.client("ssm").put_parameter(
-    #     Name=f"/copilot/test-application/{env}/secrets/TEST_APPLICATION_POSTGRES_READ_ONLY_USER",
-    #     Type="String",
-    #     Value=f'{{\"username": "postgres", "password": "password", "engine": "postgres", "port": 5432, "dbname": '
-    #           f'"main", "host": "{db_identifier}.eu-west-2.rds.amazonaws.com", "dbInstanceIdentifi'
-    #           f'er": "{db_identifier}"}}'
-    # )
-    #
-    # boto3.client("ssm").put_parameter(
-    #     Name=f"/copilot/test-application/{env}/secrets/TEST_APPLICATION_POSTGRES_RDS_MASTER_ARN",
-    #     Type="String",
-    #     Value="mock-master-user-arn",
-    # )
-    #
-    # boto3.client("secretsmanager").create_secret(
-    #     Name=f"rds!test-{env}-rds-master-user-secret",
-    #     SecretString='{"username":"postgres","password":"password"}',
-    # )

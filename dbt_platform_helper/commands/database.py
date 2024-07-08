@@ -45,12 +45,16 @@ def copy(source_db: str, target_db: str):
         if tag["Key"] == "copilot-environment":
             target_env = tag["Value"]
 
-    if not app and source_env and target_env:
-        click.secho(f"""Required tags not found.""", fg="red")
+    if not app or not source_env or not target_env:
+        click.secho(f"""Required database tags not found.""", fg="red")
         exit(1)
 
     if target_env == "prod":
         click.secho(f"""The --target-db option cannot be a production database.""", fg="red")
+        exit(1)
+
+    if source_db == target_db:
+        click.secho(f"""Source and target databases are the same.""", fg="red")
         exit(1)
 
     if not click.confirm(
@@ -97,7 +101,7 @@ def get_database_tags(session: Session, db_identifier: str) -> List[dict]:
         return db_instance["TagList"]
     except rds.exceptions.DBInstanceNotFoundFault:
         click.secho(
-            f"""Source db {db_identifier} not found. Check the database identifier.""", fg="red"
+            f"""Database {db_identifier} not found. Check the database identifier.""", fg="red"
         )
         exit(1)
 
