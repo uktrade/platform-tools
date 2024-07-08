@@ -543,6 +543,17 @@ def test_load_and_validate_config_valid_file(yaml_file):
     assert validated == conf
 
 
+def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
+    """Test that, given the path to a valid yaml file, load_and_validate_config
+    returns the loaded yaml unmodified."""
+
+    Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
+    with pytest.raises(SystemExit):
+        load_and_validate_platform_config()
+
+    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+
 @pytest.mark.parametrize(
     "files, expected_messages",
     [

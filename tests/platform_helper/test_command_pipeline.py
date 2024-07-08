@@ -279,7 +279,7 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
 
     assert result.exit_code == 1
     message = result.output
-    assert f"Error: {PLATFORM_CONFIG_FILE} is invalid" in message
+    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in message
 
 
 def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):

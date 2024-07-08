@@ -528,7 +528,7 @@ def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
         validate_platform_config(conf)
         return conf
     except ParserError:
-        abort_with_error(f"{PLATFORM_CONFIG_FILE} is invalid")
+        abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
 
 
 def config_file_check(path=PLATFORM_CONFIG_FILE):
