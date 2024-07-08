@@ -461,6 +461,35 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
     )
 
 
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_multiple_pipelines(
+    mock_abort_with_error, platform_env_config
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": "non-prod",
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {"dev": {}, "prod": {}},
+        },
+        "prod": {
+            "account": "prod",
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {"dev": {}, "staging": {}, "prod": {}},
+        },
+    }
+
+    validate_platform_config(platform_env_config)
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert f"  'main' - these environments are not in the 'non-prod' account: dev" in message
+    assert f"  'prod' - these environments are not in the 'prod' account: dev, staging" in message
+
+
 @pytest.mark.parametrize(
     "account, envs",
     [

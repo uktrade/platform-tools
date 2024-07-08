@@ -494,7 +494,8 @@ def _validate_environment_pipelines(config):
         message = "The following pipelines are misconfigured:"
         for pipeline, detail in bad_pipelines.items():
             envs = detail["bad_envs"]
-            message += f"  '{pipeline}' - these environments are not in the '{account}' account: {', '.join(envs)}\n"
+            acc = detail["account"]
+            message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
         abort_with_error(message)
 
 
