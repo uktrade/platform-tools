@@ -16,12 +16,11 @@ from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
-from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -45,9 +44,7 @@ def generate():
     app_name = get_application_name()
 
     config_file_check()
-    pipeline_config = _safe_load_config(PLATFORM_CONFIG_FILE, PLATFORM_CONFIG_SCHEMA)
-
-    _validate_pipelines_configuration(pipeline_config)
+    pipeline_config = _safe_load_config()
 
     git_repo = git_remote()
     if not git_repo:
@@ -93,26 +90,6 @@ def _clean_pipeline_config(pipelines_dir):
     if pipelines_dir.exists():
         click.echo("Deleting copilot/pipelines directory.")
         rmtree(pipelines_dir)
-
-
-def _validate_pipelines_configuration(pipeline_config):
-    if not (CODEBASE_PIPELINES_KEY in pipeline_config or ENVIRONMENTS_KEY in pipeline_config):
-        abort_with_error(f"No environment or codebase pipelines defined in {PLATFORM_CONFIG_FILE}")
-
-    if CODEBASE_PIPELINES_KEY in pipeline_config:
-        for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
-            codebase_environments = []
-
-            for pipeline in codebase["pipelines"]:
-                codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
-
-            unique_codebase_environments = sorted(list(set(codebase_environments)))
-
-            if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                abort_with_error(
-                    f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                    "listed in a single pipeline per codebase"
-                )
 
 
 def _generate_codebase_pipeline(
@@ -192,8 +169,8 @@ def _create_file_from_template(
     click.echo(message)
 
 
-def _safe_load_config(filename, schema):
+def _safe_load_config():
     try:
-        return load_and_validate_config(filename, schema)
+        return load_and_validate_platform_config()
     except ParserError:
-        abort_with_error(f"The {filename} file is invalid")
+        abort_with_error(f"{PLATFORM_CONFIG_FILE} is invalid")

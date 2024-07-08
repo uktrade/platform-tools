@@ -278,7 +278,8 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert f"Error: The {PLATFORM_CONFIG_FILE} file is invalid" in result.output
+    message = result.output
+    assert f"Error: {PLATFORM_CONFIG_FILE} is invalid" in message
 
 
 def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):

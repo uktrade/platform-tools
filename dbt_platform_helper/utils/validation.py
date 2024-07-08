@@ -1,7 +1,9 @@
 import ipaddress
 import re
+from pathlib import Path
 
 import click
+import yaml
 from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
@@ -9,9 +11,12 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.utils.constants import ENVIRONMENTS_KEY
+from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.messages import abort_with_error
 
 
 def validate_string(regex_pattern: str):
@@ -461,9 +466,16 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 
 def validate_platform_config(config):
     PLATFORM_CONFIG_SCHEMA.validate(config)
+    _validate_environment_pipelines(config)
+    _validate_codebase_pipelines(config)
+
+
+def _validate_environment_pipelines(config):
     enriched_config = apply_environment_defaults(config)
+    bad_pipelines = {}
 
     for pipeline_name, pipeline in enriched_config.get("environment_pipelines", {}).items():
+        bad_envs = []
         account = pipeline.get("account", None)
         if account:
             for env in pipeline.get("environments", {}).keys():
@@ -475,8 +487,43 @@ def validate_platform_config(config):
                     .get("name")
                 )
                 if env_account and not env_account == account:
-                    message = "Pipeline main is misconfigured. Account 'non-prod' does not match the accounts in the environments it is trying to deploy [prod]."
-                    raise ValidationException(message)
+                    bad_envs.append(env)
+        if bad_envs:
+            bad_pipelines[pipeline_name] = {"account": account, "bad_envs": bad_envs}
+    if bad_pipelines:
+        message = "The following pipelines are misconfigured:"
+        for pipeline, detail in bad_pipelines.items():
+            envs = detail["bad_envs"]
+            message += f"  '{pipeline}' - these environments are not in the '{account}' account: {', '.join(envs)}\n"
+        abort_with_error(message)
+
+
+def _validate_codebase_pipelines(pipeline_config):
+    if not (CODEBASE_PIPELINES_KEY in pipeline_config or ENVIRONMENTS_KEY in pipeline_config):
+        abort_with_error(f"No environment or codebase pipelines defined in {PLATFORM_CONFIG_FILE}")
+
+    if CODEBASE_PIPELINES_KEY in pipeline_config:
+        for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
+            codebase_environments = []
+
+            for pipeline in codebase["pipelines"]:
+                codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
+
+            unique_codebase_environments = sorted(list(set(codebase_environments)))
+
+            if sorted(codebase_environments) != sorted(unique_codebase_environments):
+                abort_with_error(
+                    f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
+                    "listed in a single pipeline per codebase"
+                )
+
+
+def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
+    conf = yaml.safe_load(Path(path).read_text())
+
+    validate_platform_config(conf)
+
+    return conf
 
 
 S3_SCHEMA = Schema(S3_DEFINITION)

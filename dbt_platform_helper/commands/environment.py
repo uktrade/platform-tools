@@ -16,13 +16,13 @@ from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
+from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -347,7 +347,7 @@ def generate(name, vpc_name):
     conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
     try:
-        PLATFORM_CONFIG_SCHEMA.validate(conf)
+        validate_platform_config(conf)
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
@@ -368,7 +368,7 @@ def generate_terraform(name):
     conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
     try:
-        PLATFORM_CONFIG_SCHEMA.validate(conf)
+        validate_platform_config(conf)
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort

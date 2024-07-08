@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 import yaml
 
-PLATFORM_CONFIG_FILE = "platform-config.yml"
+from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
 
 CONFIG_FILE_MESSAGES = {
     "storage.yml": " under the key 'extensions'",
@@ -34,14 +34,6 @@ def config_file_check():
     if errors:
         click.secho("\n".join(errors), bg="red")
         exit(1)
-
-
-def load_and_validate_config(path, schema):
-    conf = yaml.safe_load(Path(path).read_text())
-
-    schema.validate(conf)
-
-    return conf
 
 
 def to_yaml(value):

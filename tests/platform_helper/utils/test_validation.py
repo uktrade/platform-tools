@@ -10,17 +10,18 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from schema import SchemaError
 
-from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
 from dbt_platform_helper.utils.validation import warn_on_s3_bucket_name_availability
+from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
 
@@ -426,17 +427,19 @@ def test_validate_platform_config_success(valid_platform_config):
 
 
 @pytest.mark.parametrize(
-    "account, envs",
+    "account, envs, exp_bad_envs",
     [
-        ("non-prod", ["dev"]),
-        ("non-prod-acc", ["prod"]),
-        ("prod-acc", ["dev", "prod"]),
-        ("non-prod-acc", ["dev", "prod"]),
+        ("non-prod", ["dev"], ["dev"]),
+        ("non-prod-acc", ["prod"], ["prod"]),
+        ("prod-acc", ["dev", "prod"], ["dev"]),
+        ("prod-acc", ["dev", "staging", "prod"], ["dev", "staging"]),
+        ("non-prod-acc", ["dev", "prod"], ["prod"]),
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts(
-    platform_env_config, account, envs
+    mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
 ):
     platform_env_config["environment_pipelines"] = {
         "main": {
@@ -447,10 +450,15 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    with pytest.raises(ValidationException) as ex:
-        validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config)
 
-    assert "Pipeline main is misconfigured. Account 'non-prod' does not match the accounts in the environments it is trying to deploy [prod]."
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert (
+        f"  'main' - these environments are not in the '{account}' account: {', '.join(exp_bad_envs)}"
+        in message
+    )
 
 
 @pytest.mark.parametrize(
@@ -476,3 +484,24 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
 
     # Should not error if config is sound.
     validate_platform_config(platform_env_config)
+
+
+@pytest.mark.parametrize(
+    "yaml_file",
+    [
+        "pipeline/platform-config.yml",
+        "pipeline/platform-config-with-public-repo.yml",
+        "pipeline/platform-config-for-terraform.yml",
+    ],
+)
+def test_load_and_validate_config_valid_file(yaml_file):
+    """Test that, given the path to a valid yaml file, load_and_validate_config
+    returns the loaded yaml unmodified."""
+
+    path = FIXTURES_DIR / yaml_file
+    validated = load_and_validate_platform_config(path=path)
+
+    with open(path, "r") as fd:
+        conf = yaml.safe_load(fd)
+
+    assert validated == conf

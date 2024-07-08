@@ -2,38 +2,13 @@ import os
 from pathlib import Path
 
 import pytest
-import yaml
 
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
-from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
-from tests.platform_helper.conftest import FIXTURES_DIR
-
-
-@pytest.mark.parametrize(
-    "schema,yaml_file",
-    [
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-with-public-repo.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-for-terraform.yml"),
-    ],
-)
-def test_load_and_validate_config_valid_file(schema, yaml_file):
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
-
-    path = FIXTURES_DIR / yaml_file
-    validated = load_and_validate_config(path, schema)
-
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    assert validated == conf
 
 
 @pytest.mark.parametrize(
