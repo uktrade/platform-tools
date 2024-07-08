@@ -1,5 +1,6 @@
 import json
 import subprocess
+from typing import List
 
 import click
 from boto3 import Session
@@ -28,45 +29,19 @@ def database():
 @click.option("--target-db", help="Target database identifier", required=True)
 def copy(source_db: str, target_db: str):
     """Copy source database to target database."""
-
     session = get_aws_session_or_abort()
-    rds = session.client("rds")
-
-    try:
-        source_db_instance = rds.describe_db_instances(DBInstanceIdentifier=source_db)[
-            "DBInstances"
-        ][0]
-    except rds.exceptions.DBInstanceNotFoundFault:
-        click.secho(
-            f"""Source db {source_db} not found. Check the database identifier.""", fg="red"
-        )
-        exit(1)
-    try:
-        target_db_instance = rds.describe_db_instances(DBInstanceIdentifier=target_db)[
-            "DBInstances"
-        ][0]
-    except rds.exceptions.DBInstanceNotFoundFault:
-        click.secho(
-            f"""Target db {target_db} not found. Check the database identifier.""", fg="red"
-        )
-        exit(1)
-
-    # Check account
-    # sts = session.client("sts")
-    # account = sts.get_caller_identity()
-    # print(account)
 
     app = None
     source_env = None
     target_env = None
 
-    for tag in source_db_instance["TagList"]:
+    for tag in get_database_tags(session, source_db):
         if tag["Key"] == "copilot-application":
             app = tag["Value"]
         if tag["Key"] == "copilot-environment":
             source_env = tag["Value"]
 
-    for tag in target_db_instance["TagList"]:
+    for tag in get_database_tags(session, target_db):
         if tag["Key"] == "copilot-environment":
             target_env = tag["Value"]
 
@@ -90,8 +65,8 @@ def copy(source_db: str, target_db: str):
 
     click.echo(f"""Starting task to copy data from {source_db} to {target_db}""")
 
-    source_db_connection = _get_connection_string(session, app, source_env, source_db)
-    target_db_connection = _get_connection_string(session, app, target_env, target_db)
+    source_db_connection = get_connection_string(session, app, source_env, source_db)
+    target_db_connection = get_connection_string(session, app, target_env, target_db)
 
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, source_env)
@@ -111,7 +86,23 @@ def copy(source_db: str, target_db: str):
     connect_to_addon_client_task(application, source_env, cluster_arn, task_name)
 
 
-def _get_connection_string(session: Session, app: str, env: str, db_identifier: str) -> str:
+def get_database_tags(session: Session, db_identifier: str) -> List[dict]:
+    rds = session.client("rds")
+
+    try:
+        db_instance = rds.describe_db_instances(DBInstanceIdentifier=db_identifier)["DBInstances"][
+            0
+        ]
+
+        return db_instance["TagList"]
+    except rds.exceptions.DBInstanceNotFoundFault:
+        click.secho(
+            f"""Source db {db_identifier} not found. Check the database identifier.""", fg="red"
+        )
+        exit(1)
+
+
+def get_connection_string(session: Session, app: str, env: str, db_identifier: str) -> str:
     addon_name = normalise_secret_name(db_identifier.split(f"{app}-{env}-", 1)[1])
     connection_string_parameter = f"/copilot/{app}/{env}/secrets/{addon_name}_READ_ONLY_USER"
     master_secret_name = f"/copilot/{app}/{env}/secrets/{addon_name}_RDS_MASTER_ARN"
