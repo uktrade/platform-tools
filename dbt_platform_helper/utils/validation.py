@@ -478,8 +478,8 @@ def _validate_environment_pipelines(config):
 
     for pipeline_name, pipeline in enriched_config.get("environment_pipelines", {}).items():
         bad_envs = []
-        account = pipeline.get("account", None)
-        if account:
+        pipeline_account = pipeline.get("account", None)
+        if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
                 env_account = (
                     enriched_config.get("environments", {})
@@ -488,7 +488,7 @@ def _validate_environment_pipelines(config):
                     .get("deploy", {})
                     .get("name")
                 )
-                if env_account and not env_account == account:
+                if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:
             bad_pipelines[pipeline_name] = {"account": account, "bad_envs": bad_envs}
