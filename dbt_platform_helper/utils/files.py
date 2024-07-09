@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 import yaml
 
-from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 CONFIG_FILE_MESSAGES = {
     "storage.yml": " under the key 'extensions'",

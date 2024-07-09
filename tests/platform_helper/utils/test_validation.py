@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from schema import SchemaError
 
-from dbt_platform_helper.utils.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
