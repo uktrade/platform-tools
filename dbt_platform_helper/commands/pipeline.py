@@ -36,11 +36,17 @@ def pipeline():
 def generate():
     """Given a platform-config.yml file, generate environment and service
     deployment pipelines."""
-    templates = setup_templates()
-
-    app_name = get_application_name()
-
     pipeline_config = load_and_validate_platform_config()
+
+    no_codebase_pipelines = CODEBASE_PIPELINES_KEY not in pipeline_config
+    no_environment_pipelines = ENVIRONMENTS_KEY not in pipeline_config
+
+    if no_codebase_pipelines and no_environment_pipelines:
+        click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
+        return
+
+    templates = setup_templates()
+    app_name = get_application_name()
 
     git_repo = git_remote()
     if not git_repo:

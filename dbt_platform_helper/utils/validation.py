@@ -502,9 +502,6 @@ def _validate_environment_pipelines(config):
 
 
 def _validate_codebase_pipelines(pipeline_config):
-    if not (CODEBASE_PIPELINES_KEY in pipeline_config or ENVIRONMENTS_KEY in pipeline_config):
-        abort_with_error(f"No environment or codebase pipelines defined in {PLATFORM_CONFIG_FILE}")
-
     if CODEBASE_PIPELINES_KEY in pipeline_config:
         for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
             codebase_environments = []
