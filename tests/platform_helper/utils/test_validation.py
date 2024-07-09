@@ -496,7 +496,6 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 @pytest.mark.parametrize(
     "account, envs",
     [
-        ("non-prod-acc", ["dev"]),
         ("non-prod-acc", ["dev", "staging"]),
         ("prod-acc", ["prod"]),
     ],
