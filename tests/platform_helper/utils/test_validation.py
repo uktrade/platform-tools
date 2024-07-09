@@ -432,7 +432,7 @@ def test_validate_platform_config_success(valid_platform_config):
 @pytest.mark.parametrize(
     "account, envs, exp_bad_envs",
     [
-        ("non-prod", ["dev"], ["dev"]),
+        ("account-does-not-exist", ["dev"], ["dev"]),
         ("prod-acc", ["dev", "staging", "prod"], ["dev", "staging"]),
         ("non-prod-acc", ["dev", "prod"], ["prod"]),
     ],
