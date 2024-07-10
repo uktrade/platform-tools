@@ -2,38 +2,12 @@ import os
 from pathlib import Path
 
 import pytest
-import yaml
 
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
-from dbt_platform_helper.utils.files import load_and_validate_config
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
-from tests.platform_helper.conftest import FIXTURES_DIR
-
-
-@pytest.mark.parametrize(
-    "schema,yaml_file",
-    [
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-with-public-repo.yml"),
-        (PLATFORM_CONFIG_SCHEMA, "pipeline/platform-config-for-terraform.yml"),
-    ],
-)
-def test_load_and_validate_config_valid_file(schema, yaml_file):
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
-
-    path = FIXTURES_DIR / yaml_file
-    validated = load_and_validate_config(path, schema)
-
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    assert validated == conf
 
 
 @pytest.mark.parametrize(
@@ -142,79 +116,3 @@ def test_is_terraform_project(fakefs, platform_config_content, expected_result):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=platform_config_content)
 
     assert is_terraform_project() == expected_result
-
-
-@pytest.mark.parametrize(
-    "files, expected_messages",
-    [
-        (
-            [],
-            [
-                f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-            ],
-        ),
-        (
-            ["storage.yml"],
-            [
-                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
-            ],
-        ),
-        (
-            ["extensions.yml"],
-            [
-                f"`extensions.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
-            ],
-        ),
-        (
-            ["pipelines.yml"],
-            [
-                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
-            ],
-        ),
-        (
-            ["storage.yml", "pipelines.yml"],
-            [
-                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
-                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "storage.yml"],
-            [
-                f"`storage.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "extensions.yml"],
-            [
-                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
-            [
-                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
-            [
-                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
-                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
-            ],
-        ),
-    ],
-)
-def test_file_compatibility_check_fails_if_platform_config_not_present(
-    fakefs, capsys, files, expected_messages
-):
-    for file in files:
-        fakefs.create_file(file)
-
-    with pytest.raises(SystemExit):
-        config_file_check()
-
-    console_message = capsys.readouterr().out
-
-    for expected_message in expected_messages:
-        assert expected_message in console_message
