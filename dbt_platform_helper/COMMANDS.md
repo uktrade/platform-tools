@@ -1012,14 +1012,15 @@ platform-helper database copy
 ## Usage
 
 ```
-platform-helper database copy --source-db <source_db> --target-db <target_db> 
+platform-helper database copy <source_db> <target_db> 
 ```
+
+## Arguments
+
+- `source_db <text>`
+- `target_db <text>`
 
 ## Options
 
-- `--source-db <text>`
-  - Source database identifier
-- `--target-db <text>`
-  - Target database identifier
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -1,4 +1,6 @@
+import json
 import os
+import urllib.parse
 from configparser import ConfigParser
 from pathlib import Path
 from typing import Tuple
@@ -315,3 +317,20 @@ def get_load_balancer_configuration(
     response = elb_client.describe_load_balancers(LoadBalancerArns=[elb_arn])
     check_response(response)
     return response
+
+
+def update_postgres_parameter_with_master_secret(session, parameter_name, secret_arn):
+    ssm_client = session.client("ssm")
+    secrets_manager_client = session.client("secretsmanager")
+    response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
+    parameter_value = response["Parameter"]["Value"]
+
+    parameter_data = json.loads(parameter_value)
+
+    secret_response = secrets_manager_client.get_secret_value(SecretId=secret_arn)
+    secret_value = json.loads(secret_response["SecretString"])
+
+    parameter_data["username"] = urllib.parse.quote(secret_value["username"])
+    parameter_data["password"] = urllib.parse.quote(secret_value["password"])
+
+    return parameter_data

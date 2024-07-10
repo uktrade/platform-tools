@@ -1,18 +1,16 @@
-import json
 import subprocess
 from typing import List
 
 import click
-from boto3 import Session
 
 from dbt_platform_helper.commands.conduit import add_stack_delete_policy_to_task_role
 from dbt_platform_helper.commands.conduit import addon_client_is_running
 from dbt_platform_helper.commands.conduit import connect_to_addon_client_task
 from dbt_platform_helper.commands.conduit import get_cluster_arn
 from dbt_platform_helper.commands.conduit import normalise_secret_name
-from dbt_platform_helper.commands.conduit import update_parameter_with_secret
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -25,32 +23,33 @@ def database():
 
 
 @database.command(name="copy")
-@click.option("--source-db", help="Source database identifier", required=True)
-@click.option("--target-db", help="Target database identifier", required=True)
+@click.argument("source_db", type=str, required=True)
+@click.argument("target_db", type=str, required=True)
 def copy(source_db: str, target_db: str):
     """Copy source database to target database."""
-    session = get_aws_session_or_abort()
-
     app = None
     source_env = None
     target_env = None
 
-    for tag in get_database_tags(session, source_db):
+    for tag in get_database_tags(source_db):
         if tag["Key"] == "copilot-application":
             app = tag["Value"]
         if tag["Key"] == "copilot-environment":
             source_env = tag["Value"]
+            if app is not None:
+                break
 
-    for tag in get_database_tags(session, target_db):
+    for tag in get_database_tags(target_db):
         if tag["Key"] == "copilot-environment":
             target_env = tag["Value"]
+            break
 
     if not app or not source_env or not target_env:
         click.secho(f"""Required database tags not found.""", fg="red")
         exit(1)
 
     if target_env == "prod":
-        click.secho(f"""The --target-db option cannot be a production database.""", fg="red")
+        click.secho(f"""The target database cannot be a production database.""", fg="red")
         exit(1)
 
     if source_db == target_db:
@@ -69,8 +68,8 @@ def copy(source_db: str, target_db: str):
 
     click.echo(f"""Starting task to copy data from {source_db} to {target_db}""")
 
-    source_db_connection = get_connection_string(session, app, source_env, source_db)
-    target_db_connection = get_connection_string(session, app, target_env, target_db)
+    source_db_connection = get_connection_string(app, source_env, source_db)
+    target_db_connection = get_connection_string(app, target_env, target_db)
 
     application = load_application(app)
     cluster_arn = get_cluster_arn(application, source_env)
@@ -90,7 +89,8 @@ def copy(source_db: str, target_db: str):
     connect_to_addon_client_task(application, source_env, cluster_arn, task_name)
 
 
-def get_database_tags(session: Session, db_identifier: str) -> List[dict]:
+def get_database_tags(db_identifier: str) -> List[dict]:
+    session = get_aws_session_or_abort()
     rds = session.client("rds")
 
     try:
@@ -106,7 +106,8 @@ def get_database_tags(session: Session, db_identifier: str) -> List[dict]:
         exit(1)
 
 
-def get_connection_string(session: Session, app: str, env: str, db_identifier: str) -> str:
+def get_connection_string(app: str, env: str, db_identifier: str) -> str:
+    session = get_aws_session_or_abort()
     addon_name = normalise_secret_name(db_identifier.split(f"{app}-{env}-", 1)[1])
     connection_string_parameter = f"/copilot/{app}/{env}/secrets/{addon_name}_READ_ONLY_USER"
     master_secret_name = f"/copilot/{app}/{env}/secrets/{addon_name}_RDS_MASTER_ARN"
@@ -114,9 +115,8 @@ def get_connection_string(session: Session, app: str, env: str, db_identifier: s
         Name=master_secret_name, WithDecryption=True
     )["Parameter"]["Value"]
 
-    connection_string = update_parameter_with_secret(
+    conn = update_postgres_parameter_with_master_secret(
         session, connection_string_parameter, master_secret_arn
     )
 
-    x = json.loads(connection_string)
-    return f"postgres://{x['username']}:{x['password']}@{x['host']}:{x['port']}/{x['dbname']}"
+    return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"

@@ -1,3 +1,4 @@
+from unittest import mock
 from unittest.mock import patch
 
 import boto3
@@ -49,9 +50,7 @@ def test_copy(
     result = runner.invoke(
         copy,
         [
-            "--source-db",
             source_db,
-            "--target-db",
             target_db,
         ],
     )
@@ -64,6 +63,13 @@ def test_copy(
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
+    )
+
+    get_connection_string.assert_has_calls(
+        [
+            mock.call("test-application", "development", source_db),
+            mock.call("test-application", "staging", target_db),
+        ]
     )
 
     get_cluster_arn.assert_called_once_with(mock_application, "development")
@@ -85,7 +91,7 @@ def test_copy(
     "source_env, target_env, error_message",
     [
         ("dev", "dev", "Source and target databases are the same."),
-        ("dev", "prod", "The --target-db option cannot be a production database."),
+        ("dev", "prod", "The target database cannot be a production database."),
     ],
 )
 @mock_aws
@@ -115,9 +121,7 @@ def test_copy_command_fails_with_incorrect_environment_config(
     result = runner.invoke(
         copy,
         [
-            "--source-db",
             source_db,
-            "--target-db",
             target_db,
         ],
     )
@@ -150,9 +154,7 @@ def test_copy_command_fails_with_incorrect_database_identifier(
     result = runner.invoke(
         copy,
         [
-            "--source-db",
             source_db,
-            "--target-db",
             target_db,
         ],
     )
@@ -185,9 +187,7 @@ def test_copy_command_fails_if_tags_not_found(
     result = runner.invoke(
         copy,
         [
-            "--source-db",
             source_db,
-            "--target-db",
             target_db,
         ],
     )
