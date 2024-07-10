@@ -466,7 +466,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_validate_platform_config_fails_if_pipeline_account_catches_all_errors_across_multiple_pipelines(
+def test_validate_platform_config_catches_all_errors_across_multiple_pipelines(
     mock_abort_with_error, platform_env_config
 ):
     platform_env_config["environment_pipelines"] = {
