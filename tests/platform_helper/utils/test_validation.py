@@ -440,7 +440,7 @@ def test_validate_platform_config_success(valid_platform_config):
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts(
+def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
     mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
 ):
     platform_env_config["environment_pipelines"] = {
@@ -466,7 +466,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_multiple_pipelines(
+def test_validate_platform_config_fails_if_pipeline_account_catches_all_errors_across_multiple_pipelines(
     mock_abort_with_error, platform_env_config
 ):
     platform_env_config["environment_pipelines"] = {
@@ -625,3 +625,14 @@ def test_file_compatibility_check_fails_if_platform_config_not_present(
 
     for expected_message in expected_messages:
         assert expected_message in console_message
+
+
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validation_runs_against_platform_config_yml(fakefs):
+    platform_config = "platform-config.yml"
+    fakefs.create_file(platform_config, contents='{"application": "my_app"}')
+
+    config = load_and_validate_platform_config()
+
+    assert list(config.keys()) == ["application"]
+    assert config["application"] == "my_app"
