@@ -225,6 +225,7 @@ def create_addon_client_task(
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
+        f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-ecsTask "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
         "--platform-os linux "
