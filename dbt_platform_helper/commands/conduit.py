@@ -17,6 +17,7 @@ from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 
+
 class ConduitError(Exception):
     pass
 
@@ -210,7 +211,7 @@ def create_addon_client_task(
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
     session = app.environments[env].session
- 
+
     if addon_type == "postgres":
         if access == "read":
             secret_name += "_READ_ONLY_USER"
