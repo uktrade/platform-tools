@@ -17,7 +17,6 @@ from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 
-
 class ConduitError(Exception):
     pass
 
@@ -210,7 +209,8 @@ def create_addon_client_task(
     access: str,
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
-
+    session = app.environments[env].session
+ 
     if addon_type == "postgres":
         if access == "read":
             secret_name += "_READ_ONLY_USER"
@@ -222,16 +222,29 @@ def create_addon_client_task(
     elif addon_type == "redis" or addon_type == "opensearch":
         secret_name += "_ENDPOINT"
 
-    subprocess.call(
-        f"copilot task run --app {app.name} --env {env} "
-        f"--task-group-name {task_name} "
-        f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-ecsTask "
-        f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
-        "--platform-os linux "
-        "--platform-arch arm64",
-        shell=True,
-    )
+    try:
+        session.client("iam").get_role(RoleName=f"{app.name}-{addon_type}-{app.name}-{env}-ecsTask")
+
+        subprocess.call(
+            f"copilot task run --app {app.name} --env {env} "
+            f"--task-group-name {task_name} "
+            f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-ecsTask "
+            f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+            f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
+            "--platform-os linux "
+            "--platform-arch arm64",
+            shell=True,
+        )
+    except:
+        subprocess.call(
+            f"copilot task run --app {app.name} --env {env} "
+            f"--task-group-name {task_name} "
+            f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+            f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
+            "--platform-os linux "
+            "--platform-arch arm64",
+            shell=True,
+        )
 
 
 def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_name: str) -> bool:
