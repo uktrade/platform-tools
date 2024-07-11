@@ -30,5 +30,5 @@ phases:
           
           MESSAGE=":no_entry::construction: Build failure in codebuid project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
           
-          platform-helper notify add-comment "${TEST_SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
