@@ -224,28 +224,25 @@ def create_addon_client_task(
         secret_name += "_ENDPOINT"
 
     try:
-        session.client("iam").get_role(RoleName=f"{app.name}-{addon_type}-{app.name}-{env}-ecsTask")
-
-        subprocess.call(
-            f"copilot task run --app {app.name} --env {env} "
-            f"--task-group-name {task_name} "
-            f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-ecsTask "
-            f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-            f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
-            "--platform-os linux "
-            "--platform-arch arm64",
-            shell=True,
+        session.client("iam").get_role(
+            RoleName=f"{app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask"
+        )
+        execution_role = (
+            f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask "
         )
     except:
-        subprocess.call(
-            f"copilot task run --app {app.name} --env {env} "
-            f"--task-group-name {task_name} "
-            f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-            f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
-            "--platform-os linux "
-            "--platform-arch arm64",
-            shell=True,
-        )
+        execution_role = ""
+
+    subprocess.call(
+        f"copilot task run --app {app.name} --env {env} "
+        f"--task-group-name {task_name} "
+        f"{execution_role}"
+        f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
+        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
 
 
 def addon_client_is_running(app: Application, env: str, cluster_arn: str, task_name: str) -> bool:
