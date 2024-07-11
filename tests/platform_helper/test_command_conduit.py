@@ -108,32 +108,9 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
 
 
 @mock_aws
-def test_update_parameter_with_secret():
-    from dbt_platform_helper.commands.conduit import update_parameter_with_secret
-
-    session = boto3.session.Session()
-    parameter_name = "test-parameter"
-    session.client("ssm").put_parameter(
-        Name=parameter_name,
-        Value='{"username": "read-only-user", "password": ">G12345", "host": "test.com", "port": 5432}',
-        Type="String",
-    )
-    secret_arn = session.client("secretsmanager").create_secret(
-        Name="master-secret", SecretString='{"username": "postgres", "password": ">G6789"}'
-    )["ARN"]
-
-    updated_paramater_value = update_parameter_with_secret(session, parameter_name, secret_arn)
-
-    assert (
-        updated_paramater_value
-        == '{"username": "postgres", "password": "%3EG6789", "host": "test.com", "port": 5432}'
-    )
-
-
-@mock_aws
 @patch("subprocess.call")
 @patch(
-    "dbt_platform_helper.commands.conduit.update_parameter_with_secret",
+    "dbt_platform_helper.commands.conduit.update_postgres_parameter_with_master_secret",
     return_value="connection string",
 )
 def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call, mock_application):
@@ -160,7 +137,7 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call,
         f"copilot task run --app {mock_application.name} --env {env} "
         f"--task-group-name test-task "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
-        f"--env-vars CONNECTION_SECRET='connection string' "
+        "--env-vars CONNECTION_SECRET='\"connection string\"' "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,

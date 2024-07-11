@@ -19,6 +19,7 @@ from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
+from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -530,3 +531,28 @@ def test_get_load_balancer_domain_and_configuration_no_domain(
         capsys.readouterr().out
         == f"{exp_error}, please check the ./copilot/{svc_name}/manifest.yml file\n"
     )
+
+
+@mock_aws
+def test_update_postgres_parameter_with_master_secret():
+    session = boto3.session.Session()
+    parameter_name = "test-parameter"
+    session.client("ssm").put_parameter(
+        Name=parameter_name,
+        Value='{"username": "read-only-user", "password": ">G12345", "host": "test.com", "port": 5432}',
+        Type="String",
+    )
+    secret_arn = session.client("secretsmanager").create_secret(
+        Name="master-secret", SecretString='{"username": "postgres", "password": ">G6789"}'
+    )["ARN"]
+
+    updated_parameter_value = update_postgres_parameter_with_master_secret(
+        session, parameter_name, secret_arn
+    )
+
+    assert updated_parameter_value == {
+        "username": "postgres",
+        "password": "%3EG6789",
+        "host": "test.com",
+        "port": 5432,
+    }
