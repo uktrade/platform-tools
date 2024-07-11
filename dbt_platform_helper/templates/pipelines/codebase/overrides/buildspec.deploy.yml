@@ -20,14 +20,15 @@ phases:
   
   post_build:
     commands:
-      - BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
-      - echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
+          echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
+          
           echo -e "\nInstalling dependencies"
           pip install dbt-platform-helper
           
           MESSAGE=":no_entry::construction: Build failure in codebuid project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
           
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+          platform-helper notify add-comment "${TEST_SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
