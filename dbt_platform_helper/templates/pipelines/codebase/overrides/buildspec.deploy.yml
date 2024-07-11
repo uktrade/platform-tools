@@ -1,5 +1,4 @@
 version: 0.2
-
 env:
   git-credential-helper: yes
   parameter-store:
@@ -8,8 +7,27 @@ env:
   variables:
     COLOR: false
     CI: true
-
 phases:
   build:
     commands:
-      - /work/cli deploy --send-notifications
+      - |
+        environments="dev,staging,prod"
+        if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
+          /work/cli deploy --send-notifications
+        else
+          exit 1
+        fi
+  
+  post_build:
+    commands:
+      - BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
+      - echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
+      - |
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          echo -e "\nInstalling dependencies"
+          pip install dbt-platform-helper
+          
+          MESSAGE=":no_entry::construction: Build failure in codebuid project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
+          
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+        fi
