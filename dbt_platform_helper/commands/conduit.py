@@ -194,6 +194,7 @@ def create_addon_client_task(
     access: str,
 ):
     secret_name = f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
+    session = app.environments[env].session
 
     if addon_type == "postgres":
         if access == "read":
@@ -206,9 +207,20 @@ def create_addon_client_task(
     elif addon_type == "redis" or addon_type == "opensearch":
         secret_name += "_ENDPOINT"
 
+    try:
+        session.client("iam").get_role(
+            RoleName=f"{app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask"
+        )
+        execution_role = (
+            f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask "
+        )
+    except:
+        execution_role = ""
+
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
         f"--task-group-name {task_name} "
+        f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={get_connection_secret_arn(app, env, secret_name)} "
         "--platform-os linux "
