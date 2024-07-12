@@ -27,6 +27,7 @@ phases:
     commands:
       - COMMIT_HASH=$(git rev-parse HEAD)
       - echo post build for commit $COMMIT_HASH
+      - git branch --contains ${COMMIT_HASH}
       - |
         if [ git branch --contains ${COMMIT_HASH}" | grep -q "main" ] && [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
