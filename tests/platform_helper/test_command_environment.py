@@ -686,9 +686,7 @@ class TestGenerate:
     @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=True)
     @pytest.mark.parametrize(
         "terraform_platform_modules_version",
-        [
-            None,
-        ],
+        [None, "main", "3.1"],
     )
     def test_generate_terraform(
         self,

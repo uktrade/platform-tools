@@ -759,13 +759,15 @@ platform-helper environment generate --name <name> [--vpc-name <vpc_name>]
 ## Usage
 
 ```
-platform-helper environment generate-terraform --name <name> 
+platform-helper environment generate-terraform --name <name> [--terraform-platform-modules-version <terraform_platform_modules_version>] 
 ```
 
 ## Options
 
 - `--name
 -n <text>`
+
+- `--terraform-platform-modules-version <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -11,6 +11,7 @@ import requests
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
@@ -355,7 +356,8 @@ def generate(name, vpc_name):
 
 @environment.command()
 @click.option("--name", "-n", required=True)
-def generate_terraform(name):
+@click.option("--terraform-platform-modules-version")
+def generate_terraform(name, terraform_platform_modules_version):
     if not is_terraform_project():
         click.secho("This is not a terraform project. Exiting.", fg="red")
         exit(1)
@@ -363,7 +365,14 @@ def generate_terraform(name):
     conf = load_and_validate_platform_config()
 
     env_config = apply_environment_defaults(conf)["environments"][name]
-    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+    modules_version = (
+        terraform_platform_modules_version
+        if terraform_platform_modules_version
+        else TERRAFORM_PLATFORM_MODULES_VERSION
+    )
+    _generate_terraform_environment_manifests(
+        conf["application"], name, env_config, modules_version
+    )
 
 
 def _generate_copilot_environment_manifests(name, env_config, session):
@@ -384,11 +393,18 @@ def _generate_copilot_environment_manifests(name, env_config, session):
     click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
 
 
-def _generate_terraform_environment_manifests(application, env, env_config):
+def _generate_terraform_environment_manifests(
+    application, env, env_config, terraform_platform_modules_version
+):
     env_template = setup_templates().get_template("environments/main.tf")
 
     contents = env_template.render(
-        {"application": application, "environment": env, "config": env_config}
+        {
+            "application": application,
+            "environment": env,
+            "config": env_config,
+            "terraform_platform_modules_version": terraform_platform_modules_version,
+        }
     )
 
     click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
