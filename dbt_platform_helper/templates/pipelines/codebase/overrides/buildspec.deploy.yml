@@ -11,8 +11,8 @@ phases:
   build:
     commands:
       - |
-        environments="dev,staging,prod"
-        if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
+        {% set application_pipeline_environments = environments | map(attribute='name') | join(', ') %}
+        if echo ",${application_pipeline_environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
           /work/cli deploy --send-notifications
         else
           exit 1
