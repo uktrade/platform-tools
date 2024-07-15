@@ -95,6 +95,7 @@ my-rds-db:
       plan: large-ha
       deletion_policy: Retain
       deletion_protection: true
+      backup_retention_days: 10 # Optional.  Defaults to 7 if absent.
 
 
 ##### Aurora serverless v2 example:

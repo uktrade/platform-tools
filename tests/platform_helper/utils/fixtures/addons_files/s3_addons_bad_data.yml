@@ -111,3 +111,12 @@ my-s3-bucket-versioning-should-be-bool:
     dev:
       bucket_name: mandatory
       versioning: "OK"
+
+my-s3-bucket-lifecycle-enabled-should-be-bool:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      lifecycle_rules:
+        - expiration_days: 100
+          enabled: "yes"

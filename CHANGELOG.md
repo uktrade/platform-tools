@@ -1,5 +1,33 @@
 # Changelog
 
+## [10.3.0](https://github.com/uktrade/platform-tools/compare/10.2.0...10.3.0) (2024-07-10)
+
+
+### Features
+
+* Added an 'account' parameter to the environment_pipelines config ([#490](https://github.com/uktrade/platform-tools/issues/490)) ([b0ad4d1](https://github.com/uktrade/platform-tools/commit/b0ad4d19b529aa14abf0861da5e1572364f8164c))
+
+
+### Bug Fixes
+
+* Dbtp-1094 use platform-helper notify for Slack alert on publish to PyPi ([#494](https://github.com/uktrade/platform-tools/issues/494)) ([dcb3482](https://github.com/uktrade/platform-tools/commit/dcb3482d3b8cf5838bd595e27ebf341f5c04a201))
+* DBTP-1148 platform-helper environment generate should exit it not logged in ([#496](https://github.com/uktrade/platform-tools/issues/496)) ([4ae5e7b](https://github.com/uktrade/platform-tools/commit/4ae5e7bb415cf59a35da1d5aed7d9213c38468e3))
+
+## [10.2.0](https://github.com/uktrade/platform-tools/compare/10.1.0...10.2.0) (2024-07-05)
+
+
+### Features
+
+* DBTP-1116 - Support configuration of the RDS backup retention period ([#491](https://github.com/uktrade/platform-tools/issues/491)) ([a431184](https://github.com/uktrade/platform-tools/commit/a431184fda45183f9ed287d2b9e685b86420d992))
+
+## [10.1.0](https://github.com/uktrade/platform-tools/compare/10.0.0...10.1.0) (2024-07-04)
+
+
+### Features
+
+* Add defaults to AWS config ([#487](https://github.com/uktrade/platform-tools/issues/487)) ([ae66e93](https://github.com/uktrade/platform-tools/commit/ae66e9347c542cee77d933d9a80e89dbf529b8fe))
+* DBTP-1040 - add support for s3 lifecycle policies ([#485](https://github.com/uktrade/platform-tools/issues/485)) ([92c7dc8](https://github.com/uktrade/platform-tools/commit/92c7dc8649f7c3514ce3066e3c04488eaad0619e))
+
 ## [10.0.0](https://github.com/uktrade/platform-tools/compare/9.0.1...10.0.0) (2024-07-01)
 
 

@@ -188,22 +188,13 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
     assert_codebase_pipeline_config_was_generated()
 
 
-@freeze_time("2023-08-22 16:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("boto3.client")
-@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_with_empty_pipelines_yml_does_nothing(
-    git_remote, mocked_boto3_client, fakefs
-):
-    setup_fixtures(fakefs)
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+@patch("dbt_platform_helper.commands.pipeline.load_and_validate_platform_config")
+def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aws_session_or_abort):
+    get_aws_session_or_abort.returns({"application": "my-app"})
 
     result = CliRunner().invoke(generate)
 
-    assert (
-        f"Error: No environment or codebase pipelines defined in {PLATFORM_CONFIG_FILE}"
-        in result.output
-    )
+    assert "No pipelines defined: nothing to do." in result.output
 
 
 @freeze_time("2023-08-22 16:00:00")
@@ -278,7 +269,8 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert f"Error: The {PLATFORM_CONFIG_FILE} file is invalid" in result.output
+    message = result.output
+    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in message
 
 
 def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):

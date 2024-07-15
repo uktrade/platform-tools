@@ -39,6 +39,8 @@
 - [platform-helper notify](#platform-helper-notify)
 - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
+- [platform-helper database](#platform-helper-database)
+- [platform-helper database copy](#platform-helper-database-copy)
 
 # platform-helper
 
@@ -64,6 +66,7 @@ platform-helper <command> [--version]
 - [`conduit` ↪](#platform-helper-conduit)
 - [`config` ↪](#platform-helper-config)
 - [`copilot` ↪](#platform-helper-copilot)
+- [`database` ↪](#platform-helper-database)
 - [`domain` ↪](#platform-helper-domain)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
@@ -944,5 +947,46 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
   - Message title
 - `--send-to-main-channel <boolean>` _Defaults to False._
   - Send to main channel
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database
+
+[↩ Parent](#platform-helper)
+
+## Usage
+
+```
+platform-helper database copy 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`copy` ↪](#platform-helper-database-copy)
+
+# platform-helper database copy
+
+[↩ Parent](#platform-helper-database)
+
+    Copy source database to target database.
+
+## Usage
+
+```
+platform-helper database copy <source_db> <target_db> 
+```
+
+## Arguments
+
+- `source_db <text>`
+- `target_db <text>`
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

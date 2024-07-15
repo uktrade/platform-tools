@@ -8,21 +8,19 @@ from typing import Union
 import boto3
 import click
 import requests
-import yaml
 from schema import SchemaError
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -276,42 +274,33 @@ def generate(name, vpc_name):
         )
         raise click.Abort
 
-    config_file_check()
-    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    session = get_aws_session_or_abort()
 
     try:
-        PLATFORM_CONFIG_SCHEMA.validate(conf)
+        conf = load_and_validate_platform_config()
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
 
     env_config = apply_environment_defaults(conf)["environments"][name]
 
-    _generate_copilot_environment_manifests(name, env_config)
+    _generate_copilot_environment_manifests(name, env_config, session)
 
 
 @environment.command()
 @click.option("--name", "-n", required=True)
 def generate_terraform(name):
-    config_file_check()
     if not is_terraform_project():
         click.secho("This is not a terraform project. Exiting.", fg="red")
         exit(1)
 
-    conf = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-
-    try:
-        PLATFORM_CONFIG_SCHEMA.validate(conf)
-    except SchemaError as ex:
-        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
-        raise click.Abort
+    conf = load_and_validate_platform_config()
 
     env_config = apply_environment_defaults(conf)["environments"][name]
     _generate_terraform_environment_manifests(conf["application"], name, env_config)
 
 
-def _generate_copilot_environment_manifests(name, env_config):
-    session = get_aws_session_or_abort()
+def _generate_copilot_environment_manifests(name, env_config, session):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, name, vpc_name)
