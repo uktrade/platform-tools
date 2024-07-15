@@ -13,7 +13,7 @@ phases:
     commands:
       - |
         {{environments}}
-        environments={{environments}}
+        environments="{{environments}}"
         echo "Environments are - ${environments}"
         if echo "${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
           echo "Deploy environment is ${COPILOT_ENVIRONMENT}"
