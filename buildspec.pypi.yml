@@ -18,6 +18,7 @@ phases:
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
+      - pip install dbt-platform-helper
 
   build:
     commands:

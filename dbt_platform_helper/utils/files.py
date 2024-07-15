@@ -5,43 +5,13 @@ from pathlib import Path
 import click
 import yaml
 
-PLATFORM_CONFIG_FILE = "platform-config.yml"
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 CONFIG_FILE_MESSAGES = {
     "storage.yml": " under the key 'extensions'",
     "extensions.yml": " under the key 'extensions'",
     "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
 }
-
-
-def config_file_check():
-    platform_config_exists = Path(PLATFORM_CONFIG_FILE).exists()
-    errors = []
-
-    for file in CONFIG_FILE_MESSAGES.keys():
-        if Path(file).exists():
-            if platform_config_exists:
-                message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            else:
-                message = f"`{file}` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`{CONFIG_FILE_MESSAGES[file]} and delete `{file}`."
-            errors.append(message)
-
-    if not errors and not platform_config_exists:
-        errors.append(
-            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-        )
-
-    if errors:
-        click.secho("\n".join(errors), bg="red")
-        exit(1)
-
-
-def load_and_validate_config(path, schema):
-    conf = yaml.safe_load(Path(path).read_text())
-
-    schema.validate(conf)
-
-    return conf
 
 
 def to_yaml(value):

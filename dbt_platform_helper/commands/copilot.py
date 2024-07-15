@@ -15,12 +15,12 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.files import config_file_check
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
+from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,

@@ -1,5 +1,18 @@
 # Changelog
 
+## [10.3.0](https://github.com/uktrade/platform-tools/compare/10.2.0...10.3.0) (2024-07-10)
+
+
+### Features
+
+* Added an 'account' parameter to the environment_pipelines config ([#490](https://github.com/uktrade/platform-tools/issues/490)) ([b0ad4d1](https://github.com/uktrade/platform-tools/commit/b0ad4d19b529aa14abf0861da5e1572364f8164c))
+
+
+### Bug Fixes
+
+* Dbtp-1094 use platform-helper notify for Slack alert on publish to PyPi ([#494](https://github.com/uktrade/platform-tools/issues/494)) ([dcb3482](https://github.com/uktrade/platform-tools/commit/dcb3482d3b8cf5838bd595e27ebf341f5c04a201))
+* DBTP-1148 platform-helper environment generate should exit it not logged in ([#496](https://github.com/uktrade/platform-tools/issues/496)) ([4ae5e7b](https://github.com/uktrade/platform-tools/commit/4ae5e7bb415cf59a35da1d5aed7d9213c38468e3))
+
 ## [10.2.0](https://github.com/uktrade/platform-tools/compare/10.1.0...10.2.0) (2024-07-05)
 
 

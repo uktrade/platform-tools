@@ -12,7 +12,7 @@ from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import config_file_check
+from dbt_platform_helper.utils.validation import config_file_check
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"

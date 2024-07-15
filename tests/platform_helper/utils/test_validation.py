@@ -10,16 +10,20 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from schema import SchemaError
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
-from dbt_platform_helper.utils.validation import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
+from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
 from dbt_platform_helper.utils.validation import warn_on_s3_bucket_name_availability
+from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
 
@@ -419,6 +423,216 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
-def test_validate_success(valid_platform_config):
-    PLATFORM_CONFIG_SCHEMA.validate(valid_platform_config)
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_success(valid_platform_config):
+    validate_platform_config(valid_platform_config)
     # No assertions - validate will error if config is invalid.
+
+
+@pytest.mark.parametrize(
+    "account, envs, exp_bad_envs",
+    [
+        ("account-does-not-exist", ["dev"], ["dev"]),
+        ("prod-acc", ["dev", "staging", "prod"], ["dev", "staging"]),
+        ("non-prod-acc", ["dev", "prod"], ["prod"]),
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
+    mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": account,
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {env: {} for env in envs},
+        }
+    }
+
+    validate_platform_config(platform_env_config)
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert (
+        f"  'main' - these environments are not in the '{account}' account: {', '.join(exp_bad_envs)}"
+        in message
+    )
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_catches_all_errors_across_multiple_pipelines(
+    mock_abort_with_error, platform_env_config
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": "non-prod",
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {"dev": {}, "prod": {}},
+        },
+        "prod": {
+            "account": "prod",
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {"dev": {}, "staging": {}, "prod": {}},
+        },
+    }
+
+    validate_platform_config(platform_env_config)
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert f"  'main' - these environments are not in the 'non-prod' account: dev" in message
+    assert f"  'prod' - these environments are not in the 'prod' account: dev, staging" in message
+
+
+@pytest.mark.parametrize(
+    "account, envs",
+    [
+        ("non-prod-acc", ["dev", "staging"]),
+        ("prod-acc", ["prod"]),
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_succeeds_if_pipeline_account_matches_environment_accounts(
+    platform_env_config, account, envs
+):
+    platform_env_config["environment_pipelines"] = {
+        "main": {
+            "account": account,
+            "slack_channel": "/codebuild/notification_channel",
+            "trigger_on_push": True,
+            "environments": {env: {} for env in envs},
+        }
+    }
+
+    # Should not error if config is sound.
+    validate_platform_config(platform_env_config)
+
+
+@pytest.mark.parametrize(
+    "yaml_file",
+    [
+        "pipeline/platform-config.yml",
+        "pipeline/platform-config-with-public-repo.yml",
+        "pipeline/platform-config-for-terraform.yml",
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_load_and_validate_config_valid_file(yaml_file):
+    """Test that, given the path to a valid yaml file, load_and_validate_config
+    returns the loaded yaml unmodified."""
+
+    path = FIXTURES_DIR / yaml_file
+    validated = load_and_validate_platform_config(path=path)
+
+    with open(path, "r") as fd:
+        conf = yaml.safe_load(fd)
+
+    assert validated == conf
+
+
+def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
+    """Test that, given the path to a valid yaml file, load_and_validate_config
+    returns the loaded yaml unmodified."""
+
+    Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
+    with pytest.raises(SystemExit):
+        load_and_validate_platform_config()
+
+    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "files, expected_messages",
+    [
+        (
+            [],
+            [
+                f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            ],
+        ),
+        (
+            ["storage.yml"],
+            [
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
+            ],
+        ),
+        (
+            ["extensions.yml"],
+            [
+                f"`extensions.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
+            ],
+        ),
+        (
+            ["pipelines.yml"],
+            [
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
+            ],
+        ),
+        (
+            ["storage.yml", "pipelines.yml"],
+            [
+                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
+                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "storage.yml"],
+            [
+                f"`storage.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "extensions.yml"],
+            [
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
+            [
+                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+            ],
+        ),
+    ],
+)
+def test_file_compatibility_check_fails_if_platform_config_not_present(
+    fakefs, capsys, files, expected_messages
+):
+    for file in files:
+        fakefs.create_file(file)
+
+    with pytest.raises(SystemExit):
+        config_file_check()
+
+    console_message = capsys.readouterr().out
+
+    for expected_message in expected_messages:
+        assert expected_message in console_message
+
+
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validation_runs_against_platform_config_yml(fakefs):
+    platform_config = "platform-config.yml"
+    fakefs.create_file(platform_config, contents='{"application": "my_app"}')
+
+    config = load_and_validate_platform_config()
+
+    assert list(config.keys()) == ["application"]
+    assert config["application"] == "my_app"
