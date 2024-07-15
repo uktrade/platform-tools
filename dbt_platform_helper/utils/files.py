@@ -59,13 +59,17 @@ def generate_override_files(base_path, file_path, output_dir):
 
 def generate_pipeline_override_files(base_path, overrides_path, output_dir, template_data={}):
     templates = Environment(loader=FileSystemLoader(f"{overrides_path}"))
+    environment_names = [env["name"] for env in template_data["environments"]]
+    environments = ", ".join(environment_names)
+    data = {"environments": environments}
+    # breakpoint()
 
     def generate_files_for_dir(pattern):
 
         for file in overrides_path.glob(pattern):
             if file.is_file():
                 file_name = str(file).removeprefix(f"{overrides_path}/")
-                contents = templates.get_template(str(file_name)).render(template_data)
+                contents = templates.get_template(str(file_name)).render(data)
                 message = mkfile(base_path, output_dir / file_name, contents, overwrite=True)
                 click.echo(message)
 
