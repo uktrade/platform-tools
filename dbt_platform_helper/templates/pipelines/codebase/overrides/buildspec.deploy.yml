@@ -13,6 +13,7 @@ phases:
       - |
         {% set application_pipeline_environments = environments | map(attribute='name') | join(', ') %}
         if echo ",${application_pipeline_environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
+          echo "Deploy environment is ${application_pipeline_environments}"
           /work/cli deploy --send-notifications
         else
           exit 1
