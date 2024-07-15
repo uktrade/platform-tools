@@ -3,10 +3,6 @@
 # exit early if something goes wrong
 set -e
 
-# Todo: Temporary hacks, remove this block to run it in CodeBuild
-export GIT_CLONE_BASE_URL="git@github.com:uktrade"
-export CODEBUILD_SRC_DIR="$(pwd)"
-
 export TARGET_ENVIRONMENT=${TARGET_ENVIRONMENT:-toolspr}
 
 echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
