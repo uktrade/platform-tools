@@ -756,6 +756,8 @@ platform-helper environment generate --name <name> [--vpc-name <vpc_name>]
 
 [↩ Parent](#platform-helper-environment)
 
+    Generate terraform manifest for the specified environment.
+
 ## Usage
 
 ```
@@ -766,9 +768,9 @@ platform-helper environment generate-terraform --name <name> [--terraform-platfo
 
 - `--name
 -n <text>`
-
-- `--terraform-platform-modules-version <text>`
-
+  - The name of the environment to generate a manifest for.
+- `--terraform-platform-modules-version <text>` _Defaults to 5._
+  - Override the default version of terraform-platform-modules. (Default version is '5').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

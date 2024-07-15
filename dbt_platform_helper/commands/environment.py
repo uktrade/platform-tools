@@ -354,9 +354,15 @@ def generate(name, vpc_name):
     _generate_copilot_environment_manifests(name, env_config, session)
 
 
-@environment.command()
-@click.option("--name", "-n", required=True)
-@click.option("--terraform-platform-modules-version")
+@environment.command(help="Generate terraform manifest for the specified environment.")
+@click.option(
+    "--name", "-n", required=True, help="The name of the environment to generate a manifest for."
+)
+@click.option(
+    "--terraform-platform-modules-version",
+    help=f"Override the default version of terraform-platform-modules. (Default version is '{TERRAFORM_PLATFORM_MODULES_VERSION}').",
+    default=TERRAFORM_PLATFORM_MODULES_VERSION,
+)
 def generate_terraform(name, terraform_platform_modules_version):
     if not is_terraform_project():
         click.secho("This is not a terraform project. Exiting.", fg="red")
@@ -365,13 +371,8 @@ def generate_terraform(name, terraform_platform_modules_version):
     conf = load_and_validate_platform_config()
 
     env_config = apply_environment_defaults(conf)["environments"][name]
-    modules_version = (
-        terraform_platform_modules_version
-        if terraform_platform_modules_version
-        else TERRAFORM_PLATFORM_MODULES_VERSION
-    )
     _generate_terraform_environment_manifests(
-        conf["application"], name, env_config, modules_version
+        conf["application"], name, env_config, terraform_platform_modules_version
     )
 
 
