@@ -12,12 +12,10 @@ phases:
   build:
     commands:
       - |
-        {{environments}}
         environments="{{environments}}"
         echo "Environments are - ${environments}"
         if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
           echo "Deploy environment is ${COPILOT_ENVIRONMENT}"
-          exit 1
           /work/cli deploy --send-notifications
         else
           exit 1
