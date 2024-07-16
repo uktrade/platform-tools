@@ -9,6 +9,8 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 
 source ./regression_tests/stages/set_up_git_config.sh
 
+./regression_tests/stages/assume_platform_sandbox_role.sh
+
 ./regression_tests/stages/set_up_aws_config.sh
 
 ./regression_tests/stages/build_platform_helper.sh
@@ -16,8 +18,6 @@ source ./regression_tests/stages/set_up_git_config.sh
 ./regression_tests/stages/clone_demodjango_deploy.sh
 
 ./regression_tests/stages/clone_demodjango.sh
-
-./regression_tests/stages/assume_platform_sandbox_role.sh
 
 ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
