@@ -59,8 +59,7 @@ def generate_override_files(base_path, file_path, output_dir):
 
 def generate_pipeline_override_files(base_path, overrides_path, output_dir, template_data={}):
     templates = Environment(loader=FileSystemLoader(f"{overrides_path}"))
-    environment_names = [env["name"] for env in template_data["environments"]]
-    environments = ", ".join(environment_names)
+    environments = ", ".join([env["name"] for env in template_data["environments"]])
     data = {"environments": environments}
 
     def generate_files_for_dir(pattern):
