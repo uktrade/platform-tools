@@ -1,5 +1,19 @@
 # Changelog
 
+## [10.4.0](https://github.com/uktrade/platform-tools/compare/10.3.0...10.4.0) (2024-07-16)
+
+
+### Features
+
+* DBTP-1109 - Add command to copy data ([#488](https://github.com/uktrade/platform-tools/issues/488)) ([825a68b](https://github.com/uktrade/platform-tools/commit/825a68bd7b3f6526abae4423108cfdb67f01f5c2))
+* DBTP-1133 Add option to specify terraform-platform-modules version on the platform-helper environment generate command ([#503](https://github.com/uktrade/platform-tools/issues/503)) ([521a1fb](https://github.com/uktrade/platform-tools/commit/521a1fbe3699a9ee48f0f70b0eb7436478c01b31))
+
+
+### Bug Fixes
+
+* DBPT-1128 Connection Error when connecting to Redis via Conduit ([#498](https://github.com/uktrade/platform-tools/issues/498)) ([330cc14](https://github.com/uktrade/platform-tools/commit/330cc14d161fff1441d4b1c89bfc6442c81fc7cf))
+* test_validation.py::test_validate_success runs against all resources in the fixture ([#493](https://github.com/uktrade/platform-tools/issues/493)) ([1206b78](https://github.com/uktrade/platform-tools/commit/1206b7872e4534a75d3eaed3d08335d29d9f9465))
+
 ## [10.3.0](https://github.com/uktrade/platform-tools/compare/10.2.0...10.3.0) (2024-07-10)
 
 
