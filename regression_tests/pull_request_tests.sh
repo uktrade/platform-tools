@@ -11,7 +11,7 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 ./regression_tests/stages/assume_platform_sandbox_role.sh
 
-./regression_tests/stages/set_up_aws_config.sh
+source ./regression_tests/stages/set_up_aws_config.sh
 
 ./regression_tests/stages/build_platform_helper.sh
 
