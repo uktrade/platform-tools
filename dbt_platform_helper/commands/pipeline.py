@@ -123,7 +123,7 @@ def _generate_codebase_pipeline(
         "codestar_connection_id": codestar_connection_arn.split("/")[-1],
         "additional_ecr_arn": additional_ecr_arn,
     }
-    # breakpoint()
+
     _create_file_from_template(
         base_path,
         f"{codebase['name']}/manifest.yml",
