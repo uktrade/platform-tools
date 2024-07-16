@@ -376,24 +376,25 @@ PROMETHEUS_POLICY_DEFINITION = {
     },
 }
 
+_ENVIRONMENTS_PARAMS = {
+    Optional("accounts"): {
+        "deploy": {
+            "name": str,
+            "id": str,
+        },
+        "dns": {
+            "name": str,
+            "id": str,
+        },
+    },
+    Optional("requires_approval"): bool,
+    Optional("vpc"): str,
+}
+
 ENVIRONMENTS_DEFINITION = {
     str: Or(
-        None,
-        {
-            Optional("accounts"): {
-                "deploy": {
-                    "name": str,
-                    "id": str,
-                },
-                "dns": {
-                    "name": str,
-                    "id": str,
-                },
-            },
-            Optional("requires_approval"): bool,
-            Optional("vpc"): str,
-        },
-    ),
+        None, {**_ENVIRONMENTS_PARAMS, Optional("versions"): {"terraform-platform-modules": str}}
+    )
 }
 
 CODEBASE_PIPELINES_DEFINITION = [
@@ -435,8 +436,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
         Optional("branch", default="main"): str,
         "slack_channel": str,
         "trigger_on_push": bool,
-        Optional("versions"): {"terraform-platform-modules": str},
-        "environments": ENVIRONMENTS_DEFINITION,
+        "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},
     }
 }
 

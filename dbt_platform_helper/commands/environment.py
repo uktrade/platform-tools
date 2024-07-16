@@ -361,7 +361,6 @@ def generate(name, vpc_name):
 @click.option(
     "--terraform-platform-modules-version",
     help=f"Override the default version of terraform-platform-modules. (Default version is '{TERRAFORM_PLATFORM_MODULES_VERSION}').",
-    default=TERRAFORM_PLATFORM_MODULES_VERSION,
 )
 def generate_terraform(name, terraform_platform_modules_version):
     if not is_terraform_project():
@@ -399,16 +398,33 @@ def _generate_terraform_environment_manifests(
 ):
     env_template = setup_templates().get_template("environments/main.tf")
 
+    modules_version = _determine_terraform_platform_modules_version(
+        env_config, terraform_platform_modules_version
+    )
+
     contents = env_template.render(
         {
             "application": application,
             "environment": env,
             "config": env_config,
-            "terraform_platform_modules_version": terraform_platform_modules_version,
+            "terraform_platform_modules_version": modules_version,
         }
     )
 
     click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
+
+
+def _determine_terraform_platform_modules_version(env_conf, terraform_platform_modules_version):
+    cli_modules_version = terraform_platform_modules_version
+    env_conf_modules_version = env_conf.get("versions", {}).get("terraform-platform-modules")
+    version_preference_order = [
+        cli_modules_version,
+        env_conf_modules_version,
+        TERRAFORM_PLATFORM_MODULES_VERSION,
+    ]
+    modules_version = [version for version in version_preference_order if version][0]
+
+    return modules_version
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
