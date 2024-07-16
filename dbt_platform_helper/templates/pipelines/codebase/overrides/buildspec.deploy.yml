@@ -14,7 +14,7 @@ phases:
         environments="{{environments}}"
         echo "Environments are - ${environments}"
         if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
-          echo "Deploy environment is ${COPILOT_ENVIRONMENT}"
+          echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
           /work/cli deploy --send-notifications
         else
           exit 1
