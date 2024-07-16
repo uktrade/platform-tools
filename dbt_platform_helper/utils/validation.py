@@ -435,6 +435,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
         Optional("branch", default="main"): str,
         "slack_channel": str,
         "trigger_on_push": bool,
+        Optional("versions"): {"terraform-platform-modules": str},
         "environments": ENVIRONMENTS_DEFINITION,
     }
 }
