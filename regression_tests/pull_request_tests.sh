@@ -1,5 +1,5 @@
 #!/bin/bash
-
+exit 1
 # exit early if something goes wrong
 set -e
 
