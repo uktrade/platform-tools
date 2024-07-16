@@ -30,7 +30,7 @@ terraform {
 }
 
 module "extensions" {
-  source = "git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=5"
+  source = "git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={{terraform_platform_modules_version}}"
 
   args        = local.args
   environment = "{{ environment }}"
