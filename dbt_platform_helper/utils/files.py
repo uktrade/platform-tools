@@ -62,7 +62,6 @@ def generate_pipeline_override_files(base_path, overrides_path, output_dir, temp
     environment_names = [env["name"] for env in template_data["environments"]]
     environments = ", ".join(environment_names)
     data = {"environments": environments}
-    # breakpoint()
 
     def generate_files_for_dir(pattern):
 
