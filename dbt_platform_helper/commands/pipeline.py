@@ -11,7 +11,7 @@ from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import generate_pipeline_override_files
+from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import git_remote
@@ -134,7 +134,7 @@ def _generate_codebase_pipeline(
     )
 
     overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
-    generate_pipeline_override_files(
+    generate_override_files_from_template(
         base_path, overrides_path, pipelines_dir / codebase["name"] / "overrides", template_data
     )
 

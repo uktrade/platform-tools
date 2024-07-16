@@ -6,7 +6,7 @@ import pytest
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
-from dbt_platform_helper.utils.files import generate_pipeline_override_files
+from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 
@@ -77,7 +77,7 @@ def test_generate_pipeline_override_files(fakefs):
 
     template_data = {"environments": [{"name": "dev"}, {"name": "prod"}]}
 
-    generate_pipeline_override_files(
+    generate_override_files_from_template(
         base_path=Path("."),
         overrides_path=Path("templates"),
         output_dir=Path("output"),
