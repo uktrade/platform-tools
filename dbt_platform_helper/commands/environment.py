@@ -532,8 +532,7 @@ def add_maintenance_page(
         if not target_group_arn:
             continue
 
-        user_ip = get_public_ip()
-        allowed_ips = list(allowed_ips) + [user_ip]
+        allowed_ips = list(allowed_ips)
         for ip_index, ip in enumerate(allowed_ips):
             forwarded_rule_priority = (index + 1) * (ip_index + 100)
             create_header_rule(
