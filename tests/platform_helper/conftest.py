@@ -416,6 +416,8 @@ environments:
     vpc: non-prod-vpc
   dev:
   test:
+    versions:
+        terraform-platform-modules: 1.2.3
   staging:
   prod:
     accounts:
@@ -521,8 +523,6 @@ environment_pipelines:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
-    versions:
-        terraform-platform-modules: 1.2.3
     environments:
       test:
         requires_approval: true
