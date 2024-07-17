@@ -422,9 +422,7 @@ def _determine_terraform_platform_modules_version(env_conf, terraform_platform_m
         env_conf_modules_version,
         TERRAFORM_PLATFORM_MODULES_VERSION,
     ]
-    modules_version = [version for version in version_preference_order if version][0]
-
-    return modules_version
+    return [version for version in version_preference_order if version][0]
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
