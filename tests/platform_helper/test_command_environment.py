@@ -872,14 +872,12 @@ class TestAddMaintenancePage:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     @patch("dbt_platform_helper.commands.environment.random.choices", return_value=["a", "b", "c"])
     @patch("dbt_platform_helper.commands.environment.create_header_rule")
-    @patch("dbt_platform_helper.commands.environment.get_public_ip")
     @patch("dbt_platform_helper.commands.environment.find_target_group")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
     def test_adding_existing_template(
         self,
         get_maintenance_page_template,
         find_target_group,
-        get_public_ip,
         create_header_rule,
         choices,
         template,
@@ -890,7 +888,6 @@ class TestAddMaintenancePage:
         boto_mock = MagicMock()
         get_maintenance_page_template.return_value = template
         find_target_group.return_value = "target_group_arn"
-        get_public_ip.return_value = "0.1.2.3"
 
         add_maintenance_page(
             boto_mock,
@@ -902,18 +899,9 @@ class TestAddMaintenancePage:
             template,
         )
 
-        assert create_header_rule.call_count == 2
+        assert create_header_rule.call_count == 1
         create_header_rule.assert_has_calls(
             [
-                call(
-                    boto_mock.client(),
-                    "listener_arn",
-                    "target_group_arn",
-                    "X-Forwarded-For",
-                    ["0.1.2.3"],
-                    "AllowedIps",
-                    100,
-                ),
                 call(
                     boto_mock.client(),
                     "listener_arn",
@@ -1109,18 +1097,6 @@ class TestCommandHelperMethods:
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
         assert len(rules) == 1
-
-    @patch("dbt_platform_helper.commands.environment.requests.get")
-    def test_get_public_ip(self, mock_get):
-        from dbt_platform_helper.commands.environment import get_public_ip
-
-        mock_response = MagicMock()
-        mock_response.text = "123.123.123.123"
-        mock_get.return_value = mock_response
-
-        result = get_public_ip()
-
-        assert result == "123.123.123.123"
 
     @mock_aws
     def test_create_header_rule(self, capsys):
