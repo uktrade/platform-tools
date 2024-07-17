@@ -26,7 +26,7 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 #TODO check env ip is whitelisted https://uktrade.atlassian.net/browse/DBTP-1161
 
 echo -e "\nRunning online command"
-AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment online --app demodjango --env ${TARGET_ENVIRONMENT}
+echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment online --app demodjango --env ${TARGET_ENVIRONMENT}
 
 echo -e "\nCheck we can view the page again (running smoke tests)"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
