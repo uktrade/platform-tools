@@ -10,8 +10,8 @@ import click
 import requests
 from schema import SchemaError
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.constants import TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
@@ -360,7 +360,7 @@ def generate(name, vpc_name):
 )
 @click.option(
     "--terraform-platform-modules-version",
-    help=f"Override the default version of terraform-platform-modules. (Default version is '{TERRAFORM_PLATFORM_MODULES_VERSION}').",
+    help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
     if not is_terraform_project():
@@ -394,12 +394,12 @@ def _generate_copilot_environment_manifests(name, env_config, session):
 
 
 def _generate_terraform_environment_manifests(
-    application, env, env_config, terraform_platform_modules_version
+    application, env, env_config, cli_terraform_platform_modules_version
 ):
     env_template = setup_templates().get_template("environments/main.tf")
 
-    modules_version = _determine_terraform_platform_modules_version(
-        env_config, terraform_platform_modules_version
+    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
+        env_config, cli_terraform_platform_modules_version
     )
 
     contents = env_template.render(
@@ -407,20 +407,22 @@ def _generate_terraform_environment_manifests(
             "application": application,
             "environment": env,
             "config": env_config,
-            "terraform_platform_modules_version": modules_version,
+            "terraform_platform_modules_version": terraform_platform_modules_version,
         }
     )
 
     click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
 
 
-def _determine_terraform_platform_modules_version(env_conf, terraform_platform_modules_version):
-    cli_modules_version = terraform_platform_modules_version
-    env_conf_modules_version = env_conf.get("versions", {}).get("terraform-platform-modules")
+def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
+    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
+    env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
+        "terraform-platform-modules"
+    )
     version_preference_order = [
-        cli_modules_version,
-        env_conf_modules_version,
-        TERRAFORM_PLATFORM_MODULES_VERSION,
+        cli_terraform_platform_modules_version,
+        env_conf_terraform_platform_modules_version,
+        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
     ]
     return [version for version in version_preference_order if version][0]
 
