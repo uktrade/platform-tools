@@ -42,7 +42,7 @@ phases:
           echo -e "\nInstalling dependencies"
           pip install dbt-platform-helper
 
-          MESSAGE=":no_entry::building_construction: Build failure in codebuild project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
+          MESSAGE=":no_entry::building_construction: Image build failure in codebuild project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
 
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
