@@ -7,7 +7,6 @@ from typing import Union
 
 import boto3
 import click
-import requests
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -452,11 +451,6 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
 
         if name == "MaintenancePage" and not deleted:
             raise ListenerRuleNotFoundError()
-
-
-def get_public_ip():
-    response = requests.get("https://api.ipify.org")
-    return response.text
 
 
 def create_header_rule(
