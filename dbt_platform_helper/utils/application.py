@@ -10,6 +10,7 @@ from yaml.parser import ParserError
 
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
+from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -84,11 +85,8 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
     except ssm_client.exceptions.ParameterNotFound:
         raise ApplicationNotFoundError
 
-    response = ssm_client.get_parameters_by_path(
-        Path=f"/copilot/applications/{application.name}/environments",
-        Recursive=False,
-        WithDecryption=False,
-    )
+    path = f"/copilot/applications/{application.name}/environments"
+    secrets = get_ssm_secrets(app, None, current_session, path)
 
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
@@ -108,12 +106,11 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
         )
         return bool(re.match(environment_key_regex, name))
 
-    application.environments = {
+    environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
-        for env in [
-            json.loads(p["Value"]) for p in response["Parameters"] if is_environment_key(p["Name"])
-        ]
+        for env in [json.loads(s[1]) for s in secrets if is_environment_key(s[0])]
     }
+    application.environments = environments
 
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/components",

@@ -122,14 +122,16 @@ def get_ssm_secret_names(app, env):
     return sorted(secret_names)
 
 
-def get_ssm_secrets(app, env):
+def get_ssm_secrets(app, env, session=None, path=None):
     """Return secrets from AWS Parameter Store as a list of tuples with the
     secret name and secret value."""
 
-    session = get_aws_session_or_abort()
+    if not session:
+        session = get_aws_session_or_abort()
     client = session.client("ssm")
 
-    path = SSM_BASE_PATH.format(app=app, env=env)
+    if not path:
+        path = SSM_BASE_PATH.format(app=app, env=env)
 
     params = dict(
         Path=path,
