@@ -31,6 +31,8 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 ./regression_tests/stages/run_codebase_pipeline.sh
 
+./regression_tests/stages/ensure_not_under_maintenance.sh
+
 ./regression_tests/stages/run_demodjango_smoke_tests.sh
 
 ./regression_tests/stages/run_maintenance_page_tests.sh
