@@ -1204,7 +1204,10 @@ class TestCommandHelperMethods:
         from dbt_platform_helper.commands.environment import get_rules_tag_descriptions
 
         mock_client = Mock()
-        mock_client.describe_tags.return_value = {"TagDescriptions": ["TagDescriptions"]}
+        mock_client.describe_tags.side_effect = [
+            {"TagDescriptions": ["TagDescriptions1"]},
+            {"TagDescriptions": ["TagDescriptions2"]},
+        ]
 
         mock_boto_client.return_value = mock_client
 
@@ -1215,5 +1218,5 @@ class TestCommandHelperMethods:
 
         tag_descriptions = get_rules_tag_descriptions(rules, boto3.client("elbv2"))
 
-        assert tag_descriptions == ["TagDescriptions", "TagDescriptions"]
+        assert tag_descriptions == ["TagDescriptions1", "TagDescriptions2"]
         assert mock_client.describe_tags.call_count == 2
