@@ -413,24 +413,24 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    rules = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])["TagDescriptions"]
+    tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
 
     maintenance_page_type = None
-    for rule in rules:
-        tags = {t["Key"]: t["Value"] for t in rule["Tags"]}
+    for description in tag_descriptions:
+        tags = {t["Key"]: t["Value"] for t in description["Tags"]}
         if tags.get("name") == "MaintenancePage":
             maintenance_page_type = tags.get("type")
 
     return maintenance_page_type
 
 
-def delete_listener_rule(rules: list, tag_name: str, lb_client: boto3.client):
+def delete_listener_rule(tag_descriptions: list, tag_name: str, lb_client: boto3.client):
     current_rule_arn = None
 
-    for rule in rules:
-        tags = {t["Key"]: t["Value"] for t in rule["Tags"]}
+    for description in tag_descriptions:
+        tags = {t["Key"]: t["Value"] for t in description["Tags"]}
         if tags.get("name") == tag_name:
-            current_rule_arn = rule["ResourceArn"]
+            current_rule_arn = description["ResourceArn"]
 
     if not current_rule_arn:
         return current_rule_arn
@@ -444,13 +444,29 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    rules = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])["TagDescriptions"]
+    tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
+    tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
+        "TagDescriptions"
+    ]
 
     for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter"]:
-        deleted = delete_listener_rule(rules, name, lb_client)
+        deleted = delete_listener_rule(tag_descriptions, name, lb_client)
 
         if name == "MaintenancePage" and not deleted:
             raise ListenerRuleNotFoundError()
+
+
+def get_rules_tag_descriptions(rules: list, lb_client):
+    tag_descriptions = []
+    chunk_size = 20
+
+    for i in range(0, len(rules), chunk_size):
+        chunk = rules[i : i + chunk_size]
+        resource_arns = [r["RuleArn"] for r in chunk]
+        response = lb_client.describe_tags(ResourceArns=resource_arns)
+        tag_descriptions.extend(response["TagDescriptions"])
+
+    return tag_descriptions
 
 
 def create_header_rule(

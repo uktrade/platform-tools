@@ -1198,3 +1198,22 @@ class TestCommandHelperMethods:
         captured = capsys.readouterr()
 
         assert "No parameter found with name: /vpc/EGRESS_IPS\n" in captured.out
+
+    @patch("boto3.client")
+    def test_get_rules_tag_descriptions(self, mock_boto_client):
+        from dbt_platform_helper.commands.environment import get_rules_tag_descriptions
+
+        mock_client = Mock()
+        mock_client.describe_tags.return_value = {"TagDescriptions": ["TagDescriptions"]}
+
+        mock_boto_client.return_value = mock_client
+
+        rules = []
+
+        for i in range(21):
+            rules.append({"RuleArn": i})
+
+        tag_descriptions = get_rules_tag_descriptions(rules, boto3.client("elbv2"))
+
+        assert tag_descriptions == ["TagDescriptions", "TagDescriptions"]
+        assert mock_client.describe_tags.call_count == 2
