@@ -51,17 +51,15 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 #### Regression tests
 
-The regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run smoke tests.
+Amongst other things designed to exercise our tools together, the regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run the smoke tests.
 
-This is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
+At present, this is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
 
-You can trigger a regression test run for your branch using the following command...
+You can manually trigger a run from the `platform-tools-test` AWS CodeBuild project.
 
-```shell
-aws codebuild start-build --project-name platform-tools-test --profile platform-tools --source-version <branch_name>
-```
+To test your `platform-tools` changes before merging, use "Start build with overrides" and set the "Source version" to your branch name
 
-Note that this could be flaky if it runs at the same time as other people are doing the same for their branches, so communication within the team is crucial.
+Because we are currently targeting the same environment for all runs and AWS CodeBuild does not support queueing, it is essential that we do not start a regression test run while another is in progress, communicate with the team and check in the `platform-tools-test` AWS CodeBuild project.
 
 #### Manual testing
 

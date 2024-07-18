@@ -9,6 +9,7 @@ import boto3
 import click
 from schema import SchemaError
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
@@ -286,9 +287,15 @@ def generate(name, vpc_name):
     _generate_copilot_environment_manifests(name, env_config, session)
 
 
-@environment.command()
-@click.option("--name", "-n", required=True)
-def generate_terraform(name):
+@environment.command(help="Generate terraform manifest for the specified environment.")
+@click.option(
+    "--name", "-n", required=True, help="The name of the environment to generate a manifest for."
+)
+@click.option(
+    "--terraform-platform-modules-version",
+    help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
+)
+def generate_terraform(name, terraform_platform_modules_version):
     if not is_terraform_project():
         click.secho("This is not a terraform project. Exiting.", fg="red")
         exit(1)
@@ -296,7 +303,9 @@ def generate_terraform(name):
     conf = load_and_validate_platform_config()
 
     env_config = apply_environment_defaults(conf)["environments"][name]
-    _generate_terraform_environment_manifests(conf["application"], name, env_config)
+    _generate_terraform_environment_manifests(
+        conf["application"], name, env_config, terraform_platform_modules_version
+    )
 
 
 def _generate_copilot_environment_manifests(name, env_config, session):
@@ -317,14 +326,38 @@ def _generate_copilot_environment_manifests(name, env_config, session):
     click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
 
 
-def _generate_terraform_environment_manifests(application, env, env_config):
+def _generate_terraform_environment_manifests(
+    application, env, env_config, cli_terraform_platform_modules_version
+):
     env_template = setup_templates().get_template("environments/main.tf")
 
+    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
+        env_config, cli_terraform_platform_modules_version
+    )
+
     contents = env_template.render(
-        {"application": application, "environment": env, "config": env_config}
+        {
+            "application": application,
+            "environment": env,
+            "config": env_config,
+            "terraform_platform_modules_version": terraform_platform_modules_version,
+        }
     )
 
     click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
+
+
+def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
+    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
+    env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
+        "terraform-platform-modules"
+    )
+    version_preference_order = [
+        cli_terraform_platform_modules_version,
+        env_conf_terraform_platform_modules_version,
+        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+    ]
+    return [version for version in version_preference_order if version][0]
 
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
