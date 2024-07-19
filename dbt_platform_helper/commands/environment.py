@@ -568,7 +568,9 @@ def add_maintenance_page(
     maintenance_page_content = get_maintenance_page_template(template)
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
-    for index, svc in enumerate(services):
+    counter = 1
+
+    for svc in services:
         target_group_arn = find_target_group(app, env, svc.name, session)
 
         # not all of an application's services are guaranteed to have been deployed to an environment
@@ -577,7 +579,7 @@ def add_maintenance_page(
 
         allowed_ips = list(allowed_ips)
         for ip_index, ip in enumerate(allowed_ips):
-            forwarded_rule_priority = (index + 1) * (ip_index + 100)
+            forwarded_rule_priority = counter * (ip_index + 100)
             create_header_rule(
                 lb_client,
                 listener_arn,
@@ -588,7 +590,7 @@ def add_maintenance_page(
                 forwarded_rule_priority,
             )
 
-        bypass_rule_priority = index + 1
+        bypass_rule_priority = counter
         create_header_rule(
             lb_client,
             listener_arn,
