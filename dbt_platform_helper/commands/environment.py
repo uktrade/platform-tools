@@ -608,7 +608,7 @@ def add_maintenance_page(
             fg="green",
         )
 
-    fixed_rule_priority = 20000
+    fixed_rule_priority = ((service_number + 5) * max_allowed_ips)
     lb_client.create_rule(
         ListenerArn=listener_arn,
         Priority=fixed_rule_priority,  # big number because we create multiple higher priority "AllowedIps" rules for each allowed ip for each service above.
