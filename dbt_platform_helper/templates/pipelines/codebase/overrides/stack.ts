@@ -415,6 +415,9 @@ export class TransformedStack extends cdk.Stack {
         (buildProjectPolicy.policyDocument.Statement as Array<any>).push(
             this.getEnvManagerRolePolicyDoc()
         );
+        (buildProjectPolicy.policyDocument.Statement as Array<any>).push(
+            this.addECRBatchDeleteToBuildProjectRolePolicyDoc()
+        );
     }
 
     private getEnvManagerRolePolicyDoc() {
@@ -422,6 +425,14 @@ export class TransformedStack extends cdk.Stack {
             Effect: 'Allow',
             Action: ['sts:AssumeRole'],
             Resource: [`arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`],
+        };
+    }
+
+    private addECRBatchDeleteToBuildProjectRolePolicyDoc() {
+        return {
+            Effect: 'Allow',
+            Action: ['ecr:BatchDeleteImage'],
+            Resource: ['*'],
         };
     }
 
