@@ -580,7 +580,7 @@ def add_maintenance_page(
         allowed_ips = list(allowed_ips)
         max_allowed_ips = 100
         for ip_index, ip in enumerate(allowed_ips):
-            forwarded_rule_priority = service_number * (ip_index + max_allowed_ips)
+            forwarded_rule_priority = (service_number * max_allowed_ips) + ip_index
             create_header_rule(
                 lb_client,
                 listener_arn,
