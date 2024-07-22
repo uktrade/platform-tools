@@ -568,7 +568,7 @@ def add_maintenance_page(
     maintenance_page_content = get_maintenance_page_template(template)
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
-    counter = 1
+    service_number = 1
 
     for svc in services:
         target_group_arn = find_target_group(app, env, svc.name, session)
@@ -578,8 +578,9 @@ def add_maintenance_page(
             continue
 
         allowed_ips = list(allowed_ips)
+        max_allowed_ips = 100
         for ip_index, ip in enumerate(allowed_ips):
-            forwarded_rule_priority = counter * (ip_index + 100)
+            forwarded_rule_priority = service_number * (ip_index + max_allowed_ips)
             create_header_rule(
                 lb_client,
                 listener_arn,
@@ -590,7 +591,7 @@ def add_maintenance_page(
                 forwarded_rule_priority,
             )
 
-        bypass_rule_priority = counter
+        bypass_rule_priority = service_number
         create_header_rule(
             lb_client,
             listener_arn,
@@ -601,14 +602,14 @@ def add_maintenance_page(
             bypass_rule_priority,
         )
 
-        counter += 1
+        service_number += 1
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/activities/holding-and-maintenance-pages/",
             fg="green",
         )
 
-    fixed_rule_priority = ((service_number + 5) * max_allowed_ips)
+    fixed_rule_priority = (service_number + 5) * max_allowed_ips
     lb_client.create_rule(
         ListenerArn=listener_arn,
         Priority=fixed_rule_priority,  # big number because we create multiple higher priority "AllowedIps" rules for each allowed ip for each service above.

@@ -952,7 +952,7 @@ class TestAddMaintenancePage:
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=20000,
+            Priority=700,
             Conditions=[
                 {
                     "Field": "path-pattern",
