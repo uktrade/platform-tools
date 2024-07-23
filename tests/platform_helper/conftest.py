@@ -240,8 +240,10 @@ def mocked_pg_secret():
 
 @pytest.fixture(scope="function")
 def validate_version():
-    with patch("dbt_platform_helper.utils.versioning.get_app_versions") as get_app_versions:
-        get_app_versions.return_value = ((1, 0, 0), (1, 0, 0))
+    with patch(
+        "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
+    ) as get_platform_helper_versions:
+        get_platform_helper_versions.return_value = ((1, 0, 0), (1, 0, 0))
         with patch(
             "dbt_platform_helper.utils.versioning.validate_version_compatibility",
             side_effect=None,
@@ -252,12 +254,14 @@ def validate_version():
 
 @pytest.fixture(scope="function")
 def mock_tool_versions():
-    with patch("dbt_platform_helper.utils.versioning.get_app_versions") as get_app_versions:
+    with patch(
+        "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
+    ) as get_platform_helper_versions:
         with patch("dbt_platform_helper.utils.versioning.get_aws_versions") as get_aws_versions:
             with patch(
                 "dbt_platform_helper.utils.versioning.get_copilot_versions"
             ) as get_copilot_versions:
-                yield get_app_versions, get_aws_versions, get_copilot_versions
+                yield get_platform_helper_versions, get_aws_versions, get_copilot_versions
 
 
 @pytest.fixture(scope="function")

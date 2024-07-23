@@ -76,7 +76,7 @@ def deployment():
     tool_versions()
     click.secho("Checking addons templates versions...", fg="blue")
 
-    app_version, app_released_version = versioning.get_app_versions()
+    app_version, app_released_version = versioning.get_platform_helper_versions()
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -170,7 +170,7 @@ def tool_versions():
     if aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    app_version, app_released_version = versioning.get_app_versions()
+    app_version, app_released_version = versioning.get_platform_helper_versions()
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [

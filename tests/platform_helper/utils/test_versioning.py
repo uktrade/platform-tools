@@ -129,15 +129,15 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 )
 @patch("click.secho")
 @patch("click.confirm")
-@patch("dbt_platform_helper.utils.versioning.get_app_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
 def test_check_platform_helper_version_needs_update(
-    version_compatibility, get_app_versions, confirm, secho, expected_exception
+    version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
 ):
-    get_app_versions.return_value = (1, 0, 0), (1, 0, 0)
+    mock_get_platform_helper_versions.return_value = (1, 0, 0), (1, 0, 0)
     version_compatibility.side_effect = expected_exception((1, 0, 0), (1, 0, 0))
 
     check_platform_helper_version_needs_update()

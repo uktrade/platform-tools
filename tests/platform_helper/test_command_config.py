@@ -17,8 +17,8 @@ def test_running_in_non_copilot_directory():
 
 
 def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
-    get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
-    get_app_versions.return_value = (1, 0, 0), (1, 0, 0)
+    get_platform_helper_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
+    get_platform_helper_versions.return_value = (1, 0, 0), (1, 0, 0)
     get_aws_versions.return_value = (1, 0, 0), (1, 0, 0)
     get_copilot_versions.return_value = (1, 0, 0), (1, 0, 0)
 
@@ -49,8 +49,8 @@ def test_with_outdated_addons_templates(fakefs, mock_tool_versions):
 
 
 def test_with_outdated_platform_helper(fakefs, mock_tool_versions):
-    get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
-    get_app_versions.return_value = (0, 1, 0), (1, 0, 0)
+    get_platform_helper_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
+    get_platform_helper_versions.return_value = (0, 1, 0), (1, 0, 0)
     get_aws_versions.return_value = (1, 0, 0), (1, 0, 0)
     get_copilot_versions.return_value = (1, 0, 0), (1, 0, 0)
 
@@ -81,8 +81,8 @@ def test_with_outdated_platform_helper(fakefs, mock_tool_versions):
 
 
 def test_with_outdated_tools(fakefs, mock_tool_versions):
-    get_app_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
-    get_app_versions.return_value = (0, 1, 0), (1, 0, 0)
+    get_platform_helper_versions, get_aws_versions, get_copilot_versions = mock_tool_versions
+    get_platform_helper_versions.return_value = (0, 1, 0), (1, 0, 0)
     get_aws_versions.return_value = (0, 1, 0), (1, 0, 0)
     get_copilot_versions.return_value = (0, 1, 0), (1, 0, 0)
 

@@ -48,7 +48,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_app_versions",
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
@@ -67,7 +67,7 @@ def test_platform_helper_generate_generates_version_file_if_not_exist(tmp_path):
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_app_versions",
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
