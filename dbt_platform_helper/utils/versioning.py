@@ -82,13 +82,13 @@ def get_platform_helper_versions():
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
-
-    return parse_version(version("dbt-platform-helper")), parsed_released_versions[0]
-
-
-def get_file_app_versions():
     version_from_file = Path(PLATFORM_HELPER_VERSION_FILE).read_text()
-    return parse_version(version("dbt-platform-helper")), parse_version(version_from_file)
+
+    return {
+        "package_version": parse_version(version("dbt-platform-helper")),
+        "latest_pypi_release": parsed_released_versions[0],
+        "platform_helper_file_version": parse_version(version_from_file),
+    }
 
 
 def validate_version_compatibility(
@@ -140,15 +140,19 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
-    copilot_version = string_version(get_platform_helper_versions()[0])
-    click.echo(mkfile(base_path, PLATFORM_HELPER_VERSION_FILE, f"{copilot_version}"))
+
+    package_version = string_version(get_platform_helper_versions()["package_version"])
+    click.echo(mkfile(base_path, PLATFORM_HELPER_VERSION_FILE, f"{package_version}"))
 
 
 def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    app_version, app_released_version = get_platform_helper_versions()
+    versions = get_platform_helper_versions()
+    app_version = versions["package_version"]
+    app_released_version = versions["platform_helper_file_version"]
+
     message = (
         f"You are running platform-helper v{string_version(app_version)}, upgrade to "
         f"v{string_version(app_released_version)} by running run `pip install "
@@ -166,7 +170,9 @@ def check_platform_helper_version_mismatch():
     if not running_as_installed_package():
         return
 
-    app_version, on_file_version = get_file_app_versions()
+    versions = get_platform_helper_versions()
+    app_version = versions["package_version"]
+    on_file_version = versions["platform_helper_file_version"]
 
     if not check_version_on_file_compatibility(app_version, on_file_version):
         message = (

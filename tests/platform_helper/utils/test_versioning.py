@@ -137,7 +137,10 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 def test_check_platform_helper_version_needs_update(
     version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
 ):
-    mock_get_platform_helper_versions.return_value = (1, 0, 0), (1, 0, 0)
+    mock_get_platform_helper_versions.return_value = {
+        "package_version": (1, 0, 0),
+        "platform_helper_file_version": (1, 0, 0),
+    }
     version_compatibility.side_effect = expected_exception((1, 0, 0), (1, 0, 0))
 
     check_platform_helper_version_needs_update()
@@ -169,15 +172,16 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    new=Mock(
+        return_value={"package_version": (1, 0, 1), "platform_helper_file_version": (1, 0, 0)}
+    ),
+)
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    get_file_app_versions, secho
-):
-    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
-
+def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(secho):
     check_platform_helper_version_mismatch()
 
     secho.assert_called_with(

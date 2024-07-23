@@ -243,7 +243,10 @@ def validate_version():
     with patch(
         "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
     ) as get_platform_helper_versions:
-        get_platform_helper_versions.return_value = ((1, 0, 0), (1, 0, 0))
+        get_platform_helper_versions.return_value = {
+            "package_version": (1, 0, 0),
+            "platform_helper_file_version": (1, 0, 0),
+        }
         with patch(
             "dbt_platform_helper.utils.versioning.validate_version_compatibility",
             side_effect=None,
