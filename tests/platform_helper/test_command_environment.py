@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
 import boto3
@@ -23,10 +24,14 @@ class TestEnvironmentOfflineCommand:
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
+    @patch(
+        "dbt_platform_helper.commands.environment.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    )
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline(
         self,
         add_maintenance_page,
+        get_env_ips,
         get_maintenance_page,
         find_https_listener,
         load_application,
@@ -48,14 +53,14 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
             "development",
             [mock_application.services["web"]],
-            [],
-            False,
+            ["0.1.2.3, 4.5.6.7"],
             "default",
         )
 
@@ -70,10 +75,14 @@ class TestEnvironmentOfflineCommand:
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
+    @patch(
+        "dbt_platform_helper.commands.environment.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    )
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline_with_custom_template(
         self,
         add_maintenance_page,
+        get_env_ips,
         get_maintenance_page,
         find_https_listener,
         load_application,
@@ -97,14 +106,14 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
             "development",
             [mock_application.services["web"]],
-            [],
-            False,
+            ["0.1.2.3, 4.5.6.7"],
             "migration",
         )
 
@@ -122,10 +131,14 @@ class TestEnvironmentOfflineCommand:
         "dbt_platform_helper.commands.environment.get_maintenance_page", return_value="maintenance"
     )
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page", return_value=None)
+    @patch(
+        "dbt_platform_helper.commands.environment.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    )
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline_when_already_offline(
         self,
         add_maintenance_page,
+        get_env_ips,
         remove_maintenance_page,
         get_maintenance_page,
         find_https_listener,
@@ -152,14 +165,14 @@ class TestEnvironmentOfflineCommand:
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
             "development",
             [mock_application.services["web"]],
-            [],
-            False,
+            ["0.1.2.3, 4.5.6.7"],
             "default",
         )
 
@@ -168,6 +181,7 @@ class TestEnvironmentOfflineCommand:
             "application test-application"
         ) in result.output
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch("dbt_platform_helper.commands.environment.find_https_listener")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page")
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page")
@@ -178,12 +192,14 @@ class TestEnvironmentOfflineCommand:
         remove_maintenance_page,
         get_maintenance_page,
         find_https_listener,
+        load_application,
         mock_application,
     ):
         from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
         from dbt_platform_helper.commands.environment import offline
 
         find_https_listener.side_effect = LoadBalancerNotFoundError()
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             offline, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -199,6 +215,7 @@ class TestEnvironmentOfflineCommand:
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch("dbt_platform_helper.commands.environment.find_https_listener")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page")
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page")
@@ -209,11 +226,13 @@ class TestEnvironmentOfflineCommand:
         remove_maintenance_page,
         get_maintenance_page,
         find_https_listener,
+        load_application,
         mock_application,
     ):
         from dbt_platform_helper.commands.environment import ListenerNotFoundError
         from dbt_platform_helper.commands.environment import offline
 
+        load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
         result = CliRunner().invoke(
@@ -231,48 +250,20 @@ class TestEnvironmentOfflineCommand:
         remove_maintenance_page.assert_not_called()
         add_maintenance_page.assert_not_called()
 
-    @patch("dbt_platform_helper.commands.environment.find_https_listener")
-    @patch("dbt_platform_helper.commands.environment.get_maintenance_page")
-    @patch("dbt_platform_helper.commands.environment.remove_maintenance_page")
-    @patch("dbt_platform_helper.commands.environment.add_maintenance_page")
-    def test_offline_an_environment_when_https_listener_not_found(
-        self,
-        add_maintenance_page,
-        remove_maintenance_page,
-        get_maintenance_page,
-        find_https_listener,
-        mock_application,
-    ):
-        from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
-        from dbt_platform_helper.commands.environment import online
-
-        find_https_listener.side_effect = LoadBalancerNotFoundError()
-
-        result = CliRunner().invoke(
-            online, ["--app", "test-application", "--env", "development"], input="y\n"
-        )
-
-        assert (
-            "No load balancer found for environment development in the application "
-            "test-application."
-        ) in result.output
-        assert "Aborted!" in result.output
-
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
-        get_maintenance_page.assert_not_called()
-        remove_maintenance_page.assert_not_called()
-        add_maintenance_page.assert_not_called()
-
     @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
+    @patch(
+        "dbt_platform_helper.commands.environment.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    )
     @patch("dbt_platform_helper.commands.environment.add_maintenance_page", return_value=None)
     def test_successful_offline_multiple_services(
         self,
         add_maintenance_page,
+        get_env_ips,
         get_maintenance_page,
         find_https_listener,
         load_application,
@@ -297,14 +288,14 @@ class TestEnvironmentOfflineCommand:
 
         find_https_listener.assert_called_with(ANY, "test-application", "development")
         get_maintenance_page.assert_called_with(ANY, "https_listener")
+        get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
             "development",
             [mock_application.services["web"], mock_application.services["web2"]],
-            [],
-            False,
+            ["0.1.2.3, 4.5.6.7"],
             "default",
         )
 
@@ -314,202 +305,8 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
 
 
-class TestEnvironmentAllowIpsCommand:
-    @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
-    @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
-        return_value="https_listener",
-    )
-    @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value="default")
-    @patch("dbt_platform_helper.commands.environment.get_listener_rule_by_tag", return_value=None)
-    @patch(
-        "dbt_platform_helper.commands.environment.find_target_group",
-        return_value="target_group_arn",
-    )
-    @patch(
-        "dbt_platform_helper.commands.environment.create_header_rule",
-        return_value="target_group_arn",
-    )
-    def test_allow_ips_success_create(
-        self,
-        mock_create_header_rule,
-        mock_find_target_group,
-        mock_get_listener_rule_by_tag,
-        mock_get_maintenance_page,
-        mock_find_https_listener,
-        mock_get_app_environment,
-    ):
-        from dbt_platform_helper.commands.environment import allow_ips
-
-        mock_session = Mock()
-        mock_client = Mock()
-        mock_get_app_environment.return_value.session = mock_session
-        mock_get_app_environment.return_value.session.client = mock_client
-
-        result = CliRunner().invoke(
-            allow_ips, ["--app", "test-application", "--env", "development", "0.1.2.3", "4.5.6.7"]
-        )
-
-        mock_get_app_environment.assert_called_once_with("test-application", "development")
-        mock_find_https_listener.assert_called_once_with(
-            mock_session, "test-application", "development"
-        )
-        mock_get_maintenance_page.assert_called_once_with(mock_session, "https_listener")
-        mock_get_listener_rule_by_tag.assert_called_once_with(
-            mock_client(), "https_listener", "name", "AllowedIps"
-        )
-        mock_find_target_group.assert_called_once_with("test-application", "development", "web")
-        mock_create_header_rule.assert_called_once_with(
-            mock_client(),
-            "https_listener",
-            "target_group_arn",
-            "X-Forwarded-For",
-            ["0.1.2.3", "4.5.6.7"],
-            "AllowedIps",
-        )
-
-        assert result.exit_code == 0
-
-    @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
-    @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
-        return_value="https_listener",
-    )
-    @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value="default")
-    @patch("dbt_platform_helper.commands.environment.get_listener_rule_by_tag")
-    @patch("botocore.client.BaseClient._make_api_call")
-    def test_allows_ips_success_update(
-        self,
-        mock_make_api_call,
-        mock_get_listener_rule_by_tag,
-        mock_get_maintenance_page,
-        mock_find_https_listener,
-        mock_get_app_environment,
-    ):
-        from dbt_platform_helper.commands.environment import allow_ips
-
-        mock_get_listener_rule_by_tag.return_value = {
-            "RuleArn": "rule_arn",
-            "Conditions": [
-                {
-                    "Field": "http-header",
-                    "HttpHeaderConfig": {
-                        "HttpHeaderName": "X-Forwarded-For",
-                        "Values": ["8.9.10.11"],
-                    },
-                }
-            ],
-        }
-
-        mock_session = Mock()
-        mock_client = Mock()
-        mock_get_app_environment.return_value.session = mock_session
-        mock_session.client.return_value = mock_client
-
-        result = CliRunner().invoke(
-            allow_ips, ["--app", "test-application", "--env", "development", "0.1.2.3", "4.5.6.7"]
-        )
-
-        mock_get_app_environment.assert_called_once_with("test-application", "development")
-        mock_find_https_listener.assert_called_once_with(
-            mock_session, "test-application", "development"
-        )
-        mock_get_maintenance_page.assert_called_once_with(mock_session, "https_listener")
-        mock_get_listener_rule_by_tag.assert_called_once_with(
-            mock_client, "https_listener", "name", "AllowedIps"
-        )
-        mock_client.modify_rule.assert_called_once_with(
-            RuleArn="rule_arn",
-            Conditions=[
-                {
-                    "Field": "http-header",
-                    "HttpHeaderConfig": {
-                        "HttpHeaderName": "X-Forwarded-For",
-                        "Values": ["8.9.10.11", "0.1.2.3", "4.5.6.7"],
-                    },
-                }
-            ],
-        )
-        assert result.exit_code == 0
-        assert (
-            f"The following ips now have access to the web service: 8.9.10.11, 0.1.2.3, 4.5.6.7"
-            in result.output
-        )
-
-    @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
-    @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
-        return_value="https_listener",
-    )
-    def test_allow_ips_load_balancer_not_found(
-        self, mock_find_https_listener, mock_get_app_environment
-    ):
-        from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
-        from dbt_platform_helper.commands.environment import allow_ips
-
-        mock_find_https_listener.side_effect = LoadBalancerNotFoundError()
-        mock_session = Mock()
-        mock_get_app_environment.return_value.session = mock_session
-
-        result = CliRunner().invoke(
-            allow_ips, ["--app", "test-application", "--env", "development", "0.1.2.3"]
-        )
-
-        assert (
-            "No load balancer found for environment development in the application "
-            "test-application."
-        ) in result.output
-        assert "Aborted!" in result.output
-        assert result.exit_code == 1
-
-    @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
-    @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
-        return_value="https_listener",
-    )
-    def test_allow_ips_listener_not_found(self, mock_find_https_listener, mock_get_app_environment):
-        from dbt_platform_helper.commands.environment import ListenerNotFoundError
-        from dbt_platform_helper.commands.environment import allow_ips
-
-        mock_find_https_listener.side_effect = ListenerNotFoundError()
-        mock_session = Mock()
-        mock_get_app_environment.return_value.session = mock_session
-
-        result = CliRunner().invoke(
-            allow_ips, ["--app", "test-application", "--env", "development", "0.1.2.3"]
-        )
-
-        assert (
-            "No HTTPS listener found for environment development in the application "
-            "test-application."
-        ) in result.output
-        assert "Aborted!" in result.output
-        assert result.exit_code == 1
-
-    @patch("dbt_platform_helper.commands.environment.get_app_environment", return_value=Mock())
-    @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
-        return_value="https_listener",
-    )
-    @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
-    def test_allow_ips_no_maintenance_page(
-        self, mock_get_maintenance_page, mock_find_https_listener, mock_get_app_environment
-    ):
-        from dbt_platform_helper.commands.environment import allow_ips
-
-        mock_session = Mock()
-        mock_get_app_environment.return_value.session = mock_session
-
-        result = CliRunner().invoke(
-            allow_ips, ["--app", "test-application", "--env", "development", "0.1.2.3"]
-        )
-
-        assert "There is no maintenance page currently deployed. To create one, run `platform-helper environment offline --app test-application --env development --svc web"
-        assert "Aborted!" in result.output
-        assert result.exit_code == 1
-
-
 class TestEnvironmentOnlineCommand:
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
@@ -517,9 +314,16 @@ class TestEnvironmentOnlineCommand:
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value="default")
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page", return_value=None)
     def test_successful_online(
-        self, remove_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        remove_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import online
+
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -539,6 +343,7 @@ class TestEnvironmentOnlineCommand:
             "application test-application"
         ) in result.output
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch(
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener",
@@ -546,9 +351,16 @@ class TestEnvironmentOnlineCommand:
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page", return_value=None)
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page", return_value=None)
     def test_online_an_environment_that_is_not_offline(
-        self, remove_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        remove_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import online
+
+        load_application.return_value = mock_application
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -560,15 +372,22 @@ class TestEnvironmentOnlineCommand:
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_not_called()
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch("dbt_platform_helper.commands.environment.find_https_listener")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page")
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page")
     def test_online_an_environment_when_listener_not_found(
-        self, remove_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        remove_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import ListenerNotFoundError
         from dbt_platform_helper.commands.environment import online
 
+        load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
         result = CliRunner().invoke(
@@ -585,15 +404,22 @@ class TestEnvironmentOnlineCommand:
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
 
+    @patch("dbt_platform_helper.commands.environment.load_application")
     @patch("dbt_platform_helper.commands.environment.find_https_listener")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page")
     @patch("dbt_platform_helper.commands.environment.remove_maintenance_page")
     def test_online_an_environment_when_load_balancer_not_found(
-        self, remove_maintenance_page, get_maintenance_page, find_https_listener, mock_application
+        self,
+        remove_maintenance_page,
+        get_maintenance_page,
+        find_https_listener,
+        load_application,
+        mock_application,
     ):
         from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
         from dbt_platform_helper.commands.environment import online
 
+        load_application.return_value = mock_application
         find_https_listener.side_effect = LoadBalancerNotFoundError()
 
         result = CliRunner().invoke(
@@ -1081,16 +907,16 @@ class TestRemoveMaintenancePage:
 
 class TestAddMaintenancePage:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
+    @patch("dbt_platform_helper.commands.environment.random.choices", return_value=["a", "b", "c"])
     @patch("dbt_platform_helper.commands.environment.create_header_rule")
-    @patch("dbt_platform_helper.commands.environment.get_public_ip")
     @patch("dbt_platform_helper.commands.environment.find_target_group")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
     def test_adding_existing_template(
         self,
         get_maintenance_page_template,
         find_target_group,
-        get_public_ip,
         create_header_rule,
+        choices,
         template,
         mock_application,
     ):
@@ -1099,7 +925,6 @@ class TestAddMaintenancePage:
         boto_mock = MagicMock()
         get_maintenance_page_template.return_value = template
         find_target_group.return_value = "target_group_arn"
-        get_public_ip.return_value = "0.1.2.3"
 
         add_maintenance_page(
             boto_mock,
@@ -1108,21 +933,26 @@ class TestAddMaintenancePage:
             "development",
             [mock_application.services["web"]],
             [],
-            False,
             template,
         )
 
-        create_header_rule.assert_called_once_with(
-            boto_mock.client(),
-            "listener_arn",
-            "target_group_arn",
-            "X-Forwarded-For",
-            ["0.1.2.3"],
-            "AllowedIps",
+        assert create_header_rule.call_count == 1
+        create_header_rule.assert_has_calls(
+            [
+                call(
+                    boto_mock.client(),
+                    "listener_arn",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    1,
+                ),
+            ]
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=2,
+            Priority=700,
             Conditions=[
                 {
                     "Field": "path-pattern",
@@ -1143,80 +973,6 @@ class TestAddMaintenancePage:
                 {"Key": "name", "Value": "MaintenancePage"},
                 {"Key": "type", "Value": template},
             ],
-        )
-
-    @patch("dbt_platform_helper.commands.environment.random.choices", return_value=["a", "b", "c"])
-    @patch("dbt_platform_helper.commands.environment.create_header_rule")
-    @patch(
-        "dbt_platform_helper.commands.environment.find_target_group",
-        return_value="target_group_arn",
-    )
-    @patch(
-        "dbt_platform_helper.commands.environment.get_maintenance_page_template",
-        return_value="default",
-    )
-    def test_ip_filter_true(
-        self,
-        mock_get_maintenance_page_template,
-        mock_find_target_group,
-        mock_create_header_rule,
-        mock_random,
-        capsys,
-        mock_application,
-    ):
-        from dbt_platform_helper.commands.environment import add_maintenance_page
-
-        boto_mock = MagicMock()
-
-        add_maintenance_page(
-            boto_mock,
-            "listener_arn",
-            "test-application",
-            "development",
-            [mock_application.services["web"]],
-            [],
-            True,
-            "default",
-        )
-
-        mock_create_header_rule.assert_called_once_with(
-            boto_mock.client(),
-            "listener_arn",
-            "target_group_arn",
-            "Bypass-Key",
-            ["abc"],
-            "BypassIpFilter",
-        )
-        boto_mock.client().create_rule.assert_called_once_with(
-            ListenerArn="listener_arn",
-            Priority=2,
-            Conditions=[
-                {
-                    "Field": "path-pattern",
-                    "PathPatternConfig": {"Values": ["/*"]},
-                }
-            ],
-            Actions=[
-                {
-                    "Type": "fixed-response",
-                    "FixedResponseConfig": {
-                        "StatusCode": "503",
-                        "ContentType": "text/html",
-                        "MessageBody": "default",
-                    },
-                }
-            ],
-            Tags=[
-                {"Key": "name", "Value": "MaintenancePage"},
-                {"Key": "type", "Value": "default"},
-            ],
-        )
-
-        captured = capsys.readouterr()
-
-        assert (
-            "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/ "
-            in captured.out
         )
 
 
@@ -1347,13 +1103,19 @@ class TestCommandHelperMethods:
 
         target_group_arn = self._create_target_group()
 
-        assert find_target_group("test-application", "development", "web") == target_group_arn
+        assert (
+            find_target_group("test-application", "development", "web", boto3.session.Session())
+            == target_group_arn
+        )
 
     @mock_aws
     def test_find_target_group_not_found(self):
         from dbt_platform_helper.commands.environment import find_target_group
 
-        assert find_target_group("test-application", "development", "web") is None
+        assert (
+            find_target_group("test-application", "development", "web", boto3.session.Session())
+            is None
+        )
 
     @mock_aws
     def test_delete_listener_rule(self):
@@ -1373,18 +1135,6 @@ class TestCommandHelperMethods:
 
         assert len(rules) == 1
 
-    @patch("dbt_platform_helper.commands.environment.requests.get")
-    def test_get_public_ip(self, mock_get):
-        from dbt_platform_helper.commands.environment import get_public_ip
-
-        mock_response = MagicMock()
-        mock_response.text = "123.123.123.123"
-        mock_get.return_value = mock_response
-
-        result = get_public_ip()
-
-        assert result == "123.123.123.123"
-
     @mock_aws
     def test_create_header_rule(self, capsys):
         from dbt_platform_helper.commands.environment import create_header_rule
@@ -1392,8 +1142,15 @@ class TestCommandHelperMethods:
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
         target_group_arn = self._create_target_group()
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 1
+        assert len(rules) == 2
 
         create_header_rule(
             elbv2_client,
@@ -1402,11 +1159,13 @@ class TestCommandHelperMethods:
             "X-Forwarded-For",
             ["1.2.3.4", "5.6.7.8"],
             "AllowedIps",
+            333,
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 2  # 1 default + 1 created
-        assert rules[0]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
+        assert rules[1]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
 
@@ -1414,3 +1173,87 @@ class TestCommandHelperMethods:
             f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\n\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )
+
+    @pytest.mark.parametrize(
+        "vpc, param_value, expected",
+        [
+            (
+                "vpc1",
+                "192.168.1.1,192.168.1.2,192.168.1.3",
+                ["192.168.1.1", "192.168.1.2", "192.168.1.3"],
+            ),
+            (
+                "vpc2",
+                " 192.168.2.1 , 192.168.2.2 , 192.168.2.3 ",
+                ["192.168.2.1", "192.168.2.2", "192.168.2.3"],
+            ),
+            (
+                None,
+                "192.168.1.1,192.168.1.2,192.168.1.3",
+                ["192.168.1.1", "192.168.1.2", "192.168.1.3"],
+            ),
+        ],
+    )
+    @mock_aws
+    def test_get_env_ips(self, vpc, param_value, expected, mock_application):
+        from dbt_platform_helper.commands.environment import get_env_ips
+
+        response = boto3.client("organizations").create_organization(FeatureSet="ALL")
+        response["Organization"]["Id"]
+        create_account_response = boto3.client("organizations").create_account(
+            Email="test-email@example.com", AccountName="test"
+        )
+        account_id = create_account_response["CreateAccountStatus"]["AccountId"]
+        mock_application.environments["development"].account_id = account_id
+        mock_application.environments["development"].sessions[account_id] = boto3.session.Session()
+        vpc = vpc if vpc else "test"
+        boto3.client("ssm").put_parameter(
+            Name=f"/{vpc}/EGRESS_IPS", Value=param_value, Type="String"
+        )
+        environment = mock_application.environments["development"]
+        result = get_env_ips(vpc, environment)
+
+        assert result == expected
+
+    @mock_aws
+    def test_get_env_ips_param_not_found(self, capsys, mock_application):
+        from dbt_platform_helper.commands.environment import get_env_ips
+
+        response = boto3.client("organizations").create_organization(FeatureSet="ALL")
+        response["Organization"]["Id"]
+        create_account_response = boto3.client("organizations").create_account(
+            Email="test-email@example.com", AccountName="test"
+        )
+        account_id = create_account_response["CreateAccountStatus"]["AccountId"]
+        mock_application.environments["development"].account_id = account_id
+        mock_application.environments["development"].sessions[account_id] = boto3.session.Session()
+        environment = mock_application.environments["development"]
+
+        with pytest.raises(click.Abort):
+            get_env_ips("vpc", environment)
+
+        captured = capsys.readouterr()
+
+        assert "No parameter found with name: /vpc/EGRESS_IPS\n" in captured.out
+
+    @patch("boto3.client")
+    def test_get_rules_tag_descriptions(self, mock_boto_client):
+        from dbt_platform_helper.commands.environment import get_rules_tag_descriptions
+
+        mock_client = Mock()
+        mock_client.describe_tags.side_effect = [
+            {"TagDescriptions": ["TagDescriptions1"]},
+            {"TagDescriptions": ["TagDescriptions2"]},
+        ]
+
+        mock_boto_client.return_value = mock_client
+
+        rules = []
+
+        for i in range(21):
+            rules.append({"RuleArn": i})
+
+        tag_descriptions = get_rules_tag_descriptions(rules, boto3.client("elbv2"))
+
+        assert tag_descriptions == ["TagDescriptions1", "TagDescriptions2"]
+        assert mock_client.describe_tags.call_count == 2
