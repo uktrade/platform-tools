@@ -393,7 +393,14 @@ _ENVIRONMENTS_PARAMS = {
 
 ENVIRONMENTS_DEFINITION = {
     str: Or(
-        None, {**_ENVIRONMENTS_PARAMS, Optional("versions"): {"terraform-platform-modules": str}}
+        None,
+        {
+            **_ENVIRONMENTS_PARAMS,
+            Optional("versions"): {
+                Optional("terraform-platform-modules"): str,
+                Optional("platform-helper"): str,
+            },
+        },
     )
 }
 

@@ -137,6 +137,7 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
     )
 
 
+# DELETE ME!
 def validate_platform_helper_file_version(template_file_path: str):
     validate_version_compatibility(
         get_file_app_versions()[1],

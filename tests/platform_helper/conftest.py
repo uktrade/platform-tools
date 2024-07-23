@@ -418,6 +418,7 @@ environments:
   test:
     versions:
         terraform-platform-modules: 1.2.3
+        platform-helper: main
   staging:
   prod:
     accounts:
