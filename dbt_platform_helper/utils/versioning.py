@@ -147,7 +147,7 @@ def validate_platform_helper_file_version(template_file_path: str):
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
     copilot_version = string_version(get_app_versions()[0])
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{copilot_version}"))
+    click.echo(mkfile(base_path, ".platform-helper-version", f"{copilot_version}\n"))
 
 
 def check_platform_helper_version_needs_update():

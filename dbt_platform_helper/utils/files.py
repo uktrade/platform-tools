@@ -58,7 +58,9 @@ def generate_override_files(base_path, file_path, output_dir):
 
 
 def generate_override_files_from_template(base_path, overrides_path, output_dir, template_data={}):
-    templates = Environment(loader=FileSystemLoader(f"{overrides_path}"))
+    templates = Environment(
+        loader=FileSystemLoader(f"{overrides_path}"), keep_trailing_newline=True
+    )
     environments = ", ".join([env["name"] for env in template_data["environments"]])
     data = {"environments": environments}
 
