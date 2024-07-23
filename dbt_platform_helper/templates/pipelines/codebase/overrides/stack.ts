@@ -163,8 +163,7 @@ export class TransformedStack extends cdk.Stack {
                             "ecr:GetDownloadUrlForLayer",
                             "ecr:InitiateLayerUpload",
                             "ecr:PutImage",
-                            "ecr:UploadLayerPart",
-                            "ecr:BatchDeleteImage"
+                            "ecr:UploadLayerPart"
                         ]
                     }
                 ]
