@@ -46,4 +46,3 @@ phases:
 
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
-        

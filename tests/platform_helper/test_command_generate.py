@@ -54,7 +54,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
 def test_platform_helper_generate_generates_version_file_if_not_exist(tmp_path):
-    contents = "1.0.0"
+    contents = "1.0.0\n"
     version_file_path = tmp_path / ".platform-helper-version"
 
     assert not version_file_path.exists()
