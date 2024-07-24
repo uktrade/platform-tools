@@ -1,6 +1,6 @@
 # DBT Platform Helper
 
-This package contains a set of tools in the form of a Command Line Interface (CLI) primarily for automating operations used when working with the Department for Business and Trade Platform.
+This package contains a set of tools in the form of a Command Line Interface (CLI) primarily for automating operations used when working with the Department for Business and Trade (DBT) Platform.
 
 ## Getting started
 
