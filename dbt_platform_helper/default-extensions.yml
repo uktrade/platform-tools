@@ -18,7 +18,7 @@ monitoring:
     "*":
       enable_ops_center: false
 
-prometheus-prod:
+prometheus:
   type: prometheus-policy
   services: __all__
   environments:

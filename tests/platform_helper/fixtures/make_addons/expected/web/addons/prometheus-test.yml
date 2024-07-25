@@ -10,14 +10,14 @@ Parameters:
     Description: The name of the service, job, or workflow being deployed.
 
 Mappings:
-  prometheusProdEnvironmentConfigMap:
+  prometheusTestEnvironmentConfigMap:
     # Create an entry for each environment
 
     development:
-      RoleArn: 'arn:aws:iam::480224066791:role/amp-prometheus-role'
+      RoleArn: 'dev-prometheus-role-arn'
 
     production:
-      RoleArn: 'arn:aws:iam::480224066791:role/amp-prometheus-role'
+      RoleArn: 'prod-prometheus-role-arn'
 
 Resources:
   PromCrossAccountPolicy:
@@ -29,7 +29,7 @@ Resources:
           - Effect: Allow
             Action:
               - sts:AssumeRole
-            Resource: !FindInMap [prometheusProdEnvironmentConfigMap, !Ref Env, RoleArn]
+            Resource: !FindInMap [prometheusTestEnvironmentConfigMap, !Ref Env, RoleArn]
 Outputs:
   AMPAccessPolicyArn:
     Description: "Allow the task to assume the prometheus writer role in the central account"
