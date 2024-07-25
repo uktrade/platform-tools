@@ -95,7 +95,7 @@ def test_generate_pipeline_override_files(fakefs):
         assert f.read() == "This is the code.ts template."
 
     with open("output/buildspec.deploy.yml", "r") as f:
-        assert f.read() == "Contains dev, prod environments."
+        assert f.read() == "Contains dev,prod environments."
 
 
 def test_apply_defaults():
