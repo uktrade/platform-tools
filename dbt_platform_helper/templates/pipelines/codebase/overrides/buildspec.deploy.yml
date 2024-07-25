@@ -11,7 +11,7 @@ phases:
   build:
     commands:
       - |
-        environments="{{environments}}"
+        environments="{{environments|join(',')}}"
         echo "Environments are - ${environments}"
         if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
           echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
@@ -19,7 +19,7 @@ phases:
         else
           exit 1
         fi
-  
+
   post_build:
     commands:
       - |
