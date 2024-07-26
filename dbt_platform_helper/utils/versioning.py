@@ -16,12 +16,16 @@ from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import mkfile
 
 
-class PlatformHelperVersions:
-    def __init__(
-        self, local_version=None, latest_pypi_release=None, platform_helper_file_version=None
-    ):
+class Versions:
+    def __init__(self, local_version=None, latest_release=None):
         self.local_version = local_version
-        self.latest_pypi_release = latest_pypi_release
+        self.latest_release = latest_release
+
+
+class PlatformHelperVersions:
+    def __init__(self, local_version=None, latest_release=None, platform_helper_file_version=None):
+        self.local_version = local_version
+        self.latest_release = latest_release
         self.platform_helper_file_version = platform_helper_file_version
 
 
@@ -93,13 +97,13 @@ def get_platform_helper_versions():
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
-    latest_pypi_release = parsed_released_versions[0]
+    latest_release = parsed_released_versions[0]
 
     version_from_file = parse_version(Path(".platform-helper-version").read_text())
 
     return PlatformHelperVersions(
         local_version=local_version,
-        latest_pypi_release=latest_pypi_release,
+        latest_release=latest_release,
         platform_helper_file_version=version_from_file,
     )
 
@@ -170,14 +174,14 @@ def check_platform_helper_version_needs_update():
 
     versions = get_platform_helper_versions()
     local_version = versions.local_version
-    latest_pypi_release = versions.latest_pypi_release
+    latest_release = versions.latest_release
     message = (
         f"You are running platform-helper v{string_version(local_version)}, upgrade to "
-        f"v{string_version(latest_pypi_release)} by running run `pip install "
+        f"v{string_version(latest_release)} by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
     try:
-        validate_version_compatibility(local_version, latest_pypi_release)
+        validate_version_compatibility(local_version, latest_release)
     except IncompatibleMajorVersion:
         click.secho(message, fg="red")
     except IncompatibleMinorVersion:

@@ -79,7 +79,7 @@ def deployment():
 
     versions = versioning.get_platform_helper_versions()
     local_version = versions.local_version
-    latest_pypi_release = versions.latest_pypi_release
+    latest_release = versions.latest_release
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -114,7 +114,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(latest_pypi_release))
+            ].format(version=versioning.string_version(latest_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -123,7 +123,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(latest_pypi_release))
+            ].format(version=versioning.string_version(latest_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -132,7 +132,7 @@ def deployment():
             generated_with_version = versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(latest_pypi_release, str(template_file.resolve()))
+            versioning.validate_template_version(latest_release, str(template_file.resolve()))
         except IncompatibleMajorVersion:
             latest_compatible_symbol = no
             compatible = False
@@ -175,7 +175,7 @@ def tool_versions():
 
     versions = get_platform_helper_versions()
     local_version = versions.local_version
-    latest_pypi_release = versions.latest_pypi_release
+    latest_release = versions.latest_release
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -206,8 +206,8 @@ def tool_versions():
         [
             "dbt-platform-helper",
             versioning.string_version(local_version),
-            versioning.string_version(latest_pypi_release),
-            no if local_version != latest_pypi_release else yes,
+            versioning.string_version(latest_release),
+            no if local_version != latest_release else yes,
         ]
     )
 
@@ -225,10 +225,10 @@ def tool_versions():
             version=versioning.string_version(copilot_released_version),
         )
 
-    if local_version != latest_pypi_release:
+    if local_version != latest_release:
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=versioning.string_version(latest_pypi_release))
+        ].format(version=versioning.string_version(latest_release))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]

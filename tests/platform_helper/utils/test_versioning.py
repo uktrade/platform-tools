@@ -243,5 +243,5 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     versions = get_platform_helper_versions()
 
     assert versions.local_version == (1, 2, 3)
-    assert versions.latest_pypi_release == (2, 3, 4)
+    assert versions.latest_release == (2, 3, 4)
     assert versions.platform_helper_file_version == (5, 6, 7)
