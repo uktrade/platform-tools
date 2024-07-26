@@ -8,11 +8,21 @@ from typing import Union
 
 import click
 import requests
+from requests import get
 
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import mkfile
+
+
+class PlatformHelperVersions:
+    def __init__(
+        self, local_version=None, latest_pypi_release=None, platform_helper_file_version=None
+    ):
+        self.local_version = local_version
+        self.latest_pypi_release = latest_pypi_release
+        self.platform_helper_file_version = platform_helper_file_version
 
 
 def string_version(input_version: Union[Tuple[int, int, int], None]) -> str:
@@ -76,13 +86,19 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_app_versions():
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
+def get_platform_helper_versions():
+    local_version = parse_version(version("dbt-platform-helper"))
+
+    package_info = get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
+    latest_pypi_release = parsed_released_versions[0]
 
-    return parse_version(version("dbt-platform-helper")), parsed_released_versions[0]
+    return PlatformHelperVersions(
+        local_version=local_version, latest_pypi_release=latest_pypi_release
+    )
+    # return parse_version(version("dbt-platform-helper")), parsed_released_versions[0]
 
 
 def get_file_app_versions():
@@ -146,22 +162,24 @@ def validate_platform_helper_file_version(template_file_path: str):
 
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
-    copilot_version = string_version(get_app_versions()[0])
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{copilot_version}\n"))
+    platform_helper_version = string_version(get_platform_helper_versions().local_version)
+    click.echo(mkfile(base_path, ".platform-helper-version", f"{platform_helper_version}\n"))
 
 
 def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    app_version, app_released_version = get_app_versions()
+    versions = get_platform_helper_versions()
+    local_version = versions.local_version
+    latest_pypi_release = versions.latest_pypi_release
     message = (
-        f"You are running platform-helper v{string_version(app_version)}, upgrade to "
-        f"v{string_version(app_released_version)} by running run `pip install "
+        f"You are running platform-helper v{string_version(local_version)}, upgrade to "
+        f"v{string_version(latest_pypi_release)} by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
     try:
-        validate_version_compatibility(app_version, app_released_version)
+        validate_version_compatibility(local_version, latest_pypi_release)
     except IncompatibleMajorVersion:
         click.secho(message, fg="red")
     except IncompatibleMinorVersion:

@@ -13,6 +13,7 @@ from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.validation import config_file_check
+from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -76,7 +77,9 @@ def deployment():
     tool_versions()
     click.secho("Checking addons templates versions...", fg="blue")
 
-    app_version, app_released_version = versioning.get_app_versions()
+    versions = versioning.get_platform_helper_versions()
+    local_version = versions.local_version
+    latest_pypi_release = versions.latest_pypi_release
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -105,13 +108,13 @@ def deployment():
             generated_with_version = versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(app_version, str(template_file.resolve()))
+            versioning.validate_template_version(local_version, str(template_file.resolve()))
         except IncompatibleMajorVersion:
             local_compatible_symbol = no
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(app_released_version))
+            ].format(version=versioning.string_version(latest_pypi_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -120,7 +123,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(app_released_version))
+            ].format(version=versioning.string_version(latest_pypi_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -129,7 +132,7 @@ def deployment():
             generated_with_version = versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(app_released_version, str(template_file.resolve()))
+            versioning.validate_template_version(latest_pypi_release, str(template_file.resolve()))
         except IncompatibleMajorVersion:
             latest_compatible_symbol = no
             compatible = False
@@ -170,7 +173,9 @@ def tool_versions():
     if aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    app_version, app_released_version = versioning.get_app_versions()
+    versions = get_platform_helper_versions()
+    local_version = versions.local_version
+    latest_pypi_release = versions.latest_pypi_release
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -200,9 +205,9 @@ def tool_versions():
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            versioning.string_version(app_version),
-            versioning.string_version(app_released_version),
-            no if app_version != app_released_version else yes,
+            versioning.string_version(local_version),
+            versioning.string_version(latest_pypi_release),
+            no if local_version != latest_pypi_release else yes,
         ]
     )
 
@@ -220,10 +225,10 @@ def tool_versions():
             version=versioning.string_version(copilot_released_version),
         )
 
-    if app_version != app_released_version:
+    if local_version != latest_pypi_release:
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=versioning.string_version(app_released_version))
+        ].format(version=versioning.string_version(latest_pypi_release))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
