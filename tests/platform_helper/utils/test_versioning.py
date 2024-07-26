@@ -129,11 +129,13 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
         ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
     ],
 )
-@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 def test_validate_platform_helper_file_version(
-    get_file_app_versions, template_check: Tuple[str, Type[BaseException], str]
+    get_platform_helper_versions, template_check: Tuple[str, Type[BaseException], str]
 ):
-    get_file_app_versions.return_value = (1, 0, 0), (1, 0, 0)
+    get_platform_helper_versions.return_value = PlatformHelperVersions(
+        local_version=(1, 0, 0), platform_helper_file_version=(1, 0, 0)
+    )
     template_name, raises, message = template_check
 
     template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
@@ -195,14 +197,16 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+    get_file_app_versions.return_value = PlatformHelperVersions(
+        local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+    )
 
     check_platform_helper_version_mismatch()
 
@@ -229,12 +233,15 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 
 @patch("dbt_platform_helper.utils.versioning.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-def test_get_platform_helper_versions(mock_version, mock_get):
+def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
+    fakefs.create_file(".platform-helper-version", contents="5.6.7")
+
     versions = get_platform_helper_versions()
 
     assert versions.local_version == (1, 2, 3)
     assert versions.latest_pypi_release == (2, 3, 4)
+    assert versions.platform_helper_file_version == (5, 6, 7)

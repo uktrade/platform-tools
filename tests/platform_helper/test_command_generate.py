@@ -25,8 +25,12 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_file_app_versions",
-    new=Mock(return_value=[(1, 0, 1), (1, 0, 0)]),
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    new=Mock(
+        return_value=PlatformHelperVersions(
+            local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+        )
+    ),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)

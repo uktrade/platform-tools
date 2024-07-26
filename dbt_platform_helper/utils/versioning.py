@@ -95,15 +95,13 @@ def get_platform_helper_versions():
     parsed_released_versions.sort(reverse=True)
     latest_pypi_release = parsed_released_versions[0]
 
+    version_from_file = parse_version(Path(".platform-helper-version").read_text())
+
     return PlatformHelperVersions(
-        local_version=local_version, latest_pypi_release=latest_pypi_release
+        local_version=local_version,
+        latest_pypi_release=latest_pypi_release,
+        platform_helper_file_version=version_from_file,
     )
-    # return parse_version(version("dbt-platform-helper")), parsed_released_versions[0]
-
-
-def get_file_app_versions():
-    version_from_file = Path(".platform-helper-version").read_text()
-    return parse_version(version("dbt-platform-helper")), parse_version(version_from_file)
 
 
 def validate_version_compatibility(
@@ -155,7 +153,7 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 def validate_platform_helper_file_version(template_file_path: str):
     validate_version_compatibility(
-        get_file_app_versions()[1],
+        get_platform_helper_versions().platform_helper_file_version,
         get_template_generated_with_version(template_file_path),
     )
 
@@ -190,12 +188,14 @@ def check_platform_helper_version_mismatch():
     if not running_as_installed_package():
         return
 
-    app_version, on_file_version = get_file_app_versions()
+    versions = get_platform_helper_versions()
+    local_version = versions.local_version
+    platform_helper_file_version = versions.platform_helper_file_version
 
-    if not check_version_on_file_compatibility(app_version, on_file_version):
+    if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
         message = (
-            f"WARNING: You are running platform-helper v{string_version(app_version)} against "
-            f"v{string_version(on_file_version)} specified by .platform-helper-version."
+            f"WARNING: You are running platform-helper v{string_version(local_version)} against "
+            f"v{string_version(platform_helper_file_version)} specified by .platform-helper-version."
         )
         click.secho(message, fg="red")
 
