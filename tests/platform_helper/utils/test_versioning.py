@@ -231,7 +231,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
     version_compatibility.assert_not_called()
 
 
-@patch("dbt_platform_helper.utils.versioning.get")
+@patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
 def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     mock_version.return_value = "1.2.3"
@@ -245,3 +245,11 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     assert versions.local_version == (1, 2, 3)
     assert versions.latest_release == (2, 3, 4)
     assert versions.platform_helper_file_version == (5, 6, 7)
+
+
+def test_get_copilot_versions():
+    pass
+
+
+def test_get_aws_versions():
+    pass

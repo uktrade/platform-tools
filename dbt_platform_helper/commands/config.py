@@ -74,10 +74,9 @@ def deployment():
 
     compatible = True
 
-    tool_versions()
+    versions = _check_tool_versions_and_return_platform_helper_versions()
     click.secho("Checking addons templates versions...", fg="blue")
 
-    versions = versioning.get_platform_helper_versions()
     local_version = versions.local_version
     latest_release = versions.latest_release
     addons_templates_table = PrettyTable()
@@ -159,23 +158,27 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def tool_versions():
+def _check_tool_versions_and_return_platform_helper_versions():
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
-    copilot_version, copilot_released_version = versioning.get_copilot_versions()
-    if copilot_version is None:
+    copilot_versions = versioning.get_copilot_versions()
+    local_copilot_version = copilot_versions.local_version
+    copilot_latest_release = copilot_versions.latest_release
+    if local_copilot_version is None:
         recommendations["install-copilot"] = (
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    aws_version, aws_released_version = versioning.get_aws_versions()
-    if aws_version is None:
+    aws_versions = versioning.get_aws_versions()
+    local_aws_version = aws_versions.local_version
+    aws_latest_release = aws_versions.latest_release
+    if local_aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    versions = get_platform_helper_versions()
-    local_version = versions.local_version
-    latest_release = versions.latest_release
+    platform_helper_versions = get_platform_helper_versions()
+    local_version = platform_helper_versions.local_version
+    latest_release = platform_helper_versions.latest_release
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -189,17 +192,17 @@ def tool_versions():
     tool_versions_table.add_row(
         [
             "aws",
-            versioning.string_version(aws_version),
-            versioning.string_version(aws_released_version),
-            no if aws_version != aws_released_version else yes,
+            versioning.string_version(local_aws_version),
+            versioning.string_version(aws_latest_release),
+            no if local_aws_version != aws_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "copilot",
-            versioning.string_version(copilot_version),
-            versioning.string_version(copilot_released_version),
-            no if copilot_version != copilot_released_version else yes,
+            versioning.string_version(local_copilot_version),
+            versioning.string_version(copilot_latest_release),
+            no if local_copilot_version != copilot_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
@@ -213,16 +216,16 @@ def tool_versions():
 
     click.secho(tool_versions_table)
 
-    if aws_version != aws_released_version and "install-aws" not in recommendations:
+    if local_aws_version != aws_latest_release and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
-            version=versioning.string_version(aws_released_version),
+            version=versioning.string_version(aws_latest_release),
         )
 
-    if copilot_version != copilot_released_version and "install-copilot" not in recommendations:
+    if local_copilot_version != copilot_latest_release and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
-            version=versioning.string_version(copilot_released_version),
+            version=versioning.string_version(copilot_latest_release),
         )
 
     if local_version != latest_release:
@@ -234,6 +237,8 @@ def tool_versions():
         ]
 
     render_recommendations(recommendations)
+
+    return platform_helper_versions
 
 
 def render_recommendations(recommendations: Dict[str, str]):

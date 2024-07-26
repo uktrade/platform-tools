@@ -8,7 +8,6 @@ from typing import Union
 
 import click
 import requests
-from requests import get
 
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
@@ -55,7 +54,7 @@ def parse_version(input_version: Union[str, None]) -> Union[Tuple[int, int, int]
     return output_version[0], output_version[1], output_version[2]
 
 
-def get_copilot_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+def get_copilot_versions() -> Versions:
     copilot_version = None
 
     try:
@@ -64,10 +63,10 @@ def get_copilot_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
     except ValueError:
         pass
 
-    return parse_version(copilot_version), get_github_released_version("aws/copilot-cli")
+    return Versions(parse_version(copilot_version), get_github_released_version("aws/copilot-cli"))
 
 
-def get_aws_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+def get_aws_versions() -> Versions:
     aws_version = None
     try:
         response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -76,7 +75,7 @@ def get_aws_versions() -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
     except ValueError:
         pass
 
-    return aws_version, get_github_released_version("aws/aws-cli", True)
+    return Versions(aws_version, get_github_released_version("aws/aws-cli", True))
 
 
 def get_github_released_version(repository: str, tags: bool = False) -> Tuple[int, int, int]:
@@ -90,10 +89,10 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_platform_helper_versions():
+def get_platform_helper_versions() -> PlatformHelperVersions:
     local_version = parse_version(version("dbt-platform-helper"))
 
-    package_info = get("https://pypi.org/pypi/dbt-platform-helper/json").json()
+    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)

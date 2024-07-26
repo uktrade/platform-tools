@@ -9,6 +9,7 @@ from click.testing import CliRunner
 from dbt_platform_helper.commands.config import aws
 from dbt_platform_helper.commands.config import validate
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
+from dbt_platform_helper.utils.versioning import Versions
 
 
 @pytest.mark.xdist_group(name="fileaccess")
@@ -25,9 +26,13 @@ def test_running_in_non_copilot_directory():
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0)),
 )
-@patch("dbt_platform_helper.utils.versioning.get_aws_versions", return_value=((1, 0, 0), (1, 0, 0)))
 @patch(
-    "dbt_platform_helper.utils.versioning.get_copilot_versions", return_value=((1, 0, 0), (1, 0, 0))
+    "dbt_platform_helper.utils.versioning.get_aws_versions",
+    return_value=Versions((1, 0, 0), (1, 0, 0)),
+)
+@patch(
+    "dbt_platform_helper.utils.versioning.get_copilot_versions",
+    return_value=Versions((1, 0, 0), (1, 0, 0)),
 )
 def test_with_outdated_addons_templates(
     mock_config_platform_helper_versions,
@@ -70,9 +75,13 @@ def test_with_outdated_addons_templates(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
 )
-@patch("dbt_platform_helper.utils.versioning.get_aws_versions", return_value=((1, 0, 0), (1, 0, 0)))
 @patch(
-    "dbt_platform_helper.utils.versioning.get_copilot_versions", return_value=((1, 0, 0), (1, 0, 0))
+    "dbt_platform_helper.utils.versioning.get_aws_versions",
+    return_value=Versions((1, 0, 0), (1, 0, 0)),
+)
+@patch(
+    "dbt_platform_helper.utils.versioning.get_copilot_versions",
+    return_value=Versions((1, 0, 0), (1, 0, 0)),
 )
 def test_with_outdated_platform_helper(
     mock_config_platform_helper_versions,
@@ -115,9 +124,13 @@ def test_with_outdated_platform_helper(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
 )
-@patch("dbt_platform_helper.utils.versioning.get_aws_versions", return_value=((0, 1, 0), (1, 0, 0)))
 @patch(
-    "dbt_platform_helper.utils.versioning.get_copilot_versions", return_value=((0, 1, 0), (1, 0, 0))
+    "dbt_platform_helper.utils.versioning.get_aws_versions",
+    return_value=Versions((0, 1, 0), (1, 0, 0)),
+)
+@patch(
+    "dbt_platform_helper.utils.versioning.get_copilot_versions",
+    return_value=Versions((0, 1, 0), (1, 0, 0)),
 )
 def test_with_outdated_tools(
     mock_config_platform_helper_versions,
