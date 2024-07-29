@@ -154,13 +154,6 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
     )
 
 
-def validate_platform_helper_file_version(template_file_path: str):
-    validate_version_compatibility(
-        get_platform_helper_versions().platform_helper_file_version,
-        get_template_generated_with_version(template_file_path),
-    )
-
-
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
     platform_helper_version = string_version(get_platform_helper_versions().local_version)
