@@ -78,6 +78,7 @@ export class TransformedStack extends cdk.Stack {
         const envVars = [
             {name: 'AWS_ACCOUNT_ID', value: this.account},
             {name: 'ECR_REPOSITORY', value: this.ecrRepository()},
+            {name: 'CODESTAR_CONNECTION_ARN', value: this.codestarConnection.arn},
         ];
         if (this.additionalEcrRepository()){
             envVars.push({name: 'ADDITIONAL_ECR_REPOSITORY', value: this.additionalEcrRepository()});
@@ -115,7 +116,7 @@ export class TransformedStack extends cdk.Stack {
                 location: `https://github.com/${this.codebaseConfiguration.repository}.git`,
                 gitCloneDepth: 0,
                 auth: {type: 'OAUTH'},
-                gitSubmodulesConfig: {fetchSubmodules: true},
+                gitSubmodulesConfig: {fetchSubmodules: false},
                 buildSpec: stringify(parse(
                     readFileSync(path.join(__dirname, 'buildspec.image.yml')).toString('utf-8'),
                 )),
