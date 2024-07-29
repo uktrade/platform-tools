@@ -73,8 +73,8 @@ def deployment():
     click.secho()
 
     compatible = True
-
-    versions = _check_tool_versions_and_return_platform_helper_versions()
+    versions = get_platform_helper_versions()
+    _check_tool_versions_and_return_platform_helper_versions(versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
     local_version = versions.local_version
@@ -158,7 +158,7 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def _check_tool_versions_and_return_platform_helper_versions():
+def _check_tool_versions_and_return_platform_helper_versions(platform_helper_versions):
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
@@ -176,7 +176,6 @@ def _check_tool_versions_and_return_platform_helper_versions():
     if local_aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    platform_helper_versions = get_platform_helper_versions()
     local_version = platform_helper_versions.local_version
     latest_release = platform_helper_versions.latest_release
 
@@ -237,8 +236,6 @@ def _check_tool_versions_and_return_platform_helper_versions():
         ]
 
     render_recommendations(recommendations)
-
-    return platform_helper_versions
 
 
 def render_recommendations(recommendations: Dict[str, str]):
