@@ -1,6 +1,6 @@
 # DBT Platform Helper
 
-This package contains a set of tools in the form of a Command Line Interface (CLI) primarily for transferring applications/services from [GOV.UK PaaS](https://www.cloud.service.gov.uk) to Department for Business and Trade (DBT) PaaS which augments [AWS Copilot](https://aws.github.io/copilot-cli/). These tools can also be used to provision AWS resources and/or make sure the CloudFormation templates conform to best practices.
+This package contains a set of tools in the form of a Command Line Interface (CLI) primarily for automating operations used when working with the Department for Business and Trade (DBT) Platform.
 
 ## Getting started
 
