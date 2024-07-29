@@ -434,6 +434,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
     str: {
         Optional("account"): str,
         Optional("branch", default="main"): str,
+        Optional("pipeline_to_trigger"): str,
         "slack_channel": str,
         "trigger_on_push": bool,
         "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},

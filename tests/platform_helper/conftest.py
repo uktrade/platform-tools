@@ -516,6 +516,7 @@ environment_pipelines:
     account: non-prod-acc
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: true
+    pipeline_to_trigger: "prod-main"
     environments:
       dev:
       staging:
@@ -534,6 +535,14 @@ environment_pipelines:
           dns:
             name: "prod-dns-acc"
             id: "7777777777"
+  prod-main:
+    account: prod-acc
+    branch: main
+    slack_channel: "/codebuild/slack_oauth_channel"
+    trigger_on_push: false
+    environments:
+      prod:
+        requires_approval: true
 
 codebase_pipelines:
   - name: application
