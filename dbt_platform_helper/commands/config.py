@@ -73,12 +73,14 @@ def deployment():
     click.secho()
 
     compatible = True
-    versions = get_platform_helper_versions()
-    _check_tool_versions(versions)
+    platform_helper_versions = get_platform_helper_versions()
+    copilot_versions = versioning.get_copilot_versions()
+    aws_versions = versioning.get_aws_versions()
+    _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
-    local_version = versions.local_version
-    latest_release = versions.latest_release
+    local_version = platform_helper_versions.local_version
+    latest_release = platform_helper_versions.latest_release
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -158,11 +160,10 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def _check_tool_versions(platform_helper_versions):
+def _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions):
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
-    copilot_versions = versioning.get_copilot_versions()
     local_copilot_version = copilot_versions.local_version
     copilot_latest_release = copilot_versions.latest_release
     if local_copilot_version is None:
@@ -170,7 +171,6 @@ def _check_tool_versions(platform_helper_versions):
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    aws_versions = versioning.get_aws_versions()
     local_aws_version = aws_versions.local_version
     aws_latest_release = aws_versions.latest_release
     if local_aws_version is None:
