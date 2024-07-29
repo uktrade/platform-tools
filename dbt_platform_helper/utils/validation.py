@@ -470,21 +470,21 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 def validate_platform_config(config):
     get_aws_session_or_abort()  # Ensure we have a valid session as validation requires it.
     PLATFORM_CONFIG_SCHEMA.validate(config)
-    _validate_environment_pipelines(config)
-    _validate_codebase_pipelines(config)
+    enriched_config = apply_environment_defaults(config)
+    _validate_environment_pipelines(enriched_config)
+    _validate_environment_pipelines_triggers(enriched_config)
+    _validate_codebase_pipelines(enriched_config)
 
 
 def _validate_environment_pipelines(config):
-    enriched_config = apply_environment_defaults(config)
     bad_pipelines = {}
-
-    for pipeline_name, pipeline in enriched_config.get("environment_pipelines", {}).items():
+    for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
         bad_envs = []
         pipeline_account = pipeline.get("account", None)
         if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
                 env_account = (
-                    enriched_config.get("environments", {})
+                    config.get("environments", {})
                     .get(env, {})
                     .get("accounts", {})
                     .get("deploy", {})
@@ -503,9 +503,9 @@ def _validate_environment_pipelines(config):
         abort_with_error(message)
 
 
-def _validate_codebase_pipelines(pipeline_config):
-    if CODEBASE_PIPELINES_KEY in pipeline_config:
-        for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
+def _validate_codebase_pipelines(config):
+    if CODEBASE_PIPELINES_KEY in config:
+        for codebase in config[CODEBASE_PIPELINES_KEY]:
             codebase_environments = []
 
             for pipeline in codebase["pipelines"]:
@@ -518,6 +518,31 @@ def _validate_codebase_pipelines(pipeline_config):
                     f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
                     "listed in a single pipeline per codebase"
                 )
+
+
+def _validate_environment_pipelines_triggers(config):
+    errors = []
+    pipelines_with_triggers = {
+        pipeline_name: pipeline
+        for pipeline_name, pipeline in config.get("environment_pipelines", {}).items()
+        if "pipeline_to_trigger" in pipeline
+    }
+
+    for pipeline_name, pipeline in pipelines_with_triggers.items():
+        pipeline_to_trigger = pipeline["pipeline_to_trigger"]
+        if pipeline_to_trigger not in config.get("environment_pipelines", {}):
+            message = f"  '{pipeline_name}' - '{pipeline_to_trigger}' is not a valid target pipeline to trigger"
+
+            errors.append(message)
+            continue
+
+        if pipeline_to_trigger == pipeline_name:
+            message = f"  '{pipeline_name}' - pipelines cannot trigger themselves"
+            errors.append(message)
+
+    if errors:
+        error_message = "The following pipelines are misconfigured: \n"
+        abort_with_error(error_message + "\n  ".join(errors))
 
 
 def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
