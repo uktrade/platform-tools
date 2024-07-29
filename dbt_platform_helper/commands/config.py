@@ -74,7 +74,7 @@ def deployment():
 
     compatible = True
     versions = get_platform_helper_versions()
-    _check_tool_versions_and_return_platform_helper_versions(versions)
+    _check_tool_versions(versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
     local_version = versions.local_version
@@ -158,7 +158,7 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def _check_tool_versions_and_return_platform_helper_versions(platform_helper_versions):
+def _check_tool_versions(platform_helper_versions):
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
