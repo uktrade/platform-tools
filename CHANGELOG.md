@@ -1,5 +1,26 @@
 # Changelog
 
+## [10.5.0](https://github.com/uktrade/platform-tools/compare/10.4.0...10.5.0) (2024-07-30)
+
+
+### Features
+
+* Add ability to override the terraform-platform-modules version in the platform-config.yml file. ([#504](https://github.com/uktrade/platform-tools/issues/504)) ([4dbb314](https://github.com/uktrade/platform-tools/commit/4dbb314e5156e451630b0336c4ef9ee08a292449))
+* DBTP-1137 Add parameter to environment pipeline to allow triggering of other pipeline ([#515](https://github.com/uktrade/platform-tools/issues/515)) ([832b463](https://github.com/uktrade/platform-tools/commit/832b463fcfb6607cf1477111da767a4eba9f3052))
+
+
+### Bug Fixes
+
+* Add trailing new lines to some auto generated files ([#512](https://github.com/uktrade/platform-tools/issues/512)) ([d5454ca](https://github.com/uktrade/platform-tools/commit/d5454ca0a2e011adcc80b98f088b31c8db11894a))
+* DBTP-1044 as a developer when i enable a maintenance page i should still be able to access the service (PT. 2) ([#473](https://github.com/uktrade/platform-tools/issues/473)) ([8ce58b3](https://github.com/uktrade/platform-tools/commit/8ce58b3152e5c79cdbfa74a0f4c67e1e6fc856b8))
+* DBTP-1152 - slack notifications work when GitHub-Hookshot triggers build ([#501](https://github.com/uktrade/platform-tools/issues/501)) ([71c1c20](https://github.com/uktrade/platform-tools/commit/71c1c20ad73ece2fd34945a5beb458b3eb8251fc))
+
+
+### Documentation
+
+* Correct introductory paragraph on the Platform Helper README.md ([#513](https://github.com/uktrade/platform-tools/issues/513)) ([20285ac](https://github.com/uktrade/platform-tools/commit/20285ac5f48de68f0b76f6b4d60b9e12b482d451))
+* Update regression tests documentation ([#507](https://github.com/uktrade/platform-tools/issues/507)) ([5746e3a](https://github.com/uktrade/platform-tools/commit/5746e3a1b8eab160162ad693ae831f4e0ede7dd6))
+
 ## [10.4.0](https://github.com/uktrade/platform-tools/compare/10.3.0...10.4.0) (2024-07-16)
 
 
