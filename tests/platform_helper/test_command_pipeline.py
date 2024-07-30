@@ -261,9 +261,9 @@ def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
-    git_remote, get_aws_session_or_abort, mock_aws_seesion, fakefs
+    git_remote, get_aws_session_or_abort, mock_aws_session, fakefs
 ):
-    mock_codestar_connections_boto_client(mock_aws_seesion, [])
+    mock_codestar_connections_boto_client(mock_aws_session, [])
     setup_fixtures(fakefs)
 
     result = CliRunner().invoke(generate)
