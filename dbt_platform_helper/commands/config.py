@@ -13,6 +13,7 @@ from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.validation import config_file_check
+from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -72,11 +73,14 @@ def deployment():
     click.secho()
 
     compatible = True
-
-    tool_versions()
+    platform_helper_versions = get_platform_helper_versions()
+    copilot_versions = versioning.get_copilot_versions()
+    aws_versions = versioning.get_aws_versions()
+    _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
-    app_version, app_released_version = versioning.get_app_versions()
+    local_version = platform_helper_versions.local_version
+    latest_release = platform_helper_versions.latest_release
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -105,13 +109,13 @@ def deployment():
             generated_with_version = versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(app_version, str(template_file.resolve()))
+            versioning.validate_template_version(local_version, str(template_file.resolve()))
         except IncompatibleMajorVersion:
             local_compatible_symbol = no
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(app_released_version))
+            ].format(version=versioning.string_version(latest_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -120,7 +124,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(app_released_version))
+            ].format(version=versioning.string_version(latest_release))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -129,7 +133,7 @@ def deployment():
             generated_with_version = versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(app_released_version, str(template_file.resolve()))
+            versioning.validate_template_version(latest_release, str(template_file.resolve()))
         except IncompatibleMajorVersion:
             latest_compatible_symbol = no
             compatible = False
@@ -156,21 +160,24 @@ def deployment():
     exit(0 if compatible else 1)
 
 
-def tool_versions():
+def _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions):
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
-    copilot_version, copilot_released_version = versioning.get_copilot_versions()
-    if copilot_version is None:
+    local_copilot_version = copilot_versions.local_version
+    copilot_latest_release = copilot_versions.latest_release
+    if local_copilot_version is None:
         recommendations["install-copilot"] = (
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    aws_version, aws_released_version = versioning.get_aws_versions()
-    if aws_version is None:
+    local_aws_version = aws_versions.local_version
+    aws_latest_release = aws_versions.latest_release
+    if local_aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    app_version, app_released_version = versioning.get_app_versions()
+    local_version = platform_helper_versions.local_version
+    latest_release = platform_helper_versions.latest_release
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -184,46 +191,46 @@ def tool_versions():
     tool_versions_table.add_row(
         [
             "aws",
-            versioning.string_version(aws_version),
-            versioning.string_version(aws_released_version),
-            no if aws_version != aws_released_version else yes,
+            versioning.string_version(local_aws_version),
+            versioning.string_version(aws_latest_release),
+            no if local_aws_version != aws_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "copilot",
-            versioning.string_version(copilot_version),
-            versioning.string_version(copilot_released_version),
-            no if copilot_version != copilot_released_version else yes,
+            versioning.string_version(local_copilot_version),
+            versioning.string_version(copilot_latest_release),
+            no if local_copilot_version != copilot_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            versioning.string_version(app_version),
-            versioning.string_version(app_released_version),
-            no if app_version != app_released_version else yes,
+            versioning.string_version(local_version),
+            versioning.string_version(latest_release),
+            no if local_version != latest_release else yes,
         ]
     )
 
     click.secho(tool_versions_table)
 
-    if aws_version != aws_released_version and "install-aws" not in recommendations:
+    if local_aws_version != aws_latest_release and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
-            version=versioning.string_version(aws_released_version),
+            version=versioning.string_version(aws_latest_release),
         )
 
-    if copilot_version != copilot_released_version and "install-copilot" not in recommendations:
+    if local_copilot_version != copilot_latest_release and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
-            version=versioning.string_version(copilot_released_version),
+            version=versioning.string_version(copilot_latest_release),
         )
 
-    if app_version != app_released_version:
+    if local_version != latest_release:
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=versioning.string_version(app_released_version))
+        ].format(version=versioning.string_version(latest_release))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
