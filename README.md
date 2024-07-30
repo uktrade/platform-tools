@@ -171,4 +171,3 @@ If found, it indicates that the new package version exists in PyPI.
 7. Ensure the release notes contain an upgrade path for any breaking changes
 8. Check PyPI for the new published version
 
-
