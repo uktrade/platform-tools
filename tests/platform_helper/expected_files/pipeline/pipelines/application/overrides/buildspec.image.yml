@@ -1,0 +1,48 @@
+version: 0.2
+
+env:
+  parameter-store:
+    SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  install:
+    commands:
+      - >
+        if [ -f .copilot/phases/install.sh ]; then 
+          bash .copilot/phases/install.sh; 
+        fi
+
+  pre_build:
+    commands:
+      - >
+        if [ -f .copilot/phases/pre_build.sh ]; then 
+          bash .copilot/phases/pre_build.sh; 
+        fi
+
+  build:
+    commands:
+      - >
+        if [ -f .copilot/phases/build.sh ]; then 
+          bash .copilot/phases/build.sh; 
+        fi
+      - /work/cli build --publish --send-notifications
+
+  post_build:
+    commands:
+      - >
+        if [ -f .copilot/phases/post_build.sh ]; then 
+          bash .copilot/phases/post_build.sh; 
+        fi
+        
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
+          echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
+
+          echo -e "\nInstalling dependencies"
+          pip install dbt-platform-helper
+
+          MESSAGE=":no_entry::building_construction: Image build failure in codebuild project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
+
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+        fi

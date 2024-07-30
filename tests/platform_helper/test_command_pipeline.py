@@ -49,6 +49,12 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     assert_yaml_in_output_file_matches_expected(
         output_files[0], expected_files_dir / "application" / "manifest.yml"
     )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[3], expected_files_dir / "application" / "overrides/buildspec.deploy.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[4], expected_files_dir / "application" / "overrides/buildspec.image.yml"
+    )
     for file in output_files:
         assert_file_created_in_stdout(file, result)
 
@@ -96,6 +102,18 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
     output_files = setup_output_file_paths_for_codebases()
     assert_yaml_in_output_file_matches_expected(
         output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[3], expected_files_dir / "application" / "overrides/buildspec.deploy.yml"
+    )
+    assert_yaml_in_output_file_matches_expected(
+        output_files[4], expected_files_dir / "application" / "overrides/buildspec.image.yml"
     )
     for file in output_files:
         assert_file_created_in_stdout(file, result)
