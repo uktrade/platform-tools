@@ -104,12 +104,6 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
         output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
     )
     assert_yaml_in_output_file_matches_expected(
-        output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
-    )
-    assert_yaml_in_output_file_matches_expected(
-        output_files[0], expected_files_dir / "application" / "manifest-public-repo.yml"
-    )
-    assert_yaml_in_output_file_matches_expected(
         output_files[3], expected_files_dir / "application" / "overrides/buildspec.deploy.yml"
     )
     assert_yaml_in_output_file_matches_expected(
