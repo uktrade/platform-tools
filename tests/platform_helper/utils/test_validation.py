@@ -429,6 +429,62 @@ def test_validate_platform_config_success(valid_platform_config):
     # No assertions - validate will error if config is invalid.
 
 
+@pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
+    mock_abort_with_error, valid_platform_config, pipeline_to_trigger
+):
+    valid_platform_config["environment_pipelines"]["main"][
+        "pipeline_to_trigger"
+    ] = pipeline_to_trigger
+
+    validate_platform_config(valid_platform_config)
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert (
+        f"  'main' - '{pipeline_to_trigger}' is not a valid target pipeline to trigger" in message
+    )
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trigger_is_invalid(
+    mock_abort_with_error, valid_platform_config
+):
+    valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = ""
+    valid_platform_config["environment_pipelines"]["test"][
+        "pipeline_to_trigger"
+    ] = "non-existent-pipeline"
+
+    validate_platform_config(valid_platform_config)
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert f"  'main' - '' is not a valid target pipeline to trigger" in message
+    assert (
+        f"  'test' - 'non-existent-pipeline' is not a valid target pipeline to trigger" in message
+    )
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_itself(
+    mock_abort_with_error, valid_platform_config
+):
+    valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
+
+    validate_platform_config(valid_platform_config)
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert "The following pipelines are misconfigured:" in message
+    assert f"  'main' - pipelines cannot trigger themselves" in message
+
+
 @pytest.mark.parametrize(
     "account, envs, exp_bad_envs",
     [
