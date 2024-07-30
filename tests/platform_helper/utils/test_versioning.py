@@ -10,14 +10,15 @@ import pytest
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
 from dbt_platform_helper.utils.versioning import get_github_released_version
+from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
-from dbt_platform_helper.utils.versioning import validate_platform_helper_file_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from dbt_platform_helper.utils.versioning import validate_version_compatibility
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -121,29 +122,6 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 
 @pytest.mark.parametrize(
-    "template_check",
-    [
-        ("addon_different_version.yml", IncompatibleMajorVersion, ""),
-        ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
-    ],
-)
-@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
-def test_validate_platform_helper_file_version(
-    get_file_app_versions, template_check: Tuple[str, Type[BaseException], str]
-):
-    get_file_app_versions.return_value = (1, 0, 0), (1, 0, 0)
-    template_name, raises, message = template_check
-
-    template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
-
-    with pytest.raises(raises) as exception:
-        validate_platform_helper_file_version(template_path)
-
-    if message:
-        assert (message % template_path) == str(exception.value)
-
-
-@pytest.mark.parametrize(
     "expected_exception",
     [
         IncompatibleMajorVersion,
@@ -153,15 +131,15 @@ def test_validate_platform_helper_file_version(
 )
 @patch("click.secho")
 @patch("click.confirm")
-@patch("dbt_platform_helper.utils.versioning.get_app_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
 def test_check_platform_helper_version_needs_update(
-    version_compatibility, get_app_versions, confirm, secho, expected_exception
+    version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
 ):
-    get_app_versions.return_value = (1, 0, 0), (1, 0, 0)
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersions((1, 0, 0), (1, 0, 0))
     version_compatibility.side_effect = expected_exception((1, 0, 0), (1, 0, 0))
 
     check_platform_helper_version_needs_update()
@@ -193,14 +171,16 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_file_app_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = (1, 0, 1), (1, 0, 0)
+    get_file_app_versions.return_value = PlatformHelperVersions(
+        local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+    )
 
     check_platform_helper_version_mismatch()
 
@@ -223,3 +203,27 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
     check_platform_helper_version_needs_update()
 
     version_compatibility.assert_not_called()
+
+
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
+    mock_version.return_value = "1.2.3"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    fakefs.create_file(".platform-helper-version", contents="5.6.7")
+
+    versions = get_platform_helper_versions()
+
+    assert versions.local_version == (1, 2, 3)
+    assert versions.latest_release == (2, 3, 4)
+    assert versions.platform_helper_file_version == (5, 6, 7)
+
+
+def test_get_copilot_versions():
+    pass
+
+
+def test_get_aws_versions():
+    pass

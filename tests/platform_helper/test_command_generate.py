@@ -4,6 +4,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
+from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import generate_platform_helper_version_file
 
 
@@ -24,8 +25,12 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_file_app_versions",
-    new=Mock(return_value=[(1, 0, 1), (1, 0, 0)]),
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    new=Mock(
+        return_value=PlatformHelperVersions(
+            local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+        )
+    ),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
@@ -48,8 +53,8 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_app_versions",
-    new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    new=Mock(return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0))),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
@@ -67,8 +72,8 @@ def test_platform_helper_generate_generates_version_file_if_not_exist(tmp_path):
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_app_versions",
-    new=Mock(return_value=[(1, 0, 0), (1, 0, 0)]),
+    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    new=Mock(return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0))),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))

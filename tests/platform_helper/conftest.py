@@ -13,6 +13,7 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
+from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "platform_helper" / "test-application-deploy"
@@ -240,24 +241,16 @@ def mocked_pg_secret():
 
 @pytest.fixture(scope="function")
 def validate_version():
-    with patch("dbt_platform_helper.utils.versioning.get_app_versions") as get_app_versions:
-        get_app_versions.return_value = ((1, 0, 0), (1, 0, 0))
+    with patch(
+        "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
+    ) as get_platform_helper_versions:
+        get_platform_helper_versions.return_value = PlatformHelperVersions((1, 0, 0), (1, 0, 0))
         with patch(
             "dbt_platform_helper.utils.versioning.validate_version_compatibility",
             side_effect=None,
             return_value=None,
         ) as patched:
             yield patched
-
-
-@pytest.fixture(scope="function")
-def mock_tool_versions():
-    with patch("dbt_platform_helper.utils.versioning.get_app_versions") as get_app_versions:
-        with patch("dbt_platform_helper.utils.versioning.get_aws_versions") as get_aws_versions:
-            with patch(
-                "dbt_platform_helper.utils.versioning.get_copilot_versions"
-            ) as get_copilot_versions:
-                yield get_app_versions, get_aws_versions, get_copilot_versions
 
 
 @pytest.fixture(scope="function")
@@ -516,6 +509,7 @@ environment_pipelines:
     account: non-prod-acc
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: true
+    pipeline_to_trigger: "prod-main"
     environments:
       dev:
       staging:
@@ -534,6 +528,14 @@ environment_pipelines:
           dns:
             name: "prod-dns-acc"
             id: "7777777777"
+  prod-main:
+    account: prod-acc
+    branch: main
+    slack_channel: "/codebuild/slack_oauth_channel"
+    trigger_on_push: false
+    environments:
+      prod:
+        requires_approval: true
 
 codebase_pipelines:
   - name: application
