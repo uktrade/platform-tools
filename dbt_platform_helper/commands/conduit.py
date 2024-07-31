@@ -353,7 +353,7 @@ def update_conduit_stack_resources(
         Properties:
           RoleArn: {log_filter_role_arn}
           LogGroupName: /copilot/{task_name}/{access}
-          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}
+          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}/{access}
           FilterPattern: ''
           DestinationArn: {destination_arn}
         """

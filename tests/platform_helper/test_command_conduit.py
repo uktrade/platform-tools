@@ -419,7 +419,7 @@ def test_update_conduit_stack_resources(
     )
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
-        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}"
+        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
     )
 
 
