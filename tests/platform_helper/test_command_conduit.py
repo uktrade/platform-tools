@@ -402,7 +402,7 @@ def test_update_conduit_stack_resources(
     parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
 
     update_conduit_stack_resources(
-        mock_application, "development", addon_type, addon_name, task_name, parameter_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name, "read"
     )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
@@ -411,7 +411,7 @@ def test_update_conduit_stack_resources(
     assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["LogGroupName"]
-        == f"/copilot/{task_name}"
+        == f"/copilot/{task_name}/read"
     )
     assert (
         "dev_account_id"
@@ -419,7 +419,7 @@ def test_update_conduit_stack_resources(
     )
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
-        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}"
+        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
     )
 
 
@@ -604,7 +604,7 @@ def test_start_conduit(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, parameter_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name, "read"
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -780,7 +780,7 @@ def test_start_conduit_when_addon_client_task_fails_to_start(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, parameter_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name, "read"
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name
@@ -903,7 +903,7 @@ def test_start_conduit_with_access_permissions(
         mock_application, "development", task_name
     )
     update_conduit_stack_resources.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, task_name, parameter_name
+        mock_application, "development", addon_type, addon_name, task_name, parameter_name, access
     )
     connect_to_addon_client_task.assert_called_once_with(
         mock_application, "development", "test-arn", task_name

@@ -315,6 +315,7 @@ def update_conduit_stack_resources(
     addon_name: str,
     task_name: str,
     parameter_name: str,
+    access: str,
 ):
     session = app.environments[env].session
     cloudformation_client = session.client("cloudformation")
@@ -351,8 +352,8 @@ def update_conduit_stack_resources(
         DeletionPolicy: Retain
         Properties:
           RoleArn: {log_filter_role_arn}
-          LogGroupName: /copilot/{task_name}
-          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}
+          LogGroupName: /copilot/{task_name}/{access}
+          FilterName: /copilot/conduit/{app.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}/{access}
           FilterPattern: ''
           DestinationArn: {destination_arn}
         """
@@ -386,7 +387,7 @@ def start_conduit(
         create_addon_client_task(application, env, addon_type, addon_name, task_name, access)
         add_stack_delete_policy_to_task_role(application, env, task_name)
         update_conduit_stack_resources(
-            application, env, addon_type, addon_name, task_name, parameter_name
+            application, env, addon_type, addon_name, task_name, parameter_name, access
         )
 
     connect_to_addon_client_task(application, env, cluster_arn, task_name)
