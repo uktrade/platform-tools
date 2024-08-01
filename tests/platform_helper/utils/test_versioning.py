@@ -234,7 +234,7 @@ def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, sec
 
     assert versions.platform_helper_file_version is None
     secho.assert_called_with(
-        f"Cannot get dbt-platform-helper version from file '.platform-helper-version. Check if file exists.",
+        f"Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists.",
         fg="yellow",
     )
 

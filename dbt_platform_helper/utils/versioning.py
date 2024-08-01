@@ -99,7 +99,7 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     latest_release = parsed_released_versions[0]
 
     version_from_file = None
-    message = "Cannot get dbt-platform-helper version from file '.platform-helper-version. Check if file exists."
+    message = "Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists."
 
     try:
         version_from_file = parse_version(Path(".platform-helper-version").read_text())
