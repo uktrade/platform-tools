@@ -38,9 +38,6 @@ network:
 storage:
   readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
-observability:
-  tracing: awsxray
-
 variables:                    # Pass environment variables as key value pairs.
   PORT: 8080                  # The bootstrap container requires a $PORT env var
 {%- for envvar, value in env_vars.items() %}
