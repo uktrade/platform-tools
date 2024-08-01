@@ -17,3 +17,10 @@ monitoring:
   environments:
     "*":
       enable_ops_center: false
+
+prometheus:
+  type: prometheus-policy
+  services: __all__
+  environments:
+    "*":
+      role_arn: arn:aws:iam::480224066791:role/amp-prometheus-role
