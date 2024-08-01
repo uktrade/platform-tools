@@ -162,8 +162,8 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
-    platform_helper_version = string_version(get_platform_helper_versions().local_version)
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{platform_helper_version}\n"))
+    local_version = string_version(get_platform_helper_versions().local_version)
+    click.echo(mkfile(base_path, ".platform-helper-version", f"{local_version}\n"))
 
 
 def check_platform_helper_version_needs_update():
