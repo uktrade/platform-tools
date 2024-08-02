@@ -1,5 +1,20 @@
 # Changelog
 
+## [10.6.0](https://github.com/uktrade/platform-tools/compare/10.5.0...10.6.0) (2024-08-02)
+
+
+### Features
+
+* DBTP-1151 Add submodules script to pre_build.sh template ([#516](https://github.com/uktrade/platform-tools/issues/516)) ([e7ae76a](https://github.com/uktrade/platform-tools/commit/e7ae76abe6cbdf1682c6abb45128bdbf84d566a1))
+* DBTP-1154 add the prometheus prod service policy by default ([#509](https://github.com/uktrade/platform-tools/issues/509)) ([35f52f7](https://github.com/uktrade/platform-tools/commit/35f52f71338d76071448c7294938616159390212))
+
+
+### Bug Fixes
+
+* correct conduit log group name ([#523](https://github.com/uktrade/platform-tools/issues/523)) ([acd233c](https://github.com/uktrade/platform-tools/commit/acd233cacba88fa01b28ba11d9166fbce8f1a718))
+* DBTP-1236 - Fix codebase deploy to multiple environments ([#517](https://github.com/uktrade/platform-tools/issues/517)) ([be3ba7c](https://github.com/uktrade/platform-tools/commit/be3ba7c6fc287257846d332dba03c0257d32af76))
+* DBTP-1265 fix platform helper version file missing ([#521](https://github.com/uktrade/platform-tools/issues/521)) ([04adf14](https://github.com/uktrade/platform-tools/commit/04adf146673759cc68b943a8827ff4d53eb8aaa6))
+
 ## [10.5.0](https://github.com/uktrade/platform-tools/compare/10.4.0...10.5.0) (2024-07-30)
 
 
