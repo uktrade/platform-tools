@@ -74,20 +74,10 @@ network:
 storage:
   readonly_fs: true       # Limit to read-only access to mounted root filesystems.
 
-observability:
-  tracing: awsxray
-
 # Optional fields for more advanced use-cases.
 #
 variables:                    # Pass environment variables as key value pairs.
   PORT: 8080
-  OTEL_PROPAGATORS: xray
-  OTEL_PYTHON_ID_GENERATOR: xray
-  OTEL_SERVICE_NAME: ${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}-{{ name }}
-  OTEL_METRICS_EXPORTER: none
-  OTEL_TRACES_EXPORTER: otlp
-  OTEL_TRACES_SAMPLER: traceidratio
-  OTEL_TRACES_SAMPLER_ARG: "0.05"
 {%- for envvar, value in env_vars.items() %}
   {{ envvar }}: {{ value }}
 {%- endfor %}
