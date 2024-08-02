@@ -411,7 +411,7 @@ def test_update_conduit_stack_resources(
     assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["LogGroupName"]
-        == f"/copilot/{task_name}/read"
+        == f"/copilot/{task_name}"
     )
     assert (
         "dev_account_id"
