@@ -221,6 +221,24 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     assert versions.platform_helper_file_version == (5, 6, 7)
 
 
+@patch("click.secho")
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, secho):
+    mock_version.return_value = "1.2.3"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+
+    versions = get_platform_helper_versions()
+
+    assert versions.platform_helper_file_version is None
+    secho.assert_called_with(
+        f"Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists.",
+        fg="yellow",
+    )
+
+
 def test_get_copilot_versions():
     pass
 

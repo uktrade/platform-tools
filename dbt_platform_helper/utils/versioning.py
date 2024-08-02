@@ -90,7 +90,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 
 def get_platform_helper_versions() -> PlatformHelperVersions:
-    local_version = parse_version(version("dbt-platform-helper"))
+    locally_installed_version = parse_version(version("dbt-platform-helper"))
 
     package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
@@ -98,10 +98,16 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
 
-    version_from_file = parse_version(Path(".platform-helper-version").read_text())
+    version_from_file = None
+    message = "Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists."
+
+    try:
+        version_from_file = parse_version(Path(".platform-helper-version").read_text())
+    except FileNotFoundError:
+        click.secho(f"{message}", fg="yellow")
 
     return PlatformHelperVersions(
-        local_version=local_version,
+        local_version=locally_installed_version,
         latest_release=latest_release,
         platform_helper_file_version=version_from_file,
     )
@@ -156,8 +162,8 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
-    platform_helper_version = string_version(get_platform_helper_versions().local_version)
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{platform_helper_version}\n"))
+    local_version = string_version(get_platform_helper_versions().local_version)
+    click.echo(mkfile(base_path, ".platform-helper-version", f"{local_version}\n"))
 
 
 def check_platform_helper_version_needs_update():
