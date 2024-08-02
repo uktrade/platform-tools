@@ -1,5 +1,5 @@
 extensions:
-  prometheus:
+  prometheus-test:
     type: prometheus-policy
 
     services:
