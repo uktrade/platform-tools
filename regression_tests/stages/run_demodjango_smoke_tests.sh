@@ -8,4 +8,4 @@ echo -e "\nInstall dependencies"
 poetry install
 
 echo -e "\nRun smoke tests"
-./tests/browser/run.sh toolspr smoke
+./tests/browser/run.sh ${TARGET_ENVIRONMENT} smoke
