@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.6.1](https://github.com/uktrade/platform-tools/compare/10.6.0...10.6.1) (2024-08-06)
+
+
+### Bug Fixes
+
+* Add target environment override to smoke tests ([#524](https://github.com/uktrade/platform-tools/issues/524)) ([5edc1c2](https://github.com/uktrade/platform-tools/commit/5edc1c29204567f60cedbf30670ef763a2470753))
+
 ## [10.6.0](https://github.com/uktrade/platform-tools/compare/10.5.0...10.6.0) (2024-08-02)
 
 
