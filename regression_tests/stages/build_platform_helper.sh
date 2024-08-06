@@ -9,6 +9,7 @@ mkdir ./build-tools
 pip install --target ./build-tools poetry
 export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
 export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+poetry install
 poetry build --no-interaction --format sdist --no-ansi
 pip install --target ./build-tools "dist/$(ls -t1 dist | head -1)"
 platform-helper --version
