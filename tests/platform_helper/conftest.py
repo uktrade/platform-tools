@@ -406,12 +406,16 @@ environments:
         name: "non-prod-dns-acc"
         id: "6677889900"
     requires_approval: false
+    versions:
+        platform-helper: 10.2.0
     vpc: non-prod-vpc
   dev:
   test:
     versions:
         terraform-platform-modules: 1.2.3
   staging:
+    versions:
+        platform-helper: 10.2.0
   prod:
     accounts:
       deploy:
