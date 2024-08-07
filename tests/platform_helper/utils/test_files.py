@@ -121,6 +121,44 @@ def test_apply_defaults():
     }
 
 
+@pytest.mark.parametrize(
+    "env_config, expected_result",
+    [
+        (None, {"platform-helper": "10.0.0"}),
+        ({}, {"platform-helper": "10.0.0"}),
+        (
+            {"versions": {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"}},
+            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+        ),
+        (
+            {"versions": {"terraform-platform-modules": "2.0.0"}},
+            {"platform-helper": "10.0.0", "terraform-platform-modules": "2.0.0"},
+        ),
+        ({"versions": {"platform-helper": "9.0.0"}}, {"platform-helper": "9.0.0"}),
+    ],
+)
+def test_apply_defaults_for_versions(env_config, expected_result):
+    config = {
+        "application": "my-app",
+        "environments": {"*": {"versions": {"platform-helper": "10.0.0"}}, "one": env_config},
+    }
+
+    result = apply_environment_defaults(config)
+
+    assert result["environments"]["one"]["versions"] == expected_result
+
+
+def test_apply_defaults_when_versions_missing():
+    config = {
+        "application": "my-app",
+        "environments": {"*": {}, "one": {}},
+    }
+
+    result = apply_environment_defaults(config)
+
+    assert result["environments"]["one"] == {}
+
+
 def test_apply_defaults_with_no_defaults():
     config = {
         "application": "my-app",

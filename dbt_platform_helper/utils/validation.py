@@ -376,6 +376,11 @@ PROMETHEUS_POLICY_DEFINITION = {
     },
 }
 
+_VERSIONS_DEFINITION = {
+    Optional("terraform-platform-modules"): str,
+    Optional("platform-helper"): str,
+}
+
 _ENVIRONMENTS_PARAMS = {
     Optional("accounts"): {
         "deploy": {
@@ -388,14 +393,11 @@ _ENVIRONMENTS_PARAMS = {
         },
     },
     Optional("requires_approval"): bool,
+    Optional("versions"): _VERSIONS_DEFINITION,
     Optional("vpc"): str,
 }
 
-ENVIRONMENTS_DEFINITION = {
-    str: Or(
-        None, {**_ENVIRONMENTS_PARAMS, Optional("versions"): {"terraform-platform-modules": str}}
-    )
-}
+ENVIRONMENTS_DEFINITION = {str: Or(None, _ENVIRONMENTS_PARAMS)}
 
 CODEBASE_PIPELINES_DEFINITION = [
     {

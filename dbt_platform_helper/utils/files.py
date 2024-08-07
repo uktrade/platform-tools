@@ -88,9 +88,14 @@ def apply_environment_defaults(config):
     without_defaults_entry = {
         name: data if data else {} for name, data in environments.items() if name != "*"
     }
-    defaulted_envs = {
-        name: {**env_defaults, **data} for name, data in without_defaults_entry.items()
-    }
+
+    def combine(data):
+        out = {**env_defaults, **data}
+        if "versions" in data:
+            out["versions"] = {**env_defaults.get("versions", {}), **data["versions"]}
+        return out
+
+    defaulted_envs = {name: combine(data) for name, data in without_defaults_entry.items()}
 
     enriched_config["environments"] = defaulted_envs
 
