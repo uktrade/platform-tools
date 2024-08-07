@@ -15,6 +15,8 @@ from dbt_platform_helper.utils.versioning import check_platform_helper_version_m
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
+from dbt_platform_helper.utils.versioning import get_aws_versions
+from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import parse_version
@@ -242,9 +244,22 @@ def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, sec
     )
 
 
-def test_get_copilot_versions():
-    pass
+@patch("subprocess.run")
+@patch("dbt_platform_helper.utils.versioning.get_github_released_version", return_value=(2, 0, 0))
+def test_get_copilot_versions(mock_get_github_released_version, mock_run):
+    mock_run.return_value.stdout = b"1.0.0"
+
+    versions = get_copilot_versions()
+
+    assert versions.local_version == (1, 0, 0)
+    assert versions.latest_release == (2, 0, 0)
 
 
-def test_get_aws_versions():
-    pass
+@patch("subprocess.run")
+@patch("dbt_platform_helper.utils.versioning.get_github_released_version", return_value=(2, 0, 0))
+def test_get_aws_versions(mock_get_github_released_version, mock_run):
+    mock_run.return_value.stdout = b"aws-cli/1.0.0"
+    versions = get_aws_versions()
+
+    assert versions.local_version == (1, 0, 0)
+    assert versions.latest_release == (2, 0, 0)
