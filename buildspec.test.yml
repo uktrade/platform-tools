@@ -1,10 +1,5 @@
 version: 0.2
 
-env:
-  parameter-store:
-    SLACK_TOKEN: /codebuild/slack_oauth_token
-    SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
-
 phases:
   install:
     commands:
@@ -16,17 +11,18 @@ phases:
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
-      - pip install dbt-platform-helper
 
   build:
     commands:
       - echo -e "\nRunning regression tests"
-      - ./regression_tests/pull_request_tests.sh
+      - set -e
+      - export TARGET_ENVIRONMENT=${TARGET_ENVIRONMENT:-toolspr}
+      - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
+      - source ./regression_tests/stages/set_up_git_config.sh
+      - ./regression_tests/stages/build_platform_helper.sh
+      - ./regression_tests/stages/clone_demodjango_deploy.sh
+      - ./regression_tests/stages/clone_demodjango.sh
 
-  post_build:
-    commands:
-      - |
-        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"; then
-          MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
-        fi
+artifacts:
+  files:
+    - "**/*"

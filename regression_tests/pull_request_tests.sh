@@ -1,3 +1,5 @@
+# No longer required, test scripts launched individually from parallel test pipeline codebuild jobs
+
 #!/bin/bash
 
 # exit early if something goes wrong
