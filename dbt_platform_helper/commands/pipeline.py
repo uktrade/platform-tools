@@ -23,6 +23,7 @@ from dbt_platform_helper.utils.versioning import (
 )
 
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"
+ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 ENVIRONMENTS_KEY = "environments"
 
 
@@ -36,10 +37,12 @@ def pipeline():
 def generate():
     """Given a platform-config.yml file, generate environment and service
     deployment pipelines."""
-    pipeline_config = load_and_validate_platform_config()
+    platform_config = load_and_validate_platform_config()
 
-    no_codebase_pipelines = CODEBASE_PIPELINES_KEY not in pipeline_config
-    no_environment_pipelines = ENVIRONMENTS_KEY not in pipeline_config
+    no_codebase_pipelines = CODEBASE_PIPELINES_KEY not in platform_config
+    no_environment_pipelines = (
+        ENVIRONMENTS_KEY not in platform_config or ENVIRONMENT_PIPELINES_KEY not in platform_config
+    )
 
     if no_codebase_pipelines and no_environment_pipelines:
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
@@ -61,21 +64,25 @@ def generate():
 
     _clean_pipeline_config(pipelines_dir)
 
-    if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
+    if (
+        not is_terraform_project()
+        and ENVIRONMENT_PIPELINES_KEY in platform_config
+        and ENVIRONMENTS_KEY in platform_config
+    ):
         _generate_copilot_environments_pipeline(
             app_name,
             codestar_connection_arn,
             git_repo,
-            apply_environment_defaults(pipeline_config)[ENVIRONMENTS_KEY],
+            apply_environment_defaults(platform_config)[ENVIRONMENTS_KEY],
             base_path,
             pipelines_dir,
             templates,
         )
 
-    if CODEBASE_PIPELINES_KEY in pipeline_config:
+    if CODEBASE_PIPELINES_KEY in platform_config:
         account_id, _ = get_account_details()
 
-        for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
+        for codebase in platform_config[CODEBASE_PIPELINES_KEY]:
             _generate_codebase_pipeline(
                 account_id,
                 app_name,
