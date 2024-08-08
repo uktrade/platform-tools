@@ -396,6 +396,10 @@ def valid_platform_config():
 application: test-app
 legacy_project: true
 
+default_versions: 
+    platform-helper: 10.2.0
+    terraform-platform-modules: 1.2.3
+
 environments:
   "*":
     accounts:
@@ -517,6 +521,8 @@ environment_pipelines:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
+    versions:
+        platform-helper: main
     environments:
       test:
         requires_approval: true
@@ -533,6 +539,8 @@ environment_pipelines:
     branch: main
     slack_channel: "/codebuild/slack_oauth_channel"
     trigger_on_push: false
+    versions:
+        platform-helper: 9.0.9
     environments:
       prod:
         requires_approval: true
