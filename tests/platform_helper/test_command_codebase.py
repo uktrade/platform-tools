@@ -550,6 +550,60 @@ class TestCodebaseList:
             "- https://github.com/uktrade/example/commit/57c0a08 - published: 2023-11-01 17:37:02"
             in result.output
         )
+        
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    def test_lists_codebases_with_multiple_pages_of_images(self, get_aws_session_or_abort):
+        client = mock_aws_client(get_aws_session_or_abort)
+        client.get_parameters_by_path.return_value = {
+            "Parameters": [
+                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+            ],
+        }
+        client.get_paginator.return_value.paginate.return_value = [
+            {
+                "imageDetails": [
+                    {
+                        "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-10"],
+                        "imagePushedAt": datetime(2023, 11, 10, 00, 00, 00),
+                    },
+                    {
+                        "imageTags": ["branch-main", "commit-9"],
+                        "imagePushedAt": datetime(2023, 11, 9, 00, 00, 00),
+                    },
+                ]
+            },
+            {
+                "imageDetails": [
+                    {
+                        "imageTags": ["commit-8"],
+                        "imagePushedAt": datetime(2023, 11, 8, 00, 00, 00),
+                    },
+                    {
+                        "imageTags": ["commit-7"],
+                        "imagePushedAt": datetime(2023, 11, 7, 00, 00, 00),
+                    },
+                ]
+            }
+        ]
+        from dbt_platform_helper.commands.codebase import list
+
+        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
+        assert (
+            "- https://github.com/uktrade/example/commit/10 - published: 2023-11-10 00:00:00"
+            in result.output
+        )
+        assert (
+            "- https://github.com/uktrade/example/commit/9 - published: 2023-11-09 00:00:00"
+            in result.output
+        )
+        assert (
+            "- https://github.com/uktrade/example/commit/8 - published: 2023-11-08 00:00:00"
+            in result.output
+        )
+        assert (
+            "- https://github.com/uktrade/example/commit/7 - published: 2023-11-07 00:00:00"
+            in result.output
+        )
 
     @patch(
         "dbt_platform_helper.commands.codebase.load_application",
