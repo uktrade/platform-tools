@@ -229,7 +229,7 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
     assert versions.latest_release == (2, 3, 4)
     assert versions.platform_helper_file_version == (5, 6, 7)
     assert versions.platform_config_default == (10, 2, 0)
-    assert versions.pipeline_overrides == {"test": "main", "prod-main": (9, 0, 9)}
+    assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
 
 @patch("click.secho")
@@ -279,15 +279,57 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
 
 
 @pytest.mark.parametrize(
-    "platform_helper_version_file_version,platform_config_default_version,pipeline_override,expected_version",
+    "platform_helper_version_file_version,platform_config_default_version,expected_version",
     [
-        ("0.0.1", None, None, "0.0.1"),
-        ("0.0.1", "1.0.0", None, "1.0.0"),
+        (None, None, None),
+        ("0.0.1", None, "0.0.1"),
+        ("0.0.1", "1.0.0", "1.0.0"),
     ],
 )
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_desired_platform_helper_version(
+    mock_version,
+    fakefs,
+    platform_helper_version_file_version,
+    platform_config_default_version,
+    expected_version,
+):
+    if platform_helper_version_file_version:
+        Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
+
+    platform_config = {
+        "application": "my-app",
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
+        },
+    }
+    if platform_config_default_version:
+        platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
+
+    # platform_config["environment_pipelines"]["main"]["versions"] = {"platform-helper": "2.0.0"}
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+
+    desired_version = get_desired_platform_helper_version()
+
+    assert desired_version == expected_version
+
+
+@pytest.mark.parametrize(
+    "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
+    [
+        (None, None, None, None),
+        ("0.0.1", None, None, "0.0.1"),
+        ("0.0.1", "1.0.0", None, "1.0.0"),
+        (None, None, "2.0.0", "2.0.0"),
+        (None, "3.0.0", "4.0.0", "4.0.0"),
+        ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
+    ],
+)
+@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_get_desired_platform_helper_version_in_pipeline(
     mock_version,
     fakefs,
     platform_helper_version_file_version,
@@ -308,9 +350,13 @@ def test_get_desired_platform_helper_version(
     if platform_config_default_version:
         platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
 
-    # platform_config["environment_pipelines"]["main"]["versions"] = {"platform-helper": "2.0.0"}
+    if pipeline_override:
+        platform_config["environment_pipelines"]["main"]["versions"] = {
+            "platform-helper": pipeline_override
+        }
+
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    desired_version = get_desired_platform_helper_version()
+    desired_version = get_desired_platform_helper_version("main")
 
     assert desired_version == expected_version
