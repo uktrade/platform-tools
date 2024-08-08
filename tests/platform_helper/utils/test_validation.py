@@ -596,6 +596,47 @@ def test_load_and_validate_config_valid_file(yaml_file):
     assert validated == conf
 
 
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validation_fails_if_invalid_default_version_keys_present(
+    fakefs, capsys, valid_platform_config
+):
+    valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
+
+    with pytest.raises(SchemaError) as ex:
+        load_and_validate_platform_config()
+
+    assert "Wrong key 'something-invalid'" in str(ex)
+
+
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validation_fails_if_invalid_environment_version_override_keys_present(
+    fakefs, capsys, valid_platform_config
+):
+    valid_platform_config["environments"]["*"]["versions"] = {"platform-helper": "1.2.3"}
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
+
+    with pytest.raises(SchemaError) as ex:
+        load_and_validate_platform_config()
+
+    assert "Wrong key 'platform-helper'" in str(ex)
+
+
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
+    fakefs, capsys, valid_platform_config
+):
+    valid_platform_config["environment_pipelines"]["test"]["versions"][
+        "terraform-platform-modules"
+    ] = "1.2.3"
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
+
+    with pytest.raises(SchemaError) as ex:
+        load_and_validate_platform_config()
+
+    assert "Wrong key 'terraform-platform-modules'" in str(ex)
+
+
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
     """Test that, given the path to a valid yaml file, load_and_validate_config
     returns the loaded yaml unmodified."""

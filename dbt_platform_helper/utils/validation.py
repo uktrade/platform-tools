@@ -376,8 +376,14 @@ PROMETHEUS_POLICY_DEFINITION = {
     },
 }
 
-_VERSIONS_DEFINITION = {
+_DEFAULT_VERSIONS_DEFINITION = {
     Optional("terraform-platform-modules"): str,
+    Optional("platform-helper"): str,
+}
+_ENVIRONMENTS_VERSIONS_OVERRIDES = {
+    Optional("terraform-platform-modules"): str,
+}
+_PIPELINE_VERSIONS_OVERRIDES = {
     Optional("platform-helper"): str,
 }
 
@@ -393,7 +399,7 @@ _ENVIRONMENTS_PARAMS = {
         },
     },
     Optional("requires_approval"): bool,
-    Optional("versions"): _VERSIONS_DEFINITION,
+    Optional("versions"): _ENVIRONMENTS_VERSIONS_OVERRIDES,
     Optional("vpc"): str,
 }
 
@@ -437,7 +443,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
         Optional("account"): str,
         Optional("branch", default="main"): str,
         Optional("pipeline_to_trigger"): str,
-        Optional("versions"): _VERSIONS_DEFINITION,
+        Optional("versions"): _PIPELINE_VERSIONS_OVERRIDES,
         "slack_channel": str,
         "trigger_on_push": bool,
         "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},
@@ -449,6 +455,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         "application": str,
         Optional("legacy_project", default=False): bool,
+        Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
         Optional("accounts"): list[str],
         Optional("environments"): ENVIRONMENTS_DEFINITION,
         Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,

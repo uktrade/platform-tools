@@ -6,7 +6,10 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
+import yaml
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
@@ -17,6 +20,7 @@ from dbt_platform_helper.utils.versioning import (
 )
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
+from dbt_platform_helper.utils.versioning import get_desired_platform_helper_version
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import parse_version
@@ -187,7 +191,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by .platform-helper-version.",
+        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
         fg="red",
     )
 
@@ -209,28 +213,40 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
-    fakefs.create_file(".platform-helper-version", contents="5.6.7")
+    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {"application": "my-app", "default_versions": {"platform-helper": "9.0.0"}}
+        ),
+    )
 
     versions = get_platform_helper_versions()
 
     assert versions.local_version == (1, 2, 3)
     assert versions.latest_release == (2, 3, 4)
     assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.platform_config_default == (9, 0, 0)
 
 
 @patch("click.secho")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, secho):
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
+def test_platform_helper_version_file_does_not_exist(
+    mock_aws, mock_version, mock_get, secho, fakefs
+):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my-app"}))
 
     if os.path.exists(".platform-helper-version"):
         os.remove(".platform-helper-version")
@@ -239,7 +255,7 @@ def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, sec
 
     assert versions.platform_helper_file_version is None
     secho.assert_called_with(
-        f"Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists.",
+        f"Cannot get dbt-platform-helper version from file '{PLATFORM_HELPER_VERSION_FILE}'. Check if file exists.",
         fg="yellow",
     )
 
@@ -263,3 +279,41 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
 
     assert versions.local_version == (1, 0, 0)
     assert versions.latest_release == (2, 0, 0)
+
+
+@pytest.mark.parametrize(
+    "platform_helper_version_file_version,platform_config_default_version,pipeline_override,expected_version",
+    [
+        ("0.0.1", None, None, "0.0.1"),
+        ("0.0.1", "1.0.0", None, "1.0.0"),
+    ],
+)
+@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_get_desired_platform_helper_version(
+    mock_version,
+    fakefs,
+    platform_helper_version_file_version,
+    platform_config_default_version,
+    pipeline_override,
+    expected_version,
+):
+    if platform_helper_version_file_version:
+        Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
+
+    platform_config = {
+        "application": "my-app",
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
+        },
+    }
+    if platform_config_default_version:
+        platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
+
+    # platform_config["environment_pipelines"]["main"]["versions"] = {"platform-helper": "2.0.0"}
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+
+    desired_version = get_desired_platform_helper_version()
+
+    assert desired_version == expected_version
