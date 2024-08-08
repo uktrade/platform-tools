@@ -34,7 +34,7 @@ class PlatformHelperVersions:
         latest_release: VersionTuple = None,
         platform_helper_file_version: VersionTuple = None,
         platform_config_default: VersionTuple = None,
-        pipeline_overrides: Union[VersionTuple, str] = None,
+        pipeline_overrides: dict[str, str] = None,
     ):
         self.local_version = local_version
         self.latest_release = latest_release
@@ -117,14 +117,8 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         platform_config.get("default_versions", {}).get("platform-helper")
     )
 
-    def pipeline_override_version(pipeline_override):
-        version_tuple = parse_version(pipeline_override)
-        if not version_tuple:
-            return pipeline_override
-        return version_tuple
-
     pipeline_overrides = {
-        name: pipeline_override_version(pipeline.get("versions", {}).get("platform-helper"))
+        name: pipeline.get("versions", {}).get("platform-helper")
         for name, pipeline in platform_config.get("environment_pipelines", {}).items()
         if pipeline.get("versions", {}).get("platform-helper")
     }
@@ -241,7 +235,14 @@ def running_as_installed_package():
 
 def get_desired_platform_helper_version(pipeline: str = None) -> str:
     versions = get_platform_helper_versions()
-    version_precedence = [versions.platform_config_default, versions.platform_helper_file_version]
-    non_null_version_precedence = [v for v in version_precedence if v]
+    pipeline_version = versions.pipeline_overrides.get(pipeline)
+    version_precedence = [
+        pipeline_version,
+        versions.platform_config_default,
+        versions.platform_helper_file_version,
+    ]
+    non_null_version_precedence = [
+        string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
+    ]
 
-    return string_version(non_null_version_precedence[0])
+    return non_null_version_precedence[0] if non_null_version_precedence else None
