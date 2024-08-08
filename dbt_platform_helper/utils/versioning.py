@@ -9,33 +9,44 @@ from typing import Union
 import click
 import requests
 
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
+
+VersionTuple = Union[Tuple[int, int, int], None]
 
 
 class Versions:
-    def __init__(self, local_version=None, latest_release=None):
+    def __init__(self, local_version: VersionTuple = None, latest_release: VersionTuple = None):
         self.local_version = local_version
         self.latest_release = latest_release
 
 
 class PlatformHelperVersions:
-    def __init__(self, local_version=None, latest_release=None, platform_helper_file_version=None):
+    def __init__(
+        self,
+        local_version: VersionTuple = None,
+        latest_release: VersionTuple = None,
+        platform_helper_file_version: VersionTuple = None,
+        platform_config_default: VersionTuple = None,
+    ):
         self.local_version = local_version
         self.latest_release = latest_release
         self.platform_helper_file_version = platform_helper_file_version
+        self.platform_config_default = platform_config_default
 
 
-def string_version(input_version: Union[Tuple[int, int, int], None]) -> str:
+def string_version(input_version: VersionTuple) -> str:
     if input_version is None:
         return "unknown"
     major, minor, patch = input_version
     return ".".join([str(s) for s in [major, minor, patch]])
 
 
-def parse_version(input_version: Union[str, None]) -> Union[Tuple[int, int, int], None]:
+def parse_version(input_version: Union[str, None]) -> VersionTuple:
     if input_version is None:
         return None
 
@@ -97,12 +108,15 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
+    platform_config_default = parse_version(
+        load_and_validate_platform_config().get("default_versions", {}).get("platform-helper", None)
+    )
 
     version_from_file = None
-    message = "Cannot get dbt-platform-helper version from file '.platform-helper-version'. Check if file exists."
+    message = f"Cannot get dbt-platform-helper version from file '{PLATFORM_HELPER_VERSION_FILE}'. Check if file exists."
 
     try:
-        version_from_file = parse_version(Path(".platform-helper-version").read_text())
+        version_from_file = parse_version(Path(PLATFORM_HELPER_VERSION_FILE).read_text())
     except FileNotFoundError:
         click.secho(f"{message}", fg="yellow")
 
@@ -110,6 +124,7 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         local_version=locally_installed_version,
         latest_release=latest_release,
         platform_helper_file_version=version_from_file,
+        platform_config_default=platform_config_default,
     )
 
 
@@ -163,7 +178,7 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
 def generate_platform_helper_version_file(directory="."):
     base_path = Path(directory)
     local_version = string_version(get_platform_helper_versions().local_version)
-    click.echo(mkfile(base_path, ".platform-helper-version", f"{local_version}\n"))
+    click.echo(mkfile(base_path, PLATFORM_HELPER_VERSION_FILE, f"{local_version}\n"))
 
 
 def check_platform_helper_version_needs_update():
@@ -197,10 +212,18 @@ def check_platform_helper_version_mismatch():
     if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
         message = (
             f"WARNING: You are running platform-helper v{string_version(local_version)} against "
-            f"v{string_version(platform_helper_file_version)} specified by .platform-helper-version."
+            f"v{string_version(platform_helper_file_version)} specified by {PLATFORM_HELPER_VERSION_FILE}."
         )
         click.secho(message, fg="red")
 
 
 def running_as_installed_package():
     return "site-packages" in __file__
+
+
+def get_desired_platform_helper_version() -> str:
+    versions = get_platform_helper_versions()
+    version_precedence = [versions.platform_config_default, versions.platform_helper_file_version]
+    non_null_version_precedence = [v for v in version_precedence if v]
+
+    return string_version(non_null_version_precedence[0])
