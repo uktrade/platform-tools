@@ -41,6 +41,8 @@
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database copy](#platform-helper-database-copy)
+- [platform-helper version](#platform-helper-version)
+- [platform-helper version print-desired](#platform-helper-version-print-desired)
 
 # platform-helper
 
@@ -73,6 +75,7 @@ platform-helper <command> [--version]
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
+- [`version` ↪](#platform-helper-version)
 
 # platform-helper application
 
@@ -992,5 +995,43 @@ platform-helper database copy <source_db> <target_db>
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper version
+
+[↩ Parent](#platform-helper)
+
+## Usage
+
+```
+platform-helper version print-desired 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`print-desired` ↪](#platform-helper-version-print-desired)
+
+# platform-helper version print-desired
+
+[↩ Parent](#platform-helper-version)
+
+    Print the version of platform-tools desired by the current project
+
+## Usage
+
+```
+platform-helper version print-desired [--pipeline <pipeline>] 
+```
+
+## Options
+
+- `--pipeline <text>`
+  - Take into account the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
