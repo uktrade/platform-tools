@@ -214,25 +214,22 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_get_platform_helper_versions(mock_version, mock_get, fakefs):
-    mock_version.return_value = "1.2.3"
+def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_platform_config):
+    mock_version.return_value = "1.1.1"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
-    fakefs.create_file(
-        PLATFORM_CONFIG_FILE,
-        contents=yaml.dump(
-            {"application": "my-app", "default_versions": {"platform-helper": "9.0.0"}}
-        ),
-    )
+    config = valid_platform_config
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == (1, 2, 3)
+    assert versions.local_version == (1, 1, 1)
     assert versions.latest_release == (2, 3, 4)
     assert versions.platform_helper_file_version == (5, 6, 7)
-    assert versions.platform_config_default == (9, 0, 0)
+    assert versions.platform_config_default == (10, 2, 0)
+    assert versions.pipeline_overrides == {"test": "main", "prod-main": (9, 0, 9)}
 
 
 @patch("click.secho")
