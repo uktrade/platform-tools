@@ -512,7 +512,7 @@ class TestCodebaseList:
                 {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
             ],
         }
-        client.describe_images.return_value = {
+        client.get_paginator.return_value.paginate.return_value = [{
             "imageDetails": [
                 {
                     "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
@@ -531,7 +531,7 @@ class TestCodebaseList:
                     "imagePushedAt": datetime(2023, 11, 1, 17, 37, 2),
                 },
             ]
-        }
+        }]
         from dbt_platform_helper.commands.codebase import list
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])

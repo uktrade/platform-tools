@@ -87,18 +87,23 @@ def prepare():
 
 
 def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
-    describe_images_response = ecr_client.describe_images(
-        repositoryName=ecr_repository_name,
-        maxResults=20,
+    paginator = ecr_client.get_paginator("describe_images")
+    describe_images_response_iterator = paginator.paginate(
+        repositoryName=ecr_repository_name, 
         filter={"tagStatus": "TAGGED"},
+        
     )
-    images = sorted(
-        describe_images_response["imageDetails"],
+    images = []
+    for page in describe_images_response_iterator:
+        images+=page["imageDetails"]
+    
+    sorted_images = sorted(
+        images,
         key=lambda i: i["imagePushedAt"],
         reverse=True,
     )
-
-    for image in images:
+    
+    for image in sorted_images[:20]:
         try:
             commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
             if not commit_tag:
