@@ -3,7 +3,9 @@ import re
 import subprocess
 from importlib.metadata import version
 from pathlib import Path
+from typing import Optional
 from typing import Tuple
+from typing import TypeAlias
 from typing import Union
 
 import click
@@ -16,7 +18,7 @@ from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
-VersionTuple = Union[Tuple[int, int, int], None]
+VersionTuple: TypeAlias = Optional[Tuple[int, int, int]]
 
 
 class Versions:
@@ -32,11 +34,13 @@ class PlatformHelperVersions:
         latest_release: VersionTuple = None,
         platform_helper_file_version: VersionTuple = None,
         platform_config_default: VersionTuple = None,
+        pipeline_overrides: Union[VersionTuple, str] = None,
     ):
         self.local_version = local_version
         self.latest_release = latest_release
         self.platform_helper_file_version = platform_helper_file_version
         self.platform_config_default = platform_config_default
+        self.pipeline_overrides = pipeline_overrides
 
 
 def string_version(input_version: VersionTuple) -> str:
@@ -108,9 +112,22 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
+    platform_config = load_and_validate_platform_config()
     platform_config_default = parse_version(
-        load_and_validate_platform_config().get("default_versions", {}).get("platform-helper", None)
+        platform_config.get("default_versions", {}).get("platform-helper")
     )
+
+    def pipeline_override_version(pipeline_override):
+        version_tuple = parse_version(pipeline_override)
+        if not version_tuple:
+            return pipeline_override
+        return version_tuple
+
+    pipeline_overrides = {
+        name: pipeline_override_version(pipeline.get("versions", {}).get("platform-helper"))
+        for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+        if pipeline.get("versions", {}).get("platform-helper")
+    }
 
     version_from_file = None
     message = f"Cannot get dbt-platform-helper version from file '{PLATFORM_HELPER_VERSION_FILE}'. Check if file exists."
@@ -125,6 +142,7 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         latest_release=latest_release,
         platform_helper_file_version=version_from_file,
         platform_config_default=platform_config_default,
+        pipeline_overrides=pipeline_overrides,
     )
 
 
@@ -221,7 +239,7 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def get_desired_platform_helper_version() -> str:
+def get_desired_platform_helper_version(pipeline: str = None) -> str:
     versions = get_platform_helper_versions()
     version_precedence = [versions.platform_config_default, versions.platform_helper_file_version]
     non_null_version_precedence = [v for v in version_precedence if v]
