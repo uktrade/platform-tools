@@ -89,20 +89,19 @@ def prepare():
 def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
     paginator = ecr_client.get_paginator("describe_images")
     describe_images_response_iterator = paginator.paginate(
-        repositoryName=ecr_repository_name, 
+        repositoryName=ecr_repository_name,
         filter={"tagStatus": "TAGGED"},
-        
     )
     images = []
     for page in describe_images_response_iterator:
-        images+=page["imageDetails"]
-    
+        images += page["imageDetails"]
+
     sorted_images = sorted(
         images,
         key=lambda i: i["imagePushedAt"],
         reverse=True,
     )
-    
+
     for image in sorted_images[:20]:
         try:
             commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
@@ -110,7 +109,9 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
                 continue
 
             commit_hash = commit_tag.replace("commit-", "")
-            click.echo(f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}")
+            click.echo(
+                f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+            )
         except StopIteration:
             continue
 
@@ -145,7 +146,9 @@ def list(app, with_images):
     for codebase in codebases:
         click.echo(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
         if with_images:
-            list_latest_images(ecr_client, f"{application.name}/{codebase['name']}", codebase['repository'])
+            list_latest_images(
+                ecr_client, f"{application.name}/{codebase['name']}", codebase["repository"]
+            )
 
     click.echo("")
 

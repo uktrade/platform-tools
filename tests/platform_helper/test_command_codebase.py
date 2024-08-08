@@ -512,26 +512,28 @@ class TestCodebaseList:
                 {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
             ],
         }
-        client.get_paginator.return_value.paginate.return_value = [{
-            "imageDetails": [
-                {
-                    "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
-                    "imagePushedAt": datetime(2023, 11, 8, 17, 55, 35),
-                },
-                {
-                    "imageTags": ["branch-main", "commit-d269d51"],
-                    "imagePushedAt": datetime(2023, 11, 8, 17, 20, 34),
-                },
-                {
-                    "imageTags": ["cache"],
-                    "imagePushedAt": datetime(2023, 11, 8, 10, 31, 8),
-                },
-                {
-                    "imageTags": ["commit-57c0a08"],
-                    "imagePushedAt": datetime(2023, 11, 1, 17, 37, 2),
-                },
-            ]
-        }]
+        client.get_paginator.return_value.paginate.return_value = [
+            {
+                "imageDetails": [
+                    {
+                        "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
+                        "imagePushedAt": datetime(2023, 11, 8, 17, 55, 35),
+                    },
+                    {
+                        "imageTags": ["branch-main", "commit-d269d51"],
+                        "imagePushedAt": datetime(2023, 11, 8, 17, 20, 34),
+                    },
+                    {
+                        "imageTags": ["cache"],
+                        "imagePushedAt": datetime(2023, 11, 8, 10, 31, 8),
+                    },
+                    {
+                        "imageTags": ["commit-57c0a08"],
+                        "imagePushedAt": datetime(2023, 11, 1, 17, 37, 2),
+                    },
+                ]
+            }
+        ]
         from dbt_platform_helper.commands.codebase import list
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
@@ -550,7 +552,7 @@ class TestCodebaseList:
             "- https://github.com/uktrade/example/commit/57c0a08 - published: 2023-11-01 17:37:02"
             in result.output
         )
-        
+
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     def test_lists_codebases_with_multiple_pages_of_images(self, get_aws_session_or_abort):
         client = mock_aws_client(get_aws_session_or_abort)
@@ -583,7 +585,7 @@ class TestCodebaseList:
                         "imagePushedAt": datetime(2023, 11, 7, 00, 00, 00),
                     },
                 ]
-            }
+            },
         ]
         from dbt_platform_helper.commands.codebase import list
 
@@ -606,7 +608,9 @@ class TestCodebaseList:
         )
 
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_lists_codebases_with_disordered_images_in_chronological_order(self, get_aws_session_or_abort):
+    def test_lists_codebases_with_disordered_images_in_chronological_order(
+        self, get_aws_session_or_abort
+    ):
         client = mock_aws_client(get_aws_session_or_abort)
         client.get_parameters_by_path.return_value = {
             "Parameters": [
@@ -637,13 +641,18 @@ class TestCodebaseList:
                         "imagePushedAt": datetime(2023, 11, 3, 00, 00, 00),
                     },
                 ]
-            }
+            },
         ]
         from dbt_platform_helper.commands.codebase import list
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
-        
-        assert result.output.index("commit/4") < result.output.index("commit/3") < result.output.index("commit/2") < result.output.index("commit/1")
+
+        assert (
+            result.output.index("commit/4")
+            < result.output.index("commit/3")
+            < result.output.index("commit/2")
+            < result.output.index("commit/1")
+        )
 
     @patch(
         "dbt_platform_helper.commands.codebase.load_application",
