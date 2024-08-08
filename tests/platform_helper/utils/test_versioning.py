@@ -287,14 +287,19 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
     ],
 )
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("requests.get")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_desired_platform_helper_version(
+    mock_get,
     mock_version,
     fakefs,
     platform_helper_version_file_version,
     platform_config_default_version,
     expected_version,
 ):
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
     if platform_helper_version_file_version:
         Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
 
@@ -308,7 +313,6 @@ def test_get_desired_platform_helper_version(
     if platform_config_default_version:
         platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
 
-    # platform_config["environment_pipelines"]["main"]["versions"] = {"platform-helper": "2.0.0"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
     desired_version = get_desired_platform_helper_version()
@@ -328,8 +332,10 @@ def test_get_desired_platform_helper_version(
     ],
 )
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("requests.get")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_desired_platform_helper_version_in_pipeline(
+    mock_get,
     mock_version,
     fakefs,
     platform_helper_version_file_version,
@@ -337,6 +343,9 @@ def test_get_desired_platform_helper_version_in_pipeline(
     pipeline_override,
     expected_version,
 ):
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
     if platform_helper_version_file_version:
         Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
 
