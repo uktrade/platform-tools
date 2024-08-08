@@ -521,6 +521,8 @@ environment_pipelines:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
+    versions:
+        platform-helper: 1.2.3
     environments:
       test:
         requires_approval: true
