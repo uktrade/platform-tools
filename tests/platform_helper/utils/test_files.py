@@ -114,49 +114,100 @@ def test_apply_defaults():
     assert result == {
         "application": "my-app",
         "environments": {
-            "one": {"a": "aaa", "b": {"c": "ccc"}},
-            "two": {"a": "aaa", "b": {"c": "ccc"}},
-            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
+            "one": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
+            "two": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
+            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc", "versions": {}},
         },
     }
 
 
 @pytest.mark.parametrize(
-    "env_config, expected_result",
+    "default_versions, env_default_versions, env_versions, expected_result",
     [
-        (None, {"platform-helper": "10.0.0"}),
-        ({}, {"platform-helper": "10.0.0"}),
+        # Empty cases
+        (None, None, None, {}),
+        (None, None, {}, {}),
+        (None, {}, None, {}),
+        ({}, None, None, {}),
+        # Env versions populated
         (
-            {"versions": {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"}},
+            None,
+            None,
+            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
             {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
         ),
         (
-            {"versions": {"terraform-platform-modules": "2.0.0"}},
+            None,
+            None,
+            {"terraform-platform-modules": "2.0.0"},
+            {"terraform-platform-modules": "2.0.0"},
+        ),
+        (None, None, {"platform-helper": "9.0.0"}, {"platform-helper": "9.0.0"}),
+        # env_default_versions populated
+        (None, {"platform-helper": "10.0.0"}, None, {"platform-helper": "10.0.0"}),
+        (None, {"platform-helper": "10.0.0"}, {}, {"platform-helper": "10.0.0"}),
+        (
+            None,
+            {"platform-helper": "10.0.0"},
+            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+        ),
+        (
+            None,
+            {"platform-helper": "10.0.0"},
+            {"terraform-platform-modules": "2.0.0"},
             {"platform-helper": "10.0.0", "terraform-platform-modules": "2.0.0"},
         ),
-        ({"versions": {"platform-helper": "9.0.0"}}, {"platform-helper": "9.0.0"}),
+        # default_versions populated
+        (
+            None,
+            {"platform-helper": "10.0.0"},
+            {"platform-helper": "9.0.0"},
+            {"platform-helper": "9.0.0"},
+        ),
+        (
+            {"terraform-platform-modules": "1.0.0"},
+            None,
+            None,
+            {"terraform-platform-modules": "1.0.0"},
+        ),
+        (
+            {"terraform-platform-modules": "2.0.0"},
+            {"terraform-platform-modules": "3.0.0"},
+            None,
+            {"terraform-platform-modules": "3.0.0"},
+        ),
+        (
+            {"terraform-platform-modules": "3.0.0"},
+            None,
+            {"terraform-platform-modules": "4.0.0"},
+            {"terraform-platform-modules": "4.0.0"},
+        ),
+        (
+            {"terraform-platform-modules": "4.0.0"},
+            {"terraform-platform-modules": "5.0.0"},
+            {"terraform-platform-modules": "6.0.0"},
+            {"terraform-platform-modules": "6.0.0"},
+        ),
     ],
 )
-def test_apply_defaults_for_versions(env_config, expected_result):
-    config = {
-        "application": "my-app",
-        "environments": {"*": {"versions": {"platform-helper": "10.0.0"}}, "one": env_config},
-    }
-
-    result = apply_environment_defaults(config)
-
-    assert result["environments"]["one"]["versions"] == expected_result
-
-
-def test_apply_defaults_when_versions_missing():
+def test_apply_defaults_for_versions(
+    default_versions, env_default_versions, env_versions, expected_result
+):
     config = {
         "application": "my-app",
         "environments": {"*": {}, "one": {}},
     }
+    if default_versions:
+        config["default_versions"] = default_versions
+    if env_default_versions:
+        config["environments"]["*"]["versions"] = env_default_versions
+    if env_versions:
+        config["environments"]["one"]["versions"] = env_versions
 
     result = apply_environment_defaults(config)
 
-    assert result["environments"]["one"] == {}
+    assert result["environments"]["one"].get("versions") == expected_result
 
 
 def test_apply_defaults_with_no_defaults():
@@ -175,7 +226,11 @@ def test_apply_defaults_with_no_defaults():
 
     assert result == {
         "application": "my-app",
-        "environments": {"one": {}, "two": {}, "three": {"a": "aaa"}},
+        "environments": {
+            "one": {"versions": {}},
+            "two": {"versions": {}},
+            "three": {"a": "aaa", "versions": {}},
+        },
     }
 
 
