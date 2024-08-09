@@ -102,7 +102,9 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
         reverse=True,
     )
 
-    for image in sorted_images[:20]:
+    MAX_RESULTS = 20
+
+    for image in sorted_images[:MAX_RESULTS]:
         try:
             commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
             if not commit_tag:
