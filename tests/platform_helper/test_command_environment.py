@@ -513,10 +513,10 @@ class TestGenerate:
     @pytest.mark.parametrize(
         "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
-            (None, None, "5", False),
-            ("7", None, "7", False),
-            (None, "8", "8", False),
-            ("9", "10", "10", False),
+            (None, None, "5", True),
+            ("7", None, "7", True),
+            (None, "8", "8", True),
+            ("9", "10", "10", True),
             ("9-tf", "10", "10", True),
         ],
     )
@@ -576,6 +576,8 @@ class TestGenerate:
             f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={expected_version}"
             in content
         )
+        moved_block = "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
+        assert moved_block in content
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=False)
