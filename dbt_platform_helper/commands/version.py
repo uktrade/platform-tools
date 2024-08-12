@@ -13,7 +13,11 @@ def version():
 
 
 @version.command(help="Print the version of platform-tools desired by the current project")
-@click.option("--pipeline", required=False, help="Take into account the specified pipeline")
+@click.option(
+    "--pipeline",
+    required=False,
+    help="Take into account the specified pipeline",
+)
 def print_desired(pipeline):
     desired_version = get_desired_platform_helper_version(pipeline)
     click.secho(desired_version)

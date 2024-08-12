@@ -12,6 +12,7 @@ import yaml
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
@@ -592,3 +593,33 @@ def platform_env_config():
             },
         },
     }
+
+
+@pytest.fixture
+def s3_extensions_fixture(fakefs):
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "application": "my_app",
+                "extensions": {
+                    "one": {
+                        "type": "s3",
+                        "environments": {
+                            "env1": {"bucket_name": "bucket-one"},
+                            "env2": {"bucket_name": "bucket-two"},
+                        },
+                    },
+                    "two": {
+                        "type": "s3-policy",
+                        "environments": {
+                            "env3": {"bucket_name": "bucket-three"},
+                        },
+                    },
+                    "three": {
+                        "type": "s3",
+                    },
+                },
+            }
+        ),
+    )

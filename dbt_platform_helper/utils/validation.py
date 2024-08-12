@@ -93,10 +93,6 @@ def validate_s3_bucket_name(name: str):
         if name.endswith(suffix):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
-    if not errors:
-        # Don't waste time calling AWS if the bucket name is not even valid.
-        warn_on_s3_bucket_name_availability(name)
-
     if errors:
         raise SchemaError(
             S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))
@@ -126,6 +122,8 @@ def validate_addons(addons: dict):
             schema.validate(addon)
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
+
+    _validate_s3_bucket_uniqueness({"extensions": addons})
 
     return errors
 
@@ -477,13 +475,35 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 )
 
 
-def validate_platform_config(config):
-    get_aws_session_or_abort()  # Ensure we have a valid session as validation requires it.
+def _validate_s3_bucket_uniqueness(enriched_config):
+    # Don't waste time calling AWS if the bucket name is not even valid.
+    extensions = enriched_config.get("extensions", {})
+    bucket_extensions = [
+        s3_ext
+        for s3_ext in extensions.values()
+        if "type" in s3_ext and s3_ext["type"] in ("s3", "s3-policy")
+    ]
+    environments = [
+        env for ext in bucket_extensions for env in ext.get("environments", {}).values()
+    ]
+    bucket_names = [env.get("bucket_name") for env in environments]
+
+    for name in bucket_names:
+        warn_on_s3_bucket_name_availability(name)
+
+
+def validate_platform_config(config, disable_aws_validation=False):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
+    if not disable_aws_validation:
+        _run_aws_checks(enriched_config)
+
+
+def _run_aws_checks(enriched_config):
+    _validate_s3_bucket_uniqueness(enriched_config)
 
 
 def _validate_environment_pipelines(config):
@@ -555,11 +575,11 @@ def _validate_environment_pipelines_triggers(config):
         abort_with_error(error_message + "\n  ".join(errors))
 
 
-def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
+def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_aws_validation=False):
     config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
-        validate_platform_config(conf)
+        validate_platform_config(conf, disable_aws_validation)
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
