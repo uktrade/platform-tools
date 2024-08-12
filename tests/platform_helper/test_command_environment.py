@@ -511,12 +511,13 @@ class TestGenerate:
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=True)
     @pytest.mark.parametrize(
-        "env_modules_version, cli_modules_version, expected_version",
+        "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
-            (None, None, "5"),
-            ("7", None, "7"),
-            (None, "8", "8"),
-            ("9", "10", "10"),
+            (None, None, "5", True),
+            ("7", None, "7", True),
+            (None, "8", "8", True),
+            ("9", "10", "10", True),
+            ("9-tf", "10", "10", True),
         ],
     )
     def test_generate_terraform(
@@ -528,6 +529,7 @@ class TestGenerate:
         env_modules_version,
         cli_modules_version,
         expected_version,
+        should_include_moved_block,
     ):
         from dbt_platform_helper.commands.environment import generate_terraform
 
@@ -574,6 +576,8 @@ class TestGenerate:
             f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={expected_version}"
             in content
         )
+        moved_block = "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
+        assert moved_block in content
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=False)

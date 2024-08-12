@@ -36,3 +36,12 @@ module "extensions" {
   environment = "{{ environment }}"
   vpc_name    = "{{ config.vpc }}"
 }
+
+/* 
+Clean up because terraform modules were initially deployed with a -tf suffix.  This block moves those modules to naming without a suffix.
+Can be removed once all services have moved to the new naming.
+*/
+moved {
+  from = module.extensions-tf
+  to   = module.extensions
+}
