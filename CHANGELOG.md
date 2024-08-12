@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.6.1](https://github.com/uktrade/platform-tools/compare/10.6.0...10.6.1) (2024-08-12)
+
+
+### Bug Fixes
+
+* Add target environment override to smoke tests ([#524](https://github.com/uktrade/platform-tools/issues/524)) ([5edc1c2](https://github.com/uktrade/platform-tools/commit/5edc1c29204567f60cedbf30670ef763a2470753))
+* DBTP-1180 - list all latest images tagged as commits ([#529](https://github.com/uktrade/platform-tools/issues/529)) ([12c3d5d](https://github.com/uktrade/platform-tools/commit/12c3d5d97dacd09b75c58a3d50e4808ae632c83b))
+* DBTP-1207 - align extensions module name ([#530](https://github.com/uktrade/platform-tools/issues/530)) ([3511c42](https://github.com/uktrade/platform-tools/commit/3511c424e8cc47e69aee05276f873dff02f6e6f4))
+
 ## [10.6.0](https://github.com/uktrade/platform-tools/compare/10.5.0...10.6.0) (2024-08-02)
 
 
