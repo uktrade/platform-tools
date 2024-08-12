@@ -511,12 +511,13 @@ class TestGenerate:
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=True)
     @pytest.mark.parametrize(
-        "env_modules_version, cli_modules_version, expected_version",
+        "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
-            (None, None, "5"),
-            ("7", None, "7"),
-            (None, "8", "8"),
-            ("9", "10", "10"),
+            (None, None, "5", False),
+            ("7", None, "7", False),
+            (None, "8", "8", False),
+            ("9", "10", "10", False),
+            ("9-tf", "10", "10", True),
         ],
     )
     def test_generate_terraform(
@@ -528,6 +529,7 @@ class TestGenerate:
         env_modules_version,
         cli_modules_version,
         expected_version,
+        should_include_moved_block,
     ):
         from dbt_platform_helper.commands.environment import generate_terraform
 
