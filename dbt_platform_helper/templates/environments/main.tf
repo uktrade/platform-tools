@@ -36,3 +36,8 @@ module "extensions" {
   environment = "{{ environment }}"
   vpc_name    = "{{ config.vpc }}"
 }
+
+moved {
+  from = module.extensions-tf
+  to   = module.extensions
+}
