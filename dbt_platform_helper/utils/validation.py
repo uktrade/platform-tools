@@ -476,7 +476,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 
 
 def _validate_s3_bucket_uniqueness(enriched_config):
-    # Don't waste time calling AWS if the bucket name is not even valid.
     extensions = enriched_config.get("extensions", {})
     bucket_extensions = [
         s3_ext

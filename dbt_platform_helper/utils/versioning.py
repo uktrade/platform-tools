@@ -112,7 +112,7 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
-    platform_config = load_and_validate_platform_config()
+    platform_config = load_and_validate_platform_config(disable_aws_validation=True)
     platform_config_default = parse_version(
         platform_config.get("default_versions", {}).get("platform-helper")
     )
