@@ -30,7 +30,7 @@ environments:
         id: "7777777777"
     requires_approval: true
     vpc: prod-vpc
-    
+
 environment_pipelines:
   main:
     account: non-prod-acc
