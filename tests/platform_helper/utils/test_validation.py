@@ -746,7 +746,7 @@ def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_valid
         ),
     ],
 )
-def test_file_compatibility_check_fails_if_platform_config_not_present(
+def test_config_file_check_fails_for_unsupported_files_exist(
     fakefs, capsys, files, expected_messages
 ):
     for file in files:
@@ -754,6 +754,38 @@ def test_file_compatibility_check_fails_if_platform_config_not_present(
 
     with pytest.raises(SystemExit):
         config_file_check()
+
+    console_message = capsys.readouterr().out
+
+    for expected_message in expected_messages:
+        assert expected_message in console_message
+
+
+@pytest.mark.parametrize(
+    "files, expected_messages",
+    [
+        (
+            [".platform-helper-version"],
+            [
+                f"`.platform-helper-version` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`,"
+                " under the key `default_versions: platform-helper:` and delete `.platform-helper-version`."
+            ],
+        ),
+        (
+            [PLATFORM_CONFIG_FILE, ".platform-helper-version"],
+            [
+                f"`.platform-helper-version` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
+            ],
+        ),
+    ],
+)
+def test_config_file_check_warns_if_deprecated_files_exist(
+    fakefs, capsys, files, expected_messages
+):
+    for file in files:
+        fakefs.create_file(file)
+
+    config_file_check()
 
     console_message = capsys.readouterr().out
 

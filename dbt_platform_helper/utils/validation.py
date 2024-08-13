@@ -587,11 +587,19 @@ def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_aws_val
 def config_file_check(path=PLATFORM_CONFIG_FILE):
     platform_config_exists = Path(path).exists()
     errors = []
+    warnings = []
 
     messages = {
-        "storage.yml": " under the key 'extensions'",
-        "extensions.yml": " under the key 'extensions'",
-        "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
+        "storage.yml": {"instruction": " under the key 'extensions'", "type": errors},
+        "extensions.yml": {"instruction": " under the key 'extensions'", "type": errors},
+        "pipelines.yml": {
+            "instruction": ", change the key 'codebases' to 'codebase_pipelines'",
+            "type": errors,
+        },
+        ".platform-helper-version": {
+            "instruction": ", under the key `default_versions: platform-helper:`",
+            "type": warnings,
+        },
     }
 
     for file in messages.keys():
@@ -599,14 +607,20 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
             if platform_config_exists:
                 message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
             else:
-                message = f"`{file}` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`{messages[file]} and delete `{file}`."
-            errors.append(message)
+                message = (
+                    f"`{file}` is no longer supported. Please move its contents into a file named "
+                    f"`{PLATFORM_CONFIG_FILE}`{messages[file]['instruction']} and delete `{file}`."
+                )
+            messages[file]["type"].append(message)
 
-    if not errors and not platform_config_exists:
+    if not errors and not warnings and not platform_config_exists:
         errors.append(
-            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            f"`{PLATFORM_CONFIG_FILE}` is missing. "
+            "Please check it exists and you are in the root directory of your deployment project."
         )
 
+    if warnings:
+        click.secho("\n".join(warnings), bg="yellow")
     if errors:
         click.secho("\n".join(errors), bg="red")
         exit(1)

@@ -7,12 +7,6 @@ import yaml
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
-CONFIG_FILE_MESSAGES = {
-    "storage.yml": " under the key 'extensions'",
-    "extensions.yml": " under the key 'extensions'",
-    "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
-}
-
 
 def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
