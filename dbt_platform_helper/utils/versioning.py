@@ -5,7 +5,6 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Optional
 from typing import Tuple
-from typing import TypeAlias
 from typing import Union
 
 import click
@@ -18,7 +17,7 @@ from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
-VersionTuple: TypeAlias = Optional[Tuple[int, int, int]]
+VersionTuple = Optional[Tuple[int, int, int]]
 
 
 class Versions:
