@@ -1032,6 +1032,6 @@ platform-helper version print-desired [--pipeline (main|test|prod-main)]
 ## Options
 
 - `--pipeline <choice>`
-  - Take into account the specified pipeline
+  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -18,7 +18,7 @@ def version():
     "--pipeline",
     required=False,
     type=click.Choice(get_environment_pipeline_names()),
-    help="Take into account the specified pipeline",
+    help="Take into account platform-tools version overrides in the specified pipeline",
 )
 def print_desired(pipeline):
     desired_version = get_desired_platform_helper_version(pipeline)
