@@ -685,6 +685,17 @@ def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_valid
     assert not mock_get_session.called
 
 
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+@patch("dbt_platform_helper.utils.validation.config_file_check")
+def test_load_and_validate_platform_config_skips_file_check_when_disable_file_check_parameter_passed(
+    mock_config_file_check, capfd, fakefs
+):
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
+    load_and_validate_platform_config(disable_file_check=True)
+
+    assert not mock_config_file_check.called
+
+
 @pytest.mark.parametrize(
     "files, expected_messages",
     [

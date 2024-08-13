@@ -574,8 +574,11 @@ def _validate_environment_pipelines_triggers(config):
         abort_with_error(error_message + "\n  ".join(errors))
 
 
-def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_aws_validation=False):
-    config_file_check(path)
+def load_and_validate_platform_config(
+    path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
+):
+    if not disable_file_check:
+        config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
         validate_platform_config(conf, disable_aws_validation)

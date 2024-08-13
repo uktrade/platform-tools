@@ -10,7 +10,7 @@ def get_environment_pipeline_names():
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
 
-    config = load_and_validate_platform_config(disable_aws_validation=True)
+    config = load_and_validate_platform_config(disable_aws_validation=True, disable_file_check=True)
     return config.get("environment_pipelines", {}).keys()
 
 
