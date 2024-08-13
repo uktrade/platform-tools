@@ -1026,12 +1026,12 @@ platform-helper version print-desired
 ## Usage
 
 ```
-platform-helper version print-desired [--pipeline <pipeline>] 
+platform-helper version print-desired [--pipeline (main|test|prod-main)] 
 ```
 
 ## Options
 
-- `--pipeline <text>`
+- `--pipeline <choice>`
   - Take into account the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -1,0 +1,69 @@
+# This file is just here to support the tests.
+# In particular, testing the Choices for the click commands as these are evaluated at compile-time (being decorators)
+# and so the functions that populate the Choice objects are evaluated before tests can patch them.
+# e.g. dbt_platform_helper.utils.platform_config.get_environment_pipeline_names
+application: test-app
+
+environments:
+  "*":
+    accounts:
+      deploy:
+        name: "non-prod-acc"
+        id: "1122334455"
+      dns:
+        name: "non-prod-dns-acc"
+        id: "6677889900"
+    requires_approval: false
+    vpc: non-prod-vpc
+  dev:
+  test:
+    versions:
+      terraform-platform-modules: 1.2.3
+  staging:
+  prod:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "prod-dns-acc"
+        id: "7777777777"
+    requires_approval: true
+    vpc: prod-vpc
+    
+environment_pipelines:
+  main:
+    account: non-prod-acc
+    slack_channel: "/codebuild/notification_channel"
+    trigger_on_push: true
+    pipeline_to_trigger: "prod-main"
+    environments:
+      dev:
+      staging:
+  test:
+    branch: my-feature-branch
+    slack_channel: "/codebuild/notification_channel"
+    trigger_on_push: false
+    versions:
+      platform-helper: main
+    environments:
+      test:
+        requires_approval: true
+        vpc: testing_vpc
+        accounts:
+          deploy:
+            name: "prod-acc"
+            id: "9999999999"
+          dns:
+            name: "prod-dns-acc"
+            id: "7777777777"
+  prod-main:
+    account: prod-acc
+    branch: main
+    slack_channel: "/codebuild/slack_oauth_channel"
+    trigger_on_push: false
+    versions:
+      platform-helper: 9.0.9
+    environments:
+      prod:
+        requires_approval: true

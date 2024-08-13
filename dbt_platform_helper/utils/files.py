@@ -7,8 +7,6 @@ import yaml
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-
 CONFIG_FILE_MESSAGES = {
     "storage.yml": " under the key 'extensions'",
     "extensions.yml": " under the key 'extensions'",
@@ -110,8 +108,3 @@ def apply_environment_defaults(config):
     enriched_config["environments"] = defaulted_envs
 
     return enriched_config
-
-
-def is_terraform_project() -> bool:
-    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    return not config.get("legacy_project", False)

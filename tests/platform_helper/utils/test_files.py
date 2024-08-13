@@ -3,11 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import generate_override_files_from_template
-from dbt_platform_helper.utils.files import is_terraform_project
 from dbt_platform_helper.utils.files import mkfile
 
 
@@ -232,17 +230,3 @@ def test_apply_defaults_with_no_defaults():
             "three": {"a": "aaa", "versions": {}},
         },
     }
-
-
-@pytest.mark.parametrize(
-    "platform_config_content, expected_result",
-    [
-        ("application: my-app\nlegacy_project: True", False),
-        ("application: my-app\nlegacy_project: False", True),
-        ("application: my-app", True),
-    ],
-)
-def test_is_terraform_project(fakefs, platform_config_content, expected_result):
-    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=platform_config_content)
-
-    assert is_terraform_project() == expected_result

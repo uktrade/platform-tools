@@ -1,6 +1,7 @@
 import click
 
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -16,6 +17,7 @@ def version():
 @click.option(
     "--pipeline",
     required=False,
+    type=click.Choice(get_environment_pipeline_names()),
     help="Take into account the specified pipeline",
 )
 def print_desired(pipeline):
