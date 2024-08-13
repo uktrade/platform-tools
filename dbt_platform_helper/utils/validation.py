@@ -604,13 +604,10 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
 
     for file in messages.keys():
         if Path(file).exists():
-            if platform_config_exists:
-                message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            else:
-                message = (
-                    f"`{file}` is no longer supported. Please move its contents into a file named "
-                    f"`{PLATFORM_CONFIG_FILE}`{messages[file]['instruction']} and delete `{file}`."
-                )
+            message = (
+                f"`{file}` is no longer supported. Please move its contents into the "
+                f"`{PLATFORM_CONFIG_FILE}` file{messages[file]['instruction']} and delete `{file}`."
+            )
             messages[file]["type"].append(message)
 
     if not errors and not warnings and not platform_config_exists:
@@ -620,9 +617,9 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
         )
 
     if warnings:
-        click.secho("\n".join(warnings), bg="yellow")
+        click.secho("\n".join(warnings), bg="yellow", fg="black")
     if errors:
-        click.secho("\n".join(errors), bg="red")
+        click.secho("\n".join(errors), bg="red", fg="white")
         exit(1)
 
 

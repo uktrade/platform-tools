@@ -697,51 +697,26 @@ def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_valid
         (
             ["storage.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`."
+                f"`storage.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `storage.yml`."
             ],
         ),
         (
             ["extensions.yml"],
             [
-                f"`extensions.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `extensions.yml`."
+                f"`extensions.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `extensions.yml`."
             ],
         ),
         (
             ["pipelines.yml"],
             [
-                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
+                f"`pipelines.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
             ],
         ),
         (
             ["storage.yml", "pipelines.yml"],
             [
-                f"`storage.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}` under the key 'extensions' and delete `storage.yml`.",
-                f"`pipelines.yml` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "storage.yml"],
-            [
-                f"`storage.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "extensions.yml"],
-            [
-                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml"],
-            [
-                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, "pipelines.yml", "extensions.yml"],
-            [
-                f"`pipelines.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
-                f"`extensions.yml` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted.",
+                f"`storage.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `storage.yml`.",
+                f"`pipelines.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
             ],
         ),
     ],
@@ -767,14 +742,9 @@ def test_config_file_check_fails_for_unsupported_files_exist(
         (
             [".platform-helper-version"],
             [
-                f"`.platform-helper-version` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`,"
+                f"`.platform-helper-version` is no longer supported. "
+                f"Please move its contents into the `{PLATFORM_CONFIG_FILE}` file,"
                 " under the key `default_versions: platform-helper:` and delete `.platform-helper-version`."
-            ],
-        ),
-        (
-            [PLATFORM_CONFIG_FILE, ".platform-helper-version"],
-            [
-                f"`.platform-helper-version` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
             ],
         ),
     ],
