@@ -15,6 +15,7 @@ from yaml.parser import ParserError
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -599,7 +600,7 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
             "instruction": ", change the key 'codebases' to 'codebase_pipelines'",
             "type": errors,
         },
-        ".platform-helper-version": {
+        PLATFORM_HELPER_VERSION_FILE: {
             "instruction": ", under the key `default_versions: platform-helper:`",
             "type": warnings,
         },

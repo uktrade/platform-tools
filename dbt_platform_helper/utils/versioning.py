@@ -10,11 +10,11 @@ from typing import Union
 import click
 import requests
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 VersionTuple = Optional[Tuple[int, int, int]]
@@ -122,21 +122,50 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         if pipeline.get("versions", {}).get("platform-helper")
     }
 
-    version_from_file = None
-    message = f"Cannot get dbt-platform-helper version from file '{PLATFORM_HELPER_VERSION_FILE}'. Check if file exists."
+    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+    version_from_file = (
+        parse_version(deprecated_version_file.read_text())
+        if deprecated_version_file.exists()
+        else None
+    )
 
-    try:
-        version_from_file = parse_version(Path(PLATFORM_HELPER_VERSION_FILE).read_text())
-    except FileNotFoundError:
-        click.secho(f"{message}", fg="yellow")
-
-    return PlatformHelperVersions(
+    out = PlatformHelperVersions(
         local_version=locally_installed_version,
         latest_release=latest_release,
         platform_helper_file_version=version_from_file,
         platform_config_default=platform_config_default,
         pipeline_overrides=pipeline_overrides,
     )
+
+    _process_version_file_warnings(out)
+
+    return out
+
+
+def _process_version_file_warnings(versions: PlatformHelperVersions):
+    messages = []
+    missing_default_version_message = f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: "
+    deprecation_message = f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."
+
+    if versions.platform_config_default and versions.platform_helper_file_version:
+        messages.append(deprecation_message)
+
+    if versions.platform_config_default and not versions.platform_helper_file_version:
+        return
+
+    if not versions.platform_config_default and versions.platform_helper_file_version:
+        messages.append(deprecation_message)
+        messages.append(
+            f"{missing_default_version_message}{string_version(versions.platform_helper_file_version)}\n"
+        )
+
+    if not versions.platform_config_default and not versions.platform_helper_file_version:
+        messages.append(f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.")
+        messages.append(
+            f"{missing_default_version_message}{string_version(versions.local_version)}\n"
+        )
+
+    click.secho("\n".join(messages), fg="yellow")
 
 
 def validate_version_compatibility(
@@ -184,12 +213,6 @@ def validate_template_version(app_version: Tuple[int, int, int], template_file_p
         app_version,
         get_template_generated_with_version(template_file_path),
     )
-
-
-def generate_platform_helper_version_file(directory="."):
-    base_path = Path(directory)
-    local_version = string_version(get_platform_helper_versions().local_version)
-    click.echo(mkfile(base_path, PLATFORM_HELPER_VERSION_FILE, f"{local_version}\n"))
 
 
 def check_platform_helper_version_needs_update():

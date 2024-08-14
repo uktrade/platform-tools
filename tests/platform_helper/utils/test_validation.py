@@ -11,6 +11,7 @@ from moto import mock_aws
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
@@ -751,11 +752,11 @@ def test_config_file_check_fails_for_unsupported_files_exist(
     "files, expected_messages",
     [
         (
-            [".platform-helper-version"],
+            [PLATFORM_HELPER_VERSION_FILE],
             [
-                f"`.platform-helper-version` is no longer supported. "
+                f"`{PLATFORM_HELPER_VERSION_FILE}` is no longer supported. "
                 f"Please move its contents into the `{PLATFORM_CONFIG_FILE}` file,"
-                " under the key `default_versions: platform-helper:` and delete `.platform-helper-version`."
+                f" under the key `default_versions: platform-helper:` and delete `{PLATFORM_HELPER_VERSION_FILE}`."
             ],
         ),
     ],

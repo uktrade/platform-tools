@@ -6,13 +6,8 @@ from click.testing import CliRunner
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
-from dbt_platform_helper.utils.versioning import generate_platform_helper_version_file
 
 
-@patch(
-    "dbt_platform_helper.commands.generate.generate_platform_helper_version_file",
-    new=Mock(return_value=None),
-)
 @patch("dbt_platform_helper.commands.generate.make_addons", return_value=None)
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", return_value=None)
 def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
@@ -38,10 +33,6 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=True))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=True))
-@patch(
-    "dbt_platform_helper.commands.generate.generate_platform_helper_version_file",
-    new=Mock(return_value=None),
-)
 def test_platform_helper_generate_shows_a_warning_when_version_is_different_than_on_file(
     mock_secho, tmp_path
 ):
@@ -59,25 +50,6 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
-def test_platform_helper_generate_generates_version_file_if_not_exist(tmp_path):
-    contents = "1.0.0\n"
-    version_file_path = tmp_path / PLATFORM_HELPER_VERSION_FILE
-
-    assert not version_file_path.exists()
-
-    with patch.object(generate_platform_helper_version_file, "__defaults__", (tmp_path,)):
-        CliRunner().invoke(platform_helper_generate)
-
-    assert version_file_path.exists()
-    assert version_file_path.read_text() == contents
-
-
-@patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
-    new=Mock(return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0))),
-)
-@patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
-@patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
 def test_platform_helper_generate_does_not_override_version_file_if_exists(tmp_path):
     contents = "2.0.0"
     version_file_path = tmp_path / PLATFORM_HELPER_VERSION_FILE
@@ -86,8 +58,7 @@ def test_platform_helper_generate_does_not_override_version_file_if_exists(tmp_p
 
     assert version_file_path.exists()
 
-    with patch.object(generate_platform_helper_version_file, "__defaults__", (tmp_path,)):
-        CliRunner().invoke(platform_helper_generate)
+    CliRunner().invoke(platform_helper_generate)
 
     assert version_file_path.exists()
     assert version_file_path.read_text() == contents

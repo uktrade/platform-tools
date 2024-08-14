@@ -232,33 +232,61 @@ def test_get_platform_helper_versions(
     assert versions.platform_helper_file_version == (5, 6, 7)
     assert versions.platform_config_default == (10, 2, 0)
     assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
-    assert not mock_aws.called
+    assert not mock_aws.called  # Ensure that an AWS session is not required for this function
 
 
+@pytest.mark.parametrize(
+    "version_in_phv_file, version_in_platform_config, expected_warning",
+    (
+        (
+            False,
+            False,
+            f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+            f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
+        ),
+        (
+            True,
+            False,
+            f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
+            f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
+            "  platform-helper: 3.3.3\n",
+        ),
+        (False, True, None),
+        (True, True, f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."),
+    ),
+)
 @patch("click.secho")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_platform_helper_version_file_does_not_exist(
-    mock_aws, mock_version, mock_get, secho, fakefs
+def test_platform_helper_version_warnings(
+    mock_aws,
+    mock_version,
+    mock_get,
+    secho,
+    fakefs,
+    version_in_phv_file,
+    version_in_platform_config,
+    expected_warning,
 ):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my-app"}))
+    platform_config = {"application": "my-app"}
+    if version_in_platform_config:
+        platform_config["default_versions"] = {"platform-helper": "2.2.2"}
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
 
-    if os.path.exists(".platform-helper-version"):
-        os.remove(".platform-helper-version")
+    if version_in_phv_file:
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
 
-    versions = get_platform_helper_versions()
+    get_platform_helper_versions()
 
-    assert versions.platform_helper_file_version is None
-    secho.assert_called_with(
-        f"Cannot get dbt-platform-helper version from file '{PLATFORM_HELPER_VERSION_FILE}'. Check if file exists.",
-        fg="yellow",
-    )
-    assert not mock_aws.called
+    if expected_warning:
+        secho.assert_called_with(expected_warning, fg="yellow")
+    else:
+        secho.assert_not_called()
 
 
 @patch("subprocess.run")
