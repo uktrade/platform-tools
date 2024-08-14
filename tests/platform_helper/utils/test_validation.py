@@ -596,30 +596,44 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     assert "Wrong key 'something-invalid'" in str(ex)
 
 
+@pytest.mark.parametrize(
+    "invalid_key",
+    (
+        "",
+        "invalid-key",
+        "platform-helper",  # platform-helper is not valid in the environment overrides.
+    ),
+)
 def test_validation_fails_if_invalid_environment_version_override_keys_present(
-    fakefs, capsys, valid_platform_config
+    invalid_key, fakefs, capsys, valid_platform_config
 ):
-    valid_platform_config["environments"]["*"]["versions"] = {"platform-helper": "1.2.3"}
+    valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SchemaError) as ex:
         load_and_validate_platform_config()
 
-    assert "Wrong key 'platform-helper'" in str(ex)
+    assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
+@pytest.mark.parametrize(
+    "invalid_key",
+    (
+        "",
+        "invalid-key",
+        "terraform-platform-modules",  # terraform-platform-modules is not valid in the pipeline overrides.
+    ),
+)
 def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-    fakefs, capsys, valid_platform_config
+    invalid_key, fakefs, capsys, valid_platform_config
 ):
-    valid_platform_config["environment_pipelines"]["test"]["versions"][
-        "terraform-platform-modules"
-    ] = "1.2.3"
+    valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SchemaError) as ex:
         load_and_validate_platform_config()
 
-    assert "Wrong key 'terraform-platform-modules'" in str(ex)
+    assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
