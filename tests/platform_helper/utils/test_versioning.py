@@ -20,9 +20,9 @@ from dbt_platform_helper.utils.versioning import (
 )
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
-from dbt_platform_helper.utils.versioning import get_desired_platform_helper_version
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
+from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
 from dbt_platform_helper.utils.versioning import validate_template_version
@@ -321,7 +321,7 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_get_desired_platform_helper_version(
+def test_get_required_platform_helper_version(
     mock_get,
     mock_version,
     fakefs,
@@ -347,9 +347,9 @@ def test_get_desired_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    desired_version = get_desired_platform_helper_version()
+    required_version = get_required_platform_helper_version()
 
-    assert desired_version == expected_version
+    assert required_version == expected_version
 
 
 @pytest.mark.parametrize(
@@ -366,7 +366,7 @@ def test_get_desired_platform_helper_version(
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
-def test_get_desired_platform_helper_version_in_pipeline(
+def test_get_required_platform_helper_version_in_pipeline(
     mock_get,
     mock_version,
     fakefs,
@@ -398,6 +398,6 @@ def test_get_desired_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    desired_version = get_desired_platform_helper_version("main")
+    required_version = get_required_platform_helper_version("main")
 
-    assert desired_version == expected_version
+    assert required_version == expected_version

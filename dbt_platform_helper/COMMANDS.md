@@ -42,7 +42,7 @@
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
-- [platform-helper version print-desired](#platform-helper-version-print-desired)
+- [platform-helper version get-required-platform-helper](#platform-helper-version-get-required-platform-helper)
 
 # platform-helper
 
@@ -1005,7 +1005,7 @@ platform-helper database copy <source_db> <target_db>
 ## Usage
 
 ```
-platform-helper version print-desired 
+platform-helper version get-required-platform-helper 
 ```
 
 ## Options
@@ -1015,18 +1015,18 @@ platform-helper version print-desired
 
 ## Commands
 
-- [`print-desired` ↪](#platform-helper-version-print-desired)
+- [`get-required-platform-helper` ↪](#platform-helper-version-get-required-platform-helper)
 
-# platform-helper version print-desired
+# platform-helper version get-required-platform-helper
 
 [↩ Parent](#platform-helper-version)
 
-    Print the version of platform-tools desired by the current project
+    Print the version of platform-tools required by the current project
 
 ## Usage
 
 ```
-platform-helper version print-desired [--pipeline (main|test|prod-main)] 
+platform-helper version get-required-platform-helper [--pipeline (main|test|prod-main)] 
 ```
 
 ## Options

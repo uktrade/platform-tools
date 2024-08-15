@@ -259,7 +259,7 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def get_desired_platform_helper_version(pipeline: str = None) -> str:
+def get_required_platform_helper_version(pipeline: str = None) -> str:
     versions = get_platform_helper_versions()
     pipeline_version = versions.pipeline_overrides.get(pipeline)
     version_precedence = [
