@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
 from typing import Optional
@@ -104,7 +105,10 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 
 def get_platform_helper_versions() -> PlatformHelperVersions:
-    locally_installed_version = parse_version(version("dbt-platform-helper"))
+    try:
+        locally_installed_version = parse_version(version("dbt-platform-helper"))
+    except PackageNotFoundError:
+        locally_installed_version = None
 
     package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
