@@ -22,7 +22,7 @@ def version():
     type=click.Choice(get_environment_pipeline_names()),
     help="Take into account platform-tools version overrides in the specified pipeline",
 )
-def get_platform_helper_for_app(pipeline):
+def get_platform_helper_for_project(pipeline):
     """
     Version precedence is in this order:
         - if the --pipeline option is supplied, the version in 'platform-config.yml' in:

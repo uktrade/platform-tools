@@ -5,7 +5,7 @@ from unittest.mock import patch
 import yaml
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.version import get_platform_helper_for_app
+from dbt_platform_helper.commands.version import get_platform_helper_for_project
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
@@ -18,7 +18,7 @@ def test_calls_versioning_function_and_prints_returned_version(
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
     mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-    result = CliRunner().invoke(get_platform_helper_for_app, [])
+    result = CliRunner().invoke(get_platform_helper_for_project, [])
 
     assert len(mock_get_required_platform_helper_version.mock_calls) == 1
     assert mock_get_required_platform_helper_version.mock_calls[0].args == (None,)
@@ -35,7 +35,7 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
     mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-    result = CliRunner().invoke(get_platform_helper_for_app, ["--pipeline", "main"])
+    result = CliRunner().invoke(get_platform_helper_for_project, ["--pipeline", "main"])
 
     assert len(mock_get_required_platform_helper_version.mock_calls) == 1
     assert mock_get_required_platform_helper_version.mock_calls[0].args == ("main",)
@@ -49,7 +49,7 @@ def test_fail_if_pipeline_option_is_not_a_pipeline(
 ):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
 
-    result = CliRunner().invoke(get_platform_helper_for_app, ["--pipeline", "bogus"])
+    result = CliRunner().invoke(get_platform_helper_for_project, ["--pipeline", "bogus"])
 
     assert result.exit_code != 0
     assert "'bogus' is not one of" in result.output
