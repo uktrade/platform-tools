@@ -15,6 +15,10 @@ PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.Acc
 PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
 PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
+export AWS_ACCESS_KEY_ID=$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN=$PLATFORM_SANDBOX_AWS_SESSION_TOKEN
+
 echo -e "\nFetch parameters from AWS Parameter Store"
 USERNAME=$(aws ssm get-parameter --name "/copilot/demodjango/${TARGET_ENVIRONMENT}/secrets/BASIC_AUTH_USERNAME" --with-decryption --query "Parameter.Value" --output text)
 PASSWORD=$(aws ssm get-parameter --name "/copilot/demodjango/${TARGET_ENVIRONMENT}/secrets/BASIC_AUTH_PASSWORD" --with-decryption --query "Parameter.Value" --output text)
