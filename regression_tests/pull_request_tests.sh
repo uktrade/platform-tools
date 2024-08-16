@@ -15,7 +15,7 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 # ./regression_tests/stages/clone_demodjango_deploy.sh
 
-# ./regression_tests/stages/clone_demodjango.sh
+./regression_tests/stages/clone_demodjango.sh
 
 # ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
