@@ -9,7 +9,7 @@ echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HE
 
 source ./regression_tests/stages/set_up_git_config.sh
 
-source ./regression_tests/stages/set_up_aws_config.sh
+./regression_tests/stages/set_up_aws_config.sh
 
 # ./regression_tests/stages/build_platform_helper.sh
 
