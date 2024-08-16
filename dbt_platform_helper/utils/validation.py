@@ -499,11 +499,7 @@ def validate_platform_config(config, disable_aws_validation=False):
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     if not disable_aws_validation:
-        _run_aws_checks(enriched_config)
-
-
-def _run_aws_checks(enriched_config):
-    _validate_s3_bucket_uniqueness(enriched_config)
+        _validate_s3_bucket_uniqueness(enriched_config)
 
 
 def _validate_environment_pipelines(config):

@@ -1002,6 +1002,9 @@ platform-helper database copy <source_db> <target_db>
 
 [↩ Parent](#platform-helper)
 
+    Contains subcommands for getting version information about the current
+    project.
+
 ## Usage
 
 ```
