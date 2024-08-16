@@ -42,7 +42,7 @@
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
-- [platform-helper version get-required-platform-helper](#platform-helper-version-get-required-platform-helper)
+- [platform-helper version get-platform-helper-for-app](#platform-helper-version-get-platform-helper-for-app)
 
 # platform-helper
 
@@ -1008,7 +1008,7 @@ platform-helper database copy <source_db> <target_db>
 ## Usage
 
 ```
-platform-helper version get-required-platform-helper 
+platform-helper version get-platform-helper-for-app 
 ```
 
 ## Options
@@ -1018,9 +1018,9 @@ platform-helper version get-required-platform-helper
 
 ## Commands
 
-- [`get-required-platform-helper` ↪](#platform-helper-version-get-required-platform-helper)
+- [`get-platform-helper-for-app` ↪](#platform-helper-version-get-platform-helper-for-app)
 
-# platform-helper version get-required-platform-helper
+# platform-helper version get-platform-helper-for-app
 
 [↩ Parent](#platform-helper-version)
 
@@ -1029,7 +1029,7 @@ platform-helper version get-required-platform-helper
 ## Usage
 
 ```
-platform-helper version get-required-platform-helper [--pipeline (main|test|prod-main)] 
+platform-helper version get-platform-helper-for-app [--pipeline (main|test|prod-main)] 
 ```
 
 ## Options
