@@ -230,6 +230,9 @@ def test_platform_helper_version_file_does_not_exist(mock_version, mock_get, sec
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
 
+    if os.path.exists(".platform-helper-version"):
+        os.remove(".platform-helper-version")
+
     versions = get_platform_helper_versions()
 
     assert versions.platform_helper_file_version is None
