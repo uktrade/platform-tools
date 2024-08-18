@@ -28,3 +28,5 @@ export BASIC_AUTH_PASSWORD="$PASSWORD"
 
 echo -e "\nRun smoke tests"
 ./tests/browser/run.sh ${TARGET_ENVIRONMENT} smoke
+
+cd "${CODEBUILD_SRC_DIR}"
