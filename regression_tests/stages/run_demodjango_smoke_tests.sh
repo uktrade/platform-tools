@@ -7,7 +7,7 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 echo -e "\nInstall dependencies"
 poetry install
 
-echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
+echo -e "\nAssume platform-sandbox role to access basic auth secrets"
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
@@ -28,3 +28,5 @@ export BASIC_AUTH_PASSWORD="$PASSWORD"
 
 echo -e "\nRun smoke tests"
 ./tests/browser/run.sh ${TARGET_ENVIRONMENT} smoke
+
+cd "${CODEBUILD_SRC_DIR}"
