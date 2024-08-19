@@ -12,6 +12,7 @@ import yaml
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
@@ -396,6 +397,10 @@ def valid_platform_config():
 application: test-app
 legacy_project: true
 
+default_versions: 
+    platform-helper: 10.2.0
+    terraform-platform-modules: 1.2.3
+
 environments:
   "*":
     accounts:
@@ -517,6 +522,8 @@ environment_pipelines:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
+    versions:
+        platform-helper: main
     environments:
       test:
         requires_approval: true
@@ -533,6 +540,8 @@ environment_pipelines:
     branch: main
     slack_channel: "/codebuild/slack_oauth_channel"
     trigger_on_push: false
+    versions:
+        platform-helper: 9.0.9
     environments:
       prod:
         requires_approval: true
@@ -584,3 +593,33 @@ def platform_env_config():
             },
         },
     }
+
+
+@pytest.fixture
+def s3_extensions_fixture(fakefs):
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "application": "my_app",
+                "extensions": {
+                    "one": {
+                        "type": "s3",
+                        "environments": {
+                            "env1": {"bucket_name": "bucket-one"},
+                            "env2": {"bucket_name": "bucket-two"},
+                        },
+                    },
+                    "two": {
+                        "type": "s3-policy",
+                        "environments": {
+                            "env3": {"bucket_name": "bucket-three"},
+                        },
+                    },
+                    "three": {
+                        "type": "s3",
+                    },
+                },
+            }
+        ),
+    )

@@ -15,6 +15,7 @@ from yaml.parser import ParserError
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -93,10 +94,6 @@ def validate_s3_bucket_name(name: str):
         if name.endswith(suffix):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
-    if not errors:
-        # Don't waste time calling AWS if the bucket name is not even valid.
-        warn_on_s3_bucket_name_availability(name)
-
     if errors:
         raise SchemaError(
             S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))
@@ -126,6 +123,8 @@ def validate_addons(addons: dict):
             schema.validate(addon)
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
+
+    _validate_s3_bucket_uniqueness({"extensions": addons})
 
     return errors
 
@@ -376,6 +375,17 @@ PROMETHEUS_POLICY_DEFINITION = {
     },
 }
 
+_DEFAULT_VERSIONS_DEFINITION = {
+    Optional("terraform-platform-modules"): str,
+    Optional("platform-helper"): str,
+}
+_ENVIRONMENTS_VERSIONS_OVERRIDES = {
+    Optional("terraform-platform-modules"): str,
+}
+_PIPELINE_VERSIONS_OVERRIDES = {
+    Optional("platform-helper"): str,
+}
+
 _ENVIRONMENTS_PARAMS = {
     Optional("accounts"): {
         "deploy": {
@@ -388,14 +398,11 @@ _ENVIRONMENTS_PARAMS = {
         },
     },
     Optional("requires_approval"): bool,
+    Optional("versions"): _ENVIRONMENTS_VERSIONS_OVERRIDES,
     Optional("vpc"): str,
 }
 
-ENVIRONMENTS_DEFINITION = {
-    str: Or(
-        None, {**_ENVIRONMENTS_PARAMS, Optional("versions"): {"terraform-platform-modules": str}}
-    )
-}
+ENVIRONMENTS_DEFINITION = {str: Or(None, _ENVIRONMENTS_PARAMS)}
 
 CODEBASE_PIPELINES_DEFINITION = [
     {
@@ -435,6 +442,7 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
         Optional("account"): str,
         Optional("branch", default="main"): str,
         Optional("pipeline_to_trigger"): str,
+        Optional("versions"): _PIPELINE_VERSIONS_OVERRIDES,
         "slack_channel": str,
         "trigger_on_push": bool,
         "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},
@@ -446,6 +454,7 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         "application": str,
         Optional("legacy_project", default=False): bool,
+        Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
         Optional("accounts"): list[str],
         Optional("environments"): ENVIRONMENTS_DEFINITION,
         Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
@@ -467,13 +476,30 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 )
 
 
-def validate_platform_config(config):
-    get_aws_session_or_abort()  # Ensure we have a valid session as validation requires it.
+def _validate_s3_bucket_uniqueness(enriched_config):
+    extensions = enriched_config.get("extensions", {})
+    bucket_extensions = [
+        s3_ext
+        for s3_ext in extensions.values()
+        if "type" in s3_ext and s3_ext["type"] in ("s3", "s3-policy")
+    ]
+    environments = [
+        env for ext in bucket_extensions for env in ext.get("environments", {}).values()
+    ]
+    bucket_names = [env.get("bucket_name") for env in environments]
+
+    for name in bucket_names:
+        warn_on_s3_bucket_name_availability(name)
+
+
+def validate_platform_config(config, disable_aws_validation=False):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
+    if not disable_aws_validation:
+        _validate_s3_bucket_uniqueness(enriched_config)
 
 
 def _validate_environment_pipelines(config):
@@ -545,11 +571,14 @@ def _validate_environment_pipelines_triggers(config):
         abort_with_error(error_message + "\n  ".join(errors))
 
 
-def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
-    config_file_check(path)
+def load_and_validate_platform_config(
+    path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
+):
+    if not disable_file_check:
+        config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
-        validate_platform_config(conf)
+        validate_platform_config(conf, disable_aws_validation)
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
@@ -558,28 +587,39 @@ def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE):
 def config_file_check(path=PLATFORM_CONFIG_FILE):
     platform_config_exists = Path(path).exists()
     errors = []
+    warnings = []
 
     messages = {
-        "storage.yml": " under the key 'extensions'",
-        "extensions.yml": " under the key 'extensions'",
-        "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
+        "storage.yml": {"instruction": " under the key 'extensions'", "type": errors},
+        "extensions.yml": {"instruction": " under the key 'extensions'", "type": errors},
+        "pipelines.yml": {
+            "instruction": ", change the key 'codebases' to 'codebase_pipelines'",
+            "type": errors,
+        },
+        PLATFORM_HELPER_VERSION_FILE: {
+            "instruction": ", under the key `default_versions: platform-helper:`",
+            "type": warnings,
+        },
     }
 
     for file in messages.keys():
         if Path(file).exists():
-            if platform_config_exists:
-                message = f"`{file}` has been superseded by `{PLATFORM_CONFIG_FILE}` and should be deleted."
-            else:
-                message = f"`{file}` is no longer supported. Please move its contents into a file named `{PLATFORM_CONFIG_FILE}`{messages[file]} and delete `{file}`."
-            errors.append(message)
+            message = (
+                f"`{file}` is no longer supported. Please move its contents into the "
+                f"`{PLATFORM_CONFIG_FILE}` file{messages[file]['instruction']} and delete `{file}`."
+            )
+            messages[file]["type"].append(message)
 
-    if not errors and not platform_config_exists:
+    if not errors and not warnings and not platform_config_exists:
         errors.append(
-            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            f"`{PLATFORM_CONFIG_FILE}` is missing. "
+            "Please check it exists and you are in the root directory of your deployment project."
         )
 
+    if warnings:
+        click.secho("\n".join(warnings), bg="yellow", fg="black")
     if errors:
-        click.secho("\n".join(errors), bg="red")
+        click.secho("\n".join(errors), bg="red", fg="white")
         exit(1)
 
 

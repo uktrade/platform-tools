@@ -16,7 +16,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -890,6 +890,7 @@ class TestMakeAddonCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
     def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which

@@ -41,6 +41,8 @@
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database copy](#platform-helper-database-copy)
+- [platform-helper version](#platform-helper-version)
+- [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
 # platform-helper
 
@@ -73,6 +75,7 @@ platform-helper <command> [--version]
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
+- [`version` ↪](#platform-helper-version)
 
 # platform-helper application
 
@@ -992,5 +995,46 @@ platform-helper database copy <source_db> <target_db>
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper version
+
+[↩ Parent](#platform-helper)
+
+    Contains subcommands for getting version information about the current
+    project.
+
+## Usage
+
+```
+platform-helper version get-platform-helper-for-project 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`get-platform-helper-for-project` ↪](#platform-helper-version-get-platform-helper-for-project)
+
+# platform-helper version get-platform-helper-for-project
+
+[↩ Parent](#platform-helper-version)
+
+    Print the version of platform-tools required by the current project
+
+## Usage
+
+```
+platform-helper version get-platform-helper-for-project [--pipeline (main|test|prod-main)] 
+```
+
+## Options
+
+- `--pipeline <choice>`
+  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

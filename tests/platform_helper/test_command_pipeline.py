@@ -9,7 +9,7 @@ from freezegun.api import freeze_time
 
 from dbt_platform_helper.commands.pipeline import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.commands.pipeline import generate
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import assert_file_created_in_stdout

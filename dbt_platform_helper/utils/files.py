@@ -7,14 +7,6 @@ import yaml
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-
-CONFIG_FILE_MESSAGES = {
-    "storage.yml": " under the key 'extensions'",
-    "extensions.yml": " under the key 'extensions'",
-    "pipelines.yml": ", change the key 'codebases' to 'codebase_pipelines'",
-}
-
 
 def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
@@ -88,15 +80,25 @@ def apply_environment_defaults(config):
     without_defaults_entry = {
         name: data if data else {} for name, data in environments.items() if name != "*"
     }
+
+    default_versions = config.get("default_versions", {})
+
+    def combine_env_data(data):
+        return {
+            **env_defaults,
+            **data,
+            "versions": {
+                **default_versions,
+                **env_defaults.get("versions", {}),
+                **data.get("versions", {}),
+            },
+        }
+
     defaulted_envs = {
-        name: {**env_defaults, **data} for name, data in without_defaults_entry.items()
+        env_name: combine_env_data(env_data)
+        for env_name, env_data in without_defaults_entry.items()
     }
 
     enriched_config["environments"] = defaulted_envs
 
     return enriched_config
-
-
-def is_terraform_project() -> bool:
-    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    return not config.get("legacy_project", False)

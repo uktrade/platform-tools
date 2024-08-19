@@ -12,3 +12,15 @@
   path: /Resources/TaskDefinition/Properties/Volumes
   value:
     - Name: temporary-fs
+
+- op: add
+  path: /Resources/ExecutionRole/Properties/Policies/0/PolicyDocument/Statement/4
+  value:
+    Effect: 'Allow'
+    Action:
+      - 'ssm:GetParameters'
+    Resource:
+      - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*'
+    Condition:
+      StringEquals:
+          'ssm:ResourceTag/copilot-application': '__all__'

@@ -12,8 +12,8 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.application import Service
-from dbt_platform_helper.utils.files import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import BASE_DIR
 
 
