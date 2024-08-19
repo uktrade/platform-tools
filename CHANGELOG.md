@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.7.1](https://github.com/uktrade/platform-tools/compare/10.7.0...10.7.1) (2024-08-19)
+
+
+### Bug Fixes
+
+* DBTP-1294 Allow any environment deployment by deploy codebuild job ([#528](https://github.com/uktrade/platform-tools/issues/528)) ([3fad07a](https://github.com/uktrade/platform-tools/commit/3fad07aabe8e7cc75e2003f6dc1cd606f45c19c8))
+
 ## [10.7.0](https://github.com/uktrade/platform-tools/compare/10.6.1...10.7.0) (2024-08-19)
 
 
