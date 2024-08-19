@@ -10,8 +10,8 @@ env:
 phases:
   build:
     commands:
-      echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
-      /work/cli deploy --send-notifications
+      - echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
+      - /work/cli deploy --send-notifications
 
   post_build:
     commands:
