@@ -14,21 +14,24 @@ phases:
           echo "Cannot find .copilot-version file"
           exit 1
         fi
+      - COPILOT_VERSION=$(cat .copilot-version)
+      # Install pyyaml and dbt-platform-helper
+      - pip install PyYAML dbt-platform-helper
+      # Reinstall if we require a different version to the latest
+      - CURRENT_PLATFORM_HELPER_VERSION=$(platform-helper --version)
+      - export PLATFORM_HELPER_VERSION=$(platform-helper version get-platform-helper-for-project)
       - |
-        if [ ! -f .platform-helper-version ]; then
-          echo "Cannot find .platform-helper-version file"
-          exit 1
+        if [ ! "${PLATFORM_HELPER_VERSION}" == "${CURRENT_PLATFORM_HELPER_VERSION}" ]
+        then
+          pip uninstall dbt-platform-helper
+          pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION
         fi
-      - COPILOT_VERSION=`cat .copilot-version`
-      - PLATFORM_HELPER_VERSION=`cat .platform-helper-version`
       - mkdir ./build-tools
       - cd ./build-tools
       # Install copilot
       - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}"
       - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
       - chmod +x ./copilot
-      # Install pyyaml and dbt-platform-helper
-      - pip install PyYAML dbt-platform-helper==$PLATFORM_HELPER_VERSION
       # Install dyff - yaml differ
       - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
       - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
@@ -36,7 +39,6 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR
-      - PLATFORM_HELPER_VERSION=`cat .platform-helper-version`
       - cp -r copilot/ current-copilot/
       - platform-helper copilot make-addons
       - >

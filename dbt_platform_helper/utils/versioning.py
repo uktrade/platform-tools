@@ -164,12 +164,12 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
         )
 
     if not versions.platform_config_default and not versions.platform_helper_file_version:
-        messages.append(f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.")
-        messages.append(
-            f"{missing_default_version_message}{string_version(versions.local_version)}\n"
-        )
+        message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+        message += f"{missing_default_version_message}{string_version(versions.local_version)}\n"
+        click.secho(message, fg="red")
 
-    click.secho("\n".join(messages), fg="yellow")
+    if messages:
+        click.secho("\n".join(messages), fg="yellow")
 
 
 def validate_version_compatibility(
@@ -271,4 +271,9 @@ def get_required_platform_helper_version(pipeline: str = None) -> str:
         string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
     ]
 
-    return non_null_version_precedence[0] if non_null_version_precedence else None
+    out = non_null_version_precedence[0] if non_null_version_precedence else None
+
+    if not out:
+        raise SystemExit(1)
+
+    return out

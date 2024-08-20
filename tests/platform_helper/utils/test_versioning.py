@@ -236,13 +236,14 @@ def test_get_platform_helper_versions(
 
 
 @pytest.mark.parametrize(
-    "version_in_phv_file, version_in_platform_config, expected_warning",
+    "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
     (
         (
             False,
             False,
             f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
+            "red",
         ),
         (
             True,
@@ -250,9 +251,15 @@ def test_get_platform_helper_versions(
             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
             "  platform-helper: 3.3.3\n",
+            "yellow",
         ),
-        (False, True, None),
-        (True, True, f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."),
+        (False, True, None, "yellow"),
+        (
+            True,
+            True,
+            f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
+            "yellow",
+        ),
     ),
 )
 @patch("click.secho")
@@ -267,7 +274,8 @@ def test_platform_helper_version_warnings(
     fakefs,
     version_in_phv_file,
     version_in_platform_config,
-    expected_warning,
+    expected_message,
+    message_colour,
 ):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
@@ -283,8 +291,8 @@ def test_platform_helper_version_warnings(
 
     get_platform_helper_versions()
 
-    if expected_warning:
-        secho.assert_called_with(expected_warning, fg="yellow")
+    if expected_message:
+        secho.assert_called_with(expected_message, fg=message_colour)
     else:
         secho.assert_not_called()
 
@@ -313,7 +321,6 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
 @pytest.mark.parametrize(
     "platform_helper_version_file_version,platform_config_default_version,expected_version",
     [
-        (None, None, None),
         ("0.0.1", None, "0.0.1"),
         ("0.0.1", "1.0.0", "1.0.0"),
     ],
@@ -355,10 +362,8 @@ def test_get_required_platform_helper_version(
 @pytest.mark.parametrize(
     "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
     [
-        (None, None, None, None),
         ("0.0.1", None, None, "0.0.1"),
         ("0.0.1", "1.0.0", None, "1.0.0"),
-        (None, None, "2.0.0", "2.0.0"),
         (None, "3.0.0", "4.0.0", "4.0.0"),
         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
     ],
@@ -401,3 +406,32 @@ def test_get_required_platform_helper_version_in_pipeline(
     required_version = get_required_platform_helper_version("main")
 
     assert required_version == expected_version
+
+
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_get_required_platform_helper_version_errors_when_no_platform_config_version_available(
+    mock_get,
+    mock_version,
+    secho,
+    fakefs,
+):
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    mock_version.return_value = "1.2.3"
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+
+    with pytest.raises(SystemExit) as ex:
+        get_required_platform_helper_version("main")
+
+    assert ex.value.code == 1
+
+    secho.assert_called_with(
+        f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
+Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
+""",
+        fg="red",
+    )
