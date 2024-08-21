@@ -1,5 +1,24 @@
 # Changelog
 
+## [10.7.1](https://github.com/uktrade/platform-tools/compare/10.7.0...10.7.1) (2024-08-19)
+
+
+### Bug Fixes
+
+* DBTP-1294 Allow any environment deployment by deploy codebuild job ([#528](https://github.com/uktrade/platform-tools/issues/528)) ([3fad07a](https://github.com/uktrade/platform-tools/commit/3fad07aabe8e7cc75e2003f6dc1cd606f45c19c8))
+
+## [10.7.0](https://github.com/uktrade/platform-tools/compare/10.6.1...10.7.0) (2024-08-19)
+
+
+### Features
+
+* Allow override of platform-helper version in regression pipeline ([#527](https://github.com/uktrade/platform-tools/issues/527)) ([5241adf](https://github.com/uktrade/platform-tools/commit/5241adf72108054dd7d17278ec1c5828c6be1358))
+
+
+### Bug Fixes
+
+* add a policy to allow services to access global SSM parameters ([#531](https://github.com/uktrade/platform-tools/issues/531)) ([6fb9795](https://github.com/uktrade/platform-tools/commit/6fb9795cbf56963af8483ec018c16771f351390a))
+
 ## [10.6.1](https://github.com/uktrade/platform-tools/compare/10.6.0...10.6.1) (2024-08-12)
 
 
