@@ -40,7 +40,7 @@ class PlatformHelperVersions:
         self.latest_release = latest_release
         self.platform_helper_file_version = platform_helper_file_version
         self.platform_config_default = platform_config_default
-        self.pipeline_overrides = pipeline_overrides
+        self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
 
 
 def string_version(input_version: VersionTuple) -> str:
@@ -164,12 +164,12 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
         )
 
     if not versions.platform_config_default and not versions.platform_helper_file_version:
-        messages.append(f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.")
-        messages.append(
-            f"{missing_default_version_message}{string_version(versions.local_version)}\n"
-        )
+        message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+        message += f"{missing_default_version_message}{string_version(versions.local_version)}\n"
+        click.secho(message, fg="red")
 
-    click.secho("\n".join(messages), fg="yellow")
+    if messages:
+        click.secho("\n".join(messages), fg="yellow")
 
 
 def validate_version_compatibility(
@@ -245,7 +245,9 @@ def check_platform_helper_version_mismatch():
 
     versions = get_platform_helper_versions()
     local_version = versions.local_version
-    platform_helper_file_version = versions.platform_helper_file_version
+    platform_helper_file_version = parse_version(
+        get_required_platform_helper_version(versions=versions)
+    )
 
     if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
         message = (
@@ -259,8 +261,11 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def get_required_platform_helper_version(pipeline: str = None) -> str:
-    versions = get_platform_helper_versions()
+def get_required_platform_helper_version(
+    pipeline: str = None, versions: PlatformHelperVersions = None
+) -> str:
+    if not versions:
+        versions = get_platform_helper_versions()
     pipeline_version = versions.pipeline_overrides.get(pipeline)
     version_precedence = [
         pipeline_version,
@@ -271,4 +276,9 @@ def get_required_platform_helper_version(pipeline: str = None) -> str:
         string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
     ]
 
-    return non_null_version_precedence[0] if non_null_version_precedence else None
+    out = non_null_version_precedence[0] if non_null_version_precedence else None
+
+    if not out:
+        raise SystemExit(1)
+
+    return out
