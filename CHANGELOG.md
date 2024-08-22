@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.7.2](https://github.com/uktrade/platform-tools/compare/10.7.1...10.7.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* Replace .platform-helper-version check in buildspec ([#538](https://github.com/uktrade/platform-tools/issues/538)) ([6764c6c](https://github.com/uktrade/platform-tools/commit/6764c6c2a8412aff8fe3573e7eebed61a0fbd977))
+
 ## [10.7.1](https://github.com/uktrade/platform-tools/compare/10.7.0...10.7.1) (2024-08-19)
 
 
