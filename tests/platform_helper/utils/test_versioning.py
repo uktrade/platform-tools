@@ -196,6 +196,28 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
 
 
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
+    get_file_app_versions, secho
+):
+    get_file_app_versions.return_value = PlatformHelperVersions(
+        local_version=(1, 0, 1),
+        platform_helper_file_version=None,
+        platform_config_default=(1, 0, 0),
+    )
+
+    check_platform_helper_version_mismatch()
+
+    secho.assert_called_with(
+        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
+        fg="red",
+    )
+
+
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=True),
@@ -435,3 +457,21 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 """,
         fg="red",
     )
+
+
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
+def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
+    mock_get,
+    mock_version,
+    secho,
+):
+    result = get_required_platform_helper_version(
+        versions=PlatformHelperVersions(platform_config_default=(1, 2, 3))
+    )
+
+    assert result == "1.2.3"
+    mock_version.assert_not_called()
+    mock_get.assert_not_called()
