@@ -273,6 +273,11 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
+CROSS_ACCOUNT_ACCESS = {
+    "role_arn": str,
+    "bucket_actions": [str],
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("services"): Or("__all__", [str]),
@@ -283,6 +288,7 @@ S3_BASE = {
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+            Optional("cross_account_access"): CROSS_ACCOUNT_ACCESS,
         }
     },
 }

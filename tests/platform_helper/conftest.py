@@ -495,6 +495,20 @@ extensions:
       dev:
         bucket_name: test-app-policy-dev
         versioning: false
+  
+  test-app-s3-bucket-cross-account:
+    type: s3
+    services: 
+      - web
+    environments:
+      dev:
+        bucket_name: test-app-s3-cross-account
+        versioning: false
+        cross_account_access: 
+          role_arn: arn:aws:iam::123456789:role/test-external-role
+          bucket_actions: 
+            - s3:ListBucket
+            - s3:PutObject
         
   test-app-monitoring:
     type: monitoring
