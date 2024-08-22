@@ -196,6 +196,25 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
 
 
+@patch("dbt_platform_helper.utils.versioning.running_as_installed_package")
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
+    get_file_app_versions, secho, mock_running_as_installed_package
+):
+    get_file_app_versions.return_value = PlatformHelperVersions(
+        local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+    )
+    mock_running_as_installed_package.return_value = False
+
+    check_platform_helper_version_mismatch()
+
+    secho.assert_not_called()
+
+
 @patch("click.secho")
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
