@@ -502,7 +502,7 @@ extensions:
       - web
     environments:
       dev:
-        bucket_name: test-app-s3-cross-account
+        bucket_name: s3-cross-account
         versioning: false
         cross_account_access: 
           role_arn: arn:aws:iam::123456789:role/test-external-role
