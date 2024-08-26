@@ -275,7 +275,7 @@ LIFECYCLE_RULE = {
 
 CROSS_ACCOUNT_ACCESS = {
     "role_arn": str,
-    "bucket_actions": [str],
+    "actions": [str],
 }
 
 S3_BASE = {

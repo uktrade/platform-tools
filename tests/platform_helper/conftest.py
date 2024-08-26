@@ -506,7 +506,7 @@ extensions:
         versioning: false
         cross_account_access: 
           role_arn: arn:aws:iam::123456789:role/test-external-role
-          bucket_actions: 
+          actions: 
             - s3:ListBucket
             - s3:PutObject
         
