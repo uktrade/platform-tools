@@ -35,6 +35,8 @@ source ./regression_tests/stages/run_demodjango_smoke_tests.sh
 
 ./regression_tests/stages/run_maintenance_page_tests.sh
 
+./regression_tests/stages/run_cross_account_access_tests.sh || echo "Cross account access test failed, but continuing build..."
+
 # Todo: DBTP-1076 Ensure regression tests builds run one at a time
 
 # Todo: DBTP-1075 Trigger regression tests off all four main DBT Platform Codebases
