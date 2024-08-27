@@ -104,7 +104,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_platform_helper_versions(ignore_platform_config_versions=False) -> PlatformHelperVersions:
+def get_platform_helper_versions(local_and_latest_only=False) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -116,9 +116,9 @@ def get_platform_helper_versions(ignore_platform_config_versions=False) -> Platf
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
 
-    platform_config_default, pipeline_overrides = None, {}
+    platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-    if not ignore_platform_config_versions:
+    if not local_and_latest_only:
         platform_config = load_and_validate_platform_config(disable_aws_validation=True)
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
@@ -130,12 +130,12 @@ def get_platform_helper_versions(ignore_platform_config_versions=False) -> Platf
             if pipeline.get("versions", {}).get("platform-helper")
         }
 
-    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        parse_version(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+        version_from_file = (
+            parse_version(deprecated_version_file.read_text())
+            if deprecated_version_file.exists()
+            else None
+        )
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
@@ -145,7 +145,7 @@ def get_platform_helper_versions(ignore_platform_config_versions=False) -> Platf
         pipeline_overrides=pipeline_overrides,
     )
 
-    if not ignore_platform_config_versions:
+    if not local_and_latest_only:
         _process_version_file_warnings(out)
 
     return out
@@ -228,7 +228,7 @@ def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    versions = get_platform_helper_versions(ignore_platform_config_versions=True)
+    versions = get_platform_helper_versions(local_and_latest_only=True)
     local_version = versions.local_version
     latest_release = versions.latest_release
     message = (

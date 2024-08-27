@@ -150,7 +150,7 @@ def test_check_platform_helper_version_needs_update(
 
     check_platform_helper_version_needs_update()
 
-    mock_get_platform_helper_versions.assert_called_with(ignore_platform_config_versions=True)
+    mock_get_platform_helper_versions.assert_called_with(local_and_latest_only=True)
 
     if expected_exception == IncompatibleMajorVersion:
         secho.assert_called_with(
@@ -305,7 +305,7 @@ def test_get_platform_helper_versions(
         ),
     ),
 )
-@pytest.mark.parametrize("disable_platform_config_processing", [False, True])
+@pytest.mark.parametrize("local_and_latest_only", [False, True])
 @patch("click.secho")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
@@ -320,7 +320,7 @@ def test_platform_helper_version_warnings(
     version_in_platform_config,
     expected_message,
     message_colour,
-    disable_platform_config_processing,
+    local_and_latest_only,
 ):
     mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
@@ -334,9 +334,9 @@ def test_platform_helper_version_warnings(
     if version_in_phv_file:
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
 
-    get_platform_helper_versions(ignore_platform_config_versions=disable_platform_config_processing)
+    get_platform_helper_versions(local_and_latest_only=local_and_latest_only)
 
-    if expected_message and not disable_platform_config_processing:
+    if expected_message and not local_and_latest_only:
         secho.assert_called_with(expected_message, fg=message_colour)
     else:
         secho.assert_not_called()
