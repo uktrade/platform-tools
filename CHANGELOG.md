@@ -1,5 +1,13 @@
 # Changelog
 
+## [10.7.3](https://github.com/uktrade/platform-tools/compare/10.7.2...10.7.3) (2024-08-28)
+
+
+### Bug Fixes
+
+* DBTP-1323 Broken `platform-helper codebase \*` commands ([#542](https://github.com/uktrade/platform-tools/issues/542)) ([fd0e185](https://github.com/uktrade/platform-tools/commit/fd0e1857f4343e42ab260a10858e7a343cc95551))
+* S3 bucket KMS Key lookup when environments are in multiple AWS ac… ([#536](https://github.com/uktrade/platform-tools/issues/536)) ([960557d](https://github.com/uktrade/platform-tools/commit/960557debe894d9dad78ffd83caf43086065d48e))
+
 ## [10.7.2](https://github.com/uktrade/platform-tools/compare/10.7.1...10.7.2) (2024-08-22)
 
 
