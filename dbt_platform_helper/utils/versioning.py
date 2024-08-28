@@ -104,7 +104,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_platform_helper_versions(local_and_latest_only=False) -> PlatformHelperVersions:
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -118,7 +118,7 @@ def get_platform_helper_versions(local_and_latest_only=False) -> PlatformHelperV
 
     platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-    if not local_and_latest_only:
+    if include_project_versions:
         platform_config = load_and_validate_platform_config(disable_aws_validation=True)
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
@@ -145,7 +145,7 @@ def get_platform_helper_versions(local_and_latest_only=False) -> PlatformHelperV
         pipeline_overrides=pipeline_overrides,
     )
 
-    if not local_and_latest_only:
+    if include_project_versions:
         _process_version_file_warnings(out)
 
     return out
@@ -228,7 +228,7 @@ def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    versions = get_platform_helper_versions(local_and_latest_only=True)
+    versions = get_platform_helper_versions(include_project_versions=False)
     local_version = versions.local_version
     latest_release = versions.latest_release
     message = (
