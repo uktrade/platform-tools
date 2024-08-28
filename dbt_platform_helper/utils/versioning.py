@@ -104,7 +104,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_platform_helper_versions() -> PlatformHelperVersions:
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -115,23 +115,27 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
-    platform_config = load_and_validate_platform_config(disable_aws_validation=True)
-    platform_config_default = parse_version(
-        platform_config.get("default_versions", {}).get("platform-helper")
-    )
 
-    pipeline_overrides = {
-        name: pipeline.get("versions", {}).get("platform-helper")
-        for name, pipeline in platform_config.get("environment_pipelines", {}).items()
-        if pipeline.get("versions", {}).get("platform-helper")
-    }
+    platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        parse_version(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+    if include_project_versions:
+        platform_config = load_and_validate_platform_config(disable_aws_validation=True)
+        platform_config_default = parse_version(
+            platform_config.get("default_versions", {}).get("platform-helper")
+        )
+
+        pipeline_overrides = {
+            name: pipeline.get("versions", {}).get("platform-helper")
+            for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+            if pipeline.get("versions", {}).get("platform-helper")
+        }
+
+        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+        version_from_file = (
+            parse_version(deprecated_version_file.read_text())
+            if deprecated_version_file.exists()
+            else None
+        )
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
@@ -141,7 +145,8 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         pipeline_overrides=pipeline_overrides,
     )
 
-    _process_version_file_warnings(out)
+    if include_project_versions:
+        _process_version_file_warnings(out)
 
     return out
 
@@ -223,7 +228,7 @@ def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    versions = get_platform_helper_versions()
+    versions = get_platform_helper_versions(include_project_versions=False)
     local_version = versions.local_version
     latest_release = versions.latest_release
     message = (
