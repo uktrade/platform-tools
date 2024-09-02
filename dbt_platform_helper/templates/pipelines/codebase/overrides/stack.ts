@@ -207,7 +207,7 @@ export class TransformedStack extends cdk.Stack {
 
         buildProject.environment = {
             ...buildProject.environment,
-            image: 'public.ecr.aws/uktrade/ci-image-builder',
+            image: 'public.ecr.aws/uktrade/ci-image-builder:tag-latest',
             environmentVariables: deployEnvironmentVariables
         } as cdk.aws_codebuild.CfnProject.EnvironmentProperty;
 
