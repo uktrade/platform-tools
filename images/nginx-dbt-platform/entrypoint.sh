@@ -3,8 +3,17 @@
 set -euo pipefail
 
 # Proxy pass config.  Pass in $1 path, $2 target (public/private), $3 target_file (public/private).
-set_paths () {
-    echo -e "    location $1 {\n\tproxy_pass http://$2;\n\tproxy_set_header Host \$host;\n\tproxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;\n\tproxy_set_header X-Forwarded-Prefix $1;\n\tproxy_http_version 1.1;\n    }\n" >> $3
+set_paths() {
+    LOCATION_CONFIG="
+    location $1 {
+      proxy_pass http://$2;
+      proxy_set_header Host \$host;
+      proxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Prefix $1;
+      proxy_http_version 1.1;
+    }
+"
+    echo "$LOCATION_CONFIG" >> $3
 }
 
 # Either PRIV_PATH_LIST or PUB_PATH_LIST VARs can be set, not both.
