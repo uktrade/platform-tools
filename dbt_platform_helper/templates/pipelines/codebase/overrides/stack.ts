@@ -108,7 +108,7 @@ export class TransformedStack extends cdk.Stack {
                 type: 'LINUX_CONTAINER',
                 computeType: 'BUILD_GENERAL1_SMALL',
                 privilegedMode: true,
-                image: 'public.ecr.aws/uktrade/ci-image-builder',
+                image: 'public.ecr.aws/uktrade/ci-image-builder:tag-latest',
                 environmentVariables: envVars,
             },
             source: {
