@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.7.4](https://github.com/uktrade/platform-tools/compare/10.7.3...10.7.4) (2024-08-29)
+
+
+### Bug Fixes
+
+* Use tag-latest for ci-image-builder ([#543](https://github.com/uktrade/platform-tools/issues/543)) ([a4340de](https://github.com/uktrade/platform-tools/commit/a4340dec73b6800fafcf19fb32824561e1b757b9))
+
 ## [10.7.3](https://github.com/uktrade/platform-tools/compare/10.7.2...10.7.3) (2024-08-28)
 
 
