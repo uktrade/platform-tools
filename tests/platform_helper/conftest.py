@@ -496,19 +496,19 @@ extensions:
         bucket_name: test-app-policy-dev
         versioning: false
   
-  test-app-s3-bucket-cross-account:
+  test-app-s3-bucket-data-migration:
     type: s3
     services: 
       - web
     environments:
       dev:
-        bucket_name: s3-cross-account
+        bucket_name: s3-data-migration
         versioning: false
-        cross_account_access: 
-          role_arn: arn:aws:iam::123456789:role/test-external-role
-          actions: 
-            - s3:ListBucket
-            - s3:PutObject
+        data_migration:
+          import: 
+            source_bucket_arn: arn:aws:s3:::test-app
+            source_kms_key_arn: arn:aws:kms:123456789012:key
+            migration_worker_role_arn: arn:aws:iam::123456789012:role 
         
   test-app-monitoring:
     type: monitoring

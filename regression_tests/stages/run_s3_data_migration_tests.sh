@@ -4,11 +4,11 @@ set -e
 
 echo -e "\nAssume cross account access role to access basic auth secrets"
 
-DEMODJANGO_TOOLSPR_S3_CROSS_ACCOUNT_ROLE=""
+DEMODJANGO_TOOLSPR_S3_DATA_MIGRATION_ROLE=""
 DEMODJANGO_TOOLSPR_S3_BUCKET=""
 
 assumed_role=$(aws sts assume-role \
-    --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/$DEMODJANGO_TOOLSPR_S3_CROSS_ACCOUNT_ROLE" \
+    --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/$DEMODJANGO_TOOLSPR_S3_DATA_MIGRATION_ROLE" \
     --role-session-name "pull-request-regression-tests-x-account-s3-access-$(date +%s)")
 
 PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)

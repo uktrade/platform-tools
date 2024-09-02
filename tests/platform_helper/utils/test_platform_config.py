@@ -5,7 +5,9 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
-from dbt_platform_helper.utils.platform_config import is_s3_bucket_cross_account_enabled
+from dbt_platform_helper.utils.platform_config import (
+    is_s3_bucket_data_migration_enabled,
+)
 from dbt_platform_helper.utils.platform_config import is_terraform_project
 
 
@@ -39,13 +41,13 @@ def test_is_terraform_project(fakefs, platform_config_content, expected_result):
     assert is_terraform_project() == expected_result
 
 
-def test_is_s3_bucket_cross_account_enabled(fakefs, valid_platform_config):
+def test_is_s3_bucket_data_migration_enabled(fakefs, valid_platform_config):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
 
-    assert is_s3_bucket_cross_account_enabled("s3-cross-account")
+    assert is_s3_bucket_data_migration_enabled("s3-data-migration")
 
 
-def test_is_s3_bucket_cross_account_not_enabled(fakefs, valid_platform_config):
+def test_is_s3_bucket_data_migration_not_enabled(fakefs, valid_platform_config):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
 
-    assert not is_s3_bucket_cross_account_enabled("test-app-s3-bucket")
+    assert not is_s3_bucket_data_migration_enabled("test-app-s3-bucket")

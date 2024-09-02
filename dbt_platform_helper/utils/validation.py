@@ -273,9 +273,14 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
-CROSS_ACCOUNT_ACCESS = {
-    "role_arn": str,
-    "actions": [str],
+DATA_IMPORT = {
+    Optional("source_kms_key_arn"): str,
+    "source_bucket_arn": str,
+    "migration_worker_role_arn": str,
+}
+
+DATA_MIGRATION = {
+    Optional("import"): DATA_IMPORT,
 }
 
 S3_BASE = {
@@ -288,7 +293,7 @@ S3_BASE = {
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
-            Optional("cross_account_access"): CROSS_ACCOUNT_ACCESS,
+            Optional("data_migration"): DATA_MIGRATION,
         }
     },
 }
