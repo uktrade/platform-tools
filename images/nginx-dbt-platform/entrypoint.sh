@@ -55,13 +55,14 @@ events {
 
 http {
   upstream upstream_server_private{
-      server localhost:8000;
+    server localhost:8000;
   }
 
   upstream upstream_server_public{
-      server localhost:8080;
+    server localhost:8080;
   }
 
+  large_client_header_buffers 10 512k;
 
   log_format main '\$http_x_forwarded_for - \$remote_user [\$time_local] '
                   '"\$request" \$status \$body_bytes_sent "\$http_referer" '
