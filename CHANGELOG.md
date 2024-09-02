@@ -1,5 +1,20 @@
 # Changelog
 
+## [10.7.4](https://github.com/uktrade/platform-tools/compare/10.7.3...10.7.4) (2024-08-29)
+
+
+### Bug Fixes
+
+* Use tag-latest for ci-image-builder ([#543](https://github.com/uktrade/platform-tools/issues/543)) ([a4340de](https://github.com/uktrade/platform-tools/commit/a4340dec73b6800fafcf19fb32824561e1b757b9))
+
+## [10.7.3](https://github.com/uktrade/platform-tools/compare/10.7.2...10.7.3) (2024-08-28)
+
+
+### Bug Fixes
+
+* DBTP-1323 Broken `platform-helper codebase \*` commands ([#542](https://github.com/uktrade/platform-tools/issues/542)) ([fd0e185](https://github.com/uktrade/platform-tools/commit/fd0e1857f4343e42ab260a10858e7a343cc95551))
+* S3 bucket KMS Key lookup when environments are in multiple AWS ac… ([#536](https://github.com/uktrade/platform-tools/issues/536)) ([960557d](https://github.com/uktrade/platform-tools/commit/960557debe894d9dad78ffd83caf43086065d48e))
+
 ## [10.7.2](https://github.com/uktrade/platform-tools/compare/10.7.1...10.7.2) (2024-08-22)
 
 
