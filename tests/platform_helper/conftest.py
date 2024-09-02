@@ -549,7 +549,7 @@ environment_pipelines:
 codebase_pipelines:
   - name: application
     repository: uktrade/test-app
-    deploy_repo_branch: feature-branch
+    deploy_repository_branch: feature-branch
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
     services:
       - celery-worker

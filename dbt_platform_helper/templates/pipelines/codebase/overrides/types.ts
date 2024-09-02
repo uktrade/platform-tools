@@ -26,7 +26,7 @@ export interface PipelinesConfiguration {
     codebase_pipelines: Array<{
         name: string;
         repository: string;
-        deploy_repo_branch?: string;
+        deploy_repository_branch?: string;
         additional_ecr_repository?: string;
         services: Array<string>;
         pipelines: Array<{

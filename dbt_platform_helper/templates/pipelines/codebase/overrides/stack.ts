@@ -201,8 +201,8 @@ export class TransformedStack extends cdk.Stack {
             },
         ];
 
-        if (this.codebaseConfiguration.deploy_repo_branch){
-            deployEnvironmentVariables.push({name: 'DEPLOY_REPOSITORY_BRANCH', value: this.codebaseConfiguration.deploy_repo_branch})
+        if (this.codebaseConfiguration.deploy_repository_branch){
+            deployEnvironmentVariables.push({name: 'DEPLOY_REPOSITORY_BRANCH', value: this.codebaseConfiguration.deploy_repository_branch})
         }
 
         buildProject.environment = {
