@@ -93,7 +93,13 @@ http {
     # By default nginx uses “ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3” and “ssl_ciphers HIGH:!aNULL:!MD5”, so configuring them explicitly is generally not needed.
     # ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
 
+
+    # Experiments from https://stackoverflow.com/questions/75792026/i-am-facing-err-http2-protocol-error-on-my-website...
     gzip on;
+    proxy_max_temp_file_size 0;
+    proxy_read_timeout      3600;
+    proxy_connect_timeout   300;
+    proxy_redirect          off;
 
     include /etc/nginx/mime.types;
     real_ip_header X-Forwarded-For;
