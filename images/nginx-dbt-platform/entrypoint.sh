@@ -8,9 +8,15 @@ set_paths() {
     location $1 {
       proxy_pass http://$2;
       proxy_set_header Host \$host;
-      proxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Prefix $1;
-      proxy_http_version 1.1;
+      # Experiments from https://stackoverflow.com/questions/75792026/i-am-facing-err-http2-protocol-error-on-my-website...
+      proxy_cache off;
+      proxy_set_header Upgrade \$http_upgrade;
+      proxy_set_header Connection keep-alive;
+      proxy_cache_bypass \$http_upgrade;
+      proxy_set_header X-Forwarded-Proto \$scheme;
+      proxy_redirect off;
     }
 "
     echo "$LOCATION_CONFIG" >> $3
@@ -57,7 +63,7 @@ openssl req -x509 -newkey rsa:4086 \
 
 cat <<EOF >/etc/nginx/nginx.conf
 user nginx;
-worker_processes 2;
+worker_processes auto;
 events {
   worker_connections 1024;
 }
@@ -71,8 +77,6 @@ http {
     server localhost:8080;
   }
 
-  large_client_header_buffers 10 512k;
-
   log_format main '\$http_x_forwarded_for - \$remote_user [\$time_local] '
                   '"\$request" \$status \$body_bytes_sent "\$http_referer" '
                   '"\$http_user_agent"' ;
@@ -81,12 +85,15 @@ http {
   error_log /var/log/nginx/error.log;
   server_tokens off;
   server {
-    listen 443 ssl;
+    listen 443 ssl http2;
     server_name localhost;
 
     ssl_certificate /cert.pem;
     ssl_certificate_key /key.pem;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    # By default nginx uses “ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3” and “ssl_ciphers HIGH:!aNULL:!MD5”, so configuring them explicitly is generally not needed.
+    # ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+
+    gzip on;
 
     include /etc/nginx/mime.types;
     real_ip_header X-Forwarded-For;
