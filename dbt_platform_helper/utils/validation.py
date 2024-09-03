@@ -276,7 +276,7 @@ LIFECYCLE_RULE = {
 DATA_IMPORT = {
     Optional("source_kms_key_arn"): str,
     "source_bucket_arn": str,
-    "migration_worker_role_arn": str,
+    "worker_role_arn": str,
 }
 
 DATA_MIGRATION = {
