@@ -280,7 +280,7 @@ DATA_IMPORT = {
 }
 
 DATA_MIGRATION = {
-    Optional("import"): DATA_IMPORT,
+    "import": DATA_IMPORT,
 }
 
 S3_BASE = {
