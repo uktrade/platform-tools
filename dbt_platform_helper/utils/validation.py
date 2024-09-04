@@ -420,6 +420,7 @@ CODEBASE_PIPELINES_DEFINITION = [
         "name": str,
         "repository": str,
         Optional("additional_ecr_repository"): str,
+        Optional("deploy_repository_branch"): str,
         "services": list[str],
         "pipelines": [
             Or(
