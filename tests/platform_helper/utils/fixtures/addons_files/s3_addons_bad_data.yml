@@ -120,3 +120,13 @@ my-s3-bucket-lifecycle-enabled-should-be-bool:
       lifecycle_rules:
         - expiration_days: 100
           enabled: "yes"
+
+my-s3-bucket-data-migration-source-bucket-should-be-string:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: True
+          worker_role_arn: True
