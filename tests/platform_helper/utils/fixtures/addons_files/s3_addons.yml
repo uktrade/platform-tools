@@ -47,3 +47,15 @@ my-s3-bucket-with-a-lifecycle-rule:
         - filter_prefix: "bananas/"
           expiration_days: 10
           enabled: true
+
+my-s3-bucket-with-data-migration:
+  type: s3
+  environments:
+    dev:
+      bucket_name: s3-data-migration
+      versioning: false
+      data_migration:
+        import: 
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms:123456789012:key
+          worker_role_arn: arn:aws:iam::123456789012:role 
