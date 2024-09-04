@@ -29,8 +29,9 @@ phases:
         echo -e "\n\nSend alert if the tests have failed\n"
         echo "Debug output:"
         echo "CODEBUILD_BUILD_SUCCEEDING: ${CODEBUILD_BUILD_SUCCEEDING}"
-        echo "git branch --contains \$CODEBUILD_RESOLVED_SOURCE_VERSION: $(git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION)"
         echo "git branch: $(git branch)"
+        echo "git branch --contains \$CODEBUILD_RESOLVED_SOURCE_VERSION: $(git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION)"
+        echo "git branch --contains \$CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main": $(git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main")"
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"; then
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
