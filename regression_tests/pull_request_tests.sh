@@ -25,9 +25,9 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 # Todo: DBTP-1074 Include deploying codebase pipelines in regression tests
 
-#./regression_tests/stages/run_environment_pipeline.sh
-#
-#./regression_tests/stages/run_codebase_pipeline.sh
+./regression_tests/stages/run_environment_pipeline.sh
+
+./regression_tests/stages/run_codebase_pipeline.sh
 
 ./regression_tests/stages/ensure_not_under_maintenance.sh
 
