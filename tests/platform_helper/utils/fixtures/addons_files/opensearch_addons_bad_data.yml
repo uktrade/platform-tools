@@ -97,3 +97,15 @@ my-opensearch-search-slow-log-retention-in-days-should-be-int:
   environments:
     dev:
      search_slow_log_retention_in_days: true
+
+my-opensearch-password-special-characters:
+  type: opensearch
+  environments:
+    dev:
+      password_special_characters: false
+
+my-opensearch-urlencode-password:
+  type: opensearch
+  environments:
+    dev:
+      urlencode_password: "YES"

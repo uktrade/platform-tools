@@ -191,6 +191,8 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-opensearch-index-slow-log-retention-in-days-should-be-int": r"environments.*index_slow_log_retention_in_days.*should be instance of 'int'",
                 "my-opensearch-audit-log-retention-in-days-should-be-int": r"environments.*audit_log_retention_in_days.*should be instance of 'int'",
                 "my-opensearch-search-slow-log-retention-in-days-should-be-int": r"environments.*search_slow_log_retention_in_days.*should be instance of 'int'",
+                "my-opensearch-password-special-characters": r"environments.*password_special_characters.*should be instance of 'str'",
+                "my-opensearch-urlencode-password": r"environments.*urlencode_password.*should be instance of 'bool'",
             },
         ),
         (
