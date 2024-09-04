@@ -11,12 +11,15 @@ set_paths() {
       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Prefix $1;
       # Experiments from https://stackoverflow.com/questions/75792026/i-am-facing-err-http2-protocol-error-on-my-website...
+      gzip on
       proxy_cache off;
       proxy_set_header Upgrade \$http_upgrade;
       proxy_set_header Connection keep-alive;
       proxy_cache_bypass \$http_upgrade;
       proxy_set_header X-Forwarded-Proto \$scheme;
       proxy_redirect off;
+      proxy_request_buffering off;
+      proxy_buffering off;
     }
 "
     echo "$LOCATION_CONFIG" >> $3
@@ -100,6 +103,8 @@ http {
     proxy_read_timeout      3600;
     proxy_connect_timeout   300;
     proxy_redirect          off;
+    proxy_request_buffering off;
+    proxy_buffering off;
 
     include /etc/nginx/mime.types;
     real_ip_header X-Forwarded-For;
