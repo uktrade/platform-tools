@@ -275,6 +275,7 @@ LIFECYCLE_RULE = {
 
 S3_BASE = {
     Optional("readonly"): bool,
+    Optional("serve_static"): bool,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
@@ -294,12 +295,7 @@ S3_DEFINITION = dict(S3_BASE)
 S3_DEFINITION.update(
     {
         "type": "s3",
-        Optional("objects"): [
-            {
-                "key": str,
-                Optional("body"): str,
-            }
-        ],
+        Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
     }
 )
 

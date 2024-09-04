@@ -48,6 +48,7 @@ extensions:
       - key: healthcheck.txt
         body: |
           HEALTHCHECK WORKS!
+        content_type: text/plain
 
   ##### s3-policy example:
 

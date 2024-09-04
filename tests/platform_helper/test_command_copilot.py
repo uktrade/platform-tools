@@ -48,6 +48,7 @@ S3_STORAGE_CONTENTS = {
     "s3": {
         "type": "s3",
         "readonly": True,
+        "serve_static": True,
         "services": ["web"],
         "environments": {"development": {"bucket_name": "my-bucket-dev"}},
     }
