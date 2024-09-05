@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.8.1](https://github.com/uktrade/platform-tools/compare/10.8.0...10.8.1) (2024-09-05)
+
+
+### Bug Fixes
+
+* add medium-ha postgres plan ([#551](https://github.com/uktrade/platform-tools/issues/551)) ([72bb681](https://github.com/uktrade/platform-tools/commit/72bb6816ce0ab196f19b6e386cab3f0c931bbc2d))
+
 ## [10.8.0](https://github.com/uktrade/platform-tools/compare/10.7.4...10.8.0) (2024-09-05)
 
 
