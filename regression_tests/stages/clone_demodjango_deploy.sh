@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\nClone demodjango_deploy"
+echo -e "\n\nClone demodjango_deploy\n"
 
 git clone "${GIT_CLONE_BASE_URL}/demodjango-deploy.git"
 
