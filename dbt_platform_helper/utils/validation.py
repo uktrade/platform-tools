@@ -204,6 +204,7 @@ POSTGRES_PLANS = Or(
     "small-ha",
     "small-high-io",
     "medium",
+    "medium-ha",
     "medium-high-io",
     "large",
     "large-ha",
