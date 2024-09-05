@@ -273,17 +273,23 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
+SOURCE_KMS_KEY_ARN = Regex(
+    r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+    error="source_kms_key_arn must be a valid arn for a kms key",
+)
+
+SOURCE_BUCKET_ARN = Regex(
+    r"^arn:aws:s3::.*", error="source_bucket_arn must be a valid arn for an s3 bucket"
+)
+
+WORKER_ROLE_ARN = Regex(
+    r"^arn:aws:iam::\d{12}:role/.*", error="worker_role_arn must be a valid arn for an iam role"
+)
+
 DATA_IMPORT = {
-    Optional("source_kms_key_arn"): Regex(
-        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
-        error="source_kms_key_arn must be a valid arn for a kms key",
-    ),
-    "source_bucket_arn": Regex(
-        r"^arn:aws:s3::.*", error="source_bucket_arn must be a valid arn for an s3 bucket"
-    ),
-    "worker_role_arn": Regex(
-        r"^arn:aws:iam::\d{12}:role/.*", error="worker_role_arn must be a valid arn for an iam role"
-    ),
+    Optional("source_kms_key_arn"): SOURCE_KMS_KEY_ARN,
+    "source_bucket_arn": SOURCE_BUCKET_ARN,
+    "worker_role_arn": WORKER_ROLE_ARN,
 }
 
 DATA_MIGRATION = {
