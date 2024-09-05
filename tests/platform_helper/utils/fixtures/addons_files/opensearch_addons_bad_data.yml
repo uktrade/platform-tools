@@ -108,4 +108,4 @@ my-opensearch-urlencode-password:
   type: opensearch
   environments:
     dev:
-      urlencode_password: "YES"
+      urlencode_password: "BAD_DATA"
