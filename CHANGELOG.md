@@ -1,5 +1,13 @@
 # Changelog
 
+## [10.8.0](https://github.com/uktrade/platform-tools/compare/10.7.4...10.8.0) (2024-09-05)
+
+
+### Features
+
+* DBTP-1001 Add optional deploy_repository_branch to the codebase pipeline config ([#545](https://github.com/uktrade/platform-tools/issues/545)) ([e5c5235](https://github.com/uktrade/platform-tools/commit/e5c5235fafadab89e886084e867c8aa7c98c2945))
+* DBTP-1346 Add special characters & urlencode password parameters to OpenSearch validation ([#549](https://github.com/uktrade/platform-tools/issues/549)) ([1b069af](https://github.com/uktrade/platform-tools/commit/1b069affc93551f0b716757346fddfca7bc7ab05))
+
 ## [10.7.4](https://github.com/uktrade/platform-tools/compare/10.7.3...10.7.4) (2024-08-29)
 
 
