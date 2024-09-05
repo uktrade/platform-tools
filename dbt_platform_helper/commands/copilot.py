@@ -224,6 +224,9 @@ def _get_s3_kms_alias_arns(session, application_name, config):
         if environment_name not in config:
             continue
 
+        if "bucket_name" not in config[environment_name]:
+            continue
+
         bucket_name = config[environment_name]["bucket_name"]
         alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
@@ -314,6 +317,8 @@ def make_addons():
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
+            if config[addon_name].get("serve_static"):
+                continue
             if is_terraform:
                 s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, environments)
                 for environment_name in environments:
