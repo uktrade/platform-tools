@@ -132,7 +132,6 @@ my-s3-bucket-data-migration-source-bucket-invalid-arn:
           source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
           worker_role_arn: arn:aws:iam::123456789012:role/test-role 
 
-
 my-s3-bucket-data-migration-source-kms-key-invalid-arn:
   type: s3
   environments:
