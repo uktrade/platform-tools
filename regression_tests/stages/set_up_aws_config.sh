@@ -2,9 +2,10 @@
 
 set -e
 
+echo -e "\n\nAssume platform-sandbox role to trigger environment pipeline\n"
+
 cd "${CODEBUILD_SRC_DIR}"
 
-echo -e "\nAssume platform-sandbox role to trigger environment pipeline"
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
@@ -12,7 +13,8 @@ PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.Acc
 PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
 PLATFORM_SANDBOX_AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
-echo -e "\nConfigure platform-sandbox AWS Profile"
+echo -e "\n\nConfigure platform-sandbox AWS Profile\n"
+
 profile_name="platform-sandbox"
 # populates the ~/.aws/credentials file..
 aws configure set aws_access_key_id "$PLATFORM_SANDBOX_AWS_ACCESS_KEY_ID" --profile "$profile_name"
