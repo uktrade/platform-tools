@@ -12,6 +12,8 @@ my-opensearch:
       index_slow_log_retention_in_days: 10
       audit_log_retention_in_days: 10
       search_slow_log_retention_in_days: 10
+      password_special_characters: "-_.,"
+      urlencode_password: false
     development:
       plan: small
       volume_size: 100
