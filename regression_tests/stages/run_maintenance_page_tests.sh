@@ -2,9 +2,9 @@
 
 set -e
 
-echo "Running maintenance page tests"
+echo -e "\n\nRunning maintenance page tests\n"
 
-cd "${CODEBUILD_SRC_DIR}/demodjango-deploy" 
+cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 echo "Current demodjango-deploy branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
 URL=https://internal.${TARGET_ENVIRONMENT}.demodjango.uktrade.digital/
