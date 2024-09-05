@@ -507,8 +507,8 @@ extensions:
         data_migration:
           import: 
             source_bucket_arn: arn:aws:s3:::test-app
-            source_kms_key_arn: arn:aws:kms:123456789012:key
-            worker_role_arn: arn:aws:iam::123456789012:role 
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role 
         
   test-app-monitoring:
     type: monitoring

@@ -121,12 +121,36 @@ my-s3-bucket-lifecycle-enabled-should-be-bool:
         - expiration_days: 100
           enabled: "yes"
 
-my-s3-bucket-data-migration-source-bucket-should-be-string:
+my-s3-bucket-data-migration-source-bucket-invalid-arn:
   type: s3
   environments:
     dev:
       bucket_name: mandatory
       data_migration:
         import:
-          source_bucket_arn: True
-          worker_role_arn: True
+          source_bucket_arn: 1234abc
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+
+
+my-s3-bucket-data-migration-source-kms-key-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: 1234abc
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+
+my-s3-bucket-data-migration-worker-role-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: 1234abc
