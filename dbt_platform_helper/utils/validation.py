@@ -274,23 +274,28 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
-SOURCE_KMS_KEY_ARN = Regex(
-    r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
-    error="source_kms_key_arn must be a valid arn for a kms key",
-)
+def kms_key_arn_regex(key):
+    return Regex(
+        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+        error=f"{key} must contain a valid ARN for a KMS key",
+    )
 
-SOURCE_BUCKET_ARN = Regex(
-    r"^arn:aws:s3::.*", error="source_bucket_arn must be a valid arn for an s3 bucket"
-)
+def s3_bucket_arn_regex(key):
+    return Regex(
+        r"^arn:aws:s3::.*",
+        error=f"{key} must contain a valid ARN for an S3 bucket",
+    )
 
-WORKER_ROLE_ARN = Regex(
-    r"^arn:aws:iam::\d{12}:role/.*", error="worker_role_arn must be a valid arn for an iam role"
-)
+def iam_role_arn_regex(key):
+    return Regex(
+        r"^arn:aws:iam::\d{12}:role/.*",
+        error=f"{key} must contain a valid ARN for an IAM role",
+    )
 
 DATA_IMPORT = {
-    Optional("source_kms_key_arn"): SOURCE_KMS_KEY_ARN,
-    "source_bucket_arn": SOURCE_BUCKET_ARN,
-    "worker_role_arn": WORKER_ROLE_ARN,
+    Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
+    "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
+    "worker_role_arn": iam_role_arn_regex("worker_role_arn"),
 }
 
 DATA_MIGRATION = {
