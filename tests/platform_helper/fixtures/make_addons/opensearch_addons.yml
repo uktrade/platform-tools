@@ -9,6 +9,9 @@ extensions:
         plan: tiny
         # supported engine versions as of 03/2024: 2.11, 2.9, 2.7, 2.5, 2.3, 1.3, 1.2, 1.1, 1.0
         engine: '2.3'
+        password_special_characters: "-_.,"
+        urlencode_password: false
+
       production:
         plan: large-ha
         engine: '2.3'

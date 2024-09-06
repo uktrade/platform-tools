@@ -204,6 +204,7 @@ POSTGRES_PLANS = Or(
     "small-ha",
     "small-high-io",
     "medium",
+    "medium-ha",
     "medium-high-io",
     "large",
     "large-ha",
@@ -370,6 +371,8 @@ OPENSEARCH_DEFINITION = {
             Optional("index_slow_log_retention_in_days"): int,
             Optional("audit_log_retention_in_days"): int,
             Optional("search_slow_log_retention_in_days"): int,
+            Optional("password_special_characters"): str,
+            Optional("urlencode_password"): bool,
         }
     },
 }

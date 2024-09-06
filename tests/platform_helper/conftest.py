@@ -468,6 +468,8 @@ extensions:
         plan: small
         engine: '1.3'
         volume_size: 40
+        password_special_characters: "-_.,"
+        urlencode_password: false
 
   test-app-s3-bucket-with-objects:
     type: s3
