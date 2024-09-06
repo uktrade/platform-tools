@@ -274,11 +274,13 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
+
 def kms_key_arn_regex(key):
     return Regex(
         r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
         error=f"{key} must contain a valid ARN for a KMS key",
     )
+
 
 def s3_bucket_arn_regex(key):
     return Regex(
@@ -286,11 +288,13 @@ def s3_bucket_arn_regex(key):
         error=f"{key} must contain a valid ARN for an S3 bucket",
     )
 
+
 def iam_role_arn_regex(key):
     return Regex(
         r"^arn:aws:iam::\d{12}:role/.*",
         error=f"{key} must contain a valid ARN for an IAM role",
     )
+
 
 DATA_IMPORT = {
     Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
