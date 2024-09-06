@@ -238,15 +238,16 @@ def get_subnet_ids(session, vpc_id):
     return public, private
 
 
-def get_cert_arn(session, env_name):
-    certs = session.client("acm").list_certificates()["CertificateSummaryList"]
+def get_cert_arn(session, application, env_name):
+    try:
+        arn = find_https_certificate(session, application, env_name)
+    except:
+        click.secho(
+            f"No certificate found with domain name matching environment {env_name}.", fg="red"
+        )
+        raise click.Abort
 
-    for cert in certs:
-        if env_name in cert["DomainName"]:
-            return cert["CertificateArn"]
-
-    click.secho(f"No certificate found with domain name matching environment {env_name}.", fg="red")
-    raise click.Abort
+    return arn
 
 
 def get_env_ips(vpc: str, application_environment: Environment):
@@ -284,7 +285,7 @@ def generate(name, vpc_name):
 
     env_config = apply_environment_defaults(conf)["environments"][name]
 
-    _generate_copilot_environment_manifests(name, env_config, session)
+    _generate_copilot_environment_manifests(name, conf["application"], env_config, session)
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -308,12 +309,12 @@ def generate_terraform(name, terraform_platform_modules_version):
     )
 
 
-def _generate_copilot_environment_manifests(name, env_config, session):
+def _generate_copilot_environment_manifests(name, application, env_config, session):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, name, vpc_name)
     pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
-    cert_arn = get_cert_arn(session, name)
+    cert_arn = get_cert_arn(session, application, name)
     contents = env_template.render(
         {
             "name": name,
@@ -396,6 +397,23 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
         raise ListenerNotFoundError()
 
     return listener_arn
+
+
+def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
+    listener_arn = find_https_listener(session, app, env)
+    cert_client = session.client("elbv2")
+    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
+        "Certificates"
+    ]
+
+    certificate_arn = None
+
+    try:
+        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
+    except StopIteration:
+        raise CertificateNotFoundError()
+
+    return certificate_arn
 
 
 def find_target_group(app: str, env: str, svc: str, session: boto3.Session) -> str:
@@ -648,6 +666,10 @@ def get_maintenance_page_template(template) -> str:
 
     # [^\S]\s+ - Remove any space that is not preceded by a non-space character.
     return re.sub(r"[^\S]\s+", "", template_contents)
+
+
+class CertificateNotFoundError(Exception):
+    pass
 
 
 class LoadBalancerNotFoundError(Exception):
