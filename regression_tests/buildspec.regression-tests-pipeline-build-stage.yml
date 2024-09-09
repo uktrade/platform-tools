@@ -17,12 +17,15 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
-      - echo "Current working directory - Install phase"
-      - pwd
-      - ls -la
+#      - echo "Current working directory - Install phase"
+#      - pwd
+#      - ls -la
 
   build:
     commands:
+      - echo -e "\nListing files in the input artifact directory\n"
+      - ls -la /codebuild/output/src*
+      - echo "*******************************"
       - echo -e "\nRunning regression tests - Build stage\n"
       - echo "Current working directory - Build phase"
       - pwd
