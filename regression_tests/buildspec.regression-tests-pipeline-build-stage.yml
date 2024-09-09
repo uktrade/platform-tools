@@ -17,15 +17,10 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
-      - echo "Current working directory - check regression_tests/stages"
-      - ls -la ./regression_tests/stages/
 
   build:
     commands:
       - echo -e "\nRunning regression tests - Build stage\n"
-      - echo "Current working directory - Build phase"
-      - pwd
-#      - ls -la
       - source ./regression_tests/stages/set_up_git_config.sh
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
@@ -38,5 +33,3 @@ phases:
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
-
-# Does this buildspec require an "artifacts" section??
