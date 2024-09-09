@@ -17,8 +17,8 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
-#      - echo "Current working directory - check regression_tests/stages"
-#      - ls -la ./regression_tests/stages/
+      - echo "Current working directory - check regression_tests/stages"
+      - ls -la ./regression_tests/stages/
 
   build:
     commands:
