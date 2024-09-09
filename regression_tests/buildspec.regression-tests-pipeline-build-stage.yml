@@ -21,10 +21,10 @@ phases:
   build:
     commands:
       - echo -e "\nRunning regression tests - Build stage\n"
-      - source ./stages/set_up_git_config.sh
-      - ./stages/clone_demodjango_deploy.sh
-      - ./stages/clone_demodjango.sh
-      - ./stages/build_platform_helper.sh
+      - source .regression_tests/stages/set_up_git_config.sh
+      - .regression_tests/stages/clone_demodjango_deploy.sh
+      - .regression_tests/stages/clone_demodjango.sh
+      - .regression_tests/stages/build_platform_helper.sh
 
   post_build:
     commands:
