@@ -24,7 +24,7 @@ phases:
   build:
     commands:
       - echo -e "\nListing files in the input artifact directory\n"
-      - ls -la /codebuild/output/src*
+      - ls -la /codebuild/output/src/secSrc*
       - echo "*******************************"
       - echo -e "\nRunning regression tests - Build stage\n"
       - echo "Current working directory - Build phase"
