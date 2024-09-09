@@ -17,19 +17,15 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
-#      - echo "Current working directory - Install phase"
-#      - pwd
-#      - ls -la
+#      - echo "Current working directory - check regression_tests/stages"
+#      - ls -la ./regression_tests/stages/
 
   build:
     commands:
-      - echo -e "\nListing files in the input artifact directory\n"
-      - ls -la /codebuild/output/src/secSrc*
-      - echo "*******************************"
       - echo -e "\nRunning regression tests - Build stage\n"
       - echo "Current working directory - Build phase"
       - pwd
-      - ls -la
+#      - ls -la
       - source .regression_tests/stages/set_up_git_config.sh
       - .regression_tests/stages/clone_demodjango_deploy.sh
       - .regression_tests/stages/clone_demodjango.sh
