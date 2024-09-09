@@ -501,7 +501,7 @@ class TestGenerate:
 
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
-        mock_get_cert_arn.assert_called_once_with(mocked_session, "test")
+        mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
 
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
@@ -747,24 +747,26 @@ class TestGenerate:
         assert "No subnets found for VPC with id: 123." in captured.out
 
     @mock_aws
-    def test_get_cert_arn(self):
+    @patch(
+        "dbt_platform_helper.commands.environment.find_https_certificate",
+        return_value="CertificateArn",
+    )
+    def test_get_cert_arn(self, find_https_certificate):
         from dbt_platform_helper.commands.environment import get_cert_arn
 
         session = boto3.session.Session()
-        expected_arn = session.client("acm").request_certificate(DomainName="development.com")[
-            "CertificateArn"
-        ]
+        actual_arn = get_cert_arn(session, "test-application", "development")
 
-        actual_arn = get_cert_arn(session, "development")
-
-        assert expected_arn == actual_arn
+        assert "CertificateArn" == actual_arn
 
     @mock_aws
     def test_cert_arn_failure(self, capsys):
         from dbt_platform_helper.commands.environment import get_cert_arn
 
+        session = boto3.session.Session()
+
         with pytest.raises(click.Abort):
-            get_cert_arn(boto3.session.Session(), "development")
+            get_cert_arn(session, "test-application", "development")
 
         captured = capsys.readouterr()
 
@@ -829,6 +831,54 @@ class TestFindHTTPSListener:
 
         listener_arn = find_https_listener(boto_mock, "test-application", "development")
         assert "listener_arn" == listener_arn
+
+
+class TestFindHTTPSCertificate:
+    @patch(
+        "dbt_platform_helper.commands.environment.find_https_listener",
+        return_value="https_listener_arn",
+    )
+    def test_when_no_certificate_present(self, find_https_certificate):
+        from dbt_platform_helper.commands.environment import CertificateNotFoundError
+        from dbt_platform_helper.commands.environment import find_https_certificate
+
+        boto_mock = MagicMock()
+        boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
+        with pytest.raises(CertificateNotFoundError):
+            find_https_certificate(boto_mock, "test-application", "development")
+
+    @patch(
+        "dbt_platform_helper.commands.environment.find_https_listener",
+        return_value="https_listener_arn",
+    )
+    def test_when_single_https_certificate_present(self, find_https_certificate):
+        from dbt_platform_helper.commands.environment import find_https_certificate
+
+        boto_mock = MagicMock()
+        boto_mock.client().describe_listener_certificates.return_value = {
+            "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
+        }
+
+        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
+        assert "certificate_arn" == certificate_arn
+
+    @patch(
+        "dbt_platform_helper.commands.environment.find_https_listener",
+        return_value="https_listener_arn",
+    )
+    def test_when_multiple_https_certificate_present(self, find_https_certificate):
+        from dbt_platform_helper.commands.environment import find_https_certificate
+
+        boto_mock = MagicMock()
+        boto_mock.client().describe_listener_certificates.return_value = {
+            "Certificates": [
+                {"CertificateArn": "certificate_arn_default", "IsDefault": "True"},
+                {"CertificateArn": "certificate_arn_not_default", "IsDefault": "False"},
+            ]
+        }
+
+        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
+        assert "certificate_arn_default" == certificate_arn
 
 
 class TestGetMaintenancePage:
