@@ -12,6 +12,7 @@ phases:
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
       - ./regression_tests/stages/set_up_aws_config.sh
+      - pip install poetry
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
       - source ./regression_tests/stages/run_demodjango_smoke_tests.sh
       - ./regression_tests/stages/run_maintenance_page_tests.sh
