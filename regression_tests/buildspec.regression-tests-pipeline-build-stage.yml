@@ -38,7 +38,7 @@ phases:
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
 
-  artifacts:
-    files:
-      - '**/*'
-    base-directory: build_output
+artifacts:
+  files:
+    - '**/*'
+  base-directory: build_output
