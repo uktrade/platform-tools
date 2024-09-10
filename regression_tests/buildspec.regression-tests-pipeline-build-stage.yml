@@ -25,7 +25,10 @@ phases:
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - ./regression_tests/stages/build_platform_helper.sh
-      - mkdir -p build_output
+
+      - echo "Contents of build_output before uploading artifacts:"
+      - ls -la build_output
+
 
   post_build:
     commands:
