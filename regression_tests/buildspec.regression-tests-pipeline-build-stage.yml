@@ -27,7 +27,7 @@ phases:
       - ./regression_tests/stages/build_platform_helper.sh
 
       - echo "Contents of build_output before uploading artifacts:"
-      - ls -la build_output
+      - ls -la
 
 
   post_build:
@@ -41,4 +41,3 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: build_output
