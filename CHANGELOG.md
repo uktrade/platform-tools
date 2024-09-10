@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.9.0](https://github.com/uktrade/platform-tools/compare/10.8.1...10.9.0) (2024-09-10)
+
+
+### Features
+
+* DBTP-1301 - provide cross account s3 to s3 data migration permissions ([#540](https://github.com/uktrade/platform-tools/issues/540)) ([8e9cea5](https://github.com/uktrade/platform-tools/commit/8e9cea5a48f6f8cf04a4c845d7bf85873126eb60))
+
 ## [10.8.1](https://github.com/uktrade/platform-tools/compare/10.8.0...10.8.1) (2024-09-05)
 
 
