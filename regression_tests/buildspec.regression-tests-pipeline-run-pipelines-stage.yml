@@ -9,9 +9,7 @@ phases:
   build:
     commands:
        - echo "Run environment pipeline"
-       - echo "Current working directory"
-       - pwd
-       - echo "Directory Contents:\n"
+       - echo "------ FILES DIRECTORY -----------"
        - ls -la
        - ./regression_tests/stages/set_up_aws_config.sh
        - ./regression_tests/stages/run_environment_pipeline.sh

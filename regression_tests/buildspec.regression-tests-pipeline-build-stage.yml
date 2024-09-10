@@ -17,7 +17,6 @@ phases:
       - pip install poetry
       - poetry install
       - pip install dbt-platform-helper
-      - ls -l ./regression_tests/
 
   build:
     commands:
