@@ -25,6 +25,10 @@ phases:
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - ./regression_tests/stages/build_platform_helper.sh
+      - echo -e "\nCreating build_output directory and copying files\n"
+      - mkdir -p build_output
+      - rm -rf build_output/*
+      - cp -r * build_output
 
   post_build:
     commands:
@@ -33,3 +37,8 @@ phases:
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
+
+  artifacts:
+    files:
+      - '**/*'
+    base-directory: build_output
