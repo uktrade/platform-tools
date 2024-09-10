@@ -28,7 +28,7 @@ phases:
       - echo -e "\nCreating build_output directory and copying files\n"
       - mkdir -p build_output
       - rm -rf build_output/*
-      - cp -r * build_output
+      - cp -r ./* build_output/
 
   post_build:
     commands:
