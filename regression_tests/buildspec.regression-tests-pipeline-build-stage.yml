@@ -25,10 +25,7 @@ phases:
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - ./regression_tests/stages/build_platform_helper.sh
-      - echo -e "\nCreating build_output directory and copying files\n"
       - mkdir -p build_output
-      - rm -rf build_output/*
-      - cp -r ./* build_output/
 
   post_build:
     commands:
