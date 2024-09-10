@@ -40,7 +40,7 @@ class PlatformHelperVersions:
         self.latest_release = latest_release
         self.platform_helper_file_version = platform_helper_file_version
         self.platform_config_default = platform_config_default
-        self.pipeline_overrides = pipeline_overrides
+        self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
 
 
 def string_version(input_version: VersionTuple) -> str:
@@ -104,7 +104,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_platform_helper_versions() -> PlatformHelperVersions:
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -115,23 +115,27 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
-    platform_config = load_and_validate_platform_config(disable_aws_validation=True)
-    platform_config_default = parse_version(
-        platform_config.get("default_versions", {}).get("platform-helper")
-    )
 
-    pipeline_overrides = {
-        name: pipeline.get("versions", {}).get("platform-helper")
-        for name, pipeline in platform_config.get("environment_pipelines", {}).items()
-        if pipeline.get("versions", {}).get("platform-helper")
-    }
+    platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        parse_version(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+    if include_project_versions:
+        platform_config = load_and_validate_platform_config(disable_aws_validation=True)
+        platform_config_default = parse_version(
+            platform_config.get("default_versions", {}).get("platform-helper")
+        )
+
+        pipeline_overrides = {
+            name: pipeline.get("versions", {}).get("platform-helper")
+            for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+            if pipeline.get("versions", {}).get("platform-helper")
+        }
+
+        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+        version_from_file = (
+            parse_version(deprecated_version_file.read_text())
+            if deprecated_version_file.exists()
+            else None
+        )
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
@@ -141,7 +145,8 @@ def get_platform_helper_versions() -> PlatformHelperVersions:
         pipeline_overrides=pipeline_overrides,
     )
 
-    _process_version_file_warnings(out)
+    if include_project_versions:
+        _process_version_file_warnings(out)
 
     return out
 
@@ -164,12 +169,12 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
         )
 
     if not versions.platform_config_default and not versions.platform_helper_file_version:
-        messages.append(f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.")
-        messages.append(
-            f"{missing_default_version_message}{string_version(versions.local_version)}\n"
-        )
+        message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+        message += f"{missing_default_version_message}{string_version(versions.local_version)}\n"
+        click.secho(message, fg="red")
 
-    click.secho("\n".join(messages), fg="yellow")
+    if messages:
+        click.secho("\n".join(messages), fg="yellow")
 
 
 def validate_version_compatibility(
@@ -223,7 +228,7 @@ def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
 
-    versions = get_platform_helper_versions()
+    versions = get_platform_helper_versions(include_project_versions=False)
     local_version = versions.local_version
     latest_release = versions.latest_release
     message = (
@@ -245,7 +250,9 @@ def check_platform_helper_version_mismatch():
 
     versions = get_platform_helper_versions()
     local_version = versions.local_version
-    platform_helper_file_version = versions.platform_helper_file_version
+    platform_helper_file_version = parse_version(
+        get_required_platform_helper_version(versions=versions)
+    )
 
     if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
         message = (
@@ -259,8 +266,11 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def get_required_platform_helper_version(pipeline: str = None) -> str:
-    versions = get_platform_helper_versions()
+def get_required_platform_helper_version(
+    pipeline: str = None, versions: PlatformHelperVersions = None
+) -> str:
+    if not versions:
+        versions = get_platform_helper_versions()
     pipeline_version = versions.pipeline_overrides.get(pipeline)
     version_precedence = [
         pipeline_version,
@@ -271,4 +281,9 @@ def get_required_platform_helper_version(pipeline: str = None) -> str:
         string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
     ]
 
-    return non_null_version_precedence[0] if non_null_version_precedence else None
+    out = non_null_version_precedence[0] if non_null_version_precedence else None
+
+    if not out:
+        raise SystemExit(1)
+
+    return out

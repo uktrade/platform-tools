@@ -1,5 +1,68 @@
 # Changelog
 
+## [10.9.0](https://github.com/uktrade/platform-tools/compare/10.8.1...10.9.0) (2024-09-10)
+
+
+### Features
+
+* DBTP-1301 - provide cross account s3 to s3 data migration permissions ([#540](https://github.com/uktrade/platform-tools/issues/540)) ([8e9cea5](https://github.com/uktrade/platform-tools/commit/8e9cea5a48f6f8cf04a4c845d7bf85873126eb60))
+
+## [10.8.1](https://github.com/uktrade/platform-tools/compare/10.8.0...10.8.1) (2024-09-05)
+
+
+### Bug Fixes
+
+* add medium-ha postgres plan ([#551](https://github.com/uktrade/platform-tools/issues/551)) ([72bb681](https://github.com/uktrade/platform-tools/commit/72bb6816ce0ab196f19b6e386cab3f0c931bbc2d))
+
+## [10.8.0](https://github.com/uktrade/platform-tools/compare/10.7.4...10.8.0) (2024-09-05)
+
+
+### Features
+
+* DBTP-1001 Add optional deploy_repository_branch to the codebase pipeline config ([#545](https://github.com/uktrade/platform-tools/issues/545)) ([e5c5235](https://github.com/uktrade/platform-tools/commit/e5c5235fafadab89e886084e867c8aa7c98c2945))
+* DBTP-1346 Add special characters & urlencode password parameters to OpenSearch validation ([#549](https://github.com/uktrade/platform-tools/issues/549)) ([1b069af](https://github.com/uktrade/platform-tools/commit/1b069affc93551f0b716757346fddfca7bc7ab05))
+
+## [10.7.4](https://github.com/uktrade/platform-tools/compare/10.7.3...10.7.4) (2024-08-29)
+
+
+### Bug Fixes
+
+* Use tag-latest for ci-image-builder ([#543](https://github.com/uktrade/platform-tools/issues/543)) ([a4340de](https://github.com/uktrade/platform-tools/commit/a4340dec73b6800fafcf19fb32824561e1b757b9))
+
+## [10.7.3](https://github.com/uktrade/platform-tools/compare/10.7.2...10.7.3) (2024-08-28)
+
+
+### Bug Fixes
+
+* DBTP-1323 Broken `platform-helper codebase \*` commands ([#542](https://github.com/uktrade/platform-tools/issues/542)) ([fd0e185](https://github.com/uktrade/platform-tools/commit/fd0e1857f4343e42ab260a10858e7a343cc95551))
+* S3 bucket KMS Key lookup when environments are in multiple AWS ac… ([#536](https://github.com/uktrade/platform-tools/issues/536)) ([960557d](https://github.com/uktrade/platform-tools/commit/960557debe894d9dad78ffd83caf43086065d48e))
+
+## [10.7.2](https://github.com/uktrade/platform-tools/compare/10.7.1...10.7.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* Replace .platform-helper-version check in buildspec ([#538](https://github.com/uktrade/platform-tools/issues/538)) ([6764c6c](https://github.com/uktrade/platform-tools/commit/6764c6c2a8412aff8fe3573e7eebed61a0fbd977))
+
+## [10.7.1](https://github.com/uktrade/platform-tools/compare/10.7.0...10.7.1) (2024-08-19)
+
+
+### Bug Fixes
+
+* DBTP-1294 Allow any environment deployment by deploy codebuild job ([#528](https://github.com/uktrade/platform-tools/issues/528)) ([3fad07a](https://github.com/uktrade/platform-tools/commit/3fad07aabe8e7cc75e2003f6dc1cd606f45c19c8))
+
+## [10.7.0](https://github.com/uktrade/platform-tools/compare/10.6.1...10.7.0) (2024-08-19)
+
+
+### Features
+
+* Allow override of platform-helper version in regression pipeline ([#527](https://github.com/uktrade/platform-tools/issues/527)) ([5241adf](https://github.com/uktrade/platform-tools/commit/5241adf72108054dd7d17278ec1c5828c6be1358))
+
+
+### Bug Fixes
+
+* add a policy to allow services to access global SSM parameters ([#531](https://github.com/uktrade/platform-tools/issues/531)) ([6fb9795](https://github.com/uktrade/platform-tools/commit/6fb9795cbf56963af8483ec018c16771f351390a))
+
 ## [10.6.1](https://github.com/uktrade/platform-tools/compare/10.6.0...10.6.1) (2024-08-12)
 
 

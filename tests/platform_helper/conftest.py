@@ -468,6 +468,8 @@ extensions:
         plan: small
         engine: '1.3'
         volume_size: 40
+        password_special_characters: "-_.,"
+        urlencode_password: false
 
   test-app-s3-bucket-with-objects:
     type: s3
@@ -495,6 +497,20 @@ extensions:
       dev:
         bucket_name: test-app-policy-dev
         versioning: false
+  
+  test-app-s3-bucket-data-migration:
+    type: s3
+    services: 
+      - web
+    environments:
+      dev:
+        bucket_name: s3-data-migration
+        versioning: false
+        data_migration:
+          import: 
+            source_bucket_arn: arn:aws:s3:::test-app
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role 
         
   test-app-monitoring:
     type: monitoring
@@ -549,6 +565,7 @@ environment_pipelines:
 codebase_pipelines:
   - name: application
     repository: uktrade/test-app
+    deploy_repository_branch: feature-branch
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
     services:
       - celery-worker

@@ -216,8 +216,6 @@ def _generate_svc_overrides(base_path, templates, name):
 
 def _get_s3_kms_alias_arns(session, application_name, config):
     application = load_application(application_name, session)
-    # create kms client
-    kms_client = session.client("kms")
     arns = {}
 
     for environment_name in application.environments:
@@ -228,6 +226,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
             continue
 
         bucket_name = config[environment_name]["bucket_name"]
+        kms_client = application.environments[environment_name].session.client("kms")
         alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
         try:

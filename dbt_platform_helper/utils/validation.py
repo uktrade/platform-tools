@@ -204,6 +204,7 @@ POSTGRES_PLANS = Or(
     "small-ha",
     "small-high-io",
     "medium",
+    "medium-ha",
     "medium-high-io",
     "large",
     "large-ha",
@@ -273,6 +274,38 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
+
+def kms_key_arn_regex(key):
+    return Regex(
+        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+        error=f"{key} must contain a valid ARN for a KMS key",
+    )
+
+
+def s3_bucket_arn_regex(key):
+    return Regex(
+        r"^arn:aws:s3::.*",
+        error=f"{key} must contain a valid ARN for an S3 bucket",
+    )
+
+
+def iam_role_arn_regex(key):
+    return Regex(
+        r"^arn:aws:iam::\d{12}:role/.*",
+        error=f"{key} must contain a valid ARN for an IAM role",
+    )
+
+
+DATA_IMPORT = {
+    Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
+    "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
+    "worker_role_arn": iam_role_arn_regex("worker_role_arn"),
+}
+
+DATA_MIGRATION = {
+    "import": DATA_IMPORT,
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
     Optional("serve_static"): bool,
@@ -284,6 +317,7 @@ S3_BASE = {
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+            Optional("data_migration"): DATA_MIGRATION,
         }
     },
 }
@@ -342,6 +376,8 @@ OPENSEARCH_DEFINITION = {
             Optional("index_slow_log_retention_in_days"): int,
             Optional("audit_log_retention_in_days"): int,
             Optional("search_slow_log_retention_in_days"): int,
+            Optional("password_special_characters"): str,
+            Optional("urlencode_password"): bool,
         }
     },
 }
@@ -405,6 +441,7 @@ CODEBASE_PIPELINES_DEFINITION = [
         "name": str,
         "repository": str,
         Optional("additional_ecr_repository"): str,
+        Optional("deploy_repository_branch"): str,
         "services": list[str],
         "pipelines": [
             Or(

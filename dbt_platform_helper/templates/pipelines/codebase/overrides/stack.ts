@@ -108,7 +108,7 @@ export class TransformedStack extends cdk.Stack {
                 type: 'LINUX_CONTAINER',
                 computeType: 'BUILD_GENERAL1_SMALL',
                 privilegedMode: true,
-                image: 'public.ecr.aws/uktrade/ci-image-builder',
+                image: 'public.ecr.aws/uktrade/ci-image-builder:tag-latest',
                 environmentVariables: envVars,
             },
             source: {
@@ -177,33 +177,38 @@ export class TransformedStack extends cdk.Stack {
 
         const currentEnvironment = buildProject.environment as cdk.aws_codebuild.CfnProject.EnvironmentProperty;
         const currentEnvironmentVariables = currentEnvironment.environmentVariables as Array<cdk.aws_codebuild.CfnProject.EnvironmentVariableProperty>;
+        const deployEnvironmentVariables = [
+            ...currentEnvironmentVariables,
+            {
+                name: 'CODESTAR_CONNECTION_ID',
+                value: this.codestarConnection.id
+            },
+            {
+                name: 'DEPLOY_REPOSITORY',
+                value: this.deployRepository
+            },
+            {
+                name: 'CODEBASE_REPOSITORY',
+                value: this.codebaseConfiguration.repository
+            },
+            {
+                name: 'COPILOT_SERVICES',
+                value: this.codebaseConfiguration.services.join(' ')
+            },
+            {
+                name: 'ECR_REPOSITORY',
+                value: this.ecrRepository()
+            },
+        ];
+
+        if (this.codebaseConfiguration.deploy_repository_branch){
+            deployEnvironmentVariables.push({name: 'DEPLOY_REPOSITORY_BRANCH', value: this.codebaseConfiguration.deploy_repository_branch})
+        }
 
         buildProject.environment = {
             ...buildProject.environment,
-            image: 'public.ecr.aws/uktrade/ci-image-builder',
-            environmentVariables: [
-                ...currentEnvironmentVariables,
-                {
-                    name: 'CODESTAR_CONNECTION_ID',
-                    value: this.codestarConnection.id
-                },
-                {
-                    name: 'DEPLOY_REPOSITORY',
-                    value: this.deployRepository
-                },
-                {
-                    name: 'CODEBASE_REPOSITORY',
-                    value: this.codebaseConfiguration.repository
-                },
-                {
-                    name: 'COPILOT_SERVICES',
-                    value: this.codebaseConfiguration.services.join(' ')
-                },
-                {
-                    name: 'ECR_REPOSITORY',
-                    value: this.ecrRepository()
-                },
-            ]
+            image: 'public.ecr.aws/uktrade/ci-image-builder:tag-latest',
+            environmentVariables: deployEnvironmentVariables
         } as cdk.aws_codebuild.CfnProject.EnvironmentProperty;
 
         const currentSource = buildProject.source as cdk.aws_codebuild.CfnProject.SourceProperty;

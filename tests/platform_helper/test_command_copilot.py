@@ -3,6 +3,7 @@ import os
 import re
 from pathlib import Path
 from pathlib import PosixPath
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -17,6 +18,7 @@ from moto import mock_aws
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -50,7 +52,10 @@ S3_STORAGE_CONTENTS = {
         "readonly": True,
         "serve_static": True,
         "services": ["web"],
-        "environments": {"development": {"bucket_name": "my-bucket-dev"}},
+        "environments": {
+            "development": {"bucket_name": "my-bucket-dev"},
+            "production": {"bucket_name": "my-bucket-prod"},
+        },
     }
 }
 
@@ -109,13 +114,41 @@ class TestTerraformEnabledMakeAddonCommand:
     )
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
-        self, mock_get_session, mock_get_session2, fakefs, kms_key_exists, kms_key_arn
+        self,
+        mock_application,
+        mock_get_session,
+        mock_get_session2,
+        fakefs,
+        kms_key_exists,
+        kms_key_arn,
     ):
-        client = mock_aws_client(mock_get_session)
-        mock_aws_client(mock_get_session2, client)
+        dev_session = MagicMock(name="dev-session-mock")
+        dev_session.profile_name = "foo"
+        prod_session = MagicMock(name="prod-session-mock")
+        prod_session.profile_name = "bar"
+        client = MagicMock(name="client-mock")
+        dev_session.client.return_value = client
+        prod_session.client.return_value = client
+        mock_get_session.side_effect = [dev_session, prod_session]
+        mock_get_session2.side_effect = [dev_session, prod_session]
 
+        dev = Environment(
+            name="development",
+            account_id="000000000000",
+            sessions={"000000000000": dev_session},
+        )
+        prod = Environment(
+            name="production",
+            account_id="111111111111",
+            sessions={"111111111111": prod_session},
+        )
+        mock_application.return_value.environments = {
+            "development": dev,
+            "production": prod,
+        }
         client.get_parameters_by_path.side_effect = [
             {
                 "Parameters": [
@@ -168,6 +201,9 @@ class TestTerraformEnabledMakeAddonCommand:
             s3_addon["Mappings"]["s3EnvironmentConfigMap"]["development"]["KmsKeyArn"]
             == kms_key_arn
         )
+        dev_session.client.assert_called_with("kms")
+        prod_session.client.assert_called_with("kms")
+        assert dev_session != prod_session
 
     @pytest.mark.parametrize(
         "addon_file, expected_service_addons",
@@ -1193,3 +1229,4 @@ def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=content)
     fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
     fakefs.create_file("copilot/environments/development/manifest.yml")
+    fakefs.create_file("copilot/environments/production/manifest.yml")

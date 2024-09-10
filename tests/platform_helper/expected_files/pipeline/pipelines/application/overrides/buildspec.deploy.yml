@@ -10,15 +10,8 @@ env:
 phases:
   build:
     commands:
-      - |
-        environments="dev,staging,prod"
-        echo "Environments are - ${environments}"
-        if echo ",${environments}," | grep -q ",${COPILOT_ENVIRONMENT},"; then
-          echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
-          /work/cli deploy --send-notifications
-        else
-          exit 1
-        fi
+      - echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
+      - /work/cli deploy --send-notifications
 
   post_build:
     commands:
