@@ -844,6 +844,7 @@ class TestFindHTTPSCertificate:
 
         boto_mock = MagicMock()
         boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
+
         with pytest.raises(CertificateNotFoundError):
             find_https_certificate(boto_mock, "test-application", "development")
 
