@@ -860,6 +860,7 @@ class TestFindHTTPSCertificate:
             "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
         }
 
+
         certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
         assert "certificate_arn" == certificate_arn
 
