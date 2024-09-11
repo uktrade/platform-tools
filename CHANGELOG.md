@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.9.1](https://github.com/uktrade/platform-tools/compare/10.9.0...10.9.1) (2024-09-11)
+
+
+### Bug Fixes
+
+* DBTP-1331 Ensure environment generate retrieves correct certificate for load balancer ([#556](https://github.com/uktrade/platform-tools/issues/556)) ([0830410](https://github.com/uktrade/platform-tools/commit/0830410581b66f032c3f95a796ddb089f8454823))
+
 ## [10.9.0](https://github.com/uktrade/platform-tools/compare/10.8.1...10.9.0) (2024-09-10)
 
 
