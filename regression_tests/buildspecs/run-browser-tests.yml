@@ -11,6 +11,7 @@ phases:
       - echo "Run codebase pipeline"
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
+      - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - pip install poetry
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
