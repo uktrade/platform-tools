@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Todo: remove this
+
 # exit early if something goes wrong
 set -e
 

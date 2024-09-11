@@ -1,5 +1,7 @@
 version: 0.2
 
+# Todo: remove this
+
 env:
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
