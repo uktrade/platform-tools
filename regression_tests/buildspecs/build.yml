@@ -27,7 +27,7 @@ phases:
       - ./regression_tests/stages/clone_demodjango.sh
       - ./regression_tests/stages/build_platform_helper.sh
       - platform-helper --version
-      - which
+      - which platform-helper
 
       - echo "Contents of build_output before uploading artifacts:"
       - ls -la
