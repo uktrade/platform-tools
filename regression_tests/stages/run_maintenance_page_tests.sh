@@ -33,8 +33,6 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./smoke_tests.sh ${TARGET_ENVIRONMENT} smoke
 
 ################################################################ CDN tests section
-CODEBUILD_SRC_DIR="/Users/jayesh/WebOps/"
-TARGET_ENVIRONMENT="jayesh"
 export IS_CDN=True
 
 echo -e "\nNow testing CDN endpoint"
