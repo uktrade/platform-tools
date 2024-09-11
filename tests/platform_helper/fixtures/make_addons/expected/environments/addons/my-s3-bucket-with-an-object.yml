@@ -208,7 +208,7 @@ Resources:
                           Key=properties["S3ObjectKey"],
                       )
                   else:
-                      content_type = properties.get("S3ObjectContentType", "binary/octet-stream") 
+                      content_type = properties.get("S3ObjectContentType", "binary/octet-stream")
                       s3_client.put_object(
                           Bucket=properties["S3Bucket"],
                           Key=properties["S3ObjectKey"],
