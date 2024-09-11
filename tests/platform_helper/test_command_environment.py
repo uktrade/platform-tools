@@ -879,6 +879,7 @@ class TestFindHTTPSCertificate:
             ]
         }
 
+
         certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
         assert "certificate_arn_default" == certificate_arn
 
