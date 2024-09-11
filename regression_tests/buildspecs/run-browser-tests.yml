@@ -11,6 +11,8 @@ phases:
       - echo "Run codebase pipeline"
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
+      # Todo figure out whether we can carry over the ppip install directory
+      - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - pip install poetry
