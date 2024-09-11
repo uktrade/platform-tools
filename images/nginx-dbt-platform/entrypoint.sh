@@ -12,7 +12,7 @@ set_paths () {
 # To enable IP filter set PRIV_PATH_LIST: '/'
 if ! [ -z ${PRIV_PATH_LIST+x} ]; then
   PUBLIC_PATHS=""
-elif [ -z ${PUB_PATH_LIST+x} ]; then
+elif [ -z ${PUB_PATH_LIST+x} ] || [ "$PUB_PATH_LIST" = '/' ]; then
   set_paths "/" "upstream_server_public" "public_paths.txt"
   PUBLIC_PATHS=$(<public_paths.txt)
 else
