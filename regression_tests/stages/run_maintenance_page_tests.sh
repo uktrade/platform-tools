@@ -20,7 +20,7 @@ echo "$OUTPUT"
 MAINTENANCE_PAGE_BYPASS_VALUE=$(echo "$OUTPUT" | grep -oP 'Bypass-Key` header with value \K[^\s]+')
 
 echo -e "Give time for ALB to add the maintainence page config."
-sleep 15
+sleep 16
 
 echo -e "\nCheck maintenance page is working and that we can view the site with Bypass-Key header"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
