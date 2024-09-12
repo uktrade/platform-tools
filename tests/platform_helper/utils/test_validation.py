@@ -110,6 +110,9 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-s3-bucket-years-should-be-int": r"years.*should be instance of 'int'",
                 "my-s3-bucket-versioning-should-be-bool": r"environments.*versioning.*instance of 'bool'",
                 "my-s3-bucket-lifecycle-enabled-should-be-bool": r"environments.*lifecycle_rules.*enabled.*instance of 'bool'",
+                "my-s3-bucket-data-migration-source-bucket-invalid-arn": r"source_bucket_arn must contain a valid ARN for an S3 bucket",
+                "my-s3-bucket-data-migration-source-kms-key-invalid-arn": r"source_kms_key_arn must contain a valid ARN for a KMS key",
+                "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
             },
         ),
         (
