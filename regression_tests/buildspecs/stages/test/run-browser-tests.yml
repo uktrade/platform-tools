@@ -14,11 +14,11 @@ phases:
       # Todo figure out whether we can carry over the ppip install directory
       - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
-      - ./regression_tests/stages/set_up_aws_config.sh
+      - ./regression_tests/stages/deploy/set_up_aws_config.sh
       - pip install poetry
-      - ./regression_tests/stages/ensure_not_under_maintenance.sh
-      - source ./regression_tests/stages/run_demodjango_smoke_tests.sh
-      - ./regression_tests/stages/run_maintenance_page_tests.sh
+      - ./regression_tests/stages/test/ensure_not_under_maintenance.sh
+      - source ./regression_tests/stages/test/run_demodjango_smoke_tests.sh
+      - ./regression_tests/stages/test/run_maintenance_page_tests.sh
 
   post_build:
     commands:

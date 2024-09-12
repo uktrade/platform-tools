@@ -21,11 +21,11 @@ phases:
   build:
     commands:
       - echo -e "\nRunning regression tests - Build stage\n"
-      - source ./regression_tests/stages/set_up_git_config.sh
+      - source ./regression_tests/stages/build/set_up_git_config.sh
       # Todo: We should be able to use the code form the source stages and save a few seconds...
-      - ./regression_tests/stages/clone_demodjango_deploy.sh
-      - ./regression_tests/stages/clone_demodjango.sh
-      - ./regression_tests/stages/build_platform_helper.sh
+      - ./regression_tests/stages/build/clone_demodjango_deploy.sh
+      - ./regression_tests/stages/build/clone_demodjango.sh
+      - ./regression_tests/stages/build/build_platform_helper.sh
       - platform-helper --version
       - which platform-helper
 
