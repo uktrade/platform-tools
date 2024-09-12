@@ -2,9 +2,6 @@ import click
 
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
@@ -12,7 +9,6 @@ from dbt_platform_helper.utils.versioning import get_required_platform_helper_ve
 def version():
     """Contains subcommands for getting version information about the current
     project."""
-    check_platform_helper_version_needs_update()
 
 
 @version.command(help="Print the version of platform-tools required by the current project")
