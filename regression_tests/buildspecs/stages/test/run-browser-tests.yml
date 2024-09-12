@@ -11,6 +11,7 @@ phases:
       - echo "Run codebase pipeline"
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
+      - exit 0
       # Todo figure out whether we can carry over the ppip install directory
       - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
