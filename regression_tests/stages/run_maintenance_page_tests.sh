@@ -31,8 +31,8 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 echo -e "\nRunning online command"
 echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment online --app demodjango --env ${TARGET_ENVIRONMENT}
 
-# Give time for ALB to remove the maintainence page config.
-sleep 10
+echo -e "Give time for ALB to remove the maintainence page config."
+sleep 20
 
 echo -e "\nCheck we can view the page again (running smoke tests)"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
@@ -65,8 +65,8 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 echo -e "\nRunning online command"
 echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment online --app demodjango --env ${TARGET_ENVIRONMENT}
 
-# Give time for ALB to remove the maintainence page config.
-sleep 10
+echo -e "Give time for ALB to remove the maintainence page config."
+sleep 20
 
 echo -e "\nCheck we can view the page again (running smoke tests)"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
