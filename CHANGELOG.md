@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.10.0](https://github.com/uktrade/platform-tools/compare/10.9.1...10.10.0) (2024-09-12)
+
+
+### Features
+
+* DBTP 1162 support hosting static sites on s3 ([#555](https://github.com/uktrade/platform-tools/issues/555)) ([4e47ea0](https://github.com/uktrade/platform-tools/commit/4e47ea0697e49e7b43467fbeca48af2995bd6ccf))
+
 ## [10.9.1](https://github.com/uktrade/platform-tools/compare/10.9.0...10.9.1) (2024-09-11)
 
 
