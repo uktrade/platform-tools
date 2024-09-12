@@ -19,8 +19,8 @@ OUTPUT=$(echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHE
 echo "$OUTPUT"
 MAINTENANCE_PAGE_BYPASS_VALUE=$(echo "$OUTPUT" | grep -oP 'Bypass-Key` header with value \K[^\s]+')
 
-# echo -e "Give time for ALB to add the maintainence page config."
-# sleep 60
+echo -e "Give time for ALB to add the maintainence page config."
+sleep 20
 
 echo -e "\nCheck maintenance page is working and that we can view the site with Bypass-Key header"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
@@ -55,8 +55,8 @@ OUTPUT=$(echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHE
 echo "$OUTPUT"
 MAINTENANCE_PAGE_BYPASS_VALUE=$(echo "$OUTPUT" | grep -oP 'Bypass-Key` header with value \K[^\s]+')
 
-# echo -e "Give time for ALB to add the maintainence page config."
-# sleep 60
+echo -e "Give time for ALB to add the maintainence page config."
+sleep 20
 
 echo -e "\nCheck maintenance page is working and that we can view the site with Bypass-Key header"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
