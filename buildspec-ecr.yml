@@ -12,7 +12,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t nginx-dbtp-platform:ch-latest .
-      - docker tag nginx-dbtp-platform:latest public.ecr.aws/uktrade/nginx-dbtp-platform:ch-latest
+      - docker tag nginx-dbtp-platform:ch-latest public.ecr.aws/uktrade/nginx-dbtp-platform:ch-latest
   post_build:
     commands:
       - echo Build completed on `date`
