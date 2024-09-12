@@ -72,10 +72,12 @@ def handler(event, context):
                 Key=properties["S3ObjectKey"],
             )
         else:
+            content_type = properties.get("S3ObjectContentType", "binary/octet-stream")
             s3_client.put_object(
                 Bucket=properties["S3Bucket"],
                 Key=properties["S3ObjectKey"],
                 Body=properties["S3ObjectBody"].encode("utf-8"),
+                ContentType=content_type,
             )
 
         send_response(event, context, "SUCCESS", f"{request_type}d")
