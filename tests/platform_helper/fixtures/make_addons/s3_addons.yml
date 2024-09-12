@@ -64,4 +64,4 @@ extensions:
   
   my-s3-bucket-static:
     type: s3
-    serve_static: true
+    serve_static_content: true

@@ -308,7 +308,7 @@ DATA_MIGRATION = {
 
 S3_BASE = {
     Optional("readonly"): bool,
-    Optional("serve_static"): bool,
+    Optional("serve_static_content"): bool,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
