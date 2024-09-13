@@ -13,6 +13,8 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
+      - echo -e "\nCreate virtual Python environment"
+      - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
       - python --version
