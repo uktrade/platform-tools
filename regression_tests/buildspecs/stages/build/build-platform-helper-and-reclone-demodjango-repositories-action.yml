@@ -17,7 +17,9 @@ phases:
       - echo -e "\nCreate virtual Python environment"
       - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
+      - echo "$VIRTUAL_ENV"
       - source venv/bin/activate
+      - echo "$VIRTUAL_ENV"
       - python --version
       - which python
       - pip list
