@@ -13,7 +13,7 @@ phases:
       - ls -la
       - exit 0
       - export PIP_CONFIG_FILE=.pip_config
-      - pip install "dist/$(ls -t1 dist | head -1)"
+      # - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
