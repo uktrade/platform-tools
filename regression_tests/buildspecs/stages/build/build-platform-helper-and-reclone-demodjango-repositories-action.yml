@@ -17,8 +17,12 @@ phases:
       - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
+      - python --version
+      - which python
+      - pip list
       - echo -e "\nInstalling dependencies"
       - poetry install
+      - pip list
       # - pip install dbt-platform-helper
 
   build:
@@ -28,6 +32,9 @@ phases:
       - ./regression_tests/stages/build_platform_helper.sh
       - platform-helper --version
       - which platform-helper
+      - python --version
+      - which python
+      - pip list
       # The aws-codepipeline Terraform provider does not support setting primary_source,
       # so we cannot get the other codebases we need into the same output artifact
       # without recloning them.

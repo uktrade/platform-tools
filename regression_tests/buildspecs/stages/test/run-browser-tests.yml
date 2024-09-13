@@ -10,6 +10,9 @@ phases:
     commands:
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
+      - python --version
+      - which python
+      - pip list
 
   build:
     commands:
@@ -17,6 +20,9 @@ phases:
       - echo "------ FILES DIRECTORY -----------"
       - ls -al
       # - pip install "dist/$(ls -t1 dist | head -1)"
+      - python --version
+      - which python
+      - pip list
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
