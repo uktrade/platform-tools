@@ -15,36 +15,42 @@ phases:
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
         which python
+      # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
       - echo -e "\nCreate virtual Python environment"
+      # Todo: Have tried copies rto see if it helps with activating it correctly in the subsequent actions, but it doesn't seem to work.
       - python -m venv --copies venv
       - echo -e "\nActivate virtual Python environment"
-      - echo "$VIRTUAL_ENV"
       - source venv/bin/activate
+      # Temporary debug output starts
       - echo "$VIRTUAL_ENV"
       - python --version
       - which python
       - pip list
+      # Temporary debug output ends
       - echo -e "\nInstalling dependencies"
       - poetry install
+      # Temporary debug output...
       - pip list
-      # - pip install dbt-platform-helper
 
   build:
     commands:
       - echo -e "\nRunning regression tests - Build stage\n"
       - source ./regression_tests/stages/set_up_git_config.sh
       - ./regression_tests/stages/build_platform_helper.sh
+      # Temporary debug output starts
       - platform-helper --version
       - which platform-helper
       - python --version
       - which python
       - pip list
+      # Temporary debug output ends
       # The aws-codepipeline Terraform provider does not support setting primary_source,
       # so we cannot get the other codebases we need into the same output artifact
       # without recloning them.
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - cd demodjango && poetry install
+      # Temporary debug output...
       - pip list
       - echo "Contents of build_output before uploading artifacts:"
       - ls -la
