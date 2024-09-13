@@ -13,7 +13,10 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - export PYTHONPATH=$(pwd)
+      - echo -e "\nCreate virtual Python environment"
+      - python -m venv venv
+      - echo -e "\nActivate virtual Python environment"
+      - source venv/bin/activate
       - echo -e "\nInstalling dependencies"
       - poetry install
       # - pip install dbt-platform-helper

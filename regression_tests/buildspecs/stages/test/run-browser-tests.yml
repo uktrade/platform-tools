@@ -6,10 +6,14 @@ env:
     SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
 
 phases:
+  install:
+    commands:
+      - echo -e "\nActivate virtual Python environment"
+      - source venv/bin/activate
+
   build:
     commands:
       - echo "Run codebase pipeline"
-      - export PYTHONPATH=$(pwd)
       - echo "------ FILES DIRECTORY -----------"
       - ls -al
       # - pip install "dist/$(ls -t1 dist | head -1)"
