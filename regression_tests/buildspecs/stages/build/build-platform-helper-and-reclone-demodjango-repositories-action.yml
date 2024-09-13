@@ -16,7 +16,7 @@ phases:
         python --version
         which python
       - echo -e "\nCreate virtual Python environment"
-      - python -m venv venv
+      - python -m venv --copies venv
       - echo -e "\nActivate virtual Python environment"
       - echo "$VIRTUAL_ENV"
       - source venv/bin/activate
