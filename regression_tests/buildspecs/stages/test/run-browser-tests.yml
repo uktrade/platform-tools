@@ -12,7 +12,7 @@ phases:
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
       - exit 0
-      # Todo figure out whether we can carry over the ppip install directory
+      - export PIP_CONFIG_FILE=.pip_config
       - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
