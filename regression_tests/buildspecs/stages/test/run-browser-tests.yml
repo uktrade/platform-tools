@@ -9,10 +9,11 @@ phases:
   build:
     commands:
       - echo "Run codebase pipeline"
-      - echo "------ FILES DIRECTORY -----------"
-      - ls -la
-      - exit 0
       - export PIP_CONFIG_FILE=.pip_config
+      - cat $PIP_CONFIG_FILE
+      - echo "------ FILES DIRECTORY -----------"
+      - ls -al
+      - ls -al .pip_packages
       # - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
