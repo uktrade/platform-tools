@@ -13,10 +13,7 @@ phases:
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - echo -e "\nSet locations for installing dependencies"
-      - export PIP_CONFIG_FILE=.pip_config
-      - echo -e "[user]\ntarget=$(pwd)/pip_packages" > $PIP_CONFIG_FILE
-      - mkdir .pip_packages
+      - export PYTHONPATH=$(pwd)
       - echo -e "\nInstalling dependencies"
       - poetry install
       # - pip install dbt-platform-helper
