@@ -21,9 +21,9 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 ./regression_tests/stages/run_platform_helper_generate.sh
 
-# Todo: DBTP-1073 Include deploying environment pipelines in regression tests.
+# Todo: DBTP-1073 Include deploying environment pipelines in regression tests
 
-# Todo: DBTP-1074 Include deploying codebase pipelines in regression tests.
+# Todo: DBTP-1074 Include deploying codebase pipelines in regression tests
 
 ./regression_tests/stages/run_environment_pipeline.sh
 
@@ -37,4 +37,4 @@ source ./regression_tests/stages/run_demodjango_smoke_tests.sh
 
 # Todo: DBTP-1076 Ensure regression tests builds run one at a time.
 
-# Todo: DBTP-1075 Trigger regression tests off all four main DBT Platform Codebases.
+# Todo: DBTP-1075 Trigger regression tests off all four main DBT Platform Codebases
