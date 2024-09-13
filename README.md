@@ -171,3 +171,14 @@ If found, it indicates that the new package version exists in PyPI.
 7. Ensure the release notes contain an upgrade path for any breaking changes
 8. Check PyPI for the new published version
 
+
+## Docker Images
+
+### Building the Images
+
+If building on a ARM mac, the image will build but will fail to deploy with the following error:
+exec /usr/bin/dumb-init: exec format error
+
+Instead, build the image via the below command, to build for the linux/amd64 platform.
+
+`DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --tag public.ecr.aws/uktrade/nginx-dbt-platform:<tag> .`
