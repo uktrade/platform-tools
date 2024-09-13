@@ -1,5 +1,33 @@
 # Changelog
 
+## [10.10.0](https://github.com/uktrade/platform-tools/compare/10.9.1...10.10.0) (2024-09-12)
+
+
+### Features
+
+* DBTP 1162 support hosting static sites on s3 ([#555](https://github.com/uktrade/platform-tools/issues/555)) ([4e47ea0](https://github.com/uktrade/platform-tools/commit/4e47ea0697e49e7b43467fbeca48af2995bd6ccf))
+
+## [10.9.1](https://github.com/uktrade/platform-tools/compare/10.9.0...10.9.1) (2024-09-11)
+
+
+### Bug Fixes
+
+* DBTP-1331 Ensure environment generate retrieves correct certificate for load balancer ([#556](https://github.com/uktrade/platform-tools/issues/556)) ([0830410](https://github.com/uktrade/platform-tools/commit/0830410581b66f032c3f95a796ddb089f8454823))
+
+## [10.9.0](https://github.com/uktrade/platform-tools/compare/10.8.1...10.9.0) (2024-09-10)
+
+
+### Features
+
+* DBTP-1301 - provide cross account s3 to s3 data migration permissions ([#540](https://github.com/uktrade/platform-tools/issues/540)) ([8e9cea5](https://github.com/uktrade/platform-tools/commit/8e9cea5a48f6f8cf04a4c845d7bf85873126eb60))
+
+## [10.8.1](https://github.com/uktrade/platform-tools/compare/10.8.0...10.8.1) (2024-09-05)
+
+
+### Bug Fixes
+
+* add medium-ha postgres plan ([#551](https://github.com/uktrade/platform-tools/issues/551)) ([72bb681](https://github.com/uktrade/platform-tools/commit/72bb6816ce0ab196f19b6e386cab3f0c931bbc2d))
+
 ## [10.8.0](https://github.com/uktrade/platform-tools/compare/10.7.4...10.8.0) (2024-09-05)
 
 

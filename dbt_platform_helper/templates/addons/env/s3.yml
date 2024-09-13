@@ -201,6 +201,9 @@ Resources:
       S3Bucket: !Ref {{ addon_config.prefix }}Bucket
       S3ObjectKey: {{ s3object.key }}
       S3ObjectBody: {{ s3object.body }}
+      {% if s3object.content_type %} 
+      S3ObjectContentType: {{ s3object.content_type }}
+      {% endif %}
 {% endfor %}
 {% endif %}
 
