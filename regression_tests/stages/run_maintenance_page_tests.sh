@@ -38,7 +38,8 @@ echo -e "\nCheck we can view the page again (running smoke tests)"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./smoke_tests.sh ${TARGET_ENVIRONMENT} smoke
 
-################################################################ CDN tests section
+########################################################################## CDN tests section
+# As the CDN page has just the minimal bootstrap page, we only need to test the landing page.
 export IS_CDN=True
 
 echo -e "\nNow testing CDN endpoint"
