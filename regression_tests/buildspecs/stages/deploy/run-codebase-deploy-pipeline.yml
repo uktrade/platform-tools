@@ -12,7 +12,7 @@ phases:
       - echo "------ FILES DIRECTORY -----------"
       - ls -la
       - ./regression_tests/stages/set_up_aws_config.sh
-#      - ./regression_tests/stages/run_codebase_pipeline.sh
+      - ./regression_tests/stages/run_codebase_pipeline.sh
 
   post_build:
     commands:
