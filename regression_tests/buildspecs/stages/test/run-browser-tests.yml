@@ -8,6 +8,7 @@ env:
 phases:
   install:
     commands:
+      - cat .python-version
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version

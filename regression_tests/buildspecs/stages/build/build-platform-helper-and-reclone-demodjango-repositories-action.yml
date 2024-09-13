@@ -10,6 +10,7 @@ phases:
     commands:
       - echo -e "\nSetting local Python versions"
       - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
+      - cat .python-version
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
