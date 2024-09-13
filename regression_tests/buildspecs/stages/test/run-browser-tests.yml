@@ -8,13 +8,15 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nSetting local Python versions"
-      - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
       - |
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
-      - echo -e "\nCreate virtual Python environment"
-      - python -m venv venv
+        which python
+      - ls -al
+      - ls -al venv
+      - ls -al venv/bin
+      # - echo -e "\nCreate virtual Python environment"
+      # - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
       - python --version
