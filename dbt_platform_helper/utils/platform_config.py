@@ -17,18 +17,3 @@ def get_environment_pipeline_names():
 def is_terraform_project() -> bool:
     config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
     return not config.get("legacy_project", False)
-
-
-def is_s3_bucket_data_migration_enabled(bucket_name):
-    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    extensions = config.get("extensions", {})
-
-    for extension_name, extension_data in extensions.items():
-        if extension_data.get("type") == "s3":
-            environments = extension_data.get("environments", {})
-
-            for env_name, env_data in environments.items():
-                if env_data.get("bucket_name") == bucket_name:
-                    return env_data.get("data_migration") is not None
-
-    return False
