@@ -8,30 +8,20 @@ env:
 phases:
   install:
     commands:
-      # Temporary debug output starts
-      - ls -al
-      - ls -al venv
-      - ls -al venv/bin
-      # Temporary debug output ends
-      # - echo -e "\nCreate virtual Python environment"
-      # - python -m venv venv
+      - echo -e "\nCreate virtual Python environment"
+      - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
-      # Temporary debug output starts
       - echo "$VIRTUAL_ENV"
       - python --version
-      # Todo: It seems to have activated the correct environment, but is not using the Python from it...
       - which python
       - pip list
-      # Temporary debug output ends
 
   build:
     commands:
       - echo "Run browser tests"
       - echo "------ FILES DIRECTORY -----------"
       - ls -al
-      # Todo: We should not need to resinstall the built platform helper...
-      # - pip install "dist/$(ls -t1 dist | head -1)"
       - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
