@@ -2913,14 +2913,6 @@ applications:
       name: datahub-omis-fe
       namespace: datahub
       scm: git@github.com:uktrade/omis-frontend.git
-    datahub-sorry:
-      environments:
-      - environment: production
-        paas: NO-APP-FOUND
-        paas-location: sorry.trade.gov.uk
-      name: datahub-sorry
-      namespace: datahub
-      scm: git@github.com:uktrade/service-shuttering-page.git
     staff-sso:
       environments:
       - environment: prod
