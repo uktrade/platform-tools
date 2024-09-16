@@ -8,6 +8,9 @@ env:
 phases:
   install:
     commands:
+      - echo -e "\nEnsure latest python vers is installed"
+      - pyenv install -s 3.12.6
+      - pyenv global 3.12.6
       - echo -e "\nCreate virtual Python environment"
       - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
