@@ -8,16 +8,23 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nEnsure latest python vers is installed"
+      - echo -e "\nEnsure Python 3.12.6 is installed for the current user"
+      - export PYENV_ROOT="$HOME/.pyenv"
+      - if [ -d "$PYENV_ROOT" ]; then rm -rf "$PYENV_ROOT"; fi
+      - curl https://pyenv.run | bash
+      - export PATH="$PYENV_ROOT/bin:$PATH"
+      - eval "$(pyenv init --path)"
+      - eval "$(pyenv init -)"
       - pyenv install -s 3.12.6
-      - pyenv global 3.12.6
+      - pyenv global 3.12.6 
       - echo -e "\nCreate virtual Python environment"
-      - python -m venv venv
+      - python -m venv --copies venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
       - echo "$VIRTUAL_ENV"
       - python --version
       - which python
+      - pip install --upgrade pip
       - pip list
 
   build:
