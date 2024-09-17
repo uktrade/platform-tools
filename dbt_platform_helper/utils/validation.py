@@ -180,7 +180,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1")
+REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
 
 REDIS_DEFINITION = {
     "type": "redis",
