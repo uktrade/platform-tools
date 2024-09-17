@@ -275,8 +275,6 @@ def generate(name, vpc_name):
         )
         raise click.Abort
 
-    session = get_aws_session_or_abort()
-
     try:
         conf = load_and_validate_platform_config()
     except SchemaError as ex:
@@ -284,6 +282,9 @@ def generate(name, vpc_name):
         raise click.Abort
 
     env_config = apply_environment_defaults(conf)["environments"][name]
+    profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
+    click.secho(f"Using {profile_for_environment} for this AWS session")
+    session = get_aws_session_or_abort(profile_for_environment)
 
     _generate_copilot_environment_manifests(name, conf["application"], env_config, session)
 
