@@ -502,6 +502,7 @@ class TestGenerate:
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
+        mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
 
         assert actual == expected
         assert "File copilot/environments/test/manifest.yml created" in result.output
