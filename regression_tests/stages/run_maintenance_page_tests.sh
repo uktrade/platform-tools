@@ -46,7 +46,7 @@ echo -e "\nNow testing CDN endpoint"
 
 URL="${TARGET_ENVIRONMENT}.demodjango.uktrade.digital/"
 
-echo -e "\nCheck we can view the page (running smoke tests)"
+echo -e "\nCheck we can view the landing page"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./tests/browser/run.sh ${URL} smoke/test_landing_page.py
 
