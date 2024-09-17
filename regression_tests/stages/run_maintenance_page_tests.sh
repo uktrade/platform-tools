@@ -69,6 +69,6 @@ echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true p
 echo -e "Give time for ALB to remove the maintainence page config."
 sleep 15
 
-echo -e "\nCheck we can view the page again (running smoke tests)"
+echo -e "\nCheck we can view the landing page"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./tests/browser/run.sh ${URL} smoke/test_landing_page.py
