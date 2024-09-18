@@ -14,8 +14,17 @@ set_paths () {
         proxy_set_header Host \$host;
         proxy_set_header x-forwarded-for \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Prefix $LOCATION_PATH;
-    }
 EOF
+
+  if [[ -n "${ALLOW_WEBSOCKETS+x}" ]]; then
+      cat << EOF >> $OUTPUT_FILE
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+EOF
+  fi
+
+  echo -e "\n    }" >> $OUTPUT_FILE
 }
 
 # Either PRIV_PATH_LIST or PUB_PATH_LIST VARs can be set, not both.
