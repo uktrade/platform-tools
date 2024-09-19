@@ -135,17 +135,15 @@ def get_locally_installed_platform_helper_version():
 
 
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
-    local_version = get_locally_installed_platform_helper_version()
-    latest_release = get_latest_release()
 
     if not include_project_versions:
-        return PlatformHelperVersions(local_version, latest_release)
+        return PlatformHelperVersions(get_locally_installed_platform_helper_version(), get_latest_release())
 
     platform_config = load_and_validate_platform_config(disable_aws_validation=True)
 
     out = PlatformHelperVersions(
-        local_version=local_version,
-        latest_release=latest_release,
+        local_version=get_locally_installed_platform_helper_version(),
+        latest_release=get_latest_release(),
         platform_helper_file_version=get_version_from_file(PLATFORM_HELPER_VERSION_FILE),
         platform_config_default=parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
