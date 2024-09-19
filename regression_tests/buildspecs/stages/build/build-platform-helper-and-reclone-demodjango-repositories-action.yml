@@ -47,8 +47,9 @@ phases:
       - venv/bin/pip install dbt-platform-helper
       # Temporary debug output...
       - pip list
-      - cd ..
+
       - echo "Packaging the virtual environment"
+      - ls -la
       - zip -r venv.zip venv # package the virtual env into zip file
 
   build:
