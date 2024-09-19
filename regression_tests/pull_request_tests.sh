@@ -35,7 +35,7 @@ source ./regression_tests/stages/run_demodjango_smoke_tests.sh
 
 ./regression_tests/stages/run_maintenance_page_tests.sh
 
-./regression_tests/stages/run_s3_to_s3_data_migration_tests.sh || echo "S3 to S3 data migration test failed, but continuing build..."
+./regression_tests/stages/run_s3_to_s3_data_migration_tests.sh
 
 
 # Todo: DBTP-1076 Ensure regression tests builds run one at a time.
