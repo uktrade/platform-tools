@@ -138,12 +138,8 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
         )
-
         pipeline_overrides = get_pipeline_version_overrides(platform_config)
-
-    version_from_file = (
-        get_version_from_file(PLATFORM_HELPER_VERSION_FILE) if include_project_versions else None
-    )
+        version_from_file = get_version_from_file(PLATFORM_HELPER_VERSION_FILE)
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
