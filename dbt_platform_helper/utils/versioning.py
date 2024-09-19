@@ -110,6 +110,15 @@ def get_version_from_file(deprecated_version_file_path):
         return parse_version(deprecated_version_file.read_text())
 
 
+def get_pipeline_version_overrides(validated_platform_config):
+    pipeline_overrides = {
+        name: pipeline.get("versions", {}).get("platform-helper")
+        for name, pipeline in validated_platform_config.get("environment_pipelines", {}).items()
+        if pipeline.get("versions", {}).get("platform-helper")
+    }
+    return pipeline_overrides
+
+
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
@@ -130,11 +139,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
             platform_config.get("default_versions", {}).get("platform-helper")
         )
 
-        pipeline_overrides = {
-            name: pipeline.get("versions", {}).get("platform-helper")
-            for name, pipeline in platform_config.get("environment_pipelines", {}).items()
-            if pipeline.get("versions", {}).get("platform-helper")
-        }
+        pipeline_overrides = get_pipeline_version_overrides(platform_config)
 
     version_from_file = (
         get_version_from_file(PLATFORM_HELPER_VERSION_FILE) if include_project_versions else None
