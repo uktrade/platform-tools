@@ -119,17 +119,19 @@ def get_pipeline_version_overrides(validated_platform_config):
     return pipeline_overrides
 
 
+def get_latest_release():
+    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
+    released_versions = package_info["releases"].keys()
+    parsed_released_versions = [parse_version(v) for v in released_versions]
+    parsed_released_versions.sort(reverse=True)
+    return parsed_released_versions[0]
+
+
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
         locally_installed_version = None
-
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
-    released_versions = package_info["releases"].keys()
-    parsed_released_versions = [parse_version(v) for v in released_versions]
-    parsed_released_versions.sort(reverse=True)
-    latest_release = parsed_released_versions[0]
 
     platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
@@ -143,7 +145,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
-        latest_release=latest_release,
+        latest_release=get_latest_release(),
         platform_helper_file_version=version_from_file,
         platform_config_default=platform_config_default,
         pipeline_overrides=pipeline_overrides,
