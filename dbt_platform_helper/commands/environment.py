@@ -501,7 +501,7 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
         "TagDescriptions"
     ]
 
-    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter"]:
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
 
         if name == "MaintenancePage" and not deleted:
