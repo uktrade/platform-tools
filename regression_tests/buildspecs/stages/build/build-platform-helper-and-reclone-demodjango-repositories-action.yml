@@ -49,7 +49,7 @@ phases:
       - pip list
 
       - echo "Packaging the virtual environment"
-      - zip -r venv.zip venv # package the virtual env into zip file
+      - zip -r venv.zip venv > /dev/null # package the virtual env into zip file
 
   build:
     commands:
@@ -86,4 +86,3 @@ phases:
 artifacts:
   files:
     - '**/*'
-    - "venv.zip"
