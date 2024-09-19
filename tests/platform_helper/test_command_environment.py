@@ -931,34 +931,51 @@ class TestRemoveMaintenancePage:
         with pytest.raises(ListenerRuleNotFoundError):
             remove_maintenance_page(boto_mock, "listener_arn")
 
-    def test_when_environment_offline(self):
+    @patch("dbt_platform_helper.commands.environment.delete_listener_rule")
+    def test_when_environment_offline(self, delete_listener_rule):
         from dbt_platform_helper.commands.environment import remove_maintenance_page
 
         boto_mock = MagicMock()
         boto_mock.client().describe_rules.return_value = {
             "Rules": [{"RuleArn": "rule_arn"}, {"RuleArn": "allowed_ips_rule_arn"}]
         }
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [
-                {
-                    "ResourceArn": "rule_arn",
-                    "Tags": [
-                        {"Key": "name", "Value": "MaintenancePage"},
-                        {"Key": "type", "Value": "default"},
-                    ],
-                },
-                {
-                    "ResourceArn": "allowed_ips_rule_arn",
-                    "Tags": [
-                        {"Key": "name", "Value": "AllowedIps"},
-                        {"Key": "type", "Value": "default"},
-                    ],
-                },
-            ]
-        }
+        tag_descriptions = [
+            {
+                "ResourceArn": "rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "MaintenancePage"},
+                    {"Key": "type", "Value": "default"},
+                ],
+            },
+            {
+                "ResourceArn": "allowed_ips_rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "AllowedIps"},
+                    {"Key": "type", "Value": "default"},
+                ],
+            },
+            {
+                "ResourceArn": "allowed_source_ips_rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "AllowedSourceIps"},
+                    {"Key": "type", "Value": "default"},
+                ],
+            },
+        ]
+        boto_mock.client().describe_tags.return_value = {"TagDescriptions": tag_descriptions}
         boto_mock.client().delete_rule.return_value = None
 
         remove_maintenance_page(boto_mock, "listener_arn")
+
+        delete_listener_rule.assert_has_calls(
+            [
+                call(tag_descriptions, "MaintenancePage", boto_mock.client()),
+                call().__bool__(),  # return value of mock is referenced in line: `if name == "MaintenancePage" and not deleted`
+                call(tag_descriptions, "AllowedIps", boto_mock.client()),
+                call(tag_descriptions, "BypassIpFilter", boto_mock.client()),
+                call(tag_descriptions, "AllowedSourceIps", boto_mock.client()),
+            ]
+        )
 
 
 class TestAddMaintenancePage:
