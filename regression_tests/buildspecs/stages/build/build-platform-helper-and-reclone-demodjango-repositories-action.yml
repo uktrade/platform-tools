@@ -15,22 +15,37 @@ phases:
         echo -e "\nCheck we are using the latest installed Python 3.x"
         python --version
         which python
+
+      # Ensure clean environment
+      - rm -rf venv
+      -
       # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
       - echo -e "\nCreate virtual Python environment"
       # Todo: Have tried copies rto see if it helps with activating it correctly in the subsequent actions, but it doesn't seem to work.
-      - python -m venv --copies venv
+      - python -m venv venv
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
+
       # Temporary debug output starts
+      - pip install -upgrade pip
+      - echo "Python in venv - $(which python)"
+      - echo "Pip in venv - $(which pip)"
       - echo "$VIRTUAL_ENV"
       - python --version
       - which python
       - pip list
       # Temporary debug output ends
+
+      # Installing dependencies
       - echo -e "\nInstalling dependencies"
-      - poetry install
+      - venv/bin/pip install poetry
+      - venv/bin/poetry install
+      - venv/bin/pip install dbt-platform-helper
       # Temporary debug output...
       - pip list
+      - cd ..
+      - echo ""Packaging the virtual environment"
+      - zip -r venv.zip venv # packge the virtual env into zip file
 
   build:
     commands:
@@ -67,3 +82,4 @@ phases:
 artifacts:
   files:
     - '**/*'
+    - venv.zip
