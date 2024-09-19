@@ -35,20 +35,6 @@ Mappings:
       CacheParameterGroupFamily: 'redis7.x'
     '6.2':
       CacheParameterGroupFamily: 'redis6.x'
-    '6.0':
-      CacheParameterGroupFamily: 'redis6.x'
-    '5.0.6':
-      CacheParameterGroupFamily: 'redis5.0'
-    '5.0.4':
-      CacheParameterGroupFamily: 'redis5.0'
-    '5.0.3':
-      CacheParameterGroupFamily: 'redis5.0'
-    '5.0.0':
-      CacheParameterGroupFamily: 'redis5.0'
-    '4.0.10':
-      CacheParameterGroupFamily: 'redis4.0'
-    '3.2.6':
-      CacheParameterGroupFamily: 'redis3.2'
 
 Conditions:
   {{ addon_config.prefix }}HasAutomaticFailoverEnabled: !Not [!Equals [!FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, NumReplicas], 0]]

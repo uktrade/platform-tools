@@ -38,6 +38,6 @@ set -e
 ./regression_tests/stages/run_s3_to_s3_data_migration_tests.sh || echo "S3 to S3 data migration test failed, but continuing build..."
 
 
-# Todo: DBTP-1076 Ensure regression tests builds run one at a time
+# Todo: DBTP-1076 Ensure regression tests builds run one at a time.
 
 # Todo: DBTP-1075 Trigger regression tests off all four main DBT Platform Codebases

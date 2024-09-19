@@ -65,6 +65,8 @@ In order for this to work, you will need to have deployed environment and codeba
 
 To run the regression tests against your environment, select "Start build with overrides", navigate to "Additional configuration" in the "Environment" section, and set `TARGET_ENVIRONMENT` environment variable value to your environment name.
 
+To run the regression test against a specific branch for demodjango and demodjango-deploy you can use the "Start build with overrides" and add the following variables to "Additional configuration" in the "Environment" section.  `DEMODJANGO_DEPLOY_BRANCH` or `DEMODJANGO_BRANCH`.  However to ensure the ci-image-builder also used that same branch for demodjango image build, you will need to also add the VAR `DEPLOY_REPOSITORY_BRANCH` to the `pipeline-demodjango-application-<env>\DeployTo-<env>` in the platform-sandbox account.
+
 Because we are currently targeting the same environment for all runs and AWS CodeBuild does not support queueing, it is essential that we do not start a regression test run while another is in progress, communicate with the team and check in the `platform-tools-test` AWS CodeBuild project.
 
 #### Manual testing
