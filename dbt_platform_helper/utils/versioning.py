@@ -10,6 +10,7 @@ from typing import Union
 
 import click
 import requests
+import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
@@ -139,7 +140,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     if not include_project_versions:
         return PlatformHelperVersions(get_locally_installed_platform_helper_version(), get_latest_release())
 
-    platform_config = load_and_validate_platform_config(disable_aws_validation=True)
+    platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
     out = PlatformHelperVersions(
         local_version=get_locally_installed_platform_helper_version(),
