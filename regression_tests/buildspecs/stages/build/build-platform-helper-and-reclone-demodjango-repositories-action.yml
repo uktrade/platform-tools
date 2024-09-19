@@ -18,7 +18,11 @@ phases:
 
       # Ensure clean environment
       - rm -rf venv
-      -
+
+      # Install zip facility
+      - apt-get update -y
+      - apt-get install -y zip
+
       # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
       - echo -e "\nCreate virtual Python environment"
       # Todo: Have tried copies rto see if it helps with activating it correctly in the subsequent actions, but it doesn't seem to work.
