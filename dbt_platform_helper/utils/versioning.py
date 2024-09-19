@@ -127,11 +127,14 @@ def get_latest_release():
     return parsed_released_versions[0]
 
 
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
+def get_locally_installed_platform_helper_version():
     try:
-        locally_installed_version = parse_version(version("dbt-platform-helper"))
+        return parse_version(version("dbt-platform-helper"))
     except PackageNotFoundError:
-        locally_installed_version = None
+        pass
+
+
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
 
     platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
@@ -144,7 +147,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         version_from_file = get_version_from_file(PLATFORM_HELPER_VERSION_FILE)
 
     out = PlatformHelperVersions(
-        local_version=locally_installed_version,
+        local_version=get_locally_installed_platform_helper_version(),
         latest_release=get_latest_release(),
         platform_helper_file_version=version_from_file,
         platform_config_default=platform_config_default,
