@@ -10,4 +10,4 @@ The image is published to `public.ecr.aws/uktrade/copilot-bootstrap:latest` in t
 
 To allow for the standard healthcheck endpoint `/pingdom/ping.xml`, this image uses a static XML file. 
 
-This allows for the AWS Copilot configuration for health checks to be set prior to replacing the bootstrap image with an actual application. In addition, pingdom health checks can be created during the environment setup, allowing the migration team to be alerted should the to-be production environment experience issues.
+This allows the AWS Copilot configuration for health checks to be set prior to replacing the bootstrap image with an actual application. In addition, pingdom health checks can be created during the environment setup, allowing the migration team to be alerted should the to-be production environment experience issues.
