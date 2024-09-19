@@ -104,6 +104,12 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
+def get_version_from_file(deprecated_version_file_path):
+    deprecated_version_file = Path(deprecated_version_file_path)
+    if deprecated_version_file.exists():
+        return parse_version(deprecated_version_file.read_text())
+
+
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
@@ -130,12 +136,9 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
             if pipeline.get("versions", {}).get("platform-helper")
         }
 
-        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-        version_from_file = (
-            parse_version(deprecated_version_file.read_text())
-            if deprecated_version_file.exists()
-            else None
-        )
+    version_from_file = (
+        get_version_from_file(PLATFORM_HELPER_VERSION_FILE) if include_project_versions else None
+    )
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
