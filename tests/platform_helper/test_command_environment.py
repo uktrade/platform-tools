@@ -964,6 +964,7 @@ class TestRemoveMaintenancePage:
 class TestAddMaintenancePage:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     @patch("dbt_platform_helper.commands.environment.random.choices", return_value=["a", "b", "c"])
+    @patch("dbt_platform_helper.commands.environment.create_source_ip_rule")
     @patch("dbt_platform_helper.commands.environment.create_header_rule")
     @patch("dbt_platform_helper.commands.environment.find_target_group")
     @patch("dbt_platform_helper.commands.environment.get_maintenance_page_template")
@@ -972,6 +973,7 @@ class TestAddMaintenancePage:
         get_maintenance_page_template,
         find_target_group,
         create_header_rule,
+        create_source_ip,
         choices,
         template,
         mock_application,
@@ -988,13 +990,22 @@ class TestAddMaintenancePage:
             "test-application",
             "development",
             [mock_application.services["web"]],
-            [],
+            ["1.2.3.4"],
             template,
         )
 
-        assert create_header_rule.call_count == 1
+        assert create_header_rule.call_count == 2
         create_header_rule.assert_has_calls(
             [
+                call(
+                    boto_mock.client(),
+                    "listener_arn",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["1.2.3.4"],
+                    "AllowedIps",
+                    100,
+                ),
                 call(
                     boto_mock.client(),
                     "listener_arn",
@@ -1004,6 +1015,18 @@ class TestAddMaintenancePage:
                     "BypassIpFilter",
                     1,
                 ),
+            ]
+        )
+        create_source_ip.assert_has_calls(
+            [
+                call(
+                    boto_mock.client(),
+                    "listener_arn",
+                    "target_group_arn",
+                    ["1.2.3.4"],
+                    "AllowedSourceIps",
+                    101,
+                )
             ]
         )
         boto_mock.client().create_rule.assert_called_once_with(
@@ -1227,6 +1250,44 @@ class TestCommandHelperMethods:
 
         assert (
             f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\n\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
+            in captured.out
+        )
+
+    @mock_aws
+    def test_create_source_ip_rule(self, capsys):
+        from dbt_platform_helper.commands.environment import create_source_ip_rule
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 2
+
+        create_source_ip_rule(
+            elbv2_client,
+            listener_arn,
+            target_group_arn,
+            ["1.2.3.4", "5.6.7.8"],
+            "AllowedSourceIps",
+            333,
+        )
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
+        assert rules[1]["Conditions"][0]["SourceIpConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert rules[1]["Priority"] == "333"
+
+        captured = capsys.readouterr()
+
+        assert (
+            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )
 

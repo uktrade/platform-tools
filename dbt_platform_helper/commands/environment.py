@@ -250,7 +250,7 @@ def get_cert_arn(session, application, env_name):
     return arn
 
 
-def get_env_ips(vpc: str, application_environment: Environment):
+def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
     account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
@@ -521,15 +521,7 @@ def get_rules_tag_descriptions(rules: list, lb_client):
     return tag_descriptions
 
 
-def create_header_rule(
-    lb_client: boto3.client,
-    listener_arn: str,
-    target_group_arn: str,
-    header_name: str,
-    values: list,
-    rule_name: str,
-    priority: int,
-):
+def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str):
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
     # Get current set of forwarding conditions for the target group
@@ -549,6 +541,20 @@ def create_header_rule(
     conditions[0]["HostHeaderConfig"]["Values"] = [
         v for v in conditions[0]["HostHeaderConfig"]["Values"]
     ]
+
+    return conditions
+
+
+def create_header_rule(
+    lb_client: boto3.client,
+    listener_arn: str,
+    target_group_arn: str,
+    header_name: str,
+    values: list,
+    rule_name: str,
+    priority: int,
+):
+    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
 
     # add new condition to existing conditions
     combined_conditions = [
@@ -570,6 +576,40 @@ def create_header_rule(
 
     click.secho(
         f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        fg="green",
+    )
+
+
+def create_source_ip_rule(
+    lb_client: boto3.client,
+    listener_arn: str,
+    target_group_arn: str,
+    values: list,
+    rule_name: str,
+    priority: int,
+):
+    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
+
+    # add new condition to existing conditions
+    combined_conditions = [
+        {
+            "Field": "source-ip",
+            "SourceIpConfig": {"Values": [value + "/32" for value in values]},
+        }
+    ] + conditions
+
+    lb_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=priority,
+        Conditions=combined_conditions,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Tags=[
+            {"Key": "name", "Value": rule_name},
+        ],
+    )
+
+    click.secho(
+        f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
         fg="green",
     )
 
@@ -608,6 +648,14 @@ def add_maintenance_page(
                 [ip],
                 "AllowedIps",
                 forwarded_rule_priority,
+            )
+            create_source_ip_rule(
+                lb_client,
+                listener_arn,
+                target_group_arn,
+                [ip],
+                "AllowedSourceIps",
+                forwarded_rule_priority + 1,
             )
 
         bypass_rule_priority = service_number

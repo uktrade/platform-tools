@@ -1,0 +1,4 @@
+<pingdom_http_custom_check>
+    <status>OK</status>
+    <response_time>500</response_time>
+</pingdom_http_custom_check>
