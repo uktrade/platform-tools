@@ -14,7 +14,7 @@ cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./smoke_tests.sh ${TARGET_ENVIRONMENT} smoke
 
 echo -e "\nRunning offline command"
-OUTPUT=$(echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment offline --app demodjango --env "${TARGET_ENVIRONMENT}" --vpc platform-sandbox-dev)
+OUTPUT=$(echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment offline --app demodjango --env "${TARGET_ENVIRONMENT}" --svc "*" --vpc platform-sandbox-dev)
 
 echo "$OUTPUT"
 MAINTENANCE_PAGE_BYPASS_VALUE=$(echo "$OUTPUT" | grep -oP 'Bypass-Key` header with value \K[^\s]+')
