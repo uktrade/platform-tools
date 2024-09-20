@@ -18,6 +18,9 @@ phases:
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
 
+      - echo -e "\nPrint  venv/bin"
+      - ls venv/bin
+
       # Verify virtual env is active
       - echo "Python in venv - $(python --version)"
       - which python
