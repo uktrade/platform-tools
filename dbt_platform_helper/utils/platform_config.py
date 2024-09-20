@@ -6,11 +6,15 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 
-def get_environment_pipeline_names():
+def get_environment_pipeline_names(disable_config_validation=False):
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
-
-    config = load_and_validate_platform_config(disable_aws_validation=True, disable_file_check=True)
+    if disable_config_validation:
+        config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    else:
+        config = load_and_validate_platform_config(
+            disable_aws_validation=True, disable_file_check=True
+        )
     return config.get("environment_pipelines", {}).keys()
 
 
