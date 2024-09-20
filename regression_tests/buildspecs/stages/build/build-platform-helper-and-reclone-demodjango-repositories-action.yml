@@ -78,24 +78,28 @@ phases:
       - mv demodjango build_output/
       - mv demodjango-deploy build_output/
 
-      # Add source_output_platform_tools artefact from Source stage
-      - echo -e "\nUnzipping source_output_platform_tools.zip into build_output"
-#      - unzip /codebuild/output/src*/source_output_platform_tools.zip -d build_output/
-      - echo -e "\nListing files in /codebuild/output/"
-      - ls -la /codebuild/output/
+#      # Add source_output_platform_tools artefact from Source stage
+#      - echo -e "\nUnzipping source_output_platform_tools.zip into build_output"
+##      - unzip /codebuild/output/src*/source_output_platform_tools.zip -d build_output/
+#      - echo -e "\nListing files in /codebuild/output/artifacts/"
+#      - ls -la /codebuild/output/artifacts/
+#
+#      - echo -e "\nListing files in /codebuild/output/src*"
+#      - ls -la /codebuild/output/src*
+#
+#      - echo -e "\nListing files in PWD"
+#      - ls -la
 
-      - echo -e "\nListing files in /codebuild/output/src*"
-      - ls -la /codebuild/output/src*
-
-      - echo -e "\nListing files in PWD"
-      - ls -la
+      # New step: Add all files from the working directory to the build_output folder
+      - echo -e "\nCopying all working directory files into build_output"
+      - cp -R ./* build_output/
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
       - ls -la build_output/
 
-      - echo -e "\nChecking contents of test buildspec directory"
-      - ls -la regression_tests/buildspecs/stages/test/
+#      - echo -e "\nChecking contents of test buildspec directory"
+#      - ls -la regression_tests/buildspecs/stages/test/
 
 #      - echo "Unzipping source_output_platform_tools..."
 #      - mkdir -p /tmp/source_output_platform_tools
