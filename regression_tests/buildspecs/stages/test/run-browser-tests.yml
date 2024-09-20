@@ -8,7 +8,10 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nSetting up environment form previous build stageUnzipping virtual environment"
+      - echo -e "\nListing contents of build_output artefact"
+      - ls -la build_output/
+      -
+      - echo -e "\nSetting up virtual environment from previous build stage"
       - echo -e "\nUnzipping virtual environment"
       - unzip build_output/venv.zip -d venv
 
