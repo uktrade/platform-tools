@@ -138,7 +138,9 @@ def get_locally_installed_platform_helper_version():
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
 
     if not include_project_versions:
-        return PlatformHelperVersions(get_locally_installed_platform_helper_version(), get_latest_release())
+        return PlatformHelperVersions(
+            get_locally_installed_platform_helper_version(), get_latest_release()
+        )
 
     platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
 
