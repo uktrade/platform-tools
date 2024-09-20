@@ -22,9 +22,9 @@ phases:
       - ls venv/bin
 
       - echo -e "\nCAT out ACTIVATE files"
-      - cat activate
-      - cat activate.csh
-      - cat activate.fish
+      - cat venv/bin/activate
+      - cat venv/bin/activate.csh
+      - cat venv/bin/activate.fish
 
       # Verify virtual env is active
       - echo "Python in venv - $(python --version)"
