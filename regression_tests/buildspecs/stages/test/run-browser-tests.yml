@@ -13,7 +13,7 @@ phases:
       -
       - echo -e "\nSetting up virtual environment from previous build stage"
       - echo -e "\nUnzipping virtual environment"
-      - unzip build_output/venv.zip -d venv
+      - unzip venv.zip -d venv
 
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
