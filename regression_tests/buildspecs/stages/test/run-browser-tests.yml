@@ -9,7 +9,7 @@ phases:
   install:
     commands:
       - echo -e "\nListing contents of build_output artefact"
-      - ls -la build_output/
+      - ls -la
       -
       - echo -e "\nSetting up virtual environment from previous build stage"
       - echo -e "\nUnzipping virtual environment"
