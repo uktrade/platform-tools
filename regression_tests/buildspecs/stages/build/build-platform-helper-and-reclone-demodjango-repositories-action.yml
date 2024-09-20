@@ -66,6 +66,7 @@ phases:
       - which python
       - pip list
       # Temporary debug output ends
+
       # The aws-codepipeline Terraform provider does not support setting primary_source,
       # so we cannot get the other codebases we need into the same output artifact
       # without recloning them.
@@ -79,6 +80,9 @@ phases:
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
       - ls -la build_output/
+
+      - echo -e "\nChecking contents of test buildspec directory"
+      - ls -la regression_tests/buildspecs/stages/test/
 
 
   post_build:
