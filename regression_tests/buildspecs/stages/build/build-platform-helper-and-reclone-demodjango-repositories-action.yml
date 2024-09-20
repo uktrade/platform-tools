@@ -9,7 +9,7 @@ phases:
   install:
     commands:
       - echo -e "\nContents of the source_output_platform_tools artefact"
-      - ls -la /codebuild/output/src*
+      - ls -la /codebuild/output/src*/src
 
       - echo -e "\nSetting local Python versions"
       - pyenv versions | awk 'match($0, /[0-9]\.[0-9]+\.[0-9]+/) { print substr($0, RSTART, RLENGTH) }' | tac > .python-version
