@@ -8,13 +8,16 @@ env:
 phases:
   install:
     commands:
-      - echo "Unzipping virtual environment"
-      - unzip venv.zip
+      - echo -e "\nSetting up environment form previous build stageUnzipping virtual environment"
+      - echo -e "\nUnzipping virtual environment"
+      - unzip build_output/venv.zip -d venv
+
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
-      - echo "Python in venv - $(python --version)"
 
-      # Temporary debug output...
+      # Verify virtual env is active
+      - echo "Python in venv - $(python --version)"
+      - which python
       - pip list
 
   build:
