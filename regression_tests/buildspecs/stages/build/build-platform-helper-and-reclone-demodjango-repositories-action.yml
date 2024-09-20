@@ -80,7 +80,15 @@ phases:
 
       # Add source_output_platform_tools artefact from Source stage
       - echo -e "\nUnzipping source_output_platform_tools.zip into build_output"
-      - unzip /codebuild/output/src*/source_output_platform_tools.zip -d build_output/
+#      - unzip /codebuild/output/src*/source_output_platform_tools.zip -d build_output/
+      - echo -e "\nListing files in /codebuild/output/"
+      - ls -la /codebuild/output/
+
+      - echo -e "\nListing files in /codebuild/output/src*"
+      - ls -la /codebuild/output/src*
+
+      - echo -e "\nListing files in PWD"
+      - ls -la
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
