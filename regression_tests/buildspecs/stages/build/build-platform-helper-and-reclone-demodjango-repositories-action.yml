@@ -91,10 +91,11 @@ phases:
 #      - ls -la
 
       # Copy all files and directories, excluding the build_output directory
-      - for item in *; do 
-          if [[ "$item" != "build_output" ]]; then 
-            cp -r "$item" build_output/ 
-          fi 
+      - |
+        for item in *; do
+          if [[ "$item" != "build_output" ]]; then
+            cp -r "$item" build_output/
+          fi
         done
 
 
