@@ -1,6 +1,9 @@
 name: Trigger Documentation Update
 
 on:
+  push:
+    branches:
+      - main
   release:
     types: [published]
 
@@ -9,14 +12,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-        - name: Trigger Workflow in uktrade/platform-documentation
-          uses: actions/github-script@v6
-          with:
-            github-token: ${{ secrets.ACTIONS_TOKEN }}
-            script: |
-              github.rest.actions.createWorkflowDispatch({
-                owner: 'uktrade',
-                repo: 'platform-documentation',
-                workflow_id: 'update-release-notes.yml',
-                ref: 'main'
-              })
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 
+
+      - name: Check if commit message is a release
+        id: check_commit
+        run: |
+          # Check event type
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+            echo "Commit message: $COMMIT_MESSAGE"
+            if [[ "$COMMIT_MESSAGE" =~ chore\(main\):\ release.* ]]; then
+              echo "Release commit detected."
+              echo "::set-output name=should_trigger::true"
+            else
+              echo "Not a release commit."
+              echo "::set-output name=should_trigger::false"
+            fi
+          else
+            # Automatically trigger because it's a 'release' event
+            echo "Release event detected."
+            echo "::set-output name=should_trigger::true"
+          fi
+
+      - name: Trigger Workflow in uktrade/platform-documentation
+        if: steps.check_commit.outputs.should_trigger == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.ACTIONS_TOKEN }}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: 'uktrade',
+              repo: 'platform-documentation',
+              workflow_id: 'update-release-notes.yml',
+              ref: 'main'
+            });
