@@ -24,12 +24,13 @@ phases:
       # Verify virtual env is active
       - echo "Python in venv - $(python --version)"
       - which python
+      - where python
       - pip list
 
   build:
     commands:
       - echo -e "\nRunning Browser tests - BuildApplicationDeployTest stage\n"
-      - platform-helper --version
+      - ./venv/bin/platform-helper --version
       - ../../stages/set_up_aws_config.sh
 #      - ./regression_tests/stages/set_up_aws_config.sh
 #      - pip install poetry
