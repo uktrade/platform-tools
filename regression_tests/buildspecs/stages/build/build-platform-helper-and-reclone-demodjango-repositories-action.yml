@@ -90,9 +90,13 @@ phases:
 #      - echo -e "\nListing files in PWD"
 #      - ls -la
 
-      # New step: Add all files from the working directory to the build_output folder
-      - echo -e "\nCopying all working directory files into build_output"
-      - cp -R ./* build_output/
+      # Copy all files and directories, excluding the build_output directory
+      - for item in *; do 
+          if [[ "$item" != "build_output" ]]; then 
+            cp -r "$item" build_output/ 
+          fi 
+        done
+
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
