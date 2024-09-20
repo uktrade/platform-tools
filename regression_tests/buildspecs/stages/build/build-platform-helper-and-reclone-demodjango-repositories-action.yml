@@ -52,7 +52,7 @@ phases:
       - mkdir -p build_output
       - echo "Packaging the virtual environment"
       - echo "Current working directory - $(pwd)"
-      - zip -r build_output/venv.zip venv > /dev/null # package the virtual env into zip file & move into directory
+#      - zip -r build_output/venv.zip venv > /dev/null # package the virtual env into zip file & move into directory
 
   build:
     commands:
@@ -78,6 +78,7 @@ phases:
       - mv demodjango build_output/
       - mv demodjango-deploy build_output/
       - mv regression_tests build_output/
+      - mv venv build_output/
 
 #      # Copy all files and directories, excluding the build_output directory
 #      - |
