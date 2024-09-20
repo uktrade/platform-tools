@@ -43,6 +43,21 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
     assert re.match(r"\s*1\.2\.3\s*", result.output)
 
 
+def test_works_with_with_incompatible_config_version(
+    fakefs,
+    invalid_platform_config_with_platform_version_overrides,
+):
+    fakefs.create_file(
+        Path(PLATFORM_CONFIG_FILE),
+        contents=yaml.dump(invalid_platform_config_with_platform_version_overrides),
+    )
+
+    result = CliRunner().invoke(get_platform_helper_for_project, [])
+
+    assert result.exit_code == 0
+    assert result.output == "1.2.3\n"
+
+
 def test_fail_if_pipeline_option_is_not_a_pipeline(
     fakefs,
     valid_platform_config,
