@@ -48,10 +48,11 @@ phases:
       # Temporary debug output...
       - pip list
 
+      # Package virtual environment
+      - mkdir -p build_output
       - echo "Packaging the virtual environment"
       - echo "Current working directory - $(pwd)"
-      - zip -r venv.zip venv > /dev/null # package the virtual env into zip file
-      - echo ""
+      - zip -r build_output/venv.zip venv > /dev/null # package the virtual env into zip file & move into directory
 
   build:
     commands:
@@ -71,10 +72,13 @@ phases:
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - cd demodjango && poetry install
+      - echo -e "\nMoving necessary files to the build_output directory"
+      - cd ..
+      - mv demodjango build_output/
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
-      - ls -la
+      - ls -la build_output/
 
 
   post_build:
@@ -87,4 +91,4 @@ phases:
 
 artifacts:
   files:
-    - '**/*'
+    - 'build_output/*'
