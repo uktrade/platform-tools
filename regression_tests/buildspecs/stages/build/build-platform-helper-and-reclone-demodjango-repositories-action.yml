@@ -78,13 +78,13 @@ phases:
       - mv demodjango build_output/
       - mv demodjango-deploy build_output/
 
-      # Copy all files and directories, excluding the build_output directory
-      - |
-        for item in *; do
-          if [[ "$item" != "build_output" ]]; then
-            cp -r "$item" build_output/
-          fi
-        done
+#      # Copy all files and directories, excluding the build_output directory
+#      - |
+#        for item in *; do
+#          if [[ "$item" != "build_output" ]]; then
+#            cp -r "$item" build_output/
+#          fi
+#        done
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
