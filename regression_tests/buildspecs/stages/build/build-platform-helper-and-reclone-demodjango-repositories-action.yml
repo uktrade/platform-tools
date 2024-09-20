@@ -76,6 +76,7 @@ phases:
       - echo -e "\nMoving necessary files to the build_output directory"
       - cd ..
       - mv demodjango build_output/
+      - mv demodjango-deploy build_output/
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
