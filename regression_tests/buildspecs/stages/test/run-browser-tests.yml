@@ -8,23 +8,34 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nListing contents of build_output artefact"
+      - echo -e "\nListing contents of PWD"
       - ls -la
-      -
-      - echo -e "\nSetting up virtual environment from previous build stage"
-#      - echo -e "\nUnzipping virtual environment"
-#      - unzip venv.zip -d venv
 
-      - echo -e "\nActivate virtual Python environment"
+      - echo - "\n Print current codebuild job CODEBUILD_SRC_DIRECTORY"
+      - echo $CODEBUILD_SRC_DIRECTORY
+      - ls -la $CODEBUILD_SRC_DIRECTORY
+
+      # Remove pyenv shims from PATH to ensure they don't override virtualenv
+      - echo "Removing pyenv shims from PATH"
+      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
+
+      # Activate virtual env is active
+      - echo -e "\nActivate virtual Python environment from previous stage"
       - source venv/bin/activate
+#      - export VIRTUAL_ENV=
 
-      - echo -e "\nPrint  venv/bin"
+      - echo -e "\nUpdating PATH to prioritise venv binaries"
+      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
+      - echo "PATH VARIABLE IS"
+      - echo $PATH
+
+      - echo -e "List venv/bin"
       - ls venv/bin
 
-      - echo -e "\nCAT out ACTIVATE files"
-      - cat venv/bin/activate
-      - cat venv/bin/activate.csh
-      - cat venv/bin/activate.fish
+#      - echo -e "\nCAT out ACTIVATE files"
+#      - cat venv/bin/activate
+#      - cat venv/bin/activate.csh
+#      - cat venv/bin/activate.fish
 
       # Verify virtual env is active
       - echo "Python in venv - $(python --version)"
