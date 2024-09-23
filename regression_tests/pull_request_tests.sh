@@ -19,7 +19,7 @@ source ./regression_tests/stages/set_up_git_config.sh
 
 # ./regression_tests/stages/run_platform_helper_environment_generate.sh
 
-./regression_tests/stages/run_platform_helper_generate.sh
+# ./regression_tests/stages/run_platform_helper_generate.sh
 
 # Todo: DBTP-1073 Include deploying environment pipelines in regression tests
 
