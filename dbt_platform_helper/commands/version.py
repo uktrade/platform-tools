@@ -29,7 +29,7 @@ def _get_platform_helper_for_project(pipeline):
     """
     required_version = get_required_platform_helper_version(pipeline)
     click.secho(required_version)
-    
+
 
 @version.command(help="Print the version of platform-tools required by the current project")
 @click.option(
@@ -40,12 +40,12 @@ def _get_platform_helper_for_project(pipeline):
 )
 def get_platform_helper_for_project(pipeline):
     _get_platform_helper_for_project(pipeline)
-    
-    
+
+
 def redecorated_get_platform_helper_for_project():
-        
+
     ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
-    
+
     @version.command(help="Print the version of platform-tools required by the current project")
     @click.option(
         "--pipeline",
@@ -55,5 +55,5 @@ def redecorated_get_platform_helper_for_project():
     )
     def decorated_get_platform_helper_for_project(pipeline):
         _get_platform_helper_for_project(pipeline)
-        
+
     return decorated_get_platform_helper_for_project

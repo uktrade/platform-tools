@@ -9,7 +9,7 @@ from dbt_platform_helper.utils.validation import load_and_validate_platform_conf
 def get_environment_pipeline_names():
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
-    
+
     try:
         config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
         return config.get("environment_pipelines", {}).keys()

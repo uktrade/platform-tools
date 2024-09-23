@@ -11,12 +11,12 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
 @pytest.fixture
-def get_platform_helper_for_project_with_valid_config(fakefs, valid_platform_config):
+def create_valid_platform_config_file(fakefs, valid_platform_config):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
 
 
 @pytest.fixture
-def get_platform_helper_for_project_with_invalid_config(
+def create_invalid_platform_config_file(
     fakefs, invalid_platform_config_with_platform_version_overrides
 ):
     fakefs.create_file(
@@ -58,19 +58,17 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
 
 
 def test_works_with_invalid_config_with_pipeline_override(
-    get_platform_helper_for_project_with_invalid_config,
+    create_invalid_platform_config_file,
 ):
     command = redecorated_get_platform_helper_for_project()
-    result = CliRunner().invoke(
-        command, ["--pipeline", "prod-main"]
-    )
+    result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
 
     assert result.exit_code == 0
     assert result.output == "9.0.9\n"
 
 
 def test_works_with_with_incompatible_config_version(
-    get_platform_helper_for_project_with_invalid_config,
+    create_invalid_platform_config_file,
 ):
     command = redecorated_get_platform_helper_for_project()
 
@@ -81,12 +79,10 @@ def test_works_with_with_incompatible_config_version(
 
 
 def test_fail_if_pipeline_option_is_not_a_pipeline(
-    get_platform_helper_for_project_with_valid_config,
+    create_valid_platform_config_file,
 ):
     command = redecorated_get_platform_helper_for_project()
-    result = CliRunner().invoke(
-        command, ["--pipeline", "bogus"]
-    )
+    result = CliRunner().invoke(command, ["--pipeline", "bogus"])
 
     assert result.exit_code != 0
     assert "'bogus' is not one of" in result.output
@@ -94,12 +90,10 @@ def test_fail_if_pipeline_option_is_not_a_pipeline(
 
 
 def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
-    get_platform_helper_for_project_with_invalid_config,
+    create_invalid_platform_config_file,
 ):
     command = redecorated_get_platform_helper_for_project()
-    result = CliRunner().invoke(
-        command, ["--pipeline", "bogus"]
-    )
+    result = CliRunner().invoke(command, ["--pipeline", "bogus"])
 
     assert result.exit_code != 0
     assert "'bogus' is not " in result.output
@@ -107,12 +101,10 @@ def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
 
 
 def test_pipeline_override_with_invalid_config(
-    get_platform_helper_for_project_with_invalid_config,
+    create_invalid_platform_config_file,
 ):
     command = redecorated_get_platform_helper_for_project()
-    result = CliRunner().invoke(
-        command, ["--pipeline", "prod-main"]
-    )
+    result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
 
     assert result.exit_code == 0
     assert result.output == "9.0.9\n"
