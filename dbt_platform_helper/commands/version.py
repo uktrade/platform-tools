@@ -8,13 +8,6 @@ from dbt_platform_helper.utils.versioning import (
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
-@click.group(chain=True, cls=ClickDocOptGroup)
-def version():
-    """Contains subcommands for getting version information about the current
-    project."""
-    check_platform_helper_version_needs_update()
-
-
 def _get_platform_helper_for_project(pipeline):
     """
     Version precedence is in this order:
@@ -31,29 +24,30 @@ def _get_platform_helper_for_project(pipeline):
     click.secho(required_version)
 
 
-@version.command(help="Print the version of platform-tools required by the current project")
-@click.option(
-    "--pipeline",
-    required=False,
-    type=click.Choice(get_environment_pipeline_names()),
-    help="Take into account platform-tools version overrides in the specified pipeline",
-)
-def get_platform_helper_for_project(pipeline):
-    _get_platform_helper_for_project(pipeline)
+class VersionCommandFactory:
+    def __init__(self):
+        self.version_commands = self.version()
 
+    def version(self):
+        @click.group(chain=True, cls=ClickDocOptGroup)
+        def version():
+            """Contains subcommands for getting version information about the current
+            project."""
+            check_platform_helper_version_needs_update()
 
-def redecorated_get_platform_helper_for_project():
+        return version
 
-    ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+    def get_platform_helper_for_project(self):
+        @self.version_commands.command(
+            help="Print the version of platform-tools required by the current project"
+        )
+        @click.option(
+            "--pipeline",
+            required=False,
+            type=click.Choice(get_environment_pipeline_names()),
+            help="Take into account platform-tools version overrides in the specified pipeline",
+        )
+        def decorated_get_platform_helper_for_project(pipeline):
+            _get_platform_helper_for_project(pipeline)
 
-    @version.command(help="Print the version of platform-tools required by the current project")
-    @click.option(
-        "--pipeline",
-        required=False,
-        type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
-        help="Take into account platform-tools version overrides in the specified pipeline",
-    )
-    def decorated_get_platform_helper_for_project(pipeline):
-        _get_platform_helper_for_project(pipeline)
-
-    return decorated_get_platform_helper_for_project
+        return decorated_get_platform_helper_for_project
