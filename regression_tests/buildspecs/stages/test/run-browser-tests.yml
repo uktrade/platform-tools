@@ -12,23 +12,30 @@ phases:
 #      - ls -la
 
 #      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIR"
-      - echo $CODEBUILD_SRC_DIR
 #      - ls -la $CODEBUILD_SRC_DIR/
 
+#      -----------------------------------------------
+      - echo "-----------------CODEBUILD ID------------------------------"
       - echo $CODEBUILD_BUILD_ID
+      - BUILD_ID=$(echo $CODEBUILD_BUILD_ID | cut -d ':' -f 2)
+      - echo $BUILD_ID
 
 #      # Remove pyenv shims from PATH to ensure they don't override virtualenv
 #      - echo "Removing pyenv shims from PATH"
 #      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
 
-      - BUILD_ID=$(echo $CODEBUILD_BUILD_ID | cut -d ':' -f 2)
-      - echo $BUILD_ID
-
 #      - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
 #      - echo "Virtual environment path after - $VIRTUAL_ENV"
-      - export CONSTRUCTED_PATH="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
-#      - echo "Virtual environment path after - CONSTRUCTED_PATH"
 
+#      -----------------------------------------------
+      - echo "-----------------NEW PATH CONSTRUCT------------------------------"
+      - echo $CODEBUILD_SRC_DIR
+      - export CONSTRUCTED_PATH="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
+      - echo $CONSTRUCTED_PATH
+
+
+#      -----------------------------------------------
+      - echo "-----------------OLD PATH REPLACE------------------------------"
       # Find and replace all occurrences of old paths in the restored venv
       - OLD_PATH_PATTERN="/codebuild/output/src[^/]+/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/[^/]+/uktrade/platform-tools/venv"
 
@@ -42,9 +49,16 @@ phases:
         s|^_OLD_VIRTUAL_PYTHONHOME=.*|_OLD_VIRTUAL_PYTHONHOME=\"$OLD_PATH\"|;
         " {} +
 
+
+#      -----------------------------------------------
+      - echo "-----------------PRE ACTIVATION OF VENV------------------------------"
       # Activate virtual env is active
-      - echo "PATH VARIABLE IS"
+      - echo "PATH VARIABLE BEFORE ACTIVATION"
       - echo $PATH
+
+
+#      -----------------------------------------------
+      - echo "-----------------ACTIVATE VENV------------------------------"
       - echo -e "\nActivate virtual Python environment from previous stage"
       - source venv/bin/activate
 #      Running command source $VIRTUAL_ENV/bin/activate
@@ -52,19 +66,27 @@ phases:
 #      No such file or directory
 
 
-      - echo -e "\nPATH after activation"
+#      -----------------------------------------------
+      - echo "-----------------POST ACTIVATION OF VENV------------------------------"
+      - echo "PATH VARIABLE AFTER ACTIVATION"
 #      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
-      - echo "PATH VARIABLE IS"
       - echo $PATH
 
-      - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
-      - echo -e "Updated Virtual environment after activation & reset - $VIRTUAL_ENV"
 
-      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"  # Reset PATH
-      - echo "Updated PATH after activation & reset - $PATH"
-      -
+#      -----------------------------------------------
+      - echo "-----------------SET VIRTUAL_ENV------------------------------"
+      - export VIRTUAL_ENV=$CONSTRUCTED_PATH
+      - echo $VIRTUAL_ENV
 
-      - echo -e "List venv/bin contents"
+
+#      -----------------------------------------------
+      - echo "-----------------SET PATH------------------------------"
+      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"
+      - echo $PATH"
+
+
+#      -----------------------------------------------
+      - echo "-----------------LIST VENV/BIN CONTENTS------------------------------"
       - ls venv/bin
 
 #      - echo -e "\nCAT out ACTIVATE files"
@@ -72,7 +94,9 @@ phases:
 #      - cat venv/bin/activate.csh
 #      - cat venv/bin/activate.fish
 
-      # Verify virtual env is active
+
+#      -----------------------------------------------
+      - echo "-----------------VERIFY VENV IS ACTIVE & SET CORRECTLY------------------------------"
       - echo "Python in venv - $(python --version)"
       - which python
       - echo $PATH
