@@ -25,8 +25,16 @@ phases:
       - BUILD_ID=$(echo $CODEBUILD_BUILD_ID | cut -d ':' -f 2)
       - echo $BUILD_ID
 
-      - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
-      - echo "Virtual environment path after - $VIRTUAL_ENV"
+#      - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
+#      - echo "Virtual environment path after - $VIRTUAL_ENV"
+      - export CONSTRUCTED_PATH="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
+      - echo "Virtual environment path after - CONSTRUCTED_PATH"
+
+      # Find and replace all occurrences of old paths in the restored venv
+      - OLD_PATH_PATTERN="/codebuild/output/src[^/]+/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/[^/]+/uktrade/platform-tools/venv"
+
+      # Replace any instance of old paths in the 'venv' folder with the new one
+      - find venv/ -type f -exec sed -i "s|$OLD_PATH_PATTERN|$CONSTRUCTED_PATH|g" {} +
 
       # Activate virtual env is active
       - echo "Current Directory - $(pwd)"
@@ -53,8 +61,8 @@ phases:
       - echo -e "List venv/bin"
       - ls venv/bin
 
-#      - echo -e "\nCAT out ACTIVATE files"
-#      - cat venv/bin/activate
+      - echo -e "\nCAT out ACTIVATE files"
+      - cat venv/bin/activate
 #      - cat venv/bin/activate.csh
 #      - cat venv/bin/activate.fish
 
