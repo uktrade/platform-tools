@@ -98,9 +98,10 @@ phases:
 #      -----------------------------------------------
       - echo "-----------------VERIFY VENV IS ACTIVE & SET CORRECTLY------------------------------"
       - echo "Python in venv - $(python --version)"
-      - which python
       - echo $PATH
       - echo $VIRTUAL_ENV
+      - which python
+
       - pip list
 
 
