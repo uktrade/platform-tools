@@ -16,7 +16,7 @@ def test_get_environment_pipeline_names(fakefs, valid_platform_config):
     assert {"main", "test", "prod-main"} == names
 
 
-def test_get_environment_pipeline_names_without_validation(
+def test_get_environment_pipeline_names_with_invalid_config(
     fakefs, invalid_platform_config_with_platform_version_overrides
 ):
     fakefs.create_file(
@@ -24,7 +24,7 @@ def test_get_environment_pipeline_names_without_validation(
         contents=yaml.dump(invalid_platform_config_with_platform_version_overrides),
     )
 
-    names = get_environment_pipeline_names(disable_config_validation=True)
+    names = get_environment_pipeline_names()
 
     assert {"prod-main"} == names
 

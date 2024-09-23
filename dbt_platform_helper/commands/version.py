@@ -19,7 +19,7 @@ def version():
 @click.option(
     "--pipeline",
     required=False,
-    type=click.Choice(get_environment_pipeline_names(disable_config_validation=True)),
+    type=click.Choice(get_environment_pipeline_names()),
     help="Take into account platform-tools version overrides in the specified pipeline",
 )
 def get_platform_helper_for_project(pipeline):
