@@ -37,7 +37,7 @@ phases:
       - echo "PATH VARIABLE IS"
       - echo $PATH
 
-      - echo "Virtual environment path - $VIRTUAL_ENV"
+      - echo "Virtual environment path after activation - $VIRTUAL_ENV"
 
       - echo -e "List venv/bin"
       - ls venv/bin
