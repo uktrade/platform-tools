@@ -22,7 +22,6 @@ phases:
       # Activate virtual env is active
       - echo -e "\nActivate virtual Python environment from previous stage"
       - source venv/bin/activate
-#      - export VIRTUAL_ENV=
 
       - echo -e "\nUpdating PATH to prioritise venv binaries"
       - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
@@ -43,6 +42,8 @@ phases:
       - pip list
       - echo "PATH VARIABLE IS"
       - echo $PATH
+        
+       - echo "Virtual environment path: $VIRTUAL_ENV"
 
   build:
     commands:
