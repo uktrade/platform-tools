@@ -11,7 +11,7 @@ phases:
       - echo -e "\nListing contents of PWD"
       - ls -la
 
-      - echo - "\n Print current codebuild job CODEBUILD_SRC_DIRECTORY"
+      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIRECTORY"
       - echo $CODEBUILD_SRC_DIRECTORY
       - ls -la $CODEBUILD_SRC_DIRECTORY
 
@@ -43,7 +43,7 @@ phases:
       - echo "PATH VARIABLE IS"
       - echo $PATH
         
-       - echo "Virtual environment path: $VIRTUAL_ENV"
+      - echo "Virtual environment path - $VIRTUAL_ENV"
 
   build:
     commands:
