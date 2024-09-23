@@ -8,6 +8,8 @@ from dbt_platform_helper.utils.versioning import (
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
+ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+
 @click.group(chain=True, cls=ClickDocOptGroup)
 def version():
     """Contains subcommands for getting version information about the current
@@ -19,7 +21,7 @@ def version():
 @click.option(
     "--pipeline",
     required=False,
-    type=click.Choice(get_environment_pipeline_names()),
+    type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
     help="Take into account platform-tools version overrides in the specified pipeline",
 )
 def get_platform_helper_for_project(pipeline):
