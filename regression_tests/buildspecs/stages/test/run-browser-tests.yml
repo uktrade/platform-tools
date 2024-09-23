@@ -82,7 +82,7 @@ phases:
 #      -----------------------------------------------
       - echo "-----------------SET PATH------------------------------"
       - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"
-      - echo $PATH"
+      - echo $PATH
 
 
 #      -----------------------------------------------
