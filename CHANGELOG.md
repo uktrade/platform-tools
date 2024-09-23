@@ -1,5 +1,24 @@
 # Changelog
 
+## [10.11.0](https://github.com/uktrade/platform-tools/compare/10.10.0...10.11.0) (2024-09-23)
+
+
+### Features
+
+* **copilot-bootstrap:** enable pingdom health checks ([#573](https://github.com/uktrade/platform-tools/issues/573)) ([e063c3b](https://github.com/uktrade/platform-tools/commit/e063c3b52bc89a8fead1b44922dc4b97ba0c8bbb))
+* dbtp 1202 add cdn ([#562](https://github.com/uktrade/platform-tools/issues/562)) ([b825bdf](https://github.com/uktrade/platform-tools/commit/b825bdfa065e8b302bcefa37cffb4ccb42d40cce))
+* **nginx-proxy:** support proxying websocket connections ([#571](https://github.com/uktrade/platform-tools/issues/571)) ([40fbc65](https://github.com/uktrade/platform-tools/commit/40fbc6563178591c7f51a9ed45829c027a91b957))
+
+
+### Bug Fixes
+
+* Add source ip rule to maintenance pages ([#574](https://github.com/uktrade/platform-tools/issues/574)) ([1e6aa29](https://github.com/uktrade/platform-tools/commit/1e6aa291d85cda78bb592341a66eb66c8d8ea6b0))
+* Addressing workflow bug in DBTP-1083 ([#577](https://github.com/uktrade/platform-tools/issues/577)) ([2fb1705](https://github.com/uktrade/platform-tools/commit/2fb1705e453ed017a4642192f0ee0ca36f9a8f65))
+* DBTP-1282 allow for explicit settings of PUB_PATH_LIST ([#561](https://github.com/uktrade/platform-tools/issues/561)) ([2c41170](https://github.com/uktrade/platform-tools/commit/2c4117099fa5e48cc2b94ad7daf5e8c04bff8138))
+* ensure delete_listener_rule deletes multiple rules with same name ([#578](https://github.com/uktrade/platform-tools/issues/578)) ([8b2665d](https://github.com/uktrade/platform-tools/commit/8b2665d124f1a9ad560caf89666a131540027932))
+* ensure online command removes all rule types ([#576](https://github.com/uktrade/platform-tools/issues/576)) ([f36f22a](https://github.com/uktrade/platform-tools/commit/f36f22a7b21a229a9ddbe03bc52dd9f043493e62))
+* Small fix that allows you to generate environment config without chan… ([#568](https://github.com/uktrade/platform-tools/issues/568)) ([8133855](https://github.com/uktrade/platform-tools/commit/813385597729dd2ed35e449f3e83a05986214c19))
+
 ## [10.10.0](https://github.com/uktrade/platform-tools/compare/10.9.1...10.10.0) (2024-09-12)
 
 
