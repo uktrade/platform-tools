@@ -75,7 +75,10 @@ phases:
       # Verify virtual env is active
       - echo "Python in venv - $(python --version)"
       - which python
+      - echo $PATH
+      - echo $VIRTUAL_ENV
       - pip list
+
 
   build:
     commands:
