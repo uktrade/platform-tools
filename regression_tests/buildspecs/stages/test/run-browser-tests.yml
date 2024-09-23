@@ -15,18 +15,20 @@ phases:
       - echo $CODEBUILD_SRC_DIRECTORY
       - ls -la $CODEBUILD_SRC_DIRECTORY
 
-      # Remove pyenv shims from PATH to ensure they don't override virtualenv
-      - echo "Removing pyenv shims from PATH"
-      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
+#      # Remove pyenv shims from PATH to ensure they don't override virtualenv
+#      - echo "Removing pyenv shims from PATH"
+#      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
 
       # Activate virtual env is active
       - echo -e "\nActivate virtual Python environment from previous stage"
       - source venv/bin/activate
 
-      - echo -e "\nUpdating PATH to prioritise venv binaries"
-      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
+#      - echo -e "\nUpdating PATH to prioritise venv binaries"
+#      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
       - echo "PATH VARIABLE IS"
       - echo $PATH
+
+      - echo "Virtual environment path - $VIRTUAL_ENV"
 
       - echo -e "List venv/bin"
       - ls venv/bin
@@ -40,10 +42,6 @@ phases:
       - echo "Python in venv - $(python --version)"
       - which python
       - pip list
-      - echo "PATH VARIABLE IS"
-      - echo $PATH
-        
-      - echo "Virtual environment path - $VIRTUAL_ENV"
 
   build:
     commands:
