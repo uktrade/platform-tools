@@ -45,8 +45,8 @@ phases:
       - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
       - echo "Virtual environment path after activation - $VIRTUAL_ENV"
 
-      - echo "PATH VARIABLE AFTER VIRTUAL_ENV RESET"
-      - echo $PATH
+      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"  # Reset PATH
+      - echo "Updated PATH - $PATH"
 
       - echo -e "List venv/bin"
       - ls venv/bin
