@@ -26,8 +26,6 @@ echo -e "\nCheck maintenance page is working and that we can view the site with 
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 ./tests/browser/run.sh ${TARGET_ENVIRONMENT} maintenance_pages ${MAINTENANCE_PAGE_BYPASS_VALUE}
 
-#TODO check env ip is whitelisted https://uktrade.atlassian.net/browse/DBTP-1161
-
 echo -e "\nRunning online command"
 echo "y" | AWS_PROFILE=platform-sandbox PLATFORM_TOOLS_SKIP_VERSION_CHECK=true platform-helper environment online --app demodjango --env ${TARGET_ENVIRONMENT}
 
