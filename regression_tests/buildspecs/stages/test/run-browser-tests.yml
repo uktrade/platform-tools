@@ -29,8 +29,9 @@ phases:
       - echo "Virtual environment path after - $VIRTUAL_ENV"
 
       # Activate virtual env is active
+      - echo "Current Directory - $(pwd)"
       - echo -e "\nActivate virtual Python environment from previous stage"
-      - source venv/bin/activate
+      - source $VIRTUAL_ENV/bin/activate
 
 #      - echo -e "\nUpdating PATH to prioritise venv binaries"
 #      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
