@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.version import ClickCliCommandFactory
+from dbt_platform_helper.commands.version import redecorated_get_platform_helper_for_project
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
@@ -60,7 +60,7 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
 def test_works_with_invalid_config_with_pipeline_override(
     get_platform_helper_for_project_with_invalid_config,
 ):
-    command = ClickCliCommandFactory().get_platform_helper_for_project()
+    command = redecorated_get_platform_helper_for_project()
     result = CliRunner().invoke(
         command, ["--pipeline", "prod-main"]
     )
@@ -72,7 +72,7 @@ def test_works_with_invalid_config_with_pipeline_override(
 def test_works_with_with_incompatible_config_version(
     get_platform_helper_for_project_with_invalid_config,
 ):
-    command = ClickCliCommandFactory().get_platform_helper_for_project()
+    command = redecorated_get_platform_helper_for_project()
 
     result = CliRunner().invoke(command, [])
 
@@ -83,7 +83,7 @@ def test_works_with_with_incompatible_config_version(
 def test_fail_if_pipeline_option_is_not_a_pipeline(
     get_platform_helper_for_project_with_valid_config,
 ):
-    command = ClickCliCommandFactory().get_platform_helper_for_project()
+    command = redecorated_get_platform_helper_for_project()
     result = CliRunner().invoke(
         command, ["--pipeline", "bogus"]
     )
@@ -96,7 +96,7 @@ def test_fail_if_pipeline_option_is_not_a_pipeline(
 def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
     get_platform_helper_for_project_with_invalid_config,
 ):
-    command = ClickCliCommandFactory().get_platform_helper_for_project()
+    command = redecorated_get_platform_helper_for_project()
     result = CliRunner().invoke(
         command, ["--pipeline", "bogus"]
     )
@@ -109,7 +109,7 @@ def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
 def test_pipeline_override_with_invalid_config(
     get_platform_helper_for_project_with_invalid_config,
 ):
-    command = ClickCliCommandFactory().get_platform_helper_for_project()
+    command = redecorated_get_platform_helper_for_project()
     result = CliRunner().invoke(
         command, ["--pipeline", "prod-main"]
     )
