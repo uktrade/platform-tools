@@ -8,7 +8,7 @@ from dbt_platform_helper.utils.versioning import (
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
-ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def version():
@@ -17,11 +17,48 @@ def version():
     check_platform_helper_version_needs_update()
 
 
+class ClickCliCommandFactory:
+    def __init__(self):
+        pass
+    
+    def get_platform_helper_for_project(self):
+        
+        ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+        
+        @version.command(help="Print the version of platform-tools required by the current project")
+        @click.option(
+            "--pipeline",
+            required=False,
+            type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
+            help="Take into account platform-tools version overrides in the specified pipeline",
+        )
+        def decorated_get_platform_helper_for_project(pipeline):
+            _get_platform_helper_for_project(pipeline)
+            
+        return decorated_get_platform_helper_for_project
+  
+
+def _get_platform_helper_for_project(pipeline):
+    """
+    Version precedence is in this order:
+        - if the --pipeline option is supplied, the version in 'platform-config.yml' in:
+            environment_pipelines:
+                <pipeline>:
+                    ...
+                    versions:
+                        platform-helper
+        - The version from default_versions/platform-helper in 'platform-config.yml'
+        - Fall back on the version in the deprecated '.platform-helper-version' file
+    """
+    required_version = get_required_platform_helper_version(pipeline)
+    click.secho(required_version)
+    
+
 @version.command(help="Print the version of platform-tools required by the current project")
 @click.option(
     "--pipeline",
     required=False,
-    type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
+    type=click.Choice(get_environment_pipeline_names()),
     help="Take into account platform-tools version overrides in the specified pipeline",
 )
 def get_platform_helper_for_project(pipeline):
