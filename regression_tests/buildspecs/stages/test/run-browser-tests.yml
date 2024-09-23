@@ -8,12 +8,12 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nListing contents of PWD"
-      - ls -la
+#      - echo -e "\nListing contents of PWD"
+#      - ls -la
 
-      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIR"
+#      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIR"
       - echo $CODEBUILD_SRC_DIR
-      - ls -la $CODEBUILD_SRC_DIR/
+#      - ls -la $CODEBUILD_SRC_DIR/
 
       - echo $CODEBUILD_BUILD_ID
 
@@ -21,7 +21,6 @@ phases:
 #      - echo "Removing pyenv shims from PATH"
 #      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
 
-      - echo "Virtual environment path before - $VIRTUAL_ENV"
       - BUILD_ID=$(echo $CODEBUILD_BUILD_ID | cut -d ':' -f 2)
       - echo $BUILD_ID
 
@@ -43,12 +42,7 @@ phases:
         s|^_OLD_VIRTUAL_PYTHONHOME=.*|_OLD_VIRTUAL_PYTHONHOME=\"$OLD_PATH\"|;
         " {} +
 
-      - grep "VIRTUAL_ENV" venv/bin/activate*
-      - grep "_OLD_VIRTUAL_PATH" venv/bin/activate*
-      - grep "_OLD_VIRTUAL_PYTHONHOME" venv/bin/activate*
-
       # Activate virtual env is active
-      - echo "Current Directory - $(pwd)"
       - echo "PATH VARIABLE IS"
       - echo $PATH
       - echo -e "\nActivate virtual Python environment from previous stage"
@@ -58,22 +52,23 @@ phases:
 #      No such file or directory
 
 
-#      - echo -e "\nUpdating PATH to prioritise venv binaries"
+      - echo -e "\nPATH after activation"
 #      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
       - echo "PATH VARIABLE IS"
       - echo $PATH
 
       - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
-      - echo "Virtual environment path after activation - $VIRTUAL_ENV"
+      - echo -e "Updated Virtual environment after activation & reset - $VIRTUAL_ENV"
 
-#      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"  # Reset PATH
-#      - echo "Updated PATH - $PATH"
+      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"  # Reset PATH
+      - echo "Updated PATH after activation & reset - $PATH"
+      -
 
-      - echo -e "List venv/bin"
+      - echo -e "List venv/bin contents"
       - ls venv/bin
 
-      - echo -e "\nCAT out ACTIVATE files"
-      - cat venv/bin/activate
+#      - echo -e "\nCAT out ACTIVATE files"
+#      - cat venv/bin/activate
 #      - cat venv/bin/activate.csh
 #      - cat venv/bin/activate.fish
 
