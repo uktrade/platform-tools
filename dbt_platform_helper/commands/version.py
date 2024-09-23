@@ -17,25 +17,7 @@ def version():
     check_platform_helper_version_needs_update()
 
 
-class ClickCliCommandFactory:
-    def __init__(self):
-        pass
-    
-    def get_platform_helper_for_project(self):
-        
-        ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
-        
-        @version.command(help="Print the version of platform-tools required by the current project")
-        @click.option(
-            "--pipeline",
-            required=False,
-            type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
-            help="Take into account platform-tools version overrides in the specified pipeline",
-        )
-        def decorated_get_platform_helper_for_project(pipeline):
-            _get_platform_helper_for_project(pipeline)
-            
-        return decorated_get_platform_helper_for_project
+
   
 
 def _get_platform_helper_for_project(pipeline):
@@ -63,3 +45,24 @@ def _get_platform_helper_for_project(pipeline):
 )
 def get_platform_helper_for_project(pipeline):
     _get_platform_helper_for_project(pipeline)
+    
+    
+class ClickCliCommandFactory:
+    def __init__(self):
+        pass
+    
+    def get_platform_helper_for_project(self):
+        
+        ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+        
+        @version.command(help="Print the version of platform-tools required by the current project")
+        @click.option(
+            "--pipeline",
+            required=False,
+            type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
+            help="Take into account platform-tools version overrides in the specified pipeline",
+        )
+        def decorated_get_platform_helper_for_project(pipeline):
+            _get_platform_helper_for_project(pipeline)
+            
+        return decorated_get_platform_helper_for_project
