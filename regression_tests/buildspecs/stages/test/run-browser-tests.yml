@@ -32,6 +32,7 @@ phases:
       - echo $CODEBUILD_SRC_DIR
       - export CONSTRUCTED_PATH="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
       - echo $CONSTRUCTED_PATH
+      - ls -la "$(dirname "$$CONSTRUCTED_PATH")"
 
 
 #      -----------------------------------------------
