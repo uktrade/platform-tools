@@ -86,6 +86,11 @@ phases:
       - export PATH="$VIRTUAL_ENV/bin:$PATH"
       - echo $PATH
 
+#       Remove pyenv shims from PATH to ensure they don't override virtualenv
+      - echo "Removing pyenv shims from PATH"
+      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
+      - echo $PATH
+
 
 #      -----------------------------------------------
       - echo "-----------------LIST VENV/BIN CONTENTS------------------------------"
