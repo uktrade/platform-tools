@@ -31,7 +31,11 @@ phases:
       # Activate virtual env is active
       - echo "Current Directory - $(pwd)"
       - echo -e "\nActivate virtual Python environment from previous stage"
-      - source $VIRTUAL_ENV/bin/activate
+      - source venv/bin/activate
+#      Running command source $VIRTUAL_ENV/bin/activate
+#      /codebuild/output/src288323067/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/347ec9b9-2069-4623-b51c-ae4c45bae4d9/uktrade/platform-tools/venv/bin/activate:
+#      No such file or directory
+
 
 #      - echo -e "\nUpdating PATH to prioritise venv binaries"
 #      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
@@ -40,6 +44,9 @@ phases:
 
       - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$BUILD_ID/uktrade/platform-tools/venv"
       - echo "Virtual environment path after activation - $VIRTUAL_ENV"
+
+      - echo "PATH VARIABLE AFTER VIRTUAL_ENV RESET"
+      - echo $PATH
 
       - echo -e "List venv/bin"
       - ls venv/bin
