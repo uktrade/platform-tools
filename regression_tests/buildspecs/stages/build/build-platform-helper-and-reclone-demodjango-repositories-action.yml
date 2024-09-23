@@ -57,6 +57,7 @@ phases:
       - ./regression_tests/stages/build_platform_helper.sh
 
       - echo $VIRTUAL_ENV
+      - echo $PATH
 
       # Temporary debug output starts
       - platform-helper --version
