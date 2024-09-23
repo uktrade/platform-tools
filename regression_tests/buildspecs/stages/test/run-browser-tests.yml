@@ -45,8 +45,8 @@ phases:
       - |
         find venv/bin/ -type f -name "activate*" -exec sed -i "
         s|^export VIRTUAL_ENV=.*|export VIRTUAL_ENV=\"$CONSTRUCTED_PATH\"|;
-        s|^_OLD_VIRTUAL_PATH=.*|_OLD_VIRTUAL_PATH=\"$OLD_PATH\"|;
-        s|^_OLD_VIRTUAL_PYTHONHOME=.*|_OLD_VIRTUAL_PYTHONHOME=\"$OLD_PATH\"|;
+        s|^_OLD_VIRTUAL_PATH=.*|_OLD_VIRTUAL_PATH=\"$CONSTRUCTED_PATH\"|;
+        s|^_OLD_VIRTUAL_PYTHONHOME=.*|_OLD_VIRTUAL_PYTHONHOME=\"$CONSTRUCTED_PATH\"|;
         " {} +
 
 
@@ -71,6 +71,8 @@ phases:
       - echo "PATH VARIABLE AFTER ACTIVATION"
 #      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
       - echo $PATH
+      - echo -e "\nChecking if VENV is activated"
+      - which python
 
 
 #      -----------------------------------------------
@@ -81,7 +83,7 @@ phases:
 
 #      -----------------------------------------------
       - echo "-----------------SET PATH------------------------------"
-      - export PATH="$VIRTUAL_ENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/codebuild/user/bin"
+      - export PATH="$VIRTUAL_ENV/bin:$PATH"
       - echo $PATH
 
 

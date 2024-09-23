@@ -55,6 +55,9 @@ phases:
       - echo -e "\nRunning regression tests - Build stage\n"
       - source ./regression_tests/stages/set_up_git_config.sh
       - ./regression_tests/stages/build_platform_helper.sh
+
+      - echo $VIRTUAL_ENV
+
       # Temporary debug output starts
       - platform-helper --version
       - which platform-helper
