@@ -11,14 +11,19 @@ phases:
       - echo -e "\nListing contents of PWD"
       - ls -la
 
-      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIRECTORY"
-      - echo $CODEBUILD_SRC_DIRECTORY
-      - ls -la $CODEBUILD_SRC_DIRECTORY
+      - echo -e "\n Print current codebuild job CODEBUILD_SRC_DIR"
+      - echo $CODEBUILD_SRC_DIR
+      - ls -la $CODEBUILD_SRC_DIR/
+
+      - echo $CODEBUILD_BUILD_ID
 
 #      # Remove pyenv shims from PATH to ensure they don't override virtualenv
 #      - echo "Removing pyenv shims from PATH"
 #      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
 
+      - echo "Virtual environment path before - $VIRTUAL_ENV"
+      - export VIRTUAL_ENV="$CODEBUILD_SRC_DIR/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$CODEBUILD_BUILD_ID/uktrade/platform-tools/venv"
+      - echo "Virtual environment path after - $VIRTUAL_ENV"
       # Activate virtual env is active
       - echo -e "\nActivate virtual Python environment from previous stage"
       - source venv/bin/activate
