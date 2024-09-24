@@ -19,6 +19,8 @@ phases:
       - source venv/bin/activate
       - echo "Python in venv - $(which python)"
       - echo "Pip in venv - $(which pip)"
+      - pip install --upgrade pip
+      - echo "Pip in venv - $(which pip)"
       - echo "$VIRTUAL_ENV"
       - python --version
       - which python
