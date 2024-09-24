@@ -17,20 +17,22 @@ run_checks() {
     run_command "pip list"
 }
 
+replace_static_path() {
+    static_path="\"$(pwd)/venv_temp1/venv\""
+    dynamic_path='"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"'
+    sedcmd=(sed -i '' "s|${static_path}|${dynamic_path}|g" venv_temp1/venv/bin/activate)
+    "${sedcmd[@]}"
+    sedcmd=(sed -i '' '1s/.*/#!\/usr\/bin\/env python/' venv_temp1/venv/bin/pip*)
+    "${sedcmd[@]}"
+}
+
 run_command "cd regression_tests"
 
 run_command "rm -rf venv_temp*"
 
 echo -e "\n\nDo venv1"
 run_command "python -m venv --copies venv_temp1/venv"
-static_path="\"$(pwd)/venv_temp1/venv\""
-dynamic_path='"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"'
-sedcmd=(sed -i '' "s|${static_path}|${dynamic_path}|g" venv_temp1/venv/bin/activate)
-"${sedcmd[@]}"
-sedcmd=(sed -i '' '1s/.*/#!\/usr\/bin\/env python/' venv_temp1/venv/bin/pip*)
-"${sedcmd[@]}"
-
-
+run_command "replace_static_path"
 run_command "source venv_temp1/venv/bin/activate"
 run_checks
 
