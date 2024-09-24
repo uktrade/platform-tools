@@ -10,7 +10,7 @@ from dbt_platform_helper.utils.versioning import get_required_platform_helper_ve
 
 class VersionCommandFactory:
     def __init__(self):
-        self.version_commands = self.version
+        self.command_group = self.version
         self.command = self.get_platform_helper_for_project
 
     ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()

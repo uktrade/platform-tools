@@ -23,8 +23,6 @@ from dbt_platform_helper.commands.secrets import secrets as secrets_commands
 from dbt_platform_helper.commands.version import VersionCommandFactory
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
-version_commands = VersionCommandFactory().version_commands
-
 
 @click.group(cls=ClickDocOptGroup)
 @click.version_option(
@@ -34,8 +32,6 @@ version_commands = VersionCommandFactory().version_commands
 def platform_helper():
     pass
 
-
-# could load the config here and set and env variable?
 
 platform_helper.add_command(application_commands)
 platform_helper.add_command(cdn_commands)
@@ -51,7 +47,7 @@ platform_helper.add_command(pipeline_commands)
 platform_helper.add_command(secrets_commands)
 platform_helper.add_command(notify_commands)
 platform_helper.add_command(database_commands)
-platform_helper.add_command(version_commands)
+platform_helper.add_command(VersionCommandFactory().command_group)
 
 if __name__ == "__main__":
     platform_helper()
