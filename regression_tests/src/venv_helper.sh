@@ -35,7 +35,7 @@ get_old_path() {
 replace_static_path_in_venv_activate() {
     static_path="\"$(get_old_path)\""
     dynamic_path='"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"'
-    sedcmd=(sed -i '' "s|${static_path}|${dynamic_path}|g" venv/bin/activate)
+    sedcmd=(sed -i "s|${static_path}|${dynamic_path}|g" venv/bin/activate)
     "${sedcmd[@]}"
 }
 
