@@ -40,8 +40,9 @@ replace_static_path_in_venv_activate() {
 }
 
 replace_static_paths_in_shebangs_etc() {
-    build_id=$(echo $CODEBUILD_BUILD_ID | cut -d ':' -f 2)
-    new_path="$CODEBUILD_SRC_DIR/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/$build_id/uktrade/platform-tools/venv"
+    old_path="$(get_old_path)"
+    new_path="$(pwd)/venv"
+    echo "Replacing $old_path with $new_path"
     files=$(grep -RiIl "$old_path" "$new_path")
     while IFS= read -r file; do
         sedcmd=(sed -i '' "s|$old_path|$new_path|g" "$file")
