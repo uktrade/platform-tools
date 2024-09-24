@@ -31,7 +31,7 @@ def test_calls_versioning_function_and_prints_returned_version(
 ):
     mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, [])
 
     assert len(mock_get_required_platform_helper_version.mock_calls) == 1
@@ -46,7 +46,7 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
 ):
     mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, ["--pipeline", "main"])
 
     assert len(mock_get_required_platform_helper_version.mock_calls) == 1
@@ -58,7 +58,7 @@ def test_calls_versioning_function_and_prints_returned_version_with_pipeline_ove
 def test_works_with_invalid_config_with_pipeline_override(
     create_invalid_platform_config_file,
 ):
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
 
     assert result.exit_code == 0
@@ -68,7 +68,7 @@ def test_works_with_invalid_config_with_pipeline_override(
 def test_works_with_with_incompatible_config_version(
     create_invalid_platform_config_file,
 ):
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, [])
 
     assert result.exit_code == 0
@@ -78,7 +78,7 @@ def test_works_with_with_incompatible_config_version(
 def test_fail_if_pipeline_option_is_not_a_pipeline(
     create_valid_platform_config_file,
 ):
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, ["--pipeline", "bogus"])
 
     assert result.exit_code != 0
@@ -89,7 +89,7 @@ def test_fail_if_pipeline_option_is_not_a_pipeline(
 def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
     create_invalid_platform_config_file,
 ):
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, ["--pipeline", "bogus"])
 
     assert result.exit_code != 0
@@ -100,7 +100,7 @@ def test_still_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
 def test_pipeline_override_with_invalid_config(
     create_invalid_platform_config_file,
 ):
-    command = VersionCommandFactory().get_platform_helper_for_project()
+    command = VersionCommandFactory().command
     result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
 
     assert result.exit_code == 0
