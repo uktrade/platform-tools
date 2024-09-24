@@ -13,6 +13,7 @@ phases:
       - mv venv/lib lib_temp
       - rm -rf venv
       - python -m venv venv
+      - rm -rf venv/lib
       - mv -f lib_temp/* venv/lib
       - echo -e "\nActivate virtual Python environment"
       - source venv/bin/activate
