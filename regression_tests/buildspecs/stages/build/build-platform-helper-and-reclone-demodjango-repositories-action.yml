@@ -43,7 +43,7 @@ phases:
       # without recloning them.
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
-      - cd demodjango && poetry install
+      - cd demodjango && poetry install && cd $CODEBUILD_SRC_DIR
 
   build:
     commands:
