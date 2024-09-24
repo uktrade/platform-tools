@@ -26,7 +26,7 @@ replace_static_path_in_venv_activate() {
 
 replace_static_paths_in_shebangs_etc() {
     # static_path="/codebuild/output/src[^/]+/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/[^/]+/uktrade/platform-tools/venv"
-    # todo: lose the hardcoded venv_temp1 in old path
+    # todo: lose the hardcoded venv_temp1 in old path, perhaps we can drop this into a file in the artifacts
     old_path="/Users/willgibson/Dev/DBT/uktrade/platform-tools/regression_tests/venv_temp1/venv"
     new_path="/Users/willgibson/Dev/DBT/uktrade/platform-tools/regression_tests/venv_temp2/venv"
     files=$(grep -RiIl "$old_path" venv_temp2/venv)
