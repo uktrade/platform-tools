@@ -25,7 +25,11 @@ echo -e "\n\nDo venv1"
 run_command "python -m venv --copies venv_temp1/venv"
 
 
-sedcmd=(sed -i '' '45s/.*/    export VIRTUAL_ENV="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"/' venv_temp1/venv/bin/activate)
+lineNum="$(grep -n "needle" haystack.txt | head -n 1 | cut -d: -f1)"
+
+#sedcmd=(sed -i '' '45s/.*/    export VIRTUAL_ENV="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"/' venv_temp1/venv/bin/activate)
+#sedcmd=(sed -i -e '' 's|/Users/willgibson/Dev/DBT/uktrade/platform-tools/regression_tests/venv_temp1/venv|"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"|g' venv_temp1/venv/bin/activate)
+sedcmd=(sed -i '' 's|"/Users/willgibson/Dev/DBT/uktrade/platform-tools/regression_tests/venv_temp1/venv"|"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"|g' venv_temp1/venv/bin/activate)
 "${sedcmd[@]}"
 sedcmd=(sed -i '' '1s/.*/#!\/usr\/bin\/env python/' venv_temp1/venv/bin/pip*)
 "${sedcmd[@]}"
