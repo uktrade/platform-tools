@@ -25,46 +25,18 @@ phases:
         source regression_tests/src/venv_helper.sh
         create_and_activate_venv
 
-      # Temporary debug output starts
-      - pip install --upgrade pip
-      - echo "Python in venv - $(which python)"
-      - echo "Pip in venv - $(which pip)"
-      - echo "$VIRTUAL_ENV"
-      - python --version
-      - which python
-      - pip list
-      # Temporary debug output ends
-
       # Installing dependencies
       - echo -e "\nInstalling dependencies"
-      - venv/bin/pip install poetry
-      - venv/bin/poetry install
-      - venv/bin/pip install dbt-platform-helper
+      - pip install poetry
+      - poetry install
       # Temporary debug output...
       - pip list
 
       # Package virtual environment
+      # todo: Do we need this?
       - mkdir -p build_output
-      - echo "Packaging the virtual environment"
-      - echo "Current working directory - $(pwd)"
-#      - zip -r build_output/venv.zip venv > /dev/null # package the virtual env into zip file & move into directory
 
-  build:
-    commands:
-      - echo -e "\nRunning regression tests - Build stage\n"
       - source ./regression_tests/stages/set_up_git_config.sh
-      - ./regression_tests/stages/build_platform_helper.sh
-
-      - echo $VIRTUAL_ENV
-      - echo $PATH
-
-      # Temporary debug output starts
-      - platform-helper --version
-      - which platform-helper
-      - python --version
-      - which python
-      - pip list
-      # Temporary debug output ends
 
       # The aws-codepipeline Terraform provider does not support setting primary_source,
       # so we cannot get the other codebases we need into the same output artifact
@@ -72,20 +44,22 @@ phases:
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - cd demodjango && poetry install
+
+  build:
+    commands:
+      - echo -e "\n\n-----------------BUILD PLATFORM HELPER------------------------------"
+      - ./regression_tests/stages/build_platform_helper.sh
+
+      # Temporary debug output starts
+      - pip list
+      # Temporary debug output ends
+      -
       - echo -e "\nMoving necessary files to the build_output directory"
       - cd ..
       - mv demodjango build_output/
       - mv demodjango-deploy build_output/
       - mv regression_tests build_output/
       - mv venv build_output/
-
-#      # Copy all files and directories, excluding the build_output directory
-#      - |
-#        for item in *; do
-#          if [[ "$item" != "build_output" ]]; then
-#            cp -r "$item" build_output/
-#          fi
-#        done
 
       - echo "PWD & Contents of build_output before uploading artifacts:"
       - pwd
@@ -98,6 +72,7 @@ phases:
     commands:
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"; then
+          venv/bin/pip install dbt-platform-helper
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi

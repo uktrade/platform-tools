@@ -14,3 +14,6 @@ pip install "dist/$(ls -t1 dist | head -1)"
 
 echo -e "\nCheck platform-helper --version\n"
 platform-helper --version
+
+echo -e "\nCheck which platform-helper\n"
+which platform-helper
