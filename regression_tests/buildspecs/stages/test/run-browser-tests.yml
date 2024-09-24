@@ -9,73 +9,18 @@ phases:
   install:
     commands:
       - echo -e "\nCreate virtual Python environment"
-      - pwd
-      - ls -al
-      - cat venv/.venv_path
-      - cat venv/bin/activate
       - |
         source regression_tests/src/venv_helper.sh
         fix_paths_and_activate_venv
-      - cat venv/.venv_path
-      - cat venv/bin/activate
-
-
-#      -----------------------------------------------
-      - echo -e "\n\n-----------------POST ACTIVATION OF VENV------------------------------"
-      - echo "PATH VARIABLE AFTER ACTIVATION"
-#      - export PATH="$CODEBUILD_SRC_DIR/venv/bin:$PATH"
-      - echo $PATH
-      - echo -e "\nChecking if VENV is activated"
-      - which python
-
-
-#      -----------------------------------------------
-      - echo -e "\n\n-----------------SET VIRTUAL_ENV------------------------------"
-      - export VIRTUAL_ENV=$CONSTRUCTED_PATH
-      - echo $VIRTUAL_ENV
-
-
-#      -----------------------------------------------
-      - echo -e "\n\n-----------------SET PATH------------------------------"
-      - export PATH="$VIRTUAL_ENV/bin:$PATH"
-      - echo $PATH
-
-#       Remove pyenv shims from PATH to ensure they don't override virtualenv
-      - echo "Removing pyenv shims from PATH"
-      - export PATH=$(echo "$PATH" | sed -e 's|/.pyenv/shims:||' -e 's|/.pyenv/bin:||')
-      - echo $PATH
-
-
-#      -----------------------------------------------
-      - echo -e "\n\n-----------------LIST VENV/BIN CONTENTS------------------------------"
-      - ls venv/bin
-
-#      - echo -e "\nCAT out ACTIVATE files"
-#      - cat venv/bin/activate
-#      - cat venv/bin/activate.csh
-#      - cat venv/bin/activate.fish
-
-
-#      -----------------------------------------------
-      - echo -e "\n\n-----------------VERIFY VENV IS ACTIVE & SET CORRECTLY------------------------------"
-      - echo "Python in venv - $(python --version)"
-      - echo $PATH
-      - echo $VIRTUAL_ENV
-      - which python
-
-      - pip list
-
 
   build:
     commands:
       - echo -e "\nRunning Browser tests - BuildApplicationDeployTest stage\n"
       - venv/bin/platform-helper --version
-      - ../../stages/set_up_aws_config.sh
-#      - ./regression_tests/stages/set_up_aws_config.sh
-#      - pip install poetry
-#      - ./regression_tests/stages/ensure_not_under_maintenance.sh
-#      - source ./regression_tests/stages/run_demodjango_smoke_tests.sh
-#      - ./regression_tests/stages/run_maintenance_page_tests.sh
+      - ./regression_tests/stages/set_up_aws_config.sh
+      - ./regression_tests/stages/ensure_not_under_maintenance.sh
+      - source ./regression_tests/stages/run_demodjango_smoke_tests.sh
+      - ./regression_tests/stages/run_maintenance_page_tests.sh
 
   post_build:
     commands:

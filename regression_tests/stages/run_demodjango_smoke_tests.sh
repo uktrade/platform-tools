@@ -2,8 +2,6 @@
 
 set -e
 
-echo -e "\n\nInstall dependencies\n"
-
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 
 echo -e "\nAssume platform-sandbox role to access basic auth secrets"
