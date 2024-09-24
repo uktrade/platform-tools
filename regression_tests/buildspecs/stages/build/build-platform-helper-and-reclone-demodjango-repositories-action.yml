@@ -54,16 +54,16 @@ phases:
       - pip list
       # Temporary debug output ends
       -
-      - echo -e "\nMoving necessary files to the build_output directory"
-      - cd ..
-      - mv demodjango build_output/
-      - mv demodjango-deploy build_output/
-      - mv regression_tests build_output/
-      - mv venv build_output/
+#      - echo -e "\nMoving necessary files to the build_output directory"
+#      - cd ..
+#      - mv demodjango build_output/
+#      - mv demodjango-deploy build_output/
+#      - mv regression_tests build_output/
+#      - mv venv build_output/
 
-      - echo "PWD & Contents of build_output before uploading artifacts:"
-      - pwd
-      - ls -la build_output/
+#      - echo "PWD & Contents of build_output before uploading artifacts:"
+#      - pwd
+#      - ls -la build_output/
 
 #      - echo -e "\nChecking contents of test buildspec directory"
 #      - ls -la regression_tests/buildspecs/stages/test/
@@ -80,4 +80,4 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: 'build_output'
+#  base-directory: 'build_output'
