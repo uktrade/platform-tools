@@ -34,6 +34,8 @@ phases:
       - echo $CONSTRUCTED_PATH
       - ls -la "$(dirname "$$CONSTRUCTED_PATH")"
 
+      - cat venv/bin/activate | grep "VIRTUAL_ENV="
+
 
 #      -----------------------------------------------
       - echo "-----------------OLD PATH REPLACE------------------------------"
@@ -49,6 +51,9 @@ phases:
         s|^_OLD_VIRTUAL_PATH=.*|_OLD_VIRTUAL_PATH=\"$CONSTRUCTED_PATH\"|;
         s|^_OLD_VIRTUAL_PYTHONHOME=.*|_OLD_VIRTUAL_PYTHONHOME=\"$CONSTRUCTED_PATH\"|;
         " {} +
+
+      - cat venv/bin/activate | grep "VIRTUAL_ENV="
+      - env
 
 
 #      -----------------------------------------------
