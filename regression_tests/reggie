@@ -1,2 +1,0 @@
-    export VIRTUAL_ENV=$(cygpath "/codebuild/output/src1978890388/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/1b0656f3-77a1-42d2-8811-66f048d6fccd/uktrade/platform-tools/venv")
-    export VIRTUAL_ENV="/codebuild/output/src1978890388/src/codestar-connections.eu-west-2.amazonaws.com/git-http/763451185160/eu-west-2/1b0656f3-77a1-42d2-8811-66f048d6fccd/uktrade/platform-tools/venv"
