@@ -678,3 +678,18 @@ def s3_extensions_fixture(fakefs):
             }
         ),
     )
+
+
+@pytest.fixture
+def create_valid_platform_config_file(fakefs, valid_platform_config):
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
+
+
+@pytest.fixture
+def create_invalid_platform_config_file(
+    fakefs, invalid_platform_config_with_platform_version_overrides
+):
+    fakefs.create_file(
+        Path(PLATFORM_CONFIG_FILE),
+        contents=yaml.dump(invalid_platform_config_with_platform_version_overrides),
+    )

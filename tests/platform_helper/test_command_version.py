@@ -10,21 +10,6 @@ from dbt_platform_helper.commands.version import VersionCommand
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
-@pytest.fixture
-def create_valid_platform_config_file(fakefs, valid_platform_config):
-    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
-
-
-@pytest.fixture
-def create_invalid_platform_config_file(
-    fakefs, invalid_platform_config_with_platform_version_overrides
-):
-    fakefs.create_file(
-        Path(PLATFORM_CONFIG_FILE),
-        contents=yaml.dump(invalid_platform_config_with_platform_version_overrides),
-    )
-
-
 @patch("dbt_platform_helper.commands.version.get_required_platform_helper_version")
 def test_calls_versioning_function_and_prints_returned_version(
     mock_get_required_platform_helper_version,

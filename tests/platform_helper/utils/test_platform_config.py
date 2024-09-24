@@ -8,22 +8,13 @@ from dbt_platform_helper.utils.platform_config import get_environment_pipeline_n
 from dbt_platform_helper.utils.platform_config import is_terraform_project
 
 
-def test_get_environment_pipeline_names(fakefs, valid_platform_config):
-    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
-
+def test_get_environment_pipeline_names(create_valid_platform_config_file):
     names = get_environment_pipeline_names()
 
     assert {"main", "test", "prod-main"} == names
 
 
-def test_get_environment_pipeline_names_with_invalid_config(
-    fakefs, invalid_platform_config_with_platform_version_overrides
-):
-    fakefs.create_file(
-        Path(PLATFORM_CONFIG_FILE),
-        contents=yaml.dump(invalid_platform_config_with_platform_version_overrides),
-    )
-
+def test_get_environment_pipeline_names_with_invalid_config(create_invalid_platform_config_file):
     names = get_environment_pipeline_names()
 
     assert {"prod-main"} == names

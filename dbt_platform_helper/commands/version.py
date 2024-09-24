@@ -14,7 +14,7 @@ class VersionCommand:
         self.command = self.get_platform_helper_for_project
 
     ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
-    
+
     @click.group(chain=True, cls=ClickDocOptGroup)
     def version():
         """Contains subcommands for getting version information about the current
