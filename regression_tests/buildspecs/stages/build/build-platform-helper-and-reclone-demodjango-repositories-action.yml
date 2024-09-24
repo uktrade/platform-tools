@@ -21,30 +21,20 @@ phases:
 
       # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
       - echo -e "\nCreate virtual Python environment"
-      - pwd
-      - ls -al
       - |
         source regression_tests/src/venv_helper.sh
         create_and_activate_venv
-      - cat venv/.venv_path
-      - cat venv/bin/activate
 
       # Installing dependencies
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
-      # Temporary debug output...
-      - pip list
-
-      # Package virtual environment
-      # todo: Do we need this?
-#      - mkdir -p build_output
 
       - source ./regression_tests/stages/set_up_git_config.sh
 
       # The aws-codepipeline Terraform provider does not support setting primary_source,
       # so we cannot get the other codebases we need into the same output artifact
-      # without recloning them.
+      # without re-cloning them.
       - ./regression_tests/stages/clone_demodjango_deploy.sh
       - ./regression_tests/stages/clone_demodjango.sh
       - cd demodjango && poetry install && cd $CODEBUILD_SRC_DIR
@@ -53,24 +43,6 @@ phases:
     commands:
       - echo -e "\n\n-----------------BUILD PLATFORM HELPER------------------------------"
       - ./regression_tests/stages/build_platform_helper.sh
-
-      # Temporary debug output starts
-      - pip list
-      # Temporary debug output ends
-      -
-#      - echo -e "\nMoving necessary files to the build_output directory"
-#      - cd ..
-#      - mv demodjango build_output/
-#      - mv demodjango-deploy build_output/
-#      - mv regression_tests build_output/
-#      - mv venv build_output/
-
-#      - echo "PWD & Contents of build_output before uploading artifacts:"
-#      - pwd
-#      - ls -la build_output/
-
-#      - echo -e "\nChecking contents of test buildspec directory"
-#      - ls -la regression_tests/buildspecs/stages/test/
 
   post_build:
     commands:
@@ -84,4 +56,3 @@ phases:
 artifacts:
   files:
     - '**/*'
-#  base-directory: 'build_output'

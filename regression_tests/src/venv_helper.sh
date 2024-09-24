@@ -45,7 +45,7 @@ replace_static_paths_in_shebangs_etc() {
     echo "Replacing $old_path with $new_path"
     files=$(grep -RiIl "$old_path" "$new_path")
     while IFS= read -r file; do
-        sedcmd=(sed -i '' "s|$old_path|$new_path|g" "$file")
+        sedcmd=(sed -i "s|$old_path|$new_path|g" "$file")
         "${sedcmd[@]}"
     done <<< "$files"
 }
