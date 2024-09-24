@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.11.1](https://github.com/uktrade/platform-tools/compare/10.11.0...10.11.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* DBTP-1392 Allow codebase pipelines to codestar-connections:GetConnectionToken ([#579](https://github.com/uktrade/platform-tools/issues/579)) ([bef6864](https://github.com/uktrade/platform-tools/commit/bef6864a1ca1dea13532a85fd4142f59a4538546))
+
 ## [10.11.0](https://github.com/uktrade/platform-tools/compare/10.10.0...10.11.0) (2024-09-23)
 
 
