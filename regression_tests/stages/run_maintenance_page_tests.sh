@@ -11,6 +11,7 @@ URL=https://internal.${TARGET_ENVIRONMENT}.demodjango.uktrade.digital/
 
 echo -e "\nCheck we can view the page (running smoke tests)"
 cd "${CODEBUILD_SRC_DIR}/demodjango"
+# Todo: We should probably tighten this up to just run the tests we are interest in...
 ./smoke_tests.sh ${TARGET_ENVIRONMENT} smoke
 
 echo -e "\nRunning offline command"

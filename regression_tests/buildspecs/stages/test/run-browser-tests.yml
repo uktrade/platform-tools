@@ -15,8 +15,8 @@ phases:
 
   build:
     commands:
-      - echo -e "\nRunning Browser tests - BuildApplicationDeployTest stage\n"
-      - venv/bin/platform-helper --version
+      - echo -e "\nRunning Browser tests against $TARGET_ENVIRONMENT environment\n"
+      - platform-helper --version
       - ./regression_tests/stages/set_up_aws_config.sh
       - ./regression_tests/stages/ensure_not_under_maintenance.sh
       - source ./regression_tests/stages/run_demodjango_smoke_tests.sh
@@ -26,6 +26,7 @@ phases:
     commands:
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"; then
+          venv/bin/pip install dbt-platform-helper
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi

@@ -6,18 +6,24 @@ env:
     SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
 
 phases:
+  install:
+    commands:
+      - echo -e "\nCreate virtual Python environment"
+      - |
+        source regression_tests/src/venv_helper.sh
+        fix_paths_and_activate_venv
+      - ./regression_tests/stages/set_up_aws_config.sh
+
   build:
     commands:
       - echo "Run codebase pipeline"
-      - echo "------ FILES DIRECTORY -----------"
-      - ls -la
-      - ./regression_tests/stages/set_up_aws_config.sh
       - ./regression_tests/stages/run_codebase_pipeline.sh
 
   post_build:
     commands:
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"; then
+          venv/bin/pip install dbt-platform-helper
           MESSAGE=":alert: @here DBT Platform regression tests have failed in <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/763451185160/projects/platform-tools-test/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|build ${CODEBUILD_BUILD_NUMBER}> :sob:"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
         fi
