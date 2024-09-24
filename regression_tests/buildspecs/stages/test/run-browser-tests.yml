@@ -9,7 +9,9 @@ phases:
   install:
     commands:
       - echo -e "\nCreate virtual Python environment"
-      - fix_paths_and_activate_venv
+      - |
+        source regression_tests/src/venv_helper.sh
+        fix_paths_and_activate_venv
 
 
 #      -----------------------------------------------
