@@ -23,6 +23,9 @@ phases:
       - echo -e "\nCreate virtual Python environment"
       - pwd
       - ls -al
+      - ls -al regression_tests
+      - ls -al regression_tests/src
+      - ls -al regression_tests/src/venv_helper.sh
       - source regression_tests/src/venv_helper.sh
       - create_and_activate_venv
 
