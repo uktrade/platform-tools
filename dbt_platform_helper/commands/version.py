@@ -8,7 +8,7 @@ from dbt_platform_helper.utils.versioning import (
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
-class VersionCommandFactory:
+class VersionCommand:
     def __init__(self):
         self.command_group = self.version
         self.command = self.get_platform_helper_for_project
