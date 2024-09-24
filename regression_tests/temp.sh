@@ -23,10 +23,14 @@ run_command "rm -rf venv_temp*"
 
 echo -e "\n\nDo venv1"
 run_command "python -m venv --copies venv_temp1/venv"
-sedcmd=(sed -i '' '45s/.*/VIRTUAL_ENV="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"/' venv_temp1/venv/bin/activate)
+
+
+sedcmd=(sed -i '' '45s/.*/    export VIRTUAL_ENV="$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"/' venv_temp1/venv/bin/activate)
 "${sedcmd[@]}"
 sedcmd=(sed -i '' '1s/.*/#!\/usr\/bin\/env python/' venv_temp1/venv/bin/pip*)
 "${sedcmd[@]}"
+
+
 run_command "source venv_temp1/venv/bin/activate"
 run_checks
 
