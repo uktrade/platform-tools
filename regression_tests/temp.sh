@@ -38,10 +38,10 @@ sedcmd=(sed -i '' '1s/.*/#!\/usr\/bin\/env python/' venv_temp1/venv/bin/pip*)
 run_command "source venv_temp1/venv/bin/activate"
 run_checks
 
-#echo -e "\n\nDeactivate venv1"
-#run_command "deactivate"
-#run_command "which python"
-#run_command "which pip"
+echo -e "\n\nDeactivate venv1"
+run_command "deactivate"
+run_command "which python"
+run_command "which pip"
 
 echo -e "\n\nDo venv2"
 #run_command "python -m venv --copies venv_temp2/venv"
