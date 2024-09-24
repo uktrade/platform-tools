@@ -24,6 +24,10 @@ phases:
       - |
         source regression_tests/src/venv_helper.sh
         create_and_activate_venv
+      - pwd
+      - ls -al
+      - cat venv/.venv_path
+      - cat venv/bin/activate
 
       # Installing dependencies
       - echo -e "\nInstalling dependencies"
