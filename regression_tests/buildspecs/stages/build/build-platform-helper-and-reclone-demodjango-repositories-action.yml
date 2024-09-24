@@ -21,13 +21,9 @@ phases:
 
       # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
       - echo -e "\nCreate virtual Python environment"
-      - pwd
-      - ls -al
-      - ls -al regression_tests
-      - ls -al regression_tests/src
-      - ls -al regression_tests/src/venv_helper.sh
-      - source regression_tests/src/venv_helper.sh
-      - create_and_activate_venv
+      - |
+        source regression_tests/src/venv_helper.sh
+        create_and_activate_venv
 
       # Temporary debug output starts
       - pip install --upgrade pip
