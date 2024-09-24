@@ -13,7 +13,7 @@ class VersionCommand:
         self.command_group = self.version
         self.command = self.get_platform_helper_for_project
 
-    ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
+    _ENVIRONMENT_PIPELINE_NAMES = get_environment_pipeline_names()
 
     @click.group(chain=True, cls=ClickDocOptGroup)
     def version():
@@ -25,7 +25,7 @@ class VersionCommand:
     @click.option(
         "--pipeline",
         required=False,
-        type=click.Choice(ENVIRONMENT_PIPELINE_NAMES),
+        type=click.Choice(_ENVIRONMENT_PIPELINE_NAMES),
         help="Take into account platform-tools version overrides in the specified pipeline",
     )
     def get_platform_helper_for_project(pipeline):
