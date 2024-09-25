@@ -32,8 +32,6 @@ def test_get_environment_pipeline_names_defaults_to_empty_list_when_theres_no_pl
         ("application: my-app", True),
     ],
 )
-
-
 def test_is_terraform_project(fakefs, platform_config_content, expected_result):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=platform_config_content)
 
