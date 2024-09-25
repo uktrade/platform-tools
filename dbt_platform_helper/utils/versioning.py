@@ -122,7 +122,7 @@ def load_platform_config():
         return yaml.safe_load(read_platform_config())
     except yaml.parser.ParserError:
         return None
-    
+
 
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
@@ -144,7 +144,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         if deprecated_version_file.exists()
         else None
     )
-    
+
     platform_config_default, pipeline_overrides = None, {}
     platform_config = load_platform_config()
     if platform_config:
