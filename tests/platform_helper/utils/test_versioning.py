@@ -278,6 +278,52 @@ def test_get_platform_helper_versions(
     assert not mock_aws.called  # Ensure that an AWS session is not required for this function
 
 
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.utils.versioning.read_platform_config")
+def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
+    mock_config, mock_version, mock_get, fakefs
+):
+    mock_version.return_value = "1.1.1"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+    
+    INVALID_YAML = "{"
+    mock_config.return_value = INVALID_YAML
+    
+    versions = get_platform_helper_versions()
+
+    assert versions.local_version == (1, 1, 1)
+    assert versions.latest_release == (2, 3, 4)
+    assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.platform_config_default == None
+    assert versions.pipeline_overrides == {}
+   
+    
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.utils.versioning.load_platform_config")
+def test_get_platform_helper_versions_with_invalid_config(
+    mock_config, mock_version, mock_get, fakefs, invalid_platform_config_with_platform_version_overrides
+):
+    mock_version.return_value = "1.1.1"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+    mock_config.return_value = invalid_platform_config_with_platform_version_overrides
+    
+    versions = get_platform_helper_versions()
+
+    assert versions.local_version == (1, 1, 1)
+    assert versions.latest_release == (2, 3, 4)
+    assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.platform_config_default == (1, 2, 3)
+    assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
+
+
 @pytest.mark.parametrize(
     "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
     (

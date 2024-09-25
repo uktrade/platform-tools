@@ -113,11 +113,16 @@ def get_latest_release():
     return parsed_released_versions[0]
 
 
+def read_platform_config():
+    return Path(PLATFORM_CONFIG_FILE).read_text()
+
+
 def load_platform_config():
     try:
-        return yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+        return yaml.safe_load(read_platform_config())
     except yaml.parser.ParserError:
         return None
+    
 
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
