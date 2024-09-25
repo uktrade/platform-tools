@@ -105,56 +105,52 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_version_from_file(deprecated_version_file_path):
-    deprecated_version_file = Path(deprecated_version_file_path)
-    if deprecated_version_file.exists():
-        return parse_version(deprecated_version_file.read_text())
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
+    try:
+        locally_installed_version = parse_version(version("dbt-platform-helper"))
+    except PackageNotFoundError:
+        locally_installed_version = None
 
-
-def get_pipeline_version_overrides(validated_platform_config):
-    pipeline_overrides = {
-        name: pipeline.get("versions", {}).get("platform-helper")
-        for name, pipeline in validated_platform_config.get("environment_pipelines", {}).items()
-        if pipeline.get("versions", {}).get("platform-helper")
-    }
-    return pipeline_overrides
-
-
-def get_latest_release():
     package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
-    return parsed_released_versions[0]
+    latest_release = parsed_released_versions[0]
 
+    platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-def get_locally_installed_platform_helper_version():
-    try:
-        return parse_version(version("dbt-platform-helper"))
-    except PackageNotFoundError:
-        pass
-
-
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
-
-    if not include_project_versions:
-        return PlatformHelperVersions(
-            get_locally_installed_platform_helper_version(), get_latest_release()
+    if include_project_versions:
+        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+        version_from_file = (
+            parse_version(deprecated_version_file.read_text())
+            if deprecated_version_file.exists()
+            else None
         )
+        try:
+            platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+        except yaml.parser.ParserError:
+            pass
+        if platform_config:
+            platform_config_default = parse_version(
+                platform_config.get("default_versions", {}).get("platform-helper")
+            )
 
-    platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+            pipeline_overrides = {
+                name: pipeline.get("versions", {}).get("platform-helper")
+                for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+                if pipeline.get("versions", {}).get("platform-helper")
+            }
 
     out = PlatformHelperVersions(
-        local_version=get_locally_installed_platform_helper_version(),
-        latest_release=get_latest_release(),
-        platform_helper_file_version=get_version_from_file(PLATFORM_HELPER_VERSION_FILE),
-        platform_config_default=parse_version(
-            platform_config.get("default_versions", {}).get("platform-helper")
-        ),
-        pipeline_overrides=get_pipeline_version_overrides(platform_config),
+        local_version=locally_installed_version,
+        latest_release=latest_release,
+        platform_helper_file_version=version_from_file,
+        platform_config_default=platform_config_default,
+        pipeline_overrides=pipeline_overrides,
     )
 
-    _process_version_file_warnings(out)
+    if include_project_versions:
+        _process_version_file_warnings(out)
 
     return out
 
