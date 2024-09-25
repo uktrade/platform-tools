@@ -127,8 +127,6 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
             latest_release=latest_release,
         )
 
-    platform_config_default, pipeline_overrides, version_from_file = None, {}, None
-
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
     version_from_file = (
         parse_version(deprecated_version_file.read_text())
@@ -140,6 +138,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     except yaml.parser.ParserError:
         pass
 
+    platform_config_default, pipeline_overrides = None, {}
     if platform_config:
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
@@ -159,8 +158,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         pipeline_overrides=pipeline_overrides,
     )
 
-    if include_project_versions:
-        _process_version_file_warnings(out)
+    _process_version_file_warnings(out)
 
     return out
 
