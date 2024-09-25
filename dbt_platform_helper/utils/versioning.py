@@ -117,29 +117,35 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     parsed_released_versions.sort(reverse=True)
     latest_release = parsed_released_versions[0]
 
+    if not include_project_versions:
+        return PlatformHelperVersions(
+            local_version=locally_installed_version,
+            latest_release=latest_release,
+        )
+
     platform_config_default, pipeline_overrides, version_from_file = None, {}, None
 
-    if include_project_versions:
-        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-        version_from_file = (
-            parse_version(deprecated_version_file.read_text())
-            if deprecated_version_file.exists()
-            else None
-        )
-        try:
-            platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-        except yaml.parser.ParserError:
-            pass
-        if platform_config:
-            platform_config_default = parse_version(
-                platform_config.get("default_versions", {}).get("platform-helper")
-            )
+    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+    version_from_file = (
+        parse_version(deprecated_version_file.read_text())
+        if deprecated_version_file.exists()
+        else None
+    )
+    try:
+        platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    except yaml.parser.ParserError:
+        pass
 
-            pipeline_overrides = {
-                name: pipeline.get("versions", {}).get("platform-helper")
-                for name, pipeline in platform_config.get("environment_pipelines", {}).items()
-                if pipeline.get("versions", {}).get("platform-helper")
-            }
+    if platform_config:
+        platform_config_default = parse_version(
+            platform_config.get("default_versions", {}).get("platform-helper")
+        )
+
+        pipeline_overrides = {
+            name: pipeline.get("versions", {}).get("platform-helper")
+            for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+            if pipeline.get("versions", {}).get("platform-helper")
+        }
 
     out = PlatformHelperVersions(
         local_version=locally_installed_version,
