@@ -14,6 +14,12 @@ def test_get_environment_pipeline_names(create_valid_platform_config_file):
     assert {"main", "test", "prod-main"} == names
 
 
+def test_no_error_if_platform_config_in_invalid_yaml():
+    # if config = "{"
+    # catch yaml.parser.ParserError:
+    pass
+
+
 def test_get_environment_pipeline_names_with_invalid_config(create_invalid_platform_config_file):
     names = get_environment_pipeline_names()
 
