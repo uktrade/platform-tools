@@ -29,6 +29,9 @@ yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.S
 
 
 class NoSuchEntityException(ClientError):
+    """This is needed to simulate the NoSuchEntityException that is dynamically
+    created by the boto3 error factory and so unavailable for import."""
+
     def __init__(self):
         self.response = {"Error": {"Code": "NoSuchEntity"}}
 
