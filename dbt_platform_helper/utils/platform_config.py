@@ -1,5 +1,5 @@
-import yaml
 from pathlib import Path
+import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
