@@ -7,9 +7,29 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.platform_config import (
     get_environment_pipeline_names,
-    load_config,
+    load_config_file,
     is_terraform_project,
 )
+
+
+def test_load_config_file_returns_a_dict_given_valid_yaml(fakefs):
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents="""
+test:
+    some_key: some_value
+""",
+    )
+    config = load_config_file()
+
+    assert config == {"test": {"some_key": "some_value"}}
+
+
+def test_load_config_file_returns_an_empty_dict_given_invalid_yaml(fakefs):
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
+    config = load_config_file()
+
+    assert config == {}
 
 
 def test_get_environment_pipeline_names(create_valid_platform_config_file):
@@ -18,7 +38,7 @@ def test_get_environment_pipeline_names(create_valid_platform_config_file):
     assert {"main", "test", "prod-main"} == names
 
 
-@patch("dbt_platform_helper.utils.platform_config.load_config")
+@patch("dbt_platform_helper.utils.platform_config.load_config_file")
 def test_get_environment_pipeline_names_returns_empty_dict_if_platform_config_is_invalid_yaml(
     mock_config,
 ):

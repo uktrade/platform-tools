@@ -280,7 +280,7 @@ def test_get_platform_helper_versions(
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-@patch("dbt_platform_helper.utils.platform_config.read_config")
+@patch("dbt_platform_helper.utils.platform_config.read_config_file")
 def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
     mock_config, mock_version, mock_get, fakefs
 ):
@@ -304,7 +304,7 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-@patch("dbt_platform_helper.utils.versioning.load_config")
+@patch("dbt_platform_helper.utils.versioning.load_config_file")
 def test_get_platform_helper_versions_with_invalid_config(
     mock_config,
     mock_version,

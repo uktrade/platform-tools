@@ -4,19 +4,22 @@ from pathlib import Path
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
-def read_config():
+def read_config_file():
     return Path(PLATFORM_CONFIG_FILE).read_text()
 
 
-def load_config():
-    return yaml.safe_load(read_config())
+def load_config_file():
+    try:
+        return yaml.safe_load(read_config_file())
+    except yaml.parser.ParserError:
+        return {}
 
 
 def get_environment_pipeline_names():
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
 
-    config = load_config()
+    config = load_config_file()
 
     try:
         return config.get("environment_pipelines", {}).keys()
