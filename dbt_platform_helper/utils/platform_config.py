@@ -1,17 +1,24 @@
+import yaml
 from pathlib import Path
 
-import yaml
-
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
+
+def read_config():
+    return Path(PLATFORM_CONFIG_FILE).read_text()
+
+
+def load_config():
+    return yaml.safe_load(read_config())
+    
 
 def get_environment_pipeline_names():
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
 
+    config = load_config()
+    
     try:
-        config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
         return config.get("environment_pipelines", {}).keys()
     except AttributeError:
         return {}

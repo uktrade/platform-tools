@@ -17,7 +17,7 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
+from dbt_platform_helper.utils.platform_config import load_config
 
 VersionTuple = Optional[Tuple[int, int, int]]
 
@@ -113,17 +113,6 @@ def get_latest_release():
     return parsed_released_versions[0]
 
 
-def read_platform_config():
-    return Path(PLATFORM_CONFIG_FILE).read_text()
-
-
-def load_platform_config():
-    try:
-        return yaml.safe_load(read_platform_config())
-    except yaml.parser.ParserError:
-        return None
-
-
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
@@ -146,7 +135,12 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     )
 
     platform_config_default, pipeline_overrides = None, {}
-    platform_config = load_platform_config()
+    
+    try:
+        platform_config = load_config()
+    except yaml.parser.ParserError:
+        platform_config = None
+        
     if platform_config:
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")

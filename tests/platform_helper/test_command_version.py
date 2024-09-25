@@ -1,3 +1,4 @@
+import traceback
 import pytest
 import re
 import yaml
@@ -11,25 +12,26 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
 @pytest.mark.usefixtures("create_invalid_platform_config_file")
+@patch("dbt_platform_helper.utils.versioning.get_latest_release", return_value="10.9.9")
 class TestVersionCommandWithInvalidConfig:
-    def test_works_with_invalid_config(self):
+    def test_works_with_invalid_config(self, mock_latest_release):
         command = VersionCommand().command
         result = CliRunner().invoke(command, [])
 
         assert result.exit_code == 0
         assert result.output == "1.2.3\n"
 
-    def test_pipeline_override_with_invalid_config(self):
+    def test_pipeline_override_with_invalid_config(self, mock_latest_release):
         command = VersionCommand().command
         result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
 
         assert result.exit_code == 0
         assert result.output == "9.0.9\n"
 
-    def test_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(self):
+    def test_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(self, mock_latest_release):
         command = VersionCommand().command
         result = CliRunner().invoke(command, ["--pipeline", "bogus"])
-
+        
         assert result.exit_code != 0
         assert "'bogus' is not " in result.output
         assert "'prod-main'" in result.output

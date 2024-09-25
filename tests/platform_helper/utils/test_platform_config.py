@@ -1,23 +1,24 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
-from dbt_platform_helper.utils.platform_config import is_terraform_project
+from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names, load_config, is_terraform_project
 
 
 def test_get_environment_pipeline_names(create_valid_platform_config_file):
     names = get_environment_pipeline_names()
 
     assert {"main", "test", "prod-main"} == names
+    
 
-
-def test_no_error_if_platform_config_in_invalid_yaml():
-    # if config = "{"
-    # catch yaml.parser.ParserError:
-    pass
+@patch("dbt_platform_helper.utils.platform_config.load_config")
+def test_get_environment_pipeline_names_returns_empty_dict_if_platform_config_is_invalid_yaml(mock_config):
+    mock_config.return_value = "{"
+    names = get_environment_pipeline_names()
+    assert names == {}
 
 
 def test_get_environment_pipeline_names_with_invalid_config(create_invalid_platform_config_file):
