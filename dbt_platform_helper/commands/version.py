@@ -19,7 +19,6 @@ class VersionCommand:
     def version():
         """Contains subcommands for getting version information about the current
         project."""
-        check_platform_helper_version_needs_update()
 
     @version.command(help="Print the version of platform-tools required by the current project")
     @click.option(
