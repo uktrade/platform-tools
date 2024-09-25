@@ -39,13 +39,13 @@ def test_get_environment_pipeline_names(fakefs, valid_platform_config):
     assert {"main", "test", "prod-main"} == names
 
 
-def test_get_environment_pipeline_names_returns_empty_dict_if_platform_config_is_invalid_yaml(fakefs):
+def test_get_environment_pipeline_names_returns_empty_dict_given_invalid_yaml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
     names = get_environment_pipeline_names()
     assert names == {}
 
 
-def test_get_environment_pipeline_names_with_invalid_config(create_invalid_platform_config_file):
+def test_get_environment_pipeline_names_given_invalid_config(create_invalid_platform_config_file):
     names = get_environment_pipeline_names()
 
     assert {"prod-main"} == names
