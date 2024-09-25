@@ -585,10 +585,7 @@ codebase_pipelines:
     )
 
 
-@pytest.fixture()
-def invalid_platform_config_with_platform_version_overrides():
-    return yaml.safe_load(
-        """
+INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES = """
 application: invalid-config-app
 legacy_project: false
 
@@ -620,7 +617,11 @@ environment_pipelines:
       prod:
         requires_approval: true
 """
-    )
+
+
+@pytest.fixture()
+def invalid_platform_config_with_platform_version_overrides():
+    return yaml.safe_load(INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES)
 
 
 @pytest.fixture
