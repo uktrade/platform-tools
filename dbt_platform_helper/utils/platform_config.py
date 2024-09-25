@@ -1,5 +1,6 @@
-from pathlib import Path
 import yaml
+
+from pathlib import Path
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
@@ -12,7 +13,7 @@ def load_config_file():
     try:
         return yaml.safe_load(read_config_file())
     except yaml.parser.ParserError:
-        return {}
+        return None
 
 
 def get_environment_pipeline_names():

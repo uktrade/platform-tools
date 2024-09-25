@@ -25,24 +25,22 @@ test:
     assert config == {"test": {"some_key": "some_value"}}
 
 
-def test_load_config_file_returns_an_empty_dict_given_invalid_yaml(fakefs):
+def test_load_config_file_returns_none_given_invalid_yaml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
     config = load_config_file()
 
-    assert config == {}
+    assert config == None
 
 
-def test_get_environment_pipeline_names(create_valid_platform_config_file):
+def test_get_environment_pipeline_names(fakefs, valid_platform_config):
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
     names = get_environment_pipeline_names()
 
     assert {"main", "test", "prod-main"} == names
 
 
-@patch("dbt_platform_helper.utils.platform_config.load_config_file")
-def test_get_environment_pipeline_names_returns_empty_dict_if_platform_config_is_invalid_yaml(
-    mock_config,
-):
-    mock_config.return_value = "{"
+def test_get_environment_pipeline_names_returns_empty_dict_if_platform_config_is_invalid_yaml(fakefs):
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
     names = get_environment_pipeline_names()
     assert names == {}
 
@@ -53,7 +51,7 @@ def test_get_environment_pipeline_names_with_invalid_config(create_invalid_platf
     assert {"prod-main"} == names
 
 
-def test_get_environment_pipeline_names_defaults_to_empty_list_when_theres_no_platform_config(
+def test_get_environment_pipeline_names_defaults_to_empty_list_when_theres_no_platform_config_file(
     fakefs,
 ):
     names = get_environment_pipeline_names()
