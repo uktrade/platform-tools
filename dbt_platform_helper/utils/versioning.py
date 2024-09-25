@@ -113,6 +113,12 @@ def get_latest_release():
     return parsed_released_versions[0]
 
 
+def load_platform_config():
+    try:
+        return yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
+    except yaml.parser.ParserError:
+        return None
+
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
     try:
         locally_installed_version = parse_version(version("dbt-platform-helper"))
@@ -133,12 +139,9 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         if deprecated_version_file.exists()
         else None
     )
-    try:
-        platform_config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    except yaml.parser.ParserError:
-        pass
-
+    
     platform_config_default, pipeline_overrides = None, {}
+    platform_config = load_platform_config()
     if platform_config:
         platform_config_default = parse_version(
             platform_config.get("default_versions", {}).get("platform-helper")
