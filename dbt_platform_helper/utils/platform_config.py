@@ -10,14 +10,14 @@ def read_config():
 
 def load_config():
     return yaml.safe_load(read_config())
-    
+
 
 def get_environment_pipeline_names():
     if not Path(PLATFORM_CONFIG_FILE).exists():
         return {}
 
     config = load_config()
-    
+
     try:
         return config.get("environment_pipelines", {}).keys()
     except AttributeError:

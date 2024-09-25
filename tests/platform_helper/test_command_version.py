@@ -28,10 +28,12 @@ class TestVersionCommandWithInvalidConfig:
         assert result.exit_code == 0
         assert result.output == "9.0.9\n"
 
-    def test_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(self, mock_latest_release):
+    def test_fails_if_pipeline_option_is_not_a_pipeline_with_invalid_config(
+        self, mock_latest_release
+    ):
         command = VersionCommand().command
         result = CliRunner().invoke(command, ["--pipeline", "bogus"])
-        
+
         assert result.exit_code != 0
         assert "'bogus' is not " in result.output
         assert "'prod-main'" in result.output
