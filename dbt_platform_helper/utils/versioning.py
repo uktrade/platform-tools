@@ -136,10 +136,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 
     platform_config_default, pipeline_overrides = None, {}
 
-    try:
-        platform_config = load_config_file()
-    except yaml.parser.ParserError:
-        platform_config = None
+    platform_config = load_config_file()
 
     if platform_config:
         platform_config_default = parse_version(
