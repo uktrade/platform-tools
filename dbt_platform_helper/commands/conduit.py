@@ -5,6 +5,7 @@ import subprocess
 import time
 
 import click
+from botocore.exceptions import ClientError
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
@@ -12,6 +13,7 @@ from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
 from dbt_platform_helper.utils.click import ClickDocOptCommand
+from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -207,15 +209,17 @@ def create_addon_client_task(
     elif addon_type == "redis" or addon_type == "opensearch":
         secret_name += "_ENDPOINT"
 
+    role_name = f"{addon_name}-{app.name}-{env}-conduitEcsTask"
+
     try:
-        session.client("iam").get_role(
-            RoleName=f"{app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask"
-        )
-        execution_role = (
-            f"--execution-role {app.name}-{addon_type}-{app.name}-{env}-conduitEcsTask "
-        )
-    except:
+        session.client("iam").get_role(RoleName=role_name)
+        execution_role = f"--execution-role {role_name} "
+    except ClientError as ex:
         execution_role = ""
+        if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
+            abort_with_error(
+                f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
+            )
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "

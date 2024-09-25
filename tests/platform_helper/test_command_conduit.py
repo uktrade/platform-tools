@@ -4,10 +4,12 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore.exceptions import ClientError
 from cfn_tools import load_yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
+from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import mock_connection_secret_name
 from tests.platform_helper.conftest import mock_parameter_name
@@ -170,6 +172,41 @@ def test_create_addon_client_task(
     access,
     addon_type,
     addon_name,
+):
+    """Test that, given app, env and permissions, create_addon_client_task calls
+    get_connection_secret_arn with the default secret name and subsequently
+    subprocess.call with the correct secret ARN."""
+    from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    env = "development"
+    # mock_application.environments[env].session.return_value = Mock()
+    mock_application = Mock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": Mock()}
+
+    task_name = mock_task_name(addon_name)
+    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
+    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
+
+    get_connection_secret_arn.assert_called_once_with(mock_application, env, secret_name)
+    subprocess_call.assert_called_once_with(
+        f"copilot task run --app test-application --env {env} "
+        f"--task-group-name {task_name} "
+        f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
+        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
+        "--secrets CONNECTION_SECRET=test-arn "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
+
+
+@patch("subprocess.call")
+@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
+def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
+    get_connection_secret_arn,
+    subprocess_call,
     mock_application,
 ):
     """Test that, given app, env and permissions, create_addon_client_task calls
@@ -177,21 +214,70 @@ def test_create_addon_client_task(
     subprocess.call with the correct secret ARN."""
     from dbt_platform_helper.commands.conduit import create_addon_client_task
 
-    task_name = mock_task_name(addon_name)
-    create_addon_client_task(
-        mock_application, "development", addon_type, addon_name, task_name, access
+    addon_name = "postgres"
+    addon_type = "custom-name-postgres"
+    access = "read"
+    env = "development"
+    mock_application.environments[env] = Mock()
+    mock_application.environments[env].session.client.return_value = Mock()
+    mock_application.environments[env].session.client.return_value.get_role.side_effect = (
+        NoSuchEntityException()
     )
+
+    task_name = mock_task_name(addon_name)
+    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
     secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
-    get_connection_secret_arn.assert_called_once_with(mock_application, "development", secret_name)
+    get_connection_secret_arn.assert_called_once_with(mock_application, env, secret_name)
     subprocess_call.assert_called_once_with(
-        "copilot task run --app test-application --env development "
+        f"copilot task run --app test-application --env {env} "
         f"--task-group-name {task_name} "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
+    )
+
+
+@patch("subprocess.call")
+@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
+@patch("click.secho")
+def test_create_addon_client_task_abort_with_message_on_other_exceptions(
+    mock_secho,
+    get_connection_secret_arn,
+    subprocess_call,
+    mock_application,
+):
+    """Test that, given app, env and permissions, create_addon_client_task calls
+    get_connection_secret_arn with the default secret name and subsequently
+    subprocess.call with the correct secret ARN."""
+    from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    addon_name = "postgres"
+    addon_type = "custom-name-postgres"
+    access = "read"
+    env = "development"
+    mock_application.environments[env] = Mock()
+    mock_application.environments[env].session.client.return_value = Mock()
+    mock_application.environments[env].session.client.return_value.get_role.side_effect = (
+        ClientError(
+            operation_name="something_else",
+            error_response={"Error": {"Message": "Something went wrong"}},
+        )
+    )
+
+    task_name = mock_task_name(addon_name)
+
+    with pytest.raises(SystemExit) as exc_info:
+        create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
+
+    assert exc_info.value.code == 1
+    assert mock_secho.call_count > 0
+    assert (
+        mock_secho.call_args[0][0]
+        == f"Error: cannot obtain Role {addon_name}-{mock_application.name}-{env}-conduitEcsTask: Something went wrong"
     )
 
 
@@ -219,13 +305,17 @@ def test_create_addon_client_task_postgres_is_terraform(
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn")
 def test_create_addon_client_task_when_no_secret_found(
-    get_connection_secret_arn, subprocess_call, mock_application
+    get_connection_secret_arn, subprocess_call  # , mock_application
 ):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
     from dbt_platform_helper.commands.conduit import SecretNotFoundConduitError
     from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    mock_application = Mock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": Mock()}
 
     get_connection_secret_arn.side_effect = SecretNotFoundConduitError
 
