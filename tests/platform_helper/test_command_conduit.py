@@ -175,11 +175,10 @@ def test_create_addon_client_task(
 ):
     """Test that, given app, env and permissions, create_addon_client_task calls
     get_connection_secret_arn with the default secret name and subsequently
-    subprocess.call with the correct secret ARN."""
+    subprocess.call with the correct secret ARN and execution role."""
     from dbt_platform_helper.commands.conduit import create_addon_client_task
 
     env = "development"
-    # mock_application.environments[env].session.return_value = Mock()
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
@@ -211,7 +210,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
 ):
     """Test that, given app, env and permissions, create_addon_client_task calls
     get_connection_secret_arn with the default secret name and subsequently
-    subprocess.call with the correct secret ARN."""
+    subprocess.call with the correct secret ARN but no execution role."""
     from dbt_platform_helper.commands.conduit import create_addon_client_task
 
     addon_name = "postgres"
@@ -250,9 +249,8 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     subprocess_call,
     mock_application,
 ):
-    """Test that, given app, env and permissions, create_addon_client_task calls
-    get_connection_secret_arn with the default secret name and subsequently
-    subprocess.call with the correct secret ARN."""
+    """Test that if an unexpected ClientError is throw when trying to get the
+    execution role, create_addon_client_task aborts with a message."""
     from dbt_platform_helper.commands.conduit import create_addon_client_task
 
     addon_name = "postgres"
@@ -304,9 +302,7 @@ def test_create_addon_client_task_postgres_is_terraform(
 
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn")
-def test_create_addon_client_task_when_no_secret_found(
-    get_connection_secret_arn, subprocess_call  # , mock_application
-):
+def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
