@@ -16,7 +16,7 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.exceptions import IncompatibleMajorVersion
 from dbt_platform_helper.exceptions import IncompatibleMinorVersion
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.platform_config import load_config_file
+from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
 VersionTuple = Optional[Tuple[int, int, int]]
 
@@ -135,7 +135,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 
     platform_config_default, pipeline_overrides = None, {}
 
-    platform_config = load_config_file()
+    platform_config = load_unvalidated_config_file()
 
     if platform_config:
         platform_config_default = parse_version(
