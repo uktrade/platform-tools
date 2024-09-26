@@ -14,8 +14,8 @@ class VersionCommand:
 
     @click.group(chain=True, cls=ClickDocOptGroup)
     def version():
-        """Contains subcommands for getting version information about the current
-        project."""
+        """Contains subcommands for getting version information about the
+        current project."""
 
     @version.command(help="Print the version of platform-tools required by the current project")
     @click.option(
