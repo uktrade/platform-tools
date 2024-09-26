@@ -9,6 +9,7 @@ import botocore
 import certifi
 import pytest
 import yaml
+from botocore.exceptions import ClientError
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
@@ -25,6 +26,14 @@ DOCS_DIR = BASE_DIR / "tests" / "platform_helper" / "test-docs"
 
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)
+
+
+class NoSuchEntityException(ClientError):
+    """This is needed to simulate the NoSuchEntityException that is dynamically
+    created by the boto3 error factory and so unavailable for import."""
+
+    def __init__(self):
+        self.response = {"Error": {"Code": "NoSuchEntity"}}
 
 
 @pytest.fixture
@@ -283,7 +292,7 @@ def mock_parameter_name(app, addon_type, addon_name, access: str = "read"):
         return f"/copilot/{app.name}/development/conduits/{addon_name}"
 
 
-def mock_connection_secret_name(mock_application, addon_type, addon_name, access):
+def expected_connection_secret_name(mock_application, addon_type, addon_name, access):
     secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
     if addon_type == "postgres":
         if access == "read":

@@ -1,5 +1,13 @@
 # Changelog
 
+## [10.11.2](https://github.com/uktrade/platform-tools/compare/10.11.1...10.11.2) (2024-09-26)
+
+
+### Bug Fixes
+
+* DBTP-1382 Fix conduit session KMS access permissions ([#583](https://github.com/uktrade/platform-tools/issues/583)) ([fc3051e](https://github.com/uktrade/platform-tools/commit/fc3051e4c9591a0a87cc28dab7f413ca4acde9c1))
+* Restrict regression test alerts to toolspr environment ([#581](https://github.com/uktrade/platform-tools/issues/581)) ([d40f50f](https://github.com/uktrade/platform-tools/commit/d40f50fb9c8b4c552f223e97b31454e3afc302d7))
+
 ## [10.11.1](https://github.com/uktrade/platform-tools/compare/10.11.0...10.11.1) (2024-09-24)
 
 
