@@ -483,11 +483,8 @@ def delete_listener_rule(tag_descriptions: list, tag_name: str, lb_client: boto3
         tags = {t["Key"]: t["Value"] for t in description["Tags"]}
         if tags.get("name") == tag_name:
             current_rule_arn = description["ResourceArn"]
-
-    if not current_rule_arn:
-        return current_rule_arn
-
-    lb_client.delete_rule(RuleArn=current_rule_arn)
+            if current_rule_arn:
+                lb_client.delete_rule(RuleArn=current_rule_arn)
 
     return current_rule_arn
 
@@ -501,7 +498,7 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
         "TagDescriptions"
     ]
 
-    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter"]:
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
 
         if name == "MaintenancePage" and not deleted:
