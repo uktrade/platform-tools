@@ -238,18 +238,19 @@ def get_subnet_ids(session, vpc_id):
     return public, private
 
 
-def get_cert_arn(session, env_name):
-    certs = session.client("acm").list_certificates()["CertificateSummaryList"]
+def get_cert_arn(session, application, env_name):
+    try:
+        arn = find_https_certificate(session, application, env_name)
+    except:
+        click.secho(
+            f"No certificate found with domain name matching environment {env_name}.", fg="red"
+        )
+        raise click.Abort
 
-    for cert in certs:
-        if env_name in cert["DomainName"]:
-            return cert["CertificateArn"]
-
-    click.secho(f"No certificate found with domain name matching environment {env_name}.", fg="red")
-    raise click.Abort
+    return arn
 
 
-def get_env_ips(vpc: str, application_environment: Environment):
+def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
     account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
@@ -274,8 +275,6 @@ def generate(name, vpc_name):
         )
         raise click.Abort
 
-    session = get_aws_session_or_abort()
-
     try:
         conf = load_and_validate_platform_config()
     except SchemaError as ex:
@@ -283,8 +282,11 @@ def generate(name, vpc_name):
         raise click.Abort
 
     env_config = apply_environment_defaults(conf)["environments"][name]
+    profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
+    click.secho(f"Using {profile_for_environment} for this AWS session")
+    session = get_aws_session_or_abort(profile_for_environment)
 
-    _generate_copilot_environment_manifests(name, env_config, session)
+    _generate_copilot_environment_manifests(name, conf["application"], env_config, session)
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -308,12 +310,12 @@ def generate_terraform(name, terraform_platform_modules_version):
     )
 
 
-def _generate_copilot_environment_manifests(name, env_config, session):
+def _generate_copilot_environment_manifests(name, application, env_config, session):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, name, vpc_name)
     pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
-    cert_arn = get_cert_arn(session, name)
+    cert_arn = get_cert_arn(session, application, name)
     contents = env_template.render(
         {
             "name": name,
@@ -398,6 +400,23 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
+def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
+    listener_arn = find_https_listener(session, app, env)
+    cert_client = session.client("elbv2")
+    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
+        "Certificates"
+    ]
+
+    certificate_arn = None
+
+    try:
+        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
+    except StopIteration:
+        raise CertificateNotFoundError()
+
+    return certificate_arn
+
+
 def find_target_group(app: str, env: str, svc: str, session: boto3.Session) -> str:
     rg_tagging_client = session.client("resourcegroupstaggingapi")
     response = rg_tagging_client.get_resources(
@@ -464,11 +483,8 @@ def delete_listener_rule(tag_descriptions: list, tag_name: str, lb_client: boto3
         tags = {t["Key"]: t["Value"] for t in description["Tags"]}
         if tags.get("name") == tag_name:
             current_rule_arn = description["ResourceArn"]
-
-    if not current_rule_arn:
-        return current_rule_arn
-
-    lb_client.delete_rule(RuleArn=current_rule_arn)
+            if current_rule_arn:
+                lb_client.delete_rule(RuleArn=current_rule_arn)
 
     return current_rule_arn
 
@@ -482,7 +498,7 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
         "TagDescriptions"
     ]
 
-    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter"]:
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
 
         if name == "MaintenancePage" and not deleted:
@@ -502,15 +518,7 @@ def get_rules_tag_descriptions(rules: list, lb_client):
     return tag_descriptions
 
 
-def create_header_rule(
-    lb_client: boto3.client,
-    listener_arn: str,
-    target_group_arn: str,
-    header_name: str,
-    values: list,
-    rule_name: str,
-    priority: int,
-):
+def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str):
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
     # Get current set of forwarding conditions for the target group
@@ -530,6 +538,20 @@ def create_header_rule(
     conditions[0]["HostHeaderConfig"]["Values"] = [
         v for v in conditions[0]["HostHeaderConfig"]["Values"]
     ]
+
+    return conditions
+
+
+def create_header_rule(
+    lb_client: boto3.client,
+    listener_arn: str,
+    target_group_arn: str,
+    header_name: str,
+    values: list,
+    rule_name: str,
+    priority: int,
+):
+    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
 
     # add new condition to existing conditions
     combined_conditions = [
@@ -551,6 +573,40 @@ def create_header_rule(
 
     click.secho(
         f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        fg="green",
+    )
+
+
+def create_source_ip_rule(
+    lb_client: boto3.client,
+    listener_arn: str,
+    target_group_arn: str,
+    values: list,
+    rule_name: str,
+    priority: int,
+):
+    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
+
+    # add new condition to existing conditions
+    combined_conditions = [
+        {
+            "Field": "source-ip",
+            "SourceIpConfig": {"Values": [value + "/32" for value in values]},
+        }
+    ] + conditions
+
+    lb_client.create_rule(
+        ListenerArn=listener_arn,
+        Priority=priority,
+        Conditions=combined_conditions,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        Tags=[
+            {"Key": "name", "Value": rule_name},
+        ],
+    )
+
+    click.secho(
+        f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
         fg="green",
     )
 
@@ -589,6 +645,14 @@ def add_maintenance_page(
                 [ip],
                 "AllowedIps",
                 forwarded_rule_priority,
+            )
+            create_source_ip_rule(
+                lb_client,
+                listener_arn,
+                target_group_arn,
+                [ip],
+                "AllowedSourceIps",
+                forwarded_rule_priority + 1,
             )
 
         bypass_rule_priority = service_number
@@ -648,6 +712,10 @@ def get_maintenance_page_template(template) -> str:
 
     # [^\S]\s+ - Remove any space that is not preceded by a non-space character.
     return re.sub(r"[^\S]\s+", "", template_contents)
+
+
+class CertificateNotFoundError(Exception):
+    pass
 
 
 class LoadBalancerNotFoundError(Exception):

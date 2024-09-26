@@ -48,6 +48,7 @@ extensions:
       - key: healthcheck.txt
         body: |
           HEALTHCHECK WORKS!
+        content_type: text/plain
 
   ##### s3-policy example:
 
@@ -60,3 +61,7 @@ extensions:
     environments:
       default:
         bucket_name: my-bucket
+  
+  my-s3-bucket-static:
+    type: s3
+    serve_static_content: true

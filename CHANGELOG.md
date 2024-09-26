@@ -1,5 +1,67 @@
 # Changelog
 
+## [10.11.2](https://github.com/uktrade/platform-tools/compare/10.11.1...10.11.2) (2024-09-26)
+
+
+### Bug Fixes
+
+* DBTP-1382 Fix conduit session KMS access permissions ([#583](https://github.com/uktrade/platform-tools/issues/583)) ([fc3051e](https://github.com/uktrade/platform-tools/commit/fc3051e4c9591a0a87cc28dab7f413ca4acde9c1))
+* Restrict regression test alerts to toolspr environment ([#581](https://github.com/uktrade/platform-tools/issues/581)) ([d40f50f](https://github.com/uktrade/platform-tools/commit/d40f50fb9c8b4c552f223e97b31454e3afc302d7))
+
+## [10.11.1](https://github.com/uktrade/platform-tools/compare/10.11.0...10.11.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* DBTP-1392 Allow codebase pipelines to codestar-connections:GetConnectionToken ([#579](https://github.com/uktrade/platform-tools/issues/579)) ([bef6864](https://github.com/uktrade/platform-tools/commit/bef6864a1ca1dea13532a85fd4142f59a4538546))
+
+## [10.11.0](https://github.com/uktrade/platform-tools/compare/10.10.0...10.11.0) (2024-09-23)
+
+
+### Features
+
+* **copilot-bootstrap:** enable pingdom health checks ([#573](https://github.com/uktrade/platform-tools/issues/573)) ([e063c3b](https://github.com/uktrade/platform-tools/commit/e063c3b52bc89a8fead1b44922dc4b97ba0c8bbb))
+* dbtp 1202 add cdn ([#562](https://github.com/uktrade/platform-tools/issues/562)) ([b825bdf](https://github.com/uktrade/platform-tools/commit/b825bdfa065e8b302bcefa37cffb4ccb42d40cce))
+* **nginx-proxy:** support proxying websocket connections ([#571](https://github.com/uktrade/platform-tools/issues/571)) ([40fbc65](https://github.com/uktrade/platform-tools/commit/40fbc6563178591c7f51a9ed45829c027a91b957))
+
+
+### Bug Fixes
+
+* Add source ip rule to maintenance pages ([#574](https://github.com/uktrade/platform-tools/issues/574)) ([1e6aa29](https://github.com/uktrade/platform-tools/commit/1e6aa291d85cda78bb592341a66eb66c8d8ea6b0))
+* Addressing workflow bug in DBTP-1083 ([#577](https://github.com/uktrade/platform-tools/issues/577)) ([2fb1705](https://github.com/uktrade/platform-tools/commit/2fb1705e453ed017a4642192f0ee0ca36f9a8f65))
+* DBTP-1282 allow for explicit settings of PUB_PATH_LIST ([#561](https://github.com/uktrade/platform-tools/issues/561)) ([2c41170](https://github.com/uktrade/platform-tools/commit/2c4117099fa5e48cc2b94ad7daf5e8c04bff8138))
+* ensure delete_listener_rule deletes multiple rules with same name ([#578](https://github.com/uktrade/platform-tools/issues/578)) ([8b2665d](https://github.com/uktrade/platform-tools/commit/8b2665d124f1a9ad560caf89666a131540027932))
+* ensure online command removes all rule types ([#576](https://github.com/uktrade/platform-tools/issues/576)) ([f36f22a](https://github.com/uktrade/platform-tools/commit/f36f22a7b21a229a9ddbe03bc52dd9f043493e62))
+* Small fix that allows you to generate environment config without chan… ([#568](https://github.com/uktrade/platform-tools/issues/568)) ([8133855](https://github.com/uktrade/platform-tools/commit/813385597729dd2ed35e449f3e83a05986214c19))
+
+## [10.10.0](https://github.com/uktrade/platform-tools/compare/10.9.1...10.10.0) (2024-09-12)
+
+
+### Features
+
+* DBTP 1162 support hosting static sites on s3 ([#555](https://github.com/uktrade/platform-tools/issues/555)) ([4e47ea0](https://github.com/uktrade/platform-tools/commit/4e47ea0697e49e7b43467fbeca48af2995bd6ccf))
+
+## [10.9.1](https://github.com/uktrade/platform-tools/compare/10.9.0...10.9.1) (2024-09-11)
+
+
+### Bug Fixes
+
+* DBTP-1331 Ensure environment generate retrieves correct certificate for load balancer ([#556](https://github.com/uktrade/platform-tools/issues/556)) ([0830410](https://github.com/uktrade/platform-tools/commit/0830410581b66f032c3f95a796ddb089f8454823))
+
+## [10.9.0](https://github.com/uktrade/platform-tools/compare/10.8.1...10.9.0) (2024-09-10)
+
+
+### Features
+
+* DBTP-1301 - provide cross account s3 to s3 data migration permissions ([#540](https://github.com/uktrade/platform-tools/issues/540)) ([8e9cea5](https://github.com/uktrade/platform-tools/commit/8e9cea5a48f6f8cf04a4c845d7bf85873126eb60))
+
+## [10.8.1](https://github.com/uktrade/platform-tools/compare/10.8.0...10.8.1) (2024-09-05)
+
+
+### Bug Fixes
+
+* add medium-ha postgres plan ([#551](https://github.com/uktrade/platform-tools/issues/551)) ([72bb681](https://github.com/uktrade/platform-tools/commit/72bb6816ce0ab196f19b6e386cab3f0c931bbc2d))
+
 ## [10.8.0](https://github.com/uktrade/platform-tools/compare/10.7.4...10.8.0) (2024-09-05)
 
 

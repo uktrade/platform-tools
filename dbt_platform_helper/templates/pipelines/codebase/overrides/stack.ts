@@ -84,7 +84,7 @@ export class TransformedStack extends cdk.Stack {
             envVars.push({name: 'ADDITIONAL_ECR_REPOSITORY', value: this.additionalEcrRepository()});
         }
 
-        new cdk.aws_codebuild.CfnProject(this, 'ImageBuildProject', {
+        const imageBuildProject: cdk.aws_codebuild.CfnProject = new cdk.aws_codebuild.CfnProject(this, 'ImageBuildProject', {
             name: `codebuild-${this.appName}-${this.pipelineManifest.name}`,
             description: `Publish images on push to ${this.codebaseConfiguration.repository}`,
             badgeEnabled: true,
@@ -122,6 +122,9 @@ export class TransformedStack extends cdk.Stack {
                 )),
             },
         });
+
+        imageBuildProject.node.addDependency(this.template.getResource("BuildProjectRole") as cdk.aws_iam.CfnRole);
+        imageBuildProject.node.addDependency(this.template.getResource("BuildProjectPolicy") as cdk.aws_iam.CfnPolicy);
     }
 
     private createECRRepository() {
@@ -403,7 +406,10 @@ export class TransformedStack extends cdk.Stack {
         const buildProjectPolicy = this.template.getResource("BuildProjectPolicy") as cdk.aws_iam.CfnPolicy;
         (buildProjectPolicy.policyDocument.Statement as Array<any>).push({
             Effect: 'Allow',
-            Action: ['codestar-connections:UseConnection'],
+            Action: [
+                'codestar-connections:GetConnectionToken',
+                'codestar-connections:UseConnection',
+            ],
             Resource: [this.codestarConnection.arn],
         });
     }

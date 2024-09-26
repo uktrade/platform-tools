@@ -180,7 +180,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1")
+REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
 
 REDIS_DEFINITION = {
     "type": "redis",
@@ -204,6 +204,7 @@ POSTGRES_PLANS = Or(
     "small-ha",
     "small-high-io",
     "medium",
+    "medium-ha",
     "medium-high-io",
     "large",
     "large-ha",
@@ -273,8 +274,41 @@ LIFECYCLE_RULE = {
     "enabled": bool,
 }
 
+
+def kms_key_arn_regex(key):
+    return Regex(
+        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+        error=f"{key} must contain a valid ARN for a KMS key",
+    )
+
+
+def s3_bucket_arn_regex(key):
+    return Regex(
+        r"^arn:aws:s3::.*",
+        error=f"{key} must contain a valid ARN for an S3 bucket",
+    )
+
+
+def iam_role_arn_regex(key):
+    return Regex(
+        r"^arn:aws:iam::\d{12}:role/.*",
+        error=f"{key} must contain a valid ARN for an IAM role",
+    )
+
+
+DATA_IMPORT = {
+    Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
+    "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
+    "worker_role_arn": iam_role_arn_regex("worker_role_arn"),
+}
+
+DATA_MIGRATION = {
+    "import": DATA_IMPORT,
+}
+
 S3_BASE = {
     Optional("readonly"): bool,
+    Optional("serve_static_content"): bool,
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
         ENV_NAME: {
@@ -283,6 +317,7 @@ S3_BASE = {
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+            Optional("data_migration"): DATA_MIGRATION,
         }
     },
 }
@@ -294,12 +329,7 @@ S3_DEFINITION = dict(S3_BASE)
 S3_DEFINITION.update(
     {
         "type": "s3",
-        Optional("objects"): [
-            {
-                "key": str,
-                Optional("body"): str,
-            }
-        ],
+        Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
     }
 )
 
