@@ -12,12 +12,12 @@ phases:
       - |
         source regression_tests/src/venv_helper.sh
         fix_paths_and_activate_venv
-      - ./regression_tests/stages/set_up_aws_config.sh
+      - ./regression_tests/actions/set_up_aws_config.sh
 
   build:
     commands:
        - echo "Run environment pipeline"
-       - ./regression_tests/stages/run_environment_pipeline.sh
+       - ./regression_tests/actions/run_environment_pipeline.sh
 
   post_build:
     commands:
