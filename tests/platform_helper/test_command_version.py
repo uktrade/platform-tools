@@ -49,7 +49,7 @@ class TestVersionCommandWithValidConfig:
 
 
 @pytest.mark.usefixtures("create_invalid_platform_config_file")
-@patch("dbt_platform_helper.utils.versioning.get_latest_release", return_value="10.9.9")
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
 class TestVersionCommandWithInvalidConfig:
     def test_works_given_invalid_config(self, mock_latest_release):
         command = VersionCommand().command

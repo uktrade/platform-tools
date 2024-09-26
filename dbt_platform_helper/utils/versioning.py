@@ -104,7 +104,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
     return parse_version(package_info["tag_name"])
 
 
-def get_latest_release():
+def _get_latest_release():
     package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
@@ -118,7 +118,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     except PackageNotFoundError:
         locally_installed_version = None
 
-    latest_release = get_latest_release()
+    latest_release = _get_latest_release()
 
     if not include_project_versions:
         return PlatformHelperVersions(
