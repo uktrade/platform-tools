@@ -9,7 +9,7 @@ from schema import Optional
 from schema import Or
 from schema import Regex
 from schema import Schema
-from schema import SchemaError, SchemaMissingKeyError, SchemaWrongKeyError
+from schema import SchemaError
 from yaml.parser import ParserError
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
