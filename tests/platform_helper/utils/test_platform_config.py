@@ -11,7 +11,7 @@ from dbt_platform_helper.utils.platform_config import load_config_file
 
 def test_get_environment_pipeline_names(fakefs, valid_platform_config):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
-    
+
     names = get_environment_pipeline_names()
 
     assert {"main", "test", "prod-main"} == names
