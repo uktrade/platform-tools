@@ -20,10 +20,7 @@ phases:
       - rm -rf venv
 
       # Use a Python virtual environment so that the dependencies are stored somewhere we can pass around via the output artifact
-      - echo -e "\nCreate virtual Python environment"
-      - |
-        source regression_tests/src/venv_helper.sh
-        create_and_activate_venv
+      - ./regression_tests/actions/create_virtual_environment.sh
 
       # Installing dependencies
       - echo -e "\nInstalling dependencies"

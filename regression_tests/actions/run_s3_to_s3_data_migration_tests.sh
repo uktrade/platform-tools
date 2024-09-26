@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Todo: Get this running in an action
+
 set -e
 
 echo -e "\n\n### Run S3 to S3 data migration tests\n"
