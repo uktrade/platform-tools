@@ -129,6 +129,21 @@ def validate_addons(addons: dict):
     return errors
 
 
+def validate_opensearch_supported_versions():
+    session = get_aws_session_or_abort()
+    client = session.client("opensearch")
+
+    response = client.list_versions()
+    versions = response["Versions"]
+
+    filtered_versions = [
+        version for version in versions if not version.startswith("Elasticsearch_")
+    ]
+    trimmed_versions = [version.removeprefix("OpenSearch_") for version in filtered_versions]
+
+    return trimmed_versions
+
+
 def int_between(lower, upper):
     def is_between(value):
         if isinstance(value, int) and lower <= value <= upper:
@@ -345,7 +360,7 @@ MONITORING_DEFINITION = {
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
-OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+OPENSEARCH_ENGINE_VERSIONS = Or(*validate_opensearch_supported_versions())
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 OPENSEARCH_MAX_VOLUME_SIZE = {
     "tiny": 100,
