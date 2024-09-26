@@ -642,8 +642,8 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
-    """Test that, given the path to an invalid yaml file, load_and_validate_config
-    aborts and prints an error."""
+    """Test that, given the path to an invalid yaml file,
+    load_and_validate_config aborts and prints an error."""
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
@@ -659,8 +659,8 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
     assert list(config.keys()) == ["application"]
     assert config["application"] == "my_app"
-    
-    
+
+
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
     load_and_validate_platform_config()
