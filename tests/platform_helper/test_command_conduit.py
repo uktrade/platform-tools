@@ -182,8 +182,8 @@ def test_create_addon_client_task(
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
-
     task_name = mock_task_name(addon_name)
+    
     create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
     secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
