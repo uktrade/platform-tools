@@ -265,7 +265,6 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
             error_response={"Error": {"Message": "Something went wrong"}},
         )
     )
-
     task_name = mock_task_name(addon_name)
 
     with pytest.raises(SystemExit) as exc_info:
