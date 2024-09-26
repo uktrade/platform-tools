@@ -327,6 +327,27 @@ def test_get_platform_helper_versions_with_invalid_config(
     assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+def test_get_platform_helper_versions_with_bad_request_in_get_latest_version(
+    mock_version,
+    mock_get,
+    fakefs,
+    create_invalid_platform_config_file,
+):
+    mock_version.return_value = "1.1.1"
+    mock_get.return_value.json.side_effect = JSONDecodeError("Error", "", 1)
+    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+
+    versions = get_platform_helper_versions()
+
+    assert versions.local_version == (1, 1, 1)
+    assert versions.latest_release == "Latest release of platform-helper could not be resolved"
+    assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.platform_config_default == (1, 2, 3)
+    assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
+    
+
 @pytest.mark.parametrize(
     "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
     (
