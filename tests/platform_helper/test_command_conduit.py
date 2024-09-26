@@ -11,7 +11,7 @@ from moto import mock_aws
 
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import add_addon_config_parameter
-from tests.platform_helper.conftest import mock_connection_secret_name
+from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -183,10 +183,10 @@ def test_create_addon_client_task(
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
     task_name = mock_task_name(addon_name)
-    
-    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
-    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
+    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
+
+    secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
     get_connection_secret_arn.assert_called_once_with(mock_application, env, secret_name)
     subprocess_call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
@@ -223,10 +223,10 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
         NoSuchEntityException()
     )
     task_name = mock_task_name(addon_name)
-    
-    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
-    secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
+    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
+
+    secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
     get_connection_secret_arn.assert_called_once_with(mock_application, env, secret_name)
     subprocess_call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
@@ -289,10 +289,11 @@ def test_create_addon_client_task_postgres_is_terraform(
 
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
+
     create_addon_client_task(
         mock_application, "development", "postgres", addon_name, task_name, "admin"
     )
-    secret_name = mock_connection_secret_name(mock_application, "postgres", addon_name, "admin")
+    secret_name = expected_connection_secret_name(mock_application, "postgres", addon_name, "admin")
 
     mock_create_postgres_admin_task.assert_called_once_with(
         mock_application, "development", secret_name, task_name, "postgres", addon_name

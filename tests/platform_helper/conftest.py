@@ -292,7 +292,7 @@ def mock_parameter_name(app, addon_type, addon_name, access: str = "read"):
         return f"/copilot/{app.name}/development/conduits/{addon_name}"
 
 
-def mock_connection_secret_name(mock_application, addon_type, addon_name, access):
+def expected_connection_secret_name(mock_application, addon_type, addon_name, access):
     secret_name = f"/copilot/{mock_application.name}/development/secrets/{addon_name.replace('-', '_').upper()}"
     if addon_type == "postgres":
         if access == "read":
