@@ -1,6 +1,7 @@
 #!/bin/bash
 
 function create_and_activate_venv() {
+    rm -rf venv
     python -m venv --copies venv
     write_static_path_to_file
     replace_static_path_in_venv_activate
