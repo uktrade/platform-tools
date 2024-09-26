@@ -8,7 +8,7 @@ import pytest
 import yaml
 from botocore.exceptions import ClientError
 from moto import mock_aws
-from schema import SchemaError
+from schema import SchemaError, SchemaMissingKeyError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
@@ -642,8 +642,8 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
+    """Test that, given the path to an invalid yaml file, load_and_validate_config
+    aborts and prints an error."""
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
@@ -659,6 +659,16 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
     assert list(config.keys()) == ["application"]
     assert config["application"] == "my_app"
+    
+    
+def test_load_and_validate_platform_config_prints_errors_with_valid_yaml(fakefs, capsys):
+    Path(PLATFORM_CONFIG_FILE).write_text(
+    """invalid_key: some_value
+    """
+    )
+    with pytest.raises(SystemExit):
+        load_and_validate_platform_config()
+    assert f"Error: Missing key in {PLATFORM_CONFIG_FILE}. Missing key: 'application'" in capsys.readouterr().err
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")

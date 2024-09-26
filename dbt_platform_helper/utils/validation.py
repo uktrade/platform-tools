@@ -9,7 +9,7 @@ from schema import Optional
 from schema import Or
 from schema import Regex
 from schema import Schema
-from schema import SchemaError
+from schema import SchemaError, SchemaMissingKeyError
 from yaml.parser import ParserError
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
@@ -615,6 +615,8 @@ def load_and_validate_platform_config(
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
+    except SchemaMissingKeyError as e:
+        abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
 
 
 def config_file_check(path=PLATFORM_CONFIG_FILE):
