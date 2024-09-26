@@ -4,6 +4,7 @@ from typing import Tuple
 from typing import Type
 from unittest.mock import Mock
 from unittest.mock import patch
+from requests.exceptions import JSONDecodeError
 
 import pytest
 import yaml
@@ -27,6 +28,7 @@ from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from dbt_platform_helper.utils.versioning import validate_version_compatibility
+from dbt_platform_helper.utils.versioning import get_latest_release
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -325,6 +327,27 @@ def test_get_platform_helper_versions_with_invalid_config(
     assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
+@patch("requests.get")
+@patch("dbt_platform_helper.utils.versioning.version")
+def test_get_platform_helper_versions_with_bad_request_in_get_latest_version(
+    mock_version,
+    mock_get,
+    fakefs,
+    create_invalid_platform_config_file,
+):
+    mock_version.return_value = "1.1.1"
+    mock_get.return_value.json.side_effect = JSONDecodeError("Error", "", 1)
+    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+
+    versions = get_platform_helper_versions()
+
+    assert versions.local_version == (1, 1, 1)
+    assert versions.latest_release == "Latest release of platform-helper could not be resolved"
+    assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.platform_config_default == (1, 2, 3)
+    assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
+    
+
 @pytest.mark.parametrize(
     "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
     (
@@ -545,3 +568,21 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     assert result == "1.2.3"
     mock_version.assert_not_called()
     mock_get.assert_not_called()
+
+
+@patch("requests.get")
+def test_get_latest_release_returns_error_message_if_response_body_not_json(mock_get):
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    result = get_latest_release()
+
+    assert result == "2.3.4"
+    
+
+@patch("requests.get")
+def test_get_latest_release_returns_error_message_if_response_body_not_json(mock_get):
+    mock_get.return_value.json.side_effect = JSONDecodeError("Error", "", 1)
+    result = get_latest_release()
+
+    assert result == "Latest release of platform-helper could not be resolved"
