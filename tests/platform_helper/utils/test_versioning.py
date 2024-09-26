@@ -555,5 +555,5 @@ def test_get_latest_release_returns_error_message_if_response_body_not_json(mock
     mock_response.json.side_effect = JSONDecodeError("Error", "", 1)
     mock_get.return_value = mock_response
     result = get_latest_release()
-    
+
     assert result == "Latest release of platform-helper could not be resolved"
