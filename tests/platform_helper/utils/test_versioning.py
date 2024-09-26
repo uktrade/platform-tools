@@ -551,9 +551,17 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
 
 @patch("requests.get")
 def test_get_latest_release_returns_error_message_if_response_body_not_json(mock_get):
-    mock_response = Mock()
-    mock_response.json.side_effect = JSONDecodeError("Error", "", 1)
-    mock_get.return_value = mock_response
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    result = get_latest_release()
+
+    assert result == "2.3.4"
+    
+
+@patch("requests.get")
+def test_get_latest_release_returns_error_message_if_response_body_not_json(mock_get):
+    mock_get.return_value.json.side_effect = JSONDecodeError("Error", "", 1)
     result = get_latest_release()
 
     assert result == "Latest release of platform-helper could not be resolved"
