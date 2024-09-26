@@ -222,8 +222,8 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     mock_application.environments[env].session.client.return_value.get_role.side_effect = (
         NoSuchEntityException()
     )
-
     task_name = mock_task_name(addon_name)
+    
     create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
     secret_name = mock_connection_secret_name(mock_application, addon_type, addon_name, access)
 
