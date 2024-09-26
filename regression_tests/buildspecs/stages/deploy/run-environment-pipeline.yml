@@ -16,7 +16,6 @@ phases:
 
   build:
     commands:
-       - echo "Run environment pipeline"
        - ./regression_tests/actions/run_environment_pipeline.sh
 
   post_build:

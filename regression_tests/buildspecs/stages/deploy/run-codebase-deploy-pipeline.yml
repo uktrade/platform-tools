@@ -16,7 +16,6 @@ phases:
 
   build:
     commands:
-      - echo "Run codebase pipeline"
       - ./regression_tests/actions/run_codebase_pipeline.sh
 
   post_build:

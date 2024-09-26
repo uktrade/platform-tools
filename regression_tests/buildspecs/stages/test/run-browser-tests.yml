@@ -15,7 +15,6 @@ phases:
 
   build:
     commands:
-      - echo -e "\nRunning Browser tests against $TARGET_ENVIRONMENT environment\n"
       - platform-helper --version
       - ./regression_tests/actions/set_up_aws_config.sh
       - ./regression_tests/actions/ensure_not_under_maintenance.sh
