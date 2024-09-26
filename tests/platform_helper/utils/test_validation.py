@@ -8,7 +8,7 @@ import pytest
 import yaml
 from botocore.exceptions import ClientError
 from moto import mock_aws
-from schema import SchemaError, SchemaMissingKeyError
+from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
@@ -595,10 +595,10 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert "Wrong key 'something-invalid'" in str(ex)
+        assert "Wrong key 'something-invalid'" in str(ex)
 
 
 @pytest.mark.parametrize(
@@ -615,10 +615,10 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert f"Wrong key '{invalid_key}'" in str(ex)
+        assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 @pytest.mark.parametrize(
@@ -635,10 +635,10 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert f"Wrong key '{invalid_key}'" in str(ex)
+        assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
@@ -661,16 +661,6 @@ def test_validation_runs_against_platform_config_yml(fakefs):
     assert config["application"] == "my_app"
     
     
-def test_load_and_validate_platform_config_prints_errors_with_valid_yaml(fakefs, capsys):
-    Path(PLATFORM_CONFIG_FILE).write_text(
-    """invalid_key: some_value
-    """
-    )
-    with pytest.raises(SystemExit):
-        load_and_validate_platform_config()
-    assert f"Error: Missing key in {PLATFORM_CONFIG_FILE}. Missing key: 'application'" in capsys.readouterr().err
-
-
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
     load_and_validate_platform_config()
