@@ -2,9 +2,6 @@ import click
 
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 

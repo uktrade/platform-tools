@@ -10,7 +10,6 @@ from typing import Union
 
 import click
 import requests
-import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE

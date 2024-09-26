@@ -5,7 +5,6 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.version import VersionCommand
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
 
 @pytest.mark.usefixtures("create_valid_platform_config_file")
