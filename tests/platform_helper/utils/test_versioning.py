@@ -281,10 +281,10 @@ def test_get_platform_helper_versions(
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
 def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
-    mock_version, mock_get, fakefs
+    mock_version, mock_request_to_get_latest_version, fakefs
 ):
     mock_version.return_value = "1.1.1"
-    mock_get.return_value.json.return_value = {
+    mock_request_to_get_latest_version.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
