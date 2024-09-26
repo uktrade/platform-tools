@@ -4,6 +4,7 @@ from typing import Tuple
 from typing import Type
 from unittest.mock import Mock
 from unittest.mock import patch
+from requests.exceptions import JSONDecodeError
 
 import pytest
 import yaml
@@ -27,6 +28,7 @@ from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from dbt_platform_helper.utils.versioning import validate_version_compatibility
+from dbt_platform_helper.utils.versioning import get_latest_release
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -545,3 +547,13 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     assert result == "1.2.3"
     mock_version.assert_not_called()
     mock_get.assert_not_called()
+
+
+@patch("requests.get")
+def test_get_latest_release_returns_error_message_if_response_body_not_json(mock_get):
+    mock_response = Mock()
+    mock_response.json.side_effect = JSONDecodeError("Error", "", 1)
+    mock_get.return_value = mock_response
+    result = get_latest_release()
+    
+    assert result == "Latest release of platform-helper could not be resolved"

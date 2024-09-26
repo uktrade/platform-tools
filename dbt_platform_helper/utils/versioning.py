@@ -106,7 +106,13 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 
 def get_latest_release():
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
+    response = requests.get("https://pypi.org/pypi/dbt-platform-helper/json", timeout=5)
+    
+    try:
+        package_info = response.json()
+    except requests.exceptions.JSONDecodeError:
+        return "Latest release of platform-helper could not be resolved"
+    
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
     parsed_released_versions.sort(reverse=True)
