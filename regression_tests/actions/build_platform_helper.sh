@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\nBuild and install platform-helper\n"
+echo -e "\n\n### Build and install platform-helper\n"
 
 cd "${CODEBUILD_SRC_DIR}"
 

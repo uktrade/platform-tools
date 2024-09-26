@@ -2,14 +2,14 @@
 
 set -e
 
+echo -e "\n### Assume platform sandbox S3MigrationRole to access basic auth secrets"
+
 S3_MIGRATION_ROLE="demodjango-toolspr-shared-S3MigrationRole"
 DESTINATION_BUCKET="demodjango-toolspr-shared"
 SOURCE_BUCKET="s3-to-s3-data-migration-regression-test"
 SOURCE_FILE="source_file.txt"
 
 DESTINATION_FILE="copied_source_file_$(date +'%Y-%m-%d_%H-%M-%S').txt"
-
-echo -e "\nAssume platform sandbox S3MigrationRole to access basic auth secrets"
 
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/$S3_MIGRATION_ROLE" \

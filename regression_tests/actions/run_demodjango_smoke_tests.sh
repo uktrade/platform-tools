@@ -4,7 +4,7 @@ set -e
 
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 
-echo -e "\nAssume platform-sandbox role to access basic auth secrets"
+echo -e "\n### Assume platform-sandbox role to access basic auth secrets"
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")

@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\nAssume platform-sandbox role to trigger environment pipeline\n"
+echo -e "\n\n### Assume platform-sandbox role to trigger environment pipeline\n"
 
 cd "${CODEBUILD_SRC_DIR}"
 
