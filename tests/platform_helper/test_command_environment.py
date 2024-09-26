@@ -1,4 +1,3 @@
-import traceback
 from pathlib import Path
 from unittest.mock import ANY
 from unittest.mock import MagicMock
@@ -503,7 +502,6 @@ class TestGenerate:
         mock_is_terraform_project.return_value = is_terraform
 
         result = CliRunner().invoke(generate, ["--name", "test"])
-        traceback.print_tb(result.exc_info[2])
 
         actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
         expected = yaml.safe_load(

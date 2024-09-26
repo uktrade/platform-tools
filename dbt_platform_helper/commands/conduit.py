@@ -216,8 +216,8 @@ def create_addon_client_task(
         execution_role = f"--execution-role {role_name} "
     except ClientError as ex:
         execution_role = ""
-        # We cannot catch NoSuchEntityException directly as it is a dynamically generated exception by the boto3
-        # error factory. Checking the error code is the recommended way of handling these exceptions.
+        # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
+        # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
