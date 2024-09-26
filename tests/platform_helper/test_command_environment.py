@@ -1,3 +1,4 @@
+import traceback
 from pathlib import Path
 from unittest.mock import ANY
 from unittest.mock import MagicMock
@@ -12,7 +13,34 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
+from dbt_platform_helper.commands.environment import CertificateNotFoundError
+from dbt_platform_helper.commands.environment import ListenerNotFoundError
+from dbt_platform_helper.commands.environment import ListenerRuleNotFoundError
+from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
+from dbt_platform_helper.commands.environment import add_maintenance_page
+from dbt_platform_helper.commands.environment import create_header_rule
+from dbt_platform_helper.commands.environment import create_source_ip_rule
+from dbt_platform_helper.commands.environment import delete_listener_rule
+from dbt_platform_helper.commands.environment import find_https_certificate
+from dbt_platform_helper.commands.environment import find_https_listener
+from dbt_platform_helper.commands.environment import find_load_balancer
+from dbt_platform_helper.commands.environment import find_target_group
+from dbt_platform_helper.commands.environment import generate
+from dbt_platform_helper.commands.environment import generate_terraform
+from dbt_platform_helper.commands.environment import get_app_environment
+from dbt_platform_helper.commands.environment import get_cert_arn
+from dbt_platform_helper.commands.environment import get_env_ips
+from dbt_platform_helper.commands.environment import get_listener_rule_by_tag
+from dbt_platform_helper.commands.environment import get_maintenance_page
+from dbt_platform_helper.commands.environment import get_maintenance_page_template
+from dbt_platform_helper.commands.environment import get_rules_tag_descriptions
+from dbt_platform_helper.commands.environment import get_subnet_ids
+from dbt_platform_helper.commands.environment import get_vpc_id
+from dbt_platform_helper.commands.environment import offline
+from dbt_platform_helper.commands.environment import online
+from dbt_platform_helper.commands.environment import remove_maintenance_page
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Service
 from tests.platform_helper.conftest import BASE_DIR
 
@@ -37,8 +65,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import offline
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -88,8 +114,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import offline
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -145,8 +169,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import offline
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -195,9 +217,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
-        from dbt_platform_helper.commands.environment import offline
-
         find_https_listener.side_effect = LoadBalancerNotFoundError()
         load_application.return_value = mock_application
 
@@ -229,8 +248,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import ListenerNotFoundError
-        from dbt_platform_helper.commands.environment import offline
 
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
@@ -269,7 +286,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import offline
 
         mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
         load_application.return_value = mock_application
@@ -321,7 +337,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
 
@@ -358,7 +373,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
 
@@ -384,8 +398,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import ListenerNotFoundError
-        from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
@@ -416,7 +428,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
         from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
@@ -471,7 +482,6 @@ class TestGenerate:
         environment_config,
         expected_vpc,
     ):
-        from dbt_platform_helper.commands.environment import generate
 
         default_conf = environment_config.get("*", {})
         default_conf["accounts"] = {
@@ -493,6 +503,7 @@ class TestGenerate:
         mock_is_terraform_project.return_value = is_terraform
 
         result = CliRunner().invoke(generate, ["--name", "test"])
+        traceback.print_tb(result.exc_info[2])
 
         actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
         expected = yaml.safe_load(
@@ -532,7 +543,6 @@ class TestGenerate:
         expected_version,
         should_include_moved_block,
     ):
-        from dbt_platform_helper.commands.environment import generate_terraform
 
         environment_config = {
             "*": {
@@ -587,7 +597,6 @@ class TestGenerate:
         mock_is_terraform_project,
         fakefs,
     ):
-        from dbt_platform_helper.commands.environment import generate_terraform
 
         environment_config = {
             "*": {
@@ -619,7 +628,6 @@ class TestGenerate:
     @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     def test_fail_early_if_platform_config_invalid(self, mock_session_1, mock_session_2, fakefs):
-        from dbt_platform_helper.commands.environment import generate
 
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
@@ -637,7 +645,6 @@ class TestGenerate:
         assert "Missing key: 'application'" in result.output
 
     def test_fail_with_explanation_if_vpc_name_option_used(self, fakefs):
-        from dbt_platform_helper.commands.environment import generate
 
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
@@ -655,7 +662,6 @@ class TestGenerate:
     @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
     @mock_aws
     def test_get_vpc_id(self, vpc_name):
-        from dbt_platform_helper.commands.environment import get_vpc_id
 
         session = boto3.session.Session()
         vpc = session.client("ec2").create_vpc(
@@ -681,7 +687,6 @@ class TestGenerate:
 
     @mock_aws
     def test_get_vpc_id_failure(self, capsys):
-        from dbt_platform_helper.commands.environment import get_vpc_id
 
         with pytest.raises(click.Abort):
             get_vpc_id(boto3.session.Session(), "development")
@@ -692,7 +697,6 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids(self):
-        from dbt_platform_helper.commands.environment import get_subnet_ids
 
         session = boto3.session.Session()
         vpc = session.client("ec2").create_vpc(
@@ -738,7 +742,6 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
-        from dbt_platform_helper.commands.environment import get_subnet_ids
 
         with pytest.raises(click.Abort):
             get_subnet_ids(boto3.session.Session(), "123")
@@ -753,7 +756,6 @@ class TestGenerate:
         return_value="CertificateArn",
     )
     def test_get_cert_arn(self, find_https_certificate):
-        from dbt_platform_helper.commands.environment import get_cert_arn
 
         session = boto3.session.Session()
         actual_arn = get_cert_arn(session, "test-application", "development")
@@ -762,7 +764,6 @@ class TestGenerate:
 
     @mock_aws
     def test_cert_arn_failure(self, capsys):
-        from dbt_platform_helper.commands.environment import get_cert_arn
 
         session = boto3.session.Session()
 
@@ -779,8 +780,6 @@ class TestGenerate:
 
 class TestFindLoadBalancer:
     def test_when_no_load_balancer_exists(self):
-        from dbt_platform_helper.commands.environment import LoadBalancerNotFoundError
-        from dbt_platform_helper.commands.environment import find_load_balancer
 
         boto_mock = MagicMock()
         boto_mock.client().describe_load_balancers.return_value = {"LoadBalancers": []}
@@ -788,7 +787,6 @@ class TestFindLoadBalancer:
             find_load_balancer(boto_mock, "test-application", "development")
 
     def test_when_a_load_balancer_exists(self):
-        from dbt_platform_helper.commands.environment import find_load_balancer
 
         boto_mock = MagicMock()
         boto_mock.client().describe_load_balancers.return_value = {
@@ -813,9 +811,6 @@ class TestFindLoadBalancer:
 class TestFindHTTPSListener:
     @patch("dbt_platform_helper.commands.environment.find_load_balancer", return_value="lb_arn")
     def test_when_no_https_listener_present(self, find_load_balancer):
-        from dbt_platform_helper.commands.environment import ListenerNotFoundError
-        from dbt_platform_helper.commands.environment import find_https_listener
-
         boto_mock = MagicMock()
         boto_mock.client().describe_listeners.return_value = {"Listeners": []}
         with pytest.raises(ListenerNotFoundError):
@@ -823,7 +818,6 @@ class TestFindHTTPSListener:
 
     @patch("dbt_platform_helper.commands.environment.find_load_balancer", return_value="lb_arn")
     def test_when_https_listener_present(self, find_load_balancer):
-        from dbt_platform_helper.commands.environment import find_https_listener
 
         boto_mock = MagicMock()
         boto_mock.client().describe_listeners.return_value = {
@@ -839,10 +833,7 @@ class TestFindHTTPSCertificate:
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener_arn",
     )
-    def test_when_no_certificate_present(self, find_https_certificate):
-        from dbt_platform_helper.commands.environment import CertificateNotFoundError
-        from dbt_platform_helper.commands.environment import find_https_certificate
-
+    def test_when_no_certificate_present(self, mock_find_https_listener):
         boto_mock = MagicMock()
         boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
 
@@ -853,9 +844,7 @@ class TestFindHTTPSCertificate:
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener_arn",
     )
-    def test_when_single_https_certificate_present(self, find_https_certificate):
-        from dbt_platform_helper.commands.environment import find_https_certificate
-
+    def test_when_single_https_certificate_present(self, mock_find_https_listener):
         boto_mock = MagicMock()
         boto_mock.client().describe_listener_certificates.return_value = {
             "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
@@ -868,9 +857,7 @@ class TestFindHTTPSCertificate:
         "dbt_platform_helper.commands.environment.find_https_listener",
         return_value="https_listener_arn",
     )
-    def test_when_multiple_https_certificate_present(self, find_https_certificate):
-        from dbt_platform_helper.commands.environment import find_https_certificate
-
+    def test_when_multiple_https_certificate_present(self, mock_find_https_listener):
         boto_mock = MagicMock()
         boto_mock.client().describe_listener_certificates.return_value = {
             "Certificates": [
@@ -885,7 +872,6 @@ class TestFindHTTPSCertificate:
 
 class TestGetMaintenancePage:
     def test_when_environment_online(self):
-        from dbt_platform_helper.commands.environment import get_maintenance_page
 
         boto_mock = MagicMock()
         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
@@ -897,7 +883,6 @@ class TestGetMaintenancePage:
         assert maintenance_page is None
 
     def test_when_environment_offline_with_default_page(self):
-        from dbt_platform_helper.commands.environment import get_maintenance_page
 
         boto_mock = MagicMock()
         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
@@ -919,8 +904,6 @@ class TestGetMaintenancePage:
 
 class TestRemoveMaintenancePage:
     def test_when_environment_online(self):
-        from dbt_platform_helper.commands.environment import ListenerRuleNotFoundError
-        from dbt_platform_helper.commands.environment import remove_maintenance_page
 
         boto_mock = MagicMock()
         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
@@ -933,7 +916,6 @@ class TestRemoveMaintenancePage:
 
     @patch("dbt_platform_helper.commands.environment.delete_listener_rule")
     def test_when_environment_offline(self, delete_listener_rule):
-        from dbt_platform_helper.commands.environment import remove_maintenance_page
 
         boto_mock = MagicMock()
         boto_mock.client().describe_rules.return_value = {
@@ -995,7 +977,6 @@ class TestAddMaintenancePage:
         template,
         mock_application,
     ):
-        from dbt_platform_helper.commands.environment import add_maintenance_page
 
         boto_mock = MagicMock()
         get_maintenance_page_template.return_value = template
@@ -1075,18 +1056,12 @@ class TestAddMaintenancePage:
 class TestEnvironmentMaintenanceTemplates:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     def test_template_length(self, template):
-        from dbt_platform_helper.commands.environment import (
-            get_maintenance_page_template,
-        )
 
         contents = get_maintenance_page_template(template)
         assert len(contents) <= 1024
 
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     def test_template_no_new_lines(self, template):
-        from dbt_platform_helper.commands.environment import (
-            get_maintenance_page_template,
-        )
 
         contents = get_maintenance_page_template(template)
         assert "\n" not in contents
@@ -1095,8 +1070,6 @@ class TestEnvironmentMaintenanceTemplates:
 class TestCommandHelperMethods:
     @patch("dbt_platform_helper.commands.environment.load_application")
     def test_get_app_environment(self, mock_load_application):
-        from dbt_platform_helper.commands.environment import get_app_environment
-        from dbt_platform_helper.utils.application import Application
 
         development = Mock()
         application = Application(name="test-application")
@@ -1109,8 +1082,6 @@ class TestCommandHelperMethods:
 
     @patch("dbt_platform_helper.commands.environment.load_application")
     def test_get_app_environment_does_not_exist(self, mock_load_application, capsys):
-        from dbt_platform_helper.commands.environment import get_app_environment
-        from dbt_platform_helper.utils.application import Application
 
         CliRunner()
         application = Application(name="test-application")
@@ -1189,8 +1160,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_get_listener_rule_by_tag(self):
-        from dbt_platform_helper.commands.environment import get_listener_rule_by_tag
-
         rule_arn, elbv2_client, listener_arn = self._create_listener_rule()
 
         rule = get_listener_rule_by_tag(elbv2_client, listener_arn, "test-key", "test-value")
@@ -1199,7 +1168,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_find_target_group(self):
-        from dbt_platform_helper.commands.environment import find_target_group
 
         target_group_arn = self._create_target_group()
 
@@ -1210,7 +1178,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_find_target_group_not_found(self):
-        from dbt_platform_helper.commands.environment import find_target_group
 
         assert (
             find_target_group("test-application", "development", "web", boto3.session.Session())
@@ -1219,7 +1186,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_delete_listener_rule(self):
-        from dbt_platform_helper.commands.environment import delete_listener_rule
 
         rule_arn, elbv2_client, listener_arn = self._create_listener_rule()
         rule_2_arn, _, _ = self._create_listener_rule(
@@ -1243,7 +1209,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_create_header_rule(self, capsys):
-        from dbt_platform_helper.commands.environment import create_header_rule
 
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
@@ -1282,7 +1247,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_create_source_ip_rule(self, capsys):
-        from dbt_platform_helper.commands.environment import create_source_ip_rule
 
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
@@ -1340,7 +1304,6 @@ class TestCommandHelperMethods:
     )
     @mock_aws
     def test_get_env_ips(self, vpc, param_value, expected, mock_application):
-        from dbt_platform_helper.commands.environment import get_env_ips
 
         response = boto3.client("organizations").create_organization(FeatureSet="ALL")
         response["Organization"]["Id"]
@@ -1361,7 +1324,6 @@ class TestCommandHelperMethods:
 
     @mock_aws
     def test_get_env_ips_param_not_found(self, capsys, mock_application):
-        from dbt_platform_helper.commands.environment import get_env_ips
 
         response = boto3.client("organizations").create_organization(FeatureSet="ALL")
         response["Organization"]["Id"]
@@ -1382,7 +1344,6 @@ class TestCommandHelperMethods:
 
     @patch("boto3.client")
     def test_get_rules_tag_descriptions(self, mock_boto_client):
-        from dbt_platform_helper.commands.environment import get_rules_tag_descriptions
 
         mock_client = Mock()
         mock_client.describe_tags.side_effect = [
