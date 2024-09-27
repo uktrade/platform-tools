@@ -6,8 +6,8 @@ set -e
 
 echo -e "\n\n### Run S3 to S3 data migration tests\n"
 
-S3_MIGRATION_ROLE="demodjango-toolspr-shared-S3MigrationRole"
-DESTINATION_BUCKET="demodjango-toolspr-shared"
+S3_MIGRATION_ROLE="demodjango-${TARGET_ENVIRONMENT}-shared-S3MigrationRole"
+DESTINATION_BUCKET="demodjango-${TARGET_ENVIRONMENT}-shared"
 SOURCE_BUCKET="s3-to-s3-data-migration-regression-test"
 SOURCE_FILE="source_file.txt"
 
