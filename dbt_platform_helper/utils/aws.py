@@ -336,3 +336,18 @@ def update_postgres_parameter_with_master_secret(session, parameter_name, secret
     parameter_data["password"] = urllib.parse.quote(secret_value["password"])
 
     return parameter_data
+
+
+def validate_redis_supported_versions():
+
+    supported_versions = []
+
+    elasticache_client = boto3.client('elasticache')
+
+    supported_versions_response = elasticache_client.describe_cache_engine_versions(
+        Engine='redis'
+    )
+
+    supported_versions = [version['EngineVersion'] for version in supported_versions_response['CacheEngineVersions']]
+
+    return supported_versions

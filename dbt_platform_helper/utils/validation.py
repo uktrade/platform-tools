@@ -17,6 +17,7 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import validate_redis_supported_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -195,7 +196,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
+REDIS_ENGINE_VERSIONS = Or(*validate_redis_supported_versions())
 
 REDIS_DEFINITION = {
     "type": "redis",
