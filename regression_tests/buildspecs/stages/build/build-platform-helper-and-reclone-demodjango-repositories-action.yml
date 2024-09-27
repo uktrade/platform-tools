@@ -29,6 +29,7 @@ phases:
 
   post_build:
     commands:
+      # Todo: Look to extract to a helper script in a followup pull request
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main" && "${TARGET_ENVIRONMENT:-toolspr}" == "toolspr"; then
           pip install dbt-platform-helper

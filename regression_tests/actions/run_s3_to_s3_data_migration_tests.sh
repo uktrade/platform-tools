@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Todo: Get this running in an action
-
 set -e
 
 echo -e "\n\n### Run S3 to S3 data migration tests\n"
@@ -13,7 +11,8 @@ SOURCE_FILE="source_file.txt"
 
 DESTINATION_FILE="copied_source_file_$(date +'%Y-%m-%d_%H-%M-%S').txt"
 
-echo -e "\n### Assume platform-sandbox role to access basic auth secrets"
+echo -e "\nAssume platform-sandbox role to access basic auth secrets"
+# Todo: Look to extract to a helper script in a followup pull request
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
@@ -26,7 +25,7 @@ export AWS_SECRET_ACCESS_KEY=$PLATFORM_SANDBOX_AWS_SECRET_ACCESS_KEY
 export AWS_SESSION_TOKEN=$PLATFORM_SANDBOX_AWS_SESSION_TOKEN
 
 echo -e "\nAssume platform sandbox S3MigrationRole to access basic auth secrets"
-
+# Todo: Look to extract to a helper script in a followup pull request
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/$S3_MIGRATION_ROLE" \
     --role-session-name "pull-request-regression-tests-s3-to-s3-data-migration-$(date +%s)")

@@ -13,7 +13,7 @@ phases:
 
   build:
     commands:
-      # Todo: We could install the playwright dependencies in parallel with the environment pipeline so we don't have to wait for them here
+      # Todo: For a followup pull request, we could install the playwright dependencies in parallel with the environment pipeline so we don't have to wait for them here
       # Todo: Do we really need to install all the browsers in demodjango/tests/browser/run.sh?
       - ./regression_tests/actions/ensure_not_under_maintenance.sh
       - source ./regression_tests/actions/run_demodjango_smoke_tests.sh
@@ -21,6 +21,7 @@ phases:
 
   post_build:
     commands:
+      # Todo: Look to extract to a helper script in a followup pull request
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main" && "${TARGET_ENVIRONMENT:-toolspr}" == "toolspr"; then
           pip install dbt-platform-helper
