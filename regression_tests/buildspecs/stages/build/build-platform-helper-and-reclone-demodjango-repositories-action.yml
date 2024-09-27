@@ -16,7 +16,7 @@ phases:
         python --version
         which python
 
-      - ./regression_tests/actions/create_virtual_environment.sh
+      - source ./regression_tests/actions/create_virtual_environment.sh
 
       - echo -e "\nInstalling dependencies"
       - pip install poetry

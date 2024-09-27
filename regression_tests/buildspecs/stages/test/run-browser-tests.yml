@@ -11,10 +11,13 @@ phases:
       - echo -e "\nCreate virtual Python environment"
       - |
         source regression_tests/src/venv_helper.sh
-        run_checks
+        fix_paths_and_activate_venv
 
   build:
     commands:
+      - |
+        source regression_tests/src/venv_helper.sh
+        run_checks
       - which platform-helper
       - platform-helper --version
       # - ./regression_tests/actions/set_up_aws_config.sh
