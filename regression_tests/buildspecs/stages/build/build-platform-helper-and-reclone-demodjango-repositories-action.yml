@@ -35,7 +35,7 @@ phases:
     commands:
       - |
         source regression_tests/src/venv_helper.sh
-        fix_paths_and_activate_venv
+        run_checks
       - ./regression_tests/actions/build_platform_helper.sh
 
   post_build:
