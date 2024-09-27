@@ -9,17 +9,11 @@ phases:
   install:
     commands:
       - echo -e "\nCreate virtual Python environment"
-      - |
-        source regression_tests/src/venv_helper.sh
-        fix_paths_and_activate_venv
+      - source ./regression_tests/actions/reactivate_virtual_environment.sh
 
   build:
     commands:
-      - |
-        source regression_tests/src/venv_helper.sh
-        run_checks
-      - which platform-helper
-      - platform-helper --version
+      - source regression_tests/src/venv_helper.sh && run_checks
       # - ./regression_tests/actions/set_up_aws_config.sh
       # - ./regression_tests/actions/ensure_not_under_maintenance.sh
       # - source ./regression_tests/actions/run_demodjango_smoke_tests.sh

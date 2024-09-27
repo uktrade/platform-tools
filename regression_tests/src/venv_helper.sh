@@ -13,10 +13,12 @@ function fix_paths_and_activate_venv() {
     replace_static_paths_in_shebangs_etc
     source venv/bin/activate
     run_checks
+    echo -e "\nWhich platform-helper: $(which platform-helper)"
+    echo -e "\nplatform-helper --version: $(platform-helper --version)"
 }
 
 run_checks() {
-    echo "Running checks"
+    echo "Running virtual environment checks"
     echo -e "\nVIRTUAL_ENV: $VIRTUAL_ENV"
     echo -e "\nPython version: $(python --version)"
     echo -e "\nWhich Python: $(which python)"

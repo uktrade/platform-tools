@@ -33,9 +33,7 @@ phases:
 
   build:
     commands:
-      - |
-        source regression_tests/src/venv_helper.sh
-        run_checks
+      - source regression_tests/src/venv_helper.sh && run_checks
       - ./regression_tests/actions/build_platform_helper.sh
 
   post_build:
