@@ -1,17 +1,30 @@
-from pathlib import Path
-
 import yaml
 
+from pathlib import Path
+
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
+
+
+def _read_config_file_contents():
+    if Path(PLATFORM_CONFIG_FILE).exists():
+        return Path(PLATFORM_CONFIG_FILE).read_text()
+
+
+def load_unvalidated_config_file():
+    file_contents = _read_config_file_contents()
+    if not file_contents:
+        return {}
+    try:
+        return yaml.safe_load(file_contents)
+    except yaml.parser.ParserError:
+        return {}
 
 
 def get_environment_pipeline_names():
-    if not Path(PLATFORM_CONFIG_FILE).exists():
-        return {}
-
-    config = load_and_validate_platform_config(disable_aws_validation=True, disable_file_check=True)
-    return config.get("environment_pipelines", {}).keys()
+    pipelines_config = load_unvalidated_config_file().get("environment_pipelines")
+    if pipelines_config:
+        return pipelines_config.keys()
+    return {}
 
 
 def is_terraform_project() -> bool:

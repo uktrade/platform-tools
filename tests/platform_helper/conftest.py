@@ -649,3 +649,50 @@ def s3_extensions_fixture(fakefs):
             }
         ),
     )
+
+
+INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES = """
+application: invalid-config-app
+legacy_project: false
+
+default_versions: 
+    platform-helper: 1.2.3
+    terraform-platform-modules: 9.9.9
+
+environments:
+  dev:
+  test:
+  staging:
+  prod:
+    vpc: prod-vpc
+
+extensions:
+  test-app-s3-bucket:
+    type: s3
+    this_field_is_incompatible_with_current_version: foo
+  
+environment_pipelines:
+  prod-main:
+    account: prod-acc
+    branch: main
+    slack_channel: "/codebuild/slack_oauth_channel"
+    trigger_on_push: false
+    versions:
+        platform-helper: 9.0.9
+    environments:
+      prod:
+        requires_approval: true
+"""
+
+
+@pytest.fixture
+def create_valid_platform_config_file(fakefs, valid_platform_config):
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))
+
+
+@pytest.fixture
+def create_invalid_platform_config_file(fakefs):
+    fakefs.create_file(
+        Path(PLATFORM_CONFIG_FILE),
+        contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
+    )
