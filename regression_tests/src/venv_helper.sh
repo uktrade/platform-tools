@@ -39,6 +39,7 @@ get_old_path() {
 }
 
 replace_static_path_in_venv_activate() {
+    # Todo: Add comment to explain this in follow up pull request
     static_path="\"$(get_old_path)\""
     dynamic_path='"$(cd "$(dirname "$(dirname "${BASH_SOURCE[0]}" )")" \&\& pwd)"'
     sedcmd=(sed -i "s|${static_path}|${dynamic_path}|g" venv/bin/activate)
@@ -46,6 +47,7 @@ replace_static_path_in_venv_activate() {
 }
 
 replace_static_paths_in_shebangs_etc() {
+    # Todo: Add comment to explain this in follow up pull request
     old_path="$(get_old_path)"
     new_path="$(pwd)/venv"
     echo "Replacing $old_path with $new_path"

@@ -39,6 +39,7 @@ RUN git clone https://github.com/pyenv/pyenv .pyenv \
   && pyenv install ${PYTHON_VERSIONS} \
   && pyenv global $(echo ${PYTHON_VERSIONS} | awk '{ print $NF }')
 
+# Todo: Revert this change and republish image
 RUN pip install poetry
 
 # Install AWS CLI
