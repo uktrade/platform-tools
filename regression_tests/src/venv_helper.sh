@@ -17,11 +17,11 @@ function fix_paths_and_activate_venv() {
 
 run_checks() {
     echo "Running checks"
-    echo "VIRTUAL_ENV: $VIRTUAL_ENV"
-    echo "Python version: $(python --version)"
-    echo "Which Python: $(which python)"
-    echo "Which pip: $(which pip)"
-    echo "pip list: $(pip list)"
+    echo -e "\nVIRTUAL_ENV: $VIRTUAL_ENV"
+    echo -e "\nPython version: $(python --version)"
+    echo -e "\nWhich Python: $(which python)"
+    echo -e "\nWhich pip: $(which pip)"
+    echo -e "\npip list: $(pip list)"
 }
 
 write_static_path_to_file() {
