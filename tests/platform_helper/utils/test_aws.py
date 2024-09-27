@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
+from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -556,3 +557,23 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
+
+
+@mock_aws
+@patch("boto3.client")
+def test_validate_opensearch_supported_versions(mock_boto_client):
+    mock_client = mock_boto_client.return_value
+
+    mock_client.list_versions.return_value = {
+        "Versions": [
+            "Elasticsearch_7.10",
+            "OpenSearch_1.0",
+            "OpenSearch_1.1",
+            "OpenSearch_1.2",
+            "OpenSearch_1.3",
+        ]
+    }
+
+    supported_versions = validate_opensearch_supported_versions()
+
+    assert supported_versions == ["1.0", "1.1", "1.2", "1.3"]
