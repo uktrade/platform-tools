@@ -8,11 +8,7 @@ env:
 phases:
   install:
     commands:
-      - echo -e "\nCreate virtual Python environment"
-      - |
-        source regression_tests/src/venv_helper.sh
-        fix_paths_and_activate_venv
-      - ./regression_tests/actions/set_up_aws_config.sh
+      - source ./regression_tests/actions/reactivate_virtual_environment.sh
 
   build:
     commands:

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 function create_and_activate_venv() {
-    echo -e "\nCreating virtual environment"
     rm -rf venv
     python -m venv --copies venv
     echo -e "\nUpdating paths"
