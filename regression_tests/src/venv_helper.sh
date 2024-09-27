@@ -28,7 +28,6 @@ run_checks() {
     echo -e "\nPython version: $(python --version)"
     echo -e "\nWhich Python: $(which python)"
     echo -e "\nWhich pip: $(which pip)"
-    echo -e "\npip list: $(pip list)"
 }
 
 write_static_path_to_file() {
