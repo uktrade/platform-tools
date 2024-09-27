@@ -342,12 +342,27 @@ def validate_redis_supported_versions():
 
     supported_versions = []
 
-    elasticache_client = boto3.client('elasticache')
+    elasticache_client = boto3.client("elasticache")
 
-    supported_versions_response = elasticache_client.describe_cache_engine_versions(
-        Engine='redis'
-    )
+    supported_versions_response = elasticache_client.describe_cache_engine_versions(Engine="redis")
 
-    supported_versions = [version['EngineVersion'] for version in supported_versions_response['CacheEngineVersions']]
+    supported_versions = [
+        version["EngineVersion"] for version in supported_versions_response["CacheEngineVersions"]
+    ]
+
+    return supported_versions
+
+
+def validate_opensearch_supported_versions():
+    supported_versions = []
+    opensearch_client = boto3.client("opensearch")
+
+    response = opensearch_client.list_versions()
+    all_versions = response["Versions"]
+
+    opensearch_versions = [
+        version for version in all_versions if not version.startswith("Elasticsearch_")
+    ]
+    supported_versions = [version.removeprefix("OpenSearch_") for version in opensearch_versions]
 
     return supported_versions

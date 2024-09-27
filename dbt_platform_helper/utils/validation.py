@@ -17,7 +17,7 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.aws import validate_redis_supported_versions
+from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -130,21 +130,6 @@ def validate_addons(addons: dict):
     return errors
 
 
-def validate_opensearch_supported_versions():
-    session = get_aws_session_or_abort()
-    client = session.client("opensearch")
-
-    response = client.list_versions()
-    versions = response["Versions"]
-
-    filtered_versions = [
-        version for version in versions if not version.startswith("Elasticsearch_")
-    ]
-    trimmed_versions = [version.removeprefix("OpenSearch_") for version in filtered_versions]
-
-    return trimmed_versions
-
-
 def int_between(lower, upper):
     def is_between(value):
         if isinstance(value, int) and lower <= value <= upper:
@@ -196,7 +181,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or(*validate_redis_supported_versions())
+REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
 
 REDIS_DEFINITION = {
     "type": "redis",
