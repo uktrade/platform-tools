@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\nEnsure environment not under maintenance\n"
+echo -e "\n\n### Ensure environment not under maintenance\n"
 
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 

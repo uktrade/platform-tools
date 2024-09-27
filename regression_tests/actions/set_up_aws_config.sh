@@ -2,10 +2,11 @@
 
 set -e
 
-echo -e "\n\nAssume platform-sandbox role to trigger environment pipeline\n"
+echo -e "\n\n### Assume platform-sandbox role to trigger environment pipeline\n"
 
 cd "${CODEBUILD_SRC_DIR}"
 
+# Todo: Look to extract to a helper script in a followup pull request
 assumed_role=$(aws sts assume-role \
     --role-arn "arn:aws:iam::$PLATFORM_SANDBOX_AWS_ACCOUNT_ID:role/regression-tests-assume-role-for-platform-tools" \
     --role-session-name "pull-request-regression-tests-$(date +%s)")
