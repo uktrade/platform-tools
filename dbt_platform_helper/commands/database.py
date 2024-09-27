@@ -120,3 +120,122 @@ def get_connection_string(app: str, env: str, db_identifier: str) -> str:
     )
 
     return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
+
+
+#
+# cd ~/paas/platform-tools/images/tools/database-copy2
+#
+# export AWS_PROFILE=platform-tools
+# docker build --tag  public.ecr.aws/uktrade/database-copy:latest .
+# docker push public.ecr.aws/uktrade/database-copy:latest
+#
+# export AWS_PROFILE=platform-prod
+# cd ~/paas/demodjango-deploy/terraform/environments/hotfix
+#
+# TASK_FILE=~/0/task_output.json
+# log_group_name="/ecs/data-copy-poc-ant"
+#
+# aws ecs run-task \
+#         --task-definition arn:aws:ecs:eu-west-2:891377058512:task-definition/data-copy-poc-ant \
+#                                                              --cluster demodjango-prod \
+#                                                                        --capacity-provider-strategy '[{
+# "capacityProvider": "FARGATE",
+# "weight": 1,
+# "base": 0
+# }]' \
+#   --network-configuration '{
+#     "awsvpcConfiguration": {
+# "subnets": ["subnet-0539464b3d3c5c4d2"],
+# "securityGroups": ["sg-0016f40994bbc1c64"],
+# "assignPublicIp": "DISABLED"
+# }
+# }' \
+#   --overrides '{"containerOverrides": [
+# {
+#     "name": "data-copy",
+#     "environment": [
+#         {
+#             "name": "DATA_COPY_OPERATION",
+#             "value": "DUMP"
+#         },
+#         {
+#             "name": "DB_CONNECTION_STRING",
+#             "value": "postgres://postgres:L-SX_S9.t:vb1xME?u~V?Nu8hH|1@demodjango-prod-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+#         }
+#     ]
+# }
+# ]}' | tee ${TASK_FILE}
+#
+# task_arn=$(cat ${TASK_FILE} | jq -r '.tasks[0].taskArn')
+# cluster_arn=$(cat ${TASK_FILE} | jq -r '.tasks[0].clusterArn')
+#
+#
+# timestamp=$(date +"%Y-%m-%dT%H:%M:%S%z")
+#
+# echo "Data Dump Logs:"
+# aws ecs wait tasks-stopped --cluster "${cluster_arn}" --tasks "${task_arn}"
+#
+# aws logs tail ${log_group_name} --since ${timestamp} --output text
+#
+# # last_status=
+# # while [ "${last_status}" != "DEPROVISIONING" ] && [ "${last_status}" != "STOPPED" ]
+# # do
+# # sleep 5
+# # TASK_DESC=$(aws ecs describe-tasks --cluster "${cluster_arn}" --tasks "${task_arn}" | tee some_file.txt)
+# # last_status=$(echo ${TASK_DESC} | jq -r '.tasks[0].lastStatus')
+# # echo STATUS: ${last_status}
+# #
+# # if [ "${last_status}" == "RUNNING" ]
+# # then
+# # cat some_file.txt
+# # fi
+# # done
+#
+#
+# aws ecs run-task \
+#         --task-definition arn:aws:ecs:eu-west-2:891377058512:task-definition/data-copy-poc-ant \
+#                                                              --cluster demodjango-hotfix \
+#                                                                        --capacity-provider-strategy '[{
+#                                                                                                     "capacityProvider": "FARGATE",
+# "weight": 1,
+# "base": 0
+# }]' \
+#   --network-configuration '{
+#     "awsvpcConfiguration": {
+#         "subnets": ["subnet-0ef8bf9b7cc86d6d2"],
+#         "securityGroups": ["sg-00055c7e58cba5fde"],
+#         "assignPublicIp": "DISABLED"
+#     }
+# }' \
+#   --overrides '{"containerOverrides": [
+#     {
+#         "name": "data-copy",
+#         "environment": [
+# {
+#     "name": "DATA_COPY_OPERATION",
+#     "value": "RESTORE"
+# },
+# {
+#     "name": "DB_CONNECTION_STRING",
+#     "value": "postgres://postgres:%25%28Alse%25k%5Dm~yLzZl%3AQ6iT0punfvk@demodjango-hotfix-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+# }
+# ]
+# }
+# ]}' | tee ${TASK_FILE}
+#
+# task_arn=$(cat ${TASK_FILE} | jq -r '.tasks[0].taskArn')
+# cluster_arn=$(cat ${TASK_FILE} | jq -r '.tasks[0].clusterArn')
+#
+#
+# timestamp=$(date +"%Y-%m-%dT%H:%M:%S%z")
+#
+# echo "Data Restore Logs:"
+# aws ecs wait tasks-stopped --cluster "${cluster_arn}" --tasks "${task_arn}"
+#
+# aws logs tail ${log_group_name} --since ${timestamp} --output text
+# # "value": "postgres://postgres:%(Alse%k]m~yLzZl:Q6iT0punfvk@demodjango-hotfix-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+#
+# aws s3 rm s3://data-copy-poc-ant/data_dump.tgz
+#
+# echo DONE
+#
