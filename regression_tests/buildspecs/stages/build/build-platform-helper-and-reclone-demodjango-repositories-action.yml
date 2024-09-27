@@ -20,8 +20,6 @@ phases:
       # so we cannot get the other codebases we need into the same output artifact
       # without re-cloning them.
       - ./regression_tests/actions/clone_demodjango_deploy.sh
-      # Todo: Drop this temporary export
-      - export DEMODJANGO_BRANCH="DBTP-1291-regression-tests-parallel-codepipeline"
       - ./regression_tests/actions/clone_demodjango.sh
       - cd demodjango && poetry install && cd $CODEBUILD_SRC_DIR
 
