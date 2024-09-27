@@ -21,8 +21,6 @@ phases:
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
-      - which platform-helper
-      - platform-helper --version
 
       - source ./regression_tests/actions/set_up_git_config.sh
 
