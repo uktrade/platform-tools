@@ -13,11 +13,10 @@ phases:
 
   build:
     commands:
-      - source regression_tests/src/venv_helper.sh && run_checks
-      # - ./regression_tests/actions/set_up_aws_config.sh
-      # - ./regression_tests/actions/ensure_not_under_maintenance.sh
-      # - source ./regression_tests/actions/run_demodjango_smoke_tests.sh
-      # - ./regression_tests/actions/run_maintenance_page_tests.sh
+      - ./regression_tests/actions/set_up_aws_config.sh
+      - ./regression_tests/actions/ensure_not_under_maintenance.sh
+      - source ./regression_tests/actions/run_demodjango_smoke_tests.sh
+      - ./regression_tests/actions/run_maintenance_page_tests.sh
 
   post_build:
     commands:
