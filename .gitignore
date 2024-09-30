@@ -7,8 +7,6 @@ _py_cache__/
 __py_cache__/
 .git/
 
-src/
-
 .env
 .cache/
 .coverage
