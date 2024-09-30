@@ -13,7 +13,7 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import determine_if_call_required, write_to_cache
+from dbt_platform_helper.utils.files import determine_if_call_required, write_to_cache, read_supported_versions_from_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -364,18 +364,7 @@ def validate_redis_supported_versions():
 
     else:
 
-        # TODO - Method here to read from Cache
-        with open(".platform-helper-config.yml", 'r') as file:
-            platform_helper_config = yaml.safe_load(file)
-            supported_versions = platform_helper_config.get('redis').get('versions')
-
-    # elasticache_client = boto3.client("elasticache")
-
-    # supported_versions_response = elasticache_client.describe_cache_engine_versions(Engine="redis")
-
-    # supported_versions = [
-    #     version["EngineVersion"] for version in supported_versions_response["CacheEngineVersions"]
-    # ]
+        supported_versions = read_supported_versions_from_cache('redis')
 
     return supported_versions
 

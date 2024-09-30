@@ -108,6 +108,13 @@ def apply_environment_defaults(config):
     return enriched_config
 
 
+def read_supported_versions_from_cache(resource_name):
+
+    platform_helper_config = read_file_as_yaml(platform_helper_config_file)
+
+    return platform_helper_config.get(resource_name).get('versions')
+
+
 def write_to_cache(dictionary_to_write):
 
     platform_helper_config = {}
