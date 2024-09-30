@@ -595,10 +595,10 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert "Wrong key 'something-invalid'" in str(ex)
+        assert "Wrong key 'something-invalid'" in str(ex)
 
 
 @pytest.mark.parametrize(
@@ -615,10 +615,10 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert f"Wrong key '{invalid_key}'" in str(ex)
+        assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 @pytest.mark.parametrize(
@@ -635,15 +635,15 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    with pytest.raises(SchemaError) as ex:
+    with pytest.raises(SystemExit) as ex:
         load_and_validate_platform_config()
 
-    assert f"Wrong key '{invalid_key}'" in str(ex)
+        assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
+    """Test that, given the path to an invalid yaml file,
+    load_and_validate_config aborts and prints an error."""
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
