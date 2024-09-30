@@ -4,7 +4,6 @@ import urllib.parse
 from configparser import ConfigParser
 from pathlib import Path
 from typing import Tuple
-from datetime import datetime
 
 import boto3
 import botocore
@@ -13,7 +12,9 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import determine_if_call_required, write_to_cache, read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import cache_refresh_required
+from dbt_platform_helper.utils.files import read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import write_to_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -340,45 +341,55 @@ def update_postgres_parameter_with_master_secret(session, parameter_name, secret
     return parameter_data
 
 
-def validate_redis_supported_versions():
+def validate_redis_supported_versions(session=None):
 
     supported_versions = []
 
-    if determine_if_call_required('redis'):
+    if cache_refresh_required("redis"):
+        if not session:
+            session = get_aws_session_or_abort()
 
-        elasticache_client = boto3.client('elasticache')
+        elasticache_client = boto3.client("elasticache")
 
         supported_versions_response = elasticache_client.describe_cache_engine_versions(
-            Engine='redis'
+            Engine="redis"
         )
 
-        supported_versions = [version['EngineVersion'] for version in supported_versions_response['CacheEngineVersions']]
+        supported_versions = [
+            version["EngineVersion"]
+            for version in supported_versions_response["CacheEngineVersions"]
+        ]
 
-        cache_dict = {
-            'redis': {
-                'versions': supported_versions,
-                'date-retrieved': datetime.now().strftime('%d-%m-%y %H:%M:%S')
-            }
-        }
-        write_to_cache(cache_dict)
+        write_to_cache("redis", supported_versions)
 
     else:
 
-        supported_versions = read_supported_versions_from_cache('redis')
+        supported_versions = read_supported_versions_from_cache("redis")
 
     return supported_versions
 
 
-def validate_opensearch_supported_versions():
+def validate_opensearch_supported_versions(session=None):
     supported_versions = []
-    opensearch_client = boto3.client("opensearch")
 
-    response = opensearch_client.list_versions()
-    all_versions = response["Versions"]
+    if cache_refresh_required("opensearch"):
+        if not session:
+            session = get_aws_session_or_abort()
 
-    opensearch_versions = [
-        version for version in all_versions if not version.startswith("Elasticsearch_")
-    ]
-    supported_versions = [version.removeprefix("OpenSearch_") for version in opensearch_versions]
+        opensearch_client = boto3.client("opensearch")
+
+        response = opensearch_client.list_versions()
+        all_versions = response["Versions"]
+
+        opensearch_versions = [
+            version for version in all_versions if not version.startswith("Elasticsearch_")
+        ]
+        supported_versions = [
+            version.removeprefix("OpenSearch_") for version in opensearch_versions
+        ]
+
+        write_to_cache("opensearch", supported_versions)
+    else:
+        supported_versions = read_supported_versions_from_cache("opensearch")
 
     return supported_versions
