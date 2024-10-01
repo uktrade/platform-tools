@@ -6,7 +6,7 @@ env:
     SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
 
 phases:
-  install:
+  build:
     commands:
       - exit 1
       - source ./regression_tests/actions/create_virtual_environment.sh
@@ -24,8 +24,6 @@ phases:
       - ./regression_tests/actions/clone_demodjango.sh
       - cd demodjango && poetry install && cd $CODEBUILD_SRC_DIR
 
-  build:
-    commands:
       - ./regression_tests/actions/build_platform_helper.sh
 
   post_build:
