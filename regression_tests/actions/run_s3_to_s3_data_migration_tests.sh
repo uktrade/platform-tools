@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\n### Run S3 to S3 data migration tests\n"
+echo -e "\n\n### Run S3 to S3 data migration tests for ${TARGET_ENVIRONMENT} environment\n"
 
 S3_MIGRATION_ROLE="demodjango-${TARGET_ENVIRONMENT}-shared-S3MigrationRole"
 DESTINATION_BUCKET="demodjango-${TARGET_ENVIRONMENT}-shared"
