@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\n### Run maintenance page tests\n"
+echo -e "\n\n### Run maintenance page tests for${TARGET_ENVIRONMENT} environment \n"
 
 cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 echo "Current demodjango-deploy branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"

@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\n### Run demodjango smoke tests"
+echo -e "\n\n### Run demodjango smoke tests for ${TARGET_ENVIRONMENT} environment"
 
 cd "${CODEBUILD_SRC_DIR}/demodjango"
 

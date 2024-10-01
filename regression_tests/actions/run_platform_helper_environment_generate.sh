@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\n### Run platform-helper environment generate\n"
+echo -e "\n\n### Run platform-helper environment generate for ${TARGET_ENVIRONMENT} environment\n"
 
 cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 

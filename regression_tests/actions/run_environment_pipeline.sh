@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\n### Run environment pipeline\n"
+echo -e "\n\n### Run environment pipeline for ${TARGET_ENVIRONMENT} environment\n"
 
 cd "${CODEBUILD_SRC_DIR}"
 
