@@ -1035,21 +1035,13 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "addon_name",
-    [
-        "custom-name-postgres",
-        "custom-name-rds-postgres",
-        "custom-name-redis",
-        "custom-name-opensearch",
-    ],
-)
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
-def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name, validate_version):
+@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
+def test_conduit_command_when_no_cluster_exists(start_conduit, secho, validate_version):
     """Test that given an app, env and addon name strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
     exception."""
@@ -1058,12 +1050,11 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name
 
     start_conduit.side_effect = NoClusterConduitError
 
-    add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
         [
-            addon_name,
+            "mock_addon",
             "--app",
             "test-application",
             "--env",
@@ -1079,22 +1070,14 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, addon_name
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "addon_name",
-    [
-        "custom-name-postgres",
-        "custom-name-rds-postgres",
-        "custom-name-redis",
-        "custom-name-opensearch",
-    ],
-)
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
+@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
 def test_conduit_command_when_no_connection_secret_exists(
-    start_conduit, secho, addon_name, validate_version
+    start_conduit, secho, validate_version
 ):
     """Test that given an app, env and addon name strings, when there is no
     connection secret available, the conduit command handles the
@@ -1102,14 +1085,13 @@ def test_conduit_command_when_no_connection_secret_exists(
     from dbt_platform_helper.commands.conduit import SecretNotFoundConduitError
     from dbt_platform_helper.commands.conduit import conduit
 
-    start_conduit.side_effect = SecretNotFoundConduitError(addon_name)
-
-    add_addon_config_parameter()
+    mock_addon_name = "mock_addon"
+    start_conduit.side_effect = SecretNotFoundConduitError(mock_addon_name)
 
     result = CliRunner().invoke(
         conduit,
         [
-            addon_name,
+            mock_addon_name,
             "--app",
             "test-application",
             "--env",
@@ -1120,28 +1102,20 @@ def test_conduit_command_when_no_connection_secret_exists(
     assert result.exit_code == 1
     validate_version.assert_called_once()
     secho.assert_called_once_with(
-        f"""No secret called "{addon_name}" for "test-application" in "development" environment.""",
+        f"""No secret called "{mock_addon_name}" for "test-application" in "development" environment.""",
         fg="red",
     )
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "addon_name",
-    [
-        "custom-name-postgres",
-        "custom-name-rds-postgres",
-        "custom-name-redis",
-        "custom-name-opensearch",
-    ],
-)
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
+@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
 def test_conduit_command_when_client_task_fails_to_start(
-    start_conduit, secho, addon_name, validate_version
+    start_conduit, secho, validate_version
 ):
     """Test that given an app, env and addon name strings, when the ECS client
     task fails to start, the conduit command handles the
@@ -1149,14 +1123,13 @@ def test_conduit_command_when_client_task_fails_to_start(
     from dbt_platform_helper.commands.conduit import CreateTaskTimeoutConduitError
     from dbt_platform_helper.commands.conduit import conduit
 
+    mock_addon_name = "mock_addon"
     start_conduit.side_effect = CreateTaskTimeoutConduitError
-
-    add_addon_config_parameter()
 
     result = CliRunner().invoke(
         conduit,
         [
-            addon_name,
+            mock_addon_name,
             "--app",
             "test-application",
             "--env",
@@ -1167,7 +1140,7 @@ def test_conduit_command_when_client_task_fails_to_start(
     assert result.exit_code == 1
     validate_version.assert_called_once()
     secho.assert_called_once_with(
-        f"""Client ({addon_name}) ECS task has failed to start for "test-application" in "development" environment.""",
+        f"""Client ({mock_addon_name}) ECS task has failed to start for "test-application" in "development" environment.""",
         fg="red",
     )
 
@@ -1239,20 +1212,11 @@ def test_conduit_command_when_addon_does_not_exist(start_conduit, secho, validat
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "addon_name",
-    [
-        "custom-name-postgres",
-        "custom-name-rds-postgres",
-        "custom-name-redis",
-        "custom-name-opensearch",
-    ],
-)
 @patch("click.secho")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name, validate_version):
+def test_conduit_command_when_no_addon_config_parameter_exists(secho, validate_version):
     """Test that given an app, env and addon name strings, when there is no
     addon config parameter available, the conduit command handles the
     ParameterNotFoundConduitError exception."""
@@ -1261,7 +1225,7 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
     result = CliRunner().invoke(
         conduit,
         [
-            addon_name,
+            "mock_addon",
             "--app",
             "test-application",
             "--env",
@@ -1279,21 +1243,16 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, addon_name
 
 @mock_aws
 @pytest.mark.parametrize(
-    "addon_type, addon_name, access",
-    [
-        ("postgres", "custom-name-postgres", "read"),
-        ("postgres", "custom-name-postgres", "write"),
-        ("postgres", "custom-name-postgres", "admin"),
-    ],
+    "access",
+    ["read", "write", "admin"]
 )
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
+@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="postgres"))
 def test_conduit_command_flags(
     start_conduit,
-    addon_type,
-    addon_name,
     access,
     validate_version,
     mock_application,
@@ -1303,16 +1262,15 @@ def test_conduit_command_flags(
     addon name and the correct boolean values."""
     from dbt_platform_helper.commands.conduit import conduit
 
-    add_addon_config_parameter()
-
+    mock_addon_name = "mock_addon"
     CliRunner().invoke(
         conduit,
-        [addon_name, "--app", "test-application", "--env", "development", "--access", f"{access}"],
+        [mock_addon_name, "--app", "test-application", "--env", "development", "--access", f"{access}"],
     )
 
     validate_version.assert_called_once()
     start_conduit.assert_called_once_with(
-        mock_application, "development", addon_type, addon_name, access
+        mock_application, "development", "postgres", mock_addon_name, access
     )
 
 
