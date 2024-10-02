@@ -2,27 +2,22 @@
 
 echo "TARGET_ENVIRONMENT: ${TARGET_ENVIRONMENT}"
 
-function is_platform_tools_branch_main() {
+function is_everything_on_branch_main() {
     git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"
-}
 
-function is_demodjango_deploy_branch_main() {
     cd demodjango-deploy
     git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"
     cd "$CODEBUILD_SRC_DIR"
-}
 
-function is_demodjango_branch_main() {
     cd demodjango
     git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"
     cd "$CODEBUILD_SRC_DIR"
+
+    #todo: Add terraform-platform-tools when we are targeting branches
 }
 
-#todo: Add terraform-platform-tools when we are targeting branches
 if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && \
-    is_platform_tools_branch_main && \
-    is_demodjango_deploy_branch_main && \
-    is_demodjango_branch_main && \
+    is_everything_on_branch_main && \
     [ "${TARGET_ENVIRONMENT:-toolspr}" == "tony" ]; then
 
     echo -e "\nAction failed sending alert"
