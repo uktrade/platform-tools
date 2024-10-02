@@ -3,7 +3,7 @@
 echo "TARGET_ENVIRONMENT: ${TARGET_ENVIRONMENT}"
 
 function is_platform_tools_branch_main() {
-    git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "1291-sort-out-alerts"
+    git branch --contains $CODEBUILD_RESOLVED_SOURCE_VERSION | grep -q "main"
 }
 
 function is_demodjango_deploy_branch_main() {

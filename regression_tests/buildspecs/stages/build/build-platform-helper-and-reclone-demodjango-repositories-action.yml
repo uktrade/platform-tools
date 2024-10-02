@@ -7,7 +7,6 @@ env:
 phases:
   build:
     commands:
-      - exit 1
       - echo -e "\nCurrent platform-tools branch/commit $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"
 
       - source ./regression_tests/actions/create_virtual_environment.sh
