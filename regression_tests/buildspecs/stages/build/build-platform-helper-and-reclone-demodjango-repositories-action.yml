@@ -3,7 +3,7 @@ version: 0.2
 env:
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
-    SLACK_CHANNEL_ID: /codebuild/slack_channel_id_test_command_output
+#    SLACK_CHANNEL_ID: /codebuild/slack_channel_id_test_command_output
 
 phases:
   build:
