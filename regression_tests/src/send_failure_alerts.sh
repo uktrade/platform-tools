@@ -18,7 +18,7 @@ function is_everything_on_branch_main() {
 
 if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ] && \
     is_everything_on_branch_main && \
-    [ "${TARGET_ENVIRONMENT:-toolspr}" == "tony" ]; then
+    [ "${TARGET_ENVIRONMENT:-toolspr}" == "toolspr" ]; then
 
     echo -e "\nAction failed sending alert"
     pip install dbt-platform-helper
