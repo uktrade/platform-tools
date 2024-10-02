@@ -5,13 +5,10 @@ env:
     SLACK_TOKEN: /codebuild/slack_oauth_token
 
 phases:
-  install:
+  build:
     commands:
       - source ./regression_tests/actions/reactivate_virtual_environment.sh
       - source ./regression_tests/actions/set_up_aws_config.sh
-
-  build:
-    commands:
       - ./regression_tests/actions/run_codebase_pipeline.sh
 
   post_build:
