@@ -910,3 +910,63 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capf
 
     msg = f"Copying to a prod environment is not supported. database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
     assert msg in console_message
+
+
+def test_validate_database_copy_complex_success():
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "test"}],
+            },
+            "our-other-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "test"}, {"from": "prod", "to": "dev"}],
+            },
+        },
+    }
+
+    validate_database_copy_section(config)
+
+    # Should get here fine if the config is valid.
+
+
+def test_validate_database_copy_complex_failures(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "devvv", "to": "test"}],
+            },
+            "our-other-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "test", "to": "test"}, {"from": "dev", "to": "prod"}],
+            },
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    assert (
+        f"database_copy 'from' parameter must be a valid environment (dev, test, prod) but was 'devv' in extension 'our-postgres'."
+        in console_message
+    )
+    assert (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-other-postgres'."
+        in console_message
+    )
+    assert (
+        f"Copying to a prod environment is not supported. database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
+        in console_message
+    )
