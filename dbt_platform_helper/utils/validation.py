@@ -564,12 +564,18 @@ def validate_database_copy_section(config):
     errors = []
 
     from_env = database_copy_section["from"]
+    to_env = database_copy_section["to"]
+    
+    if from_env == to_env:
+        errors.append(
+            f"database_copy 'to' and 'from' cannot be the same environment in extension '{first_extension_name}'."
+        )
+    
     if from_env not in all_environments:
         errors.append(
             f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{first_extension_name}'."
         )
 
-    to_env = database_copy_section["to"]
     if to_env not in all_environments:
         errors.append(
             f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{first_extension_name}'."

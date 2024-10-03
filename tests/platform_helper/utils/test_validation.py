@@ -854,3 +854,25 @@ def test_validate_database_copy_section_failure_cases(
     for param in expected_parameters:
         msg = f"database_copy '{param}' parameter must be a valid environment (dev, test, prod) but was 'hotfix' in extension 'our-postgres'."
         assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": {"from": "dev", "to": "dev"}
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+    assert msg in console_message
