@@ -52,7 +52,9 @@ def test_conduit_command(start_conduit, addon_type, addon_name, validate_version
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
-@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
+@patch(
+    "dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type")
+)
 def test_conduit_command_when_no_cluster_exists(start_conduit, secho, validate_version):
     """Test that given an app, env and addon name strings, when there is no ECS
     Cluster available, the conduit command handles the NoClusterConduitError
@@ -61,7 +63,6 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, validate_v
     from dbt_platform_helper.commands.conduit import conduit
 
     start_conduit.side_effect = NoClusterConduitError
-
 
     result = CliRunner().invoke(
         conduit,
@@ -87,10 +88,10 @@ def test_conduit_command_when_no_cluster_exists(start_conduit, secho, validate_v
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
-@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
-def test_conduit_command_when_no_connection_secret_exists(
-    start_conduit, secho, validate_version
-):
+@patch(
+    "dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type")
+)
+def test_conduit_command_when_no_connection_secret_exists(start_conduit, secho, validate_version):
     """Test that given an app, env and addon name strings, when there is no
     connection secret available, the conduit command handles the
     NoConnectionSecretError exception."""
@@ -125,10 +126,10 @@ def test_conduit_command_when_no_connection_secret_exists(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch("dbt_platform_helper.commands.conduit.start_conduit")
-@patch("dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type"))
-def test_conduit_command_when_client_task_fails_to_start(
-    start_conduit, secho, validate_version
-):
+@patch(
+    "dbt_platform_helper.commands.conduit.get_addon_type", new=Mock(return_value="mock_addon_type")
+)
+def test_conduit_command_when_client_task_fails_to_start(start_conduit, secho, validate_version):
     """Test that given an app, env and addon name strings, when the ECS client
     task fails to start, the conduit command handles the
     TaskConnectionTimeoutError exception."""
@@ -254,10 +255,7 @@ def test_conduit_command_when_no_addon_config_parameter_exists(secho, validate_v
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "access",
-    ["read", "write", "admin"]
-)
+@pytest.mark.parametrize("access", ["read", "write", "admin"])
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
@@ -277,7 +275,15 @@ def test_conduit_command_flags(
     mock_addon_name = "mock_addon"
     CliRunner().invoke(
         conduit,
-        [mock_addon_name, "--app", "test-application", "--env", "development", "--access", f"{access}"],
+        [
+            mock_addon_name,
+            "--app",
+            "test-application",
+            "--env",
+            "development",
+            "--access",
+            f"{access}",
+        ],
     )
 
     validate_version.assert_called_once()
