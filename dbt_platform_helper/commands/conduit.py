@@ -416,7 +416,6 @@ def conduit(addon_name: str, app: str, env: str, access: str):
 
     try:
         addon_type = get_addon_type(application, env, addon_name)
-        start_conduit(application, env, addon_type, addon_name, access)
     except ParameterNotFoundConduitError:
         click.secho(
             f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
@@ -435,6 +434,9 @@ def conduit(addon_name: str, app: str, env: str, access: str):
             fg="red",
         )
         exit(1)
+
+    try:
+        start_conduit(application, env, addon_type, addon_name, access)
     except NoClusterConduitError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
