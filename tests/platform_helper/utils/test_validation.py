@@ -878,3 +878,29 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
         f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
     )
     assert msg in console_message
+
+
+@pytest.mark.parametrize(
+    "env_name",
+    ["prod", "prod-env", "env-that-is-prod", "thing-prod-thing"],
+)
+def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capfd, env_name):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": {"from": "dev", "to": env_name},
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Copying to a prod environment is not supported. database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
+    assert msg in console_message

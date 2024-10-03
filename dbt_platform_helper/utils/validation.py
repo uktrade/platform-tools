@@ -571,6 +571,11 @@ def validate_database_copy_section(config):
             f"database_copy 'to' and 'from' cannot be the same environment in extension '{first_extension_name}'."
         )
 
+    if "prod" in to_env:
+        errors.append(
+            f"Copying to a prod environment is not supported. database_copy 'to' cannot be '{to_env}' in extension '{first_extension_name}'."
+        )
+
     if from_env not in all_environments:
         errors.append(
             f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{first_extension_name}'."
