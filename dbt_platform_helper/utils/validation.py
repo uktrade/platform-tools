@@ -222,6 +222,9 @@ RETENTION_POLICY = Or(
         Or("days", "years", only_one=True): int,
     },
 )
+
+DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME}
+
 POSTGRES_DEFINITION = {
     "type": "postgres",
     "version": NUMBER,
@@ -239,6 +242,7 @@ POSTGRES_DEFINITION = {
             Optional("backup_retention_days"): int_between(1, 35),
         }
     },
+    Optional("database_copy"): [DATABASE_COPY],
     Optional("objects"): [
         {
             "key": str,

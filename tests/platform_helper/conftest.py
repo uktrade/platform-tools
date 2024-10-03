@@ -464,11 +464,16 @@ extensions:
     environments:
       prod:
         backup_retention_days: 10
+      hotfix:
+        backup_retention_days: 10
       dev:
         deletion_protection: true
       staging:
         deletion_protection: true
         deletion_policy: Retain
+    database_copy:
+        - from: prod
+          to: hotfix
 
   test-app-opensearch:
     type: opensearch

@@ -159,6 +159,9 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-rds-multi_az-should-be-bool": r"'environments'.*'default'.*multi_az.*10 should be instance of 'bool'",
                 "my-rds-storage_type-should-valid-option": r"'environments'.*'default'.*storage_type.*'io2' does not match 'floppydisc'",
                 "my-rds-backup-retention-too-high": r"environments'.*'default'.*'backup_retention_days'.*should be an integer between 1 and 35",
+                "my-rds-data-migration-invalid-environments": r"Environment name \$ is invalid: names must only contain lowercase alphanumeric characters, or be the '\*' default environment",
+                "my-rds-data-migration-missing-key": r"Missing key: 'to'.*",
+                "my-rds-data-migration-invalid-key": r"Wrong key 'non-existent-key' in.*",
             },
         ),
         (
