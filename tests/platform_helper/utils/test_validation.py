@@ -800,7 +800,11 @@ def test_config_file_check_warns_if_deprecated_files_exist(
 
 @pytest.mark.parametrize(
     "database_copy_section",
-    [None, [{"from": "dev", "to": "test"}]],
+    [
+        None,
+        [{"from": "dev", "to": "test"}],
+        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test"}],
+    ],
 )
 def test_validate_database_copy_section_success_cases(database_copy_section):
     config = {
@@ -828,6 +832,8 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
         ([{"from": "hotfix", "to": "test"}], ["from"]),
         ([{"from": "dev", "to": "hotfix"}], ["to"]),
         ([{"from": "hotfix", "to": "hotfix"}], ["to", "from"]),
+        ([{"from": "test", "to": "dev"}, {"from": "dev", "to": "hotfix"}], ["to"]),
+        ([{"from": "hotfix", "to": "test"}, {"from": "dev", "to": "test"}], ["from"]),
     ],
 )
 def test_validate_database_copy_section_failure_cases(
