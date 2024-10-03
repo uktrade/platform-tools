@@ -539,6 +539,46 @@ def validate_platform_config(config, disable_aws_validation=False):
         _validate_s3_bucket_uniqueness(enriched_config)
 
 
+def validate_database_copy_section(config):
+    extensions = config.get("extensions", {})
+    if not extensions:
+        return
+
+    postgres_extensions = {
+        key: ext for key, ext in extensions.items() if ext.get("type", None) == "postgres"
+    }
+
+    if not postgres_extensions:
+        return
+
+    first_extension_name = list(postgres_extensions.keys())[0]
+    extension = postgres_extensions[first_extension_name]
+    database_copy_section = extension.get("database_copy", {})
+
+    if not database_copy_section:
+        return
+
+    all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
+    all_envs_string = ", ".join(all_environments)
+
+    errors = []
+
+    from_env = database_copy_section["from"]
+    if from_env not in all_environments:
+        errors.append(
+            f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{first_extension_name}'."
+        )
+
+    to_env = database_copy_section["to"]
+    if to_env not in all_environments:
+        errors.append(
+            f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{first_extension_name}'."
+        )
+
+    if errors:
+        abort_with_error("\n".join(errors))
+
+
 def _validate_environment_pipelines(config):
     bad_pipelines = {}
     for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
