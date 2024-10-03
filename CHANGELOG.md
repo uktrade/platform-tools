@@ -1,5 +1,14 @@
 # Changelog
 
+## [10.11.3](https://github.com/uktrade/platform-tools/compare/10.11.2...10.11.3) (2024-10-02)
+
+
+### Bug Fixes
+
+* DBTP-1373 - Handle SchemaErrors from platform config validation gracefully ([#584](https://github.com/uktrade/platform-tools/issues/584)) ([8324049](https://github.com/uktrade/platform-tools/commit/83240491fede3130c5c4d338029bb139bf7d2ef0))
+* DBTP-1375 - platform helper version get-platform-helper-for-project no longer validates config ([#575](https://github.com/uktrade/platform-tools/issues/575)) ([f62c25d](https://github.com/uktrade/platform-tools/commit/f62c25d5fcb218c1668be1a7043ca45745c7c03b))
+* fix typo ([#591](https://github.com/uktrade/platform-tools/issues/591)) ([8f48dd3](https://github.com/uktrade/platform-tools/commit/8f48dd3dc6449045add87215483a625290b21484))
+
 ## [10.11.2](https://github.com/uktrade/platform-tools/compare/10.11.1...10.11.2) (2024-09-26)
 
 
