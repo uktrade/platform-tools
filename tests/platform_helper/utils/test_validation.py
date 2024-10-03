@@ -864,7 +864,7 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
             "our-postgres": {
                 "type": "postgres",
                 "version": 7,
-                "database_copy": {"from": "dev", "to": "dev"}
+                "database_copy": {"from": "dev", "to": "dev"},
             }
         },
     }
@@ -874,5 +874,7 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
 
     console_message = capfd.readouterr().err
 
-    msg = f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+    msg = (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+    )
     assert msg in console_message
