@@ -800,7 +800,7 @@ def test_config_file_check_warns_if_deprecated_files_exist(
 
 @pytest.mark.parametrize(
     "database_copy_section",
-    [None, {"from": "dev", "to": "test"}],
+    [None, [{"from": "dev", "to": "test"}]],
 )
 def test_validate_database_copy_section_success_cases(database_copy_section):
     config = {
@@ -825,9 +825,9 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
 @pytest.mark.parametrize(
     "database_copy_section, expected_parameters",
     [
-        ({"from": "hotfix", "to": "test"}, ["from"]),
-        ({"from": "dev", "to": "hotfix"}, ["to"]),
-        ({"from": "hotfix", "to": "hotfix"}, ["to", "from"]),
+        ([{"from": "hotfix", "to": "test"}], ["from"]),
+        ([{"from": "dev", "to": "hotfix"}], ["to"]),
+        ([{"from": "hotfix", "to": "hotfix"}], ["to", "from"]),
     ],
 )
 def test_validate_database_copy_section_failure_cases(
@@ -864,7 +864,7 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
             "our-postgres": {
                 "type": "postgres",
                 "version": 7,
-                "database_copy": {"from": "dev", "to": "dev"},
+                "database_copy": [{"from": "dev", "to": "dev"}],
             }
         },
     }
@@ -892,7 +892,7 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capf
             "our-postgres": {
                 "type": "postgres",
                 "version": 7,
-                "database_copy": {"from": "dev", "to": env_name},
+                "database_copy": [{"from": "dev", "to": env_name}],
             }
         },
     }

@@ -553,7 +553,7 @@ def validate_database_copy_section(config):
 
     first_extension_name = list(postgres_extensions.keys())[0]
     extension = postgres_extensions[first_extension_name]
-    database_copy_section = extension.get("database_copy", {})
+    database_copy_section = extension.get("database_copy", [])
 
     if not database_copy_section:
         return
@@ -563,8 +563,8 @@ def validate_database_copy_section(config):
 
     errors = []
 
-    from_env = database_copy_section["from"]
-    to_env = database_copy_section["to"]
+    from_env = database_copy_section[0]["from"]
+    to_env = database_copy_section[0]["to"]
 
     if from_env == to_env:
         errors.append(
