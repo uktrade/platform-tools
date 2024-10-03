@@ -49,26 +49,6 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 `poetry run pytest --numprocesses 0`
 
-#### Regression tests
-
-Amongst other things designed to exercise our tools together, the regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run the smoke tests.
-
-At present, this is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
-
-You can manually trigger a run from the `platform-tools-test` AWS CodeBuild project.
-
-To test your `platform-tools` changes before merging, use "Start build with overrides" and set the "Source version" to your branch name.
-
-You may wish to run tests against a `demodjango` environment other than `toolspr`. 
-
-In order for this to work, you will need to have deployed environment and codebase pipelines for your environment. See the `toolspr` examples in [demodjango-deploy/platform-config.yml](https://github.com/uktrade/demodjango-deploy/blob/main/platform-config.yml).
-
-To run the regression tests against your environment, select "Start build with overrides", navigate to "Additional configuration" in the "Environment" section, and set `TARGET_ENVIRONMENT` environment variable value to your environment name.
-
-To run the regression test against a specific branch for demodjango and demodjango-deploy you can use the "Start build with overrides" and add the following variables to "Additional configuration" in the "Environment" section.  `DEMODJANGO_DEPLOY_BRANCH` or `DEMODJANGO_BRANCH`.  However to ensure the ci-image-builder also used that same branch for demodjango image build, you will need to also add the VAR `DEPLOY_REPOSITORY_BRANCH` to the `pipeline-demodjango-application-<env>\DeployTo-<env>` in the platform-sandbox account.
-
-Because we are currently targeting the same environment for all runs and AWS CodeBuild does not support queueing, it is essential that we do not start a regression test run while another is in progress, communicate with the team and check in the `platform-tools-test` AWS CodeBuild project.
-
 #### Manual testing
 
 You may want to test any CLI changes locally.
