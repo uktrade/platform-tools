@@ -115,7 +115,7 @@ For an optional manual check, install the package locally and test everything wo
 
 #### Merging to main
 
-- Merging to `main` will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
+- Merging to `main` will trigger the `pull-request-regression-tests` pipeline in the _platform-tools_ AWS account to run regression tests
 - We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to `main`
   - The _release PR_ will automatically update the _pyproject.toml_ version number and generate release notes based on the commits merged since the last release
   - Merging the _release PR_ will create a draft GitHub release for the next version with release notes
@@ -124,7 +124,7 @@ For an optional manual check, install the package locally and test everything wo
 
 Publishing a GitHub release should automatically:
 
-- Run the full regression pipeline (currently WIP)
+- Run the full `pull-request-regression-tests` pipeline (currently WIP)
 - Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
 - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
 - Push a notification to the development community via the #developers channel in Slack
