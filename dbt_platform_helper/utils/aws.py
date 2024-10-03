@@ -349,7 +349,7 @@ def validate_redis_supported_versions(session=None):
         if not session:
             session = get_aws_session_or_abort()
 
-        elasticache_client = boto3.client("elasticache")
+        elasticache_client = session.client("elasticache")
 
         supported_versions_response = elasticache_client.describe_cache_engine_versions(
             Engine="redis"
@@ -376,7 +376,7 @@ def validate_opensearch_supported_versions(session=None):
         if not session:
             session = get_aws_session_or_abort()
 
-        opensearch_client = boto3.client("opensearch")
+        opensearch_client = session.client("opensearch")
 
         response = opensearch_client.list_versions()
         all_versions = response["Versions"]
