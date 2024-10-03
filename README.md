@@ -49,26 +49,6 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 `poetry run pytest --numprocesses 0`
 
-#### Regression tests
-
-Amongst other things designed to exercise our tools together, the regression tests will attempt to deploy `demodjango` to the `toolspr` environment and run the smoke tests.
-
-At present, this is currently only triggered on merges to the `main` branch for this code base and on a schedule early every morning.
-
-You can manually trigger a run from the `platform-tools-test` AWS CodeBuild project.
-
-To test your `platform-tools` changes before merging, use "Start build with overrides" and set the "Source version" to your branch name.
-
-You may wish to run tests against a `demodjango` environment other than `toolspr`. 
-
-In order for this to work, you will need to have deployed environment and codebase pipelines for your environment. See the `toolspr` examples in [demodjango-deploy/platform-config.yml](https://github.com/uktrade/demodjango-deploy/blob/main/platform-config.yml).
-
-To run the regression tests against your environment, select "Start build with overrides", navigate to "Additional configuration" in the "Environment" section, and set `TARGET_ENVIRONMENT` environment variable value to your environment name.
-
-To run the regression test against a specific branch for demodjango and demodjango-deploy you can use the "Start build with overrides" and add the following variables to "Additional configuration" in the "Environment" section.  `DEMODJANGO_DEPLOY_BRANCH` or `DEMODJANGO_BRANCH`.  However to ensure the ci-image-builder also used that same branch for demodjango image build, you will need to also add the VAR `DEPLOY_REPOSITORY_BRANCH` to the `pipeline-demodjango-application-<env>\DeployTo-<env>` in the platform-sandbox account.
-
-Because we are currently targeting the same environment for all runs and AWS CodeBuild does not support queueing, it is essential that we do not start a regression test run while another is in progress, communicate with the team and check in the `platform-tools-test` AWS CodeBuild project.
-
 #### Manual testing
 
 You may want to test any CLI changes locally.
@@ -135,7 +115,7 @@ For an optional manual check, install the package locally and test everything wo
 
 #### Merging to main
 
-- Merging to `main` will trigger a CodeBuild project called `platform-tools-test` in the _platform-tools_ AWS account to run regression tests on `merge to main / pull request created / pull request updated` events emitted by GitHub
+- Merging to `main` will trigger the `pull-request-regression-tests` pipeline in the _platform-tools_ AWS account to run regression tests
 - We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to `main`
   - The _release PR_ will automatically update the _pyproject.toml_ version number and generate release notes based on the commits merged since the last release
   - Merging the _release PR_ will create a draft GitHub release for the next version with release notes
@@ -144,7 +124,7 @@ For an optional manual check, install the package locally and test everything wo
 
 Publishing a GitHub release should automatically:
 
-- Run the full regression pipeline (currently WIP)
+- Run the full `pull-request-regression-tests` pipeline
 - Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
 - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
 - Push a notification to the development community via the #developers channel in Slack
