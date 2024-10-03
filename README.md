@@ -124,7 +124,7 @@ For an optional manual check, install the package locally and test everything wo
 
 Publishing a GitHub release should automatically:
 
-- Run the full `pull-request-regression-tests` pipeline (currently WIP)
+- Run the full `pull-request-regression-tests` pipeline
 - Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
 - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
 - Push a notification to the development community via the #developers channel in Slack
