@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\nRun platform-helper generate (which runs copilot make-addons & pipeline generate)\n"
+echo -e "\n\n### Run platform-helper generate (which runs copilot make-addons & pipeline generate)\n"
 
 cd "${CODEBUILD_SRC_DIR}/demodjango-deploy"
 

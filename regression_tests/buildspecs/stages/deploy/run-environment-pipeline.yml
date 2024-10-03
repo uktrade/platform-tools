@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  build:
+    commands:
+      - source ./regression_tests/actions/reactivate_virtual_environment.sh
+      - source ./regression_tests/actions/set_up_aws_config.sh
+      - ./regression_tests/actions/run_environment_pipeline.sh
+
+  post_build:
+    commands:
+      - ./regression_tests/src/send_failure_alerts.sh
+
+artifacts:
+  files:
+    - '**/*'

@@ -2,7 +2,7 @@
 
 set -e
 
-echo -e "\n\nGet CodeStar connection details\n"
+echo -e "\n\n### Get CodeStar connection details\n"
 
 codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
 aws_account=$(echo "$codestar_connections" | jq -r ".[0].OwnerAccountId")
