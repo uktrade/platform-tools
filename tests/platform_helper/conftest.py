@@ -473,7 +473,7 @@ extensions:
         deletion_policy: Retain
     database_copy:
         - from: prod
-          to: hotfix
+          to: staging
 
   test-app-opensearch:
     type: opensearch

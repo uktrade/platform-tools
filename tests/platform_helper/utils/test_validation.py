@@ -521,7 +521,36 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
-def test_validate_platform_config_catches_all_errors_across_multiple_pipelines(
+def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
+    mock_abort_with_error,
+):
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "dev"}],
+            }
+        },
+    }
+
+    validate_platform_config(config)
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+        in message
+    )
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+def test_validate_platform_config_catches_database_copy_errors(
     mock_abort_with_error, platform_env_config
 ):
     platform_env_config["environment_pipelines"] = {
