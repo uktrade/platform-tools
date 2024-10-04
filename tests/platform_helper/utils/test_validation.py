@@ -521,7 +521,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
-def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
+def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     mock_abort_with_error,
 ):
     """Edge cases for this are all covered in unit tests of
