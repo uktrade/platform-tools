@@ -181,7 +181,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or(*validate_redis_supported_versions())
+REDIS_ENGINE_VERSIONS = Or('foo')
 
 REDIS_DEFINITION = {
     "type": "redis",
@@ -346,7 +346,7 @@ MONITORING_DEFINITION = {
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
-OPENSEARCH_ENGINE_VERSIONS = Or(*validate_opensearch_supported_versions())
+OPENSEARCH_ENGINE_VERSIONS = Or('bar')
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 OPENSEARCH_MAX_VOLUME_SIZE = {
     "tiny": 100,
@@ -527,6 +527,75 @@ def _validate_s3_bucket_uniqueness(enriched_config):
 
 
 def validate_platform_config(config, disable_aws_validation=False):
+
+    REDIS_ENGINE_VERSIONS = Or(*validate_redis_supported_versions())
+    OPENSEARCH_ENGINE_VERSIONS = Or(*validate_opensearch_supported_versions())
+
+    REDIS_DEFINITION = {
+    "type": "redis",
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("plan"): REDIS_PLANS,
+            Optional("engine"): REDIS_ENGINE_VERSIONS,
+            Optional("replicas"): int_between(0, 5),
+            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("apply_immediately"): bool,
+            Optional("automatic_failover_enabled"): bool,
+            Optional("instance"): str,
+            Optional("multi_az_enabled"): bool,
+            }
+        },
+    }
+
+    OPENSEARCH_DEFINITION = {
+    "type": "opensearch",
+    Optional("environments"): {
+        ENV_NAME: {
+            Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
+            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("plan"): OPENSEARCH_PLANS,
+            Optional("volume_size"): int,
+            Optional("ebs_throughput"): int,
+            Optional("ebs_volume_type"): str,
+            Optional("instance"): str,
+            Optional("instances"): int,
+            Optional("master"): bool,
+            Optional("es_app_log_retention_in_days"): int,
+            Optional("index_slow_log_retention_in_days"): int,
+            Optional("audit_log_retention_in_days"): int,
+            Optional("search_slow_log_retention_in_days"): int,
+            Optional("password_special_characters"): str,
+            Optional("urlencode_password"): bool,
+            }
+        },
+    }
+
+    PLATFORM_CONFIG_SCHEMA = Schema(
+        {
+            # The following line is for the AWS Copilot version, will be removed under DBTP-1002
+            "application": str,
+            Optional("legacy_project", default=False): bool,
+            Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
+            Optional("accounts"): list[str],
+            Optional("environments"): ENVIRONMENTS_DEFINITION,
+            Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
+            Optional("extensions"): {
+                str: Or(
+                    REDIS_DEFINITION,
+                    AURORA_DEFINITION,
+                    POSTGRES_DEFINITION,
+                    S3_DEFINITION,
+                    S3_POLICY_DEFINITION,
+                    MONITORING_DEFINITION,
+                    OPENSEARCH_DEFINITION,
+                    ALB_DEFINITION,
+                    PROMETHEUS_POLICY_DEFINITION,
+                )
+            },
+            Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
+        }
+    )
+
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
