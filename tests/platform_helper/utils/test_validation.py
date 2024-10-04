@@ -908,11 +908,11 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capf
 
     console_message = capfd.readouterr().err
 
-    msg = f"Copying to a prod environment is not supported. database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
+    msg = f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
     assert msg in console_message
 
 
-def test_validate_database_copy_complex_success():
+def test_validate_database_copy_multi_postgres_success():
     config = {
         "application": "test-app",
         "environments": {"dev": {}, "test": {}, "prod": {}},
@@ -935,7 +935,7 @@ def test_validate_database_copy_complex_success():
     # Should get here fine if the config is valid.
 
 
-def test_validate_database_copy_complex_failures(capfd):
+def test_validate_database_copy_multi_postgres_failures(capfd):
     config = {
         "application": "test-app",
         "environments": {"dev": {}, "test": {}, "prod": {}},
@@ -959,7 +959,7 @@ def test_validate_database_copy_complex_failures(capfd):
     console_message = capfd.readouterr().err
 
     assert (
-        f"database_copy 'from' parameter must be a valid environment (dev, test, prod) but was 'devv' in extension 'our-postgres'."
+        f"database_copy 'from' parameter must be a valid environment (dev, test, prod) but was 'devvv' in extension 'our-postgres'."
         in console_message
     )
     assert (
@@ -967,6 +967,6 @@ def test_validate_database_copy_complex_failures(capfd):
         in console_message
     )
     assert (
-        f"Copying to a prod environment is not supported. database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
+        f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )

@@ -551,41 +551,40 @@ def validate_database_copy_section(config):
     if not postgres_extensions:
         return
 
-    first_extension_name = list(postgres_extensions.keys())[0]
-    extension = postgres_extensions[first_extension_name]
-    database_copy_sections = extension.get("database_copy", [])
-
-    if not database_copy_sections:
-        return
-
-    all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
-    all_envs_string = ", ".join(all_environments)
-
     errors = []
 
-    for section in database_copy_sections:
-        from_env = section["from"]
-        to_env = section["to"]
+    for extension_name, extension in postgres_extensions.items():
+        database_copy_sections = extension.get("database_copy", [])
 
-        if from_env == to_env:
-            errors.append(
-                f"database_copy 'to' and 'from' cannot be the same environment in extension '{first_extension_name}'."
-            )
+        if not database_copy_sections:
+            return
 
-        if "prod" in to_env:
-            errors.append(
-                f"Copying to a prod environment is not supported. database_copy 'to' cannot be '{to_env}' in extension '{first_extension_name}'."
-            )
+        all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
+        all_envs_string = ", ".join(all_environments)
 
-        if from_env not in all_environments:
-            errors.append(
-                f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{first_extension_name}'."
-            )
+        for section in database_copy_sections:
+            from_env = section["from"]
+            to_env = section["to"]
 
-        if to_env not in all_environments:
-            errors.append(
-                f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{first_extension_name}'."
-            )
+            if from_env == to_env:
+                errors.append(
+                    f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
+                )
+
+            if "prod" in to_env:
+                errors.append(
+                    f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{to_env}' in extension '{extension_name}'."
+                )
+
+            if from_env not in all_environments:
+                errors.append(
+                    f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{extension_name}'."
+                )
+
+            if to_env not in all_environments:
+                errors.append(
+                    f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
+                )
 
     if errors:
         abort_with_error("\n".join(errors))
