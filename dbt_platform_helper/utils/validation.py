@@ -17,8 +17,8 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions, validate_redis_supported_versions
-from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions, get_redis_supported_versions
+from dbt_platform_helper.utils.files import apply_environment_defaults, cache_refresh_required, read_supported_versions_from_cache
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -123,6 +123,7 @@ def validate_addons(addons: dict):
                 continue
             schema.validate(addon)
         except SchemaError as ex:
+            print(f"Schema Error: {ex}")
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
     _validate_s3_bucket_uniqueness({"extensions": addons})
@@ -538,10 +539,21 @@ def validate_platform_config(config, disable_aws_validation=False):
         _validate_redis_versions(config)
         _validate_opensearch_versions(config)
 
+    
+# TODO Test for get_redis_supported_versions() and for read_supported_versions_from_cache
+# TODO test for _validate_redis_versions, patch cache_Refresh_required=True and read_supported_versions_from_cache=['7.1', '6.2'] happy path.
+# TODO add redis/opensearch version validation to validate_addons, update tests.
+
 
 def _validate_redis_versions(config):
 
-    supported_redis_versions = validate_redis_supported_versions()
+    supported_redis_versions = []
+
+    if cache_refresh_required('redis'):
+        supported_redis_versions = get_redis_supported_versions()
+    else:
+        supported_redis_versions = read_supported_versions_from_cache('redis')
+
     redis_extensions = []
     redis_environments_with_failure = []
 
@@ -565,7 +577,13 @@ def _validate_redis_versions(config):
 
 def _validate_opensearch_versions(config):
 
-    supported_opensearch_versions = validate_opensearch_supported_versions()
+    supported_opensearch_versions = []
+
+    if cache_refresh_required('opensearch'):
+        supported_opensearch_versions = validate_opensearch_supported_versions()
+    else:
+        supported_opensearch_versions = read_supported_versions_from_cache('opensearch')
+
     opensearch_extensions = []
     opensearch_environments_with_failure = []
 
