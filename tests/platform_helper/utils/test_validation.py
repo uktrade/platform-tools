@@ -417,7 +417,7 @@ def test_validate_s3_bucket_name_multiple_failures():
 def test_validate_platform_config_success(
     mock_warn_on_s3_bucket_name_availability, valid_platform_config
 ):
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     assert mock_warn_on_s3_bucket_name_availability.called
 
 
@@ -439,7 +439,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
         "pipeline_to_trigger"
     ] = pipeline_to_trigger
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -458,7 +458,7 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
         "pipeline_to_trigger"
     ] = "non-existent-pipeline"
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -475,7 +475,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
 ):
     valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -504,7 +504,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
     message = mock_abort_with_error.call_args.args[0]
 
@@ -535,7 +535,7 @@ def test_validate_platform_config_catches_all_errors_across_multiple_pipelines(
         },
     }
 
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
     message = mock_abort_with_error.call_args.args[0]
 
@@ -565,7 +565,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     }
 
     # Should not error if config is sound.
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
 
 @pytest.mark.parametrize(
@@ -581,7 +581,7 @@ def test_load_and_validate_config_valid_file(yaml_file):
     returns the loaded yaml unmodified."""
 
     path = FIXTURES_DIR / yaml_file
-    validated = load_and_validate_platform_config(path=path)
+    validated = load_and_validate_platform_config(path=path, disable_aws_validation=True)
 
     with open(path, "r") as fd:
         conf = yaml.safe_load(fd)
@@ -596,7 +596,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert "Wrong key 'something-invalid'" in str(ex)
 
@@ -616,7 +616,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
@@ -636,7 +636,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
@@ -647,7 +647,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
     assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
@@ -655,7 +655,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 def test_validation_runs_against_platform_config_yml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents='{"application": "my_app"}')
 
-    config = load_and_validate_platform_config()
+    config = load_and_validate_platform_config(disable_aws_validation=True)
 
     assert list(config.keys()) == ["application"]
     assert config["application"] == "my_app"
@@ -663,7 +663,7 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
-    load_and_validate_platform_config()
+    load_and_validate_platform_config(disable_aws_validation=True)
 
     assert "Warning" not in capfd.readouterr().out
     assert mock_get_session.called
@@ -685,7 +685,7 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
     response = {"Error": {"Code": "403"}}
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")
 
-    load_and_validate_platform_config()
+    load_and_validate_platform_config(disable_aws_validation=True)
 
     assert "Warning" in capfd.readouterr().out
     assert mock_get_session.called
@@ -711,7 +711,7 @@ def test_load_and_validate_platform_config_skips_file_check_when_disable_file_ch
     mock_config_file_check, capfd, fakefs
 ):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
-    load_and_validate_platform_config(disable_file_check=True)
+    load_and_validate_platform_config(disable_file_check=True, disable_aws_validation=True)
 
     assert not mock_config_file_check.called
 
