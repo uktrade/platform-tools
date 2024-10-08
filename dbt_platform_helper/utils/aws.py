@@ -376,7 +376,10 @@ def get_vpc_info_by_name(session, app, env, vpc_name):
     if not matching_vpcs:
         raise AWSException(f"VPC not found for name '{vpc_name}'")
 
-    vpc_id = vpc_response["Vpcs"][0]["VpcId"]
+    vpc_id = vpc_response["Vpcs"][0].get("VpcId")
+
+    if not vpc_id:
+        raise AWSException(f"VPC id not present in vpc '{vpc_name}'")
 
     ec2_resource = session.resource("ec2")
     vpc = ec2_resource.Vpc(vpc_id)

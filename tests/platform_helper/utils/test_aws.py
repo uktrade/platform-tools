@@ -632,11 +632,11 @@ def mock_vpc_info_session():
         ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
     ]
 
-    return mock_session, mock_client
+    return mock_session, mock_client, mock_vpc
 
 
 def test_get_vpc_info_by_name_success():
-    mock_session, mock_client = mock_vpc_info_session()
+    mock_session, mock_client, _ = mock_vpc_info_session()
 
     result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
@@ -652,8 +652,8 @@ def test_get_vpc_info_by_name_success():
     assert result.security_groups == expected_vpc.security_groups
 
 
-def test_get_vpc_info_by_name_failure_cases():
-    mock_session, mock_client = mock_vpc_info_session()
+def test_get_vpc_info_by_name_failure_no_matching_vpc():
+    mock_session, mock_client, _ = mock_vpc_info_session()
 
     vpc_data = {"Vpcs": []}
     mock_client.describe_vpcs.return_value = vpc_data
@@ -662,3 +662,15 @@ def test_get_vpc_info_by_name_failure_cases():
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     assert "VPC not found for name 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_vpc_id_in_response():
+    mock_session, mock_client, _ = mock_vpc_info_session()
+
+    vpc_data = {"Vpcs": [{"Id": "abc123"}]}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "VPC id not present in vpc 'my_vpc'" in str(ex)
