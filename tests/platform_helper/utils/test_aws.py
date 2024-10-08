@@ -685,3 +685,19 @@ def test_get_vpc_info_by_name_failure_no_subnets_in_vpc():
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     assert "No subnets found in vpc 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_matching_security_groups():
+    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+
+    mock_vpc.security_groups.all.return_value = [
+        ObjectWithId("sg-abc345", tags=[]),
+        ObjectWithId("sg-abc567", tags=[{"Key": "Name", "Value": "copilot-other_app-my_env-env"}]),
+        ObjectWithId("sg-abc456"),
+        ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
+    ]
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "No matching security groups found in vpc 'my_vpc'" in str(ex)

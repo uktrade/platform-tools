@@ -392,4 +392,7 @@ def get_vpc_info_by_name(session, app, env, vpc_name):
     tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
     sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
 
+    if not sec_groups:
+        raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
+
     return Vpc(subnets, sec_groups)
