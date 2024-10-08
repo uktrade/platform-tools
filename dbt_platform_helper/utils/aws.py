@@ -11,6 +11,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -369,6 +370,11 @@ class Vpc:
 def get_vpc_info_by_name(session, app, env, vpc_name):
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
+
+    matching_vpcs = vpc_response.get("Vpcs", [])
+
+    if not matching_vpcs:
+        raise AWSException(f"VPC not found for name '{vpc_name}'")
 
     vpc_id = vpc_response["Vpcs"][0]["VpcId"]
 

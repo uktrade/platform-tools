@@ -9,6 +9,7 @@ import botocore
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import Vpc
@@ -600,7 +601,7 @@ class ObjectWithId:
         self.tags = tags
 
 
-def test_get_vpc_info_by_name():
+def mock_vpc_info_session():
     mock_session = Mock()
     mock_client = Mock()
     mock_session.client.return_value = mock_client
@@ -631,6 +632,12 @@ def test_get_vpc_info_by_name():
         ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
     ]
 
+    return mock_session, mock_client
+
+
+def test_get_vpc_info_by_name_success():
+    mock_session, mock_client = mock_vpc_info_session()
+
     result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     expected_vpc = Vpc(
@@ -643,3 +650,15 @@ def test_get_vpc_info_by_name():
 
     assert result.subnets == expected_vpc.subnets
     assert result.security_groups == expected_vpc.security_groups
+
+
+def test_get_vpc_info_by_name_failure_cases():
+    mock_session, mock_client = mock_vpc_info_session()
+
+    vpc_data = {"Vpcs": []}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "VPC not found for name 'my_vpc'" in str(ex)
