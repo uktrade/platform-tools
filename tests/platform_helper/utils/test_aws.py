@@ -9,6 +9,8 @@ import botocore
 import pytest
 from moto import mock_aws
 
+from botocore.stub import Stubber
+
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import get_account_details
@@ -20,7 +22,7 @@ from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
-from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions
+from dbt_platform_helper.utils.aws import get_opensearch_supported_versions, get_redis_supported_versions
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -559,21 +561,57 @@ def test_update_postgres_parameter_with_master_secret():
     }
 
 
-@mock_aws
-@patch("boto3.client")
-def test_validate_opensearch_supported_versions(mock_boto_client):
-    mock_client = mock_boto_client.return_value
+def test_get_redis_supported_versions_when_cache_refresh_required():
 
-    mock_client.list_versions.return_value = {
-        "Versions": [
-            "Elasticsearch_7.10",
-            "OpenSearch_1.0",
-            "OpenSearch_1.1",
-            "OpenSearch_1.2",
-            "OpenSearch_1.3",
+    list_redis_versions_response = [
+        {'Engine': 'redis', 'EngineVersion': '4.0.10', 'CacheParameterGroupFamily': 'redis4.0', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 4.0.10'}, 
+        {'Engine': 'redis', 'EngineVersion': '5.0.6', 'CacheParameterGroupFamily': 'redis5.0', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 5.0.6'}, 
+        {'Engine': 'redis', 'EngineVersion': '6.0', 'CacheParameterGroupFamily': 'redis6.x', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 6.0.5'}, 
+        {'Engine': 'redis', 'EngineVersion': '6.2', 'CacheParameterGroupFamily': 'redis6.x', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 6.2.6'}, 
+        {'Engine': 'redis', 'EngineVersion': '7.0', 'CacheParameterGroupFamily': 'redis7', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 7.0.7'}, 
+        {'Engine': 'redis', 'EngineVersion': '7.1', 'CacheParameterGroupFamily': 'redis7', 'CacheEngineDescription': 'Redis', 'CacheEngineVersionDescription': 'redis version 7.1.0'}
         ]
-    }
 
-    supported_versions = validate_opensearch_supported_versions()
+    mock_elasticache_client = boto3.client('elasticache')
+    elasticache_stubber = Stubber(mock_elasticache_client)
+    elasticache_stubber.add_response(
+        'describe_cache_engine_versions',
+        {
+            'CacheEngineVersions': list_redis_versions_response
+        }
+    )
+    elasticache_stubber.activate()
 
-    assert supported_versions == ["1.0", "1.1", "1.2", "1.3"]
+    try:
+        supported_redis_versions_response = get_redis_supported_versions(mock_elasticache_client)
+        assert supported_redis_versions_response == ['4.0.10', '5.0.6', '6.0', '6.2', '7.0', '7.1']
+        elasticache_stubber.assert_no_pending_responses()
+
+    finally:
+        elasticache_stubber.deactivate()
+
+
+def test_get_opensearch_supported_versions_when_cache_refresh_required():
+
+    list_opensearch_supported_versions = [
+        'OpenSearch_2.15', 'OpenSearch_2.13', 'OpenSearch_2.11', 'OpenSearch_2.9', 'OpenSearch_2.7', 'OpenSearch_2.5', 'OpenSearch_2.3', 'OpenSearch_1.3', 'OpenSearch_1.2', 'OpenSearch_1.1', 'OpenSearch_1.0', 'Elasticsearch_7.10', 'Elasticsearch_7.9', 'Elasticsearch_7.8', 'Elasticsearch_7.7', 'Elasticsearch_7.4', 'Elasticsearch_7.1', 'Elasticsearch_6.8', 'Elasticsearch_6.7', 'Elasticsearch_6.5', 'Elasticsearch_6.4', 'Elasticsearch_6.3', 'Elasticsearch_6.2', 'Elasticsearch_6.0', 'Elasticsearch_5.6', 'Elasticsearch_5.5', 'Elasticsearch_5.3', 'Elasticsearch_5.1', 'Elasticsearch_2.3', 'Elasticsearch_1.5'
+    ]
+
+    mock_opensearch_client = boto3.client('opensearch')
+    opensearch_stubber = Stubber(mock_opensearch_client)
+    opensearch_stubber.add_response(
+        'list_versions',
+        {
+            'Versions': list_opensearch_supported_versions
+        }
+    )
+    opensearch_stubber.activate()
+
+    try:
+        supported_opensearch_versions_response = get_opensearch_supported_versions(mock_opensearch_client)
+        assert supported_opensearch_versions_response == ['2.15', '2.13', '2.11', '2.9', '2.7', '2.5', '2.3', '1.3', '1.2', '1.1', '1.0']
+        opensearch_stubber.assert_no_pending_responses()
+
+    finally:
+        opensearch_stubber.deactivate()
+

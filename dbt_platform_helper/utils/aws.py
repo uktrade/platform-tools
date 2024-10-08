@@ -352,8 +352,7 @@ def get_redis_supported_versions(elasticache_client=None):
     )
 
     supported_versions = [
-        version["EngineVersion"]
-        for version in supported_versions_response["CacheEngineVersions"]
+        version["EngineVersion"] for version in supported_versions_response["CacheEngineVersions"]
     ]
 
     write_to_cache("redis", supported_versions)
@@ -361,7 +360,7 @@ def get_redis_supported_versions(elasticache_client=None):
     return supported_versions
 
 
-def validate_opensearch_supported_versions(opensearch_client=None):
+def get_opensearch_supported_versions(opensearch_client=None):
 
     supported_versions = []
 

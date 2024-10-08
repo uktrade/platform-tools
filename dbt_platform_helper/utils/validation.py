@@ -17,7 +17,7 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.aws import validate_opensearch_supported_versions, get_redis_supported_versions
+from dbt_platform_helper.utils.aws import get_opensearch_supported_versions, get_redis_supported_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults, cache_refresh_required, read_supported_versions_from_cache
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -580,7 +580,7 @@ def _validate_opensearch_versions(config):
     supported_opensearch_versions = []
 
     if cache_refresh_required('opensearch'):
-        supported_opensearch_versions = validate_opensearch_supported_versions()
+        supported_opensearch_versions = get_opensearch_supported_versions()
     else:
         supported_opensearch_versions = read_supported_versions_from_cache('opensearch')
 
