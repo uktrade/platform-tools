@@ -14,12 +14,15 @@ from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
+from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
+from dbt_platform_helper.utils.aws import (
+    get_postgres_connection_data_updated_with_master_secret,
+)
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
-from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -546,7 +549,7 @@ def test_update_postgres_parameter_with_master_secret():
         Name="master-secret", SecretString='{"username": "postgres", "password": ">G6789"}'
     )["ARN"]
 
-    updated_parameter_value = update_postgres_parameter_with_master_secret(
+    updated_parameter_value = get_postgres_connection_data_updated_with_master_secret(
         session, parameter_name, secret_arn
     )
 
@@ -556,3 +559,34 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
+
+
+@mock_aws
+def test_get_connection_string():
+    db_identifier = f"my_app-my_env-my_postgres"
+    session = boto3.session.Session()
+    master_secret_arn = "arn://the-rds-master-arn"
+    master_secret_arn_param = "/copilot/my_app/my_env/secrets/MY_POSTGRES_RDS_MASTER_ARN"
+    session.client("ssm").put_parameter(
+        Name=master_secret_arn_param,
+        Value=master_secret_arn,
+        Type="String",
+    )
+    mock_connection_data = Mock(
+        return_value={
+            "username": "master_user",
+            "password": "master_password",
+            "host": "hostname",
+            "port": "1234",
+            "dbname": "main",
+        }
+    )
+
+    connection_string = get_connection_string(
+        session, "my_app", "my_env", db_identifier, connection_data_fn=mock_connection_data
+    )
+
+    mock_connection_data.assert_called_once_with(
+        session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
+    )
+    assert connection_string == "postgres://master_user:master_password@hostname:1234/main"

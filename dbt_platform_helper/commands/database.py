@@ -7,10 +7,9 @@ from dbt_platform_helper.commands.conduit import add_stack_delete_policy_to_task
 from dbt_platform_helper.commands.conduit import addon_client_is_running
 from dbt_platform_helper.commands.conduit import connect_to_addon_client_task
 from dbt_platform_helper.commands.conduit import get_cluster_arn
-from dbt_platform_helper.commands.conduit import normalise_secret_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
+from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -104,22 +103,6 @@ def get_database_tags(db_identifier: str) -> List[dict]:
             f"""Database {db_identifier} not found. Check the database identifier.""", fg="red"
         )
         exit(1)
-
-
-def get_connection_string(app: str, env: str, db_identifier: str) -> str:
-    session = get_aws_session_or_abort()
-    addon_name = normalise_secret_name(db_identifier.split(f"{app}-{env}-", 1)[1])
-    connection_string_parameter = f"/copilot/{app}/{env}/secrets/{addon_name}_READ_ONLY_USER"
-    master_secret_name = f"/copilot/{app}/{env}/secrets/{addon_name}_RDS_MASTER_ARN"
-    master_secret_arn = session.client("ssm").get_parameter(
-        Name=master_secret_name, WithDecryption=True
-    )["Parameter"]["Value"]
-
-    conn = update_postgres_parameter_with_master_secret(
-        session, connection_string_parameter, master_secret_arn
-    )
-
-    return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
 
 
 #

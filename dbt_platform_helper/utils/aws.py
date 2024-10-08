@@ -321,7 +321,7 @@ def get_load_balancer_configuration(
     return response
 
 
-def update_postgres_parameter_with_master_secret(session, parameter_name, secret_arn):
+def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
     ssm_client = session.client("ssm")
     secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
@@ -336,3 +336,25 @@ def update_postgres_parameter_with_master_secret(session, parameter_name, secret
     parameter_data["password"] = urllib.parse.quote(secret_value["password"])
 
     return parameter_data
+
+
+def get_connection_string(
+    session: Session,
+    app: str,
+    env: str,
+    db_identifier: str,
+    connection_data_fn=get_postgres_connection_data_updated_with_master_secret,
+) -> str:
+    addon_name = db_identifier.split(f"{app}-{env}-", 1)[1]
+    normalised_addon_name = addon_name.replace("-", "_").upper()
+    connection_string_parameter = (
+        f"/copilot/{app}/{env}/secrets/{normalised_addon_name}_READ_ONLY_USER"
+    )
+    master_secret_name = f"/copilot/{app}/{env}/secrets/{normalised_addon_name}_RDS_MASTER_ARN"
+    master_secret_arn = session.client("ssm").get_parameter(
+        Name=master_secret_name, WithDecryption=True
+    )["Parameter"]["Value"]
+
+    conn = connection_data_fn(session, connection_string_parameter, master_secret_arn)
+
+    return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
