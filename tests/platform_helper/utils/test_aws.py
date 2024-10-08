@@ -674,3 +674,14 @@ def test_get_vpc_info_by_name_failure_no_vpc_id_in_response():
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     assert "VPC id not present in vpc 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_subnets_in_vpc():
+    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+
+    mock_vpc.subnets.all.return_value = []
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "No subnets found in vpc 'my_vpc'" in str(ex)

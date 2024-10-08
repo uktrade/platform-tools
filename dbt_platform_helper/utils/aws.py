@@ -385,6 +385,10 @@ def get_vpc_info_by_name(session, app, env, vpc_name):
     vpc = ec2_resource.Vpc(vpc_id)
 
     subnets = [subnet.id for subnet in vpc.subnets.all()]
+
+    if not subnets:
+        raise AWSException(f"No subnets found in vpc '{vpc_name}'")
+
     tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
     sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
 
