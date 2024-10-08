@@ -11,6 +11,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
+from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -22,6 +23,7 @@ from dbt_platform_helper.utils.aws import (
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
+from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
@@ -590,3 +592,54 @@ def test_get_connection_string():
         session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
     )
     assert connection_string == "postgres://master_user:master_password@hostname:1234/main"
+
+
+class ObjectWithId:
+    def __init__(self, id, tags=None):
+        self.id = id
+        self.tags = tags
+
+
+def test_get_vpc_info_by_name():
+    mock_session = Mock()
+    mock_client = Mock()
+    mock_session.client.return_value = mock_client
+    vpc_data = {"Vpcs": [{"VpcId": "vpc-123456"}]}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    mock_resource = Mock()
+    mock_session.resource.return_value = mock_resource
+    mock_vpc = Mock()
+    mock_resource.Vpc.return_value = mock_vpc
+    subnets = Mock()
+    mock_vpc.subnets = subnets
+    subnets.all.return_value = [
+        ObjectWithId("subnet-abc123"),
+        ObjectWithId("subnet-abc456"),
+        ObjectWithId("subnet-abc789"),
+    ]
+
+    sec_groups = Mock()
+    mock_vpc.security_groups = sec_groups
+    sec_groups.all.return_value = [
+        ObjectWithId("sg-abc345", tags=[]),
+        ObjectWithId("sg-abc567", tags=[{"Key": "Name", "Value": "copilot-other_app-my_env-env"}]),
+        ObjectWithId(
+            "sg-abc123", tags=[{"Key": "Name", "Value": "copilot-my_app-my_env-env"}]
+        ),  # this is the correct one.
+        ObjectWithId("sg-abc456"),
+        ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
+    ]
+
+    result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    expected_vpc = Vpc(
+        subnets=["subnet-abc123", "subnet-abc456", "subnet-abc789"], security_groups=["sg-abc123"]
+    )
+
+    mock_client.describe_vpcs.assert_called_once_with(
+        Filters=[{"Name": "tag:Name", "Values": ["my_vpc"]}]
+    )
+
+    assert result.subnets == expected_vpc.subnets
+    assert result.security_groups == expected_vpc.security_groups

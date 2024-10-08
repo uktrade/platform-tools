@@ -358,3 +358,25 @@ def get_connection_string(
     conn = connection_data_fn(session, connection_string_parameter, master_secret_arn)
 
     return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
+
+
+class Vpc:
+    def __init__(self, subnets, security_groups):
+        self.subnets = subnets
+        self.security_groups = security_groups
+
+
+def get_vpc_info_by_name(session, app, env, vpc_name):
+    ec2_client = session.client("ec2")
+    vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
+
+    vpc_id = vpc_response["Vpcs"][0]["VpcId"]
+
+    ec2_resource = session.resource("ec2")
+    vpc = ec2_resource.Vpc(vpc_id)
+
+    subnets = [subnet.id for subnet in vpc.subnets.all()]
+    tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
+    sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
+
+    return Vpc(subnets, sec_groups)
