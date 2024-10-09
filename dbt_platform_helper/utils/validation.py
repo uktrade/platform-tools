@@ -17,8 +17,11 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.aws import get_opensearch_supported_versions, get_redis_supported_versions
-from dbt_platform_helper.utils.files import apply_environment_defaults, cache_refresh_required, read_supported_versions_from_cache
+from dbt_platform_helper.utils.aws import get_opensearch_supported_versions
+from dbt_platform_helper.utils.aws import get_redis_supported_versions
+from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import cache_refresh_required
+from dbt_platform_helper.utils.files import read_supported_versions_from_cache
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -127,6 +130,8 @@ def validate_addons(addons: dict):
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
     _validate_s3_bucket_uniqueness({"extensions": addons})
+    _validate_redis_versions({"extensions": addons})
+    _validate_opensearch_versions({"extensions": addons})
 
     return errors
 
@@ -539,7 +544,7 @@ def validate_platform_config(config, disable_aws_validation=False):
         _validate_redis_versions(config)
         _validate_opensearch_versions(config)
 
-    
+
 # TODO Test for get_redis_supported_versions() and for read_supported_versions_from_cache
 # TODO test for _validate_redis_versions, patch cache_Refresh_required=True and read_supported_versions_from_cache=['7.1', '6.2'] happy path.
 # TODO add redis/opensearch version validation to validate_addons, update tests.
@@ -549,60 +554,82 @@ def _validate_redis_versions(config):
 
     supported_redis_versions = []
 
-    if cache_refresh_required('redis'):
+    if cache_refresh_required("redis"):
         supported_redis_versions = get_redis_supported_versions()
     else:
-        supported_redis_versions = read_supported_versions_from_cache('redis')
+        supported_redis_versions = read_supported_versions_from_cache("redis")
 
     redis_extensions = []
     redis_environments_with_failure = []
 
-    for extension in config.get('extensions').keys():
+    for extension in config.get("extensions").keys():
 
-        if config.get('extensions').get(extension).get('type') == 'redis':
-            redis_extensions.append(config['extensions'][extension])
+        if config.get("extensions").get(extension).get("type") == "redis":
+            redis_extensions.append(config["extensions"][extension])
 
     for redis_extension in redis_extensions:
+        environments = redis_extension.get("environments", {})
+        if isinstance(environments, dict):
+            for environment in environments.keys():
+                env_config = environments.get(environment, {})
+                print(env_config)
+                if isinstance(env_config, dict):
+                    redis_engine_version = env_config.get("engine")
+                    if redis_engine_version not in supported_redis_versions:
+                        redis_environments_with_failure.append(
+                            [extension, environment, redis_engine_version]
+                        )
+        else:
+            click.secho(f'Invalid Redis Configuration Block "{extension}"', fg="red")
 
-        for environment in redis_extension.get('environments').keys():
-
-            redis_engine_version = redis_extension.get('environments').get(environment).get('engine') 
-
-            if redis_engine_version not in supported_redis_versions:
-                redis_environments_with_failure.append(environment)
-
-    if redis_environments_with_failure:
-        abort_with_error(f"The following Redis extension configurations contain engine versions which are not supported. Redis environments: {redis_environments_with_failure}. Supported versions: {supported_redis_versions}")
+    if len(redis_environments_with_failure) > 0:
+        for version_failure in redis_environments_with_failure:
+            click.secho(
+                f'Redis version for environment "{version_failure[1]}" is not in the list of supported Redis Versions',
+                fg="red",
+            )
 
 
 def _validate_opensearch_versions(config):
 
     supported_opensearch_versions = []
 
-    if cache_refresh_required('opensearch'):
+    if cache_refresh_required("opensearch"):
         supported_opensearch_versions = get_opensearch_supported_versions()
     else:
-        supported_opensearch_versions = read_supported_versions_from_cache('opensearch')
+        supported_opensearch_versions = read_supported_versions_from_cache("opensearch")
 
     opensearch_extensions = []
     opensearch_environments_with_failure = []
 
-    for extension in config.get('extensions').keys():
+    for extension in config.get("extensions", {}).keys():
 
-        if config.get('extensions').get(extension).get('type') == 'opensearch':
-            opensearch_extensions.append(config['extensions'][extension])
+        if config.get("extensions").get(extension).get("type") == "opensearch":
+            opensearch_extensions.append(config["extensions"][extension])
 
     for opensearch_extension in opensearch_extensions:
 
-        for environment in opensearch_extension.get('environments').keys():
+        environments = opensearch_extension.get("environments", {})
+        if isinstance(environments, dict):
+            for environment in environments.keys():
+                env_config = environments.get(environment, {})
+                print(env_config)
+                if isinstance(env_config, dict):
+                    opensearch_engine_version = env_config.get("engine")
+                    if opensearch_engine_version not in supported_opensearch_versions:
+                        opensearch_environments_with_failure.append(
+                            [extension, environment, opensearch_engine_version]
+                        )
 
-            opensearch_engine_version = opensearch_extension.get('environments').get(environment).get('engine') 
+        else:
+            click.secho(f'Invalid OpenSearch Configuration Block "{extension}"', fg="red")
 
-            if opensearch_engine_version not in supported_opensearch_versions:
-                opensearch_environments_with_failure.append(environment)
-
-    if opensearch_environments_with_failure:
-        abort_with_error(f"The following Opensearch extension configurations contain engine versions which are not supported. Redis environments: {opensearch_environments_with_failure}. Supported versions: {supported_opensearch_versions}")
+    if len(opensearch_environments_with_failure) > 0:
+        for version_failure in opensearch_environments_with_failure:
+            click.secho(
+                f'OpenSearch version for environment "{version_failure[1]}" is not in the list of supported OpenSearch Versions',
+                fg="red",
+            )
 
 
 def _validate_environment_pipelines(config):
