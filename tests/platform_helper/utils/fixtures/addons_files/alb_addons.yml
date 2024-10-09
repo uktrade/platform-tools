@@ -6,6 +6,7 @@ my-alb:
       dev:
           cdn_domains_list:
               dev.application.uktrade.digital: ["internal", "<application>.uktrade.digital" ]
+          enable_logging: true
           default_waf: "waf_sentinel_012345678910_default"
           forwarded_values_query_string: true
           viewer_certificate_minimum_protocol_version: "TLSv1.2"
