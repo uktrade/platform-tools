@@ -75,6 +75,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "opensearch_addons.yml",
         "monitoring_addons.yml",
         "no_param_addons.yml",
+        "alb_addons.yml",
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")

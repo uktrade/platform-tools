@@ -1,0 +1,7 @@
+my-alb:
+  type: alb
+  environments:
+    dev:
+      cdn_domains_list:
+        dev.app.uktrade.digital: ["internal", "app.uktrade.digital" ]
+      default_waf: "waf_sentinel_012345678910_default"
