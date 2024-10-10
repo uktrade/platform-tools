@@ -1,6 +1,7 @@
 import subprocess
 from typing import List
 
+import boto3
 import click
 
 from dbt_platform_helper.commands.conduit import add_stack_delete_policy_to_task_role
@@ -8,6 +9,7 @@ from dbt_platform_helper.commands.conduit import addon_client_is_running
 from dbt_platform_helper.commands.conduit import connect_to_addon_client_task
 from dbt_platform_helper.commands.conduit import get_cluster_arn
 from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -105,6 +107,78 @@ def get_database_tags(db_identifier: str) -> List[dict]:
         exit(1)
 
 
+def run_database_copy_task(
+    session: boto3.session.Session,
+    account_id: str,
+    app: str,
+    env: str,
+    database: str,
+    vpc_config: Vpc,
+    is_dump: bool,
+    db_connection_string: str,
+):
+    client = session.client("ecs")
+    action = "dump" if is_dump else ""
+    client.run_task(
+        taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{env}-{database}-{action}",
+        cluster=f"{app}-{env}",
+        capacityProviderStrategy=[
+            {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+        ],
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": vpc_config.subnets,
+                "securityGroups": vpc_config.security_groups,
+                "assignPublicIp": "DISABLED",
+            }
+        },
+        overrides={
+            "containerOverrides": [
+                {
+                    "name": f"{env}-{database}-{action}",
+                    "environment": [
+                        {"name": "DATA_COPY_OPERATION", "value": action.upper()},
+                        {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+                    ],
+                }
+            ]
+        },
+    )
+
+
+"""
+aws ecs run-task \
+  --task-definition arn:aws:ecs:eu-west-2:891377058512:task-definition/hotfix-demodjango-postgres-restore \
+  --cluster demodjango-hotfix \
+  --capacity-provider-strategy '[{
+        "capacityProvider": "FARGATE",
+            "weight": 1,
+                "base": 0
+    }]' \
+  --network-configuration '{
+      "awsvpcConfiguration": {
+        "subnets": ["subnet-0ef8bf9b7cc86d6d2"],
+        "securityGroups": ["sg-00055c7e58cba5fde"],
+        "assignPublicIp": "DISABLED"
+      }
+    }' \
+  --overrides '{"containerOverrides": [
+      {
+        "name": "hotfix-demodjango-postgres-restore",
+        "environment": [
+          {
+            "name": "DATA_COPY_OPERATION",
+            "value": "RESTORE"
+          },
+          {
+            "name": "DB_CONNECTION_STRING",
+            "value": "postgres://postgres:banana@demodjango-hotfix-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+          }
+        ]
+      }
+    ]}' | tee ${TASK_FILE}
+"""
+
 #
 # cd ~/paas/platform-tools/images/tools/database-copy2
 #
@@ -143,7 +217,7 @@ def get_database_tags(db_identifier: str) -> List[dict]:
 #         },
 #         {
 #             "name": "DB_CONNECTION_STRING",
-#             "value": "postgres://postgres:L-SX_S9.t:vb1xME?u~V?Nu8hH|1@demodjango-prod-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+#             "value": "postgres://postgres:banana@demodjango-prod-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
 #         }
 #     ]
 # }
@@ -200,7 +274,7 @@ def get_database_tags(db_identifier: str) -> List[dict]:
 # },
 # {
 #     "name": "DB_CONNECTION_STRING",
-#     "value": "postgres://postgres:%25%28Alse%25k%5Dm~yLzZl%3AQ6iT0punfvk@demodjango-hotfix-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
+#     "value": "postgres://postgres:banana@demodjango-hotfix-demodjango-postgres.cje2g6iwu5wr.eu-west-2.rds.amazonaws.com:5432/main"
 # }
 # ]
 # }

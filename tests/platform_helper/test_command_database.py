@@ -1,4 +1,5 @@
 from unittest import mock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
@@ -6,7 +7,9 @@ import pytest
 from click.testing import CliRunner
 from moto import mock_aws
 
+from dbt_platform_helper.commands.database import run_database_copy_task
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.aws import Vpc
 
 
 @mock_aws
@@ -213,4 +216,53 @@ def _setup_test_databases(db_identifier: str, app: Application, env: str, with_t
             if with_tags
             else []
         ),
+    )
+
+
+def test_run_database_copy_task():
+    mock_client = Mock()
+    mock_session = Mock()
+    mock_session.client.return_value = mock_client
+
+    account_id = "1234567"
+    app = "my_app"
+    env = "my_env"
+    database = "my_postgres"
+    is_dump = True
+    vpc_config = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
+    db_connection_string = "connection_string"
+
+    run_database_copy_task(
+        mock_session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
+    )
+
+    # exp_task_definition_name = f"{env}-{database}-{'dump' if is_dump else 'load'}"
+
+    mock_session.client.assert_called_once_with("ecs")
+    mock_client.run_task.assert_called_once_with(
+        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_env-my_postgres-dump",
+        cluster="my_app-my_env",
+        capacityProviderStrategy=[
+            {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+        ],
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": ["subnet_1", "subnet_2"],
+                "securityGroups": [
+                    "sec_group_1",
+                ],
+                "assignPublicIp": "DISABLED",
+            }
+        },
+        overrides={
+            "containerOverrides": [
+                {
+                    "name": "my_env-my_postgres-dump",
+                    "environment": [
+                        {"name": "DATA_COPY_OPERATION", "value": "DUMP"},
+                        {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
+                    ],
+                }
+            ]
+        },
     )

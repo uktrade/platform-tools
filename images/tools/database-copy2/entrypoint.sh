@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "${DATA_COPY_OPERATION:-DUMP}" != "RESTORE" ]
+if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
   pg_dump --format tar "${DB_CONNECTION_STRING}" | gzip > data_dump.tgz
