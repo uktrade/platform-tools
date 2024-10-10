@@ -61,7 +61,8 @@ class DatabaseCopy:
     def _execute_operation(self, account_id, app, env, database, vpc_name, is_dump):
         session = self.get_session_fn()
         vpc_config = self.vpc_config_fn(session, app, env, vpc_name)
-        db_connection_string = self.db_connection_string_fn(session, app, env, database)
+        database_identifier = f"{app}-{env}-{database}"
+        db_connection_string = self.db_connection_string_fn(session, app, env, database_identifier)
         self.run_database_copy_fn(
             session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
         )

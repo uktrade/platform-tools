@@ -83,7 +83,9 @@ def test_database_dump():
 
     mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
 
-    mock_db_connection_string_fn.assert_called_once_with(mock_session, app, env, "test-db")
+    mock_db_connection_string_fn.assert_called_once_with(
+        mock_session, app, env, "my-app-my-env-test-db"
+    )
 
     mock_run_database_copy_task_fn.assert_called_once_with(
         mock_session, account_id, app, env, database, vpc, True, "test-db-connection-string"
@@ -119,7 +121,9 @@ def test_database_load():
 
     mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
 
-    mock_db_connection_string_fn.assert_called_once_with(mock_session, app, env, "test-db")
+    mock_db_connection_string_fn.assert_called_once_with(
+        mock_session, app, env, "my-app-my-env-test-db"
+    )
 
     mock_run_database_copy_task_fn.assert_called_once_with(
         mock_session, account_id, app, env, database, vpc, False, "test-db-connection-string"
