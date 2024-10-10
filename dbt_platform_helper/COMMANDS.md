@@ -40,7 +40,7 @@
 - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 - [platform-helper database](#platform-helper-database)
-- [platform-helper database copy](#platform-helper-database-copy)
+- [platform-helper database dump](#platform-helper-database-dump)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
@@ -964,7 +964,7 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 ## Usage
 
 ```
-platform-helper database copy 
+platform-helper database dump 
 ```
 
 ## Options
@@ -974,26 +974,33 @@ platform-helper database copy
 
 ## Commands
 
-- [`copy` ↪](#platform-helper-database-copy)
+- [`dump` ↪](#platform-helper-database-dump)
 
-# platform-helper database copy
+# platform-helper database dump
 
 [↩ Parent](#platform-helper-database)
 
-    Copy source database to target database.
+    Dump a database into an S3 bucket.
 
 ## Usage
 
 ```
-platform-helper database copy <source_db> <target_db> 
+platform-helper database dump --account-id <account_id> --app <application> 
+                              --env <environment> --database <database> 
+                              --vpc-name <vpc_name> 
 ```
 
-## Arguments
-
-- `source_db <text>`
-- `target_db <text>`
-
 ## Options
+
+- `--account-id <text>`
+
+- `--app <text>`
+
+- `--env <text>`
+
+- `--database <text>`
+
+- `--vpc-name <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -9,17 +9,23 @@ import botocore
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
+from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
+from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
+from dbt_platform_helper.utils.aws import (
+    get_postgres_connection_data_updated_with_master_secret,
+)
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
+from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
-from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -546,7 +552,7 @@ def test_update_postgres_parameter_with_master_secret():
         Name="master-secret", SecretString='{"username": "postgres", "password": ">G6789"}'
     )["ARN"]
 
-    updated_parameter_value = update_postgres_parameter_with_master_secret(
+    updated_parameter_value = get_postgres_connection_data_updated_with_master_secret(
         session, parameter_name, secret_arn
     )
 
@@ -556,3 +562,142 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
+
+
+@mock_aws
+def test_get_connection_string():
+    db_identifier = f"my_app-my_env-my_postgres"
+    session = boto3.session.Session()
+    master_secret_arn = "arn://the-rds-master-arn"
+    master_secret_arn_param = "/copilot/my_app/my_env/secrets/MY_POSTGRES_RDS_MASTER_ARN"
+    session.client("ssm").put_parameter(
+        Name=master_secret_arn_param,
+        Value=master_secret_arn,
+        Type="String",
+    )
+    mock_connection_data = Mock(
+        return_value={
+            "username": "master_user",
+            "password": "master_password",
+            "host": "hostname",
+            "port": "1234",
+            "dbname": "main",
+        }
+    )
+
+    connection_string = get_connection_string(
+        session, "my_app", "my_env", db_identifier, connection_data_fn=mock_connection_data
+    )
+
+    mock_connection_data.assert_called_once_with(
+        session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
+    )
+    assert connection_string == "postgres://master_user:master_password@hostname:1234/main"
+
+
+class ObjectWithId:
+    def __init__(self, id, tags=None):
+        self.id = id
+        self.tags = tags
+
+
+def mock_vpc_info_session():
+    mock_session = Mock()
+    mock_client = Mock()
+    mock_session.client.return_value = mock_client
+    vpc_data = {"Vpcs": [{"VpcId": "vpc-123456"}]}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    mock_resource = Mock()
+    mock_session.resource.return_value = mock_resource
+    mock_vpc = Mock()
+    mock_resource.Vpc.return_value = mock_vpc
+    subnets = Mock()
+    mock_vpc.subnets = subnets
+    subnets.all.return_value = [
+        ObjectWithId("subnet-abc123"),
+        ObjectWithId("subnet-abc456"),
+        ObjectWithId("subnet-abc789"),
+    ]
+
+    sec_groups = Mock()
+    mock_vpc.security_groups = sec_groups
+    sec_groups.all.return_value = [
+        ObjectWithId("sg-abc345", tags=[]),
+        ObjectWithId("sg-abc567", tags=[{"Key": "Name", "Value": "copilot-other_app-my_env-env"}]),
+        ObjectWithId(
+            "sg-abc123", tags=[{"Key": "Name", "Value": "copilot-my_app-my_env-env"}]
+        ),  # this is the correct one.
+        ObjectWithId("sg-abc456"),
+        ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
+    ]
+
+    return mock_session, mock_client, mock_vpc
+
+
+def test_get_vpc_info_by_name_success():
+    mock_session, mock_client, _ = mock_vpc_info_session()
+
+    result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    expected_vpc = Vpc(
+        subnets=["subnet-abc123", "subnet-abc456", "subnet-abc789"], security_groups=["sg-abc123"]
+    )
+
+    mock_client.describe_vpcs.assert_called_once_with(
+        Filters=[{"Name": "tag:Name", "Values": ["my_vpc"]}]
+    )
+
+    assert result.subnets == expected_vpc.subnets
+    assert result.security_groups == expected_vpc.security_groups
+
+
+def test_get_vpc_info_by_name_failure_no_matching_vpc():
+    mock_session, mock_client, _ = mock_vpc_info_session()
+
+    vpc_data = {"Vpcs": []}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "VPC not found for name 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_vpc_id_in_response():
+    mock_session, mock_client, _ = mock_vpc_info_session()
+
+    vpc_data = {"Vpcs": [{"Id": "abc123"}]}
+    mock_client.describe_vpcs.return_value = vpc_data
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "VPC id not present in vpc 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_subnets_in_vpc():
+    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+
+    mock_vpc.subnets.all.return_value = []
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "No subnets found in vpc 'my_vpc'" in str(ex)
+
+
+def test_get_vpc_info_by_name_failure_no_matching_security_groups():
+    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+
+    mock_vpc.security_groups.all.return_value = [
+        ObjectWithId("sg-abc345", tags=[]),
+        ObjectWithId("sg-abc567", tags=[{"Key": "Name", "Value": "copilot-other_app-my_env-env"}]),
+        ObjectWithId("sg-abc456"),
+        ObjectWithId("sg-abc678", tags=[{"Key": "Name", "Value": "copilot-my_app-other_env-env"}]),
+    ]
+
+    with pytest.raises(AWSException) as ex:
+        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+
+    assert "No matching security groups found in vpc 'my_vpc'" in str(ex)

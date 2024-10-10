@@ -11,7 +11,9 @@ from cfn_tools import load_yaml
 
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import update_postgres_parameter_with_master_secret
+from dbt_platform_helper.utils.aws import (
+    get_postgres_connection_data_updated_with_master_secret,
+)
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.platform_config import is_terraform_project
@@ -171,7 +173,7 @@ def create_postgres_admin_task(
         Name=master_secret_name, WithDecryption=True
     )["Parameter"]["Value"]
     connection_string = json.dumps(
-        update_postgres_parameter_with_master_secret(
+        get_postgres_connection_data_updated_with_master_secret(
             session, read_only_secret_name, master_secret_arn
         )
     )
