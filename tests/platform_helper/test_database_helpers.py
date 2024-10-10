@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.commands.database_helpers import run_database_copy_task
 from dbt_platform_helper.utils.aws import Vpc
 
@@ -53,28 +54,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     )
 
 
-class DatabaseCopy:
-    def __init__(self, run_database_copy_fn, vpc_config_fn, db_connection_string_fn):
-        self.run_database_copy_fn = run_database_copy_fn
-        self.vpc_config_fn = vpc_config_fn
-        self.db_connection_string_fn = db_connection_string_fn
-
-    def _execute_operation(self, session, account_id, app, env, database, vpc_name, is_dump):
-        vpc_config = self.vpc_config_fn(session, app, env, vpc_name)
-        db_connection_string = self.db_connection_string_fn(session, app, env, database)
-        self.run_database_copy_fn(
-            session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
-        )
-
-    def dump(self, session, account_id, app, env, database, vpc_name):
-        self._execute_operation(session, account_id, app, env, database, vpc_name, True)
-
-    def load(self, session, account_id, app, env, database, vpc_name):
-        self._execute_operation(session, account_id, app, env, database, vpc_name, False)
-
-
 def test_database_dump():
-    mock_session = Mock()
     app = "my-app"
     env = "my-env"
     vpc_name = "test-vpc"
@@ -82,6 +62,8 @@ def test_database_dump():
 
     account_id = "1234567"
 
+    mock_session = Mock()
+    mock_session_fn = Mock(return_value=mock_session)
     mock_run_database_copy_task_fn = Mock()
 
     vpc = Vpc([], [])
@@ -90,9 +72,14 @@ def test_database_dump():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     db_copy = DatabaseCopy(
-        mock_run_database_copy_task_fn, mock_vpc_config_fn, mock_db_connection_string_fn
+        mock_session_fn,
+        mock_run_database_copy_task_fn,
+        mock_vpc_config_fn,
+        mock_db_connection_string_fn,
     )
-    db_copy.dump(mock_session, account_id, app, env, database, vpc_name)
+    db_copy.dump(account_id, app, env, database, vpc_name)
+
+    mock_session_fn.assert_called_once()
 
     mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
 
@@ -104,7 +91,6 @@ def test_database_dump():
 
 
 def test_database_load():
-    mock_session = Mock()
     app = "my-app"
     env = "my-env"
     vpc_name = "test-vpc"
@@ -112,6 +98,8 @@ def test_database_load():
 
     account_id = "1234567"
 
+    mock_session = Mock()
+    mock_session_fn = Mock(return_value=mock_session)
     mock_run_database_copy_task_fn = Mock()
 
     vpc = Vpc([], [])
@@ -120,9 +108,14 @@ def test_database_load():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     db_copy = DatabaseCopy(
-        mock_run_database_copy_task_fn, mock_vpc_config_fn, mock_db_connection_string_fn
+        mock_session_fn,
+        mock_run_database_copy_task_fn,
+        mock_vpc_config_fn,
+        mock_db_connection_string_fn,
     )
-    db_copy.load(mock_session, account_id, app, env, database, vpc_name)
+    db_copy.load(account_id, app, env, database, vpc_name)
+
+    mock_session_fn.assert_called_once()
 
     mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
 

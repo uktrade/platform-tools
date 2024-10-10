@@ -1,6 +1,9 @@
 import boto3
 
 from dbt_platform_helper.utils.aws import Vpc
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_connection_string
+from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 
 
 def run_database_copy_task(
@@ -40,3 +43,31 @@ def run_database_copy_task(
             ]
         },
     )
+
+
+class DatabaseCopy:
+    def __init__(
+        self,
+        get_session_fn=get_aws_session_or_abort,
+        run_database_copy_fn=run_database_copy_task,
+        vpc_config_fn=get_vpc_info_by_name,
+        db_connection_string_fn=get_connection_string,
+    ):
+        self.get_session_fn = get_session_fn
+        self.run_database_copy_fn = run_database_copy_fn
+        self.vpc_config_fn = vpc_config_fn
+        self.db_connection_string_fn = db_connection_string_fn
+
+    def _execute_operation(self, account_id, app, env, database, vpc_name, is_dump):
+        session = self.get_session_fn()
+        vpc_config = self.vpc_config_fn(session, app, env, vpc_name)
+        db_connection_string = self.db_connection_string_fn(session, app, env, database)
+        self.run_database_copy_fn(
+            session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
+        )
+
+    def dump(self, account_id, app, env, database, vpc_name):
+        self._execute_operation(account_id, app, env, database, vpc_name, True)
+
+    def load(self, account_id, app, env, database, vpc_name):
+        self._execute_operation(account_id, app, env, database, vpc_name, False)
