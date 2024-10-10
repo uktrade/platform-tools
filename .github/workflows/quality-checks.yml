@@ -41,8 +41,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          apt install pipx
-          pipx install poetry
+          pip install poetry
           poetry install
 
       - name: black
