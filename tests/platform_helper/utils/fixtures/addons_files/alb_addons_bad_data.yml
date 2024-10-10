@@ -60,7 +60,6 @@ my-alb-cdn-logging-bucket-prefix-should-be-a-string:
     dev:
       cdn_logging_bucket_prefix: 12345 # Should be a string
 
-
 my-alb-default-waf-should-be-a-string:
   type: alb
   environments:
