@@ -272,19 +272,18 @@ class DatabaseCopy:
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
 
-    def dump(self, session, account_id, app, env, database, vpc_name):
+    def _execute_operation(self, session, account_id, app, env, database, vpc_name, is_dump):
         vpc_config = self.vpc_config_fn(session, app, env, vpc_name)
         db_connection_string = self.db_connection_string_fn(session, app, env, database)
         self.run_database_copy_fn(
-            session, account_id, app, env, database, vpc_config, True, db_connection_string
+            session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
         )
 
+    def dump(self, session, account_id, app, env, database, vpc_name):
+        self._execute_operation(session, account_id, app, env, database, vpc_name, True)
+
     def load(self, session, account_id, app, env, database, vpc_name):
-        vpc_config = self.vpc_config_fn(session, app, env, vpc_name)
-        db_connection_string = self.db_connection_string_fn(session, app, env, database)
-        self.run_database_copy_fn(
-            session, account_id, app, env, database, vpc_config, False, db_connection_string
-        )
+        self._execute_operation(session, account_id, app, env, database, vpc_name, False)
 
 
 def test_database_dump():
