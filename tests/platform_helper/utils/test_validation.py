@@ -225,6 +225,12 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-prometheus-policy-wrong-type": r"Key 'role_arn' error.*should be instance of 'str'",
             },
         ),
+        (
+            "alb_addons_bad_data.yml",
+            {
+                "my-alb-allowed-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+            },
+        ),
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")

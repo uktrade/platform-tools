@@ -1,9 +1,8 @@
 my-alb:
   type: alb
   environments:
-    "*":
-        additional_address_list: ["internal.api"]
     dev:
+        additional_address_list: ["internal.api"]
         allowed_methods: ["GET", "POST", "OPTIONS"]
         cached_methods: ["GET", "HEAD"]
         cdn_compress: true
@@ -23,4 +22,4 @@ my-alb:
         viewer_certificate_minimum_protocol_version: "TLSv1.2"
         viewer_certificate_ssl_support_method: "sni-only"
         viewer_protocol_policy: "redirect-to-https"
-        
+

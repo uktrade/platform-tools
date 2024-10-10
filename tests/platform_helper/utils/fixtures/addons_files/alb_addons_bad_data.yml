@@ -1,0 +1,5 @@
+my-alb-allowed-methods-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      allowed_methods: True # Should be instance of 'list'
