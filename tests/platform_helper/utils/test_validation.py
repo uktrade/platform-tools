@@ -228,7 +228,10 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
         (
             "alb_addons_bad_data.yml",
             {
+                "my-alb-additional-address-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
                 "my-alb-allowed-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cached-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cdn-compress-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
             },
         ),
     ],

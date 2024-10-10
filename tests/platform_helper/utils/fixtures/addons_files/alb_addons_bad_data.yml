@@ -1,5 +1,24 @@
+my-alb-additional-address-list-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      additional_address_list: 123 # Should a list
+
 my-alb-allowed-methods-should-be-a-list:
   type: alb
   environments:
     dev:
-      allowed_methods: True # Should be instance of 'list'
+      allowed_methods: True # Should be a list
+
+my-alb-cached-methods-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      cached_methods: "hello world" # Should be a list
+
+my-alb-cdn-compress-should-be-a-bool:
+  type: alb
+  environments:
+    dev:
+      cdn_compress: "another hello world" # Should be a boolean
+      
