@@ -1,9 +1,9 @@
 my-alb:
   type: alb
   environments:
-      "*":
-          additional_address_list: ["internal.api"]
-      dev:
+    "*":
+        additional_address_list: ["internal.api"]
+    dev:
         allowed_methods: ["GET", "POST", "OPTIONS"]
         cached_methods: ["GET", "HEAD"]
         cdn_compress: true
