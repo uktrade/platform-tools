@@ -111,7 +111,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
 @mock_aws
 @patch("subprocess.call")
 @patch(
-    "dbt_platform_helper.commands.conduit.update_postgres_parameter_with_master_secret",
+    "dbt_platform_helper.commands.conduit.get_postgres_connection_data_updated_with_master_secret",
     return_value="connection string",
 )
 def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call, mock_application):
