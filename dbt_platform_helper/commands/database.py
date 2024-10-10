@@ -118,7 +118,7 @@ def run_database_copy_task(
     db_connection_string: str,
 ):
     client = session.client("ecs")
-    action = "dump" if is_dump else ""
+    action = "dump" if is_dump else "load"
     client.run_task(
         taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{env}-{database}-{action}",
         cluster=f"{app}-{env}",

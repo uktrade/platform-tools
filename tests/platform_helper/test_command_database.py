@@ -219,7 +219,8 @@ def _setup_test_databases(db_identifier: str, app: Application, env: str, with_t
     )
 
 
-def test_run_database_copy_task():
+@pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
+def test_run_database_copy_task(is_dump, exp_operation):
     mock_client = Mock()
     mock_session = Mock()
     mock_session.client.return_value = mock_client
@@ -228,7 +229,6 @@ def test_run_database_copy_task():
     app = "my_app"
     env = "my_env"
     database = "my_postgres"
-    is_dump = True
     vpc_config = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
     db_connection_string = "connection_string"
 
@@ -236,11 +236,9 @@ def test_run_database_copy_task():
         mock_session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
     )
 
-    # exp_task_definition_name = f"{env}-{database}-{'dump' if is_dump else 'load'}"
-
     mock_session.client.assert_called_once_with("ecs")
     mock_client.run_task.assert_called_once_with(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_env-my_postgres-dump",
+        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_env-my_postgres-{exp_operation}",
         cluster="my_app-my_env",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
@@ -257,9 +255,9 @@ def test_run_database_copy_task():
         overrides={
             "containerOverrides": [
                 {
-                    "name": "my_env-my_postgres-dump",
+                    "name": f"my_env-my_postgres-{exp_operation}",
                     "environment": [
-                        {"name": "DATA_COPY_OPERATION", "value": "DUMP"},
+                        {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
                         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
                     ],
                 }
