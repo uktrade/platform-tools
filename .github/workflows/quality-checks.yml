@@ -24,8 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --verbose poetry
-          poetry install --verbose
+          pip install
+          poetry install 
 
       - name: Run pytest
         run: poetry run pytest
