@@ -696,3 +696,41 @@ def create_invalid_platform_config_file(fakefs):
         Path(PLATFORM_CONFIG_FILE),
         contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
     )
+
+
+@pytest.fixture
+def create_invalid_platform_config_file(fakefs):
+    fakefs.create_file(
+        Path(PLATFORM_CONFIG_FILE),
+        contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_get_opensearch_supported_versions(monkeypatch):
+    def mock_return_value(opensearch_client=None):
+        return ["1.0", "1.1", "1.2"]
+
+    monkeypatch.setattr(
+        "dbt_platform_helper.utils.validation.get_opensearch_supported_versions", mock_return_value
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_get_redis_supported_versions(monkeypatch):
+    def mock_return_value(opensearch_client=None):
+        return ["6.2", "7.0", "7.1"]
+
+    monkeypatch.setattr(
+        "dbt_platform_helper.utils.validation.get_redis_supported_versions", mock_return_value
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_validate_redis_versions(monkeypatch):
+    def mock_return_value(config):
+        return [["test-app-redis-1", "dev", "6.2"], ["test-app-redis-2", "dev", "7.0"]]
+
+    monkeypatch.setattr(
+        "dbt_platform_helper.utils.validation._validate_redis_versions", mock_return_value
+    )
