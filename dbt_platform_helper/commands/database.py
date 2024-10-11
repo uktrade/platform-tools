@@ -21,6 +21,18 @@ def dump(account_id, app, env, database, vpc_name):
     data_copy.dump(account_id, app, env, database, vpc_name)
 
 
+@database.command(name="load")
+@click.option("--account-id", type=str, required=True)
+@click.option("--app", type=str, required=True)
+@click.option("--env", type=str, required=True)
+@click.option("--database", type=str, required=True)
+@click.option("--vpc-name", type=str, required=True)
+def load(account_id, app, env, database, vpc_name):
+    """Load a database from an S3 bucket."""
+    data_copy = DatabaseCopy()
+    data_copy.load(account_id, app, env, database, vpc_name)
+
+
 # @database.command(name="copy")
 # @click.argument("source_db", type=str, required=True)
 # @click.argument("target_db", type=str, required=True)

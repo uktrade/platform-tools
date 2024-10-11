@@ -41,6 +41,7 @@
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database dump](#platform-helper-database-dump)
+- [platform-helper database load](#platform-helper-database-load)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
@@ -964,7 +965,7 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 ## Usage
 
 ```
-platform-helper database dump 
+platform-helper database (dump|load) 
 ```
 
 ## Options
@@ -975,6 +976,7 @@ platform-helper database dump
 ## Commands
 
 - [`dump` ↪](#platform-helper-database-dump)
+- [`load` ↪](#platform-helper-database-load)
 
 # platform-helper database dump
 
@@ -986,6 +988,35 @@ platform-helper database dump
 
 ```
 platform-helper database dump --account-id <account_id> --app <application> 
+                              --env <environment> --database <database> 
+                              --vpc-name <vpc_name> 
+```
+
+## Options
+
+- `--account-id <text>`
+
+- `--app <text>`
+
+- `--env <text>`
+
+- `--database <text>`
+
+- `--vpc-name <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database load
+
+[↩ Parent](#platform-helper-database)
+
+    Load a database from an S3 bucket.
+
+## Usage
+
+```
+platform-helper database load --account-id <account_id> --app <application> 
                               --env <environment> --database <database> 
                               --vpc-name <vpc_name> 
 ```

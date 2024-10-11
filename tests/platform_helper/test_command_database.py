@@ -6,6 +6,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.database import dump
+from dbt_platform_helper.commands.database import load
 
 # import boto3
 # import pytest
@@ -34,6 +35,29 @@ def test_command_dump_success(mock_database_dump):
 
     assert result.exit_code == 0
     mock_database_dump.assert_called_once_with("12345", "my_app", "my_env", "my_postgres", "my_vpc")
+
+
+@patch("dbt_platform_helper.commands.database.DatabaseCopy.load")
+def test_command_load_success(mock_database_load):
+    runner = CliRunner()
+    result = runner.invoke(
+        load,
+        [
+            "--account-id",
+            "12345",
+            "--app",
+            "my_app",
+            "--env",
+            "my_env",
+            "--database",
+            "my_postgres",
+            "--vpc-name",
+            "my_vpc",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_database_load.assert_called_once_with("12345", "my_app", "my_env", "my_postgres", "my_vpc")
 
 
 # @patch("dbt_platform_helper.commands.database.DatabaseCopy.dump")
