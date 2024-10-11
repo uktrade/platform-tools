@@ -78,7 +78,10 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_success(mock_name_is_available, addons_file):
+@patch("dbt_platform_helper.utils.validation.cache_refresh_required", return_value = True)
+@patch("dbt_platform_helper.utils.validation.get_redis_supported_versions", return_value = ['6.3'])
+@patch("dbt_platform_helper.utils.validation.get_opensearch_supported_versions", return_value = ['1.3'])
+def test_validate_addons_success(mock_name_is_available, mock_cache_refresh, mock_get_redis_versions, mock_get_opensearch_versions, addons_file):
     mock_name_is_available.return_value = True
     errors = validate_addons(load_addons(addons_file))
 
@@ -226,17 +229,22 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
-    mock_name_is_available.return_value = True
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", return_value = True)
+@patch("dbt_platform_helper.utils.validation.cache_refresh_required", return_value = True)
+@patch("dbt_platform_helper.utils.validation.get_redis_supported_versions", return_value = ['6.2'])
+@patch("dbt_platform_helper.utils.validation.get_opensearch_supported_versions", return_value = ['1.3'])
+def test_validate_addons_failure(mock_name_is_available, mock_cache_refresh, mock_get_redis_versions, mock_get_opensearch_versions, addons_file, exp_error):
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
+        print(error)
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_invalid_env_name_errors(mock_name_is_available, mock_validate_redis_versions, mock_validate_opensearch_versions):
     mock_name_is_available.return_value = True
     error_map = validate_addons(
         {
@@ -259,25 +267,31 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
 def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, capfd):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
-    validate_addons(
-        {
-            "my-s3": {
-                "type": "s3",
-                "environments": {"dev": {"bucket_name": "bucket"}},
+
+    with patch("dbt_platform_helper.utils.validation._validate_redis_versions"), \
+         patch("dbt_platform_helper.utils.validation._validate_opensearch_versions"): 
+        validate_addons(
+            {
+                "my-s3": {
+                    "type": "s3",
+                    "environments": {"dev": {"bucket_name": "bucket"}},
+                }
             }
-        }
-    )
-
-    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
+        )
+        assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
-def test_validate_addons_unsupported_addon():
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_unsupported_addon(mock_validate_redis_versions, mock_validate_opensearch_versions):
     error_map = validate_addons(load_addons("unsupported_addon.yml"))
+
     for entry, error in error_map.items():
         assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
 
-
-def test_validate_addons_missing_type():
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_missing_type(mock_validate_redis_versions, mock_validate_opensearch_versions):
     error_map = validate_addons(load_addons("missing_type_addon.yml"))
     assert (
         "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
@@ -414,19 +428,27 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
+    mock_warn_on_s3_bucket_name_availability, mock_validate_redis_versions, mock_validate_opensearch_versions, valid_platform_config
 ):
-    validate_platform_config(valid_platform_config, disable_aws_validation=True)
+    validate_platform_config(valid_platform_config, disable_aws_validation=False)
     assert mock_warn_on_s3_bucket_name_availability.called
+    assert mock_validate_redis_versions.called
+    assert mock_validate_opensearch_versions.called
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success_when_aws_validation_disabled(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
+    mock_warn_on_s3_bucket_name_availability, mock_validate_redis_versions, mock_validate_opensearch_versions, valid_platform_config
 ):
     validate_platform_config(valid_platform_config, disable_aws_validation=True)
     assert not mock_warn_on_s3_bucket_name_availability.called
+    assert not mock_validate_redis_versions.called
+    assert not mock_validate_opensearch_versions.called
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
@@ -662,8 +684,10 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
-    load_and_validate_platform_config(disable_aws_validation=True)
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validation_checks_s3_bucket_names(mock_get_session, mock_validate_redis_versions, mock_validate_opensearch_versions, s3_extensions_fixture, capfd):
+    load_and_validate_platform_config(disable_aws_validation=False)
 
     assert "Warning" not in capfd.readouterr().out
     assert mock_get_session.called
@@ -685,11 +709,13 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
     response = {"Error": {"Code": "403"}}
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")
 
-    load_and_validate_platform_config(disable_aws_validation=True)
+    with patch("dbt_platform_helper.utils.validation._validate_redis_versions"), \
+         patch("dbt_platform_helper.utils.validation._validate_opensearch_versions"):
 
-    assert "Warning" in capfd.readouterr().out
-    assert mock_get_session.called
+        load_and_validate_platform_config(disable_aws_validation=False)
 
+        assert "Warning" in capfd.readouterr().out
+        assert mock_get_session.called
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_validation_off(
