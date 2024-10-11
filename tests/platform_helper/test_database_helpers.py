@@ -142,11 +142,11 @@ def test_database_load():
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
 def test_is_confirmed_ready_to_load(user_response):
-    db_copy = DatabaseCopy("", "", "test-env", "test-db", "", None, None, None, None)
     mock_input = Mock()
     mock_input.return_value = user_response
+    db_copy = DatabaseCopy("", "", "test-env", "test-db", "", None, None, None, None, mock_input)
 
-    assert db_copy.is_confirmed_ready_to_load("test-env", "test-db", mock_input)
+    assert db_copy.is_confirmed_ready_to_load("test-env", "test-db")
 
     mock_input.assert_called_once_with(
         f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
@@ -155,11 +155,11 @@ def test_is_confirmed_ready_to_load(user_response):
 
 @pytest.mark.parametrize("user_response", ["n", "N", " no ", "squiggly"])
 def test_is_not_confirmed_ready_to_load(user_response):
-    db_copy = DatabaseCopy(None, None, None, None)
     mock_input = Mock()
     mock_input.return_value = user_response
+    db_copy = DatabaseCopy(None, None, None, None, None, None, None, None, None, mock_input)
 
-    assert not db_copy.is_confirmed_ready_to_load("test-env", "test-db", mock_input)
+    assert not db_copy.is_confirmed_ready_to_load("test-env", "test-db")
 
     mock_input.assert_called_once_with(
         f"Are all tasks using test-db in the test-env environment stopped? (y/n)"

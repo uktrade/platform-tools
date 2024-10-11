@@ -57,6 +57,7 @@ class DatabaseCopy:
         run_database_copy_fn=run_database_copy_task,
         vpc_config_fn=get_vpc_info_by_name,
         db_connection_string_fn=get_connection_string,
+        input_fn=input,
     ):
         self.account_id = account_id
         self.app = app
@@ -67,6 +68,7 @@ class DatabaseCopy:
         self.run_database_copy_fn = run_database_copy_fn
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
+        self.input_fn = input_fn
 
     def _execute_operation(self, is_dump):
         session = self.get_session_fn()
@@ -92,8 +94,8 @@ class DatabaseCopy:
     def load(self):
         self._execute_operation(False)
 
-    def is_confirmed_ready_to_load(self, env, database, input):
-        user_input = input(
+    def is_confirmed_ready_to_load(self, env, database):
+        user_input = self.input_fn(
             f"Are all tasks using {database} in the {env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
