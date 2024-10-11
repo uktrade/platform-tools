@@ -612,13 +612,107 @@ def mock_vpc_info_session():
     mock_session.resource.return_value = mock_resource
     mock_vpc = Mock()
     mock_resource.Vpc.return_value = mock_vpc
-    subnets = Mock()
-    mock_vpc.subnets = subnets
-    subnets.all.return_value = [
-        ObjectWithId("subnet-abc123"),
-        ObjectWithId("subnet-abc456"),
-        ObjectWithId("subnet-abc789"),
-    ]
+
+    mock_client.describe_route_tables.return_value = {
+        "RouteTables": [
+            {
+                "Associations": [
+                    {
+                        "Main": False,
+                        "RouteTableId": "rtb-09613a6769688def8",
+                        "SubnetId": "subnet-private-1",
+                    }
+                ],
+                "Routes": [
+                    {
+                        "DestinationCidrBlock": "10.151.0.0/16",
+                        "GatewayId": "local",
+                        "Origin": "CreateRouteTable",
+                        "State": "active",
+                    },
+                    {
+                        "DestinationCidrBlock": "0.0.0.0/0",
+                        "NatGatewayId": "nat-05c4f248a6db4d724",
+                        "Origin": "CreateRoute",
+                        "State": "active",
+                    },
+                ],
+                "VpcId": "vpc-010327b71b948b4bc",
+                "OwnerId": "891377058512",
+            },
+            {
+                "Associations": [
+                    {
+                        "Main": True,
+                        "RouteTableId": "rtb-00cbf3c8d611a46b8",
+                    }
+                ],
+                "Routes": [
+                    {
+                        "DestinationCidrBlock": "10.151.0.0/16",
+                        "GatewayId": "local",
+                        "Origin": "CreateRouteTable",
+                        "State": "active",
+                    }
+                ],
+                "VpcId": "vpc-010327b71b948b4bc",
+                "OwnerId": "891377058512",
+            },
+            {
+                "Associations": [
+                    {
+                        "Main": False,
+                        "RouteTableId": "rtb-01caa2856120956c3",
+                        "SubnetId": "subnet-public-1",
+                    },
+                    {
+                        "Main": False,
+                        "RouteTableId": "rtb-01caa2856120956c3",
+                        "SubnetId": "subnet-public-2",
+                    },
+                ],
+                "Routes": [
+                    {
+                        "DestinationCidrBlock": "10.151.0.0/16",
+                        "GatewayId": "local",
+                        "Origin": "CreateRouteTable",
+                        "State": "active",
+                    },
+                    {
+                        "DestinationCidrBlock": "0.0.0.0/0",
+                        "GatewayId": "igw-0b2cbfdbb1cbd8a6b",
+                        "Origin": "CreateRoute",
+                        "State": "active",
+                    },
+                ],
+                "OwnerId": "891377058512",
+            },
+            {
+                "Associations": [
+                    {
+                        "Main": False,
+                        "RouteTableId": "rtb-054dcff33741f4fe8",
+                        "SubnetId": "subnet-private-2",
+                    }
+                ],
+                "Routes": [
+                    {
+                        "DestinationCidrBlock": "10.151.0.0/16",
+                        "GatewayId": "local",
+                        "Origin": "CreateRouteTable",
+                        "State": "active",
+                    },
+                    {
+                        "DestinationCidrBlock": "0.0.0.0/0",
+                        "NatGatewayId": "nat-08ead90aee75d601e",
+                        "Origin": "CreateRoute",
+                        "State": "active",
+                    },
+                ],
+                "OwnerId": "891377058512",
+            },
+        ]
+    }
 
     sec_groups = Mock()
     mock_vpc.security_groups = sec_groups
@@ -641,7 +735,7 @@ def test_get_vpc_info_by_name_success():
     result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     expected_vpc = Vpc(
-        subnets=["subnet-abc123", "subnet-abc456", "subnet-abc789"], security_groups=["sg-abc123"]
+        subnets=["subnet-private-1", "subnet-private-2"], security_groups=["sg-abc123"]
     )
 
     mock_client.describe_vpcs.assert_called_once_with(
@@ -676,15 +770,36 @@ def test_get_vpc_info_by_name_failure_no_vpc_id_in_response():
     assert "VPC id not present in vpc 'my_vpc'" in str(ex)
 
 
-def test_get_vpc_info_by_name_failure_no_subnets_in_vpc():
+def test_get_vpc_info_by_name_failure_no_private_subnets_in_vpc():
     mock_session, mock_client, mock_vpc = mock_vpc_info_session()
 
-    mock_vpc.subnets.all.return_value = []
+    mock_client.describe_route_tables.return_value = {
+        "RouteTables": [
+            {
+                "Associations": [
+                    {
+                        "Main": True,
+                        "RouteTableId": "rtb-00cbf3c8d611a46b8",
+                    }
+                ],
+                "Routes": [
+                    {
+                        "DestinationCidrBlock": "10.151.0.0/16",
+                        "GatewayId": "local",
+                        "Origin": "CreateRouteTable",
+                        "State": "active",
+                    }
+                ],
+                "VpcId": "vpc-010327b71b948b4bc",
+                "OwnerId": "891377058512",
+            }
+        ]
+    }
 
     with pytest.raises(AWSException) as ex:
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
-    assert "No subnets found in vpc 'my_vpc'" in str(ex)
+    assert "No private subnets found in vpc 'my_vpc'" in str(ex)
 
 
 def test_get_vpc_info_by_name_failure_no_matching_security_groups():

@@ -384,10 +384,22 @@ def get_vpc_info_by_name(session, app, env, vpc_name):
     ec2_resource = session.resource("ec2")
     vpc = ec2_resource.Vpc(vpc_id)
 
-    subnets = [subnet.id for subnet in vpc.subnets.all()]
+    route_tables = ec2_client.describe_route_tables(
+        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+    )["RouteTables"]
+
+    subnets = []
+    for route_table in route_tables:
+        private_routes = [route for route in route_table["Routes"] if "NatGatewayId" in route]
+        if not private_routes:
+            continue
+        for association in route_table["Associations"]:
+            if "SubnetId" in association:
+                subnet_id = association["SubnetId"]
+                subnets.append(subnet_id)
 
     if not subnets:
-        raise AWSException(f"No subnets found in vpc '{vpc_name}'")
+        raise AWSException(f"No private subnets found in vpc '{vpc_name}'")
 
     tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
     sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
