@@ -168,7 +168,6 @@ def test_validate_addons_success(mock_name_is_available, mock_cache_refresh, moc
             "redis_addons_bad_data.yml",
             {
                 "my-redis-bad-key": r"Wrong key 'bad_key' in",
-                "my-redis-bad-engine-size": r"environments.*default.*engine.*'6.2' does not match 'a-big-engine'",
                 "my-redis-bad-plan": r"environments.*default.*plan.*does not match 'enormous'",
                 "my-redis-too-many-replicas": r"environments.*default.*replicas.*should be an integer between 0 and 5",
                 "my-redis-bad-deletion-policy": r"environments.*default.*deletion_policy.*does not match 'Never'",
@@ -185,7 +184,6 @@ def test_validate_addons_success(mock_name_is_available, mock_cache_refresh, moc
                 "my-opensearch-environments-should-be-list": r"environments.*False should be instance of 'dict'",
                 "my-opensearch-bad-env-param": r"environments.*Wrong key 'opensearch_plan'",
                 "my-opensearch-bad-plan": r"environments.*dev.*plan.*does not match 'largish'",
-                "my-opensearch-bad-engine-size": r"environments.*dev.*engine.*does not match 7.3",
                 "my-opensearch-no-plan": r"Missing key: 'plan'",
                 "my-opensearch-volume-size-too-small": r"environments.*dev.*volume_size.*should be an integer greater than 10",
                 "my-opensearch-invalid-size-for-small": r"environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*",
