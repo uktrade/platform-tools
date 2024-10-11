@@ -12,6 +12,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client = Mock()
     mock_session = Mock()
     mock_session.client.return_value = mock_client
+    mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     account_id = "1234567"
     app = "my_app"
@@ -20,9 +21,11 @@ def test_run_database_copy_task(is_dump, exp_operation):
     vpc_config = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
     db_connection_string = "connection_string"
 
-    run_database_copy_task(
+    actual_task_arn = run_database_copy_task(
         mock_session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
     )
+
+    assert actual_task_arn == "arn:aws:ecs:test-task-arn"
 
     mock_session.client.assert_called_once_with("ecs")
     mock_client.run_task.assert_called_once_with(
@@ -64,7 +67,7 @@ def test_database_dump():
 
     mock_session = Mock()
     mock_session_fn = Mock(return_value=mock_session)
-    mock_run_database_copy_task_fn = Mock()
+    mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
     mock_vpc_config_fn = Mock()
@@ -72,6 +75,7 @@ def test_database_dump():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     mock_input_fn = Mock(return_value="yes")
+    mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
         account_id,
@@ -84,7 +88,11 @@ def test_database_dump():
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
+        mock_echo_fn,
     )
+
+    db_copy.wait_for_task_to_stop = Mock()
+
     db_copy.dump()
 
     mock_session_fn.assert_called_once()
@@ -100,6 +108,11 @@ def test_database_dump():
     )
 
     mock_input_fn.assert_not_called()
+    mock_echo_fn.assert_called_once_with(
+        "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
+        fg="green",
+    )
+    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
 
 
 def test_database_load_with_response_of_yes():
@@ -113,6 +126,7 @@ def test_database_load_with_response_of_yes():
     mock_session = Mock()
     mock_session_fn = Mock(return_value=mock_session)
     mock_run_database_copy_task_fn = Mock()
+    mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
     mock_vpc_config_fn = Mock()
@@ -120,6 +134,7 @@ def test_database_load_with_response_of_yes():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     mock_input_fn = Mock(return_value="yes")
+    mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
         account_id,
@@ -132,7 +147,10 @@ def test_database_load_with_response_of_yes():
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
+        mock_echo_fn,
     )
+    db_copy.wait_for_task_to_stop = Mock()
+
     db_copy.load()
 
     mock_session_fn.assert_called_once()
@@ -150,6 +168,12 @@ def test_database_load_with_response_of_yes():
     mock_input_fn.assert_called_once_with(
         f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
     )
+
+    mock_echo_fn.assert_called_once_with(
+        "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
+        fg="green",
+    )
+    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
 
 
 def test_database_load_with_response_of_no():
@@ -170,6 +194,7 @@ def test_database_load_with_response_of_no():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     mock_input_fn = Mock(return_value="no")
+    mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
         account_id,
@@ -182,6 +207,7 @@ def test_database_load_with_response_of_no():
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
+        mock_echo_fn,
     )
     db_copy.load()
 
@@ -196,6 +222,7 @@ def test_database_load_with_response_of_no():
     mock_input_fn.assert_called_once_with(
         f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
     )
+    mock_echo_fn.assert_not_called()
 
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
@@ -223,4 +250,27 @@ def test_is_not_confirmed_ready_to_load(user_response):
 
     mock_input.assert_called_once_with(
         f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
+    )
+
+
+def test_wait_for_task_to_stop():
+    mock_session = Mock()
+    mock_session_fn = Mock(return_value=mock_session)
+    mock_client = Mock()
+    mock_session.client.return_value = mock_client
+    mock_waiter = Mock()
+    mock_client.get_waiter.return_value = mock_waiter
+
+    db_copy = DatabaseCopy(
+        None, "test-app", "test-env", "test-db", None, mock_session_fn, None, None, None, None
+    )
+
+    db_copy.wait_for_task_to_stop("arn://the-task-arn")
+
+    mock_session.client.assert_called_once_with("ecs")
+    mock_client.get_waiter.assert_called_once_with("tasks_stopped")
+    mock_waiter.wait.assert_called_once_with(
+        cluster="test-app-test-env",
+        tasks=["arn://the-task-arn"],
+        WaiterConfig={"Delay": 6, "MaxAttempts": 300},
     )
