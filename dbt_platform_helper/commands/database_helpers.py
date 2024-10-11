@@ -72,3 +72,9 @@ class DatabaseCopy:
 
     def load(self, account_id, app, env, database, vpc_name):
         self._execute_operation(account_id, app, env, database, vpc_name, False)
+
+    def is_confirmed_ready_to_load(self, env, database, input):
+        user_input = input(
+            f"Are all tasks using {database} in the {env} environment stopped? (y/n)"
+        )
+        return user_input.lower().strip() in ["y", "yes"]

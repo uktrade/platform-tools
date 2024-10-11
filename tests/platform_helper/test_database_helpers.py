@@ -128,3 +128,16 @@ def test_database_load():
     mock_run_database_copy_task_fn.assert_called_once_with(
         mock_session, account_id, app, env, database, vpc, False, "test-db-connection-string"
     )
+
+
+@pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES"])
+def test_is_confirmed_ready_to_load(user_response):
+    db_copy = DatabaseCopy(None, None, None, None)
+    mock_input = Mock()
+    mock_input.return_value = user_response
+
+    assert db_copy.is_confirmed_ready_to_load("test-env", "test-db", mock_input)
+
+    mock_input.assert_called_once_with(
+        f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
+    )
