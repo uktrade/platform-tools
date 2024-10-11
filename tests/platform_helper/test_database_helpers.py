@@ -72,12 +72,17 @@ def test_database_dump():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     db_copy = DatabaseCopy(
+        account_id,
+        app,
+        env,
+        database,
+        vpc_name,
         mock_session_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
     )
-    db_copy.dump(account_id, app, env, database, vpc_name)
+    db_copy.dump()
 
     mock_session_fn.assert_called_once()
 
@@ -110,12 +115,17 @@ def test_database_load():
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
     db_copy = DatabaseCopy(
+        account_id,
+        app,
+        env,
+        database,
+        vpc_name,
         mock_session_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
     )
-    db_copy.load(account_id, app, env, database, vpc_name)
+    db_copy.load()
 
     mock_session_fn.assert_called_once()
 
@@ -132,7 +142,7 @@ def test_database_load():
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES"])
 def test_is_confirmed_ready_to_load(user_response):
-    db_copy = DatabaseCopy(None, None, None, None)
+    db_copy = DatabaseCopy("", "", "test-env", "test-db", "", None, None, None, None)
     mock_input = Mock()
     mock_input.return_value = user_response
 
