@@ -76,6 +76,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "opensearch_addons.yml",
         "monitoring_addons.yml",
         "no_param_addons.yml",
+        "alb_addons.yml",
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
@@ -226,6 +227,30 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
             {
                 "my-prometheus-policy-wrong-key": r"Missing key: 'role_arn'",
                 "my-prometheus-policy-wrong-type": r"Key 'role_arn' error.*should be instance of 'str'",
+            },
+        ),
+        (
+            "alb_addons_bad_data.yml",
+            {
+                "my-alb-additional-address-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-allowed-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cached-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cdn-compress-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-cdn-domain-list-be-a-dict": r"environments.*dev.*should be instance of 'dict'",
+                "my-cdn-geo-locations-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cdn-geo-restrictions-type-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cdn-logging-bucket-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cdn-logging-bucket-prefix-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-default-waf-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-enable-logging-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-forwarded-values-forward-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-forwarded-values-headers-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-forwarded-values-query-string-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-origin-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-origin-ssl-protocols-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
             },
         ),
     ],
