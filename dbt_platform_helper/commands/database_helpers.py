@@ -92,7 +92,8 @@ class DatabaseCopy:
         self._execute_operation(True)
 
     def load(self):
-        self._execute_operation(False)
+        if self.is_confirmed_ready_to_load(self.env, self.database):
+            self._execute_operation(False)
 
     def is_confirmed_ready_to_load(self, env, database):
         user_input = self.input_fn(

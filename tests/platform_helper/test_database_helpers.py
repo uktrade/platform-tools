@@ -71,6 +71,8 @@ def test_database_dump():
     mock_vpc_config_fn.return_value = vpc
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
+    mock_input_fn = Mock(return_value="yes")
+
     db_copy = DatabaseCopy(
         account_id,
         app,
@@ -81,6 +83,7 @@ def test_database_dump():
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
+        mock_input_fn,
     )
     db_copy.dump()
 
@@ -96,8 +99,10 @@ def test_database_dump():
         mock_session, account_id, app, env, database, vpc, True, "test-db-connection-string"
     )
 
+    mock_input_fn.assert_not_called()
 
-def test_database_load():
+
+def test_database_load_with_response_of_yes():
     app = "my-app"
     env = "my-env"
     vpc_name = "test-vpc"
@@ -114,6 +119,8 @@ def test_database_load():
     mock_vpc_config_fn.return_value = vpc
     mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
 
+    mock_input_fn = Mock(return_value="yes")
+
     db_copy = DatabaseCopy(
         account_id,
         app,
@@ -124,6 +131,7 @@ def test_database_load():
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
+        mock_input_fn,
     )
     db_copy.load()
 
@@ -137,6 +145,56 @@ def test_database_load():
 
     mock_run_database_copy_task_fn.assert_called_once_with(
         mock_session, account_id, app, env, database, vpc, False, "test-db-connection-string"
+    )
+
+    mock_input_fn.assert_called_once_with(
+        f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
+    )
+
+
+def test_database_load_with_response_of_no():
+    app = "my-app"
+    env = "my-env"
+    vpc_name = "test-vpc"
+    database = "test-db"
+
+    account_id = "1234567"
+
+    mock_session = Mock()
+    mock_session_fn = Mock(return_value=mock_session)
+    mock_run_database_copy_task_fn = Mock()
+
+    vpc = Vpc([], [])
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.return_value = vpc
+    mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
+
+    mock_input_fn = Mock(return_value="no")
+
+    db_copy = DatabaseCopy(
+        account_id,
+        app,
+        env,
+        database,
+        vpc_name,
+        mock_session_fn,
+        mock_run_database_copy_task_fn,
+        mock_vpc_config_fn,
+        mock_db_connection_string_fn,
+        mock_input_fn,
+    )
+    db_copy.load()
+
+    mock_session_fn.assert_not_called()
+
+    mock_vpc_config_fn.assert_not_called()
+
+    mock_db_connection_string_fn.assert_not_called()
+
+    mock_run_database_copy_task_fn.assert_not_called()
+
+    mock_input_fn.assert_called_once_with(
+        f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
     )
 
 
