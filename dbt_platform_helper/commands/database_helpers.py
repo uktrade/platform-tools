@@ -1,4 +1,5 @@
 import boto3
+import click
 
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -57,7 +58,7 @@ class DatabaseCopy:
         run_database_copy_fn=run_database_copy_task,
         vpc_config_fn=get_vpc_info_by_name,
         db_connection_string_fn=get_connection_string,
-        input_fn=input,
+        input_fn=click.prompt,
     ):
         self.account_id = account_id
         self.app = app
@@ -92,11 +93,11 @@ class DatabaseCopy:
         self._execute_operation(True)
 
     def load(self):
-        if self.is_confirmed_ready_to_load(self.env, self.database):
+        if self.is_confirmed_ready_to_load():
             self._execute_operation(False)
 
-    def is_confirmed_ready_to_load(self, env, database):
+    def is_confirmed_ready_to_load(self):
         user_input = self.input_fn(
-            f"Are all tasks using {database} in the {env} environment stopped? (y/n)"
+            f"Are all tasks using {self.database} in the {self.env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
