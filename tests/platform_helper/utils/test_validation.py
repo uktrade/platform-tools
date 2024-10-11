@@ -78,13 +78,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-@patch("dbt_platform_helper.utils.validation.get_redis_supported_versions", return_value=["6.3"])
-@patch(
-    "dbt_platform_helper.utils.validation.get_opensearch_supported_versions", return_value=["1.3"]
-)
-def test_validate_addons_success(
-    mock_name_is_available, mock_get_redis_versions, mock_get_opensearch_versions, addons_file
-):
+def test_validate_addons_success(mock_name_is_available, addons_file):
     mock_name_is_available.return_value = True
     errors = validate_addons(load_addons(addons_file))
 
