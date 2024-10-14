@@ -97,6 +97,7 @@ class DatabaseCopy:
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
             fg="green",
         )
+        self.tail_logs(is_dump)
         self.wait_for_task_to_stop(task_arn)
 
     def dump(self):
@@ -111,6 +112,30 @@ class DatabaseCopy:
             f"Are all tasks using {self.database} in the {self.env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
+
+    def tail_logs(self, is_dump: bool):
+        session = self.get_session_fn()
+        action = "dump" if is_dump else "load"
+        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:/ecs/{self.app}-{self.env}-{self.database}-{action}"
+        response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
+
+        started = False
+        stopped = False
+        for data in response["responseStream"]:
+            if stopped:
+                break
+            results = data.get("sessionUpdate", {}).get("sessionResults", [])
+            if not results:
+                print(".", end="")
+            for result in results:
+                if not started:
+                    print()
+                started = True
+                message = result.get("message")
+                if message:
+                    if message.startswith("Stopping data "):
+                        stopped = True
+                    self.echo_fn(message)
 
     def wait_for_task_to_stop(self, task_arn):
         client = self.get_session_fn().client("ecs")

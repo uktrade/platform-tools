@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
 
@@ -92,6 +93,7 @@ def test_database_dump():
     )
 
     db_copy.wait_for_task_to_stop = Mock()
+    db_copy.tail_logs = Mock()
 
     db_copy.dump()
 
@@ -113,6 +115,7 @@ def test_database_dump():
         fg="green",
     )
     db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
+    db_copy.tail_logs.assert_called_once_with(True)
 
 
 def test_database_load_with_response_of_yes():
@@ -125,7 +128,6 @@ def test_database_load_with_response_of_yes():
 
     mock_session = Mock()
     mock_session_fn = Mock(return_value=mock_session)
-    mock_run_database_copy_task_fn = Mock()
     mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
@@ -150,6 +152,7 @@ def test_database_load_with_response_of_yes():
         mock_echo_fn,
     )
     db_copy.wait_for_task_to_stop = Mock()
+    db_copy.tail_logs = Mock()
 
     db_copy.load()
 
@@ -174,6 +177,7 @@ def test_database_load_with_response_of_yes():
         fg="green",
     )
     db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
+    db_copy.tail_logs.assert_called_once_with(False)
 
 
 def test_database_load_with_response_of_no():
@@ -209,6 +213,8 @@ def test_database_load_with_response_of_no():
         mock_input_fn,
         mock_echo_fn,
     )
+    db_copy.tail_logs = Mock()
+
     db_copy.load()
 
     mock_session_fn.assert_not_called()
@@ -223,6 +229,7 @@ def test_database_load_with_response_of_no():
         f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
     )
     mock_echo_fn.assert_not_called()
+    db_copy.tail_logs.assert_not_called()
 
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
@@ -273,4 +280,55 @@ def test_wait_for_task_to_stop():
         cluster="test-app-test-env",
         tasks=["arn://the-task-arn"],
         WaiterConfig={"Delay": 6, "MaxAttempts": 300},
+    )
+
+
+@pytest.mark.parametrize("is_dump", [True, False])
+def test_tail_logs(is_dump):
+    action = "dump" if is_dump else "load"
+    mock_session = Mock()
+    mock_session_fn = Mock(return_value=mock_session)
+    mock_client = Mock()
+    mock_session.client.return_value = mock_client
+
+    mock_client.start_live_tail.return_value = {
+        "responseStream": [
+            {"sessionStart": {}},
+            {"sessionUpdate": {"sessionResults": []}},
+            {"sessionUpdate": {"sessionResults": [{"message": ""}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": f"Starting data {action}"}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": "A load of SQL shenanigans"}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": f"Stopping data {action}"}]}},
+        ]
+    }
+    mock_echo = Mock()
+
+    db_copy = DatabaseCopy(
+        "1234",
+        "test-app",
+        "test-env",
+        "test-db",
+        None,
+        mock_session_fn,
+        None,
+        None,
+        None,
+        None,
+        echo_fn=mock_echo,
+    )
+    db_copy.tail_logs(is_dump)
+
+    mock_session.client.assert_called_once_with("logs")
+    mock_client.start_live_tail.assert_called_once_with(
+        logGroupIdentifiers=[
+            f"arn:aws:logs:eu-west-2:1234:log-group:/ecs/test-app-test-env-test-db-{action}"
+        ],
+    )
+
+    mock_echo.assert_has_calls(
+        [
+            call(f"Starting data {action}"),
+            call("A load of SQL shenanigans"),
+            call(f"Stopping data {action}"),
+        ]
     )
