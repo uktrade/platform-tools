@@ -698,14 +698,6 @@ def create_invalid_platform_config_file(fakefs):
     )
 
 
-@pytest.fixture
-def create_invalid_platform_config_file(fakefs):
-    fakefs.create_file(
-        Path(PLATFORM_CONFIG_FILE),
-        contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
-    )
-
-
 @pytest.fixture(autouse=True)
 def mock_get_opensearch_supported_versions(monkeypatch):
     def mock_return_value(opensearch_client=None):

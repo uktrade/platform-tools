@@ -126,7 +126,6 @@ def validate_addons(addons: dict):
                 continue
             schema.validate(addon)
         except SchemaError as ex:
-            print(f"Schema Error: {ex}")
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
     _validate_s3_bucket_uniqueness({"extensions": addons})
@@ -545,11 +544,6 @@ def validate_platform_config(config, disable_aws_validation=False):
         _validate_opensearch_versions(config)
 
 
-# TODO Test for get_redis_supported_versions() and for read_supported_versions_from_cache
-# TODO test for _validate_redis_versions, patch cache_Refresh_required=True and read_supported_versions_from_cache=['7.1', '6.2'] happy path.
-# TODO add redis/opensearch version validation to validate_addons, update tests.
-
-
 def _validate_redis_versions(config):
 
     supported_redis_versions = []
@@ -572,7 +566,6 @@ def _validate_redis_versions(config):
         if isinstance(environments, dict):
             for environment in environments.keys():
                 env_config = environments.get(environment, {})
-                print(env_config)
                 if isinstance(env_config, dict):
                     redis_engine_version = env_config.get("engine")
                     if redis_engine_version not in supported_redis_versions:
@@ -613,7 +606,6 @@ def _validate_opensearch_versions(config):
         if isinstance(environments, dict):
             for environment in environments.keys():
                 env_config = environments.get(environment, {})
-                print(env_config)
                 if isinstance(env_config, dict):
                     opensearch_engine_version = env_config.get("engine")
                     if opensearch_engine_version not in supported_opensearch_versions:
