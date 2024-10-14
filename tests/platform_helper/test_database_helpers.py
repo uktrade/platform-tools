@@ -267,9 +267,20 @@ def test_wait_for_task_to_stop():
     mock_session.client.return_value = mock_client
     mock_waiter = Mock()
     mock_client.get_waiter.return_value = mock_waiter
+    mock_echo = Mock()
 
     db_copy = DatabaseCopy(
-        None, "test-app", "test-env", "test-db", None, mock_session_fn, None, None, None, None
+        None,
+        "test-app",
+        "test-env",
+        "test-db",
+        None,
+        mock_session_fn,
+        None,
+        None,
+        None,
+        None,
+        mock_echo,
     )
 
     db_copy.wait_for_task_to_stop("arn://the-task-arn")
@@ -280,6 +291,11 @@ def test_wait_for_task_to_stop():
         cluster="test-app-test-env",
         tasks=["arn://the-task-arn"],
         WaiterConfig={"Delay": 6, "MaxAttempts": 300},
+    )
+    mock_echo.assert_has_calls(
+        [
+            call("Waiting for task to complete", fg="yellow"),
+        ]
     )
 
 
@@ -327,6 +343,7 @@ def test_tail_logs(is_dump):
 
     mock_echo.assert_has_calls(
         [
+            call(f"Tailing logs for /ecs/test-app-test-env-test-db-{action}", fg="yellow"),
             call(f"Starting data {action}"),
             call("A load of SQL shenanigans"),
             call(f"Stopping data {action}"),

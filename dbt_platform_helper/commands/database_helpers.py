@@ -114,9 +114,11 @@ class DatabaseCopy:
         return user_input.lower().strip() in ["y", "yes"]
 
     def tail_logs(self, is_dump: bool):
-        session = self.get_session_fn()
         action = "dump" if is_dump else "load"
-        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:/ecs/{self.app}-{self.env}-{self.database}-{action}"
+        log_group_name = f"/ecs/{self.app}-{self.env}-{self.database}-{action}"
+        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:{log_group_name}"
+        self.echo_fn(f"Tailing logs for {log_group_name}", fg="yellow")
+        session = self.get_session_fn()
         response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         started = False
@@ -138,6 +140,7 @@ class DatabaseCopy:
                     self.echo_fn(message)
 
     def wait_for_task_to_stop(self, task_arn):
+        self.echo_fn("Waiting for task to complete", fg="yellow")
         client = self.get_session_fn().client("ecs")
         waiter = client.get_waiter("tasks_stopped")
         waiter.wait(
