@@ -121,19 +121,14 @@ class DatabaseCopy:
         session = self.get_session_fn()
         response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
 
-        started = False
         stopped = False
         for data in response["responseStream"]:
             if stopped:
                 break
             results = data.get("sessionUpdate", {}).get("sessionResults", [])
-            if not results:
-                print(".", end="")
             for result in results:
-                if not started:
-                    print()
-                started = True
                 message = result.get("message")
+
                 if message:
                     if message.startswith("Stopping data "):
                         stopped = True
