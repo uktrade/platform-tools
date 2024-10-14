@@ -20,7 +20,7 @@ def run_database_copy_task(
     client = session.client("ecs")
     action = "dump" if is_dump else "load"
     response = client.run_task(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{env}-{database}-{action}",
+        taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{app}-{env}-{database}-{action}",
         cluster=f"{app}-{env}",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
@@ -35,7 +35,7 @@ def run_database_copy_task(
         overrides={
             "containerOverrides": [
                 {
-                    "name": f"{env}-{database}-{action}",
+                    "name": f"{app}-{env}-{database}-{action}",
                     "environment": [
                         {"name": "DATA_COPY_OPERATION", "value": action.upper()},
                         {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
