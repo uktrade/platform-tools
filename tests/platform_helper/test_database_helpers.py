@@ -29,7 +29,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
     mock_session.client.assert_called_once_with("ecs")
     mock_client.run_task.assert_called_once_with(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_env-my_postgres-{exp_operation}",
+        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_app-my_env-my_postgres-{exp_operation}",
         cluster="my_app-my_env",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
@@ -46,7 +46,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
         overrides={
             "containerOverrides": [
                 {
-                    "name": f"my_env-my_postgres-{exp_operation}",
+                    "name": f"my_app-my_env-my_postgres-{exp_operation}",
                     "environment": [
                         {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
                         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
