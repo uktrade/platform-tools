@@ -1,5 +1,19 @@
 # Changelog
 
+## [11.0.0](https://github.com/uktrade/platform-tools/compare/10.11.3...11.0.0) (2024-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Implement a data copy command that copies data cross-VPC ([#565](https://github.com/uktrade/platform-tools/issues/565))
+
+NOTE: This removes the previous `platform-helper database copy` command. Instructions for use of the replacement `dump` and `load` commands can be found here: https://platform.readme.trade.gov.uk/reference/copy-a-database-between-environments/
+
+### Features
+
+* DBTP-1110 support cdn configuration ([#596](https://github.com/uktrade/platform-tools/issues/596)) ([fd73517](https://github.com/uktrade/platform-tools/commit/fd73517512e1769285874dc3ca340dc4ebd8eefb))
+* Implement a data copy command that copies data cross-VPC ([#565](https://github.com/uktrade/platform-tools/issues/565)) ([d9037e5](https://github.com/uktrade/platform-tools/commit/d9037e5f32071c7a6ed41dc4d1e697a3bd44b40e))
+
 ## [10.11.3](https://github.com/uktrade/platform-tools/compare/10.11.2...10.11.3) (2024-10-02)
 
 
