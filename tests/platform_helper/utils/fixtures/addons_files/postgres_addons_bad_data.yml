@@ -82,3 +82,28 @@ my-rds-backup-retention-too-high:
   environments:
     default:
       backup_retention_days: 36
+
+my-rds-data-migration-invalid-key:
+  type: postgres
+  version: 14.4
+  environments:
+    prod: {}
+  database_copy:
+    - from: prod
+      non-existent-key: hotfix
+      to: dev
+
+my-rds-data-migration-missing-key:
+  type: postgres
+  version: 14.4
+  environments:
+    prod: {}
+  database_copy:
+    - from: prod
+
+my-rds-data-migration-invalid-environments:
+  type: postgres
+  version: 14.4
+  database_copy:
+    - from: $
+      to: £

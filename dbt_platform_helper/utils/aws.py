@@ -11,6 +11,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -321,7 +322,7 @@ def get_load_balancer_configuration(
     return response
 
 
-def update_postgres_parameter_with_master_secret(session, parameter_name, secret_arn):
+def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
     ssm_client = session.client("ssm")
     secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
@@ -336,3 +337,74 @@ def update_postgres_parameter_with_master_secret(session, parameter_name, secret
     parameter_data["password"] = urllib.parse.quote(secret_value["password"])
 
     return parameter_data
+
+
+def get_connection_string(
+    session: Session,
+    app: str,
+    env: str,
+    db_identifier: str,
+    connection_data_fn=get_postgres_connection_data_updated_with_master_secret,
+) -> str:
+    addon_name = db_identifier.split(f"{app}-{env}-", 1)[1]
+    normalised_addon_name = addon_name.replace("-", "_").upper()
+    connection_string_parameter = (
+        f"/copilot/{app}/{env}/secrets/{normalised_addon_name}_READ_ONLY_USER"
+    )
+    master_secret_name = f"/copilot/{app}/{env}/secrets/{normalised_addon_name}_RDS_MASTER_ARN"
+    master_secret_arn = session.client("ssm").get_parameter(
+        Name=master_secret_name, WithDecryption=True
+    )["Parameter"]["Value"]
+
+    conn = connection_data_fn(session, connection_string_parameter, master_secret_arn)
+
+    return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
+
+
+class Vpc:
+    def __init__(self, subnets, security_groups):
+        self.subnets = subnets
+        self.security_groups = security_groups
+
+
+def get_vpc_info_by_name(session, app, env, vpc_name):
+    ec2_client = session.client("ec2")
+    vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
+
+    matching_vpcs = vpc_response.get("Vpcs", [])
+
+    if not matching_vpcs:
+        raise AWSException(f"VPC not found for name '{vpc_name}'")
+
+    vpc_id = vpc_response["Vpcs"][0].get("VpcId")
+
+    if not vpc_id:
+        raise AWSException(f"VPC id not present in vpc '{vpc_name}'")
+
+    ec2_resource = session.resource("ec2")
+    vpc = ec2_resource.Vpc(vpc_id)
+
+    route_tables = ec2_client.describe_route_tables(
+        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+    )["RouteTables"]
+
+    subnets = []
+    for route_table in route_tables:
+        private_routes = [route for route in route_table["Routes"] if "NatGatewayId" in route]
+        if not private_routes:
+            continue
+        for association in route_table["Associations"]:
+            if "SubnetId" in association:
+                subnet_id = association["SubnetId"]
+                subnets.append(subnet_id)
+
+    if not subnets:
+        raise AWSException(f"No private subnets found in vpc '{vpc_name}'")
+
+    tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
+    sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
+
+    if not sec_groups:
+        raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
+
+    return Vpc(subnets, sec_groups)
