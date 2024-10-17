@@ -1,30 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-TASKS_RUNNING=0
-
-CHECK_COUNT=0
-CHECK_NUMBER=1
-CHECK_INTERVAL=60
-
-CLIENT_TASK="ssm-session-wor"
-
-while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
-  sleep $CHECK_INTERVAL
-  TASKS_RUNNING="$(ps -e -o pid,comm | grep -c "$CLIENT_TASK")"
-
-  if [[ $TASKS_RUNNING == 0 ]]; then
-     CHECK_COUNT=$(( $CHECK_COUNT + 1 ))
-     TIME_TO_SHUTDOWN="$(( (CHECK_NUMBER - CHECK_COUNT) * CHECK_INTERVAL ))"
-     echo "No clients connected, will shutdown in approximately $TIME_TO_SHUTDOWN seconds"
-  else
-     CHECK_COUNT=0
-     echo "$TASKS_RUNNING clients are connected"
-  fi
-done
-
-# Trigger CloudFormation stack delete before shutting down
-if [[ ! -z $ECS_CONTAINER_METADATA_URI_V4 ]]; then
-  aws cloudformation delete-stack --stack-name task-$(curl $ECS_CONTAINER_METADATA_URI_V4 -s | jq -r ".Name")
+if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
+then
+  echo "Starting data dump"
+  pg_dump --format c "${DB_CONNECTION_STRING}" > data_dump.sql
+  aws s3 cp data_dump.sql s3://${S3_BUCKET_NAME}/
+  echo "Stopping data dump"
+else
+  echo "Starting data load"
+  aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql
+  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
+  echo "Cleaning up dump file"
+  rm data_dump.sql
+  echo "Removing dump file from S3"
+  aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
+  echo "Stopping data load"
 fi
-
-echo "Shutting down"

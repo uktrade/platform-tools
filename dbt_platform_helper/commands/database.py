@@ -17,8 +17,8 @@ def database():
 @click.option("--vpc-name", type=str, required=True)
 def dump(account_id, app, env, database, vpc_name):
     """Dump a database into an S3 bucket."""
-    data_copy = DatabaseCopy(account_id, app, env, database, vpc_name)
-    data_copy.dump()
+    data_copy = DatabaseCopy(account_id, app, database)
+    data_copy.dump(env, vpc_name)
 
 
 @database.command(name="load")
@@ -29,5 +29,20 @@ def dump(account_id, app, env, database, vpc_name):
 @click.option("--vpc-name", type=str, required=True)
 def load(account_id, app, env, database, vpc_name):
     """Load a database from an S3 bucket."""
-    data_copy = DatabaseCopy(account_id, app, env, database, vpc_name)
-    data_copy.load()
+    data_copy = DatabaseCopy(account_id, app, database)
+    data_copy.load(env, vpc_name)
+
+
+@database.command(name="copy")
+@click.option("--account-id", type=str, required=True)
+@click.option("--app", type=str, required=True)
+@click.option("--from", "from_env", type=str, required=True)
+@click.option("--to", "to_env", type=str, required=True)
+@click.option("--database", type=str, required=True)
+@click.option("--from-vpc", type=str, required=True)
+@click.option("--to-vpc", type=str, required=True)
+def copy(account_id, app, from_env, to_env, database, from_vpc, to_vpc):
+    """Copy a database from an S3 bucket."""
+    data_copy = DatabaseCopy(account_id, app, database)
+    data_copy.dump(from_env, from_vpc)
+    data_copy.load(to_env, to_vpc)
