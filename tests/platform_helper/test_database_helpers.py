@@ -82,7 +82,6 @@ def test_database_dump():
         account_id,
         app,
         database,
-        vpc_name,
         mock_session_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
@@ -94,7 +93,7 @@ def test_database_dump():
     db_copy.wait_for_task_to_stop = Mock()
     db_copy.tail_logs = Mock()
 
-    db_copy.dump(env)
+    db_copy.dump(env, vpc_name)
 
     mock_session_fn.assert_called_once()
 
@@ -141,7 +140,6 @@ def test_database_load_with_response_of_yes():
         account_id,
         app,
         database,
-        vpc_name,
         mock_session_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
@@ -152,7 +150,7 @@ def test_database_load_with_response_of_yes():
     db_copy.wait_for_task_to_stop = Mock()
     db_copy.tail_logs = Mock()
 
-    db_copy.load(env)
+    db_copy.load(env, vpc_name)
 
     mock_session_fn.assert_called_once()
 
@@ -202,7 +200,6 @@ def test_database_load_with_response_of_no():
         account_id,
         app,
         database,
-        vpc_name,
         mock_session_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
@@ -212,7 +209,7 @@ def test_database_load_with_response_of_no():
     )
     db_copy.tail_logs = Mock()
 
-    db_copy.load(env)
+    db_copy.load(env, vpc_name)
 
     mock_session_fn.assert_not_called()
 
@@ -237,7 +234,6 @@ def test_is_confirmed_ready_to_load(user_response):
         "",
         "",
         "test-db",
-        "",
         None,
         None,
         None,
@@ -260,7 +256,6 @@ def test_is_not_confirmed_ready_to_load(user_response):
         None,
         None,
         "test-db",
-        None,
         None,
         None,
         None,
@@ -288,7 +283,6 @@ def test_wait_for_task_to_stop():
         None,
         "test-app",
         "test-db",
-        None,
         mock_session_fn,
         None,
         None,
@@ -337,7 +331,6 @@ def test_tail_logs(is_dump):
         "1234",
         "test-app",
         "test-db",
-        None,
         mock_session_fn,
         None,
         None,
