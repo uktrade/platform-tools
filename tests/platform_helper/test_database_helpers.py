@@ -90,7 +90,6 @@ def test_database_dump():
         mock_echo_fn,
     )
 
-    db_copy.wait_for_task_to_stop = Mock()
     db_copy.tail_logs = Mock()
 
     db_copy.dump(env, vpc_name)
@@ -117,7 +116,6 @@ def test_database_dump():
             ),
         ]
     )
-    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", env)
     db_copy.tail_logs.assert_called_once_with(True, env)
 
 
@@ -152,7 +150,6 @@ def test_database_load_with_response_of_yes():
         mock_input_fn,
         mock_echo_fn,
     )
-    db_copy.wait_for_task_to_stop = Mock()
     db_copy.tail_logs = Mock()
 
     db_copy.load(env, vpc_name)
@@ -184,7 +181,6 @@ def test_database_load_with_response_of_yes():
             ),
         ]
     )
-    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", env)
     db_copy.tail_logs.assert_called_once_with(False, "my-env")
 
 
@@ -279,43 +275,6 @@ def test_is_not_confirmed_ready_to_load(user_response):
 
     mock_input.assert_called_once_with(
         f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
-    )
-
-
-def test_wait_for_task_to_stop():
-    mock_session = Mock()
-    mock_session_fn = Mock(return_value=mock_session)
-    mock_client = Mock()
-    mock_session.client.return_value = mock_client
-    mock_waiter = Mock()
-    mock_client.get_waiter.return_value = mock_waiter
-    mock_echo = Mock()
-
-    db_copy = DatabaseCopy(
-        None,
-        "test-app",
-        "test-db",
-        mock_session_fn,
-        None,
-        None,
-        None,
-        None,
-        mock_echo,
-    )
-
-    db_copy.wait_for_task_to_stop("arn://the-task-arn", "test-env")
-
-    mock_session.client.assert_called_once_with("ecs")
-    mock_client.get_waiter.assert_called_once_with("tasks_stopped")
-    mock_waiter.wait.assert_called_once_with(
-        cluster="test-app-test-env",
-        tasks=["arn://the-task-arn"],
-        WaiterConfig={"Delay": 6, "MaxAttempts": 300},
-    )
-    mock_echo.assert_has_calls(
-        [
-            call("Waiting for task to complete", fg="yellow"),
-        ]
     )
 
 
