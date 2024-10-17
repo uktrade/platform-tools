@@ -100,7 +100,6 @@ class DatabaseCopy:
             fg="green",
         )
         self.tail_logs(is_dump, env)
-        self.wait_for_task_to_stop(task_arn, env)
 
     def dump(self, env, vpc_name):
         self._execute_operation(True, env, vpc_name)
@@ -135,13 +134,3 @@ class DatabaseCopy:
                     if message.startswith("Stopping data "):
                         stopped = True
                     self.echo_fn(message)
-
-    def wait_for_task_to_stop(self, task_arn, env):
-        self.echo_fn("Waiting for task to complete", fg="yellow")
-        client = self.get_session_fn().client("ecs")
-        waiter = client.get_waiter("tasks_stopped")
-        waiter.wait(
-            cluster=f"{self.app}-{env}",
-            tasks=[task_arn],
-            WaiterConfig={"Delay": 6, "MaxAttempts": 300},
-        )
