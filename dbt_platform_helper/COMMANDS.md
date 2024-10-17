@@ -42,6 +42,7 @@
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database dump](#platform-helper-database-dump)
 - [platform-helper database load](#platform-helper-database-load)
+- [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
@@ -965,7 +966,7 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 ## Usage
 
 ```
-platform-helper database (dump|load) 
+platform-helper database (dump|load|copy) 
 ```
 
 ## Options
@@ -975,6 +976,7 @@ platform-helper database (dump|load)
 
 ## Commands
 
+- [`copy` ↪](#platform-helper-database-copy)
 - [`dump` ↪](#platform-helper-database-dump)
 - [`load` ↪](#platform-helper-database-load)
 
@@ -1028,6 +1030,37 @@ platform-helper database load --account-id <account_id> --app <application>
 - `--app <text>`
 
 - `--env <text>`
+
+- `--database <text>`
+
+- `--vpc-name <text>`
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database copy
+
+[↩ Parent](#platform-helper-database)
+
+    Copy a database from an S3 bucket.
+
+## Usage
+
+```
+platform-helper database copy --account-id <account_id> --app <application> 
+                              --from <from_env> --to <to_env> --database <database> 
+                              --vpc-name <vpc_name> 
+```
+
+## Options
+
+- `--account-id <text>`
+
+- `--app <text>`
+
+- `--from <text>`
+
+- `--to <text>`
 
 - `--database <text>`
 

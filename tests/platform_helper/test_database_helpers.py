@@ -82,6 +82,7 @@ def test_database_dump():
         account_id,
         app,
         env,
+        None,  # No `to` env required for dump
         database,
         vpc_name,
         mock_session_fn,
@@ -114,7 +115,7 @@ def test_database_dump():
         "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
         fg="green",
     )
-    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
+    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", True)
     db_copy.tail_logs.assert_called_once_with(True)
 
 
@@ -141,6 +142,7 @@ def test_database_load_with_response_of_yes():
     db_copy = DatabaseCopy(
         account_id,
         app,
+        None,  # No `from` env required for dump
         env,
         database,
         vpc_name,
@@ -176,7 +178,7 @@ def test_database_load_with_response_of_yes():
         "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
         fg="green",
     )
-    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn")
+    db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", False)
     db_copy.tail_logs.assert_called_once_with(False)
 
 
@@ -203,6 +205,7 @@ def test_database_load_with_response_of_no():
     db_copy = DatabaseCopy(
         account_id,
         app,
+        None,  # No `from` env required for dump
         env,
         database,
         vpc_name,
@@ -236,7 +239,19 @@ def test_database_load_with_response_of_no():
 def test_is_confirmed_ready_to_load(user_response):
     mock_input = Mock()
     mock_input.return_value = user_response
-    db_copy = DatabaseCopy("", "", "test-env", "test-db", "", None, None, None, None, mock_input)
+    db_copy = DatabaseCopy(
+        "",
+        "",
+        None,  # No `from` env required for dump
+        "test-env",
+        "test-db",
+        "",
+        None,
+        None,
+        None,
+        None,
+        mock_input,
+    )
 
     assert db_copy.is_confirmed_ready_to_load()
 
@@ -250,7 +265,17 @@ def test_is_not_confirmed_ready_to_load(user_response):
     mock_input = Mock()
     mock_input.return_value = user_response
     db_copy = DatabaseCopy(
-        None, None, "test-env", "test-db", None, None, None, None, None, mock_input
+        None,
+        None,
+        None,  # No `from` env required for dump
+        "test-env",
+        "test-db",
+        None,
+        None,
+        None,
+        None,
+        None,
+        mock_input,
     )
 
     assert not db_copy.is_confirmed_ready_to_load()
@@ -272,7 +297,8 @@ def test_wait_for_task_to_stop():
     db_copy = DatabaseCopy(
         None,
         "test-app",
-        "test-env",
+        "test-from-env",
+        "test-to-env",
         "test-db",
         None,
         mock_session_fn,
@@ -283,12 +309,12 @@ def test_wait_for_task_to_stop():
         mock_echo,
     )
 
-    db_copy.wait_for_task_to_stop("arn://the-task-arn")
+    db_copy.wait_for_task_to_stop("arn://the-task-arn", True)
 
     mock_session.client.assert_called_once_with("ecs")
     mock_client.get_waiter.assert_called_once_with("tasks_stopped")
     mock_waiter.wait.assert_called_once_with(
-        cluster="test-app-test-env",
+        cluster="test-app-test-from-env",
         tasks=["arn://the-task-arn"],
         WaiterConfig={"Delay": 6, "MaxAttempts": 300},
     )
@@ -302,6 +328,7 @@ def test_wait_for_task_to_stop():
 @pytest.mark.parametrize("is_dump", [True, False])
 def test_tail_logs(is_dump):
     action = "dump" if is_dump else "load"
+    env_target = "from" if is_dump else "to"
     mock_session = Mock()
     mock_session_fn = Mock(return_value=mock_session)
     mock_client = Mock()
@@ -322,7 +349,8 @@ def test_tail_logs(is_dump):
     db_copy = DatabaseCopy(
         "1234",
         "test-app",
-        "test-env",
+        "test-from-env",
+        "test-to-env",
         "test-db",
         None,
         mock_session_fn,
@@ -337,13 +365,16 @@ def test_tail_logs(is_dump):
     mock_session.client.assert_called_once_with("logs")
     mock_client.start_live_tail.assert_called_once_with(
         logGroupIdentifiers=[
-            f"arn:aws:logs:eu-west-2:1234:log-group:/ecs/test-app-test-env-test-db-{action}"
+            f"arn:aws:logs:eu-west-2:1234:log-group:/ecs/test-app-test-{env_target}-env-test-db-{action}"
         ],
     )
 
     mock_echo.assert_has_calls(
         [
-            call(f"Tailing logs for /ecs/test-app-test-env-test-db-{action}", fg="yellow"),
+            call(
+                f"Tailing logs for /ecs/test-app-test-{env_target}-env-test-db-{action}",
+                fg="yellow",
+            ),
             call(f"Starting data {action}"),
             call("A load of SQL shenanigans"),
             call(f"Stopping data {action}"),
