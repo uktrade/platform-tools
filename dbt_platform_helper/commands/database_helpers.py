@@ -1,8 +1,8 @@
 import boto3
 import click
 
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 
@@ -54,7 +54,7 @@ class DatabaseCopy:
         account_id,
         app,
         database,
-        get_session_fn=get_aws_session_or_abort,
+        load_application_fn=load_application,
         run_database_copy_fn=run_database_copy_task,
         vpc_config_fn=get_vpc_info_by_name,
         db_connection_string_fn=get_connection_string,
@@ -64,22 +64,29 @@ class DatabaseCopy:
         self.account_id = account_id
         self.app = app
         self.database = database
-        self.get_session_fn = get_session_fn
         self.run_database_copy_fn = run_database_copy_fn
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
         self.input_fn = input_fn
         self.echo_fn = echo_fn
 
+        # Get Application
+        self.application = load_application_fn(self.app)
+
     def _execute_operation(self, is_dump, env, vpc_name):
-        session = self.get_session_fn()
-        vpc_config = self.vpc_config_fn(session, self.app, env, vpc_name)
+        # Get Environment
+        environment = self.application.environments[env]
+        # Get session for environment
+        env_session = environment.session
+        # Enhance parameters
+
+        vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
         database_identifier = f"{self.app}-{env}-{self.database}"
         db_connection_string = self.db_connection_string_fn(
-            session, self.app, env, database_identifier
+            env_session, self.app, env, database_identifier
         )
         task_arn = self.run_database_copy_fn(
-            session,
+            env_session,
             self.account_id,
             self.app,
             env,
@@ -119,7 +126,7 @@ class DatabaseCopy:
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:{log_group_name}"
         self.echo_fn(f"Tailing logs for {log_group_name}", fg="yellow")
-        session = self.get_session_fn()
+        session = self.application.environments[env].session
         response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         stopped = False

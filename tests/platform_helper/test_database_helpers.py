@@ -5,6 +5,7 @@ import pytest
 
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.commands.database_helpers import run_database_copy_task
+from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -66,8 +67,11 @@ def test_database_dump():
 
     account_id = "1234567"
 
-    mock_session = Mock()
-    mock_session_fn = Mock(return_value=mock_session)
+    mock_application = Application(app)
+    mock_environment = Mock()
+    mock_application.environments = {env: mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
     mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
@@ -82,7 +86,7 @@ def test_database_dump():
         account_id,
         app,
         database,
-        mock_session_fn,
+        mock_load_application_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
@@ -94,18 +98,21 @@ def test_database_dump():
 
     db_copy.dump(env, vpc_name)
 
-    mock_session_fn.assert_called_once()
-
-    mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
-
+    mock_load_application_fn.assert_called_once()
+    mock_vpc_config_fn.assert_called_once_with(mock_environment.session, app, env, vpc_name)
     mock_db_connection_string_fn.assert_called_once_with(
-        mock_session, app, env, "my-app-my-env-test-db"
+        mock_environment.session, app, env, "my-app-my-env-test-db"
     )
-
     mock_run_database_copy_task_fn.assert_called_once_with(
-        mock_session, account_id, app, env, database, vpc, True, "test-db-connection-string"
+        mock_environment.session,
+        account_id,
+        app,
+        env,
+        database,
+        vpc,
+        True,
+        "test-db-connection-string",
     )
-
     mock_input_fn.assert_not_called()
     mock_echo_fn.assert_has_calls(
         [
@@ -127,8 +134,11 @@ def test_database_load_with_response_of_yes():
 
     account_id = "1234567"
 
-    mock_session = Mock()
-    mock_session_fn = Mock(return_value=mock_session)
+    mock_application = Application(app)
+    mock_environment = Mock()
+    mock_application.environments = {env: mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
     mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
@@ -143,7 +153,7 @@ def test_database_load_with_response_of_yes():
         account_id,
         app,
         database,
-        mock_session_fn,
+        mock_load_application_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
@@ -154,16 +164,23 @@ def test_database_load_with_response_of_yes():
 
     db_copy.load(env, vpc_name)
 
-    mock_session_fn.assert_called_once()
+    mock_load_application_fn.assert_called_once()
 
-    mock_vpc_config_fn.assert_called_once_with(mock_session, app, env, vpc_name)
+    mock_vpc_config_fn.assert_called_once_with(mock_environment.session, app, env, vpc_name)
 
     mock_db_connection_string_fn.assert_called_once_with(
-        mock_session, app, env, "my-app-my-env-test-db"
+        mock_environment.session, app, env, "my-app-my-env-test-db"
     )
 
     mock_run_database_copy_task_fn.assert_called_once_with(
-        mock_session, account_id, app, env, database, vpc, False, "test-db-connection-string"
+        mock_environment.session,
+        account_id,
+        app,
+        env,
+        database,
+        vpc,
+        False,
+        "test-db-connection-string",
     )
 
     mock_input_fn.assert_called_once_with(
@@ -192,8 +209,11 @@ def test_database_load_with_response_of_no():
 
     account_id = "1234567"
 
-    mock_session = Mock()
-    mock_session_fn = Mock(return_value=mock_session)
+    mock_application = Application(app)
+    mock_environment = Mock()
+    mock_application.environments = {env: mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
     mock_run_database_copy_task_fn = Mock()
 
     vpc = Vpc([], [])
@@ -208,7 +228,7 @@ def test_database_load_with_response_of_no():
         account_id,
         app,
         database,
-        mock_session_fn,
+        mock_load_application_fn,
         mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
@@ -219,7 +239,7 @@ def test_database_load_with_response_of_no():
 
     db_copy.load(env, vpc_name)
 
-    mock_session_fn.assert_not_called()
+    mock_environment.session_fn.assert_not_called()
 
     mock_vpc_config_fn.assert_not_called()
 
@@ -242,7 +262,7 @@ def test_is_confirmed_ready_to_load(user_response):
         "",
         "",
         "test-db",
-        None,
+        Mock(),
         None,
         None,
         None,
@@ -264,7 +284,7 @@ def test_is_not_confirmed_ready_to_load(user_response):
         None,
         None,
         "test-db",
-        None,
+        Mock(),
         None,
         None,
         None,
@@ -281,10 +301,14 @@ def test_is_not_confirmed_ready_to_load(user_response):
 @pytest.mark.parametrize("is_dump", [True, False])
 def test_tail_logs(is_dump):
     action = "dump" if is_dump else "load"
-    mock_session = Mock()
-    mock_session_fn = Mock(return_value=mock_session)
+
+    mock_application = Application("test-app")
+    mock_environment = Mock()
+    mock_application.environments = {"test-env": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
     mock_client = Mock()
-    mock_session.client.return_value = mock_client
+
+    mock_environment.session.client.return_value = mock_client
 
     mock_client.start_live_tail.return_value = {
         "responseStream": [
@@ -302,7 +326,7 @@ def test_tail_logs(is_dump):
         "1234",
         "test-app",
         "test-db",
-        mock_session_fn,
+        mock_load_application_fn,
         None,
         None,
         None,
@@ -311,7 +335,7 @@ def test_tail_logs(is_dump):
     )
     db_copy.tail_logs(is_dump, "test-env")
 
-    mock_session.client.assert_called_once_with("logs")
+    mock_environment.session.client.assert_called_once_with("logs")
     mock_client.start_live_tail.assert_called_once_with(
         logGroupIdentifiers=[
             f"arn:aws:logs:eu-west-2:1234:log-group:/ecs/test-app-test-env-test-db-{action}"
