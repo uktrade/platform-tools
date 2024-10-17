@@ -1049,7 +1049,7 @@ platform-helper database load --account-id <account_id> --app <application>
 ```
 platform-helper database copy --account-id <account_id> --app <application> 
                               --from <from_env> --to <to_env> --database <database> 
-                              --vpc-name <vpc_name> 
+                              --from-vpc <from_vpc> --to-vpc <to_vpc> 
 ```
 
 ## Options
@@ -1064,7 +1064,9 @@ platform-helper database copy --account-id <account_id> --app <application>
 
 - `--database <text>`
 
-- `--vpc-name <text>`
+- `--from-vpc <text>`
+
+- `--to-vpc <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

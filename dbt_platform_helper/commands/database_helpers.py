@@ -54,7 +54,6 @@ class DatabaseCopy:
         account_id,
         app,
         database,
-        vpc_name,
         get_session_fn=get_aws_session_or_abort,
         run_database_copy_fn=run_database_copy_task,
         vpc_config_fn=get_vpc_info_by_name,
@@ -65,7 +64,6 @@ class DatabaseCopy:
         self.account_id = account_id
         self.app = app
         self.database = database
-        self.vpc_name = vpc_name
         self.get_session_fn = get_session_fn
         self.run_database_copy_fn = run_database_copy_fn
         self.vpc_config_fn = vpc_config_fn
@@ -73,9 +71,9 @@ class DatabaseCopy:
         self.input_fn = input_fn
         self.echo_fn = echo_fn
 
-    def _execute_operation(self, is_dump, env):
+    def _execute_operation(self, is_dump, env, vpc_name):
         session = self.get_session_fn()
-        vpc_config = self.vpc_config_fn(session, self.app, env, self.vpc_name)
+        vpc_config = self.vpc_config_fn(session, self.app, env, vpc_name)
         database_identifier = f"{self.app}-{env}-{self.database}"
         db_connection_string = self.db_connection_string_fn(
             session, self.app, env, database_identifier
@@ -98,12 +96,12 @@ class DatabaseCopy:
         self.tail_logs(is_dump, env)
         self.wait_for_task_to_stop(task_arn, env)
 
-    def dump(self, env):
-        self._execute_operation(True, env)
+    def dump(self, env, vpc_name):
+        self._execute_operation(True, env, vpc_name)
 
-    def load(self, env):
+    def load(self, env, vpc_name):
         if self.is_confirmed_ready_to_load(env):
-            self._execute_operation(False, env)
+            self._execute_operation(False, env, vpc_name)
 
     def is_confirmed_ready_to_load(self, env):
         user_input = self.input_fn(
