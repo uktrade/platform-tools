@@ -53,8 +53,6 @@ class DatabaseCopy:
         self,
         account_id,
         app,
-        from_env,
-        to_env,
         database,
         vpc_name,
         get_session_fn=get_aws_session_or_abort,
@@ -66,8 +64,6 @@ class DatabaseCopy:
     ):
         self.account_id = account_id
         self.app = app
-        self.from_env = from_env
-        self.to_env = to_env
         self.database = database
         self.vpc_name = vpc_name
         self.get_session_fn = get_session_fn
@@ -77,8 +73,7 @@ class DatabaseCopy:
         self.input_fn = input_fn
         self.echo_fn = echo_fn
 
-    def _execute_operation(self, is_dump):
-        env = self.from_env if is_dump else self.to_env
+    def _execute_operation(self, is_dump, env):
         session = self.get_session_fn()
         vpc_config = self.vpc_config_fn(session, self.app, env, self.vpc_name)
         database_identifier = f"{self.app}-{env}-{self.database}"
@@ -100,25 +95,24 @@ class DatabaseCopy:
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
             fg="green",
         )
-        self.tail_logs(is_dump)
-        self.wait_for_task_to_stop(task_arn, is_dump)
+        self.tail_logs(is_dump, env)
+        self.wait_for_task_to_stop(task_arn, env)
 
-    def dump(self):
-        self._execute_operation(True)
+    def dump(self, env):
+        self._execute_operation(True, env)
 
-    def load(self):
-        if self.is_confirmed_ready_to_load():
-            self._execute_operation(False)
+    def load(self, env):
+        if self.is_confirmed_ready_to_load(env):
+            self._execute_operation(False, env)
 
-    def is_confirmed_ready_to_load(self):
+    def is_confirmed_ready_to_load(self, env):
         user_input = self.input_fn(
-            f"Are all tasks using {self.database} in the {self.to_env} environment stopped? (y/n)"
+            f"Are all tasks using {self.database} in the {env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
 
-    def tail_logs(self, is_dump: bool):
+    def tail_logs(self, is_dump: bool, env: str):
         action = "dump" if is_dump else "load"
-        env = self.from_env if is_dump else self.to_env
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:{log_group_name}"
         self.echo_fn(f"Tailing logs for {log_group_name}", fg="yellow")
@@ -138,13 +132,12 @@ class DatabaseCopy:
                         stopped = True
                     self.echo_fn(message)
 
-    def wait_for_task_to_stop(self, task_arn, is_dump):
+    def wait_for_task_to_stop(self, task_arn, env):
         self.echo_fn("Waiting for task to complete", fg="yellow")
-        self.from_env if is_dump else self.to_env
         client = self.get_session_fn().client("ecs")
         waiter = client.get_waiter("tasks_stopped")
         waiter.wait(
-            cluster=f"{self.app}-{self.from_env}",
+            cluster=f"{self.app}-{env}",
             tasks=[task_arn],
             WaiterConfig={"Delay": 6, "MaxAttempts": 300},
         )
