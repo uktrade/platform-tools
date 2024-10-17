@@ -89,6 +89,12 @@ class DatabaseCopy:
             db_connection_string,
         )
 
+        if is_dump:
+            message = f"Dumping {self.database} from the {env} environment into S3"
+        else:
+            message = f"Loading data into {self.database} in the {env} environment from S3"
+
+        self.echo_fn(message, fg="white", bold=True)
         self.echo_fn(
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
             fg="green",

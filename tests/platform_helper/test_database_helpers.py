@@ -108,9 +108,14 @@ def test_database_dump():
     )
 
     mock_input_fn.assert_not_called()
-    mock_echo_fn.assert_called_once_with(
-        "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-        fg="green",
+    mock_echo_fn.assert_has_calls(
+        [
+            call("Dumping test-db from the my-env environment into S3", fg="white", bold=True),
+            call(
+                "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
+                fg="green",
+            ),
+        ]
     )
     db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", env)
     db_copy.tail_logs.assert_called_once_with(True, env)
@@ -168,9 +173,16 @@ def test_database_load_with_response_of_yes():
         f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
     )
 
-    mock_echo_fn.assert_called_once_with(
-        "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-        fg="green",
+    mock_echo_fn.assert_has_calls(
+        [
+            call(
+                "Loading data into test-db in the my-env environment from S3", fg="white", bold=True
+            ),
+            call(
+                "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
+                fg="green",
+            ),
+        ]
     )
     db_copy.wait_for_task_to_stop.assert_called_once_with("arn://task-arn", env)
     db_copy.tail_logs.assert_called_once_with(False, "my-env")
