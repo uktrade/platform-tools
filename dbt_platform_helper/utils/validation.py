@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 import yaml
 from botocore.exceptions import ClientError
+from jsonschema import ValidationError
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -684,12 +685,32 @@ def load_and_validate_platform_config(
         config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
+
+        check_duplicate_keys(conf)
+
         validate_platform_config(conf, disable_aws_validation)
         return conf
+
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
     except SchemaError as e:
         abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
+    except Exception as e:
+        abort_with_error(f"Unexpected error while processing {PLATFORM_CONFIG_FILE}: {str(e)}")
+
+
+def check_duplicate_keys(conf):
+    """Check for duplicate keys of the same type in the configuration."""
+    seen_keys = {}
+
+    print("CHECKHERE", conf)
+    for key, value in conf.items():
+        if isinstance(value, dict) and "type" in value:
+            if value["type"] in seen_keys:
+                raise ValidationError(
+                    f"Duplicate key for type '{value['type']}': '{key}' and '{seen_keys[value['type']]}'"
+                )
+            seen_keys[value["type"]] = key
 
 
 def config_file_check(path=PLATFORM_CONFIG_FILE):

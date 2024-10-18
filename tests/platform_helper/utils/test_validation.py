@@ -7,6 +7,7 @@ import boto3
 import pytest
 import yaml
 from botocore.exceptions import ClientError
+from jsonschema import ValidationError
 from moto import mock_aws
 from schema import SchemaError
 
@@ -750,6 +751,31 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
+def test_load_and_validate_platform_config_duplicate_keys(
+    mock_get_session, valid_platform_config, fakefs
+):
+    setup_fixtures(fakefs)
+    valid_platform_config["extensions"] = {
+        "demodjango-s3-bucket": {
+            "type": "s3",
+            "services": ["web"],
+            "environments": {"dev": {"bucket_name": "demodjango-dev", "versioning": False}},
+        },
+        "demodjango-s3-bucket": {
+            "type": "s3",
+            "services": ["api"],
+            "environments": {"prod": {"bucket_name": "demodjango-prod", "versioning": False}},
+        },
+    }
+
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
+    with pytest.raises(ValidationError, match="Duplicate key for type 's3'"):
+        load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE)
+
+    assert not mock_get_session.called
+
+
+@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_validation_off(
     mock_get_session, s3_extensions_fixture, capfd
 ):
@@ -1024,3 +1050,7 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
+
+
+def setup_fixtures(fakefs, pipelines_file=f"pipeline/{PLATFORM_CONFIG_FILE}"):
+    fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, PLATFORM_CONFIG_FILE)
