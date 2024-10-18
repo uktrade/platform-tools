@@ -170,7 +170,6 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
             "redis_addons_bad_data.yml",
             {
                 "my-redis-bad-key": r"Wrong key 'bad_key' in",
-                "my-redis-bad-engine-size": r"environments.*default.*engine.*'6.2' does not match 'a-big-engine'",
                 "my-redis-bad-plan": r"environments.*default.*plan.*does not match 'enormous'",
                 "my-redis-too-many-replicas": r"environments.*default.*replicas.*should be an integer between 0 and 5",
                 "my-redis-bad-deletion-policy": r"environments.*default.*deletion_policy.*does not match 'Never'",
@@ -187,7 +186,6 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-opensearch-environments-should-be-list": r"environments.*False should be instance of 'dict'",
                 "my-opensearch-bad-env-param": r"environments.*Wrong key 'opensearch_plan'",
                 "my-opensearch-bad-plan": r"environments.*dev.*plan.*does not match 'largish'",
-                "my-opensearch-bad-engine-size": r"environments.*dev.*engine.*does not match 7.3",
                 "my-opensearch-no-plan": r"Missing key: 'plan'",
                 "my-opensearch-volume-size-too-small": r"environments.*dev.*volume_size.*should be an integer greater than 10",
                 "my-opensearch-invalid-size-for-small": r"environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*",
@@ -255,9 +253,22 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
-    mock_name_is_available.return_value = True
+@patch(
+    "dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", return_value=True
+)
+@patch("dbt_platform_helper.utils.validation.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.validation.get_redis_supported_versions", return_value=["6.2"])
+@patch(
+    "dbt_platform_helper.utils.validation.get_opensearch_supported_versions", return_value=["1.3"]
+)
+def test_validate_addons_failure(
+    mock_name_is_available,
+    mock_cache_refresh,
+    mock_get_redis_versions,
+    mock_get_opensearch_versions,
+    addons_file,
+    exp_error,
+):
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
@@ -265,7 +276,10 @@ def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error)
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_invalid_env_name_errors(
+    mock_name_is_available, mock_validate_opensearch_versions
+):
     mock_name_is_available.return_value = True
     error_map = validate_addons(
         {
@@ -288,6 +302,7 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
 def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, capfd):
     client = mock_aws_client(mock_get_session)
     client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
+
     validate_addons(
         {
             "my-s3": {
@@ -296,17 +311,19 @@ def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, ca
             }
         }
     )
-
     assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
-def test_validate_addons_unsupported_addon():
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_unsupported_addon(mock_validate_opensearch_versions):
     error_map = validate_addons(load_addons("unsupported_addon.yml"))
+
     for entry, error in error_map.items():
         assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
 
 
-def test_validate_addons_missing_type():
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validate_addons_missing_type(mock_validate_opensearch_versions):
     error_map = validate_addons(load_addons("missing_type_addon.yml"))
     assert (
         "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
@@ -443,19 +460,33 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
+    mock_warn_on_s3_bucket_name_availability,
+    mock_validate_redis_versions,
+    mock_validate_opensearch_versions,
+    valid_platform_config,
 ):
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=False)
     assert mock_warn_on_s3_bucket_name_availability.called
+    assert mock_validate_redis_versions.called
+    assert mock_validate_opensearch_versions.called
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
+@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success_when_aws_validation_disabled(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
+    mock_warn_on_s3_bucket_name_availability,
+    mock_validate_redis_versions,
+    mock_validate_opensearch_versions,
+    valid_platform_config,
 ):
     validate_platform_config(valid_platform_config, disable_aws_validation=True)
     assert not mock_warn_on_s3_bucket_name_availability.called
+    assert not mock_validate_redis_versions.called
+    assert not mock_validate_opensearch_versions.called
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
@@ -468,7 +499,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
         "pipeline_to_trigger"
     ] = pipeline_to_trigger
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -487,7 +518,7 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
         "pipeline_to_trigger"
     ] = "non-existent-pipeline"
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -504,7 +535,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
 ):
     valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
 
-    validate_platform_config(valid_platform_config)
+    validate_platform_config(valid_platform_config, disable_aws_validation=True)
     message = mock_abort_with_error.call_args.args[0]
 
     assert "The following pipelines are misconfigured:" in message
@@ -533,7 +564,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
     message = mock_abort_with_error.call_args.args[0]
 
@@ -593,7 +624,7 @@ def test_validate_platform_config_catches_database_copy_errors(
         },
     }
 
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
     message = mock_abort_with_error.call_args.args[0]
 
@@ -623,7 +654,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     }
 
     # Should not error if config is sound.
-    validate_platform_config(platform_env_config)
+    validate_platform_config(platform_env_config, disable_aws_validation=True)
 
 
 @pytest.mark.parametrize(
@@ -639,7 +670,7 @@ def test_load_and_validate_config_valid_file(yaml_file):
     returns the loaded yaml unmodified."""
 
     path = FIXTURES_DIR / yaml_file
-    validated = load_and_validate_platform_config(path=path)
+    validated = load_and_validate_platform_config(path=path, disable_aws_validation=True)
 
     with open(path, "r") as fd:
         conf = yaml.safe_load(fd)
@@ -654,7 +685,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert "Wrong key 'something-invalid'" in str(ex)
 
@@ -674,7 +705,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
@@ -694,7 +725,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
     with pytest.raises(SystemExit) as ex:
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
@@ -705,7 +736,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
-        load_and_validate_platform_config()
+        load_and_validate_platform_config(disable_aws_validation=True)
 
     assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
@@ -713,15 +744,21 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 def test_validation_runs_against_platform_config_yml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents='{"application": "my_app"}')
 
-    config = load_and_validate_platform_config()
+    config = load_and_validate_platform_config(disable_aws_validation=True)
 
     assert list(config.keys()) == ["application"]
     assert config["application"] == "my_app"
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
-    load_and_validate_platform_config()
+@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
+def test_validation_checks_s3_bucket_names(
+    mock_get_session,
+    mock_validate_opensearch_versions,
+    s3_extensions_fixture,
+    capfd,
+):
+    load_and_validate_platform_config(disable_aws_validation=False)
 
     assert "Warning" not in capfd.readouterr().out
     assert mock_get_session.called
@@ -743,10 +780,12 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
     response = {"Error": {"Code": "403"}}
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")
 
-    load_and_validate_platform_config()
+    with patch("dbt_platform_helper.utils.validation._validate_opensearch_versions"):
 
-    assert "Warning" in capfd.readouterr().out
-    assert mock_get_session.called
+        load_and_validate_platform_config(disable_aws_validation=False)
+
+        assert "Warning" in capfd.readouterr().out
+        assert mock_get_session.called
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
@@ -769,7 +808,7 @@ def test_load_and_validate_platform_config_skips_file_check_when_disable_file_ch
     mock_config_file_check, capfd, fakefs
 ):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
-    load_and_validate_platform_config(disable_file_check=True)
+    load_and_validate_platform_config(disable_file_check=True, disable_aws_validation=True)
 
     assert not mock_config_file_check.called
 
