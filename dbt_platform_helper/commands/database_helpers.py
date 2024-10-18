@@ -7,47 +7,6 @@ from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 
 
-def run_database_copy_task(
-    session: boto3.session.Session,
-    account_id: str,
-    app: str,
-    env: str,
-    database: str,
-    vpc_config: Vpc,
-    is_dump: bool,
-    db_connection_string: str,
-):
-    client = session.client("ecs")
-    action = "dump" if is_dump else "load"
-    response = client.run_task(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{app}-{env}-{database}-{action}",
-        cluster=f"{app}-{env}",
-        capacityProviderStrategy=[
-            {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
-        ],
-        networkConfiguration={
-            "awsvpcConfiguration": {
-                "subnets": vpc_config.subnets,
-                "securityGroups": vpc_config.security_groups,
-                "assignPublicIp": "DISABLED",
-            }
-        },
-        overrides={
-            "containerOverrides": [
-                {
-                    "name": f"{app}-{env}-{database}-{action}",
-                    "environment": [
-                        {"name": "DATA_COPY_OPERATION", "value": action.upper()},
-                        {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
-                    ],
-                }
-            ]
-        },
-    )
-
-    return response.get("tasks", [{}])[0].get("taskArn")
-
-
 class DatabaseCopy:
     def __init__(
         self,
@@ -55,7 +14,6 @@ class DatabaseCopy:
         app,
         database,
         load_application_fn=load_application,
-        run_database_copy_fn=run_database_copy_task,
         vpc_config_fn=get_vpc_info_by_name,
         db_connection_string_fn=get_connection_string,
         input_fn=click.prompt,
@@ -64,7 +22,6 @@ class DatabaseCopy:
         self.account_id = account_id
         self.app = app
         self.database = database
-        self.run_database_copy_fn = run_database_copy_fn
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
         self.input_fn = input_fn
@@ -74,9 +31,7 @@ class DatabaseCopy:
         self.application = load_application_fn(self.app)
 
     def _execute_operation(self, is_dump, env, vpc_name):
-        # Get Environment
         environment = self.application.environments[env]
-        # Get session for environment
         env_session = environment.session
         # Enhance parameters
 
@@ -85,12 +40,9 @@ class DatabaseCopy:
         db_connection_string = self.db_connection_string_fn(
             env_session, self.app, env, database_identifier
         )
-        task_arn = self.run_database_copy_fn(
+        task_arn = self.run_database_copy_task(
             env_session,
-            self.account_id,
-            self.app,
             env,
-            self.database,
             vpc_config,
             is_dump,
             db_connection_string,
@@ -107,6 +59,44 @@ class DatabaseCopy:
             fg="green",
         )
         self.tail_logs(is_dump, env)
+
+    def run_database_copy_task(
+        self,
+        session: boto3.session.Session,
+        env: str,
+        vpc_config: Vpc,
+        is_dump: bool,
+        db_connection_string: str,
+    ):
+        client = session.client("ecs")
+        action = "dump" if is_dump else "load"
+        response = client.run_task(
+            taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id}:task-definition/{self.app}-{env}-{self.database}-{action}",
+            cluster=f"{self.app}-{env}",
+            capacityProviderStrategy=[
+                {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+            ],
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": vpc_config.subnets,
+                    "securityGroups": vpc_config.security_groups,
+                    "assignPublicIp": "DISABLED",
+                }
+            },
+            overrides={
+                "containerOverrides": [
+                    {
+                        "name": f"{self.app}-{env}-{self.database}-{action}",
+                        "environment": [
+                            {"name": "DATA_COPY_OPERATION", "value": action.upper()},
+                            {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+                        ],
+                    }
+                ]
+            },
+        )
+
+        return response.get("tasks", [{}])[0].get("taskArn")
 
     def dump(self, env, vpc_name):
         self._execute_operation(True, env, vpc_name)
