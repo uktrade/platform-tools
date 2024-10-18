@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
+from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
@@ -75,6 +76,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "opensearch_addons.yml",
         "monitoring_addons.yml",
         "no_param_addons.yml",
+        "alb_addons.yml",
     ],
 )
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
@@ -159,6 +161,9 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-rds-multi_az-should-be-bool": r"'environments'.*'default'.*multi_az.*10 should be instance of 'bool'",
                 "my-rds-storage_type-should-valid-option": r"'environments'.*'default'.*storage_type.*'io2' does not match 'floppydisc'",
                 "my-rds-backup-retention-too-high": r"environments'.*'default'.*'backup_retention_days'.*should be an integer between 1 and 35",
+                "my-rds-data-migration-invalid-environments": r"Environment name \$ is invalid: names must only contain lowercase alphanumeric characters, or be the '\*' default environment",
+                "my-rds-data-migration-missing-key": r"Missing key: 'to'.*",
+                "my-rds-data-migration-invalid-key": r"Wrong key 'non-existent-key' in.*",
             },
         ),
         (
@@ -220,6 +225,30 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
             {
                 "my-prometheus-policy-wrong-key": r"Missing key: 'role_arn'",
                 "my-prometheus-policy-wrong-type": r"Key 'role_arn' error.*should be instance of 'str'",
+            },
+        ),
+        (
+            "alb_addons_bad_data.yml",
+            {
+                "my-alb-additional-address-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-allowed-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cached-methods-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cdn-compress-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-cdn-domain-list-be-a-dict": r"environments.*dev.*should be instance of 'dict'",
+                "my-cdn-geo-locations-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cdn-geo-restrictions-type-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cdn-logging-bucket-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cdn-logging-bucket-prefix-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-default-waf-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-enable-logging-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-forwarded-values-forward-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-forwarded-values-headers-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-forwarded-values-query-string-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
+                "my-alb-origin-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-origin-ssl-protocols-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
             },
         ),
     ],
@@ -548,7 +577,36 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
-def test_validate_platform_config_catches_all_errors_across_multiple_pipelines(
+def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
+    mock_abort_with_error,
+):
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "dev"}],
+            }
+        },
+    }
+
+    validate_platform_config(config)
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+        in message
+    )
+
+
+@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
+@patch("dbt_platform_helper.utils.validation.abort_with_error")
+def test_validate_platform_config_catches_database_copy_errors(
     mock_abort_with_error, platform_env_config
 ):
     platform_env_config["environment_pipelines"] = {
@@ -831,3 +889,177 @@ def test_config_file_check_warns_if_deprecated_files_exist(
 
     for expected_message in expected_messages:
         assert expected_message in console_message
+
+
+@pytest.mark.parametrize(
+    "database_copy_section",
+    [
+        None,
+        [{"from": "dev", "to": "test"}],
+        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test"}],
+    ],
+)
+def test_validate_database_copy_section_success_cases(database_copy_section):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+            }
+        },
+    }
+
+    if database_copy_section:
+        config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
+
+    validate_database_copy_section(config)
+
+    # Should get here fine if the config is valid.
+
+
+@pytest.mark.parametrize(
+    "database_copy_section, expected_parameters",
+    [
+        ([{"from": "hotfix", "to": "test"}], ["from"]),
+        ([{"from": "dev", "to": "hotfix"}], ["to"]),
+        ([{"from": "hotfix", "to": "hotfix"}], ["to", "from"]),
+        ([{"from": "test", "to": "dev"}, {"from": "dev", "to": "hotfix"}], ["to"]),
+        ([{"from": "hotfix", "to": "test"}, {"from": "dev", "to": "test"}], ["from"]),
+    ],
+)
+def test_validate_database_copy_section_failure_cases(
+    capfd, database_copy_section, expected_parameters
+):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+            }
+        },
+    }
+
+    config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    for param in expected_parameters:
+        msg = f"database_copy '{param}' parameter must be a valid environment (dev, test, prod) but was 'hotfix' in extension 'our-postgres'."
+        assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "dev"}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
+    )
+    assert msg in console_message
+
+
+@pytest.mark.parametrize(
+    "env_name",
+    ["prod", "prod-env", "env-that-is-prod", "thing-prod-thing"],
+)
+def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capfd, env_name):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": env_name}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
+    assert msg in console_message
+
+
+def test_validate_database_copy_multi_postgres_success():
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "test"}],
+            },
+            "our-other-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "dev", "to": "test"}, {"from": "prod", "to": "dev"}],
+            },
+        },
+    }
+
+    validate_database_copy_section(config)
+
+    # Should get here fine if the config is valid.
+
+
+def test_validate_database_copy_multi_postgres_failures(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "devvv", "to": "test"}],
+            },
+            "our-other-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "test", "to": "test"}, {"from": "dev", "to": "prod"}],
+            },
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    assert (
+        f"database_copy 'from' parameter must be a valid environment (dev, test, prod) but was 'devvv' in extension 'our-postgres'."
+        in console_message
+    )
+    assert (
+        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-other-postgres'."
+        in console_message
+    )
+    assert (
+        f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
+        in console_message
+    )

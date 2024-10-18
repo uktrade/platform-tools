@@ -228,6 +228,9 @@ RETENTION_POLICY = Or(
         Or("days", "years", only_one=True): int,
     },
 )
+
+DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME}
+
 POSTGRES_DEFINITION = {
     "type": "postgres",
     "version": NUMBER,
@@ -245,6 +248,7 @@ POSTGRES_DEFINITION = {
             Optional("backup_retention_days"): int_between(1, 35),
         }
     },
+    Optional("database_copy"): [DATABASE_COPY],
     Optional("objects"): [
         {
             "key": str,
@@ -393,10 +397,27 @@ ALB_DEFINITION = {
     Optional("environments"): {
         ENV_NAME: Or(
             {
-                Optional("domain_prefix"): str,
-                Optional("env_root"): str,
-                Optional("cdn_domains_list"): dict,
                 Optional("additional_address_list"): list,
+                Optional("allowed_methods"): list,
+                Optional("cached_methods"): list,
+                Optional("cdn_compress"): bool,
+                Optional("cdn_domains_list"): dict,
+                Optional("cdn_geo_locations"): list,
+                Optional("cdn_geo_restriction_type"): str,
+                Optional("cdn_logging_bucket"): str,
+                Optional("cdn_logging_bucket_prefix"): str,
+                Optional("default_waf"): str,
+                Optional("domain_prefix"): str,
+                Optional("enable_logging"): bool,
+                Optional("env_root"): str,
+                Optional("forwarded_values_forward"): str,
+                Optional("forwarded_values_headers"): list,
+                Optional("forwarded_values_query_string"): bool,
+                Optional("origin_protocol_policy"): str,
+                Optional("origin_ssl_protocols"): list,
+                Optional("viewer_certificate_minimum_protocol_version"): str,
+                Optional("viewer_certificate_ssl_support_method"): str,
+                Optional("viewer_protocol_policy"): str,
             },
             None,
         )
@@ -537,7 +558,8 @@ def validate_platform_config(config, disable_aws_validation=False):
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
-
+    validate_database_copy_section(enriched_config)
+    
     if not disable_aws_validation:
         _validate_s3_bucket_uniqueness(enriched_config)
         _validate_redis_versions(config)
@@ -622,6 +644,57 @@ def _validate_opensearch_versions(config):
                 f'OpenSearch version for environment "{version_failure[1]}" is not in the list of supported OpenSearch Versions',
                 fg="red",
             )
+
+
+def validate_database_copy_section(config):
+    extensions = config.get("extensions", {})
+    if not extensions:
+        return
+
+    postgres_extensions = {
+        key: ext for key, ext in extensions.items() if ext.get("type", None) == "postgres"
+    }
+
+    if not postgres_extensions:
+        return
+
+    errors = []
+
+    for extension_name, extension in postgres_extensions.items():
+        database_copy_sections = extension.get("database_copy", [])
+
+        if not database_copy_sections:
+            return
+
+        all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
+        all_envs_string = ", ".join(all_environments)
+
+        for section in database_copy_sections:
+            from_env = section["from"]
+            to_env = section["to"]
+
+            if from_env == to_env:
+                errors.append(
+                    f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
+                )
+
+            if "prod" in to_env:
+                errors.append(
+                    f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{to_env}' in extension '{extension_name}'."
+                )
+
+            if from_env not in all_environments:
+                errors.append(
+                    f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{extension_name}'."
+                )
+
+            if to_env not in all_environments:
+                errors.append(
+                    f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
+                )
+
+    if errors:
+        abort_with_error("\n".join(errors))
 
 
 def _validate_environment_pipelines(config):
