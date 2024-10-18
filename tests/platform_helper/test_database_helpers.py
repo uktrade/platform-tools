@@ -4,18 +4,12 @@ from unittest.mock import call
 import pytest
 
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
-from dbt_platform_helper.commands.database_helpers import run_database_copy_task
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.aws import Vpc
 
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    mock_client = Mock()
-    mock_session = Mock()
-    mock_session.client.return_value = mock_client
-    mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
-
     account_id = "1234567"
     app = "my_app"
     env = "my_env"
@@ -23,8 +17,26 @@ def test_run_database_copy_task(is_dump, exp_operation):
     vpc_config = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
     db_connection_string = "connection_string"
 
-    actual_task_arn = run_database_copy_task(
-        mock_session, account_id, app, env, database, vpc_config, is_dump, db_connection_string
+    mock_input_fn = Mock(return_value="yes")
+    mock_echo_fn = Mock()
+
+    db_copy = DatabaseCopy(
+        account_id,
+        app,
+        database,
+        Mock(),
+        None,
+        mock_input_fn,
+        mock_echo_fn,
+    )
+
+    mock_client = Mock()
+    mock_session = Mock()
+    mock_session.client.return_value = mock_client
+    mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
+
+    actual_task_arn = db_copy.run_database_copy_task(
+        mock_session, env, vpc_config, is_dump, db_connection_string
     )
 
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
@@ -72,7 +84,7 @@ def test_database_dump():
     mock_application.environments = {env: mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
-    mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
+    mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
     mock_vpc_config_fn = Mock()
@@ -87,12 +99,12 @@ def test_database_dump():
         app,
         database,
         mock_load_application_fn,
-        mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
         mock_echo_fn,
     )
+    db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.tail_logs = Mock()
 
@@ -103,12 +115,9 @@ def test_database_dump():
     mock_db_connection_string_fn.assert_called_once_with(
         mock_environment.session, app, env, "my-app-my-env-test-db"
     )
-    mock_run_database_copy_task_fn.assert_called_once_with(
+    mock_run_database_copy_task.assert_called_once_with(
         mock_environment.session,
-        account_id,
-        app,
         env,
-        database,
         vpc,
         True,
         "test-db-connection-string",
@@ -139,7 +148,7 @@ def test_database_load_with_response_of_yes():
     mock_application.environments = {env: mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
-    mock_run_database_copy_task_fn = Mock(return_value="arn://task-arn")
+    mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
     vpc = Vpc([], [])
     mock_vpc_config_fn = Mock()
@@ -154,13 +163,13 @@ def test_database_load_with_response_of_yes():
         app,
         database,
         mock_load_application_fn,
-        mock_run_database_copy_task_fn,
         mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
         mock_echo_fn,
     )
     db_copy.tail_logs = Mock()
+    db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.load(env, vpc_name)
 
@@ -172,12 +181,9 @@ def test_database_load_with_response_of_yes():
         mock_environment.session, app, env, "my-app-my-env-test-db"
     )
 
-    mock_run_database_copy_task_fn.assert_called_once_with(
+    mock_run_database_copy_task.assert_called_once_with(
         mock_environment.session,
-        account_id,
-        app,
         env,
-        database,
         vpc,
         False,
         "test-db-connection-string",
@@ -230,7 +236,6 @@ def test_database_load_with_response_of_no():
         database,
         mock_load_application_fn,
         mock_run_database_copy_task_fn,
-        mock_vpc_config_fn,
         mock_db_connection_string_fn,
         mock_input_fn,
         mock_echo_fn,
@@ -265,7 +270,6 @@ def test_is_confirmed_ready_to_load(user_response):
         Mock(),
         None,
         None,
-        None,
         mock_input,
     )
 
@@ -285,7 +289,6 @@ def test_is_not_confirmed_ready_to_load(user_response):
         None,
         "test-db",
         Mock(),
-        None,
         None,
         None,
         mock_input,
@@ -327,7 +330,6 @@ def test_tail_logs(is_dump):
         "test-app",
         "test-db",
         mock_load_application_fn,
-        None,
         None,
         None,
         None,
