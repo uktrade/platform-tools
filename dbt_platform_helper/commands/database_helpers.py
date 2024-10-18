@@ -1,6 +1,10 @@
+from collections.abc import Callable
+
 import boto3
 import click
+from boto3 import Session
 
+from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
@@ -10,14 +14,16 @@ from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 class DatabaseCopy:
     def __init__(
         self,
-        account_id,
-        app,
-        database,
-        load_application_fn=load_application,
-        vpc_config_fn=get_vpc_info_by_name,
-        db_connection_string_fn=get_connection_string,
-        input_fn=click.prompt,
-        echo_fn=click.secho,
+        account_id: str,
+        app: str,
+        database: str,
+        load_application_fn: Callable[[str], Application] = load_application,
+        vpc_config_fn: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
+        db_connection_string_fn: Callable[
+            [Session, str, str, str, Callable], str
+        ] = get_connection_string,
+        input_fn: Callable[[str], str] = click.prompt,
+        echo_fn: Callable[[str], str] = click.secho,
     ):
         self.account_id = account_id
         self.app = app
@@ -30,22 +36,19 @@ class DatabaseCopy:
         # Get Application
         self.application = load_application_fn(self.app)
 
-    def _execute_operation(self, is_dump, env, vpc_name):
+    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
         environment = self.application.environments[env]
         env_session = environment.session
         # Enhance parameters
 
         vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
         database_identifier = f"{self.app}-{env}-{self.database}"
+
         db_connection_string = self.db_connection_string_fn(
             env_session, self.app, env, database_identifier
         )
         task_arn = self.run_database_copy_task(
-            env_session,
-            env,
-            vpc_config,
-            is_dump,
-            db_connection_string,
+            env_session, env, vpc_config, is_dump, db_connection_string
         )
 
         if is_dump:
@@ -56,7 +59,7 @@ class DatabaseCopy:
         self.echo_fn(message, fg="white", bold=True)
         self.echo_fn(
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
-            fg="green",
+            fg="white",
         )
         self.tail_logs(is_dump, env)
 
@@ -67,7 +70,7 @@ class DatabaseCopy:
         vpc_config: Vpc,
         is_dump: bool,
         db_connection_string: str,
-    ):
+    ) -> str:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         response = client.run_task(
@@ -98,16 +101,16 @@ class DatabaseCopy:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def dump(self, env, vpc_name):
+    def dump(self, env: str, vpc_name: str):
         self._execute_operation(True, env, vpc_name)
 
-    def load(self, env, vpc_name):
+    def load(self, env: str, vpc_name: str):
         if self.is_confirmed_ready_to_load(env):
             self._execute_operation(False, env, vpc_name)
 
-    def is_confirmed_ready_to_load(self, env):
+    def is_confirmed_ready_to_load(self, env: str) -> bool:
         user_input = self.input_fn(
-            f"Are all tasks using {self.database} in the {env} environment stopped? (y/n)"
+            f"\nAre all tasks using {self.database} in the {env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
 

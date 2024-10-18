@@ -128,7 +128,7 @@ def test_database_dump():
             call("Dumping test-db from the my-env environment into S3", fg="white", bold=True),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="green",
+                fg="white",
             ),
         ]
     )
@@ -190,7 +190,7 @@ def test_database_load_with_response_of_yes():
     )
 
     mock_input_fn.assert_called_once_with(
-        f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the my-env environment stopped? (y/n)"
     )
 
     mock_echo_fn.assert_has_calls(
@@ -200,7 +200,7 @@ def test_database_load_with_response_of_yes():
             ),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="green",
+                fg="white",
             ),
         ]
     )
@@ -253,7 +253,7 @@ def test_database_load_with_response_of_no():
     mock_run_database_copy_task_fn.assert_not_called()
 
     mock_input_fn.assert_called_once_with(
-        f"Are all tasks using test-db in the my-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the my-env environment stopped? (y/n)"
     )
     mock_echo_fn.assert_not_called()
     db_copy.tail_logs.assert_not_called()
@@ -276,7 +276,7 @@ def test_is_confirmed_ready_to_load(user_response):
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
     mock_input.assert_called_once_with(
-        f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
 
 
@@ -297,7 +297,7 @@ def test_is_not_confirmed_ready_to_load(user_response):
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
     mock_input.assert_called_once_with(
-        f"Are all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
 
 
@@ -355,3 +355,19 @@ def test_tail_logs(is_dump):
             call(f"Stopping data {action}"),
         ]
     )
+
+
+# def test_lookup_missing_options():
+#     db_copy = DatabaseCopy(
+#         "1234",
+#         "test-app",
+#         "test-db",
+#         None,
+#         None,
+#         None,
+#         None,
+#         None,
+#     )
+#
+#     db_copy.lookup_missing_options()
+#
