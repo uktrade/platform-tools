@@ -29,6 +29,16 @@ class Mocks:
         self.echo_fn = Mock()
         self.abort_fn = Mock(side_effect=SystemExit(1))
 
+    def params(self):
+        return {
+            "load_application_fn": self.load_application_fn,
+            "vpc_config_fn": self.vpc_config_fn,
+            "db_connection_string_fn": self.db_connection_string_fn,
+            "input_fn": self.input_fn,
+            "echo_fn": self.echo_fn,
+            "abort_fn": self.abort_fn,
+        }
+
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
@@ -39,15 +49,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mocks = Mocks(app, env, vpc=vpc)
     db_connection_string = "connection_string"
 
-    db_copy = DatabaseCopy(
-        app,
-        database,
-        load_application_fn=mocks.load_application_fn,
-        vpc_config_fn=mocks.vpc_config_fn,
-        db_connection_string_fn=mocks.db_connection_string_fn,
-        input_fn=mocks.input_fn,
-        echo_fn=mocks.echo_fn,
-    )
+    db_copy = DatabaseCopy(app, database, **mocks.params())
 
     mock_client = Mock()
     mock_session = Mock()
@@ -100,15 +102,7 @@ def test_database_dump():
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
-    db_copy = DatabaseCopy(
-        app,
-        database,
-        mocks.load_application_fn,
-        mocks.vpc_config_fn,
-        mocks.db_connection_string_fn,
-        mocks.input_fn,
-        mocks.echo_fn,
-    )
+    db_copy = DatabaseCopy(app, database, **mocks.params())
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.tail_logs = Mock()
@@ -150,20 +144,7 @@ def test_database_load_with_response_of_yes():
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
-    vpc = Vpc([], [])
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.return_value = vpc
-    mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
-
-    db_copy = DatabaseCopy(
-        app,
-        database,
-        mocks.load_application_fn,
-        mock_vpc_config_fn,
-        mock_db_connection_string_fn,
-        mocks.input_fn,
-        mocks.echo_fn,
-    )
+    db_copy = DatabaseCopy(app, database, **mocks.params())
     db_copy.tail_logs = Mock()
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
@@ -171,16 +152,16 @@ def test_database_load_with_response_of_yes():
 
     mocks.load_application_fn.assert_called_once()
 
-    mock_vpc_config_fn.assert_called_once_with(mocks.environment.session, app, env, vpc_name)
+    mocks.vpc_config_fn.assert_called_once_with(mocks.environment.session, app, env, vpc_name)
 
-    mock_db_connection_string_fn.assert_called_once_with(
+    mocks.db_connection_string_fn.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
     )
 
     mock_run_database_copy_task.assert_called_once_with(
         mocks.environment.session,
         env,
-        vpc,
+        mocks.vpc,
         False,
         "test-db-connection-string",
     )
@@ -216,29 +197,17 @@ def test_database_load_with_response_of_no():
 
     mock_run_database_copy_task_fn = Mock()
 
-    vpc = Vpc([], [])
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.return_value = vpc
-    mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
-
-    db_copy = DatabaseCopy(
-        app,
-        database,
-        mocks.load_application_fn,
-        mock_run_database_copy_task_fn,
-        mock_db_connection_string_fn,
-        mocks.input_fn,
-        mocks.echo_fn,
-    )
+    db_copy = DatabaseCopy(app, database, **mocks.params())
     db_copy.tail_logs = Mock()
+    db_copy.run_database_copy_task = mock_run_database_copy_task_fn
 
     db_copy.load(env, vpc_name)
 
     mocks.environment.session_fn.assert_not_called()
 
-    mock_vpc_config_fn.assert_not_called()
+    mocks.vpc_config_fn.assert_not_called()
 
-    mock_db_connection_string_fn.assert_not_called()
+    mocks.db_connection_string_fn.assert_not_called()
 
     mock_run_database_copy_task_fn.assert_not_called()
 
@@ -252,18 +221,9 @@ def test_database_load_with_response_of_no():
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_vpc_errors(is_dump):
     mocks = Mocks()
+    mocks.vpc_config_fn.side_effect = AWSException("A VPC error occurred")
 
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
-
-    db_copy = DatabaseCopy(
-        "test-app",
-        "test-db",
-        load_application_fn=mocks.load_application_fn,
-        vpc_config_fn=mock_vpc_config_fn,
-        input_fn=mocks.input_fn,
-        abort_fn=mocks.abort_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
@@ -278,24 +238,13 @@ def test_database_dump_handles_vpc_errors(is_dump):
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_db_name_errors(is_dump):
     mocks = Mocks()
-
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
-    mock_db_connection_string_fn = Mock(side_effect=Exception("Parameter not found."))
+    mocks.db_connection_string_fn = Mock(side_effect=Exception("Parameter not found."))
 
     vpc = Vpc([], [])
     mock_vpc_config_fn = Mock()
     mock_vpc_config_fn.return_value = vpc
 
-    db_copy = DatabaseCopy(
-        "test-app",
-        "bad-db",
-        load_application_fn=mocks.load_application_fn,
-        vpc_config_fn=mock_vpc_config_fn,
-        db_connection_string_fn=mock_db_connection_string_fn,
-        input_fn=mocks.input_fn,
-        abort_fn=mocks.abort_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "bad-db", **mocks.params())
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
@@ -313,13 +262,7 @@ def test_database_dump_handles_db_name_errors(is_dump):
 def test_database_dump_handles_env_name_errors(is_dump):
     mocks = Mocks()
 
-    db_copy = DatabaseCopy(
-        "test-app",
-        "test-db",
-        load_application_fn=mocks.load_application_fn,
-        input_fn=mocks.input_fn,
-        abort_fn=mocks.abort_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
@@ -339,16 +282,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
     error_msg = "An error occurred (InvalidParameterException) when calling the RunTask operation: AccountIDs mismatch"
     mock_run_database_copy_task = Mock(side_effect=Exception(error_msg))
 
-    db_copy = DatabaseCopy(
-        "test-app",
-        "test-db",
-        mocks.load_application_fn,
-        mocks.vpc_config_fn,
-        mocks.db_connection_string_fn,
-        mocks.input_fn,
-        mocks.echo_fn,
-        mocks.abort_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.tail_logs = Mock()
@@ -368,13 +302,7 @@ def test_database_copy_initializaion_handles_app_name_errors():
     mocks.load_application_fn = Mock(side_effect=ApplicationNotFoundError())
 
     with pytest.raises(SystemExit) as exc:
-        DatabaseCopy(
-            "bad-app",
-            "test-db",
-            load_application_fn=mocks.load_application_fn,
-            input_fn=mocks.input_fn,
-            abort_fn=mocks.abort_fn,
-        )
+        DatabaseCopy("bad-app", "test-db", **mocks.params())
 
     assert exc.value.code == 1
     mocks.abort_fn.assert_called_once_with("No such application 'bad-app'.")
@@ -382,40 +310,28 @@ def test_database_copy_initializaion_handles_app_name_errors():
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
 def test_is_confirmed_ready_to_load(user_response):
-    mock_input = Mock()
-    mock_input.return_value = user_response
-    db_copy = DatabaseCopy(
-        "",
-        "test-db",
-        Mock(),
-        None,
-        None,
-        mock_input,
-    )
+    mocks = Mocks()
+    mocks.input_fn.return_value = user_response
+
+    db_copy = DatabaseCopy("", "test-db", **mocks.params())
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
-    mock_input.assert_called_once_with(
+    mocks.input_fn.assert_called_once_with(
         f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
 
 
 @pytest.mark.parametrize("user_response", ["n", "N", " no ", "squiggly"])
 def test_is_not_confirmed_ready_to_load(user_response):
-    mock_input = Mock()
-    mock_input.return_value = user_response
-    db_copy = DatabaseCopy(
-        None,
-        "test-db",
-        Mock(),
-        None,
-        None,
-        mock_input,
-    )
+    mocks = Mocks()
+    mocks.input_fn.return_value = user_response
+
+    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
 
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
-    mock_input.assert_called_once_with(
+    mocks.input_fn.assert_called_once_with(
         f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
 
@@ -437,15 +353,7 @@ def test_tail_logs(is_dump):
         ]
     }
 
-    db_copy = DatabaseCopy(
-        "test-app",
-        "test-db",
-        mocks.load_application_fn,
-        None,
-        None,
-        mocks.input_fn,
-        echo_fn=mocks.echo_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
     db_copy.tail_logs(is_dump, "test-env")
 
     mocks.environment.session.client.assert_called_once_with("logs")
@@ -471,10 +379,6 @@ def test_tail_logs(is_dump):
 def test_database_copy_account_id():
     mocks = Mocks()
 
-    db_copy = DatabaseCopy(
-        "test-app",
-        "test-db",
-        mocks.load_application_fn,
-    )
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert db_copy.account_id("test-env") == "12345"
