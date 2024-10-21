@@ -67,11 +67,14 @@ class DatabaseCopy:
                 env_session, self.app, env, database_identifier
             )
         except Exception as exc:
-            self.abort_fn(f"{exc} (DB: {database_identifier})")
+            self.abort_fn(f"{exc} (Database: {database_identifier})")
 
-        task_arn = self.run_database_copy_task(
-            env_session, env, vpc_config, is_dump, db_connection_string
-        )
+        try:
+            task_arn = self.run_database_copy_task(
+                env_session, env, vpc_config, is_dump, db_connection_string
+            )
+        except Exception as exc:
+            self.abort_fn(f"{exc} (Account id: {self.account_id})")
 
         if is_dump:
             message = f"Dumping {self.database} from the {env} environment into S3"
