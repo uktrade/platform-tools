@@ -4,11 +4,13 @@ import boto3
 import click
 from boto3 import Session
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
+from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class DatabaseCopy:
@@ -24,6 +26,7 @@ class DatabaseCopy:
         ] = get_connection_string,
         input_fn: Callable[[str], str] = click.prompt,
         echo_fn: Callable[[str], str] = click.secho,
+        abort_fn: Callable[[str], None] = abort_with_error,
     ):
         self.account_id = account_id
         self.app = app
@@ -32,6 +35,7 @@ class DatabaseCopy:
         self.db_connection_string_fn = db_connection_string_fn
         self.input_fn = input_fn
         self.echo_fn = echo_fn
+        self.abort_fn = abort_fn
 
         # Get Application
         self.application = load_application_fn(self.app)
@@ -41,12 +45,20 @@ class DatabaseCopy:
         env_session = environment.session
         # Enhance parameters
 
-        vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
+        try:
+            vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
+        except AWSException as ex:
+            self.abort_fn(str(ex))
+
         database_identifier = f"{self.app}-{env}-{self.database}"
 
-        db_connection_string = self.db_connection_string_fn(
-            env_session, self.app, env, database_identifier
-        )
+        try:
+            db_connection_string = self.db_connection_string_fn(
+                env_session, self.app, env, database_identifier
+            )
+        except Exception as exc:
+            self.abort_fn(f"{exc} (DB: {database_identifier})")
+
         task_arn = self.run_database_copy_task(
             env_session, env, vpc_config, is_dump, db_connection_string
         )

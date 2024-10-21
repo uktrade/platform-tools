@@ -4,6 +4,7 @@ from unittest.mock import call
 import pytest
 
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.aws import Vpc
 
@@ -133,6 +134,65 @@ def test_database_dump():
         ]
     )
     db_copy.tail_logs.assert_called_once_with(True, env)
+
+
+def test_database_dump_handles_vpc_errors():
+    mock_application = Application("my-app")
+    mock_environment = Mock()
+    mock_application.environments = {"my-env": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
+
+    mock_abort_fn = Mock(side_effect=SystemExit(1))
+
+    db_copy = DatabaseCopy(
+        "1234567",
+        "my-app",
+        "test-db",
+        load_application_fn=mock_load_application_fn,
+        vpc_config_fn=mock_vpc_config_fn,
+        abort_fn=mock_abort_fn,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        db_copy.dump("my-env", "bad-vpc-name")
+
+    assert exc.value.code == 1
+    mock_abort_fn.assert_called_once_with("A VPC error occurred")
+
+
+def test_database_dump_handles_db_name_errors():
+    mock_application = Application("my-app")
+    mock_environment = Mock()
+    mock_application.environments = {"my-env": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
+    mock_db_connection_string_fn = Mock(side_effect=Exception("Parameter not found."))
+
+    vpc = Vpc([], [])
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.return_value = vpc
+    mock_abort_fn = Mock(side_effect=SystemExit(1))
+
+    db_copy = DatabaseCopy(
+        "1234567",
+        "my-app",
+        "bad-db",
+        load_application_fn=mock_load_application_fn,
+        vpc_config_fn=mock_vpc_config_fn,
+        db_connection_string_fn=mock_db_connection_string_fn,
+        abort_fn=mock_abort_fn,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        db_copy.dump("my-env", "vpc-name")
+
+    assert exc.value.code == 1
+    mock_abort_fn.assert_called_once_with("Parameter not found. (DB: my-app-my-env-bad-db)")
 
 
 def test_database_load_with_response_of_yes():
