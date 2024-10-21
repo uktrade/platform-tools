@@ -675,6 +675,7 @@ extensions:
 
     # Kinda hacky - need to add the duplicate keys back into the platform-config as a string.
     # As adding keys as a dictionary will overwrite the duplicate keys, hence no duplicate and the test doesn't work.
+
     invalid_platform_config = f"""
 {yaml.dump(valid_platform_config)}
 {naughty_extensions_with_duplicate}
