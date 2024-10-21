@@ -6,6 +6,7 @@ import pytest
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -200,13 +201,6 @@ def test_database_dump_handles_env_name_errors():
     mock_environment = Mock()
     mock_application.environments = {"test-env": mock_environment, "test-env-2": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
-
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
-
-    vpc = Vpc([], [])
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.return_value = vpc
     mock_abort_fn = Mock(side_effect=SystemExit(1))
 
     db_copy = DatabaseCopy(
@@ -224,6 +218,24 @@ def test_database_dump_handles_env_name_errors():
     mock_abort_fn.assert_called_once_with(
         "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
     )
+
+
+def test_database_dump_handles_app_name_errors():
+    mock_load_application_fn = Mock(side_effect=ApplicationNotFoundError())
+
+    mock_abort_fn = Mock(side_effect=SystemExit(1))
+
+    with pytest.raises(SystemExit) as exc:
+        DatabaseCopy(
+            "1234567",
+            "bad-app",
+            "test-db",
+            load_application_fn=mock_load_application_fn,
+            abort_fn=mock_abort_fn,
+        )
+
+    assert exc.value.code == 1
+    mock_abort_fn.assert_called_once_with("No such application 'bad-app'.")
 
 
 def test_database_load_with_response_of_yes():
