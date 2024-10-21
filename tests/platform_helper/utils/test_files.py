@@ -1,17 +1,16 @@
 import os
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
-from datetime import datetime, timedelta
-import yaml
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import patch, Mock
-
 
 from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import cache_refresh_required
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.files import cache_refresh_required, check_if_cached_datetime_is_greater_than_interval, write_to_cache, read_supported_versions_from_cache
 
 
 @pytest.mark.parametrize(
@@ -237,34 +236,36 @@ def test_apply_defaults_with_no_defaults():
     }
 
 
-@patch('dbt_platform_helper.utils.files.os.path.exists', return_value=True)
-@patch('dbt_platform_helper.utils.files.read_file_as_yaml')
-def test_cache_refresh_required_is_true_when_cached_datetime_greater_than_one_day(mock_read_yaml, mock_path_exists):
+@patch("dbt_platform_helper.utils.files.os.path.exists", return_value=True)
+@patch("dbt_platform_helper.utils.files.read_file_as_yaml")
+def test_cache_refresh_required_is_true_when_cached_datetime_greater_than_one_day(
+    mock_read_yaml, mock_path_exists
+):
 
     read_yaml_return_value = {
-        'redis': {
+        "redis": {
             # Some timestamp which is > than 1 day. i.e. enough to trigger a cache refresh
-            'date-retrieved': '09-02-02 10:35:48'
+            "date-retrieved": "09-02-02 10:35:48"
         }
     }
     mock_read_yaml.return_value = read_yaml_return_value
 
-    assert cache_refresh_required('redis')
+    assert cache_refresh_required("redis")
 
 
-@patch('dbt_platform_helper.utils.files.os.path.exists', return_value=True)
-@patch('dbt_platform_helper.utils.files.read_file_as_yaml')
-def test_cache_refresh_required_is_false_when_cached_datetime_less_than_one_day(mock_read_yaml, mock_path_exists):
+@patch("dbt_platform_helper.utils.files.os.path.exists", return_value=True)
+@patch("dbt_platform_helper.utils.files.read_file_as_yaml")
+def test_cache_refresh_required_is_false_when_cached_datetime_less_than_one_day(
+    mock_read_yaml, mock_path_exists
+):
 
     today = datetime.now()
     # Time range is still < 1 day so should not require refresh
     middle_of_today = today - timedelta(hours=12)
 
     read_yaml_return_value = {
-        'redis': {
-            'date-retrieved': middle_of_today.strftime("%d-%m-%y %H:%M:%S")
-        }
+        "redis": {"date-retrieved": middle_of_today.strftime("%d-%m-%y %H:%M:%S")}
     }
     mock_read_yaml.return_value = read_yaml_return_value
 
-    assert not cache_refresh_required('redis')
+    assert not cache_refresh_required("redis")
