@@ -10,7 +10,7 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import Vpc
 
 
-class Mocks:
+class DataCopyMocks:
     def __init__(self, app="test-app", env="test-env", acc="12345", vpc=Vpc([], [])):
         self.application = Application(app)
         self.environment = Mock()
@@ -42,14 +42,11 @@ class Mocks:
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    app = "test-app"
-    env = "test-env"
-    database = "test-postgres"
     vpc = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
-    mocks = Mocks(app, env, vpc=vpc)
+    mocks = DataCopyMocks(vpc=vpc)
     db_connection_string = "connection_string"
 
-    db_copy = DatabaseCopy(app, database, **mocks.params())
+    db_copy = DatabaseCopy("test-app", "test-postgres", **mocks.params())
 
     mock_client = Mock()
     mock_session = Mock()
@@ -57,7 +54,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     actual_task_arn = db_copy.run_database_copy_task(
-        mock_session, env, vpc, is_dump, db_connection_string
+        mock_session, "test-env", vpc, is_dump, db_connection_string
     )
 
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
@@ -98,7 +95,7 @@ def test_database_dump():
     vpc_name = "test-vpc"
     database = "test-db"
 
-    mocks = Mocks(app, env)
+    mocks = DataCopyMocks(app, env)
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
@@ -138,13 +135,11 @@ def test_database_load_with_response_of_yes():
     app = "test-app"
     env = "test-env"
     vpc_name = "test-vpc"
-    database = "test-db"
-
-    mocks = Mocks()
+    mocks = DataCopyMocks()
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
-    db_copy = DatabaseCopy(app, database, **mocks.params())
+    db_copy = DatabaseCopy(app, "test-db", **mocks.params())
     db_copy.tail_logs = Mock()
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
@@ -187,21 +182,16 @@ def test_database_load_with_response_of_yes():
 
 
 def test_database_load_with_response_of_no():
-    app = "test-app"
-    env = "test-env"
-    vpc_name = "test-vpc"
-    database = "test-db"
-
-    mocks = Mocks(app, env)
+    mocks = DataCopyMocks()
     mocks.input_fn = Mock(return_value="no")
 
     mock_run_database_copy_task_fn = Mock()
 
-    db_copy = DatabaseCopy(app, database, **mocks.params())
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
     db_copy.tail_logs = Mock()
     db_copy.run_database_copy_task = mock_run_database_copy_task_fn
 
-    db_copy.load(env, vpc_name)
+    db_copy.load("test-env", "test-vpc")
 
     mocks.environment.session_fn.assert_not_called()
 
@@ -220,7 +210,7 @@ def test_database_load_with_response_of_no():
 
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_vpc_errors(is_dump):
-    mocks = Mocks()
+    mocks = DataCopyMocks()
     mocks.vpc_config_fn.side_effect = AWSException("A VPC error occurred")
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
@@ -237,12 +227,8 @@ def test_database_dump_handles_vpc_errors(is_dump):
 
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_db_name_errors(is_dump):
-    mocks = Mocks()
+    mocks = DataCopyMocks()
     mocks.db_connection_string_fn = Mock(side_effect=Exception("Parameter not found."))
-
-    vpc = Vpc([], [])
-    mock_vpc_config_fn = Mock()
-    mock_vpc_config_fn.return_value = vpc
 
     db_copy = DatabaseCopy("test-app", "bad-db", **mocks.params())
 
@@ -260,7 +246,7 @@ def test_database_dump_handles_db_name_errors(is_dump):
 
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_env_name_errors(is_dump):
-    mocks = Mocks()
+    mocks = DataCopyMocks()
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
@@ -278,12 +264,10 @@ def test_database_dump_handles_env_name_errors(is_dump):
 
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_account_id_errors(is_dump):
-    mocks = Mocks()
-    error_msg = "An error occurred (InvalidParameterException) when calling the RunTask operation: AccountIDs mismatch"
-    mock_run_database_copy_task = Mock(side_effect=Exception(error_msg))
-
+    mocks = DataCopyMocks()
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
-    db_copy.run_database_copy_task = mock_run_database_copy_task
+    error_msg = "An error occurred (InvalidParameterException) when calling the RunTask operation: AccountIDs mismatch"
+    db_copy.run_database_copy_task = Mock(side_effect=Exception(error_msg))
 
     db_copy.tail_logs = Mock()
 
@@ -298,7 +282,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
 
 def test_database_copy_initializaion_handles_app_name_errors():
-    mocks = Mocks()
+    mocks = DataCopyMocks()
     mocks.load_application_fn = Mock(side_effect=ApplicationNotFoundError())
 
     with pytest.raises(SystemExit) as exc:
@@ -310,7 +294,7 @@ def test_database_copy_initializaion_handles_app_name_errors():
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
 def test_is_confirmed_ready_to_load(user_response):
-    mocks = Mocks()
+    mocks = DataCopyMocks()
     mocks.input_fn.return_value = user_response
 
     db_copy = DatabaseCopy("", "test-db", **mocks.params())
@@ -324,7 +308,7 @@ def test_is_confirmed_ready_to_load(user_response):
 
 @pytest.mark.parametrize("user_response", ["n", "N", " no ", "squiggly"])
 def test_is_not_confirmed_ready_to_load(user_response):
-    mocks = Mocks()
+    mocks = DataCopyMocks()
     mocks.input_fn.return_value = user_response
 
     db_copy = DatabaseCopy(None, "test-db", **mocks.params())
@@ -340,7 +324,7 @@ def test_is_not_confirmed_ready_to_load(user_response):
 def test_tail_logs(is_dump):
     action = "dump" if is_dump else "load"
 
-    mocks = Mocks()
+    mocks = DataCopyMocks()
 
     mocks.client.start_live_tail.return_value = {
         "responseStream": [
@@ -377,7 +361,7 @@ def test_tail_logs(is_dump):
 
 
 def test_database_copy_account_id():
-    mocks = Mocks()
+    mocks = DataCopyMocks()
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
