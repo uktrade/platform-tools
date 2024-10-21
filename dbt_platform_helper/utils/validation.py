@@ -12,6 +12,8 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 from yaml.parser import ParserError
+from yamllint import linter
+from yamllint.config import YamlLintConfig
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
@@ -683,7 +685,15 @@ def load_and_validate_platform_config(
 ):
     if not disable_file_check:
         config_file_check(path)
+
     try:
+        yaml_config = YamlLintConfig("extends: platform-config.yml")
+        with open(path, "r") as f:
+            for problem in linter.run(f, yaml_config):
+                raise ParserError(
+                    f"YAML lint error: {problem.desc} at line {problem.line} (rule: {problem.rule})"
+                )
+
         conf = yaml.safe_load(Path(path).read_text())
 
         check_duplicate_keys(conf)
