@@ -193,7 +193,9 @@ def test_database_dump_handles_db_name_errors():
         db_copy.dump("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mock_abort_fn.assert_called_once_with("Parameter not found. (DB: test-app-test-env-bad-db)")
+    mock_abort_fn.assert_called_once_with(
+        "Parameter not found. (Database: test-app-test-env-bad-db)"
+    )
 
 
 def test_database_dump_handles_env_name_errors():
@@ -236,6 +238,46 @@ def test_database_dump_handles_app_name_errors():
 
     assert exc.value.code == 1
     mock_abort_fn.assert_called_once_with("No such application 'bad-app'.")
+
+
+def test_database_dump_handles_account_id_errors():
+    mock_application = Application("test-app")
+    mock_environment = Mock()
+    mock_application.environments = {"test-env": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
+    error_msg = "An error occurred (InvalidParameterException) when calling the RunTask operation: AccountIDs mismatch"
+    mock_run_database_copy_task = Mock(side_effect=Exception(error_msg))
+
+    vpc = Vpc([], [])
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.return_value = vpc
+    mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
+
+    mock_input_fn = Mock(return_value="yes")
+    mock_echo_fn = Mock()
+    mock_abort_fn = Mock(side_effect=SystemExit(1))
+
+    db_copy = DatabaseCopy(
+        "1234567",
+        "test-app",
+        "test-db",
+        mock_load_application_fn,
+        mock_vpc_config_fn,
+        mock_db_connection_string_fn,
+        mock_input_fn,
+        mock_echo_fn,
+        mock_abort_fn,
+    )
+    db_copy.run_database_copy_task = mock_run_database_copy_task
+
+    db_copy.tail_logs = Mock()
+
+    with pytest.raises(SystemExit) as exc:
+        db_copy.dump("test-env", "vpc-name")
+
+    assert exc.value.code == 1
+    mock_abort_fn.assert_called_once_with(f"{error_msg} (Account id: 1234567)")
 
 
 def test_database_load_with_response_of_yes():
