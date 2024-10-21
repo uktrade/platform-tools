@@ -41,7 +41,13 @@ class DatabaseCopy:
         self.application = load_application_fn(self.app)
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
-        environment = self.application.environments[env]
+        environments = self.application.environments
+        environment = environments.get(env)
+        if not environment:
+            self.abort_fn(
+                f"No such environment '{env}'. Available environments are: {', '.join(environments.keys())}"
+            )
+
         env_session = environment.session
         # Enhance parameters
 
