@@ -12,7 +12,6 @@ from dbt_platform_helper.utils.aws import Vpc
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    account_id = "1234567"
     app = "test_app"
     env = "test_env"
     database = "test_postgres"
@@ -21,15 +20,19 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
     mock_input_fn = Mock(return_value="yes")
     mock_echo_fn = Mock()
+    mock_application = Application(app)
+    mock_environment = Mock()
+    mock_environment.account_id = "12345"
+    mock_application.environments = {env: mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
 
     db_copy = DatabaseCopy(
-        account_id,
         app,
         database,
-        Mock(),
-        None,
-        mock_input_fn,
-        mock_echo_fn,
+        load_application_fn=mock_load_application_fn,
+        vpc_config_fn=None,
+        input_fn=mock_input_fn,
+        echo_fn=mock_echo_fn,
     )
 
     mock_client = Mock()
@@ -45,7 +48,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
     mock_session.client.assert_called_once_with("ecs")
     mock_client.run_task.assert_called_once_with(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/test_app-test_env-test_postgres-{exp_operation}",
+        taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test_app-test_env-test_postgres-{exp_operation}",
         cluster="test_app-test_env",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
@@ -79,10 +82,9 @@ def test_database_dump():
     vpc_name = "test-vpc"
     database = "test-db"
 
-    account_id = "1234567"
-
     mock_application = Application(app)
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {env: mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -97,7 +99,6 @@ def test_database_dump():
     mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
-        account_id,
         app,
         database,
         mock_load_application_fn,
@@ -143,10 +144,9 @@ def test_database_load_with_response_of_yes():
     vpc_name = "test-vpc"
     database = "test-db"
 
-    account_id = "1234567"
-
     mock_application = Application(app)
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {env: mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -161,7 +161,6 @@ def test_database_load_with_response_of_yes():
     mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
-        account_id,
         app,
         database,
         mock_load_application_fn,
@@ -217,10 +216,9 @@ def test_database_load_with_response_of_no():
     vpc_name = "test-vpc"
     database = "test-db"
 
-    account_id = "1234567"
-
     mock_application = Application(app)
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {env: mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -235,7 +233,6 @@ def test_database_load_with_response_of_no():
     mock_echo_fn = Mock()
 
     db_copy = DatabaseCopy(
-        account_id,
         app,
         database,
         mock_load_application_fn,
@@ -267,6 +264,7 @@ def test_database_load_with_response_of_no():
 def test_database_dump_handles_vpc_errors(is_dump):
     mock_application = Application("test-app")
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -276,7 +274,6 @@ def test_database_dump_handles_vpc_errors(is_dump):
     mock_abort_fn = Mock(side_effect=SystemExit(1))
 
     db_copy = DatabaseCopy(
-        "1234567",
         "test-app",
         "test-db",
         load_application_fn=mock_load_application_fn,
@@ -299,6 +296,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
 def test_database_dump_handles_db_name_errors(is_dump):
     mock_application = Application("test-app")
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -312,7 +310,6 @@ def test_database_dump_handles_db_name_errors(is_dump):
     mock_abort_fn = Mock(side_effect=SystemExit(1))
 
     db_copy = DatabaseCopy(
-        "1234567",
         "test-app",
         "bad-db",
         load_application_fn=mock_load_application_fn,
@@ -338,12 +335,12 @@ def test_database_dump_handles_db_name_errors(is_dump):
 def test_database_dump_handles_env_name_errors(is_dump):
     mock_application = Application("test-app")
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {"test-env": mock_environment, "test-env-2": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
     mock_abort_fn = Mock(side_effect=SystemExit(1))
 
     db_copy = DatabaseCopy(
-        "1234567",
         "test-app",
         "test-db",
         load_application_fn=mock_load_application_fn,
@@ -367,6 +364,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
 def test_database_dump_handles_account_id_errors(is_dump):
     mock_application = Application("test-app")
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
@@ -383,7 +381,6 @@ def test_database_dump_handles_account_id_errors(is_dump):
     mock_abort_fn = Mock(side_effect=SystemExit(1))
 
     db_copy = DatabaseCopy(
-        "1234567",
         "test-app",
         "test-db",
         mock_load_application_fn,
@@ -404,7 +401,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
             db_copy.load("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mock_abort_fn.assert_called_once_with(f"{error_msg} (Account id: 1234567)")
+    mock_abort_fn.assert_called_once_with(f"{error_msg} (Account id: 12345)")
 
 
 def test_database_copy_initializaion_handles_app_name_errors():
@@ -414,7 +411,6 @@ def test_database_copy_initializaion_handles_app_name_errors():
 
     with pytest.raises(SystemExit) as exc:
         DatabaseCopy(
-            "1234567",
             "bad-app",
             "test-db",
             load_application_fn=mock_load_application_fn,
@@ -431,7 +427,6 @@ def test_is_confirmed_ready_to_load(user_response):
     mock_input = Mock()
     mock_input.return_value = user_response
     db_copy = DatabaseCopy(
-        "",
         "",
         "test-db",
         Mock(),
@@ -453,7 +448,6 @@ def test_is_not_confirmed_ready_to_load(user_response):
     mock_input.return_value = user_response
     db_copy = DatabaseCopy(
         None,
-        None,
         "test-db",
         Mock(),
         None,
@@ -474,6 +468,7 @@ def test_tail_logs(is_dump):
 
     mock_application = Application("test-app")
     mock_environment = Mock()
+    mock_environment.account_id = "12345"
     mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
     mock_client = Mock()
@@ -493,7 +488,6 @@ def test_tail_logs(is_dump):
     mock_echo = Mock()
 
     db_copy = DatabaseCopy(
-        "1234",
         "test-app",
         "test-db",
         mock_load_application_fn,
@@ -507,7 +501,7 @@ def test_tail_logs(is_dump):
     mock_environment.session.client.assert_called_once_with("logs")
     mock_client.start_live_tail.assert_called_once_with(
         logGroupIdentifiers=[
-            f"arn:aws:logs:eu-west-2:1234:log-group:/ecs/test-app-test-env-test-db-{action}"
+            f"arn:aws:logs:eu-west-2:12345:log-group:/ecs/test-app-test-env-test-db-{action}"
         ],
     )
 
@@ -524,17 +518,17 @@ def test_tail_logs(is_dump):
     )
 
 
-# def test_lookup_missing_options():
-#     db_copy = DatabaseCopy(
-#         "1234",
-#         "test-app",
-#         "test-db",
-#         None,
-#         None,
-#         None,
-#         None,
-#         None,
-#     )
-#
-#     db_copy.lookup_missing_options()
-#
+def test_database_copy_account_id():
+    mock_application = Application("test-app")
+    mock_environment = Mock()
+    mock_environment.account_id = "12345"
+    mock_application.environments = {"test-env": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
+    db_copy = DatabaseCopy(
+        "test-app",
+        "test-db",
+        mock_load_application_fn,
+    )
+
+    assert db_copy.account_id("test-env") == "12345"

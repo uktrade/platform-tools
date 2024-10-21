@@ -17,7 +17,6 @@ from dbt_platform_helper.utils.messages import abort_with_error
 class DatabaseCopy:
     def __init__(
         self,
-        account_id: str,
         app: str,
         database: str,
         load_application_fn: Callable[[str], Application] = load_application,
@@ -29,7 +28,6 @@ class DatabaseCopy:
         echo_fn: Callable[[str], str] = click.secho,
         abort_fn: Callable[[str], None] = abort_with_error,
     ):
-        self.account_id = account_id
         self.app = app
         self.database = database
         self.vpc_config_fn = vpc_config_fn
@@ -43,8 +41,6 @@ class DatabaseCopy:
             self.application = load_application_fn(self.app)
         except ApplicationNotFoundError:
             abort_fn(f"No such application '{app}'.")
-
-        # Enhance parameters
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
         environments = self.application.environments
@@ -75,7 +71,7 @@ class DatabaseCopy:
                 env_session, env, vpc_config, is_dump, db_connection_string
             )
         except Exception as exc:
-            self.abort_fn(f"{exc} (Account id: {self.account_id})")
+            self.abort_fn(f"{exc} (Account id: {self.account_id(env)})")
 
         if is_dump:
             message = f"Dumping {self.database} from the {env} environment into S3"
@@ -100,7 +96,7 @@ class DatabaseCopy:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         response = client.run_task(
-            taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id}:task-definition/{self.app}-{env}-{self.database}-{action}",
+            taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
             cluster=f"{self.app}-{env}",
             capacityProviderStrategy=[
                 {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
@@ -143,7 +139,7 @@ class DatabaseCopy:
     def tail_logs(self, is_dump: bool, env: str):
         action = "dump" if is_dump else "load"
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
-        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:{log_group_name}"
+        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
         self.echo_fn(f"Tailing logs for {log_group_name}", fg="yellow")
         session = self.application.environments[env].session
         response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
@@ -160,3 +156,8 @@ class DatabaseCopy:
                     if message.startswith("Stopping data "):
                         stopped = True
                     self.echo_fn(message)
+
+    def account_id(self, env):
+        envs = self.application.environments
+        if env in envs:
+            return envs.get(env).account_id
