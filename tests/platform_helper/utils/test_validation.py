@@ -754,7 +754,7 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
 def test_load_and_validate_platform_config_duplicate_keys(
     mock_get_session, valid_platform_config, fakefs
 ):
-    setup_fixtures(fakefs)
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
     valid_platform_config["extensions"] = {
         "demodjango-s3-bucket": {
             "type": "s3",
@@ -1050,7 +1050,3 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
-
-
-def setup_fixtures(fakefs, pipelines_file=f"pipeline/{PLATFORM_CONFIG_FILE}"):
-    fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, PLATFORM_CONFIG_FILE)

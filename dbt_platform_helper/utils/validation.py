@@ -687,7 +687,7 @@ def load_and_validate_platform_config(
         config_file_check(path)
 
     try:
-        yaml_config = YamlLintConfig("extends: platform-config.yml")
+        yaml_config = YamlLintConfig("extends: default")
         with open(path, "r") as f:
             for problem in linter.run(f, yaml_config):
                 raise ParserError(

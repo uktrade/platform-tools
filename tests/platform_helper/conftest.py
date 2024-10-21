@@ -23,6 +23,7 @@ FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "fixtures"
 EXPECTED_FILES_DIR = BASE_DIR / "tests" / "platform_helper" / "expected_files"
 UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "utils" / "fixtures"
 DOCS_DIR = BASE_DIR / "tests" / "platform_helper" / "test-docs"
+PLATFORM_CONFIG_FILE = "platform-config.yml"
 
 # tell yaml to ignore CFN ! function prefixes
 yaml.add_multi_constructor("!", lambda loader, suffix, node: None, Loader=yaml.SafeLoader)
