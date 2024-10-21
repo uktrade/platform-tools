@@ -12,9 +12,9 @@ from dbt_platform_helper.utils.aws import Vpc
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
     account_id = "1234567"
-    app = "my_app"
-    env = "my_env"
-    database = "my_postgres"
+    app = "test_app"
+    env = "test_env"
+    database = "test_postgres"
     vpc_config = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
     db_connection_string = "connection_string"
 
@@ -44,8 +44,8 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
     mock_session.client.assert_called_once_with("ecs")
     mock_client.run_task.assert_called_once_with(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/my_app-my_env-my_postgres-{exp_operation}",
-        cluster="my_app-my_env",
+        taskDefinition=f"arn:aws:ecs:eu-west-2:1234567:task-definition/test_app-test_env-test_postgres-{exp_operation}",
+        cluster="test_app-test_env",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
         ],
@@ -61,7 +61,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
         overrides={
             "containerOverrides": [
                 {
-                    "name": f"my_app-my_env-my_postgres-{exp_operation}",
+                    "name": f"test_app-test_env-test_postgres-{exp_operation}",
                     "environment": [
                         {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
                         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
@@ -73,8 +73,8 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
 
 def test_database_dump():
-    app = "my-app"
-    env = "my-env"
+    app = "test-app"
+    env = "test-env"
     vpc_name = "test-vpc"
     database = "test-db"
 
@@ -114,7 +114,7 @@ def test_database_dump():
     mock_load_application_fn.assert_called_once()
     mock_vpc_config_fn.assert_called_once_with(mock_environment.session, app, env, vpc_name)
     mock_db_connection_string_fn.assert_called_once_with(
-        mock_environment.session, app, env, "my-app-my-env-test-db"
+        mock_environment.session, app, env, "test-app-test-env-test-db"
     )
     mock_run_database_copy_task.assert_called_once_with(
         mock_environment.session,
@@ -126,7 +126,7 @@ def test_database_dump():
     mock_input_fn.assert_not_called()
     mock_echo_fn.assert_has_calls(
         [
-            call("Dumping test-db from the my-env environment into S3", fg="white", bold=True),
+            call("Dumping test-db from the test-env environment into S3", fg="white", bold=True),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
                 fg="white",
@@ -137,9 +137,9 @@ def test_database_dump():
 
 
 def test_database_dump_handles_vpc_errors():
-    mock_application = Application("my-app")
+    mock_application = Application("test-app")
     mock_environment = Mock()
-    mock_application.environments = {"my-env": mock_environment}
+    mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
     mock_vpc_config_fn = Mock()
@@ -149,7 +149,7 @@ def test_database_dump_handles_vpc_errors():
 
     db_copy = DatabaseCopy(
         "1234567",
-        "my-app",
+        "test-app",
         "test-db",
         load_application_fn=mock_load_application_fn,
         vpc_config_fn=mock_vpc_config_fn,
@@ -157,16 +157,16 @@ def test_database_dump_handles_vpc_errors():
     )
 
     with pytest.raises(SystemExit) as exc:
-        db_copy.dump("my-env", "bad-vpc-name")
+        db_copy.dump("test-env", "bad-vpc-name")
 
     assert exc.value.code == 1
     mock_abort_fn.assert_called_once_with("A VPC error occurred")
 
 
 def test_database_dump_handles_db_name_errors():
-    mock_application = Application("my-app")
+    mock_application = Application("test-app")
     mock_environment = Mock()
-    mock_application.environments = {"my-env": mock_environment}
+    mock_application.environments = {"test-env": mock_environment}
     mock_load_application_fn = Mock(return_value=mock_application)
 
     mock_vpc_config_fn = Mock()
@@ -180,7 +180,7 @@ def test_database_dump_handles_db_name_errors():
 
     db_copy = DatabaseCopy(
         "1234567",
-        "my-app",
+        "test-app",
         "bad-db",
         load_application_fn=mock_load_application_fn,
         vpc_config_fn=mock_vpc_config_fn,
@@ -189,15 +189,46 @@ def test_database_dump_handles_db_name_errors():
     )
 
     with pytest.raises(SystemExit) as exc:
-        db_copy.dump("my-env", "vpc-name")
+        db_copy.dump("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mock_abort_fn.assert_called_once_with("Parameter not found. (DB: my-app-my-env-bad-db)")
+    mock_abort_fn.assert_called_once_with("Parameter not found. (DB: test-app-test-env-bad-db)")
+
+
+def test_database_dump_handles_env_name_errors():
+    mock_application = Application("test-app")
+    mock_environment = Mock()
+    mock_application.environments = {"test-env": mock_environment, "test-env-2": mock_environment}
+    mock_load_application_fn = Mock(return_value=mock_application)
+
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.side_effect = AWSException("A VPC error occurred")
+
+    vpc = Vpc([], [])
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.return_value = vpc
+    mock_abort_fn = Mock(side_effect=SystemExit(1))
+
+    db_copy = DatabaseCopy(
+        "1234567",
+        "test-app",
+        "test-db",
+        load_application_fn=mock_load_application_fn,
+        abort_fn=mock_abort_fn,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        db_copy.dump("bad-env", "vpc-name")
+
+    assert exc.value.code == 1
+    mock_abort_fn.assert_called_once_with(
+        "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
+    )
 
 
 def test_database_load_with_response_of_yes():
-    app = "my-app"
-    env = "my-env"
+    app = "test-app"
+    env = "test-env"
     vpc_name = "test-vpc"
     database = "test-db"
 
@@ -238,7 +269,7 @@ def test_database_load_with_response_of_yes():
     mock_vpc_config_fn.assert_called_once_with(mock_environment.session, app, env, vpc_name)
 
     mock_db_connection_string_fn.assert_called_once_with(
-        mock_environment.session, app, env, "my-app-my-env-test-db"
+        mock_environment.session, app, env, "test-app-test-env-test-db"
     )
 
     mock_run_database_copy_task.assert_called_once_with(
@@ -250,13 +281,15 @@ def test_database_load_with_response_of_yes():
     )
 
     mock_input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the my-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
 
     mock_echo_fn.assert_has_calls(
         [
             call(
-                "Loading data into test-db in the my-env environment from S3", fg="white", bold=True
+                "Loading data into test-db in the test-env environment from S3",
+                fg="white",
+                bold=True,
             ),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
@@ -264,12 +297,12 @@ def test_database_load_with_response_of_yes():
             ),
         ]
     )
-    db_copy.tail_logs.assert_called_once_with(False, "my-env")
+    db_copy.tail_logs.assert_called_once_with(False, "test-env")
 
 
 def test_database_load_with_response_of_no():
-    app = "my-app"
-    env = "my-env"
+    app = "test-app"
+    env = "test-env"
     vpc_name = "test-vpc"
     database = "test-db"
 
@@ -313,7 +346,7 @@ def test_database_load_with_response_of_no():
     mock_run_database_copy_task_fn.assert_not_called()
 
     mock_input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the my-env environment stopped? (y/n)"
+        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
     )
     mock_echo_fn.assert_not_called()
     db_copy.tail_logs.assert_not_called()
