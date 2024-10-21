@@ -15,8 +15,6 @@ def test_command_dump_success(mock_database_copy_object):
     result = runner.invoke(
         dump,
         [
-            "--account-id",
-            "12345",
             "--app",
             "my_app",
             "--env",
@@ -29,7 +27,7 @@ def test_command_dump_success(mock_database_copy_object):
     )
 
     assert result.exit_code == 0
-    mock_database_copy_object.assert_called_once_with("12345", "my_app", "my_postgres")
+    mock_database_copy_object.assert_called_once_with("my_app", "my_postgres")
     mock_database_copy_instance.dump.assert_called_once_with("my_env", "my_vpc")
 
 
@@ -40,8 +38,6 @@ def test_command_load_success(mock_database_copy_object):
     result = runner.invoke(
         load,
         [
-            "--account-id",
-            "12345",
             "--app",
             "my_app",
             "--env",
@@ -54,7 +50,7 @@ def test_command_load_success(mock_database_copy_object):
     )
 
     assert result.exit_code == 0
-    mock_database_copy_object.assert_called_once_with("12345", "my_app", "my_postgres")
+    mock_database_copy_object.assert_called_once_with("my_app", "my_postgres")
     mock_database_copy_instance.load.assert_called_once_with("my_env", "my_vpc")
 
 
@@ -65,8 +61,6 @@ def test_command_copy_success(mock_database_copy_object):
     result = runner.invoke(
         copy,
         [
-            "--account-id",
-            "12345",
             "--app",
             "my_app",
             "--from",
@@ -83,6 +77,6 @@ def test_command_copy_success(mock_database_copy_object):
     )
 
     assert result.exit_code == 0
-    mock_database_copy_object.assert_called_once_with("12345", "my_app", "my_postgres")
+    mock_database_copy_object.assert_called_once_with("my_app", "my_postgres")
     mock_database_copy_instance.dump.assert_called_once_with("my_prod_env", "my_from_vpc")
     mock_database_copy_instance.load.assert_called_once_with("my_hotfix_env", "my_to_vpc")

@@ -989,14 +989,11 @@ platform-helper database (dump|load|copy)
 ## Usage
 
 ```
-platform-helper database dump --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
+platform-helper database dump --app <application> --env <environment> --database <database> 
                               --vpc-name <vpc_name> 
 ```
 
 ## Options
-
-- `--account-id <text>`
 
 - `--app <text>`
 
@@ -1018,14 +1015,11 @@ platform-helper database dump --account-id <account_id> --app <application>
 ## Usage
 
 ```
-platform-helper database load --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
+platform-helper database load --app <application> --env <environment> --database <database> 
                               --vpc-name <vpc_name> 
 ```
 
 ## Options
-
-- `--account-id <text>`
 
 - `--app <text>`
 
@@ -1047,14 +1041,12 @@ platform-helper database load --account-id <account_id> --app <application>
 ## Usage
 
 ```
-platform-helper database copy --account-id <account_id> --app <application> 
-                              --from <from_env> --to <to_env> --database <database> 
-                              --from-vpc <from_vpc> --to-vpc <to_vpc> 
+platform-helper database copy --app <application> --from <from_env> --to <to_env> 
+                              --database <database> --from-vpc <from_vpc> 
+                              --to-vpc <to_vpc> 
 ```
 
 ## Options
-
-- `--account-id <text>`
 
 - `--app <text>`
 
