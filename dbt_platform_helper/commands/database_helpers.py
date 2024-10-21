@@ -44,6 +44,8 @@ class DatabaseCopy:
         except ApplicationNotFoundError:
             abort_fn(f"No such application '{app}'.")
 
+        # Enhance parameters
+
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
         environments = self.application.environments
         environment = environments.get(env)
@@ -53,7 +55,6 @@ class DatabaseCopy:
             )
 
         env_session = environment.session
-        # Enhance parameters
 
         try:
             vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
