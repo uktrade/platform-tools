@@ -19,6 +19,7 @@ from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
+from dbt_platform_helper.utils.validation import lint_yaml
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
@@ -751,9 +752,7 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_load_and_validate_platform_config_duplicate_keys(
-    mock_get_session, valid_platform_config, fakefs
-):
+def test_lint_yaml(mock_get_session, valid_platform_config, fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
     valid_platform_config["extensions"] = {
         "demodjango-s3-bucket": {
@@ -770,7 +769,7 @@ def test_load_and_validate_platform_config_duplicate_keys(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
     with pytest.raises(ValidationError, match="Duplicate key for type 's3'"):
-        load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE)
+        lint_yaml(PLATFORM_CONFIG_FILE)
 
     assert not mock_get_session.called
 

@@ -5,15 +5,14 @@ from pathlib import Path
 import click
 import yaml
 from botocore.exceptions import ClientError
-from jsonschema import ValidationError
 from schema import Optional
 from schema import Or
 from schema import Regex
 from schema import Schema
 from schema import SchemaError
 from yaml.parser import ParserError
+from yamllint import config
 from yamllint import linter
-from yamllint.config import YamlLintConfig
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
@@ -680,6 +679,19 @@ def _validate_environment_pipelines_triggers(config):
         abort_with_error(error_message + "\n  ".join(errors))
 
 
+def lint_yaml(file_path):
+    yaml_config = """
+rules:
+  key-duplicates: enable
+"""
+    yaml_config = config.YamlLintConfig(yaml_config)
+    with open(file_path, "r") as yaml_file:
+        file_contents = yaml_file.read()
+        results = linter.run(file_contents, yaml_config)
+    for result in results:
+        print(f"Line {result.line}: {result.message} (Severity: {result.level})")
+
+
 def load_and_validate_platform_config(
     path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
 ):
@@ -687,17 +699,8 @@ def load_and_validate_platform_config(
         config_file_check(path)
 
     try:
-        yaml_config = YamlLintConfig("extends: default")
-        with open(path, "r") as f:
-            for problem in linter.run(f, yaml_config):
-                raise ParserError(
-                    f"YAML lint error: {problem.desc} at line {problem.line} (rule: {problem.rule})"
-                )
-
         conf = yaml.safe_load(Path(path).read_text())
-
-        check_duplicate_keys(conf)
-
+        lint_yaml(conf)
         validate_platform_config(conf, disable_aws_validation)
         return conf
 
@@ -707,20 +710,6 @@ def load_and_validate_platform_config(
         abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
     except Exception as e:
         abort_with_error(f"Unexpected error while processing {PLATFORM_CONFIG_FILE}: {str(e)}")
-
-
-def check_duplicate_keys(conf):
-    """Check for duplicate keys of the same type in the configuration."""
-    seen_keys = {}
-
-    print("CHECKHERE", conf)
-    for key, value in conf.items():
-        if isinstance(value, dict) and "type" in value:
-            if value["type"] in seen_keys:
-                raise ValidationError(
-                    f"Duplicate key for type '{value['type']}': '{key}' and '{seen_keys[value['type']]}'"
-                )
-            seen_keys[value["type"]] = key
 
 
 def config_file_check(path=PLATFORM_CONFIG_FILE):
