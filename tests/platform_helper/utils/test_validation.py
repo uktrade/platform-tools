@@ -7,7 +7,6 @@ import boto3
 import pytest
 import yaml
 from botocore.exceptions import ClientError
-from jsonschema import ValidationError
 from moto import mock_aws
 from schema import SchemaError
 
@@ -19,7 +18,7 @@ from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
-from dbt_platform_helper.utils.validation import lint_yaml
+from dbt_platform_helper.utils.validation import lint_yaml_for_duplicate_keys
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
@@ -751,27 +750,41 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
     assert mock_get_session.called
 
 
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_lint_yaml(mock_get_session, valid_platform_config, fakefs):
+def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(valid_platform_config, fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
-    valid_platform_config["extensions"] = {
-        "demodjango-s3-bucket": {
-            "type": "s3",
-            "services": ["web"],
-            "environments": {"dev": {"bucket_name": "demodjango-dev", "versioning": False}},
-        },
-        "demodjango-s3-bucket": {
-            "type": "s3",
-            "services": ["api"],
-            "environments": {"prod": {"bucket_name": "demodjango-prod", "versioning": False}},
-        },
-    }
 
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    with pytest.raises(ValidationError, match="Duplicate key for type 's3'"):
-        lint_yaml(PLATFORM_CONFIG_FILE)
+    # Remove the extensions k:v pair from the platform config - re-added as plain text.
+    valid_platform_config.pop('extensions')
 
-    assert not mock_get_session.called
+    naughty_extensions_with_duplicate = """
+extensions:
+  connors-favourite-key-but-duplicated:
+    type: redis
+    environments:
+        "*":
+        engine: '7.1'
+        plan: tiny
+        apply_immediately: true
+  connors-favourite-key-but-duplicated:
+    type: redis
+    environments:
+      "*":
+          engine: '7.1'
+          plan: tiny
+          apply_immediately: true
+"""
+
+    # Kinda hacky - need to add the duplicate keys back into the platform-config as a string. 
+    # As adding keys as a dictionary will overwrite the duplicate keys, hence no duplicate and the test doesn't work.
+    invalid_platform_config = f"""
+{yaml.dump(valid_platform_config)}
+{naughty_extensions_with_duplicate}
+"""
+
+    Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+
+    linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+    assert linting_failures == ['Line 98: duplication of key "connors-favourite-key-but-duplicated" in mapping (key-duplicates) (Severity: error)']
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
