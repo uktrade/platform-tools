@@ -678,9 +678,9 @@ extensions:
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-
-    expected_failures = [f'Line 100: duplication of key "{duplicate_key}"']
-    assert linting_failures == expected_failures
+    assert linting_failures == [
+        f'Line 100: duplication of key "{duplicate_key}" in mapping (key-duplicates) (Severity: error)'
+    ]
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(
