@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from unittest.mock import Mock
@@ -649,7 +650,7 @@ def test_load_and_validate_config_valid_file(yaml_file):
 
 
 def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
-    valid_platform_config, fakefs
+    valid_platform_config, fakefs, capsys
 ):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
 
@@ -679,6 +680,19 @@ extensions:
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert linting_failures == [f'\tLine 100: duplication of key "{duplicate_key}"']
+
+    with pytest.raises(SystemExit) as excinfo:
+        load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
+
+    captured = capsys.readouterr()
+    expected_error_message = (
+        "Duplicate keys found in platform-config:"
+        + os.linesep
+        + f'\tLine 100: duplication of key "{duplicate_key}"'
+    )
+
+    assert expected_error_message in captured.err
+    assert excinfo.value.code == 1
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(
