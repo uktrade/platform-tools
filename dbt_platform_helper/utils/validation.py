@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import re
 from pathlib import Path
 
@@ -691,9 +692,7 @@ rules:
         file_contents = yaml_file.read()
         results = linter.run(file_contents, yaml_config)
 
-    parsed_results = [
-        f"Line {result.line}: {result.message} (Severity: {result.level})" for result in results
-    ]
+    parsed_results = ["\t" + f"Line {result.line}: {result.message}" for result in results]
 
     return parsed_results
 
@@ -707,7 +706,9 @@ def load_and_validate_platform_config(
         conf = yaml.safe_load(Path(path).read_text())
         duplicate_keys = lint_yaml_for_duplicate_keys(path)
         if duplicate_keys:
-            abort_with_error(f"Error: Duplicate keys found in platform-config: {duplicate_keys}")
+            abort_with_error(
+                "Error: Duplicate keys found in platform-config:" + os.linesep.join(duplicate_keys)
+            )
         validate_platform_config(conf, disable_aws_validation)
         return conf
     except ParserError:
