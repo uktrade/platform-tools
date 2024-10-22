@@ -680,7 +680,6 @@ def _validate_environment_pipelines_triggers(config):
 
 
 def lint_yaml_for_duplicate_keys(file_path):
-
     lint_yaml_config = """
 rules:
   key-duplicates: enable
@@ -692,7 +691,8 @@ rules:
         results = linter.run(file_contents, yaml_config)
 
     parsed_results = [
-        f"Line {result.line}: {result.message} (Severity: {result.level})" for result in results
+        f"Line {result.line}: duplication of key \"{result.message.split('\"')[1]}\""
+        for result in results
     ]
 
     return parsed_results
@@ -707,7 +707,10 @@ def load_and_validate_platform_config(
         conf = yaml.safe_load(Path(path).read_text())
         duplicate_keys = lint_yaml_for_duplicate_keys(path)
         if duplicate_keys:
-            abort_with_error(f"Error: Duplicate keys found in platform-config: {duplicate_keys}")
+            formatted_error_message = (
+                "Error: Duplicate keys found in platform-config:\n" + "\n".join(duplicate_keys)
+            )
+            abort_with_error(formatted_error_message)
         validate_platform_config(conf, disable_aws_validation)
         return conf
     except ParserError:
