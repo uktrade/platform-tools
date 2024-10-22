@@ -52,6 +52,14 @@ class DatabaseCopy:
             abort_fn(f"No such application '{app}'.")
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
+        if not vpc_name:
+            if not Path(PLATFORM_CONFIG_FILE).exists():
+                self.abort_fn(
+                    "You must either be in a deploy repo, or provide the vpc name option."
+                )
+            config = load_and_validate_platform_config(disable_aws_validation=True)
+            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+
         environments = self.application.environments
         environment = environments.get(env)
         if not environment:

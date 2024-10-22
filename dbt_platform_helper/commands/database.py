@@ -25,7 +25,9 @@ def database():
     "--database", type=str, required=True, help="The name of the database you are dumping data from"
 )
 @click.option(
-    "--vpc-name", type=str, required=True, help="The vpc the specified environment is running in"
+    "--vpc-name",
+    type=str,
+    help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
 def dump(app, env, database, vpc_name):
     """Dump a database into an S3 bucket."""
@@ -44,7 +46,9 @@ def dump(app, env, database, vpc_name):
     "--database", type=str, required=True, help="The name of the database you are loading data into"
 )
 @click.option(
-    "--vpc-name", type=str, required=True, help="The vpc the specified environment is running in"
+    "--vpc-name",
+    type=str,
+    help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
 def load(app, env, database, vpc_name):
     """Load a database from an S3 bucket."""
@@ -70,14 +74,12 @@ def load(app, env, database, vpc_name):
 @click.option(
     "--from-vpc",
     type=str,
-    required=True,
-    help="The vpc the environment you are copying from is running in",
+    help="The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo",
 )
 @click.option(
     "--to-vpc",
     type=str,
-    required=True,
-    help="The vpc the environment you are copying into is running in",
+    help="The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo",
 )
 def copy(app, from_env, to_env, database, from_vpc, to_vpc):
     """Copy a database between environments."""
