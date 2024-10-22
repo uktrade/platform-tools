@@ -362,6 +362,32 @@ def test_tail_logs(is_dump):
     )
 
 
+@pytest.mark.parametrize("is_dump", [True, False])
+def test_tail_logs_exits_with_error_if_task_aborts(is_dump):
+    action = "dump" if is_dump else "load"
+
+    mocks = DataCopyMocks()
+
+    mocks.client.start_live_tail.return_value = {
+        "responseStream": [
+            {"sessionStart": {}},
+            {"sessionUpdate": {"sessionResults": []}},
+            {"sessionUpdate": {"sessionResults": [{"message": ""}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": f"Starting data {action}"}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": "A load of SQL shenanigans"}]}},
+            {"sessionUpdate": {"sessionResults": [{"message": f"Aborting data {action}"}]}},
+        ]
+    }
+
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    with pytest.raises(SystemExit) as exc:
+        db_copy.tail_logs(is_dump, "test-env")
+
+    assert exc.value.code == 1
+    mocks.abort_fn.assert_called_once_with("Task aborted abnormally. See logs above for details.")
+
+
 def test_database_copy_account_id():
     mocks = DataCopyMocks()
 

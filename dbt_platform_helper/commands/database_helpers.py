@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -170,7 +171,10 @@ class DatabaseCopy:
                 message = result.get("message")
 
                 if message:
-                    if message.startswith("Stopping data "):
+                    match = re.match(r"(Stopping|Aborting) data (load|dump).*", message)
+                    if match:
+                        if match.group(1) == "Aborting":
+                            self.abort_fn("Task aborted abnormally. See logs above for details.")
                         stopped = True
                     self.echo_fn(message)
 
