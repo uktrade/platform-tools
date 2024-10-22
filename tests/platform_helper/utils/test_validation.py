@@ -395,7 +395,7 @@ def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_co
 def test_warn_on_s3_bucket_name_availability_success_200(capfd):
     client = boto3.client("s3")
     client.create_bucket(
-        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
     )
 
     warn_on_s3_bucket_name_availability(f"bucket-name-200")
