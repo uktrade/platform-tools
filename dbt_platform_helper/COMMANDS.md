@@ -989,8 +989,8 @@ platform-helper database (dump|load|copy)
 ## Usage
 
 ```
-platform-helper database dump --app <application> --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database dump --env <environment> --database <database> 
+                              --vpc-name <vpc_name> [--app <application>] 
 ```
 
 ## Options
@@ -1015,8 +1015,8 @@ platform-helper database dump --app <application> --env <environment> --database
 ## Usage
 
 ```
-platform-helper database load --app <application> --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database load --env <environment> --database <database> 
+                              --vpc-name <vpc_name> [--app <application>] 
 ```
 
 ## Options
@@ -1041,9 +1041,9 @@ platform-helper database load --app <application> --env <environment> --database
 ## Usage
 
 ```
-platform-helper database copy --app <application> --from <from_env> --to <to_env> 
-                              --database <database> --from-vpc <from_vpc> 
-                              --to-vpc <to_vpc> 
+platform-helper database copy --from <from_env> --to <to_env> --database <database> 
+                              --from-vpc <from_vpc> --to-vpc <to_vpc> 
+                              [--app <application>] 
 ```
 
 ## Options
