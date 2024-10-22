@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.0.1](https://github.com/uktrade/platform-tools/compare/11.0.0...11.0.1) (2024-10-22)
+
+
+### Bug Fixes
+
+* Update dependencies ([#602](https://github.com/uktrade/platform-tools/issues/602)) ([a07050b](https://github.com/uktrade/platform-tools/commit/a07050b9cad2cf5e6eb0b4966c086e8a7996cce9))
+
 ## [11.0.0](https://github.com/uktrade/platform-tools/compare/10.11.3...11.0.0) (2024-10-16)
 
 
