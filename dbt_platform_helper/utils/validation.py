@@ -681,7 +681,6 @@ def _validate_environment_pipelines_triggers(config):
 
 
 def lint_yaml_for_duplicate_keys(file_path):
-
     lint_yaml_config = """
 rules:
   key-duplicates: enable
@@ -692,7 +691,10 @@ rules:
         file_contents = yaml_file.read()
         results = linter.run(file_contents, yaml_config)
 
-    parsed_results = ["\t" + f"Line {result.line}: {result.message}" for result in results]
+    parsed_results = [
+        "\t" + f"Line {result.line}: {result.message}".replace(" in mapping (key-duplicates)", "")
+        for result in results
+    ]
 
     return parsed_results
 
