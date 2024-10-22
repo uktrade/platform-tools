@@ -707,7 +707,9 @@ def load_and_validate_platform_config(
         duplicate_keys = lint_yaml_for_duplicate_keys(path)
         if duplicate_keys:
             abort_with_error(
-                "Error: Duplicate keys found in platform-config:" + os.linesep.join(duplicate_keys)
+                "Duplicate keys found in platform-config:"
+                + os.linesep
+                + os.linesep.join(duplicate_keys)
             )
         validate_platform_config(conf, disable_aws_validation)
         return conf
