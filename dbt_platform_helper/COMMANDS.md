@@ -963,6 +963,8 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper)
 
+    Commands to copy data between databases.
+
 ## Usage
 
 ```
@@ -996,13 +998,13 @@ platform-helper database dump --env <environment> --database <database>
 ## Options
 
 - `--app <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
 - `--env <text>`
-
+  - This is required unless you are running the command from your deploy repo
 - `--database <text>`
-
+  - The name of the database you are dumping data from
 - `--vpc-name <text>`
-
+  - The vpc the specified environment is running in
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1022,13 +1024,13 @@ platform-helper database load --env <environment> --database <database>
 ## Options
 
 - `--app <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
 - `--env <text>`
-
+  - The environment you are loading data into
 - `--database <text>`
-
+  - The name of the database you are loading data into
 - `--vpc-name <text>`
-
+  - The vpc the specified environment is running in
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1036,7 +1038,7 @@ platform-helper database load --env <environment> --database <database>
 
 [↩ Parent](#platform-helper-database)
 
-    Copy a database from an S3 bucket.
+    Copy a database between environments.
 
 ## Usage
 
@@ -1049,17 +1051,17 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 ## Options
 
 - `--app <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
 - `--from <text>`
-
+  - The environment you are copying data from
 - `--to <text>`
-
+  - The environment you are copying data into
 - `--database <text>`
-
+  - The name of the database you are copying
 - `--from-vpc <text>`
-
+  - The vpc the environment you are copying from is running in
 - `--to-vpc <text>`
-
+  - The vpc the environment you are copying into is running in
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
