@@ -16,7 +16,8 @@ def database():
     help="The application name. Required unless you are running the command from your deploy repo",
 )
 @click.option(
-    "--env",
+    "--from",
+    "from_env",
     type=str,
     required=True,
     help="This is required unless you are running the command from your deploy repo",
@@ -25,14 +26,14 @@ def database():
     "--database", type=str, required=True, help="The name of the database you are dumping data from"
 )
 @click.option(
-    "--vpc-name",
+    "--from-vpc",
     type=str,
     help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
-def dump(app, env, database, vpc_name):
+def dump(app, from_env, database, from_vpc):
     """Dump a database into an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
-    data_copy.dump(env, vpc_name)
+    data_copy.dump(from_env, from_vpc)
 
 
 @database.command(name="load")
@@ -41,19 +42,21 @@ def dump(app, env, database, vpc_name):
     type=str,
     help="The application name. Required unless you are running the command from your deploy repo",
 )
-@click.option("--env", type=str, required=True, help="The environment you are loading data into")
+@click.option(
+    "--to", "to_env", type=str, required=True, help="The environment you are loading data into"
+)
 @click.option(
     "--database", type=str, required=True, help="The name of the database you are loading data into"
 )
 @click.option(
-    "--vpc-name",
+    "--to-vpc",
     type=str,
     help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
-def load(app, env, database, vpc_name):
+def load(app, to_env, database, to_vpc):
     """Load a database from an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
-    data_copy.load(env, vpc_name)
+    data_copy.load(to_env, to_vpc)
 
 
 @database.command(name="copy")
