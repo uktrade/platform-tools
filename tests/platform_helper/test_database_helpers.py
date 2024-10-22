@@ -352,7 +352,7 @@ def test_tail_logs(is_dump):
     mocks.echo_fn.assert_has_calls(
         [
             call(
-                f"Tailing logs for /ecs/test-app-test-env-test-db-{action}",
+                f"Tailing /ecs/test-app-test-env-test-db-{action} logs",
                 fg="yellow",
             ),
             call(f"Starting data {action}"),
