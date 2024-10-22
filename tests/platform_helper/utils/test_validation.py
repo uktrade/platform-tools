@@ -679,7 +679,7 @@ extensions:
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert linting_failures == [
-        f'Line 100: duplication of key "{duplicate_key}" in mapping (key-duplicates)'
+        f'\tLine 100: duplication of key "{duplicate_key}" in mapping (key-duplicates)'
     ]
 
 
