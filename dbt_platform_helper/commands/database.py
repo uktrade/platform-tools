@@ -6,14 +6,27 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def database():
-    pass
+    """Commands to copy data between databases."""
 
 
 @database.command(name="dump")
-@click.option("--app", type=str)
-@click.option("--env", type=str, required=True)
-@click.option("--database", type=str, required=True)
-@click.option("--vpc-name", type=str, required=True)
+@click.option(
+    "--app",
+    type=str,
+    help="The application name. Required unless you are running the command from your deploy repo",
+)
+@click.option(
+    "--env",
+    type=str,
+    required=True,
+    help="This is required unless you are running the command from your deploy repo",
+)
+@click.option(
+    "--database", type=str, required=True, help="The name of the database you are dumping data from"
+)
+@click.option(
+    "--vpc-name", type=str, required=True, help="The vpc the specified environment is running in"
+)
 def dump(app, env, database, vpc_name):
     """Dump a database into an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
@@ -21,10 +34,18 @@ def dump(app, env, database, vpc_name):
 
 
 @database.command(name="load")
-@click.option("--app", type=str)
-@click.option("--env", type=str, required=True)
-@click.option("--database", type=str, required=True)
-@click.option("--vpc-name", type=str, required=True)
+@click.option(
+    "--app",
+    type=str,
+    help="The application name. Required unless you are running the command from your deploy repo",
+)
+@click.option("--env", type=str, required=True, help="The environment you are loading data into")
+@click.option(
+    "--database", type=str, required=True, help="The name of the database you are loading data into"
+)
+@click.option(
+    "--vpc-name", type=str, required=True, help="The vpc the specified environment is running in"
+)
 def load(app, env, database, vpc_name):
     """Load a database from an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
@@ -32,14 +53,34 @@ def load(app, env, database, vpc_name):
 
 
 @database.command(name="copy")
-@click.option("--app", type=str)
-@click.option("--from", "from_env", type=str, required=True)
-@click.option("--to", "to_env", type=str, required=True)
-@click.option("--database", type=str, required=True)
-@click.option("--from-vpc", type=str, required=True)
-@click.option("--to-vpc", type=str, required=True)
+@click.option(
+    "--app",
+    type=str,
+    help="The application name. Required unless you are running the command from your deploy repo",
+)
+@click.option(
+    "--from", "from_env", type=str, required=True, help="The environment you are copying data from"
+)
+@click.option(
+    "--to", "to_env", type=str, required=True, help="The environment you are copying data into"
+)
+@click.option(
+    "--database", type=str, required=True, help="The name of the database you are copying"
+)
+@click.option(
+    "--from-vpc",
+    type=str,
+    required=True,
+    help="The vpc the environment you are copying from is running in",
+)
+@click.option(
+    "--to-vpc",
+    type=str,
+    required=True,
+    help="The vpc the environment you are copying into is running in",
+)
 def copy(app, from_env, to_env, database, from_vpc, to_vpc):
-    """Copy a database from an S3 bucket."""
+    """Copy a database between environments."""
     data_copy = DatabaseCopy(app, database)
     data_copy.dump(from_env, from_vpc)
     data_copy.load(to_env, to_vpc)
