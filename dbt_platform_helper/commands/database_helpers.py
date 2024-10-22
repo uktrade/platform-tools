@@ -1,9 +1,11 @@
 from collections.abc import Callable
+from pathlib import Path
 
 import boto3
 import click
 from boto3 import Session
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
@@ -12,12 +14,13 @@ from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 
 class DatabaseCopy:
     def __init__(
         self,
-        app: str,
+        app: str | None,
         database: str,
         load_application_fn: Callable[[str], Application] = load_application,
         vpc_config_fn: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
@@ -36,7 +39,13 @@ class DatabaseCopy:
         self.echo_fn = echo_fn
         self.abort_fn = abort_fn
 
-        # Get Application
+        if not self.app:
+            if not Path(PLATFORM_CONFIG_FILE).exists():
+                self.abort_fn("You must either be in a deploy repo, or provide the --app option.")
+
+            config = load_and_validate_platform_config(disable_aws_validation=True)
+            self.app = config["application"]
+
         try:
             self.application = load_application_fn(self.app)
         except ApplicationNotFoundError:

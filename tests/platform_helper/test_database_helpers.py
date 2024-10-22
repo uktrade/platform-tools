@@ -2,8 +2,10 @@ from unittest.mock import Mock
 from unittest.mock import call
 
 import pytest
+import yaml
 
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
@@ -366,3 +368,25 @@ def test_database_copy_account_id():
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert db_copy.account_id("test-env") == "12345"
+
+
+def test_update_application_from_platform_config_if_application_not_specified(fs):
+    fs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
+    mocks = DataCopyMocks()
+
+    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+
+    assert db_copy.app == "my_app"
+
+
+def test_error_if_neither_platform_config_or_application_supplied(fs):
+    # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
+    mocks = DataCopyMocks()
+
+    with pytest.raises(SystemExit) as exc:
+        DatabaseCopy(None, "test-db", **mocks.params())
+
+    assert exc.value.code == 1
+    mocks.abort_fn.assert_called_once_with(
+        "You must either be in a deploy repo, or provide the --app option."
+    )

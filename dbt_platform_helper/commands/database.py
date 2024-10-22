@@ -10,7 +10,7 @@ def database():
 
 
 @database.command(name="dump")
-@click.option("--app", type=str, required=True)
+@click.option("--app", type=str)
 @click.option("--env", type=str, required=True)
 @click.option("--database", type=str, required=True)
 @click.option("--vpc-name", type=str, required=True)
@@ -21,7 +21,7 @@ def dump(app, env, database, vpc_name):
 
 
 @database.command(name="load")
-@click.option("--app", type=str, required=True)
+@click.option("--app", type=str)
 @click.option("--env", type=str, required=True)
 @click.option("--database", type=str, required=True)
 @click.option("--vpc-name", type=str, required=True)
@@ -32,7 +32,7 @@ def load(app, env, database, vpc_name):
 
 
 @database.command(name="copy")
-@click.option("--app", type=str, required=True)
+@click.option("--app", type=str)
 @click.option("--from", "from_env", type=str, required=True)
 @click.option("--to", "to_env", type=str, required=True)
 @click.option("--database", type=str, required=True)
