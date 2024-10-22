@@ -17,11 +17,11 @@ def test_command_dump_success(mock_database_copy_object):
         [
             "--app",
             "my_app",
-            "--env",
+            "--from",
             "my_env",
             "--database",
             "my_postgres",
-            "--vpc-name",
+            "--from-vpc",
             "my_vpc",
         ],
     )
@@ -40,11 +40,11 @@ def test_command_load_success(mock_database_copy_object):
         [
             "--app",
             "my_app",
-            "--env",
+            "--to",
             "my_env",
             "--database",
             "my_postgres",
-            "--vpc-name",
+            "--to-vpc",
             "my_vpc",
         ],
     )

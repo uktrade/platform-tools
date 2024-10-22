@@ -991,19 +991,19 @@ platform-helper database (dump|load|copy)
 ## Usage
 
 ```
-platform-helper database dump --env <environment> --database <database> 
-                              [--app <application>] [--vpc-name <vpc_name>] 
+platform-helper database dump --from <from_env> --database <database> 
+                              [--app <application>] [--from-vpc <from_vpc>] 
 ```
 
 ## Options
 
 - `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
-- `--env <text>`
+- `--from <text>`
   - This is required unless you are running the command from your deploy repo
 - `--database <text>`
   - The name of the database you are dumping data from
-- `--vpc-name <text>`
+- `--from-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -1017,19 +1017,19 @@ platform-helper database dump --env <environment> --database <database>
 ## Usage
 
 ```
-platform-helper database load --env <environment> --database <database> 
-                              [--app <application>] [--vpc-name <vpc_name>] 
+platform-helper database load --to <to_env> --database <database> 
+                              [--app <application>] [--to-vpc <to_vpc>] 
 ```
 
 ## Options
 
 - `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
-- `--env <text>`
+- `--to <text>`
   - The environment you are loading data into
 - `--database <text>`
   - The name of the database you are loading data into
-- `--vpc-name <text>`
+- `--to-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
