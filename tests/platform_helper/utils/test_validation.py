@@ -652,40 +652,40 @@ def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
     valid_platform_config, fakefs
 ):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
-    # Remove the extensions k:v pair from the platform config - re-added as plain text.
+
+    # Remove the extensions key-value pair from the platform config - re-added as plain text.
     valid_platform_config.pop("extensions")
 
-    naughty_extensions_with_duplicate = """
+    duplicate_key = "duplicate-key"
+    extension_config = f"""
 extensions:
-  connors-favourite-key-but-duplicated:
-    type: redis
-    environments:
-        "*":
-        engine: '7.1'
-        plan: tiny
-        apply_immediately: true
-  connors-favourite-key-but-duplicated:
+  {duplicate_key}:
     type: redis
     environments:
       "*":
-          engine: '7.1'
-          plan: tiny
-          apply_immediately: true
+        engine: '7.1'
+        plan: tiny
+        apply_immediately: true
+  {duplicate_key}:
+    type: redis
+    environments:
+      "*":
+        engine: '7.1'
+        plan: tiny
+        apply_immediately: true
 """
 
-    # Kinda hacky - need to add the duplicate keys back into the platform-config as a string.
-    # As adding keys as a dictionary will overwrite the duplicate keys, hence no duplicate and the test doesn't work.
-
+    # Combine the valid config (minus the extensions key) and the duplicate key config
     invalid_platform_config = f"""
 {yaml.dump(valid_platform_config)}
-{naughty_extensions_with_duplicate}
+{extension_config}
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert linting_failures == [
-        'Line 98: duplication of key "connors-favourite-key-but-duplicated" in mapping (key-duplicates) (Severity: error)'
+        f'Line 98: duplication of key "{duplicate_key}" in mapping (key-duplicates) (Severity: error)'
     ]
 
 
