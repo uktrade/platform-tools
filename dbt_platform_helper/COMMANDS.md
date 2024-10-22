@@ -992,7 +992,7 @@ platform-helper database (dump|load|copy)
 
 ```
 platform-helper database dump --env <environment> --database <database> 
-                              --vpc-name <vpc_name> [--app <application>] 
+                              [--app <application>] [--vpc-name <vpc_name>] 
 ```
 
 ## Options
@@ -1004,7 +1004,7 @@ platform-helper database dump --env <environment> --database <database>
 - `--database <text>`
   - The name of the database you are dumping data from
 - `--vpc-name <text>`
-  - The vpc the specified environment is running in
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1018,7 +1018,7 @@ platform-helper database dump --env <environment> --database <database>
 
 ```
 platform-helper database load --env <environment> --database <database> 
-                              --vpc-name <vpc_name> [--app <application>] 
+                              [--app <application>] [--vpc-name <vpc_name>] 
 ```
 
 ## Options
@@ -1030,7 +1030,7 @@ platform-helper database load --env <environment> --database <database>
 - `--database <text>`
   - The name of the database you are loading data into
 - `--vpc-name <text>`
-  - The vpc the specified environment is running in
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1044,8 +1044,8 @@ platform-helper database load --env <environment> --database <database>
 
 ```
 platform-helper database copy --from <from_env> --to <to_env> --database <database> 
-                              --from-vpc <from_vpc> --to-vpc <to_vpc> 
-                              [--app <application>] 
+                              [--app <application>] [--from-vpc <from_vpc>] 
+                              [--to-vpc <to_vpc>] 
 ```
 
 ## Options
@@ -1059,9 +1059,9 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 - `--database <text>`
   - The name of the database you are copying
 - `--from-vpc <text>`
-  - The vpc the environment you are copying from is running in
+  - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
 - `--to-vpc <text>`
-  - The vpc the environment you are copying into is running in
+  - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

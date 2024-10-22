@@ -299,7 +299,7 @@ def test_is_confirmed_ready_to_load(user_response):
     mocks = DataCopyMocks()
     mocks.input_fn.return_value = user_response
 
-    db_copy = DatabaseCopy("", "test-db", **mocks.params())
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
@@ -313,7 +313,7 @@ def test_is_not_confirmed_ready_to_load(user_response):
     mocks = DataCopyMocks()
     mocks.input_fn.return_value = user_response
 
-    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
@@ -371,12 +371,12 @@ def test_database_copy_account_id():
 
 
 def test_update_application_from_platform_config_if_application_not_specified(fs):
-    fs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
+    fs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "test-app"}))
     mocks = DataCopyMocks()
 
     db_copy = DatabaseCopy(None, "test-db", **mocks.params())
 
-    assert db_copy.app == "my_app"
+    assert db_copy.app == "test-app"
 
 
 def test_error_if_neither_platform_config_or_application_supplied(fs):
@@ -389,4 +389,61 @@ def test_error_if_neither_platform_config_or_application_supplied(fs):
     assert exc.value.code == 1
     mocks.abort_fn.assert_called_once_with(
         "You must either be in a deploy repo, or provide the --app option."
+    )
+
+
+@pytest.mark.parametrize("is_dump", [True, False])
+def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {"application": "test-app", "environments": {"test-env": {"vpc": "test-env-vpc"}}}
+        ),
+    )
+    env = "test-env"
+    database = "test-db"
+
+    mocks = DataCopyMocks()
+
+    mock_run_database_copy_task = Mock(return_value="arn://task-arn")
+
+    db_copy = DatabaseCopy(None, database, **mocks.params())
+
+    db_copy.run_database_copy_task = mock_run_database_copy_task
+    db_copy.tail_logs = Mock()
+
+    if is_dump:
+        db_copy.dump(env, None)
+    else:
+        db_copy.load(env, None)
+
+    mocks.vpc_config_fn.assert_called_once_with(
+        mocks.environment.session, "test-app", env, "test-env-vpc"
+    )
+
+
+@pytest.mark.parametrize("is_dump", [True, False])
+def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
+    # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
+    env = "test-env"
+    database = "test-db"
+
+    mocks = DataCopyMocks()
+
+    mock_run_database_copy_task = Mock(return_value="arn://task-arn")
+
+    db_copy = DatabaseCopy("test-app", database, **mocks.params())
+
+    db_copy.run_database_copy_task = mock_run_database_copy_task
+    db_copy.tail_logs = Mock()
+
+    with pytest.raises(SystemExit) as exc:
+        if is_dump:
+            db_copy.dump(env, None)
+        else:
+            db_copy.load(env, None)
+
+    assert exc.value.code == 1
+    mocks.abort_fn.assert_called_once_with(
+        f"You must either be in a deploy repo, or provide the vpc name option."
     )
