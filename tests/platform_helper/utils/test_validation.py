@@ -657,15 +657,7 @@ def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
     valid_platform_config.pop("extensions")
 
     duplicate_key = "duplicate-key"
-    extension_config = f"""
-extensions:
-  {duplicate_key}:
-    type: redis
-    environments:
-      "*":
-        engine: '7.1'
-        plan: tiny
-        apply_immediately: true
+    duplicate_extension = f"""
   {duplicate_key}:
     type: redis
     environments:
@@ -678,14 +670,16 @@ extensions:
     # Combine the valid config (minus the extensions key) and the duplicate key config
     invalid_platform_config = f"""
 {yaml.dump(valid_platform_config)}
-{extension_config}
+extensions:
+{duplicate_extension}
+{duplicate_extension}
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert linting_failures == [
-        f'Line 98: duplication of key "{duplicate_key}" in mapping (key-duplicates) (Severity: error)'
+        f'Line 100: duplication of key "{duplicate_key}" in mapping (key-duplicates) (Severity: error)'
     ]
 
 
