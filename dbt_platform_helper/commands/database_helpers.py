@@ -23,6 +23,7 @@ class DatabaseCopy:
         self,
         app: str | None,
         database: str,
+        auto_approve: bool = False,
         load_application_fn: Callable[[str], Application] = load_application,
         vpc_config_fn: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
         db_connection_string_fn: Callable[
@@ -34,6 +35,7 @@ class DatabaseCopy:
     ):
         self.app = app
         self.database = database
+        self.auto_approve = auto_approve
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
         self.input_fn = input_fn
@@ -149,6 +151,9 @@ class DatabaseCopy:
             self._execute_operation(False, env, vpc_name)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
+        if self.auto_approve:
+            return True
+
         user_input = self.input_fn(
             f"\nAre all tasks using {self.database} in the {env} environment stopped? (y/n)"
         )
