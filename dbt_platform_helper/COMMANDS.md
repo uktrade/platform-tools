@@ -1019,6 +1019,7 @@ platform-helper database dump --from <from_env> --database <database>
 ```
 platform-helper database load --to <to_env> --database <database> 
                               [--app <application>] [--to-vpc <to_vpc>] 
+                              [--auto-approve] 
 ```
 
 ## Options
@@ -1031,6 +1032,8 @@ platform-helper database load --to <to_env> --database <database>
   - The name of the database you are loading data into
 - `--to-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1045,7 +1048,7 @@ platform-helper database load --to <to_env> --database <database>
 ```
 platform-helper database copy --from <from_env> --to <to_env> --database <database> 
                               [--app <application>] [--from-vpc <from_vpc>] 
-                              [--to-vpc <to_vpc>] 
+                              [--to-vpc <to_vpc>] [--auto-approve] 
 ```
 
 ## Options
@@ -1062,6 +1065,8 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
   - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
 - `--to-vpc <text>`
   - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

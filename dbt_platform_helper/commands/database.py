@@ -53,9 +53,10 @@ def dump(app, from_env, database, from_vpc):
     type=str,
     help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
-def load(app, to_env, database, to_vpc):
+@click.option("--auto-approve/--no-auto-approve", default=False)
+def load(app, to_env, database, to_vpc, auto_approve):
     """Load a database from an S3 bucket."""
-    data_copy = DatabaseCopy(app, database)
+    data_copy = DatabaseCopy(app, database, auto_approve)
     data_copy.load(to_env, to_vpc)
 
 
@@ -84,8 +85,9 @@ def load(app, to_env, database, to_vpc):
     type=str,
     help="The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo",
 )
-def copy(app, from_env, to_env, database, from_vpc, to_vpc):
+@click.option("--auto-approve/--no-auto-approve", default=False)
+def copy(app, from_env, to_env, database, from_vpc, to_vpc, auto_approve):
     """Copy a database between environments."""
-    data_copy = DatabaseCopy(app, database)
+    data_copy = DatabaseCopy(app, database, auto_approve)
     data_copy.dump(from_env, from_vpc)
     data_copy.load(to_env, to_vpc)

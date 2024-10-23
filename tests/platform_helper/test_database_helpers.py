@@ -322,6 +322,16 @@ def test_is_not_confirmed_ready_to_load(user_response):
     )
 
 
+def test_is_confirmed_ready_to_load_with_yes_flag():
+    mocks = DataCopyMocks()
+
+    db_copy = DatabaseCopy("test-app", "test-db", True, **mocks.params())
+
+    assert db_copy.is_confirmed_ready_to_load("test-env")
+
+    mocks.input_fn.assert_not_called()
+
+
 @pytest.mark.parametrize("is_dump", [True, False])
 def test_tail_logs(is_dump):
     action = "dump" if is_dump else "load"
