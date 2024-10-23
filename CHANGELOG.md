@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.1.0](https://github.com/uktrade/platform-tools/compare/11.0.1...11.1.0) (2024-10-23)
+
+
+### Features
+
+* DBTP-1159 Add validation for duplicate entries in platform-config.yml ([#604](https://github.com/uktrade/platform-tools/issues/604)) ([d00e143](https://github.com/uktrade/platform-tools/commit/d00e143ecaa9e86645563d996ed79779cae52597))
+
 ## [11.0.1](https://github.com/uktrade/platform-tools/compare/11.0.0...11.0.1) (2024-10-22)
 
 
