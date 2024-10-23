@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import re
 from pathlib import Path
 
@@ -11,6 +12,8 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 from yaml.parser import ParserError
+from yamllint import config
+from yamllint import linter
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
@@ -677,6 +680,25 @@ def _validate_environment_pipelines_triggers(config):
         abort_with_error(error_message + "\n  ".join(errors))
 
 
+def lint_yaml_for_duplicate_keys(file_path):
+    lint_yaml_config = """
+rules:
+  key-duplicates: enable
+"""
+    yaml_config = config.YamlLintConfig(lint_yaml_config)
+
+    with open(file_path, "r") as yaml_file:
+        file_contents = yaml_file.read()
+        results = linter.run(file_contents, yaml_config)
+
+    parsed_results = [
+        "\t" + f"Line {result.line}: {result.message}".replace(" in mapping (key-duplicates)", "")
+        for result in results
+    ]
+
+    return parsed_results
+
+
 def load_and_validate_platform_config(
     path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
 ):
@@ -684,6 +706,13 @@ def load_and_validate_platform_config(
         config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
+        duplicate_keys = lint_yaml_for_duplicate_keys(path)
+        if duplicate_keys:
+            abort_with_error(
+                "Duplicate keys found in platform-config:"
+                + os.linesep
+                + os.linesep.join(duplicate_keys)
+            )
         validate_platform_config(conf, disable_aws_validation)
         return conf
     except ParserError:
