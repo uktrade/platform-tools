@@ -21,7 +21,7 @@ from dbt_platform_helper.utils.validation import load_and_validate_platform_conf
 class DatabaseCopy:
     def __init__(
         self,
-        app: str | None,
+        app: str,
         database: str,
         auto_approve: bool = False,
         load_application_fn: Callable[[str], Application] = load_application,
