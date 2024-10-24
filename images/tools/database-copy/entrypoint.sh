@@ -45,8 +45,7 @@ else
     aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
 
-  psql "${DB_CONNECTION_STRING}" <<EOF
-DO $$ DECLARE
+  echo 'DO $$ DECLARE
   r RECORD;
 BEGIN
   FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
@@ -57,7 +56,9 @@ BEGIN
     END CASE;
   END LOOP;
 END $$;
-EOF
+' > clear_db.sql
+
+  psql "${DB_CONNECTION_STRING}" -f clear_db.sql
 
   exit_code=$?
 
