@@ -41,10 +41,12 @@ else
     CONFIG_FILE="$(basename "${service}").desired_count"
     echo "${COUNT}" > "${CONFIG_FILE}"
 
-    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq
+    echo "$(basename ${service})"
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
 
-  echo "DO $$ DECLARE
+  psql "${DB_CONNECTION_STRING}" <<EOF
+DO $$ DECLARE
   r RECORD;
 BEGIN
   FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
@@ -54,7 +56,8 @@ BEGIN
       ELSE null;
     END CASE;
   END LOOP;
-END $$;" | psql "${DB_CONNECTION_STRING}"
+END $$;
+EOF
 
   exit_code=$?
 
@@ -72,7 +75,8 @@ END $$;" | psql "${DB_CONNECTION_STRING}"
     CONFIG_FILE="$(basename "${service}").desired_count"
     COUNT=$(cat "${CONFIG_FILE}")
 
-    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq
+    echo "$(basename ${service})"
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
 
   if [ ${exit_code} -ne 0 ]
