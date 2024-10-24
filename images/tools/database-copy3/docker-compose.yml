@@ -54,7 +54,7 @@ services:
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: DUMP
-      DB_CONNECTION_STRING: postgresql://user:pwd@source_db:5432/source
+      DB_CONNECTION_STRING: postgres://user:pwd@source_db:5432/source
       S3_BUCKET_NAME: s3_mock
     depends_on:
       - source_db
@@ -68,7 +68,7 @@ services:
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: LOAD
-      DB_CONNECTION_STRING: postgresql://user:pwd@destination_db:5433/destination
+      DB_CONNECTION_STRING: postgres://user:pwd@destination_db:5433/destination
       S3_BUCKET_NAME: s3_mock
     networks:
       - test_net
