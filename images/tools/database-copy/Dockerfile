@@ -1,4 +1,4 @@
-FROM postgres:16
+FROM public.ecr.aws/docker/library/postgres:16
 
 RUN apt-get update && apt upgrade
 RUN apt-get install -y curl zip jq
