@@ -54,7 +54,7 @@ BEGIN
       ELSE null;
     END CASE;
   END LOOP;
-END $$;" | psql
+END $$;" | psql "${DB_CONNECTION_STRING}"
 
   exit_code=$?
 
