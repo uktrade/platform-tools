@@ -62,12 +62,17 @@ else
   pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
   exit_code=$?
 
-  echo "Scaling up services"
+  echo "Cleaning up dump file"
+  rm data_dump.sql
+  echo "Removing dump file from S3"
+  aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
+
   for service in ${SERVICES}
   do
     CONFIG_FILE="$(basename "${service}").desired_count"
     COUNT=$(cat "${CONFIG_FILE}")
 
+  echo "Scaling up services"
     echo "$(basename ${service})"
     aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
@@ -78,9 +83,5 @@ else
     exit $exit_code
   fi
 
-  echo "Cleaning up dump file"
-  rm data_dump.sql
-  echo "Removing dump file from S3"
-  aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
   echo "Stopping data load"
 fi
