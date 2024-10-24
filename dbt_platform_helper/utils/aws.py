@@ -52,7 +52,7 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         botocore.exceptions.NoCredentialsError,
     ):
         click.secho(
-            "The SSO session associated with this profile has expired, is not set or is otherwise invalid.."
+            "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
             "To refresh this SSO session run `aws sso login` with the corresponding profile",
             fg="red",
         )
