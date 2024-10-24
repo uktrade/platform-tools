@@ -7,6 +7,7 @@ from typing import Tuple
 
 import boto3
 import botocore
+import botocore.exceptions
 import click
 import yaml
 from boto3 import Session
@@ -48,9 +49,10 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         botocore.exceptions.UnauthorizedSSOTokenError,
         botocore.exceptions.TokenRetrievalError,
         botocore.exceptions.SSOTokenLoadError,
+        botocore.exceptions.NoCredentialsError,
     ):
         click.secho(
-            "The SSO session associated with this profile has expired or is otherwise invalid."
+            "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
             "To refresh this SSO session run `aws sso login` with the corresponding profile",
             fg="red",
         )

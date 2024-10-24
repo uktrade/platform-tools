@@ -99,7 +99,7 @@ def test_get_aws_session_or_abort_with_invalid_credentials(
 ):
     aws_profile = "existing_profile"
     expected_error_message = (
-        "The SSO session associated with this profile has expired or is otherwise invalid."
+        "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
         + "To refresh this SSO session run `aws sso login` with the corresponding profile"
     )
     mock_get_account_details.side_effect = botocore.exceptions.SSOTokenLoadError(
