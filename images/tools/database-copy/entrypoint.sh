@@ -44,7 +44,27 @@ else
     aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq
   done
 
-  pg_restore --clean --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
+  echo "DO $$ DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+    CASE
+      WHEN r.tablename NOT IN ('spatial_ref_sys') THEN
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+      ELSE null;
+    END CASE;
+  END LOOP;
+END $$;" | psql
+
+  exit_code=$?
+
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data load"
+    exit $exit_code
+  fi
+
+  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
   exit_code=$?
 
   for service in ${SERVICES}
