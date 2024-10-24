@@ -1,30 +1,87 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-TASKS_RUNNING=0
+if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
+then
+  echo "Starting data dump"
+  pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > data_dump.sql
+  exit_code=$?
 
-CHECK_COUNT=0
-CHECK_NUMBER=1
-CHECK_INTERVAL=60
-
-CLIENT_TASK="ssm-session-wor"
-
-while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
-  sleep $CHECK_INTERVAL
-  TASKS_RUNNING="$(ps -e -o pid,comm | grep -c "$CLIENT_TASK")"
-
-  if [[ $TASKS_RUNNING == 0 ]]; then
-     CHECK_COUNT=$(( $CHECK_COUNT + 1 ))
-     TIME_TO_SHUTDOWN="$(( (CHECK_NUMBER - CHECK_COUNT) * CHECK_INTERVAL ))"
-     echo "No clients connected, will shutdown in approximately $TIME_TO_SHUTDOWN seconds"
-  else
-     CHECK_COUNT=0
-     echo "$TASKS_RUNNING clients are connected"
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data dump"
+    exit $exit_code
   fi
-done
 
-# Trigger CloudFormation stack delete before shutting down
-if [[ ! -z $ECS_CONTAINER_METADATA_URI_V4 ]]; then
-  aws cloudformation delete-stack --stack-name task-$(curl $ECS_CONTAINER_METADATA_URI_V4 -s | jq -r ".Name")
+  aws s3 cp data_dump.sql s3://${S3_BUCKET_NAME}/
+  exit_code=$?
+
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data dump"
+    exit $exit_code
+  fi
+
+  echo "Stopping data dump"
+else
+  echo "Starting data load"
+
+  echo "Copying data dump from S3"
+  aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql
+  exit_code=$?
+
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data load"
+    exit $exit_code
+  fi
+
+  echo "Scaling down services"
+  SERVICES=$(aws ecs list-services --cluster "${ECS_CLUSTER}" | jq -r '.serviceArns[]')
+  for service in ${SERVICES}
+  do
+    COUNT=$(aws ecs describe-services --cluster "${ECS_CLUSTER}" --services "${service}" | jq '.services[0].desiredCount')
+    CONFIG_FILE="$(basename "${service}").desired_count"
+    echo "${COUNT}" > "${CONFIG_FILE}"
+
+    echo "$(basename ${service})"
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
+  done
+
+  echo "Clearing down the database prior to loading new data"
+  psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
+
+  exit_code=$?
+
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data load"
+    exit $exit_code
+  fi
+
+  echo "loading new data from S3"
+  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
+  exit_code=$?
+
+  echo "Cleaning up dump file"
+  rm data_dump.sql
+  echo "Removing dump file from S3"
+  aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
+
+  for service in ${SERVICES}
+  do
+    CONFIG_FILE="$(basename "${service}").desired_count"
+    COUNT=$(cat "${CONFIG_FILE}")
+
+  echo "Scaling up services"
+    echo "$(basename ${service})"
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
+  done
+
+  if [ ${exit_code} -ne 0 ]
+  then
+    echo "Aborting data load"
+    exit $exit_code
+  fi
+
+  echo "Stopping data load"
 fi
-
-echo "Shutting down"

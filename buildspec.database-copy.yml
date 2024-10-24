@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "3.9" > .python-version
+      - cd images/tools/database-copy/
+      - echo Login to Amazon ECR
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
+      - SHORT_HASH=$(git rev-parse --short HEAD)
+
+  build:
+    commands:
+      - echo "Build database-copy ($SHORT_HASH) started on $(date)"
+      - docker build --tag public.ecr.aws/uktrade/database-copy:tag-latest .
+      - docker tag public.ecr.aws/uktrade/database-copy:tag-latest public.ecr.aws/uktrade/database-copy:$SHORT_HASH
+      - echo "Build database-copy ($SHORT_HASH) completed on $(date)"
+
+  post_build:
+    commands:
+      - echo "Push database-copy ($SHORT_HASH) started on $(date)"
+      - docker push public.ecr.aws/uktrade/database-copy:tag-latest
+      - docker push public.ecr.aws/uktrade/database-copy:$SHORT_HASH
+      - echo "Push database-copy ($SHORT_HASH) completed on $(date)"

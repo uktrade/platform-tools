@@ -1,124 +1,170 @@
+import re
+from collections.abc import Callable
+from pathlib import Path
+
 import boto3
 import click
+from boto3 import Session
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
-
-
-def run_database_copy_task(
-    session: boto3.session.Session,
-    account_id: str,
-    app: str,
-    env: str,
-    database: str,
-    vpc_config: Vpc,
-    is_dump: bool,
-    db_connection_string: str,
-):
-    client = session.client("ecs")
-    action = "dump" if is_dump else "load"
-    response = client.run_task(
-        taskDefinition=f"arn:aws:ecs:eu-west-2:{account_id}:task-definition/{app}-{env}-{database}-{action}",
-        cluster=f"{app}-{env}",
-        capacityProviderStrategy=[
-            {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
-        ],
-        networkConfiguration={
-            "awsvpcConfiguration": {
-                "subnets": vpc_config.subnets,
-                "securityGroups": vpc_config.security_groups,
-                "assignPublicIp": "DISABLED",
-            }
-        },
-        overrides={
-            "containerOverrides": [
-                {
-                    "name": f"{app}-{env}-{database}-{action}",
-                    "environment": [
-                        {"name": "DATA_COPY_OPERATION", "value": action.upper()},
-                        {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
-                    ],
-                }
-            ]
-        },
-    )
-
-    return response.get("tasks", [{}])[0].get("taskArn")
+from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 
 class DatabaseCopy:
     def __init__(
         self,
-        account_id,
-        app,
-        env,
-        database,
-        vpc_name,
-        get_session_fn=get_aws_session_or_abort,
-        run_database_copy_fn=run_database_copy_task,
-        vpc_config_fn=get_vpc_info_by_name,
-        db_connection_string_fn=get_connection_string,
-        input_fn=click.prompt,
-        echo_fn=click.secho,
+        app: str,
+        database: str,
+        auto_approve: bool = False,
+        load_application_fn: Callable[[str], Application] = load_application,
+        vpc_config_fn: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
+        db_connection_string_fn: Callable[
+            [Session, str, str, str, Callable], str
+        ] = get_connection_string,
+        input_fn: Callable[[str], str] = click.prompt,
+        echo_fn: Callable[[str], str] = click.secho,
+        abort_fn: Callable[[str], None] = abort_with_error,
     ):
-        self.account_id = account_id
         self.app = app
-        self.env = env
         self.database = database
-        self.vpc_name = vpc_name
-        self.get_session_fn = get_session_fn
-        self.run_database_copy_fn = run_database_copy_fn
+        self.auto_approve = auto_approve
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
         self.input_fn = input_fn
         self.echo_fn = echo_fn
+        self.abort_fn = abort_fn
 
-    def _execute_operation(self, is_dump):
-        session = self.get_session_fn()
-        vpc_config = self.vpc_config_fn(session, self.app, self.env, self.vpc_name)
-        database_identifier = f"{self.app}-{self.env}-{self.database}"
-        db_connection_string = self.db_connection_string_fn(
-            session, self.app, self.env, database_identifier
-        )
-        task_arn = self.run_database_copy_fn(
-            session,
-            self.account_id,
-            self.app,
-            self.env,
-            self.database,
-            vpc_config,
-            is_dump,
-            db_connection_string,
-        )
+        if not self.app:
+            if not Path(PLATFORM_CONFIG_FILE).exists():
+                self.abort_fn("You must either be in a deploy repo, or provide the --app option.")
 
+            config = load_and_validate_platform_config(disable_aws_validation=True)
+            self.app = config["application"]
+
+        try:
+            self.application = load_application_fn(self.app)
+        except ApplicationNotFoundError:
+            abort_fn(f"No such application '{app}'.")
+
+    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
+        if not vpc_name:
+            if not Path(PLATFORM_CONFIG_FILE).exists():
+                self.abort_fn(
+                    "You must either be in a deploy repo, or provide the vpc name option."
+                )
+            config = load_and_validate_platform_config(disable_aws_validation=True)
+            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+
+        environments = self.application.environments
+        environment = environments.get(env)
+        if not environment:
+            self.abort_fn(
+                f"No such environment '{env}'. Available environments are: {', '.join(environments.keys())}"
+            )
+
+        env_session = environment.session
+
+        try:
+            vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
+        except AWSException as ex:
+            self.abort_fn(str(ex))
+
+        database_identifier = f"{self.app}-{env}-{self.database}"
+
+        try:
+            db_connection_string = self.db_connection_string_fn(
+                env_session, self.app, env, database_identifier
+            )
+        except Exception as exc:
+            self.abort_fn(f"{exc} (Database: {database_identifier})")
+
+        try:
+            task_arn = self.run_database_copy_task(
+                env_session, env, vpc_config, is_dump, db_connection_string
+            )
+        except Exception as exc:
+            self.abort_fn(f"{exc} (Account id: {self.account_id(env)})")
+
+        if is_dump:
+            message = f"Dumping {self.database} from the {env} environment into S3"
+        else:
+            message = f"Loading data into {self.database} in the {env} environment from S3"
+
+        self.echo_fn(message, fg="white", bold=True)
         self.echo_fn(
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
-            fg="green",
+            fg="white",
         )
-        self.tail_logs(is_dump)
-        self.wait_for_task_to_stop(task_arn)
+        self.tail_logs(is_dump, env)
 
-    def dump(self):
-        self._execute_operation(True)
+    def run_database_copy_task(
+        self,
+        session: boto3.session.Session,
+        env: str,
+        vpc_config: Vpc,
+        is_dump: bool,
+        db_connection_string: str,
+    ) -> str:
+        client = session.client("ecs")
+        action = "dump" if is_dump else "load"
+        response = client.run_task(
+            taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
+            cluster=f"{self.app}-{env}",
+            capacityProviderStrategy=[
+                {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+            ],
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": vpc_config.subnets,
+                    "securityGroups": vpc_config.security_groups,
+                    "assignPublicIp": "DISABLED",
+                }
+            },
+            overrides={
+                "containerOverrides": [
+                    {
+                        "name": f"{self.app}-{env}-{self.database}-{action}",
+                        "environment": [
+                            {"name": "DATA_COPY_OPERATION", "value": action.upper()},
+                            {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+                        ],
+                    }
+                ]
+            },
+        )
 
-    def load(self):
-        if self.is_confirmed_ready_to_load():
-            self._execute_operation(False)
+        return response.get("tasks", [{}])[0].get("taskArn")
 
-    def is_confirmed_ready_to_load(self):
+    def dump(self, env: str, vpc_name: str):
+        self._execute_operation(True, env, vpc_name)
+
+    def load(self, env: str, vpc_name: str):
+        if self.is_confirmed_ready_to_load(env):
+            self._execute_operation(False, env, vpc_name)
+
+    def is_confirmed_ready_to_load(self, env: str) -> bool:
+        if self.auto_approve:
+            return True
+
         user_input = self.input_fn(
-            f"Are all tasks using {self.database} in the {self.env} environment stopped? (y/n)"
+            f"\nAre all tasks using {self.database} in the {env} environment stopped? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
 
-    def tail_logs(self, is_dump: bool):
+    def tail_logs(self, is_dump: bool, env: str):
         action = "dump" if is_dump else "load"
-        log_group_name = f"/ecs/{self.app}-{self.env}-{self.database}-{action}"
-        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id}:log-group:{log_group_name}"
-        self.echo_fn(f"Tailing logs for {log_group_name}", fg="yellow")
-        session = self.get_session_fn()
+        log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
+        log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
+        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
+        session = self.application.environments[env].session
         response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         stopped = False
@@ -130,16 +176,14 @@ class DatabaseCopy:
                 message = result.get("message")
 
                 if message:
-                    if message.startswith("Stopping data "):
+                    match = re.match(r"(Stopping|Aborting) data (load|dump).*", message)
+                    if match:
+                        if match.group(1) == "Aborting":
+                            self.abort_fn("Task aborted abnormally. See logs above for details.")
                         stopped = True
                     self.echo_fn(message)
 
-    def wait_for_task_to_stop(self, task_arn):
-        self.echo_fn("Waiting for task to complete", fg="yellow")
-        client = self.get_session_fn().client("ecs")
-        waiter = client.get_waiter("tasks_stopped")
-        waiter.wait(
-            cluster=f"{self.app}-{self.env}",
-            tasks=[task_arn],
-            WaiterConfig={"Delay": 6, "MaxAttempts": 300},
-        )
+    def account_id(self, env):
+        envs = self.application.environments
+        if env in envs:
+            return envs.get(env).account_id
