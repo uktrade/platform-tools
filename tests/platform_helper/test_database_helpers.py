@@ -4,11 +4,16 @@ from unittest.mock import call
 import pytest
 import yaml
 
+<<<<<<< Updated upstream
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
+=======
+from dbt_platform_helper.commands.database_helpers import DatabaseCopy, EcsTask
+from dbt_platform_helper.commands.database_helpers import run_database_copy_task
+>>>>>>> Stashed changes
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -101,8 +106,16 @@ def test_database_dump():
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
+<<<<<<< Updated upstream
     db_copy = DatabaseCopy(app, database, **mocks.params())
     db_copy.run_database_copy_task = mock_run_database_copy_task
+=======
+    vpc = Vpc([], [])
+    mock_vpc_config_fn = Mock()
+    mock_vpc_config_fn.return_value = vpc
+    ecs_task = EcsTask()
+    mock_db_connection_string_fn = Mock(return_value="test-db-connection-string")
+>>>>>>> Stashed changes
 
     db_copy.tail_logs = Mock()
 

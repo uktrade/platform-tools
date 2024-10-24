@@ -1,0 +1,86 @@
+services:
+  source_db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: source
+    ports:
+      - '5432:5432'
+    networks:
+      - test_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  destination_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: destination
+    ports:
+      - '5433:5433'
+    networks:
+      - test_net
+
+  s3_mock:
+    image: minio/minio
+    entrypoint: sh
+    command:
+      - -c
+      - |
+        mkdir -p /data/test-dump-bucket
+        touch /data/test-dump-bucket/test-dump.tar.gz
+        minio server /data 
+        
+      # server /data --console-address ":9000"
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9000:9000"
+    networks:
+      - test_net
+    volumes:
+      - minio_data:/data
+  
+  dump_task:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATA_COPY_OPERATION: DUMP
+      DB_CONNECTION_STRING: postgresql://user:pwd@source_db:5432/source
+      S3_BUCKET_NAME: s3_mock
+    depends_on:
+      - source_db
+      - s3_mock
+    networks:
+      - test_net
+
+  load_task:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATA_COPY_OPERATION: LOAD
+      DB_CONNECTION_STRING: postgresql://user:pwd@destination_db:5433/destination
+      S3_BUCKET_NAME: s3_mock
+    networks:
+      - test_net
+    depends_on:
+      - dump_task
+      - destination_db
+      - s3_mock
+
+networks:
+  test_net:
+    driver: bridge
+
+volumes:
+  minio_data:
+    driver: local
