@@ -3,7 +3,7 @@
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
-  pg_dump --format c "${DB_CONNECTION_STRING}" > data_dump.sql
+  pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > data_dump.sql
   exit_code=$?
 
   if [ ${exit_code} -ne 0 ]
@@ -34,8 +34,26 @@ else
     exit $exit_code
   fi
 
-  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
+  SERVICES=$(aws ecs list-services --cluster "${ECS_CLUSTER}" | jq -r '.serviceArns[]')
+  for service in ${SERVICES}
+  do
+    COUNT=$(aws ecs describe-services --cluster "${ECS_CLUSTER}" --services "${service}" | jq '.services[0].desiredCount')
+    CONFIG_FILE="$(basename "${service}").desired_count"
+    echo "${COUNT}" > "${CONFIG_FILE}"
+
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq
+  done
+
+  pg_restore --clean --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
   exit_code=$?
+
+  for service in ${SERVICES}
+  do
+    CONFIG_FILE="$(basename "${service}").desired_count"
+    COUNT=$(cat "${CONFIG_FILE}")
+
+    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq
+  done
 
   if [ ${exit_code} -ne 0 ]
   then
