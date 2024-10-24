@@ -7,5 +7,6 @@ RUN unzip awscliv2.zip
 RUN ./aws/install
 
 COPY entrypoint.sh /entrypoint.sh
+COPY clear_db.sql /clear_db.sql
 
 ENTRYPOINT ["bash", "/entrypoint.sh"]
