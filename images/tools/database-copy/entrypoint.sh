@@ -25,6 +25,7 @@ then
 else
   echo "Starting data load"
 
+  echo "Copying data dump from S3"
   aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql
   exit_code=$?
 
@@ -34,6 +35,7 @@ else
     exit $exit_code
   fi
 
+  echo "Scaling down services"
   SERVICES=$(aws ecs list-services --cluster "${ECS_CLUSTER}" | jq -r '.serviceArns[]')
   for service in ${SERVICES}
   do
@@ -45,20 +47,8 @@ else
     aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
 
-  echo 'DO $$ DECLARE
-  r RECORD;
-BEGIN
-  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-    CASE
-      WHEN r.tablename NOT IN ('spatial_ref_sys') THEN
-        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-      ELSE null;
-    END CASE;
-  END LOOP;
-END $$;
-' > clear_db.sql
-
-  psql "${DB_CONNECTION_STRING}" -f clear_db.sql
+  echo "Clearing down the database prior to loading new data"
+  psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
 
   exit_code=$?
 
@@ -68,9 +58,11 @@ END $$;
     exit $exit_code
   fi
 
+  echo "loading new data from S3"
   pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
   exit_code=$?
 
+  echo "Scaling up services"
   for service in ${SERVICES}
   do
     CONFIG_FILE="$(basename "${service}").desired_count"
