@@ -131,7 +131,7 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
 @patch("dbt_platform_helper.utils.aws.get_account_details")
 @patch("boto3.session.Session")
 @patch("click.secho")
-def test_get_aws_session_or_abort_erors(
+def test_get_aws_session_or_abort_errors(
     mock_secho,
     mock_session,
     mock_get_account_details,
