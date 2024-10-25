@@ -34,63 +34,63 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         click.secho("Credentials are valid.", fg="green")
 
     except botocore.exceptions.ProfileNotFound:
-        click.secho(f'AWS profile "{aws_profile}" is not configured.', fg="red")
-        exit(1)
+        _handle_error(f'AWS profile "{aws_profile}" is not configured.')
     except botocore.exceptions.ClientError as e:
         if e.response["Error"]["Code"] == "ExpiredToken":
-            click.secho(
-                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
-                fg="red",
+            _handle_error(
+                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
             )
-            exit(1)
     except botocore.exceptions.NoCredentialsError:
-        click.secho(
+        _handle_error(
             "There are no credentials set for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+            "To refresh this SSO session run `aws sso login` with the corresponding profile"
         )
-        exit(1)
     except botocore.exceptions.UnauthorizedSSOTokenError:
-        click.secho(
+        _handle_error(
             "The SSO Token used for this session is unauthorised."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+            "To refresh this SSO session run `aws sso login` with the corresponding profile"
         )
-        exit(1)
     except botocore.exceptions.TokenRetrievalError:
-        click.secho(
+        _handle_error(
             "Unable to retrieve the Token for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+            "To refresh this SSO session run `aws sso login` with the corresponding profile"
         )
-        exit(1)
     except botocore.exceptions.SSOTokenLoadError:
-        click.secho(
+        _handle_error(
             "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+            "To refresh this SSO session run `aws sso login` with the corresponding profile"
         )
-        exit(1)
 
     alias_client = session.client("iam")
-    account_name = alias_client.list_account_aliases()["AccountAliases"]
-    if account_name:
-        click.echo(
-            click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True),
-        )
-    else:
-        click.echo(
-            click.style("Logged in with AWS account id: ", fg="yellow")
-            + click.style(f"{account_id}", fg="white", bold=True),
-        )
+    account_name = alias_client.list_account_aliases().get("AccountAliases", [])
+
+    _log_account_info(account_name, account_id)
+
     click.echo(
         click.style("User: ", fg="yellow")
-        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
+        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True)
     )
 
     AWS_SESSION_CACHE[aws_profile] = session
     return session
+
+
+def _handle_error(message: str) -> None:
+    click.secho(message, fg="red")
+    exit(1)
+
+
+def _log_account_info(account_name: list, account_id: str) -> None:
+    if account_name:
+        click.echo(
+            click.style("Logged in with AWS account: ", fg="yellow")
+            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True)
+        )
+    else:
+        click.echo(
+            click.style("Logged in with AWS account id: ", fg="yellow")
+            + click.style(f"{account_id}", fg="white", bold=True)
+        )
 
 
 class NoProfileForAccountIdError(Exception):
