@@ -243,6 +243,7 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
                 "my-alb-cdn-geo-restrictions-type-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-cdn-logging-bucket-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-cdn-logging-bucket-prefix-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cdn-timeout-seconds-should-be-an-int": r"environments.*dev.*should be instance of 'int'",
                 "my-alb-default-waf-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-enable-logging-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
                 "my-alb-forwarded-values-forward-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
