@@ -45,12 +45,28 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     try:
         account_id, user_id = get_account_details(sts)
         click.secho("Credentials are valid.", fg="green")
-    except (
-        botocore.exceptions.UnauthorizedSSOTokenError,
-        botocore.exceptions.TokenRetrievalError,
-        botocore.exceptions.SSOTokenLoadError,
-        botocore.exceptions.NoCredentialsError,
-    ):
+    except (botocore.exceptions.NoCredentialsError,):
+        click.secho(
+            "There are no credentials set for this session."
+            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            fg="red",
+        )
+        exit(1)
+    except (botocore.exceptions.UnauthorizedSSOTokenError,):
+        click.secho(
+            "The SSO Token used for this session is unauthorised."
+            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            fg="red",
+        )
+        exit(1)
+    except (botocore.exceptions.TokenRetrievalError,):
+        click.secho(
+            "Unable to retrieve the Token for this session."
+            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            fg="red",
+        )
+        exit(1)
+    except (botocore.exceptions.SSOTokenLoadError,):
         click.secho(
             "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
             "To refresh this SSO session run `aws sso login` with the corresponding profile",

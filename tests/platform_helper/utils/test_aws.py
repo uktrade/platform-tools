@@ -94,7 +94,7 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
 @patch("dbt_platform_helper.utils.aws.get_account_details")
 @patch("boto3.session.Session")
 @patch("click.secho")
-def test_get_aws_session_or_abort_with_invalid_credentials(
+def test_get_aws_session_or_abort_with_unauthorised_sso_token_error(
     mock_secho, mock_session, mock_get_account_details
 ):
     aws_profile = "existing_profile"
@@ -104,6 +104,52 @@ def test_get_aws_session_or_abort_with_invalid_credentials(
     )
     mock_get_account_details.side_effect = botocore.exceptions.SSOTokenLoadError(
         error_msg=expected_error_message
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        get_aws_session_or_abort(aws_profile=aws_profile)
+
+    assert exc_info.value.code == 1
+    assert mock_secho.call_count > 0
+    assert mock_secho.call_args[0][0] == expected_error_message
+
+
+@patch("dbt_platform_helper.utils.aws.get_account_details")
+@patch("boto3.session.Session")
+@patch("click.secho")
+def test_get_aws_session_or_abort_with_no_credentials(
+    mock_secho, mock_session, mock_get_account_details
+):
+    aws_profile = "existing_profile"
+    expected_error_message = (
+        "There are no credentials set for this session."
+        + "To refresh this SSO session run `aws sso login` with the corresponding profile"
+    )
+    mock_get_account_details.side_effect = botocore.exceptions.NoCredentialsError(
+        error_msg=expected_error_message
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        get_aws_session_or_abort(aws_profile=aws_profile)
+
+    assert exc_info.value.code == 1
+    assert mock_secho.call_count > 0
+    assert mock_secho.call_args[0][0] == expected_error_message
+
+
+@patch("dbt_platform_helper.utils.aws.get_account_details")
+@patch("boto3.session.Session")
+@patch("click.secho")
+def test_get_aws_session_or_abort_with_token_retrieval_error(
+    mock_secho, mock_session, mock_get_account_details
+):
+    aws_profile = "existing_profile"
+    expected_error_message = (
+        "Unable to retrieve the Token for this session."
+        + "To refresh this SSO session run `aws sso login` with the corresponding profile"
+    )
+    mock_get_account_details.side_effect = botocore.exceptions.TokenRetrievalError(
+        error_msg=expected_error_message, provider="sso"
     )
 
     with pytest.raises(SystemExit) as exc_info:
