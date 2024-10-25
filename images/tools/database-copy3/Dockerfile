@@ -1,12 +1,17 @@
-FROM public.ecr.aws/docker/library/postgres:16
+FROM python:3.12
+RUN apt-get update && apt-get install -y curl
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
-RUN apt-get update && apt upgrade
-RUN apt-get install -y curl zip jq
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
-RUN unzip awscliv2.zip
-RUN ./aws/install
+WORKDIR /src
+COPY poetry.lock ./
+COPY pyproject.toml ./
 
-COPY entrypoint.sh /entrypoint.sh
-COPY clear_db.sql /clear_db.sql
+RUN poetry update
+COPY . ./
+RUN poetry install --no-root
 
-ENTRYPOINT ["bash", "/entrypoint.sh"]
+HEALTHCHECK --interval=5m --timeout=3s \
+  CMD curl -f http://localhost/ || exit 1
+
+CMD ["poetry", "run", "pytest"]

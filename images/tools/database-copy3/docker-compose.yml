@@ -1,33 +1,31 @@
 services:
-  source_db:
+  source-db:
     image: postgres:13
     restart: always
+    command: 'postgres -c log_statement=all -c fsync=off -c vm.zone_reclaim_mode=0 -c synchronous_commit=off -c checkpoint_completion_target=0.9 -c random_page_cost=1.1'
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: test_user
       POSTGRES_PASSWORD: pwd
       POSTGRES_DB: source
     ports:
       - '5432:5432'
     networks:
-      - test_net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - test-net
 
-  destination_db:
+  destination-db:
     image: postgres:13
+    restart: always
+    command: 'postgres -c log_statement=all -c fsync=off -c vm.zone_reclaim_mode=0 -c synchronous_commit=off -c checkpoint_completion_target=0.9 -c random_page_cost=1.1'
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: test_user
       POSTGRES_PASSWORD: pwd
       POSTGRES_DB: destination
     ports:
-      - '5433:5433'
+      - '5433:5432'
     networks:
-      - test_net
+      - test-net
 
-  s3_mock:
+  s3-mock:
     image: minio/minio
     entrypoint: sh
     command:
@@ -36,49 +34,60 @@ services:
         mkdir -p /data/test-dump-bucket
         touch /data/test-dump-bucket/test-dump.tar.gz
         minio server /data 
-        
-      # server /data --console-address ":9000"
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
     ports:
       - "9000:9000"
     networks:
-      - test_net
+      - test-net
     volumes:
       - minio_data:/data
   
-  dump_task:
+  dump-task:
     build:
-      context: .
+      context: ./image
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: DUMP
-      DB_CONNECTION_STRING: postgres://user:pwd@source_db:5432/source
-      S3_BUCKET_NAME: s3_mock
+      DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
+      S3_BUCKET_NAME: s3-mock
     depends_on:
-      - source_db
-      - s3_mock
+      - source-db
+      - s3-mock
     networks:
-      - test_net
+      - test-net
 
-  load_task:
+  load-task:
     build:
-      context: .
+      context: ./image
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: LOAD
-      DB_CONNECTION_STRING: postgres://user:pwd@destination_db:5433/destination
-      S3_BUCKET_NAME: s3_mock
+      DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
+      S3_BUCKET_NAME: s3-mock
     networks:
-      - test_net
+      - test-net
     depends_on:
-      - dump_task
-      - destination_db
-      - s3_mock
+      - dump-task
+      - destination-db
+      - s3-mock
+
+  tests:
+    networks:
+      - test-net
+    build:
+      context: .
+    depends_on:
+      - load-task
+    environment:
+      DESTINATION_DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
+      SOURCE_DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
+    volumes:
+      - ./:/src
 
 networks:
-  test_net:
+  test-net:
     driver: bridge
 
 volumes:

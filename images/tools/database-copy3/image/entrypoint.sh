@@ -1,6 +1,5 @@
 #!/bin/bash
-echo "Sleeping for 5m"
-sleep 300
+
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
