@@ -5,6 +5,7 @@ from shutil import rmtree
 
 import click
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -24,6 +25,7 @@ from dbt_platform_helper.utils.versioning import (
 
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"
 ENVIRONMENTS_KEY = "environments"
+ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
@@ -33,7 +35,12 @@ def pipeline():
 
 
 @pipeline.command()
-def generate():
+@click.option(
+    "--terraform-platform-modules-version",
+    help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
+    (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').""",
+)
+def generate(terraform_platform_modules_version):
     """Given a platform-config.yml file, generate environment and service
     deployment pipelines."""
     pipeline_config = load_and_validate_platform_config()
@@ -61,6 +68,10 @@ def generate():
 
     _clean_pipeline_config(pipelines_dir)
 
+    if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
+        _generate_terraform_environment_pipeline_manifest(
+            pipeline_config["application"], "platform-sandbox", terraform_platform_modules_version
+        )
     if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
         _generate_copilot_environments_pipeline(
             app_name,
@@ -170,3 +181,27 @@ def _create_file_from_template(
     ).render(template_data)
     message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
     click.echo(message)
+
+
+def _generate_terraform_environment_pipeline_manifest(
+    application, aws_account, cli_terraform_platform_modules_version
+):
+    env_template = setup_templates().get_template("environment-pipelines/main.tf")
+
+    version_preference_order = [
+        cli_terraform_platform_modules_version,
+        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+    ]
+    terraform_platform_modules_version = [
+        version for version in version_preference_order if version
+    ][0]
+
+    contents = env_template.render(
+        {
+            "application": application,
+            "aws_account": aws_account,
+            "terraform_platform_modules_version": terraform_platform_modules_version,
+        }
+    )
+
+    click.echo(mkfile(".", f"terraform/environment-pipelines/main.tf", contents, overwrite=True))

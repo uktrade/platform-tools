@@ -795,11 +795,14 @@ platform-helper pipeline generate
 ## Usage
 
 ```
-platform-helper pipeline generate 
+platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
 ```
 
 ## Options
 
+- `--terraform-platform-modules-version <text>`
+  - Override the default version of terraform-platform-modules with a specific version or branch. 
+(Default version is '5').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
