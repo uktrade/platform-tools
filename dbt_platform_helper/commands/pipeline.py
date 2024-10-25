@@ -69,6 +69,8 @@ def generate(terraform_platform_modules_version):
     _clean_pipeline_config(pipelines_dir)
 
     if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
+        # extract unique aws accounts from platform-config/environments/deploy accounts
+        # for loop to use unique account names to call the function below:
         _generate_terraform_environment_pipeline_manifest(
             pipeline_config["application"], "platform-sandbox", terraform_platform_modules_version
         )
@@ -204,4 +206,8 @@ def _generate_terraform_environment_pipeline_manifest(
         }
     )
 
-    click.echo(mkfile(".", f"terraform/environment-pipelines/main.tf", contents, overwrite=True))
+    click.echo(
+        mkfile(
+            ".", f"terraform/environment-pipelines-{aws_account}/main.tf", contents, overwrite=True
+        )
+    )

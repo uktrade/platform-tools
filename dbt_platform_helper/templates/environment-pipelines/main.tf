@@ -1,9 +1,9 @@
 # {% extra_header %}
 # {% version_info %}
 locals {
-  platform_config = yamldecode(file("../../platform-config.yml"))
+  platform_config    = yamldecode(file("../../platform-config.yml"))
   all_pipelines      = local.platform_config["environment_pipelines"]
-  non_prod_pipelines = { for pipeline, config in local.platform_config["environment_pipelines"] : pipeline => config if config.account == "{{ aws_account }}" }
+  pipelines = { for pipeline, config in local.platform_config["environment_pipelines"] : pipeline => config if config.account == "{{ aws_account }}" }
   environment_config = local.platform_config["environments"]
 }
 
@@ -12,7 +12,7 @@ provider "aws" {
   profile                  = "{{ aws_account }}"
   alias                    = "{{ aws_account }}"
   shared_credentials_files = ["~/.aws/config"]
-  }
+}
 
 terraform {
   required_version = "~> 1.8"
@@ -37,7 +37,7 @@ module "environment-pipelines" {
   source = "git::https://github.com/uktrade/terraform-platform-modules.git//environment-pipelines?depth=1&ref={{terraform_platform_modules_version}}"
   #  source = "../../../terraform-platform-modules/environment-pipelines"
 
-  for_each = local.non_prod_pipelines
+  for_each = local.pipelines
 
   application   = "{{ application }}"
   pipeline_name = each.key
@@ -50,4 +50,4 @@ module "environment-pipelines" {
   slack_channel       = each.value.slack_channel
   trigger_on_push     = each.value.trigger_on_push
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)
-  }
+}
