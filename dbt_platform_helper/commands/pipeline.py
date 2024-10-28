@@ -211,7 +211,7 @@ def _generate_terraform_environment_pipeline_manifest(
         }
     )
 
-    dir_path = f"terraform/environment-pipelines/{aws_account}/{pipeline_name}"
+    dir_path = f"terraform/environment-pipelines/{aws_account}"
     makedirs(dir_path, exist_ok=True)
 
     print(f"Creating file at: {dir_path}/main.tf with contents: \n{contents}")
