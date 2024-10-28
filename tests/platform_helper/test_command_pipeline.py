@@ -372,7 +372,6 @@ def assert_terraform(app_name, aws_account, expected_version):
 
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.commands.pipeline.is_terraform_project", return_value=True)
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
@@ -388,7 +387,6 @@ def test_generate_terraform_environment_pipeline_manifest_as_part_of_pipeline_ge
     git_remote,
     get_aws_command_or_abort,
     mock_aws_session,
-    mock_is_terraform,
     fakefs,
     cli_modules_version,
     expected_version,
@@ -412,7 +410,6 @@ def test_generate_terraform_environment_pipeline_manifest_as_part_of_pipeline_ge
 
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.commands.pipeline.is_terraform_project", return_value=False)
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
@@ -420,17 +417,12 @@ def test_generate_terraform_environment_pipeline_errors_if_this_is_a_legacy_proj
     git_remote,
     get_aws_command_or_abort,
     mock_aws_session,
-    mock_is_terraform,
     fakefs,
 ):
     app_name = "test-app"
     mock_codestar_connections_boto_client(mock_aws_session, [app_name])
-    setup_fixtures(
-        fakefs, pipelines_file="pipeline/platform-config-for-terraform-environment-pipelines.yml"
-    )
-    result = CliRunner().invoke(generate, args=[])
-    # assert result.exit_code != 0
-    # assert "This is not a terraform project. Exiting." in result.output
+    setup_fixtures(fakefs, pipelines_file="pipeline/platform-config-legacy-project.yml")
+    CliRunner().invoke(generate, args=[])
 
     for aws_account in ["platform-sandbox-test", "platform-prod-test"]:
         expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
