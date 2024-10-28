@@ -37,6 +37,9 @@ ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
 CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
+REFRESH_TOKEN_MESSAGE = (
+    "To refresh this SSO session run `aws sso login` with the corresponding profile"
+)
 
 
 def test_get_aws_session_or_abort_profile_not_configured(clear_session_cache, capsys):
@@ -99,32 +102,28 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
             botocore.exceptions.NoCredentialsError(
                 error_msg="There are no credentials set for this session."
             ),
-            "There are no credentials set for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            f"There are no credentials set for this session. {REFRESH_TOKEN_MESSAGE}",
         ),
         (
             "existing_profile",
             botocore.exceptions.UnauthorizedSSOTokenError(
                 error_msg="The SSO Token used for this session is unauthorised."
             ),
-            "The SSO Token used for this session is unauthorised."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            f"The SSO Token used for this session is unauthorised. {REFRESH_TOKEN_MESSAGE}",
         ),
         (
             "existing_profile",
             botocore.exceptions.TokenRetrievalError(
                 error_msg="Unable to retrieve the Token for this session.", provider="sso"
             ),
-            "Unable to retrieve the Token for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            f"Unable to retrieve the Token for this session. {REFRESH_TOKEN_MESSAGE}",
         ),
         (
             "existing_profile",
             botocore.exceptions.SSOTokenLoadError(
                 error_msg="The SSO session associated with this profile has expired, is not set or is otherwise invalid."
             ),
-            "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
+            f"The SSO session associated with this profile has expired, is not set or is otherwise invalid. {REFRESH_TOKEN_MESSAGE}",
         ),
     ],
 )

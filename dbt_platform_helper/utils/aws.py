@@ -37,7 +37,7 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         click.secho("Credentials are valid.", fg="green")
 
     except botocore.exceptions.ProfileNotFound:
-        _handle_error(f'AWS profile "{aws_profile}" is not configured.', "")
+        _handle_error(f'AWS profile "{aws_profile}" is not configured.')
     except botocore.exceptions.ClientError as e:
         if e.response["Error"]["Code"] == "ExpiredToken":
             _handle_error(
@@ -69,8 +69,9 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     return session
 
 
-def _handle_error(message: str, refresh_token_message: str) -> None:
-    click.secho(message + refresh_token_message, fg="red")
+def _handle_error(message: str, refresh_token_message: str = None) -> None:
+    full_message = message + (" " + refresh_token_message if refresh_token_message else "")
+    click.secho(full_message, fg="red")
     exit(1)
 
 
