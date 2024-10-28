@@ -18,6 +18,9 @@ from dbt_platform_helper.exceptions import ValidationException
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 AWS_SESSION_CACHE = {}
+REFRESH_TOKEN_MESSAGE = (
+    "To refresh this SSO session run `aws sso login` with the corresponding profile"
+)
 
 
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
@@ -34,31 +37,22 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
         click.secho("Credentials are valid.", fg="green")
 
     except botocore.exceptions.ProfileNotFound:
-        _handle_error(f'AWS profile "{aws_profile}" is not configured.')
+        _handle_error(f'AWS profile "{aws_profile}" is not configured.', "")
     except botocore.exceptions.ClientError as e:
         if e.response["Error"]["Code"] == "ExpiredToken":
             _handle_error(
                 f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
             )
     except botocore.exceptions.NoCredentialsError:
-        _handle_error(
-            "There are no credentials set for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile"
-        )
+        _handle_error("There are no credentials set for this session.", REFRESH_TOKEN_MESSAGE)
     except botocore.exceptions.UnauthorizedSSOTokenError:
-        _handle_error(
-            "The SSO Token used for this session is unauthorised."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile"
-        )
+        _handle_error("The SSO Token used for this session is unauthorised.", REFRESH_TOKEN_MESSAGE)
     except botocore.exceptions.TokenRetrievalError:
-        _handle_error(
-            "Unable to retrieve the Token for this session."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile"
-        )
+        _handle_error("Unable to retrieve the Token for this session.", REFRESH_TOKEN_MESSAGE)
     except botocore.exceptions.SSOTokenLoadError:
         _handle_error(
-            "The SSO session associated with this profile has expired, is not set or is otherwise invalid."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile"
+            "The SSO session associated with this profile has expired, is not set or is otherwise invalid.",
+            REFRESH_TOKEN_MESSAGE,
         )
 
     alias_client = session.client("iam")
@@ -75,8 +69,8 @@ def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     return session
 
 
-def _handle_error(message: str) -> None:
-    click.secho(message, fg="red")
+def _handle_error(message: str, refresh_token_message: str) -> None:
+    click.secho(message + refresh_token_message, fg="red")
     exit(1)
 
 
