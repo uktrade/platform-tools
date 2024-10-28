@@ -113,11 +113,15 @@ def test_database_dump():
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.tail_logs = Mock()
+    db_copy.enrich_vpc_name = Mock()
+    db_copy.enrich_vpc_name.return_value = "test-vpc-override"
 
     db_copy.dump(env, vpc_name)
 
     mocks.load_application_fn.assert_called_once()
-    mocks.vpc_config_fn.assert_called_once_with(mocks.environment.session, app, env, vpc_name)
+    mocks.vpc_config_fn.assert_called_once_with(
+        mocks.environment.session, app, env, "test-vpc-override"
+    )
     mocks.db_connection_string_fn.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
     )
@@ -139,6 +143,7 @@ def test_database_dump():
         ]
     )
     db_copy.tail_logs.assert_called_once_with(True, env)
+    db_copy.enrich_vpc_name.assert_called_once_with("test-env", "test-vpc")
 
 
 def test_database_load_with_response_of_yes():
@@ -151,13 +156,17 @@ def test_database_load_with_response_of_yes():
 
     db_copy = DatabaseCopy(app, "test-db", **mocks.params())
     db_copy.tail_logs = Mock()
+    db_copy.enrich_vpc_name = Mock()
+    db_copy.enrich_vpc_name.return_value = "test-vpc-override"
     db_copy.run_database_copy_task = mock_run_database_copy_task
 
     db_copy.load(env, vpc_name)
 
     mocks.load_application_fn.assert_called_once()
 
-    mocks.vpc_config_fn.assert_called_once_with(mocks.environment.session, app, env, vpc_name)
+    mocks.vpc_config_fn.assert_called_once_with(
+        mocks.environment.session, app, env, "test-vpc-override"
+    )
 
     mocks.db_connection_string_fn.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
@@ -189,6 +198,7 @@ def test_database_load_with_response_of_yes():
         ]
     )
     db_copy.tail_logs.assert_called_once_with(False, "test-env")
+    db_copy.enrich_vpc_name.assert_called_once_with("test-env", "test-vpc")
 
 
 def test_database_load_with_response_of_no():
@@ -353,14 +363,17 @@ def test_copy_command(services, template):
     db_copy = DatabaseCopy("test-app", "test-db", True, **mocks.params())
     db_copy.dump = Mock()
     db_copy.load = Mock()
+    db_copy.enrich_vpc_name = Mock()
+    db_copy.enrich_vpc_name.return_value = "test-vpc-override"
 
     db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template)
 
+    db_copy.enrich_vpc_name.assert_called_once_with("test-to-env", "test-to-vpc")
     mocks.maintenance_page_provider.offline.assert_called_once_with(
-        "test-app", "test-to-env", services, template, "test-to-vpc"
+        "test-app", "test-to-env", services, template, "test-vpc-override"
     )
     db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc")
-    db_copy.load.assert_called_once_with("test-to-env", "test-to-vpc")
+    db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override")
     mocks.maintenance_page_provider.online.assert_called_once_with("test-app", "test-to-env")
 
 
@@ -515,3 +528,39 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
     mocks.abort_fn.assert_called_once_with(
         f"You must either be in a deploy repo, or provide the vpc name option."
     )
+
+
+def test_enrich_vpc_name_returns_the_vpc_name_passed_in():
+    db_copy = DatabaseCopy("test-app", "test-db", **DataCopyMocks().params())
+    vpc_name = db_copy.enrich_vpc_name("test-env", "test-vpc")
+
+    assert vpc_name == "test-vpc"
+
+
+def test_enrich_vpc_name_aborts_if_no_platform_config(fs):
+    # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
+    mocks = DataCopyMocks()
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    with pytest.raises(SystemExit):
+        db_copy.enrich_vpc_name("test-env", None)
+
+    mocks.abort_fn.assert_called_once_with(
+        f"You must either be in a deploy repo, or provide the vpc name option."
+    )
+
+
+def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
+    # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {"application": "test-app", "environments": {"test-env": {"vpc": "test-env-vpc"}}}
+        ),
+    )
+    mocks = DataCopyMocks()
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    vpc_name = db_copy.enrich_vpc_name("test-env", None)
+
+    assert vpc_name == "test-env-vpc"

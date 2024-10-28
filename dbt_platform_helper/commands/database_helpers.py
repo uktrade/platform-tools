@@ -67,13 +67,7 @@ class DatabaseCopy:
             abort_fn(f"No such application '{app}'.")
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
-        if not vpc_name:
-            if not Path(PLATFORM_CONFIG_FILE).exists():
-                self.abort_fn(
-                    "You must either be in a deploy repo, or provide the vpc name option."
-                )
-            config = load_and_validate_platform_config(disable_aws_validation=True)
-            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+        vpc_name = self.enrich_vpc_name(env, vpc_name)
 
         environments = self.application.environments
         environment = environments.get(env)
@@ -116,6 +110,16 @@ class DatabaseCopy:
             fg="white",
         )
         self.tail_logs(is_dump, env)
+
+    def enrich_vpc_name(self, env, vpc_name):
+        if not vpc_name:
+            if not Path(PLATFORM_CONFIG_FILE).exists():
+                self.abort_fn(
+                    "You must either be in a deploy repo, or provide the vpc name option."
+                )
+            config = load_and_validate_platform_config(disable_aws_validation=True)
+            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+        return vpc_name
 
     def run_database_copy_task(
         self,
@@ -175,6 +179,7 @@ class DatabaseCopy:
         services: tuple[str],
         template: str,
     ):
+        to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         self.maintenance_page_provider.offline(self.app, to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc)
         self.load(to_env, to_vpc)
