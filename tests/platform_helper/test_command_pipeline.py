@@ -383,7 +383,7 @@ def assert_terraform(app_name, aws_account, expected_version):
         ("feature_branch", "feature_branch"),
     ],
 )
-def test_generate_terraform_environment_pipeline_manifest_as_part_of_pipeline_generate(
+def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
     git_remote,
     get_aws_command_or_abort,
     mock_aws_session,
@@ -413,7 +413,7 @@ def test_generate_terraform_environment_pipeline_manifest_as_part_of_pipeline_ge
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-def test_generate_terraform_environment_pipeline_errors_if_this_is_a_legacy_project(
+def test_generate_pipeline_command_doesnt_generate_terraform_files_if_legacy_project(
     git_remote,
     get_aws_command_or_abort,
     mock_aws_session,
