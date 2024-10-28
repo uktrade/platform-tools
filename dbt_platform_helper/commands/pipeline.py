@@ -64,9 +64,9 @@ def generate(terraform_platform_modules_version):
         abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
     base_path = Path(".")
-    pipelines_dir = base_path / f"copilot/pipelines"
+    copilot_pipelines_dir = base_path / f"copilot/pipelines"
 
-    _clean_pipeline_config(pipelines_dir)
+    _clean_pipeline_config(copilot_pipelines_dir)
 
     if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
         # extract unique aws accounts from platform-config/environments/deploy accounts
@@ -81,7 +81,7 @@ def generate(terraform_platform_modules_version):
             git_repo,
             apply_environment_defaults(pipeline_config)[ENVIRONMENTS_KEY],
             base_path,
-            pipelines_dir,
+            copilot_pipelines_dir,
             templates,
         )
 
@@ -96,7 +96,7 @@ def generate(terraform_platform_modules_version):
                 git_repo,
                 codebase,
                 base_path,
-                pipelines_dir,
+                copilot_pipelines_dir,
                 templates,
             )
 
@@ -188,7 +188,7 @@ def _create_file_from_template(
 def _generate_terraform_environment_pipeline_manifest(
     application, aws_account, cli_terraform_platform_modules_version
 ):
-    env_template = setup_templates().get_template("environment-pipelines/main.tf")
+    env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
     version_preference_order = [
         cli_terraform_platform_modules_version,
@@ -198,7 +198,7 @@ def _generate_terraform_environment_pipeline_manifest(
         version for version in version_preference_order if version
     ][0]
 
-    contents = env_template.render(
+    contents = env_pipeline_template.render(
         {
             "application": application,
             "aws_account": aws_account,
