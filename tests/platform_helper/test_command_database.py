@@ -102,8 +102,9 @@ def test_command_copy_success(mock_database_copy_object):
 
     assert result.exit_code == 0
     mock_database_copy_object.assert_called_once_with("my_app", "my_postgres", False)
-    mock_database_copy_instance.dump.assert_called_once_with("my_prod_env", "my_from_vpc")
-    mock_database_copy_instance.load.assert_called_once_with("my_hotfix_env", "my_to_vpc")
+    mock_database_copy_instance.copy.assert_called_once_with(
+        "my_prod_env", "my_hotfix_env", "my_from_vpc", "my_to_vpc", ("web",), "default"
+    )
 
 
 @patch("dbt_platform_helper.commands.database.DatabaseCopy")
@@ -126,10 +127,22 @@ def test_command_copy_success_with_auto_approve(mock_database_copy_object):
             "--to-vpc",
             "my_to_vpc",
             "--auto-approve",
+            "--svc",
+            "other",
+            "--svc",
+            "service",
+            "--template",
+            "migration",
         ],
     )
 
     assert result.exit_code == 0
     mock_database_copy_object.assert_called_once_with("my_app", "my_postgres", True)
-    mock_database_copy_instance.dump.assert_called_once_with("my_prod_env", "my_from_vpc")
-    mock_database_copy_instance.load.assert_called_once_with("my_hotfix_env", "my_to_vpc")
+    mock_database_copy_instance.copy.assert_called_once_with(
+        "my_prod_env",
+        "my_hotfix_env",
+        "my_from_vpc",
+        "my_to_vpc",
+        ("other", "service"),
+        "migration",
+    )

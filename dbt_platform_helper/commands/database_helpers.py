@@ -6,6 +6,8 @@ import boto3
 import click
 from boto3 import Session
 
+from dbt_platform_helper.commands.environment import offline_command
+from dbt_platform_helper.commands.environment import online_command
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
@@ -16,6 +18,12 @@ from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
+
+
+class MaintenancePageProvider:
+    def __init__(self):
+        self.offline = offline_command
+        self.online = online_command
 
 
 class DatabaseCopy:
@@ -29,6 +37,9 @@ class DatabaseCopy:
         db_connection_string_fn: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
+        maintenance_page_provider: Callable[
+            [str, str, list[str], str, str], None
+        ] = MaintenancePageProvider(),
         input_fn: Callable[[str], str] = click.prompt,
         echo_fn: Callable[[str], str] = click.secho,
         abort_fn: Callable[[str], None] = abort_with_error,
@@ -38,6 +49,7 @@ class DatabaseCopy:
         self.auto_approve = auto_approve
         self.vpc_config_fn = vpc_config_fn
         self.db_connection_string_fn = db_connection_string_fn
+        self.maintenance_page_provider = maintenance_page_provider
         self.input_fn = input_fn
         self.echo_fn = echo_fn
         self.abort_fn = abort_fn
@@ -153,6 +165,20 @@ class DatabaseCopy:
     def load(self, env: str, vpc_name: str):
         if self.is_confirmed_ready_to_load(env):
             self._execute_operation(False, env, vpc_name)
+
+    def copy(
+        self,
+        from_env: str,
+        to_env: str,
+        from_vpc: str,
+        to_vpc: str,
+        services: tuple[str],
+        template: str,
+    ):
+        self.maintenance_page_provider.offline(self.app, to_env, services, template, to_vpc)
+        self.dump(from_env, from_vpc)
+        self.load(to_env, to_vpc)
+        self.maintenance_page_provider.online(self.app, to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:

@@ -47,6 +47,10 @@ def environment():
 @click.option("--vpc", type=str)
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
+    offline_command(app, env, svc, template, vpc)
+
+
+def offline_command(app, env, svc, template, vpc):
     application = get_application(app)
     application_environment = get_app_environment(app, env)
 
@@ -120,6 +124,11 @@ def offline(app, env, svc, template, vpc):
 @click.option("--env", type=str, required=True)
 def online(app, env):
     """Remove a maintenance page from an environment."""
+    online_command(app, env)
+
+
+def online_command(app, env):
+
     application_environment = get_app_environment(app, env)
 
     try:
@@ -251,7 +260,7 @@ def get_cert_arn(session, application, env_name):
 
 
 def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
-    account_name = f"{application_environment.session.profile_name}-vpc"
+    account_name = f"{application_environment.session.profile_name}"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
 

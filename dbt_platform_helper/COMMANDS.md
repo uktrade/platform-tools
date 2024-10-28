@@ -1047,8 +1047,9 @@ platform-helper database load --to <to_env> --database <database>
 
 ```
 platform-helper database copy --from <from_env> --to <to_env> --database <database> 
-                              [--app <application>] [--from-vpc <from_vpc>] 
-                              [--to-vpc <to_vpc>] [--auto-approve] 
+                              --svc <service> [--app <application>] [--from-vpc <from_vpc>] 
+                              [--to-vpc <to_vpc>] [--template (default|migration|dmas-migration)] 
+                              [--auto-approve] 
 ```
 
 ## Options
@@ -1067,6 +1068,10 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
   - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
 - `--auto-approve <boolean>` _Defaults to False._
 
+- `--svc <text>` _Defaults to ['web']._
+
+- `--template <choice>` _Defaults to default._
+  - The maintenance page you wish to put up.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

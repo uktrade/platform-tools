@@ -1,6 +1,7 @@
 import click
 
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
+from dbt_platform_helper.commands.environment import AVAILABLE_TEMPLATES
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -86,8 +87,14 @@ def load(app, to_env, database, to_vpc, auto_approve):
     help="The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo",
 )
 @click.option("--auto-approve/--no-auto-approve", default=False)
-def copy(app, from_env, to_env, database, from_vpc, to_vpc, auto_approve):
+@click.option("--svc", type=str, required=True, multiple=True, default=["web"])
+@click.option(
+    "--template",
+    type=click.Choice(AVAILABLE_TEMPLATES),
+    default="default",
+    help="The maintenance page you wish to put up.",
+)
+def copy(app, from_env, to_env, database, from_vpc, to_vpc, auto_approve, svc, template):
     """Copy a database between environments."""
     data_copy = DatabaseCopy(app, database, auto_approve)
-    data_copy.dump(from_env, from_vpc)
-    data_copy.load(to_env, to_vpc)
+    data_copy.copy(from_env, to_env, from_vpc, to_vpc, svc, template)

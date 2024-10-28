@@ -26,6 +26,7 @@ class DataCopyMocks:
         self.vpc_config_fn = Mock()
         self.vpc_config_fn.return_value = vpc
         self.db_connection_string_fn = Mock(return_value="test-db-connection-string")
+        self.maintenance_page_provider = Mock()
 
         self.input_fn = Mock(return_value="yes")
         self.echo_fn = Mock()
@@ -36,6 +37,7 @@ class DataCopyMocks:
             "load_application_fn": self.load_application_fn,
             "vpc_config_fn": self.vpc_config_fn,
             "db_connection_string_fn": self.db_connection_string_fn,
+            "maintenance_page_provider": self.maintenance_page_provider,
             "input_fn": self.input_fn,
             "echo_fn": self.echo_fn,
             "abort_fn": self.abort_fn,
@@ -289,7 +291,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
     mocks.abort_fn.assert_called_once_with(f"{error_msg} (Account id: 12345)")
 
 
-def test_database_copy_initializaion_handles_app_name_errors():
+def test_database_copy_initialization_handles_app_name_errors():
     mocks = DataCopyMocks()
     mocks.load_application_fn = Mock(side_effect=ApplicationNotFoundError())
 
@@ -336,6 +338,30 @@ def test_is_confirmed_ready_to_load_with_yes_flag():
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
     mocks.input_fn.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "services, template",
+    (
+        (["web"], "default"),
+        (["*"], "default"),
+        (["web", "other"], "migrations"),
+    ),
+)
+def test_copy_command(services, template):
+    mocks = DataCopyMocks()
+    db_copy = DatabaseCopy("test-app", "test-db", True, **mocks.params())
+    db_copy.dump = Mock()
+    db_copy.load = Mock()
+
+    db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template)
+
+    mocks.maintenance_page_provider.offline.assert_called_once_with(
+        "test-app", "test-to-env", services, template, "test-to-vpc"
+    )
+    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc")
+    db_copy.load.assert_called_once_with("test-to-env", "test-to-vpc")
+    mocks.maintenance_page_provider.online.assert_called_once_with("test-app", "test-to-env")
 
 
 @pytest.mark.parametrize("is_dump", [True, False])
