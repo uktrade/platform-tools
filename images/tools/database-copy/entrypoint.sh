@@ -54,24 +54,25 @@ else
   handle_errors $? "Copy failed"
 
   echo "Scaling down services"
-  SERVICES=$(aws ecs list-services --cluster "${ECS_CLUSTER}" | jq -r '.serviceArns[]')
-  
+  SERVICES_DATA=$(aws ecs list-services --cluster "${ECS_CLUSTER}")
   handle_errors $? "Failed to list services"
+  SERVICES=$(echo "${SERVICES_DATA}" | jq -r '.serviceArns[]')
 
   for service in ${SERVICES}
   do
-    COUNT=$(aws ecs describe-services --cluster "${ECS_CLUSTER}" --services "${service}" | jq '.services[0].desiredCount')
-    
+    COUNT_DATA=$(aws ecs describe-services --cluster "${ECS_CLUSTER}" --services "${service}")
     handle_errors $? "Failed to describe service"
-    
+    COUNT=$(echo "${COUNT_DATA}" | jq '.services[0].desiredCount')
+
     SERVICE_NAME=$(basename "${service}")
     CONFIG_FILE="${SERVICE_NAME}.desired_count"
     echo "${COUNT}" > "${CONFIG_FILE}"
 
     echo ${SERVICE_NAME}
-    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0 | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
-  
+    UPDATE_DATA=$(aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0)
     handle_errors $? "Failed to update service ${SERVICE_NAME}"
+    echo "${UPDATE_DATA}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
+  
   done
 
   echo "Clearing down the database prior to loading new data"
@@ -90,8 +91,9 @@ else
     SERVICE_NAME=$(basename "${service}")
     echo "Scaling up services"
     echo ${SERVICE_NAME}
-    aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
+    UPDATE_DATA=$(aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}")
     handle_errors $? "Failed to update service ${SERVICE_NAME}"
+    echo "${UPDATE_DATA}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
   done
 
   clean_up
