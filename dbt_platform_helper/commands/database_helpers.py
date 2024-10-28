@@ -159,7 +159,7 @@ class DatabaseCopy:
             return True
 
         user_input = self.input_fn(
-            f"\nAre all tasks using {self.database} in the {env} environment stopped? (y/n)"
+            f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
 

@@ -170,7 +170,7 @@ def test_database_load_with_response_of_yes():
     )
 
     mocks.input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
     )
 
     mocks.echo_fn.assert_has_calls(
@@ -210,7 +210,7 @@ def test_database_load_with_response_of_no():
     mock_run_database_copy_task_fn.assert_not_called()
 
     mocks.input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
     )
     mocks.echo_fn.assert_not_called()
     db_copy.tail_logs.assert_not_called()
@@ -310,7 +310,7 @@ def test_is_confirmed_ready_to_load(user_response):
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
     mocks.input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
     )
 
 
@@ -324,7 +324,7 @@ def test_is_not_confirmed_ready_to_load(user_response):
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
     mocks.input_fn.assert_called_once_with(
-        f"\nAre all tasks using test-db in the test-env environment stopped? (y/n)"
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
     )
 
 
