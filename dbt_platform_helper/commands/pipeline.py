@@ -72,7 +72,7 @@ def generate(terraform_platform_modules_version):
     if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
         environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
 
-        for pipeline_name, config in environment_pipelines.items():
+        for config in environment_pipelines.values():
             aws_account = config.get("account")
             _generate_terraform_environment_pipeline_manifest(
                 pipeline_config["application"],
