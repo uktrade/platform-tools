@@ -34,7 +34,7 @@ terraform {
 
 
 module "environment-pipelines" {
-  source = "git::https://github.com/uktrade/terraform-platform-modules.git//environment-pipelines?depth=1&ref={{terraform_platform_modules_version}}"
+  source = "git::https://github.com/uktrade/terraform-platform-modules.git//environment-pipelines?depth=1&ref={{ terraform_platform_modules_version }}"
   #  source = "../../../terraform-platform-modules/environment-pipelines"
 
   for_each = local.pipelines

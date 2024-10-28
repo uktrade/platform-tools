@@ -211,11 +211,8 @@ def _generate_terraform_environment_pipeline_manifest(
         }
     )
 
-    click.echo(
-        mkfile(
-            ".",
-            f"terraform/environment-pipelines-{pipeline_name}-{aws_account}/main.tf",
-            contents,
-            overwrite=True,
-        )
-    )
+    dir_path = f"terraform/environment-pipelines/{aws_account}/{pipeline_name}"
+    makedirs(dir_path, exist_ok=True)
+
+    print(f"Creating file at: {dir_path}/main.tf with contents: \n{contents}")
+    click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
