@@ -39,6 +39,7 @@ def pipeline():
     "--terraform-platform-modules-version",
     help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
     (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').""",
+    default=DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
 )
 def generate(terraform_platform_modules_version):
     """Given a platform-config.yml file, generate environment and service
@@ -75,7 +76,6 @@ def generate(terraform_platform_modules_version):
             aws_account = config.get("account")
             _generate_terraform_environment_pipeline_manifest(
                 pipeline_config["application"],
-                pipeline_name,
                 aws_account,
                 terraform_platform_modules_version,
             )
@@ -191,17 +191,9 @@ def _create_file_from_template(
 
 
 def _generate_terraform_environment_pipeline_manifest(
-    application, pipeline_name, aws_account, cli_terraform_platform_modules_version
+    application, aws_account, terraform_platform_modules_version
 ):
     env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
-
-    version_preference_order = [
-        cli_terraform_platform_modules_version,
-        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
-    ]
-    terraform_platform_modules_version = [
-        version for version in version_preference_order if version
-    ][0]
 
     contents = env_pipeline_template.render(
         {
@@ -214,5 +206,4 @@ def _generate_terraform_environment_pipeline_manifest(
     dir_path = f"terraform/environment-pipelines/{aws_account}"
     makedirs(dir_path, exist_ok=True)
 
-    print(f"Creating file at: {dir_path}/main.tf with contents: \n{contents}")
     click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
