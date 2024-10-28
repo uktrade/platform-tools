@@ -80,7 +80,7 @@ else
 
   handle_errors $? "Clear down failed"
   
-  echo "loading new data from S3"
+  echo "Restoring data from dump file"
   pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
   
   handle_errors $? "Restore failed"

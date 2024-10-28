@@ -62,6 +62,15 @@ def test_run_database_copy_task(is_dump, exp_operation):
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
 
     mock_session.client.assert_called_once_with("ecs")
+    expected_env_vars = [
+        {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
+        {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
+    ]
+    if not is_dump:
+        expected_env_vars.append(
+            {"name": "ECS_CLUSTER", "value": "test-app-test-env"},
+        )
+
     mock_client.run_task.assert_called_once_with(
         taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test-app-test-env-test-postgres-{exp_operation}",
         cluster="test-app-test-env",
@@ -81,10 +90,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
             "containerOverrides": [
                 {
                     "name": f"test-app-test-env-test-postgres-{exp_operation}",
-                    "environment": [
-                        {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
-                        {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
-                    ],
+                    "environment": expected_env_vars,
                 }
             ]
         },

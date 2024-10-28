@@ -115,6 +115,13 @@ class DatabaseCopy:
     ) -> str:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
+        env_vars = [
+            {"name": "DATA_COPY_OPERATION", "value": action.upper()},
+            {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+        ]
+        if not is_dump:
+            env_vars.append({"name": "ECS_CLUSTER", "value": f"{self.app}-{env}"})
+
         response = client.run_task(
             taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
             cluster=f"{self.app}-{env}",
@@ -132,10 +139,7 @@ class DatabaseCopy:
                 "containerOverrides": [
                     {
                         "name": f"{self.app}-{env}-{self.database}-{action}",
-                        "environment": [
-                            {"name": "DATA_COPY_OPERATION", "value": action.upper()},
-                            {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
-                        ],
+                        "environment": env_vars,
                     }
                 ]
             },
