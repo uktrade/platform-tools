@@ -69,11 +69,16 @@ def generate(terraform_platform_modules_version):
     _clean_pipeline_config(copilot_pipelines_dir)
 
     if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
-        # extract unique aws accounts from platform-config/environments/deploy accounts
-        # for loop to use unique account names to call the function below:
-        _generate_terraform_environment_pipeline_manifest(
-            pipeline_config["application"], "platform-sandbox", terraform_platform_modules_version
-        )
+        environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
+
+        for pipeline_name, config in environment_pipelines.items():
+            aws_account = config.get("account")
+            _generate_terraform_environment_pipeline_manifest(
+                pipeline_config["application"],
+                pipeline_name,
+                aws_account,
+                terraform_platform_modules_version,
+            )
     if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
         _generate_copilot_environments_pipeline(
             app_name,
@@ -186,7 +191,7 @@ def _create_file_from_template(
 
 
 def _generate_terraform_environment_pipeline_manifest(
-    application, aws_account, cli_terraform_platform_modules_version
+    application, pipeline_name, aws_account, cli_terraform_platform_modules_version
 ):
     env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -208,6 +213,9 @@ def _generate_terraform_environment_pipeline_manifest(
 
     click.echo(
         mkfile(
-            ".", f"terraform/environment-pipelines-{aws_account}/main.tf", contents, overwrite=True
+            ".",
+            f"terraform/environment-pipelines-{pipeline_name}-{aws_account}/main.tf",
+            contents,
+            overwrite=True,
         )
     )
