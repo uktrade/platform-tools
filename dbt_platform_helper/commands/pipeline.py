@@ -50,7 +50,7 @@ def generate(terraform_platform_modules_version):
     has_legacy_environment_pipelines = ENVIRONMENTS_KEY in pipeline_config
     has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
-    if no_codebase_pipelines and no_environment_pipelines and no_terraform_environment_pipelines:
+    if not has codebase_pipelines and not has_legacy_environment_pipelines and not has_environment_pipelines:
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
 
