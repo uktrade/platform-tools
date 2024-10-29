@@ -46,9 +46,9 @@ def generate(terraform_platform_modules_version):
     deployment pipelines."""
     pipeline_config = load_and_validate_platform_config()
 
-    no_codebase_pipelines = CODEBASE_PIPELINES_KEY not in pipeline_config
-    no_environment_pipelines = ENVIRONMENTS_KEY not in pipeline_config
-    no_terraform_environment_pipelines = ENVIRONMENT_PIPELINES_KEY not in pipeline_config
+    has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
+    has_legacy_environment_pipelines = ENVIRONMENTS_KEY in pipeline_config
+    has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
     if no_codebase_pipelines and no_environment_pipelines and no_terraform_environment_pipelines:
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
