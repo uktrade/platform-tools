@@ -391,7 +391,9 @@ def test_copy_command_with_no_maintenance_page(services, template):
     db_copy.enrich_vpc_name = Mock()
     db_copy.enrich_vpc_name.return_value = "test-vpc-override"
 
-    db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template, True)
+    db_copy.copy(
+        "test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template, True
+    )
 
     mocks.maintenance_page_provider.offline.assert_not_called()
     mocks.maintenance_page_provider.online.assert_not_called()

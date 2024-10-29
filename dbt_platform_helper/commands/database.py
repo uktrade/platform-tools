@@ -95,7 +95,18 @@ def load(app, to_env, database, to_vpc, auto_approve):
     help="The maintenance page you wish to put up.",
 )
 @click.option("--no-maintenance-page", flag_value=True)
-def copy(app, from_env, to_env, database, from_vpc, to_vpc, auto_approve, svc, template, no_maintenance_page):
+def copy(
+    app,
+    from_env,
+    to_env,
+    database,
+    from_vpc,
+    to_vpc,
+    auto_approve,
+    svc,
+    template,
+    no_maintenance_page,
+):
     """Copy a database between environments."""
     data_copy = DatabaseCopy(app, database, auto_approve)
     data_copy.copy(from_env, to_env, from_vpc, to_vpc, svc, template, no_maintenance_page)

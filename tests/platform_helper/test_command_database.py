@@ -103,7 +103,13 @@ def test_command_copy_success(mock_database_copy_object):
     assert result.exit_code == 0
     mock_database_copy_object.assert_called_once_with("my_app", "my_postgres", False)
     mock_database_copy_instance.copy.assert_called_once_with(
-        "my_prod_env", "my_hotfix_env", "my_from_vpc", "my_to_vpc", ("web",), "default", False,
+        "my_prod_env",
+        "my_hotfix_env",
+        "my_from_vpc",
+        "my_to_vpc",
+        ("web",),
+        "default",
+        False,
     )
 
 
@@ -173,7 +179,7 @@ def test_command_copy_success_with_no_maintenance_page(mock_database_copy_object
             "other",
             "--svc",
             "service",
-            "--no-maintenance-page"
+            "--no-maintenance-page",
         ],
     )
 
@@ -185,9 +191,10 @@ def test_command_copy_success_with_no_maintenance_page(mock_database_copy_object
         "my_from_vpc",
         "my_to_vpc",
         ("other", "service"),
-        'default',
+        "default",
         True,
     )
+
 
 @patch("dbt_platform_helper.commands.database.DatabaseCopy")
 def test_command_copy_success_with_maintenance_page(mock_database_copy_object):
@@ -224,6 +231,6 @@ def test_command_copy_success_with_maintenance_page(mock_database_copy_object):
         "my_from_vpc",
         "my_to_vpc",
         ("other", "service"),
-        'default',
+        "default",
         False,
     )
