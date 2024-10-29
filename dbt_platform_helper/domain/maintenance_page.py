@@ -8,8 +8,6 @@ from typing import Union
 import boto3
 import click
 
-from dbt_platform_helper.commands.environment import offline_command
-from dbt_platform_helper.commands.environment import online_command
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundError
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundError
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundError
@@ -20,11 +18,7 @@ from dbt_platform_helper.utils.application import load_application
 
 
 class MaintenancePageProvider:
-    def __init__(self):
-        self.offline = offline_command
-        self.online = online_command
-
-    def offline_command(self, app, env, svc, template, vpc):
+    def offline(self, app, env, svc, template, vpc):
         application = load_application(app)
         application_environment = get_app_environment(app, env)
 
@@ -79,6 +73,41 @@ class MaintenancePageProvider:
                 )
             else:
                 raise click.Abort
+
+        except LoadBalancerNotFoundError:
+            click.secho(
+                f"No load balancer found for environment {env} in the application {app}.", fg="red"
+            )
+            raise click.Abort
+
+        except ListenerNotFoundError:
+            click.secho(
+                f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
+            )
+            raise click.Abort
+
+    def online(self, app, env):
+        application_environment = get_app_environment(app, env)
+
+        try:
+            https_listener = find_https_listener(application_environment.session, app, env)
+            current_maintenance_page = get_maintenance_page(
+                application_environment.session, https_listener
+            )
+            if not current_maintenance_page:
+                click.secho("There is no current maintenance page to remove", fg="red")
+                raise click.Abort
+
+            if not click.confirm(
+                f"There is currently a '{current_maintenance_page}' maintenance page, "
+                f"would you like to remove it?"
+            ):
+                raise click.Abort
+
+            remove_maintenance_page(application_environment.session, https_listener)
+            click.secho(
+                f"Maintenance page removed from environment {env} in application {app}", fg="green"
+            )
 
         except LoadBalancerNotFoundError:
             click.secho(
@@ -423,7 +452,7 @@ def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group
 
 
 def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
-    account_name = f"{application_environment.session.profile_name}"
+    account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
 
