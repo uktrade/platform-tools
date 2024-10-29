@@ -43,8 +43,8 @@ def pipeline():
 )
 @click.option(
     "--demodjango-deploy-branch",
-    help=f"""Specify the branch of demodjango-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
-    (Default demodjango-deploy branch is specified in demodjango-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
+    help=f"""Specify the branch of <application>-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+    (Default <application>-deploy branch is specified in <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
 )
 def generate(terraform_platform_modules_version, demodjango_deploy_branch=None):
     """Given a platform-config.yml file, generate environment and service
