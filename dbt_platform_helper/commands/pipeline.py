@@ -224,7 +224,7 @@ def _generate_terraform_environment_pipeline_manifest(
             "application": application,
             "aws_account": aws_account,
             "terraform_platform_modules_version": terraform_platform_modules_version,
-            "deploy_branch": (f'"{deploy_branch}"' if deploy_branch else "each.value.branch"),
+            "deploy_branch": deploy_branch,
         }
     )
 
