@@ -70,7 +70,7 @@ def generate(terraform_platform_modules_version):
 
     _clean_pipeline_config(copilot_pipelines_dir)
 
-    if is_terraform_project() and ENVIRONMENT_PIPELINES_KEY in pipeline_config:
+    if is_terraform_project() and has_environment_pipelines:
         environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
 
         for config in environment_pipelines.values():
