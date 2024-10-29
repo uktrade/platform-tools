@@ -3,8 +3,8 @@ from unittest.mock import Mock, call
 import pytest
 import yaml
 
-from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import Vpc

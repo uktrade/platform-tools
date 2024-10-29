@@ -1,7 +1,7 @@
 import click
 
-from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.commands.environment import AVAILABLE_TEMPLATES
+from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
