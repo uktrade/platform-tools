@@ -1,5 +1,4 @@
-from unittest.mock import Mock
-from unittest.mock import call
+from unittest.mock import Mock, call
 
 import pytest
 import yaml
@@ -7,8 +6,7 @@ import yaml
 from dbt_platform_helper.commands.database_helpers import DatabaseCopy
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -375,6 +373,28 @@ def test_copy_command(services, template):
     db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc")
     db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override")
     mocks.maintenance_page_provider.online.assert_called_once_with("test-app", "test-to-env")
+
+
+@pytest.mark.parametrize(
+    "services, template",
+    (
+        (["web"], "default"),
+        (["*"], "default"),
+        (["web", "other"], "migrations"),
+    ),
+)
+def test_copy_command_with_no_maintenance_page(services, template):
+    mocks = DataCopyMocks()
+    db_copy = DatabaseCopy("test-app", "test-db", True, **mocks.params())
+    db_copy.dump = Mock()
+    db_copy.load = Mock()
+    db_copy.enrich_vpc_name = Mock()
+    db_copy.enrich_vpc_name.return_value = "test-vpc-override"
+
+    db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template, True)
+
+    mocks.maintenance_page_provider.offline.assert_not_called()
+    mocks.maintenance_page_provider.online.assert_not_called()
 
 
 @pytest.mark.parametrize("is_dump", [True, False])

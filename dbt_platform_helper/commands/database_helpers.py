@@ -6,16 +6,11 @@ import boto3
 import click
 from boto3 import Session
 
-from dbt_platform_helper.commands.environment import offline_command
-from dbt_platform_helper.commands.environment import online_command
+from dbt_platform_helper.commands.environment import offline_command, online_command
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationNotFoundError
-from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import Vpc
-from dbt_platform_helper.utils.aws import get_connection_string
-from dbt_platform_helper.utils.aws import get_vpc_info_by_name
+from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError, load_application
+from dbt_platform_helper.utils.aws import Vpc, get_connection_string, get_vpc_info_by_name
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
@@ -178,12 +173,15 @@ class DatabaseCopy:
         to_vpc: str,
         services: tuple[str],
         template: str,
+        no_maintenance_page: bool = False,
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
-        self.maintenance_page_provider.offline(self.app, to_env, services, template, to_vpc)
+        if not no_maintenance_page:
+            self.maintenance_page_provider.offline(self.app, to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc)
         self.load(to_env, to_vpc)
-        self.maintenance_page_provider.online(self.app, to_env)
+        if not no_maintenance_page:
+            self.maintenance_page_provider.online(self.app, to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:
