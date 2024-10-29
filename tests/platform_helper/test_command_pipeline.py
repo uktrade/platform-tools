@@ -367,7 +367,7 @@ def assert_terraform(app_name, aws_account, expected_version):
         f"git::https://github.com/uktrade/terraform-platform-modules.git//environment-pipelines?depth=1&ref={expected_version}"
         in content
     )
-    assert f'application   = "{app_name}"' in content
+    assert f'application         = "{app_name}"' in content
 
 
 @freeze_time("2024-10-28 12:00:00")
