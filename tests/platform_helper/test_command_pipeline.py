@@ -359,7 +359,7 @@ def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
     assert_codebase_pipeline_config_was_generated()
 
 
-def assert_terraform(app_name, aws_account, expected_version):
+def assert_terraform(app_name, aws_account, expected_version, expected_branch):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
@@ -372,6 +372,8 @@ def assert_terraform(app_name, aws_account, expected_version):
         in content
     )
     assert f'application         = "{app_name}"' in content
+    expected_branch_value = f'"{expected_branch}"' if expected_branch else "each.value.branch"
+    assert f'branch              = "{expected_branch_value}"' in content
 
 
 @freeze_time("2024-10-28 12:00:00")
@@ -380,11 +382,10 @@ def assert_terraform(app_name, aws_account, expected_version):
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 @pytest.mark.parametrize(
-    "cli_modules_version, platform_config_version, expected_version",
+    "cli_terraform_platform_version, config_terraform_platform_version, expected_terraform_platform_version, cli_demodjango_branch, expected_demodjango_branch",
     [
-        (None, "5", "5"),
-        ("8", "5", "8"),
-        ("feature_branch", None, "feature_branch"),
+        (None, "5", "5", "demodjango-branch", "demodjango-branch"),  # Case with specific branch
+        (None, "5", "5", None, None),  # Case without branch, defaults
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
@@ -392,9 +393,11 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     get_aws_command_or_abort,
     mock_aws_session,
     fakefs,
-    cli_modules_version,
-    platform_config_version,
-    expected_version,
+    cli_terraform_platform_version,
+    config_terraform_platform_version,
+    expected_terraform_platform_version,
+    cli_demodjango_branch,
+    expected_demodjango_branch,
 ):
 
     app_name = "test-app"
@@ -404,13 +407,25 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     )
 
     args = []
-    if cli_modules_version:
-        args.extend(["--terraform-platform-modules-version", cli_modules_version])
+    if cli_terraform_platform_version:
+        args.extend(["--terraform-platform-modules-version", cli_terraform_platform_version])
+    if cli_demodjango_branch:
+        args.extend(["--demodjango-deploy-branch", cli_demodjango_branch])
 
     CliRunner().invoke(generate, args=args)
 
-    assert_terraform(app_name, "platform-sandbox-test", expected_version)
-    assert_terraform(app_name, "platform-prod-test", expected_version)
+    assert_terraform(
+        app_name,
+        "platform-sandbox-test",
+        expected_terraform_platform_version,
+        expected_demodjango_branch,
+    )
+    assert_terraform(
+        app_name,
+        "platform-prod-test",
+        expected_terraform_platform_version,
+        expected_demodjango_branch,
+    )
 
 
 @freeze_time("2024-10-28 12:00:00")
@@ -435,7 +450,7 @@ def test_generate_pipeline_command_doesnt_generate_terraform_files_if_legacy_pro
 
 
 @pytest.mark.parametrize(
-    "cli_version, config_version, expected_version",
+    "cli_terraform_platform_version, config_terraform_platform_version, expected_version",
     [
         ("feature_branch", "5", "feature_branch"),
         (None, "5", "5"),
@@ -443,10 +458,12 @@ def test_generate_pipeline_command_doesnt_generate_terraform_files_if_legacy_pro
     ],
 )
 def test_determine_terraform_platform_modules_version(
-    cli_version, config_version, expected_version
+    cli_terraform_platform_version, config_terraform_platform_version, expected_version
 ):
     assert (
-        _determine_terraform_platform_modules_version(cli_version, config_version)
+        _determine_terraform_platform_modules_version(
+            cli_terraform_platform_version, config_terraform_platform_version
+        )
         == expected_version
     )
 

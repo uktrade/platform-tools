@@ -45,7 +45,7 @@ module "environment-pipelines" {
   environments        = each.value.environments
   all_pipelines       = local.all_pipelines
   environment_config  = local.environment_config
-  branch              = each.value.branch
+  branch              = "{{ demodjango_deploy_branch }}"
   slack_channel       = each.value.slack_channel
   trigger_on_push     = each.value.trigger_on_push
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)
