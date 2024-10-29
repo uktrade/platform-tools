@@ -211,7 +211,7 @@ def _generate_terraform_environment_pipeline_manifest(
     aws_account,
     cli_terraform_platform_modules_version,
     platform_config_terraform_modules_default_version,
-    demodjango_deploy_branch,
+    deploy_branch,
 ):
     env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -224,9 +224,7 @@ def _generate_terraform_environment_pipeline_manifest(
             "application": application,
             "aws_account": aws_account,
             "terraform_platform_modules_version": terraform_platform_modules_version,
-            "demodjango_deploy_branch": (
-                f'"{demodjango_deploy_branch}"' if demodjango_deploy_branch else "each.value.branch"
-            ),
+            "deploy_branch": (f'"{deploy_branch}"' if deploy_branch else "each.value.branch"),
         }
     )
 
