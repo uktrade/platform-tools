@@ -38,9 +38,9 @@ module "environment-pipelines" {
 
   for_each = local.pipelines
 
-  application   = "{{ application }}"
-  pipeline_name = each.key
-  repository    = "uktrade/{{ application }}-deploy"
+  application         = "{{ application }}"
+  pipeline_name       = each.key
+  repository          = "uktrade/{{ application }}-deploy"
 
   environments        = each.value.environments
   all_pipelines       = local.all_pipelines

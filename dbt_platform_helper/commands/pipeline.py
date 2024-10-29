@@ -84,7 +84,7 @@ def generate(terraform_platform_modules_version):
                 aws_account,
                 terraform_platform_modules_version,
             )
-    if not is_terraform_project() and has_legacy_pipelines:
+    if not is_terraform_project() and has_legacy_environment_pipelines:
         _generate_copilot_environments_pipeline(
             app_name,
             codestar_connection_arn,
@@ -95,7 +95,7 @@ def generate(terraform_platform_modules_version):
             templates,
         )
 
-    if CODEBASE_PIPELINES_KEY in pipeline_config:
+    if has_codebase_pipelines:
         account_id, _ = get_account_details()
 
         for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
