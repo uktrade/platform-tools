@@ -145,7 +145,7 @@ class TestAddMaintenancePage:
                     "X-Forwarded-For",
                     ["1.2.3.4"],
                     "AllowedIps",
-                    100,
+                    1,
                 ),
                 call(
                     boto_mock.client(),
@@ -154,7 +154,7 @@ class TestAddMaintenancePage:
                     "Bypass-Key",
                     ["abc"],
                     "BypassIpFilter",
-                    1,
+                    3,
                 ),
             ]
         )
@@ -166,13 +166,13 @@ class TestAddMaintenancePage:
                     "target_group_arn",
                     ["1.2.3.4"],
                     "AllowedSourceIps",
-                    101,
+                    2,
                 )
             ]
         )
         boto_mock.client().create_rule.assert_called_once_with(
             ListenerArn="listener_arn",
-            Priority=700,
+            Priority=4,
             Conditions=[
                 {
                     "Field": "path-pattern",

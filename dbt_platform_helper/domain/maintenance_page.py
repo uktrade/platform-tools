@@ -1,3 +1,4 @@
+import itertools
 import random
 import re
 import string
@@ -224,7 +225,7 @@ def add_maintenance_page(
     maintenance_page_content = get_maintenance_page_template(template)
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
-    service_number = 1
+    rule_priority = itertools.count(start=1)
 
     for svc in services:
         target_group_arn = find_target_group(app, env, svc.name, session)
@@ -233,10 +234,7 @@ def add_maintenance_page(
         if not target_group_arn:
             continue
 
-        allowed_ips = list(allowed_ips)
-        max_allowed_ips = 100
-        for ip_index, ip in enumerate(allowed_ips):
-            forwarded_rule_priority = (service_number * max_allowed_ips) + ip_index
+        for ip in allowed_ips:
             create_header_rule(
                 lb_client,
                 listener_arn,
@@ -244,7 +242,7 @@ def add_maintenance_page(
                 "X-Forwarded-For",
                 [ip],
                 "AllowedIps",
-                forwarded_rule_priority,
+                next(rule_priority),
             )
             create_source_ip_rule(
                 lb_client,
@@ -252,10 +250,9 @@ def add_maintenance_page(
                 target_group_arn,
                 [ip],
                 "AllowedSourceIps",
-                forwarded_rule_priority + 1,
+                next(rule_priority),
             )
 
-        bypass_rule_priority = service_number
         create_header_rule(
             lb_client,
             listener_arn,
@@ -263,20 +260,17 @@ def add_maintenance_page(
             "Bypass-Key",
             [bypass_value],
             "BypassIpFilter",
-            bypass_rule_priority,
+            next(rule_priority),
         )
-
-        service_number += 1
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/activities/holding-and-maintenance-pages/",
             fg="green",
         )
 
-    fixed_rule_priority = (service_number + 5) * max_allowed_ips
     lb_client.create_rule(
         ListenerArn=listener_arn,
-        Priority=fixed_rule_priority,  # big number because we create multiple higher priority "AllowedIps" rules for each allowed ip for each service above.
+        Priority=next(rule_priority),
         Conditions=[
             {
                 "Field": "path-pattern",
