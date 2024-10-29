@@ -52,7 +52,7 @@ def offline(app, env, svc, template, vpc):
 
 
 def offline_command(app, env, svc, template, vpc):
-    application = get_application(app)
+    application = load_application(app)
     application_environment = get_app_environment(app, env)
 
     if "*" in svc:
@@ -165,12 +165,8 @@ def online_command(app, env):
         raise click.Abort
 
 
-def get_application(app_name: str):
-    return load_application(app_name)
-
-
 def get_app_environment(app_name: str, env_name: str) -> Environment:
-    application = get_application(app_name)
+    application = load_application(app_name)
     application_environment = application.environments.get(env_name)
 
     if not application_environment:
@@ -185,7 +181,7 @@ def get_app_environment(app_name: str, env_name: str) -> Environment:
 
 
 def get_app_service(app_name: str, svc_name: str) -> Service:
-    application = get_application(app_name)
+    application = load_application(app_name)
     application_service = application.services.get(svc_name)
 
     if not application_service:
@@ -378,8 +374,6 @@ def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
         "Certificates"
     ]
-
-    certificate_arn = None
 
     try:
         certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])

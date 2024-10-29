@@ -7,8 +7,8 @@ import click
 from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.providers.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import load_application

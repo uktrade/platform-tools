@@ -45,3 +45,7 @@ class LoadBalancerNotFoundError(Exception):
 
 class ListenerNotFoundError(Exception):
     pass
+
+
+class ListenerRuleNotFoundError(Exception):
+    pass
