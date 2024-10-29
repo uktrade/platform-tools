@@ -3,7 +3,7 @@
 locals {
   platform_config    = yamldecode(file("../../platform-config.yml"))
   all_pipelines      = local.platform_config["environment_pipelines"]
-  pipelines = { for pipeline, config in local.platform_config["environment_pipelines"] : pipeline => config if config.account == "{{ aws_account }}" }
+  pipelines          = { for pipeline, config in local.platform_config["environment_pipelines"] : pipeline => config if config.account == "{{ aws_account }}" }
   environment_config = local.platform_config["environments"]
 }
 
