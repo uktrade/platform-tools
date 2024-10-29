@@ -80,7 +80,7 @@ def generate(terraform_platform_modules_version):
                 aws_account,
                 terraform_platform_modules_version,
             )
-    if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
+    if not is_terraform_project() and has_legacy_pipelines:
         _generate_copilot_environments_pipeline(
             app_name,
             codestar_connection_arn,
