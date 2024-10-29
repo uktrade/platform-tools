@@ -410,7 +410,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     if cli_terraform_platform_version:
         args.extend(["--terraform-platform-modules-version", cli_terraform_platform_version])
     if cli_demodjango_branch:
-        args.extend(["--demodjango-deploy-branch", cli_demodjango_branch])
+        args.extend(["--deploy-branch", cli_demodjango_branch])
 
     CliRunner().invoke(generate, args=args)
 

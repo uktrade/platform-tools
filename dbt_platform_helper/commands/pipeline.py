@@ -42,11 +42,11 @@ def pipeline():
     default=DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
 )
 @click.option(
-    "--demodjango-deploy-branch",
+    "--deploy-branch",
     help=f"""Specify the branch of <application>-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
     (Default <application>-deploy branch is specified in <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
 )
-def generate(terraform_platform_modules_version, demodjango_deploy_branch=None):
+def generate(terraform_platform_modules_version, deploy_branch=None):
     """Given a platform-config.yml file, generate environment and service
     deployment pipelines."""
     pipeline_config = load_and_validate_platform_config()
@@ -93,7 +93,7 @@ def generate(terraform_platform_modules_version, demodjango_deploy_branch=None):
                 aws_account,
                 terraform_platform_modules_version,
                 platform_config_terraform_modules_default_version,
-                demodjango_deploy_branch,
+                deploy_branch,
             )
     if not is_terraform_project() and has_legacy_environment_pipelines:
         _generate_copilot_environments_pipeline(

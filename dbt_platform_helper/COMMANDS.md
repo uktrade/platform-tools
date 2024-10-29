@@ -796,7 +796,7 @@ platform-helper pipeline generate
 
 ```
 platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
-                                  [--demodjango-deploy-branch <demodjango_deploy_branch>] 
+                                  [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
@@ -804,7 +804,7 @@ platform-helper pipeline generate [--terraform-platform-modules-version <terrafo
 - `--terraform-platform-modules-version <text>` _Defaults to 5._
   - Override the default version of terraform-platform-modules with a specific version or branch. 
 (Default version is '5').
-- `--demodjango-deploy-branch <text>`
+- `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
 (Default <application>-deploy branch is specified in <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
 - `--help <boolean>` _Defaults to False._
