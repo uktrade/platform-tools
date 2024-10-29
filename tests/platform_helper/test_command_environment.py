@@ -21,8 +21,6 @@ from dbt_platform_helper.commands.environment import create_header_rule
 from dbt_platform_helper.commands.environment import create_source_ip_rule
 from dbt_platform_helper.commands.environment import delete_listener_rule
 from dbt_platform_helper.commands.environment import find_https_certificate
-from dbt_platform_helper.commands.environment import find_https_listener
-from dbt_platform_helper.commands.environment import find_load_balancer
 from dbt_platform_helper.commands.environment import find_target_group
 from dbt_platform_helper.commands.environment import generate
 from dbt_platform_helper.commands.environment import generate_terraform
@@ -774,56 +772,6 @@ class TestGenerate:
             "No certificate found with domain name matching environment development."
             in captured.out
         )
-
-
-class TestFindLoadBalancer:
-    def test_when_no_load_balancer_exists(self):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_load_balancers.return_value = {"LoadBalancers": []}
-        with pytest.raises(LoadBalancerNotFoundError):
-            find_load_balancer(boto_mock, "test-application", "development")
-
-    def test_when_a_load_balancer_exists(self):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_load_balancers.return_value = {
-            "LoadBalancers": [{"LoadBalancerArn": "lb_arn"}]
-        }
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [
-                {
-                    "ResourceArn": "lb_arn",
-                    "Tags": [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": "development"},
-                    ],
-                }
-            ]
-        }
-
-        lb_arn = find_load_balancer(boto_mock, "test-application", "development")
-        assert "lb_arn" == lb_arn
-
-
-class TestFindHTTPSListener:
-    @patch("dbt_platform_helper.commands.environment.find_load_balancer", return_value="lb_arn")
-    def test_when_no_https_listener_present(self, find_load_balancer):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listeners.return_value = {"Listeners": []}
-        with pytest.raises(ListenerNotFoundError):
-            find_https_listener(boto_mock, "test-application", "development")
-
-    @patch("dbt_platform_helper.commands.environment.find_load_balancer", return_value="lb_arn")
-    def test_when_https_listener_present(self, find_load_balancer):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listeners.return_value = {
-            "Listeners": [{"ListenerArn": "listener_arn", "Protocol": "HTTPS"}]
-        }
-
-        listener_arn = find_https_listener(boto_mock, "test-application", "development")
-        assert "listener_arn" == listener_arn
 
 
 class TestFindHTTPSCertificate:
