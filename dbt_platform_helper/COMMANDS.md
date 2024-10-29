@@ -1049,7 +1049,7 @@ platform-helper database load --to <to_env> --database <database>
 platform-helper database copy --from <from_env> --to <to_env> --database <database> 
                               --svc <service> [--app <application>] [--from-vpc <from_vpc>] 
                               [--to-vpc <to_vpc>] [--template (default|migration|dmas-migration)] 
-                              [--auto-approve] 
+                              [--auto-approve] [--no-maintenance-page] 
 ```
 
 ## Options
@@ -1072,6 +1072,8 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.
+- `--no-maintenance-page <boolean>` _Defaults to False._
+  - Don't show the maintenance page on the target service
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
