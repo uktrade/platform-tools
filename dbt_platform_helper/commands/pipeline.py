@@ -58,6 +58,10 @@ def generate(terraform_platform_modules_version):
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
 
+    platform_config_terraform_modules_default_version = pipeline_config.get(
+        "default_versions", {}
+    ).get("terraform-platform-modules", DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION)
+
     templates = setup_templates()
     app_name = get_application_name()
 
@@ -83,6 +87,7 @@ def generate(terraform_platform_modules_version):
                 pipeline_config["application"],
                 aws_account,
                 terraform_platform_modules_version,
+                platform_config_terraform_modules_default_version,
             )
     if not is_terraform_project() and has_legacy_environment_pipelines:
         _generate_copilot_environments_pipeline(
@@ -196,9 +201,16 @@ def _create_file_from_template(
 
 
 def _generate_terraform_environment_pipeline_manifest(
-    application, aws_account, terraform_platform_modules_version
+    application,
+    aws_account,
+    cli_terraform_platform_modules_version,
+    platform_config_terraform_modules_default_version,
 ):
     env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
+
+    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
+        cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
+    )
 
     contents = env_pipeline_template.render(
         {
@@ -212,3 +224,16 @@ def _generate_terraform_environment_pipeline_manifest(
     makedirs(dir_path, exist_ok=True)
 
     click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+
+
+def _determine_terraform_platform_modules_version(
+    cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
+):
+    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
+
+    version_preference_order = [
+        cli_terraform_platform_modules_version,
+        platform_config_terraform_modules_default_version,
+        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+    ]
+    return [version for version in version_preference_order if version][0]

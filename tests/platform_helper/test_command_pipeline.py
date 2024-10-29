@@ -9,7 +9,11 @@ from click.testing import CliRunner
 from freezegun.api import freeze_time
 
 from dbt_platform_helper.commands.pipeline import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.commands.pipeline import (
+    _determine_terraform_platform_modules_version,
+)
 from dbt_platform_helper.commands.pipeline import generate
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -376,11 +380,11 @@ def assert_terraform(app_name, aws_account, expected_version):
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 @pytest.mark.parametrize(
-    "cli_modules_version, expected_version",
+    "cli_modules_version, platform_config_version, expected_version",
     [
-        (None, "5"),
-        ("8", "8"),
-        ("feature_branch", "feature_branch"),
+        (None, "5", "5"),
+        ("8", "5", "8"),
+        ("feature_branch", None, "feature_branch"),
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
@@ -389,6 +393,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     mock_aws_session,
     fakefs,
     cli_modules_version,
+    platform_config_version,
     expected_version,
 ):
 
@@ -427,6 +432,23 @@ def test_generate_pipeline_command_doesnt_generate_terraform_files_if_legacy_pro
     for aws_account in ["platform-sandbox-test", "platform-prod-test"]:
         expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
         assert not expected_files_dir.exists()
+
+
+@pytest.mark.parametrize(
+    "cli_version, config_version, expected_version",
+    [
+        ("feature_branch", "5", "feature_branch"),
+        (None, "5", "5"),
+        (None, None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION),
+    ],
+)
+def test_determine_terraform_platform_modules_version(
+    cli_version, config_version, expected_version
+):
+    assert (
+        _determine_terraform_platform_modules_version(cli_version, config_version)
+        == expected_version
+    )
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
