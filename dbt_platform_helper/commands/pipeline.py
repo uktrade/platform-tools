@@ -69,7 +69,7 @@ def generate(terraform_platform_modules_version, deploy_branch):
 
     platform_config_terraform_modules_default_version = pipeline_config.get(
         "default_versions", {}
-    ).get("terraform-platform-modules", DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION)
+    ).get("terraform-platform-modules", "")
 
     templates = setup_templates()
     app_name = get_application_name()
