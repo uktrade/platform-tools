@@ -372,8 +372,8 @@ def assert_terraform(app_name, aws_account, expected_version, expected_branch):
         in content
     )
     assert f'application         = "{app_name}"' in content
-    expected_branch_value = f'"{expected_branch}"' if expected_branch else "each.value.branch"
-    assert f'branch              = "{expected_branch_value}"' in content
+    expected_branch_value = expected_branch if expected_branch else "each.value.branch"
+    assert f"branch              = {expected_branch_value} in content"
 
 
 @freeze_time("2024-10-28 12:00:00")
