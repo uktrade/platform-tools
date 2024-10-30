@@ -19,7 +19,7 @@ from dbt_platform_helper.utils.application import load_application
 
 
 class MaintenancePageProvider:
-    def offline(self, app, env, svc, template, vpc):
+    def activate(self, app, env, svc, template, vpc):
         application = load_application(app)
         application_environment = get_app_environment(app, env)
 
@@ -87,7 +87,7 @@ class MaintenancePageProvider:
             )
             raise click.Abort
 
-    def online(self, app, env):
+    def deactivate(self, app, env):
         application_environment = get_app_environment(app, env)
 
         try:

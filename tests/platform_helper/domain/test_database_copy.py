@@ -1,4 +1,5 @@
-from unittest.mock import Mock, call
+from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
 import yaml
@@ -6,7 +7,8 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError
+from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -367,12 +369,12 @@ def test_copy_command(services, template):
     db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template)
 
     db_copy.enrich_vpc_name.assert_called_once_with("test-to-env", "test-to-vpc")
-    mocks.maintenance_page_provider.offline.assert_called_once_with(
+    mocks.maintenance_page_provider.activate.assert_called_once_with(
         "test-app", "test-to-env", services, template, "test-vpc-override"
     )
     db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc")
     db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override")
-    mocks.maintenance_page_provider.online.assert_called_once_with("test-app", "test-to-env")
+    mocks.maintenance_page_provider.deactivate.assert_called_once_with("test-app", "test-to-env")
 
 
 @pytest.mark.parametrize(

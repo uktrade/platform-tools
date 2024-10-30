@@ -175,11 +175,11 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider.offline(self.app, to_env, services, template, to_vpc)
+            self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc)
         self.load(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider.online(self.app, to_env)
+            self.maintenance_page_provider.deactivate(self.app, to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:

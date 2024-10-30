@@ -40,7 +40,7 @@ def environment():
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     maintenance_page = MaintenancePageProvider()
-    maintenance_page.offline(app, env, svc, template, vpc)
+    maintenance_page.activate(app, env, svc, template, vpc)
 
 
 @environment.command()
@@ -49,7 +49,7 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
     maintenance_page = MaintenancePageProvider()
-    maintenance_page.online(app, env)
+    maintenance_page.deactivate(app, env)
 
 
 def get_vpc_id(session, env_name, vpc_name=None):
