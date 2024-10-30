@@ -136,7 +136,7 @@ def write_to_cache(resource_name, supported_versions):
         yaml.dump(platform_helper_config, file)
 
 
-def cache_refresh_required(resource_name):
+def cache_refresh_required(resource_name) -> bool:
     """
     Checks if the platform-helper should reach out to AWS to 'refresh' its
     cached values.
@@ -147,19 +147,17 @@ def cache_refresh_required(resource_name):
         3. The date-retrieved value of the cached data is > than a time interval. In this case 1 day.
     """
 
-    api_call_required = True
+    if not os.path.exits(platform_helper_config_file):
 
-    if os.path.exists(platform_helper_config_file):
+        return True
 
-        platform_helper_config = read_file_as_yaml(platform_helper_config_file)
+    platform_helper_config = read_file_as_yaml(platform_helper_config_file)
 
-        if platform_helper_config.get(resource_name):
+    if platform_helper_config.get(resource_name):
 
-            api_call_required = check_if_cached_datetime_is_greater_than_interval(
-                platform_helper_config[resource_name].get("date-retrieved"), 1
-            )
-
-    return api_call_required
+        return check_if_cached_datetime_is_greater_than_interval(
+            platform_helper_config[resource_name].get("date-retrieved"), 1
+        )
 
 
 def check_if_cached_datetime_is_greater_than_interval(date_retrieved, interval_in_days):
