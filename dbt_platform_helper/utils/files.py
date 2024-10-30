@@ -148,13 +148,11 @@ def cache_refresh_required(resource_name) -> bool:
     """
 
     if not os.path.exits(platform_helper_config_file):
-
         return True
 
     platform_helper_config = read_file_as_yaml(platform_helper_config_file)
 
     if platform_helper_config.get(resource_name):
-
         return check_if_cached_datetime_is_greater_than_interval(
             platform_helper_config[resource_name].get("date-retrieved"), 1
         )
