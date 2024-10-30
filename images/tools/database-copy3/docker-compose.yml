@@ -1,0 +1,95 @@
+services:
+  source-db:
+    image: postgres:13
+    restart: always
+    command: 'postgres -c log_statement=all -c fsync=off -c vm.zone_reclaim_mode=0 -c synchronous_commit=off -c checkpoint_completion_target=0.9 -c random_page_cost=1.1'
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: source
+    ports:
+      - '5432:5432'
+    networks:
+      - test-net
+
+  destination-db:
+    image: postgres:13
+    restart: always
+    command: 'postgres -c log_statement=all -c fsync=off -c vm.zone_reclaim_mode=0 -c synchronous_commit=off -c checkpoint_completion_target=0.9 -c random_page_cost=1.1'
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: destination
+    ports:
+      - '5433:5432'
+    networks:
+      - test-net
+
+  s3-mock:
+    image: minio/minio
+    entrypoint: sh
+    command:
+      - -c
+      - |
+        mkdir -p /data/test-dump-bucket
+        touch /data/test-dump-bucket/test-dump.tar.gz
+        minio server /data 
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9000:9000"
+    networks:
+      - test-net
+    volumes:
+      - minio_data:/data
+  
+  dump-task:
+    build:
+      context: ./image
+      dockerfile: Dockerfile
+    environment:
+      DATA_COPY_OPERATION: DUMP
+      DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
+      S3_BUCKET_NAME: s3-mock
+    depends_on:
+      - source-db
+      - s3-mock
+    networks:
+      - test-net
+
+  load-task:
+    build:
+      context: ./image
+      dockerfile: Dockerfile
+    environment:
+      DATA_COPY_OPERATION: LOAD
+      DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
+      S3_BUCKET_NAME: s3-mock
+    networks:
+      - test-net
+    depends_on:
+      - dump-task
+      - destination-db
+      - s3-mock
+
+  tests:
+    networks:
+      - test-net
+    build:
+      context: .
+    depends_on:
+      - load-task
+    environment:
+      DESTINATION_DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
+      SOURCE_DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
+    volumes:
+      - ./:/src
+
+networks:
+  test-net:
+    driver: bridge
+
+volumes:
+  minio_data:
+    driver: local
