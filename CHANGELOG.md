@@ -1,5 +1,19 @@
 # Changelog
 
+## [11.1.0](https://github.com/uktrade/platform-tools/compare/11.0.1...11.1.0) (2024-10-30)
+
+
+### Features
+
+* DBTP-1159 Add validation for duplicate entries in platform-config.yml ([#604](https://github.com/uktrade/platform-tools/issues/604)) ([d00e143](https://github.com/uktrade/platform-tools/commit/d00e143ecaa9e86645563d996ed79779cae52597))
+* DBTP-1215 Improve error message when AWS profile not set ([#607](https://github.com/uktrade/platform-tools/issues/607)) ([beb0e7f](https://github.com/uktrade/platform-tools/commit/beb0e7f12013f035a1ffe2796a22b2a1bc70ed5f))
+* Delete data dump from S3 after data load has been successful ([#600](https://github.com/uktrade/platform-tools/issues/600)) ([410cd56](https://github.com/uktrade/platform-tools/commit/410cd5673eccce5855d03b4f0cbb4d6c1377085a))
+
+
+### Documentation
+
+* Add a note about regression/integration testing to the README.md ([#612](https://github.com/uktrade/platform-tools/issues/612)) ([d219356](https://github.com/uktrade/platform-tools/commit/d219356e41efb3b6eab3950a921aaf6e5b3b7d9c))
+
 ## [11.0.1](https://github.com/uktrade/platform-tools/compare/11.0.0...11.0.1) (2024-10-22)
 
 
