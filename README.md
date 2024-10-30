@@ -65,6 +65,10 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-helper` installation back to what it was; e.g. `pip install dbt-platform-helper==0.1.39`.
 
+#### Regression/integration testing
+
+Because this codebase is only fully exercised in conjunction with several others, we have [platform-regression-tests](https://github.com/uktrade/platform-regression-tests), which orchestrates the testing of them working together.
+
 ### Publishing
 
 Publishing to PyPI happens automatically when a GitHub Release is published. To publish the Python package `dbt-platform-helper` manually, you will need an API token.

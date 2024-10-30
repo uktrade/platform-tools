@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from unittest.mock import Mock
@@ -18,6 +19,7 @@ from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
+from dbt_platform_helper.utils.validation import lint_yaml_for_duplicate_keys
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
@@ -411,7 +413,7 @@ def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_co
 def test_warn_on_s3_bucket_name_availability_success_200(capfd):
     client = boto3.client("s3")
     client.create_bucket(
-        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-1"}
+        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
     )
 
     warn_on_s3_bucket_name_availability(f"bucket-name-200")
@@ -676,6 +678,52 @@ def test_load_and_validate_config_valid_file(yaml_file):
         conf = yaml.safe_load(fd)
 
     assert validated == conf
+
+
+def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
+    valid_platform_config, fakefs, capsys
+):
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
+
+    # Remove the extensions key-value pair from the platform config - re-added as plain text.
+    valid_platform_config.pop("extensions")
+
+    duplicate_key = "duplicate-key"
+    duplicate_extension = f"""
+  {duplicate_key}:
+    type: redis
+    environments:
+      "*":
+        engine: '7.1'
+        plan: tiny
+        apply_immediately: true
+"""
+
+    # Combine the valid config (minus the extensions key) and the duplicate key config
+    invalid_platform_config = f"""
+{yaml.dump(valid_platform_config)}
+extensions:
+{duplicate_extension}
+{duplicate_extension}
+"""
+
+    Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+
+    linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+    assert linting_failures == [f'\tLine 100: duplication of key "{duplicate_key}"']
+
+    with pytest.raises(SystemExit) as excinfo:
+        load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
+
+    captured = capsys.readouterr()
+    expected_error_message = (
+        "Duplicate keys found in platform-config:"
+        + os.linesep
+        + f'\tLine 100: duplication of key "{duplicate_key}"'
+    )
+
+    assert expected_error_message in captured.err
+    assert excinfo.value.code == 1
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(

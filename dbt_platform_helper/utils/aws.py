@@ -7,6 +7,7 @@ from typing import Tuple
 
 import boto3
 import botocore
+import botocore.exceptions
 import click
 import yaml
 from boto3 import Session
@@ -21,62 +22,71 @@ AWS_SESSION_CACHE = {}
 
 
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
-    aws_profile = aws_profile if aws_profile else os.getenv("AWS_PROFILE")
+    REFRESH_TOKEN_MESSAGE = (
+        "To refresh this SSO session run `aws sso login` with the corresponding profile"
+    )
+    aws_profile = aws_profile or os.getenv("AWS_PROFILE")
     if aws_profile in AWS_SESSION_CACHE:
         return AWS_SESSION_CACHE[aws_profile]
 
-    # Check that the aws profile exists and is set.
-    click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
+    click.secho(f'Checking AWS connection for profile "{aws_profile}"...', fg="cyan")
 
     try:
         session = boto3.session.Session(profile_name=aws_profile)
-    except botocore.exceptions.ProfileNotFound:
-        click.secho(f"""AWS profile "{aws_profile}" is not configured.""", fg="red")
-        exit(1)
-    except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] == "ExpiredToken":
-            click.secho(
-                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
-                fg="red",
-            )
-            exit(1)
-
-    sts = session.client("sts")
-    try:
+        sts = session.client("sts")
         account_id, user_id = get_account_details(sts)
         click.secho("Credentials are valid.", fg="green")
-    except (
-        botocore.exceptions.UnauthorizedSSOTokenError,
-        botocore.exceptions.TokenRetrievalError,
-        botocore.exceptions.SSOTokenLoadError,
-    ):
-        click.secho(
-            "The SSO session associated with this profile has expired or is otherwise invalid."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+
+    except botocore.exceptions.ProfileNotFound:
+        _handle_error(f'AWS profile "{aws_profile}" is not configured.')
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "ExpiredToken":
+            _handle_error(
+                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
+            )
+    except botocore.exceptions.NoCredentialsError:
+        _handle_error("There are no credentials set for this session.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.UnauthorizedSSOTokenError:
+        _handle_error("The SSO Token used for this session is unauthorised.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.TokenRetrievalError:
+        _handle_error("Unable to retrieve the Token for this session.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.SSOTokenLoadError:
+        _handle_error(
+            "The SSO session associated with this profile has expired, is not set or is otherwise invalid.",
+            REFRESH_TOKEN_MESSAGE,
         )
-        exit(1)
 
     alias_client = session.client("iam")
-    account_name = alias_client.list_account_aliases()["AccountAliases"]
+    account_name = alias_client.list_account_aliases().get("AccountAliases", [])
+
+    _log_account_info(account_name, account_id)
+
+    click.echo(
+        click.style("User: ", fg="yellow")
+        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True)
+    )
+
+    AWS_SESSION_CACHE[aws_profile] = session
+    return session
+
+
+def _handle_error(message: str, refresh_token_message: str = None) -> None:
+    full_message = message + (" " + refresh_token_message if refresh_token_message else "")
+    click.secho(full_message, fg="red")
+    exit(1)
+
+
+def _log_account_info(account_name: list, account_id: str) -> None:
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True),
+            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True)
         )
     else:
         click.echo(
             click.style("Logged in with AWS account id: ", fg="yellow")
-            + click.style(f"{account_id}", fg="white", bold=True),
+            + click.style(f"{account_id}", fg="white", bold=True)
         )
-    click.echo(
-        click.style("User: ", fg="yellow")
-        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
-    )
-
-    AWS_SESSION_CACHE[aws_profile] = session
-
-    return session
 
 
 class NoProfileForAccountIdError(Exception):
@@ -403,12 +413,12 @@ def get_connection_string(
 
 
 class Vpc:
-    def __init__(self, subnets, security_groups):
+    def __init__(self, subnets: list[str], security_groups: list[str]):
         self.subnets = subnets
         self.security_groups = security_groups
 
 
-def get_vpc_info_by_name(session, app, env, vpc_name):
+def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) -> Vpc:
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
 

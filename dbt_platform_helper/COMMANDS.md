@@ -40,6 +40,8 @@
 - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
 - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
 - [platform-helper database](#platform-helper-database)
+- [platform-helper database dump](#platform-helper-database-dump)
+- [platform-helper database load](#platform-helper-database-load)
 - [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
@@ -961,10 +963,16 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper)
 
+    Commands to copy data between databases.
+
 ## Usage
 
 ```
+<<<<<<< HEAD
 platform-helper database copy 
+=======
+platform-helper database (dump|load|copy) 
+>>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 ```
 
 ## Options
@@ -975,6 +983,11 @@ platform-helper database copy
 ## Commands
 
 - [`copy` ↪](#platform-helper-database-copy)
+<<<<<<< HEAD
+=======
+- [`dump` ↪](#platform-helper-database-dump)
+- [`load` ↪](#platform-helper-database-load)
+>>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 
 # platform-helper database copy
 
@@ -985,7 +998,12 @@ platform-helper database copy
 ## Usage
 
 ```
+<<<<<<< HEAD
 platform-helper database copy <source_db> <target_db> 
+=======
+platform-helper database dump --from <from_env> --database <database> 
+                              [--app <application>] [--from-vpc <from_vpc>] 
+>>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 ```
 
 ## Arguments
@@ -995,6 +1013,86 @@ platform-helper database copy <source_db> <target_db>
 
 ## Options
 
+<<<<<<< HEAD
+=======
+- `--app <text>`
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are dumping data from
+- `--database <text>`
+  - The name of the database you are dumping data from
+- `--from-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database load
+
+[↩ Parent](#platform-helper-database)
+
+    Load a database from an S3 bucket.
+
+## Usage
+
+```
+platform-helper database load --to <to_env> --database <database> 
+                              [--app <application>] [--to-vpc <to_vpc>] 
+                              [--auto-approve] 
+```
+
+## Options
+
+- `--app <text>`
+  - The application name. Required unless you are running the command from your deploy repo
+- `--to <text>`
+  - The environment you are loading data into
+- `--database <text>`
+  - The name of the database you are loading data into
+- `--to-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database copy
+
+[↩ Parent](#platform-helper-database)
+
+    Copy a database between environments.
+
+## Usage
+
+```
+platform-helper database copy --from <from_env> --to <to_env> --database <database> 
+                              --svc <service> [--app <application>] [--from-vpc <from_vpc>] 
+                              [--to-vpc <to_vpc>] [--template (default|migration|dmas-migration)] 
+                              [--auto-approve] [--no-maintenance-page] 
+```
+
+## Options
+
+- `--app <text>`
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are copying data from
+- `--to <text>`
+  - The environment you are copying data into
+- `--database <text>`
+  - The name of the database you are copying
+- `--from-vpc <text>`
+  - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
+- `--to-vpc <text>`
+  - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
+- `--svc <text>` _Defaults to ['web']._
+
+- `--template <choice>` _Defaults to default._
+  - The maintenance page you wish to put up.
+- `--no-maintenance-page <boolean>` _Defaults to False._
+
+>>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
