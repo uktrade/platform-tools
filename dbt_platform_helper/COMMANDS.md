@@ -1000,7 +1000,7 @@ platform-helper database dump --from <from_env> --database <database>
 - `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
 - `--from <text>`
-  - This is required unless you are running the command from your deploy repo
+  - The environment you are dumping data from
 - `--database <text>`
   - The name of the database you are dumping data from
 - `--from-vpc <text>`

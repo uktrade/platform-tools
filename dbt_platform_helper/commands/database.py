@@ -21,7 +21,7 @@ def database():
     "from_env",
     type=str,
     required=True,
-    help="This is required unless you are running the command from your deploy repo",
+    help="The environment you are dumping data from",
 )
 @click.option(
     "--database", type=str, required=True, help="The name of the database you are dumping data from"
