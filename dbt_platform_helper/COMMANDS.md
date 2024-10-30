@@ -801,12 +801,16 @@ platform-helper pipeline generate [--terraform-platform-modules-version <terrafo
 
 ## Options
 
-- `--terraform-platform-modules-version <text>` _Defaults to 5._
+- `--terraform-platform-modules-version <text>`
   - Override the default version of terraform-platform-modules with a specific version or branch. 
-(Default version is '5').
+Precendence of version used is version supplied via CLI, then the version found in 
+platform-config.yml/default_versions/terraform-platform-modules. 
+In absence of these inputs, defaults to version '5'.
 - `--deploy-branch <text>`
-  - Specify the branch of <application>-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
-(Default <application>-deploy branch is specified in <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
+  - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+(Default <application>-deploy branch is specified in 
+<application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

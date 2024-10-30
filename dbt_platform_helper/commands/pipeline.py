@@ -38,15 +38,19 @@ def pipeline():
 @click.option(
     "--terraform-platform-modules-version",
     help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
-    (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').""",
-    default=DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+    Precendence of version used is version supplied via CLI, then the version found in 
+    platform-config.yml/default_versions/terraform-platform-modules. 
+    In absence of these inputs, defaults to version '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}'.""",
 )
 @click.option(
     "--deploy-branch",
-    help=f"""Specify the branch of <application>-deploy used to configure the environment-pipeline module. This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
-    (Default <application>-deploy branch is specified in <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
+    help="""Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+    This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+    (Default <application>-deploy branch is specified in 
+    <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
+    default=None,
 )
-def generate(terraform_platform_modules_version, deploy_branch=None):
+def generate(terraform_platform_modules_version, deploy_branch):
     """Given a platform-config.yml file, generate environment and service
     deployment pipelines."""
     pipeline_config = load_and_validate_platform_config()
@@ -237,7 +241,6 @@ def _generate_terraform_environment_pipeline_manifest(
 def _determine_terraform_platform_modules_version(
     cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
 ):
-    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
 
     version_preference_order = [
         cli_terraform_platform_modules_version,
