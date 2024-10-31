@@ -982,11 +982,11 @@ platform-helper database (dump|load|copy)
 - [`dump` ↪](#platform-helper-database-dump)
 - [`load` ↪](#platform-helper-database-load)
 
-# platform-helper database copy
+# platform-helper database dump
 
 [↩ Parent](#platform-helper-database)
 
-    Copy source database to target database.
+    Dump a database into an S3 bucket.
 
 ## Usage
 
@@ -994,11 +994,6 @@ platform-helper database (dump|load|copy)
 platform-helper database dump --from <from_env> --database <database> 
                               [--app <application>] [--from-vpc <from_vpc>] 
 ```
-
-## Arguments
-
-- `source_db <text>`
-- `target_db <text>`
 
 ## Options
 
