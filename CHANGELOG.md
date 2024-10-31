@@ -10,6 +10,11 @@
 * Delete data dump from S3 after data load has been successful ([#600](https://github.com/uktrade/platform-tools/issues/600)) ([410cd56](https://github.com/uktrade/platform-tools/commit/410cd5673eccce5855d03b4f0cbb4d6c1377085a))
 
 
+### Bug Fixes
+
+* Fix issue with offline command resulting in 'CreateRule operation: Priority '100' is currently in use' error
+
+
 ### Documentation
 
 * Add a note about regression/integration testing to the README.md ([#612](https://github.com/uktrade/platform-tools/issues/612)) ([d219356](https://github.com/uktrade/platform-tools/commit/d219356e41efb3b6eab3950a921aaf6e5b3b7d9c))
