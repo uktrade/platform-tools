@@ -587,23 +587,20 @@ def _validate_redis_versions(config):
             redis_extensions.append(config["extensions"][extension])
 
     for redis_extension in redis_extensions:
-        environments = redis_extension.get("environments", {})
-        if isinstance(environments, dict):
-            for environment in environments.keys():
-                env_config = environments.get(environment, {})
-                if isinstance(env_config, dict):
-                    redis_engine_version = env_config.get("engine")
-                    if redis_engine_version not in supported_redis_versions:
-                        redis_environments_with_failure.append(
-                            [extension, environment, redis_engine_version]
-                        )
-        else:
-            click.secho(f'Invalid Redis Configuration Block "{extension}"', fg="red")
 
-    if len(redis_environments_with_failure) > 0:
+        environments = redis_extension.get("environments", {})
+
+        for environment, env_config in environments.items():
+
+            redis_engine_version = env_config.get("engine")
+            if redis_engine_version not in supported_redis_versions:
+                redis_environments_with_failure.append([extension, environment, redis_engine_version])
+
+
+    if redis_environments_with_failure:
         for version_failure in redis_environments_with_failure:
             click.secho(
-                f'Redis version for environment "{version_failure[1]}" is not in the list of supported Redis Versions',
+                f'Redis version for environment "{version_failure[1]}" is not in the list of supported Redis Versions: {supported_redis_versions}, actual version: {version_failure[2]}',
                 fg="red",
             )
 
@@ -628,23 +625,17 @@ def _validate_opensearch_versions(config):
     for opensearch_extension in opensearch_extensions:
 
         environments = opensearch_extension.get("environments", {})
-        if isinstance(environments, dict):
-            for environment in environments.keys():
-                env_config = environments.get(environment, {})
-                if isinstance(env_config, dict):
-                    opensearch_engine_version = env_config.get("engine")
-                    if opensearch_engine_version not in supported_opensearch_versions:
-                        opensearch_environments_with_failure.append(
-                            [extension, environment, opensearch_engine_version]
-                        )
 
-        else:
-            click.secho(f'Invalid OpenSearch Configuration Block "{extension}"', fg="red")
+        for environment, env_config in environments.items():
 
-    if len(opensearch_environments_with_failure) > 0:
+            opensearch_engine_version = env_config.get("engine")
+            if opensearch_engine_version not in supported_opensearch_versions:
+                opensearch_environments_with_failure.append([extension, environment, opensearch_engine_version])
+
+    if opensearch_environments_with_failure:
         for version_failure in opensearch_environments_with_failure:
             click.secho(
-                f'OpenSearch version for environment "{version_failure[1]}" is not in the list of supported OpenSearch Versions',
+                f'OpenSearch version for environment "{version_failure[1]}" is not in the list of supported OpenSearch Versions: {supported_opensearch_versions}, actual version: {version_failure[2]}',
                 fg="red",
             )
 

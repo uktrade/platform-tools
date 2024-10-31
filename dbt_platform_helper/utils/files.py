@@ -147,7 +147,7 @@ def cache_refresh_required(resource_name) -> bool:
         3. The date-retrieved value of the cached data is > than a time interval. In this case 1 day.
     """
 
-    if not os.path.exits(platform_helper_config_file):
+    if not os.path.exists(platform_helper_config_file):
         return True
 
     platform_helper_config = read_file_as_yaml(platform_helper_config_file)
