@@ -590,6 +590,13 @@ def _validate_redis_versions(config):
 
         environments = redis_extension.get("environments", {})
 
+        if not isinstance(environments, dict):
+            click.secho(
+                'Error: Redis extension definition is invalid type, expected dictionary',
+                fg='red'
+            )
+            continue
+
         for environment, env_config in environments.items():
 
             redis_engine_version = env_config.get("engine")
@@ -625,6 +632,13 @@ def _validate_opensearch_versions(config):
     for opensearch_extension in opensearch_extensions:
 
         environments = opensearch_extension.get("environments", {})
+
+        if not isinstance(environments, dict):
+            click.secho(
+                'Error: Opensearch extension definition is invalid type, expected dictionary',
+                fg='red'
+            )
+            continue
 
         for environment, env_config in environments.items():
 
