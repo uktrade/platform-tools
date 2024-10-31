@@ -968,11 +968,7 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 ## Usage
 
 ```
-<<<<<<< HEAD
-platform-helper database copy 
-=======
 platform-helper database (dump|load|copy) 
->>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 ```
 
 ## Options
@@ -983,11 +979,8 @@ platform-helper database (dump|load|copy)
 ## Commands
 
 - [`copy` ↪](#platform-helper-database-copy)
-<<<<<<< HEAD
-=======
 - [`dump` ↪](#platform-helper-database-dump)
 - [`load` ↪](#platform-helper-database-load)
->>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 
 # platform-helper database copy
 
@@ -998,12 +991,8 @@ platform-helper database (dump|load|copy)
 ## Usage
 
 ```
-<<<<<<< HEAD
-platform-helper database copy <source_db> <target_db> 
-=======
 platform-helper database dump --from <from_env> --database <database> 
                               [--app <application>] [--from-vpc <from_vpc>] 
->>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 ```
 
 ## Arguments
@@ -1013,8 +1002,6 @@ platform-helper database dump --from <from_env> --database <database>
 
 ## Options
 
-<<<<<<< HEAD
-=======
 - `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
 - `--from <text>`
@@ -1092,7 +1079,6 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
   - The maintenance page you wish to put up.
 - `--no-maintenance-page <boolean>` _Defaults to False._
 
->>>>>>> 410cd5673eccce5855d03b4f0cbb4d6c1377085a
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
