@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# sleep 3000
 clean_up(){
   echo "Cleaning up dump file"
   rm data_dump.sql
@@ -35,7 +35,7 @@ then
     exit $exit_code
   fi
 
-  aws s3 cp data_dump.sql s3://${S3_BUCKET_NAME}/
+  aws s3 cp data_dump.sql s3://${S3_BUCKET_NAME} --endpoint-url "${S3_BUCKET_ENDPOINT}"
   exit_code=$?
 
   if [ ${exit_code} -ne 0 ]
