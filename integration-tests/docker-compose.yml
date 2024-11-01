@@ -52,6 +52,7 @@ services:
       DATA_COPY_OPERATION: DUMP
       DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
       S3_BUCKET_NAME: s3-mock
+      ECS_CLUSTER: not-sure
     depends_on:
       - source-db
       - s3-mock
@@ -66,6 +67,7 @@ services:
       DATA_COPY_OPERATION: LOAD
       DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
       S3_BUCKET_NAME: s3-mock
+      ECS_CLUSTER: not-sure
     networks:
       - test-net
     depends_on:
