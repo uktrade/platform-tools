@@ -38,7 +38,7 @@ def pipeline():
 @click.option(
     "--terraform-platform-modules-version",
     help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
-    Precendence of version used is version supplied via CLI, then the version found in 
+    Precedence of version used is version supplied via CLI, then the version found in 
     platform-config.yml/default_versions/terraform-platform-modules. 
     In absence of these inputs, defaults to version '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}'.""",
 )
@@ -51,8 +51,21 @@ def pipeline():
     default=None,
 )
 def generate(terraform_platform_modules_version, deploy_branch):
-    """Given a platform-config.yml file, generate environment and service
-    deployment pipelines."""
+    """
+    Given a platform-config.yml file, generate environment and service
+    deployment pipelines.
+
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+
+    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
+    - Generates the copilot manifest.yml for copilot/environments/<environment>
+    """
     pipeline_config = load_and_validate_platform_config()
 
     has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
