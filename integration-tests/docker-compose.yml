@@ -53,7 +53,6 @@ services:
       - -c
       - |
         mkdir -p /data/test-dump-bucket
-        touch /data/test-dump-bucket/test-dump.tar.gz
         minio server /data 
     environment:
       MINIO_ACCESS_KEY: minioadmin
@@ -72,8 +71,12 @@ services:
     environment:
       DATA_COPY_OPERATION: DUMP
       DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
-      S3_BUCKET_NAME: s3-mock
+      S3_BUCKET_NAME: test-dump-bucket
       ECS_CLUSTER: not-sure
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      REGION_NAME: eu-west-2
+      S3_BUCKET_ENDPOINT: http://s3-mock:9000
     depends_on:
       source-db:
           condition: service_healthy
