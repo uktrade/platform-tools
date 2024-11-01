@@ -49,7 +49,7 @@ else
   echo "Starting data load"
 
   echo "Copying data dump from S3"
-  aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql
+  aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql --endpoint-url "${S3_BUCKET_ENDPOINT}"
   
   handle_errors $? "Copy failed"
 
