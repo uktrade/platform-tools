@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "database-copy3"
+name = "integration-tests"
 version = "0.1.0"
 description = ""
 authors = ["Kate Sugden <kate.sugden@madetech.com>"]

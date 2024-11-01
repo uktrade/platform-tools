@@ -46,7 +46,7 @@ services:
   
   dump-task:
     build:
-      context: ./image
+      context: ../images/tools/database-copy/
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: DUMP
@@ -60,7 +60,7 @@ services:
 
   load-task:
     build:
-      context: ./image
+      context: ../images/tools/database-copy/
       dockerfile: Dockerfile
     environment:
       DATA_COPY_OPERATION: LOAD
