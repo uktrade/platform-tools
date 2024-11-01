@@ -10,10 +10,21 @@ S3_CONFIG = {
     "region_name": "eu-west-2",
 }
 
+ECS_CONFIG = {
+    "endpoint_url": "http://app:5000",
+    "aws_access_key_id": "test",
+    "aws_secret_access_key": "test",
+    "region_name": "eu-west-2",
+}
+
 
 @pytest.fixture(scope="module")
 def s3_client():
     return boto3.client("s3", **S3_CONFIG)
+
+@pytest.fixture(scope="module")
+def ecs_client():
+    return boto3.client("ecs", **ECS_CONFIG)
 
 
 @pytest.fixture(scope="module")
@@ -43,6 +54,10 @@ def test_can_speak_to_destination_db(destination_db):
         
     assert new_cursor.fetchone()[0] == 'test_user'
 
+
+def test_can_speak_to_ecs(ecs_client):
+    pass
+    
 
 def test_can_speak_to_s3(s3_client):
     response = s3_client.list_objects_v2(Bucket="test-dump-bucket")

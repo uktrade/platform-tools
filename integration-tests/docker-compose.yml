@@ -1,4 +1,20 @@
 services:
+  app:
+    build:
+      context: ./mocks/app/
+    ports: 
+      - '5000:5000'
+    networks:
+      - test-net
+    environment:
+      - FLASK_DEBUG=true
+    healthcheck:
+      test: ["CMD", "curl", "-kf", "https://127.0.0.1/status"]
+      interval: 1s
+      timeout: 30s
+      retries: 10
+      start_period: 1s
+
   source-db:
     image: postgres:13
     restart: always
@@ -82,6 +98,7 @@ services:
       context: .
     depends_on:
       - load-task
+      - app
     environment:
       DESTINATION_DB_CONNECTION_STRING: postgres://test_user:pwd@destination-db:5432/destination
       SOURCE_DB_CONNECTION_STRING: postgres://test_user:pwd@source-db:5432/source
