@@ -1,4 +1,5 @@
 import os
+
 import boto3
 import psycopg2
 import pytest
@@ -22,6 +23,7 @@ ECS_CONFIG = {
 def s3_client():
     return boto3.client("s3", **S3_CONFIG)
 
+
 @pytest.fixture(scope="module")
 def ecs_client():
     return boto3.client("ecs", **ECS_CONFIG)
@@ -39,29 +41,29 @@ def destination_db():
     conn = psycopg2.connect(os.getenv("DESTINATION_DB_CONNECTION_STRING"))
     yield conn
     conn.close()
-    
+
 
 def test_can_speak_to_source_db(source_db):
     new_cursor = source_db.cursor()
-    new_cursor.execute('SELECT * FROM pg_catalog.pg_user')
-        
-    assert new_cursor.fetchone()[0] == 'test_user'
-    
-    
+    new_cursor.execute("SELECT * FROM pg_catalog.pg_user")
+
+    assert new_cursor.fetchone()[0] == "test_user"
+
+
 def test_can_speak_to_destination_db(destination_db):
     new_cursor = destination_db.cursor()
-    new_cursor.execute('SELECT * FROM pg_catalog.pg_user')
-        
-    assert new_cursor.fetchone()[0] == 'test_user'
+    new_cursor.execute("SELECT * FROM pg_catalog.pg_user")
+
+    assert new_cursor.fetchone()[0] == "test_user"
 
 
 def test_can_speak_to_ecs(ecs_client):
     pass
-    
+
 
 def test_can_speak_to_s3(s3_client):
     response = s3_client.list_objects_v2(Bucket="test-dump-bucket")
-    assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
 @pytest.mark.skip("Not working yet")
