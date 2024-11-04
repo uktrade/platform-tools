@@ -372,12 +372,12 @@ def get_connection_string(
 
 
 class Vpc:
-    def __init__(self, subnets, security_groups):
+    def __init__(self, subnets: list[str], security_groups: list[str]):
         self.subnets = subnets
         self.security_groups = security_groups
 
 
-def get_vpc_info_by_name(session, app, env, vpc_name):
+def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) -> Vpc:
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
 
