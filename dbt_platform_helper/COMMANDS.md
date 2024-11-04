@@ -348,8 +348,6 @@ platform-helper codebase (prepare|list|build|deploy)
 
 [↩ Parent](#platform-helper-codebase)
 
-    Sets up an application codebase for use within a DBT platform project.
-
 ## Usage
 
 ```
