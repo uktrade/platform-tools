@@ -66,8 +66,6 @@ def test_can_speak_to_s3(s3_client):
     assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-@pytest.mark.skip("Not working yet")
 def test_data_is_dumped_into_s3(s3_client):
     response = s3_client.list_objects_v2(Bucket="test-dump-bucket")
-    print(response)
-    assert "Contents" in response
+    assert response["Contents"][0]["Key"] == "data_dump.sql"
