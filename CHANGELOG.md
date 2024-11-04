@@ -1,5 +1,23 @@
 # Changelog
 
+## [11.2.0](https://github.com/uktrade/platform-tools/compare/11.1.0...11.2.0) (2024-11-04)
+
+
+### Features
+
+* DBTP-1071 Generate terraform config for environment pipeline ([#611](https://github.com/uktrade/platform-tools/issues/611)) ([237fb35](https://github.com/uktrade/platform-tools/commit/237fb35fe06df7fd13e93419d282dc067187d952))
+* DBTP-1380/DBT-1393 validate Redis and OpenSearch versions are valid and supported versions ([#599](https://github.com/uktrade/platform-tools/issues/599)) ([e36deb2](https://github.com/uktrade/platform-tools/commit/e36deb2d9741907fedae3f2b1928ac6fc49f374e))
+
+
+### Reverts
+
+* "feat: DBTP-1380/DBT-1393 validate Redis and OpenSearch versions are valid and supported versions" ([#617](https://github.com/uktrade/platform-tools/issues/617)) ([6175a52](https://github.com/uktrade/platform-tools/commit/6175a5218474ecbe91d2d1746ffbfe7c99fe3990))
+
+
+### Documentation
+
+* Call out the offline command fix in the changelog ([#613](https://github.com/uktrade/platform-tools/issues/613)) ([e2a6396](https://github.com/uktrade/platform-tools/commit/e2a63961260d3b60a1ae9aa99a1bd06927e98ae9))
+
 ## [11.1.0](https://github.com/uktrade/platform-tools/compare/11.0.1...11.1.0) (2024-10-30)
 
 
