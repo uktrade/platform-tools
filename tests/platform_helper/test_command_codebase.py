@@ -30,7 +30,7 @@ def mock_aws_client(get_aws_session_or_abort):
 
 
 class TestCodebasePrepare:
-    @patch("dbt_platform_helper.commands.codebase.requests.get")
+    @patch("requests.get")
     def test_codebase_prepare_generates_the_expected_files(self, mocked_requests_get, tmp_path):
         from dbt_platform_helper.commands.codebase import prepare
 
