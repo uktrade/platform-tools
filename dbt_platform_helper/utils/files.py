@@ -157,6 +157,8 @@ def cache_refresh_required(resource_name) -> bool:
             platform_helper_config[resource_name].get("date-retrieved"), 1
         )
 
+    return True
+
 
 def check_if_cached_datetime_is_greater_than_interval(date_retrieved, interval_in_days):
 
