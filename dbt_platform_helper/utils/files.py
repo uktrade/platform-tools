@@ -147,6 +147,8 @@ def cache_refresh_required(resource_name) -> bool:
         3. The date-retrieved value of the cached data is > than a time interval. In this case 1 day.
     """
 
+    print('This is connors branch revertme')
+
     if not os.path.exists(platform_helper_cache_file):
         return True
 
