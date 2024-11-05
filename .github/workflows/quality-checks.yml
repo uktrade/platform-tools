@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         # If the matrix, you must also update after_n_builds in codecov.yml to match the number of times the test suite is run
         python-version: ["3.12", "3.11", "3.10", "3.9"]
