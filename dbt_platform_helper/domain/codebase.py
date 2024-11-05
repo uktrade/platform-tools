@@ -22,9 +22,14 @@ class Codebase:
         self,
         input_fn: Callable[[str], str] = click.prompt,
         echo_fn: Callable[[str], str] = click.secho,
+        load_application_fn: Callable[[str], Application] = load_application,
+        get_aws_session_or_abort_fn: Callable[[str], Application] = get_aws_session_or_abort,
     ):
         self.input_fn = input_fn
         self.echo_fn = echo_fn
+        self.load_application_fn = load_application_fn
+        self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
+
 
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
@@ -90,7 +95,7 @@ class Codebase:
 
     def build(self, app: str, codebase: str, commit: str):
         """Trigger a CodePipeline pipeline based build."""
-        session = get_aws_session_or_abort()
+        session = self.get_aws_session_or_abort_fn()
         self.load_application_or_abort(session, app)
 
         check_if_commit_exists = subprocess.run(
@@ -137,9 +142,9 @@ class Codebase:
 
     def load_application_or_abort(self, session: Session, app: str) -> Application:
         try:
-            return load_application(app, default_session=session)
+            return self.load_application_fn(app, default_session=session)
         except ApplicationNotFoundError:
-            click.secho(
+            self.echo_fn(
                 f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
                 fg="red",
             )

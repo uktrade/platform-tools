@@ -23,7 +23,7 @@ def codebase():
 
 @codebase.command()
 def prepare():
-    Codebase.prepare()
+    Codebase().prepare()
 
 
 def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):

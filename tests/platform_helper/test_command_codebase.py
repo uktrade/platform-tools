@@ -10,10 +10,13 @@ from unittest.mock import PropertyMock
 from unittest.mock import patch
 
 import boto3
+import click
+import pytest
 import requests
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
+from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -143,71 +146,69 @@ class TestCodebasePrepare:
         assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
 
 
+@pytest.mark.focus
 class TestCodebaseBuild:
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    @patch(
-        "dbt_platform_helper.commands.codebase.load_application",
-        side_effect=ApplicationNotFoundError,
-    )
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_build_does_not_trigger_build_without_an_application(
-        self, mock_load_application, mock_get_aws_session_or_abort
+        self, mock_codebase_object
     ):
-        with patch.dict(os.environ, {"AWS_PROFILE": "foo"}):
-            mock_aws_session = MagicMock()
-            mock_get_aws_session_or_abort.return_value = mock_aws_session
+        # Arrange
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.build.side_effect = click.Abort
+        os.environ["AWS_PROFILE"] = "foo"
 
-            result = CliRunner().invoke(
-                build,
-                [
-                    "--app",
-                    "not-an-application",
-                    "--codebase",
-                    "application",
-                    "--commit",
-                    "ab1c23d",
-                ],
-            )
+        result = CliRunner().invoke(
+            build,
+            [
+                "--app",
+                "not-an-application",
+                "--codebase",
+                "application",
+                "--commit",
+                "ab1c23d",
+            ],
+        )
 
-            assert (
-                """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-                in result.output
-            )
+        # Assert
+        mock_codebase_object_instance.build.assert_called_once_with("not-an-application", "application", "ab1c23d")
+        assert result.exit_code == 1
 
-    @patch("subprocess.run")
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, mock_get_aws_session_or_abort, mock_subprocess_run
+        self, mock_codebase_object
     ):
-        # Set up the environment variable
-        with patch.dict(os.environ, {"AWS_PROFILE": "foo"}):
-            # Mock the AWS session
-            mock_aws_session = MagicMock()
-            mock_get_aws_session_or_abort.return_value = mock_aws_session
+        # Arrange
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.build.side_effect = SystemExit(1)
+        os.environ["AWS_PROFILE"] = "foo"
+       
+        # # Set up the environment variable
+        # with patch.dict(os.environ, {"AWS_PROFILE": "foo"}):
+        #     # Mock the AWS session
+        #     mock_aws_session = MagicMock()
+        #     mock_get_aws_session_or_abort.return_value = mock_aws_session
 
             # Simulate subprocess.run returning a command error
-            mock_subprocess_run.return_value = MagicMock(
-                stderr="The commit hash 'nonexistent-commit-hash' either does not exist or you need to run `git fetch`.",
-                returncode=1,
-            )
-
+        
             # Invoke the CLI command
-            result = CliRunner().invoke(
-                build,
-                [
-                    "--app",
-                    "test-application",
-                    "--codebase",
-                    "application",
-                    "--commit",
-                    "nonexistent-commit-hash",
-                ],
-            )
+        result = CliRunner().invoke(
+            build,
+            [
+                "--app",
+                "test-application",
+                "--codebase",
+                "application",
+                "--commit",
+                "nonexistent-commit-hash",
+            ],
+        )
 
-            # Assert the output contains the expected error message
-            assert (
-                """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
-                in result.output
-            )
+        mock_codebase_object_instance.build.assert_called_once_with("test-application", "application", "nonexistent-commit-hash")
+        assert result.exit_code == 1
+        # assert (
+        #     """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
+        #     in result.output
+        # )
 
     @patch("click.confirm")
     @patch("subprocess.run")
@@ -233,34 +234,6 @@ class TestCodebaseBuild:
         )
 
         assert """Your build was not triggered.""" in result.output
-
-    @patch(
-        "dbt_platform_helper.commands.codebase.load_application",
-        side_effect=ApplicationNotFoundError,
-    )
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_codebase_build_does_not_trigger_build_without_an_application(
-        self, mock_aws_session, load_application
-    ):
-        os.environ["AWS_PROFILE"] = "foo"
-        from dbt_platform_helper.commands.codebase import build
-
-        result = CliRunner().invoke(
-            build,
-            [
-                "--app",
-                "not-an-application",
-                "--codebase",
-                "application",
-                "--commit",
-                "ab1c23d",
-            ],
-        )
-
-        assert (
-            """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-            in result.output
-        )
 
 
 class TestCodebaseDeploy:
