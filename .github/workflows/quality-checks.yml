@@ -34,6 +34,8 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
       - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
 
   lint:
     name: Run lint checks
