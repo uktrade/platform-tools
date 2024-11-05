@@ -1,3 +1,5 @@
+# Todo: Superseded by Terraform. Can be deleted
+
 import json
 import logging
 import time
