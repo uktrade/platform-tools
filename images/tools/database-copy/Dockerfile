@@ -1,21 +1,12 @@
-FROM public.ecr.aws/docker/library/debian:12-slim
+FROM public.ecr.aws/docker/library/postgres:16
 
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    # Add repository for postgres version 16
-    apt-get install -y postgresql-common && \
-    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt-get install -y curl unzip jq procps postgresql-client-16 && \
-    # Start installing AWS CLI
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf aws && rm awscliv2.zip && \
-    apt-get remove -y apt-utils gnupg unzip && \
-    # Finish installing AWS CLI
-    apt-get clean
+RUN apt-get update && apt upgrade
+RUN apt-get install -y curl zip jq
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
 
-COPY shell-profile.sh /root/.bashrc
 COPY entrypoint.sh /entrypoint.sh
+COPY clear_db.sql /clear_db.sql
 
 ENTRYPOINT ["bash", "/entrypoint.sh"]

@@ -37,6 +37,9 @@ ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
 CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
+REFRESH_TOKEN_MESSAGE = (
+    "To refresh this SSO session run `aws sso login` with the corresponding profile"
+)
 
 
 def test_get_aws_session_or_abort_profile_not_configured(clear_session_cache, capsys):
@@ -91,20 +94,54 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
     assert result == [("/copilot/test-application/development/secrets/TEST_SECRET", "test value")]
 
 
+@pytest.mark.parametrize(
+    "aws_profile, side_effect, expected_error_message",
+    [
+        (
+            "existing_profile",
+            botocore.exceptions.NoCredentialsError(
+                error_msg="There are no credentials set for this session."
+            ),
+            f"There are no credentials set for this session. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.UnauthorizedSSOTokenError(
+                error_msg="The SSO Token used for this session is unauthorised."
+            ),
+            f"The SSO Token used for this session is unauthorised. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.TokenRetrievalError(
+                error_msg="Unable to retrieve the Token for this session.", provider="sso"
+            ),
+            f"Unable to retrieve the Token for this session. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.SSOTokenLoadError(
+                error_msg="The SSO session associated with this profile has expired, is not set or is otherwise invalid."
+            ),
+            f"The SSO session associated with this profile has expired, is not set or is otherwise invalid. {REFRESH_TOKEN_MESSAGE}",
+        ),
+    ],
+)
 @patch("dbt_platform_helper.utils.aws.get_account_details")
 @patch("boto3.session.Session")
 @patch("click.secho")
-def test_get_aws_session_or_abort_with_invalid_credentials(
-    mock_secho, mock_session, mock_get_account_details
+def test_get_aws_session_or_abort_errors(
+    mock_secho,
+    mock_session,
+    mock_get_account_details,
+    aws_profile,
+    side_effect,
+    expected_error_message,
 ):
-    aws_profile = "existing_profile"
-    expected_error_message = (
-        "The SSO session associated with this profile has expired or is otherwise invalid."
-        + "To refresh this SSO session run `aws sso login` with the corresponding profile"
-    )
-    mock_get_account_details.side_effect = botocore.exceptions.SSOTokenLoadError(
-        error_msg=expected_error_message
-    )
+    if isinstance(side_effect, botocore.exceptions.ProfileNotFound):
+        mock_session.side_effect = side_effect
+    else:
+        mock_get_account_details.side_effect = side_effect
 
     with pytest.raises(SystemExit) as exc_info:
         get_aws_session_or_abort(aws_profile=aws_profile)

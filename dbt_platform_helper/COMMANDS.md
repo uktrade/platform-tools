@@ -42,6 +42,7 @@
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database dump](#platform-helper-database-dump)
 - [platform-helper database load](#platform-helper-database-load)
+- [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
@@ -792,14 +793,36 @@ platform-helper pipeline generate
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
 
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+
+    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
+    - Generates the copilot manifest.yml for copilot/environments/<environment>
+
 ## Usage
 
 ```
-platform-helper pipeline generate 
+platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+                                  [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
+- `--terraform-platform-modules-version <text>`
+  - Override the default version of terraform-platform-modules with a specific version or branch. 
+Precedence of version used is version supplied via CLI, then the version found in 
+platform-config.yml/default_versions/terraform-platform-modules. 
+In absence of these inputs, defaults to version '5'.
+- `--deploy-branch <text>`
+  - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+(Default <application>-deploy branch is specified in 
+<application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -962,10 +985,12 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper)
 
+    Commands to copy data between databases.
+
 ## Usage
 
 ```
-platform-helper database (dump|load) 
+platform-helper database (dump|load|copy) 
 ```
 
 ## Options
@@ -975,6 +1000,7 @@ platform-helper database (dump|load)
 
 ## Commands
 
+- [`copy` ↪](#platform-helper-database-copy)
 - [`dump` ↪](#platform-helper-database-dump)
 - [`load` ↪](#platform-helper-database-load)
 
@@ -987,23 +1013,20 @@ platform-helper database (dump|load)
 ## Usage
 
 ```
-platform-helper database dump --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database dump --from <from_env> --database <database> 
+                              [--app <application>] [--from-vpc <from_vpc>] 
 ```
 
 ## Options
 
-- `--account-id <text>`
-
 - `--app <text>`
-
-- `--env <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are dumping data from
 - `--database <text>`
-
-- `--vpc-name <text>`
-
+  - The name of the database you are dumping data from
+- `--from-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1016,22 +1039,62 @@ platform-helper database dump --account-id <account_id> --app <application>
 ## Usage
 
 ```
-platform-helper database load --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database load --to <to_env> --database <database> 
+                              [--app <application>] [--to-vpc <to_vpc>] 
+                              [--auto-approve] 
 ```
 
 ## Options
 
-- `--account-id <text>`
+- `--app <text>`
+  - The application name. Required unless you are running the command from your deploy repo
+- `--to <text>`
+  - The environment you are loading data into
+- `--database <text>`
+  - The name of the database you are loading data into
+- `--to-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database copy
+
+[↩ Parent](#platform-helper-database)
+
+    Copy a database between environments.
+
+## Usage
+
+```
+platform-helper database copy --from <from_env> --to <to_env> --database <database> 
+                              --svc <service> [--app <application>] [--from-vpc <from_vpc>] 
+                              [--to-vpc <to_vpc>] [--template (default|migration|dmas-migration)] 
+                              [--auto-approve] [--no-maintenance-page] 
+```
+
+## Options
 
 - `--app <text>`
-
-- `--env <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are copying data from
+- `--to <text>`
+  - The environment you are copying data into
 - `--database <text>`
+  - The name of the database you are copying
+- `--from-vpc <text>`
+  - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
+- `--to-vpc <text>`
+  - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
 
-- `--vpc-name <text>`
+- `--svc <text>` _Defaults to ['web']._
+
+- `--template <choice>` _Defaults to default._
+  - The maintenance page you wish to put up.
+- `--no-maintenance-page <boolean>` _Defaults to False._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
