@@ -5,9 +5,10 @@ from importlib.metadata import version
 import click
 
 from dbt_platform_helper.commands.application import application as application_commands
-from dbt_platform_helper.commands.check_cloudformation import (
-    check_cloudformation as check_cloudformation_commands,
-)
+
+# from dbt_platform_helper.commands.check_cloudformation import (
+#     check_cloudformation as check_cloudformation_commands,
+# )
 from dbt_platform_helper.commands.codebase import codebase as codebase_commands
 from dbt_platform_helper.commands.conduit import conduit as conduit_commands
 from dbt_platform_helper.commands.config import config as config_commands
@@ -35,7 +36,7 @@ def platform_helper():
 
 platform_helper.add_command(application_commands)
 platform_helper.add_command(cdn_commands)
-platform_helper.add_command(check_cloudformation_commands)
+# platform_helper.add_command(check_cloudformation_commands)
 platform_helper.add_command(codebase_commands)
 platform_helper.add_command(conduit_commands)
 platform_helper.add_command(config_commands)

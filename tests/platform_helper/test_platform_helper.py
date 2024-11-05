@@ -21,7 +21,7 @@ class TestCopilotHelperCli:
         assert list(platform_helper.commands.keys()) == [
             "application",
             "cdn",
-            "check-cloudformation",
+            # "check-cloudformation",
             "codebase",
             "conduit",
             "config",
