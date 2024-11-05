@@ -1,7 +1,5 @@
 # Platform Tools
 
-![Codecov](https://codecov.io/github/uktrade/platform-tools/graphs/tree.svg?token=HMXT8R8136)
-
 ## Using the dbt-platform-helper package
 
 See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/README.md) for detail on what the package is and how to use it.
