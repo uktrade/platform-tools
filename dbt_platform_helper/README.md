@@ -2,8 +2,6 @@
 
 This package contains a set of tools in the form of a Command Line Interface (CLI) primarily for automating operations used when working with the Department for Business and Trade (DBT) Platform.
 
-[Codecov](https://codecov.io/github/uktrade/platform-tools/graphs/tree.svg?token=HMXT8R8136)
-
 ## Getting started
 
 To use the Python package `dbt-platform-helper`, follow the steps below.
