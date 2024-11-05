@@ -32,8 +32,9 @@ jobs:
         run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
+
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ always() && !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
