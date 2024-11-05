@@ -384,8 +384,6 @@ platform-helper codebase list --app <application> [--with-images]
 
 [↩ Parent](#platform-helper-codebase)
 
-    Trigger a CodePipeline pipeline based build.
-
 ## Usage
 
 ```

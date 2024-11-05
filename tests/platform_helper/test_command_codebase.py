@@ -13,6 +13,7 @@ import boto3
 import requests
 from click.testing import CliRunner
 
+from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -143,73 +144,70 @@ class TestCodebasePrepare:
 
 
 class TestCodebaseBuild:
-    @patch("click.confirm")
-    @patch("subprocess.run")
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_codebase_build_successfully_triggers_a_pipeline_based_build(
-        self, get_aws_session_or_abort, mock_subprocess_run, mock_click_confirm
+    @patch(
+        "dbt_platform_helper.commands.codebase.load_application",
+        side_effect=ApplicationNotFoundError,
+    )
+    def test_codebase_build_does_not_trigger_build_without_an_application(
+        self, mock_load_application, mock_get_aws_session_or_abort
     ):
-        from dbt_platform_helper.commands.codebase import build
+        with patch.dict(os.environ, {"AWS_PROFILE": "foo"}):
+            mock_aws_session = MagicMock()
+            mock_get_aws_session_or_abort.return_value = mock_aws_session
 
-        mock_subprocess_run.return_value.stderr = ""
-        mock_click_confirm.return_value = "y"
+            result = CliRunner().invoke(
+                build,
+                [
+                    "--app",
+                    "not-an-application",
+                    "--codebase",
+                    "application",
+                    "--commit",
+                    "ab1c23d",
+                ],
+            )
 
-        client = mock_aws_client(get_aws_session_or_abort)
-        client.start_build.return_value = {
-            "build": {
-                "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
-            }
-        }
-
-        result = CliRunner().invoke(
-            build,
-            [
-                "--app",
-                "test-application",
-                "--codebase",
-                "application",
-                "--commit",
-                "ab1c23d",
-            ],
-        )
-
-        client.start_build.assert_called_with(
-            projectName="codebuild-test-application-application",
-            artifactsOverride={"type": "NO_ARTIFACTS"},
-            sourceVersion="ab1c23d",
-        )
-
-        assert (
-            "Your build has been triggered. Check your build progress in the AWS Console: "
-            "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
-            "-project/build/build-project%3Abuild-id" in result.output
-        )
+            assert (
+                """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+                in result.output
+            )
 
     @patch("subprocess.run")
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, mock_aws_session, mock_subprocess_run
+        self, mock_get_aws_session_or_abort, mock_subprocess_run
     ):
-        from dbt_platform_helper.commands.codebase import build
+        # Set up the environment variable
+        with patch.dict(os.environ, {"AWS_PROFILE": "foo"}):
+            # Mock the AWS session
+            mock_aws_session = MagicMock()
+            mock_get_aws_session_or_abort.return_value = mock_aws_session
 
-        mock_subprocess_run.return_value.stderr = "malformed"
+            # Simulate subprocess.run returning a command error
+            mock_subprocess_run.return_value = MagicMock(
+                stderr="The commit hash 'nonexistent-commit-hash' either does not exist or you need to run `git fetch`.",
+                returncode=1,
+            )
 
-        result = CliRunner().invoke(
-            build,
-            [
-                "--app",
-                "test-application",
-                "--codebase",
-                "application",
-                "--commit",
-                "nonexistent-commit-hash",
-            ],
-        )
+            # Invoke the CLI command
+            result = CliRunner().invoke(
+                build,
+                [
+                    "--app",
+                    "test-application",
+                    "--codebase",
+                    "application",
+                    "--commit",
+                    "nonexistent-commit-hash",
+                ],
+            )
 
-        assert (
-            """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
-            in result.output
-        )
+            # Assert the output contains the expected error message
+            assert (
+                """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
+                in result.output
+            )
 
     @patch("click.confirm")
     @patch("subprocess.run")

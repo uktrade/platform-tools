@@ -1,3 +1,4 @@
+import os
 import stat
 import subprocess
 from collections.abc import Callable
@@ -6,7 +7,12 @@ from pathlib import Path
 import click
 import requests
 import yaml
+from boto3 import Session
 
+from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -20,7 +26,7 @@ class Codebase:
         self.input_fn = input_fn
         self.echo_fn = echo_fn
 
-    def prepare():
+    def prepare(self):
         """Sets up an application codebase for use within a DBT platform
         project."""
         templates = setup_templates()
@@ -81,3 +87,60 @@ class Codebase:
             click.echo(
                 mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True)
             )
+
+    def build(self, app: str, codebase: str, commit: str):
+        """Trigger a CodePipeline pipeline based build."""
+        session = get_aws_session_or_abort()
+        self.load_application_or_abort(session, app)
+
+        check_if_commit_exists = subprocess.run(
+            ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
+        )
+
+        if check_if_commit_exists.stderr:
+            self.echo_fn(
+                f'The commit hash "{commit}" either does not exist or you need to run `git fetch`.',
+                fg="red",
+            )
+            raise SystemExit(1)
+
+        codebuild_client = session.client("codebuild")
+        build_url = self.start_build_with_confirmation(
+            codebuild_client,
+            f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
+            {
+                "projectName": f"codebuild-{app}-{codebase}",
+                "artifactsOverride": {"type": "NO_ARTIFACTS"},
+                "sourceVersion": commit,
+            },
+        )
+
+        if build_url:
+            return self.echo_fn(
+                f"Your build has been triggered. Check your build progress in the AWS Console: {build_url}"
+            )
+
+        return self.echo_fn("Your build was not triggered.")
+
+    def get_build_url_from_arn(self, build_arn: str) -> str:
+        _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
+        project_name = project_name.removeprefix("build/")
+        return (
+            f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
+            f"{project_name}/build/{project_name}%3A{build_id}"
+        )
+
+    def start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
+        if click.confirm(confirmation_message):
+            response = codebuild_client.start_build(**build_options)
+            return self.get_build_url_from_arn(response["build"]["arn"])
+
+    def load_application_or_abort(self, session: Session, app: str) -> Application:
+        try:
+            return load_application(app, default_session=session)
+        except ApplicationNotFoundError:
+            click.secho(
+                f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+                fg="red",
+            )
+            raise click.Abort

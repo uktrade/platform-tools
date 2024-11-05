@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 
 import click
 from boto3 import Session
@@ -103,39 +102,7 @@ def list(app, with_images):
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
-    """Trigger a CodePipeline pipeline based build."""
-    session = get_aws_session_or_abort()
-    load_application_or_abort(session, app)
-
-    check_if_commit_exists = subprocess.run(
-        ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
-    )
-
-    if check_if_commit_exists.stderr:
-        click.secho(
-            f"""The commit hash "{commit}" either does not exist or you need to run `git fetch`.""",
-            fg="red",
-        )
-        raise click.Abort
-
-    codebuild_client = session.client("codebuild")
-    build_url = start_build_with_confirmation(
-        codebuild_client,
-        f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
-        {
-            "projectName": f"codebuild-{app}-{codebase}",
-            "artifactsOverride": {"type": "NO_ARTIFACTS"},
-            "sourceVersion": commit,
-        },
-    )
-
-    if build_url:
-        return click.echo(
-            "Your build has been triggered. Check your build progress in the AWS Console: "
-            f"{build_url}",
-        )
-
-    return click.echo("Your build was not triggered.")
+    Codebase().build(app, codebase, commit)
 
 
 @codebase.command()
