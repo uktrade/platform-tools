@@ -35,7 +35,7 @@ class TestPublishNotify(unittest.TestCase):
         with pytest.raises(ValueError) as e:
             PublishNotify()
         self.assertEqual(
-            f"'{environment_variable}' DELIBERATE FAIL environment variable must be set",
+            f"'{environment_variable}' environment variable must be set",
             str(e.value),
         )
 
