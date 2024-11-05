@@ -205,6 +205,7 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
+        # Todo: Remove "and is_terraform_project()"
         elif access == "admin" and is_terraform_project():
             create_postgres_admin_task(app, env, secret_name, task_name, addon_type, addon_name)
             return
