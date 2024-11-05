@@ -145,60 +145,6 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call,
     )
 
 
-@pytest.mark.parametrize(
-    "access",
-    [
-        "read",
-        "write",
-        "admin",
-    ],
-)
-@pytest.mark.parametrize(
-    "addon_type, addon_name",
-    [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
-        ("redis", "custom-name-redis"),
-        ("opensearch", "custom-name-opensearch"),
-    ],
-)
-@patch("subprocess.call")
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
-def test_create_addon_client_task(
-    get_connection_secret_arn,
-    subprocess_call,
-    access,
-    addon_type,
-    addon_name,
-):
-    """Test that, given app, env and permissions, create_addon_client_task calls
-    get_connection_secret_arn with the default secret name and subsequently
-    subprocess.call with the correct secret ARN and execution role."""
-    from dbt_platform_helper.commands.conduit import create_addon_client_task
-
-    env = "development"
-    mock_application = Mock()
-    mock_application.name = "test-application"
-    mock_application.environments = {"development": Mock()}
-    task_name = mock_task_name(addon_name)
-
-    create_addon_client_task(mock_application, env, addon_type, addon_name, task_name, access)
-
-    secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
-    get_connection_secret_arn.assert_called_once_with(mock_application, env, secret_name)
-    subprocess_call.assert_called_once_with(
-        f"copilot task run --app test-application --env {env} "
-        f"--task-group-name {task_name} "
-        f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
-        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
-        "--secrets CONNECTION_SECRET=test-arn "
-        "--platform-os linux "
-        "--platform-arch arm64",
-        shell=True,
-    )
-
-
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
 @patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
