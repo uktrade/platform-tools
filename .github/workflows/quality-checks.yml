@@ -9,6 +9,7 @@ jobs:
 
     strategy:
       matrix:
+        # If the matrix, you must also update after_n_builds in codecov.yml to match the number of times the test suite is run
         python-version: ["3.12", "3.11", "3.10", "3.9"]
 
     steps:
@@ -28,9 +29,11 @@ jobs:
           poetry install
 
       - name: Run pytest
-        run: poetry run pytest
+        run: poetry run pytest --cov
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
+
+      - uses: codecov/codecov-action@v4
 
   lint:
     name: Run lint checks
