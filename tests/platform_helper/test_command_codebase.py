@@ -197,32 +197,6 @@ class TestCodebaseBuild:
         mock_codebase_object_instance.build.assert_called_once_with("test-application", "application", "nonexistent-commit-hash")
         assert result.exit_code == 1
 
-    # @patch("dbt_platform_helper.commands.codebase.Codebase")
-    # def test_codebase_build_does_not_trigger_build_without_confirmation(
-    #     self,  mock_codebase_object
-    # ):
-
-    #     # mock_subprocess_run.return_value.stderr = ""
-    #     # mock_click_confirm.return_value = False
-
-    #     mock_codebase_object_instance = mock_codebase_object.return_value
-    #     mock_codebase_object_instance.build. = 
-    #     os.environ["AWS_PROFILE"] = "foo"
-
-    #     result = CliRunner().invoke(
-    #         build,
-    #         [
-    #             "--app",
-    #             "test-application",
-    #             "--codebase",
-    #             "application",
-    #             "--commit",
-    #             "ab1c23d",
-    #         ],
-    #     )
-
-    #     assert """Your build was not triggered.""" in result.output
-
 
 class TestCodebaseDeploy:
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
