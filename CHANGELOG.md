@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
+
+
+### Features
+
+* DBTP-1431 Add validation for CDN timeout ([#609](https://github.com/uktrade/platform-tools/issues/609)) ([66a21c6](https://github.com/uktrade/platform-tools/commit/66a21c622937f7a2fc05caa75714a90ad1d82be0))
+
 ## [11.2.0](https://github.com/uktrade/platform-tools/compare/11.1.0...11.2.0) (2024-11-04)
 
 
