@@ -1,4 +1,4 @@
-name: Quality Checks
+name: Unit tests
 
 on: [push]
 
@@ -40,38 +40,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-
-  lint:
-    name: Run lint checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
-
-      - name: black
-        run: poetry run pre-commit run black --all-files
-
-      - name: mixed-line-ending
-        run: poetry run pre-commit run mixed-line-ending --all-files
-
-      - name: detect-private-key
-        run: poetry run pre-commit run detect-private-key --all-files
-
-      - name: autoflake
-        run: poetry run pre-commit run autoflake --all-files
-
-      - name: docformatter
-        run: poetry run pre-commit run docformatter --all-files
-
-      - name: docs
-        run: poetry run pre-commit run docs --all-files
-
-
