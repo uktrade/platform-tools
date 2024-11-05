@@ -41,6 +41,7 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
             ]
         )
 
+@pytest.mark.focus
 @patch("subprocess.run")
 def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subprocess_run):
     mocks = CodebaseMocks()
@@ -61,3 +62,25 @@ def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subpro
                 ),
             ]
         )
+
+@pytest.mark.focus
+@patch("click.confirm")
+@patch("subprocess.run")
+def test_codebase_build_does_not_trigger_build_without_confirmation(
+    mock_subprocess_run, mock_click_confirm
+):
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    
+    mock_subprocess_run.return_value.stderr = ""
+    mock_click_confirm.return_value = False
+
+    codebase.build("test-application", "application", "ab1c234")
+    
+    mocks.echo_fn.assert_has_calls(
+                [
+                    call(
+                        """Your build was not triggered.""",
+                    ),
+                ]
+            )
