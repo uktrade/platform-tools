@@ -34,10 +34,7 @@ class TestPublishNotify(unittest.TestCase):
         del os.environ[environment_variable]
         with pytest.raises(ValueError) as e:
             PublishNotify()
-        self.assertEqual(
-            f"'{environment_variable}' environment variable must be set",
-            str(e.value),
-        )
+        self.assertEqual(f"'{environment_variable}' environment variable must be set", str(e.value))
 
     def test_sending_publish_notifications_when_notifications_off(self, mock_subprocess):
         notify = PublishNotify(False)
