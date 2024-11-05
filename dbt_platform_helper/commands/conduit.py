@@ -16,6 +16,7 @@ from dbt_platform_helper.utils.aws import (
 )
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -204,7 +205,7 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
-        elif access == "admin":
+        elif access == "admin" and is_terraform_project():
             create_postgres_admin_task(app, env, secret_name, task_name, addon_type, addon_name)
             return
     elif addon_type == "redis" or addon_type == "opensearch":
