@@ -1,37 +1,8 @@
-name: Quality Checks
+name: Linting
 
 on: [push]
 
 jobs:
-  tests:
-    name: Test against Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.12", "3.11", "3.10", "3.9"]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Display Python version
-        run: python --version
-
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
-
-      - name: Run pytest
-        run: poetry run pytest
-        env:
-          PYTHON_VERSION: ${{ matrix.python-version }}
-
   lint:
     name: Run lint checks
     runs-on: ubuntu-latest
