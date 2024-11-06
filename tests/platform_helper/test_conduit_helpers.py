@@ -156,16 +156,13 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_subprocess_call,
 @pytest.mark.parametrize(
     "addon_type, addon_name",
     [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
         ("redis", "custom-name-redis"),
         ("opensearch", "custom-name-opensearch"),
     ],
 )
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
-def test_create_addon_client_task(
+def test_create_redis_or_opensearch_addon_client_task(
     get_connection_secret_arn,
     subprocess_call,
     access,
@@ -199,9 +196,28 @@ def test_create_addon_client_task(
     )
 
 
+@patch("dbt_platform_helper.commands.conduit.create_postgres_admin_task")
+def test_create_postgres_addon_client_task(
+    mock_create_postgres_admin_task,
+    mock_application,
+):
+    from dbt_platform_helper.commands.conduit import create_addon_client_task
+
+    addon_name = "custom-name-postgres"
+    task_name = mock_task_name(addon_name)
+
+    create_addon_client_task(
+        mock_application, "development", "postgres", addon_name, task_name, "admin"
+    )
+    secret_name = expected_connection_secret_name(mock_application, "postgres", addon_name, "admin")
+
+    mock_create_postgres_admin_task.assert_called_once_with(
+        mock_application, "development", secret_name, task_name, "postgres", addon_name
+    )
+
+
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
 def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     get_connection_secret_arn,
     subprocess_call,
@@ -240,7 +256,6 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
 
 @patch("subprocess.call")
 @patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
-@patch("dbt_platform_helper.commands.conduit.is_terraform_project", new=Mock(return_value=False))
 @patch("click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
@@ -274,28 +289,6 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     assert (
         mock_secho.call_args[0][0]
         == f"Error: cannot obtain Role {addon_name}-{mock_application.name}-{env}-conduitEcsTask: Something went wrong"
-    )
-
-
-@patch("dbt_platform_helper.commands.conduit.create_postgres_admin_task")
-@patch("dbt_platform_helper.commands.conduit.is_terraform_project", return_value=True)
-def test_create_addon_client_task_postgres_is_terraform(
-    mock_is_terraform_project,
-    mock_create_postgres_admin_task,
-    mock_application,
-):
-    from dbt_platform_helper.commands.conduit import create_addon_client_task
-
-    addon_name = "custom-name-postgres"
-    task_name = mock_task_name(addon_name)
-
-    create_addon_client_task(
-        mock_application, "development", "postgres", addon_name, task_name, "admin"
-    )
-    secret_name = expected_connection_secret_name(mock_application, "postgres", addon_name, "admin")
-
-    mock_create_postgres_admin_task.assert_called_once_with(
-        mock_application, "development", secret_name, task_name, "postgres", addon_name
     )
 
 
