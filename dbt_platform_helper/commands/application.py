@@ -45,7 +45,6 @@ def get_query_results(env, app, query_string, timeout):
 
     # Container stats are 5 mins behind realtime.
     date_time = datetime.now()
-    end_time = int(date_time.timestamp())
     start_time = int((date_time - timedelta(minutes=5)).timestamp())
     end_time = int((date_time - timedelta(minutes=4)).timestamp())
 
