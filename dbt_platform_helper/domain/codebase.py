@@ -1,3 +1,4 @@
+import json
 import os
 import stat
 import subprocess
@@ -22,11 +23,13 @@ class Codebase:
         self,
         input_fn: Callable[[str], str] = click.prompt,
         echo_fn: Callable[[str], str] = click.secho,
+        confirm_fn: Callable[[str], bool] = click.confirm,
         load_application_fn: Callable[[str], Application] = load_application,
-        get_aws_session_or_abort_fn: Callable[[str], Application] = get_aws_session_or_abort,
+        get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
     ):
         self.input_fn = input_fn
         self.echo_fn = echo_fn
+        self.confirm_fn = confirm_fn,
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
 
@@ -126,6 +129,37 @@ class Codebase:
             )
 
         return self.echo_fn("Your build was not triggered.")
+    
+    def deploy(self, app, env, codebase, commit):
+        """Trigger a CodePipeline pipeline based deployment."""
+        session = self.get_aws_session_or_abort_fn()
+        application = self.load_application_with_environment(session, app, env)
+        self.check_codebase_exists(session, application, codebase)
+        self.check_image_exists(session, application, codebase, commit)
+
+        codebuild_client = session.client("codebuild")
+        build_url = self.start_build_with_confirmation(
+            codebuild_client,
+            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
+            {
+                "projectName": f"pipeline-{application.name}-{codebase}-BuildProject",
+                "artifactsOverride": {"type": "NO_ARTIFACTS"},
+                "sourceTypeOverride": "NO_SOURCE",
+                "environmentVariablesOverride": [
+                    {"name": "COPILOT_ENVIRONMENT", "value": env},
+                    {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
+                ],
+            },
+        )
+
+        if build_url:
+            return self.echo_fn(
+                "Your deployment has been triggered. Check your build progress in the AWS Console: "
+                f"{build_url}",
+            )
+
+        return self.echo_fn("Your deployment was not triggered.")
+
 
     def get_build_url_from_arn(self, build_arn: str) -> str:
         _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
@@ -134,11 +168,6 @@ class Codebase:
             f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
             f"{project_name}/build/{project_name}%3A{build_id}"
         )
-
-    def start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
-        if click.confirm(confirmation_message):
-            response = codebuild_client.start_build(**build_options)
-            return self.get_build_url_from_arn(response["build"]["arn"])
 
     def load_application_or_abort(self, session: Session, app: str) -> Application:
         try:
@@ -149,3 +178,56 @@ class Codebase:
                 fg="red",
             )
             raise click.Abort
+        
+    def load_application_with_environment(self, session: Session, app, env):
+        application = self.load_application_or_abort(session, app)
+
+        if not application.environments.get(env):
+            self.echo_fn(
+                f"""The environment "{env}" either does not exist or has not been deployed.""",
+                fg="red",
+            )
+            raise click.Abort
+        return application
+    
+
+    def check_codebase_exists(self, session: Session, application: Application, codebase: str):
+        ssm_client = session.client("ssm")
+        try:
+            parameter = ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+            )
+            value = parameter["Parameter"]["Value"]
+            json.loads(value)
+        except (KeyError, ValueError, json.JSONDecodeError, ssm_client.exceptions.ParameterNotFound):
+            self.echo_fn(
+                f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
+                fg="red",
+            )
+            raise click.Abort
+        
+    def check_image_exists(self, session: Session, application: Application, codebase: str, commit: str):
+        ecr_client = session.client("ecr")
+        try:
+            ecr_client.describe_images(
+                repositoryName=f"{application.name}/{codebase}",
+                imageIds=[{"imageTag": f"commit-{commit}"}],
+            )
+        except ecr_client.exceptions.RepositoryNotFoundException:
+            self.echo_fn(
+                f'The ECR Repository for codebase "{codebase}" does not exist.',
+                fg="red",
+            )
+            raise click.Abort
+        except ecr_client.exceptions.ImageNotFoundException:
+            self.echo_fn(
+                f'The commit hash "{commit}" has not been built into an image, try the '
+                "`platform-helper codebase build` command first.",
+                fg="red",
+            )
+            raise click.Abort
+
+    def start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
+        if self.confirm_fn(confirmation_message):
+            response = codebuild_client.start_build(**build_options)
+            return self.get_build_url_from_arn(response["build"]["arn"])
