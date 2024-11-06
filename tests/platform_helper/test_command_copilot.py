@@ -258,7 +258,6 @@ class TestTerraformEnabledMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=True))
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
@@ -315,9 +314,7 @@ class TestTerraformEnabledMakeAddonCommand:
 
             assert actual == expected
 
-        assert not any(
-            Path("./copilot/environments/addons/").iterdir()
-        ), "./copilot/environments/addons/ should be empty"
+        assert not Path("./copilot/environments/addons/").exists()
 
         env_override_file = Path("./copilot/environments/overrides/cfn.patches.yml")
         assert f"{env_override_file} created" in result.stdout
@@ -433,9 +430,6 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch(
-        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
-    )
     @mock_aws
     def test_make_addons_success(
         self,
@@ -548,9 +542,6 @@ class TestMakeAddonCommand:
     )
     @mock_aws
     @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-    @patch(
-        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
-    )
     def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
         client = mock_aws_client(mock_get_session)
         client.head_bucket.side_effect = ClientError({"Error": {"Code": "400"}}, "HeadBucket")
@@ -585,9 +576,6 @@ class TestMakeAddonCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch(
-        "dbt_platform_helper.commands.copilot.is_terraform_project", new=Mock(return_value=False)
-    )
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -611,10 +599,6 @@ class TestMakeAddonCommand:
 
         # Add some legacy addon files:
         old_addon_files = [
-            "environments/addons/my-s3-bucket.yml",
-            "environments/addons/my-s3-bucket-with-an-object.yml",
-            "environments/addons/my-opensearch.yml",
-            "environments/addons/my-rds-db.yml",
             "web/addons/my-s3-bucket.yml",
             "web/addons/my-s3-bucket-with-an-object.yml",
             "web/addons/my-s3-bucket-bucket-access.yml",
@@ -631,14 +615,10 @@ class TestMakeAddonCommand:
         CliRunner().invoke(copilot, ["make-addons"])
 
         # Assert
-        expected_env_files = [
-            Path("environments/addons", f)
-            for f in ["my-redis.yml", "addons.parameters.yml", "vpc.yml"]
-        ]
         expected_service_files = [
             Path("web/addons", f) for f in ["appconfig-ipfilter.yml", "subscription-filter.yml"]
         ]
-        all_expected_files = expected_env_files + expected_service_files
+        all_expected_files = expected_service_files
 
         for f in all_expected_files:
             expected_file = Path(
@@ -1170,8 +1150,8 @@ class TestMakeAddonCommand:
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
+        # Todo: Is there any value in this test?
         assert ">>>>>>>>> alb" in result.output
-        assert "File copilot/environments/addons/addons.parameters.yml created" in result.output
 
 
 @pytest.mark.parametrize(
