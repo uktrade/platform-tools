@@ -17,11 +17,17 @@ def test_conduit(app_name, addon_type, addon_name):
 
     # mock application
     mock_application = Application(app_name)
+    mock_subprocess = Mock()
+    env = "dev"
+    task_name = "some_task_name"
 
-    conduit = Conduit(mock_application)
+    conduit = Conduit(mock_application, mock_subprocess)
 
-    # exec conduit.command()
+    conduit.start(env)
 
-    # assert results
-
-    assert conduit.application == mock_application
+    mock_subprocess.assert_called_once_with(
+        "copilot task exec "
+        f"--app {app_name} --env {env} "
+        f"--name {task_name} "
+        f"--command bash"
+    )

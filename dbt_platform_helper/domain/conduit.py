@@ -1,14 +1,16 @@
+from dbt_platform_helper.providers.subprocess import DBTSubprocess
 from dbt_platform_helper.utils.application import Application
 
 
 class Conduit:
-    def __init__(self, application: Application):
+    def __init__(self, application: Application, subprocess: DBTSubprocess):
         """
 
         Args:
             application(Application): an object with the data of the deployed application
         """
         self.application = application
+        self.subprocess = subprocess
 
     def start(self):
         """
@@ -30,6 +32,14 @@ class Conduit:
 
         connect_to_addon_client_task(application, env, cluster_arn, task_name)
         """
+
+        self.subprocess.call(
+            "copilot task exec "
+            f"--app {self.application.name} --env {env} "
+            f"--name {task_name} "
+            f"--command bash",
+            shell=True,
+        )
 
 
 class ConduitError(Exception):
