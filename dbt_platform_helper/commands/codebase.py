@@ -113,35 +113,7 @@ def build(app, codebase, commit):
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
-    """Trigger a CodePipeline pipeline based deployment."""
-    session = get_aws_session_or_abort()
-    application = load_application_with_environment(session, app, env)
-    check_codebase_exists(session, application, codebase)
-    check_image_exists(session, application, codebase, commit)
-
-    codebuild_client = session.client("codebuild")
-    build_url = start_build_with_confirmation(
-        codebuild_client,
-        f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
-        {
-            "projectName": f"pipeline-{application.name}-{codebase}-BuildProject",
-            "artifactsOverride": {"type": "NO_ARTIFACTS"},
-            "sourceTypeOverride": "NO_SOURCE",
-            "environmentVariablesOverride": [
-                {"name": "COPILOT_ENVIRONMENT", "value": env},
-                {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
-            ],
-        },
-    )
-
-    if build_url:
-        return click.echo(
-            "Your deployment has been triggered. Check your build progress in the AWS Console: "
-            f"{build_url}",
-        )
-
-    return click.echo("Your deployment was not triggered.")
-
+    Codebase().deploy(app, env, codebase, commit)
 
 def load_application_or_abort(session: Session, app: str) -> Application:
     try:

@@ -1,5 +1,4 @@
 import json
-from unittest import mock
 from unittest.mock import MagicMock, Mock, call, patch
 
 import click
@@ -23,7 +22,7 @@ class CodebaseMocks:
         self.get_aws_session_or_abort_fn = Mock()
         self.input_fn = Mock(return_value="yes")
         self.echo_fn = Mock()
-        self.confirm_fn = Mock()
+        self.confirm_fn = Mock(return_value=True)
 
     def params(self):
         return {

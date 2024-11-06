@@ -29,7 +29,7 @@ class Codebase:
     ):
         self.input_fn = input_fn
         self.echo_fn = echo_fn
-        self.confirm_fn = confirm_fn,
+        self.confirm_fn = confirm_fn
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
 

@@ -15,7 +15,7 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.codebase import build
+from dbt_platform_helper.commands.codebase import build, deploy
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
@@ -199,24 +199,14 @@ class TestCodebaseBuild:
 
 
 class TestCodebaseDeploy:
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @pytest.mark.focus
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
-        self, get_aws_session_or_abort
+        self, codebase_object_mock
     ):
-        from dbt_platform_helper.commands.codebase import deploy
+        mock_codebase_object_instance = codebase_object_mock.return_value
 
-        client = mock_aws_client(get_aws_session_or_abort)
-
-        client.get_parameter.return_value = {
-            "Parameter": {"Value": json.dumps({"name": "application"})},
-        }
-        client.start_build.return_value = {
-            "build": {
-                "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
-            },
-        }
-
-        result = CliRunner().invoke(
+        CliRunner().invoke(
             deploy,
             [
                 "--app",
@@ -231,24 +221,11 @@ class TestCodebaseDeploy:
             input="y\n",
         )
 
-        client.start_build.assert_called_with(
-            projectName="pipeline-test-application-application-BuildProject",
-            artifactsOverride={"type": "NO_ARTIFACTS"},
-            sourceTypeOverride="NO_SOURCE",
-            environmentVariablesOverride=[
-                {"name": "COPILOT_ENVIRONMENT", "value": "development"},
-                {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
-            ],
-        )
-
-        assert (
-            'You are about to deploy "test-application" for "application" with commit '
-            '"ab1c23d" to the "development" environment. Do you want to continue?' in result.output
-        )
-        assert (
-            "Your deployment has been triggered. Check your build progress in the AWS Console: "
-            "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
-            "-project/build/build-project%3Abuild-id" in result.output
+        mock_codebase_object_instance.deploy.assert_called_once_with(
+            "test-application",
+            "development",
+            "application",
+            "ab1c23d"
         )
 
     @patch("subprocess.run")
