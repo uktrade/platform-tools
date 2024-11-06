@@ -99,7 +99,7 @@ class Codebase:
     def build(self, app: str, codebase: str, commit: str):
         """Trigger a CodePipeline pipeline based build."""
         session = self.get_aws_session_or_abort_fn()
-        self.load_application_or_abort(session, app)
+        self.__load_application_or_abort(session, app)
 
         check_if_commit_exists = subprocess.run(
             ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
@@ -113,7 +113,7 @@ class Codebase:
             raise SystemExit(1)
 
         codebuild_client = session.client("codebuild")
-        build_url = self.start_build_with_confirmation(
+        build_url = self.__start_build_with_confirmation(
             codebuild_client,
             f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
             {
@@ -133,12 +133,12 @@ class Codebase:
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
         session = self.get_aws_session_or_abort_fn()
-        application = self.load_application_with_environment(session, app, env)
-        self.check_codebase_exists(session, application, codebase)
-        self.check_image_exists(session, application, codebase, commit)
+        application = self.__load_application_with_environment(session, app, env)
+        self.__check_codebase_exists(session, application, codebase)
+        self.__check_image_exists(session, application, codebase, commit)
 
         codebuild_client = session.client("codebuild")
-        build_url = self.start_build_with_confirmation(
+        build_url = self.__start_build_with_confirmation(
             codebuild_client,
             f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
             {
@@ -161,7 +161,7 @@ class Codebase:
         return self.echo_fn("Your deployment was not triggered.")
 
 
-    def get_build_url_from_arn(self, build_arn: str) -> str:
+    def __get_build_url_from_arn(self, build_arn: str) -> str:
         _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
         project_name = project_name.removeprefix("build/")
         return (
@@ -169,7 +169,7 @@ class Codebase:
             f"{project_name}/build/{project_name}%3A{build_id}"
         )
 
-    def load_application_or_abort(self, session: Session, app: str) -> Application:
+    def __load_application_or_abort(self, session: Session, app: str) -> Application:
         try:
             return self.load_application_fn(app, default_session=session)
         except ApplicationNotFoundError:
@@ -179,8 +179,8 @@ class Codebase:
             )
             raise click.Abort
         
-    def load_application_with_environment(self, session: Session, app, env):
-        application = self.load_application_or_abort(session, app)
+    def __load_application_with_environment(self, session: Session, app, env):
+        application = self.__load_application_or_abort(session, app)
 
         if not application.environments.get(env):
             self.echo_fn(
@@ -191,7 +191,7 @@ class Codebase:
         return application
     
 
-    def check_codebase_exists(self, session: Session, application: Application, codebase: str):
+    def __check_codebase_exists(self, session: Session, application: Application, codebase: str):
         ssm_client = session.client("ssm")
         try:
             parameter = ssm_client.get_parameter(
@@ -206,7 +206,7 @@ class Codebase:
             )
             raise click.Abort
         
-    def check_image_exists(self, session: Session, application: Application, codebase: str, commit: str):
+    def __check_image_exists(self, session: Session, application: Application, codebase: str, commit: str):
         ecr_client = session.client("ecr")
         try:
             ecr_client.describe_images(
@@ -227,7 +227,7 @@ class Codebase:
             )
             raise click.Abort
 
-    def start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
+    def __start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
-            return self.get_build_url_from_arn(response["build"]["arn"])
+            return self.__get_build_url_from_arn(response["build"]["arn"])

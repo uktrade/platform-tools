@@ -228,27 +228,12 @@ class TestCodebaseDeploy:
             "ab1c23d"
         )
 
-    @patch("subprocess.run")
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(
-        self, get_aws_session_or_abort, mock_subprocess_run
+        self, codebase_object_mock
     ):
-        from dbt_platform_helper.commands.codebase import deploy
-
-        client = mock_aws_client(get_aws_session_or_abort)
-
-        client.get_parameter.return_value = {
-            "Parameter": {"Value": json.dumps({"name": "application"})},
-        }
-        client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
-        client.exceptions.RepositoryNotFoundException = (
-            real_ecr_client.exceptions.RepositoryNotFoundException
-        )
-        client.describe_images.side_effect = real_ecr_client.exceptions.RepositoryNotFoundException(
-            {}, ""
-        )
-
-        result = CliRunner().invoke(
+        mock_codebase_object_instance = codebase_object_mock.return_value
+        CliRunner().invoke(
             deploy,
             [
                 "--app",
@@ -262,7 +247,12 @@ class TestCodebaseDeploy:
             ],
         )
 
-        assert 'The ECR Repository for codebase "application" does not exist.' in result.output
+        mock_codebase_object_instance.deploy.assert_called_once_with(
+            "test-application",
+            "development",
+            "application",
+            "nonexistent-commit-hash"
+        )
 
     @patch("subprocess.run")
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")

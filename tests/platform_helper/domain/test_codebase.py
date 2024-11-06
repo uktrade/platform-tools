@@ -1,11 +1,16 @@
 import json
 from unittest.mock import MagicMock, Mock, call, patch
 
+import boto3
 import click
 import pytest
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError, Environment
+
+
+real_ecr_client = boto3.client("ecr")
+real_ssm_client = boto3.client("ssm")
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -145,3 +150,26 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy():
        ] 
     ) 
     
+
+@patch("subprocess.run")
+def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(mock_subprocess_run):
+    mocks = CodebaseMocks()
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+    client.exceptions.RepositoryNotFoundException = (
+        real_ecr_client.exceptions.RepositoryNotFoundException
+    )
+    client.describe_images.side_effect = real_ecr_client.exceptions.RepositoryNotFoundException(
+        {}, ""
+    )
+
+    with pytest.raises(click.Abort) as exc:
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+
+        mocks.echo_fn.assert_has_calls([call('The ECR Repository for codebase "application" does not exist.')])
