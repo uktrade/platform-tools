@@ -25,10 +25,11 @@ def test_get_environment_pipeline_names_defaults_to_empty_list_when_theres_no_pl
     assert {} == names
 
 
+# Todo: Remove this
 @pytest.mark.parametrize(
     "platform_config_content, expected_result",
     [
-        ("application: my-app\nlegacy_project: True", False),
+        ("application: my-app\nlegacy_project: True", True),
         ("application: my-app\nlegacy_project: False", True),
         ("application: my-app", True),
     ],

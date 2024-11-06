@@ -29,5 +29,4 @@ def get_environment_pipeline_names():
 
 # Todo: Remove def is_terraform_project()
 def is_terraform_project() -> bool:
-    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    return not config.get("legacy_project", False)
+    return True
