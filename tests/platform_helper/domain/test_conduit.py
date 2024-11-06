@@ -52,7 +52,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
     conduit.start(env, addon_name, addon_type, access)
 
-    mock_session.client.assert_called_twice_with("ecs")
+    mock_session.client.assert_called_with("ecs")
     mock_client.list_tasks.assert_called_once_with(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
@@ -168,6 +168,13 @@ def test_conduit_domain_when_client_task_fails_to_start():
         conduit.start(env, addon_name, addon_type, access)
 
 
+def normalise_secret_name(addon_name: str) -> str:
+    return addon_name.replace("-", "_").upper()
+
+
+# TODO add test for failing to retrieve session.client("iam").get_role(RoleName=role_name)
+
+
 # TODO conduit requires addon type
 def test_conduit_domain_when_addon_type_is_invalid():
 
@@ -175,7 +182,7 @@ def test_conduit_domain_when_addon_type_is_invalid():
     addon_name = "invalid_addon"
     addon_type = "postgres"
     env = "dev"
-    access = "admin"
+    access = "read"
 
     mock_client = Mock()
     mock_session = Mock()
@@ -183,10 +190,85 @@ def test_conduit_domain_when_addon_type_is_invalid():
     mock_client.list_tasks.return_value = {"taskArns": [], "nextToken": ""}
     mock_client.get_parameter.return_value = {
         "Parameter": {
-            "Value": "arn::some-arn",
+            "Value": "secret value",
+            "ARN": "arn::some-arn",
             "Name": "/copilot/{app_name}/{env}/secrets/{addon_name}_RDS_MASTER_ARN",
         }
     }
+
+    mock_client.describe_secret.return_value = {
+        "ARN": "arn:aws:secretsmanager:eu-west-2:123456789012:secret:MyTestSecret-Ca8JGt",
+        "Name": "MyTestSecret",
+        "Description": "My test secret",
+    }
+
+    # mock copied from example output of aws command
+    mock_client.list_stack_resources.return_value = {
+        "StackResourceSummaries": [
+            {
+                "LogicalResourceId": "bucket",
+                "PhysicalResourceId": "my-stack-bucket-1vc62xmplgguf",
+                "ResourceType": "AWS::S3::Bucket",
+                "LastUpdatedTimestamp": "2019-10-02T04:34:11.345Z",
+                "ResourceStatus": "CREATE_COMPLETE",
+                "DriftInformation": {"StackResourceDriftStatus": "IN_SYNC"},
+            },
+            {
+                "LogicalResourceId": "function",
+                "PhysicalResourceId": "my-function-SEZV4XMPL4S5",
+                "ResourceType": "AWS::Lambda::Function",
+                "LastUpdatedTimestamp": "2019-10-02T05:34:27.989Z",
+                "ResourceStatus": "UPDATE_COMPLETE",
+                "DriftInformation": {"StackResourceDriftStatus": "IN_SYNC"},
+            },
+            {
+                "LogicalResourceId": "functionRole",
+                "PhysicalResourceId": "my-functionRole-HIZXMPLEOM9E",
+                "ResourceType": "AWS::IAM::Role",
+                "LastUpdatedTimestamp": "2019-10-02T04:34:06.350Z",
+                "ResourceStatus": "CREATE_COMPLETE",
+                "DriftInformation": {"StackResourceDriftStatus": "IN_SYNC"},
+            },
+        ]
+    }
+
+    mock_client.get_template.return_value = {
+        "TemplateBody": {
+            "AWSTemplateFormatVersion": "2010-09-09",
+            "Outputs": {
+                "BucketName": {
+                    "Description": "Name of S3 bucket to hold website content",
+                    "Value": {"Ref": "S3Bucket"},
+                }
+            },
+            "Description": "AWS CloudFormation Sample Template S3_Bucket: Sample template showing how to create a publicly accessible S3 bucket. **WARNING** This template creates an S3 bucket. You will be billed for the AWS resources used if you create a stack from this template.",
+            "Resources": {
+                "S3Bucket": {
+                    "Type": "AWS::S3::Bucket",
+                    "Properties": {"AccessControl": "PublicRead"},
+                }
+            },
+        }
+    }
+
+    mock_client.get_role.return_value = {
+        "Role": {
+            "Description": "Test Role",
+            "AssumeRolePolicyDocument": "<URL-encoded-JSON>",
+            "MaxSessionDuration": 3600,
+            "RoleId": "AROA1234567890EXAMPLE",
+            "CreateDate": "2019-11-13T16:45:56Z",
+            "RoleName": "Test-Role",
+            "Path": "/",
+            "RoleLastUsed": {"Region": "eu-west-2", "LastUsedDate": "2019-11-13T17:14:00Z"},
+            "Arn": "arn:aws:iam::123456789012:role/Test-Role",
+        }
+    }
+
+    # mocks line 159: ssm_client.get_parameter(Name="/copilot/tools/central_log_groups")
+    # but already mocked .... TODO fix
+    # mock_client.get_parameter.return_value =
+
     sessions = {"000000000": mock_session}
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
@@ -195,6 +277,13 @@ def test_conduit_domain_when_addon_type_is_invalid():
 
     with pytest.raises(InvalidAddonTypeConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
+        mock_session.client.assert_called_with("ssm")
+        mock_session.client.assert_called_with("secretsmanager")
+        mock_session.client.assert_called_with("cloudformation")
+        mock_session.client.assert_called_with("iam")
+
+        # mock_client.list_stack_resources
+        # mock_client.describe_secret
 
 
 # TODO conduit requires addon type
@@ -239,3 +328,37 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
 
     with pytest.raises(ParameterNotFoundConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
+
+
+"""
+
+    mock_client_attrs = {'get_parameter.side_effect': set_get_parameter_return_value}
+
+    mock_client.configure_mock(**mock_client_attrs)
+
+    def set_get_parameter_return_value(Name,WithDecryption):
+        print("param name for side effect: %s",Name)
+        if Name == f"/copilot/{app_name}/{env}/secrets/{addon_name}_RDS_MASTER_ARN":
+            return {
+            "Parameter": {
+                "Value": "arn::some-arn",
+                "Name": f"/copilot/{app_name}/{env}/secrets/{addon_name}_RDS_MASTER_ARN",
+            }
+        }
+        elif Name == f"/copilot/{app_name}/{env}/secrets/{normalise_secret_name(addon_name)}_READ_ONLY_USER":
+            return {
+                "Parameter": {
+                    "Value": {
+                        "username": "read_only",
+                        "password": "fake_pass",
+                        "engine": "postgres", 
+                        "port": 5432, 
+                        "dbname": "main", 
+                        "host": "demodjango-anthoni-demodjango-postgres..eu-west-2.rds.amazonaws.com", 
+                        "dbInstanceIdentifier": "db-XXXXXXXXXXXXXXX"
+                        },
+                    "Name": f"/copilot/{app_name}/{env}/secrets/{normalise_secret_name(addon_name)}_READ_ONLY_USER",
+                    },
+            } 
+
+"""
