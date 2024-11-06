@@ -1,3 +1,5 @@
+import time
+
 from dbt_platform_helper.providers.subprocess import DBTSubprocess
 from dbt_platform_helper.utils.application import Application
 
@@ -12,7 +14,21 @@ class Conduit:
         self.application = application
         self.subprocess = subprocess
 
-    def start(self):
+    def __addon_client_is_running(self, env: str, cluster_arn: str, task_name: str):
+        ecs_client = self.application.environments[env].session.client("ecs")
+
+        tasks = ecs_client.list_tasks(
+            cluster=cluster_arn,
+            desiredStatus="RUNNING",
+            family=f"copilot-{task_name}",
+        )
+
+        if not tasks["taskArns"]:
+            return False
+
+        return True
+
+    def start(self, env: str):
         """
         application: str
         env: str,
@@ -33,16 +49,33 @@ class Conduit:
         connect_to_addon_client_task(application, env, cluster_arn, task_name)
         """
 
-        self.subprocess.call(
-            "copilot task exec "
-            f"--app {self.application.name} --env {env} "
-            f"--name {task_name} "
-            f"--command bash",
-            shell=True,
-        )
+        # task_name = get_or_create_task_name(application, env, addon_name, parameter_name)
+        task_name = "task_name"
+        cluster_arn = "cluster_arn"
+        running = False
+        tries = 0
+        while tries < 15 and not running:
+            tries += 1
+            if self.__addon_client_is_running(env, cluster_arn, task_name):
+                running = True
+                self.subprocess.call(
+                    "copilot task exec "
+                    f"--app {self.application.name} --env {env} "
+                    f"--name {task_name} "
+                    f"--command bash",
+                    shell=True,
+                )
+
+            time.sleep(1)
+        if not running:
+            raise CreateTaskTimeoutConduitError
 
 
 class ConduitError(Exception):
+    pass
+
+
+class CreateTaskTimeoutConduitError(ConduitError):
     pass
 
 
