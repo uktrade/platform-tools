@@ -15,8 +15,8 @@ import pytest
 import requests
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.codebase import build, deploy
-from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.commands.codebase import build
+from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -170,18 +170,18 @@ class TestCodebaseBuild:
         )
 
         # Assert
-        mock_codebase_object_instance.build.assert_called_once_with("not-an-application", "application", "ab1c23d")
+        mock_codebase_object_instance.build.assert_called_once_with(
+            "not-an-application", "application", "ab1c23d"
+        )
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, mock_codebase_object
-    ):
+    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(self, mock_codebase_object):
         # Arrange
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.build.side_effect = SystemExit(1)
         os.environ["AWS_PROFILE"] = "foo"
-       
+
         result = CliRunner().invoke(
             build,
             [
@@ -194,7 +194,9 @@ class TestCodebaseBuild:
             ],
         )
 
-        mock_codebase_object_instance.build.assert_called_once_with("test-application", "application", "nonexistent-commit-hash")
+        mock_codebase_object_instance.build.assert_called_once_with(
+            "test-application", "application", "nonexistent-commit-hash"
+        )
         assert result.exit_code == 1
 
 
@@ -222,57 +224,15 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application",
-            "development",
-            "application",
-            "ab1c23d"
+            "test-application", "development", "application", "ab1c23d"
         )
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(
+    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_image_tag(
         self, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--commit",
-                "nonexistent-commit-hash",
-            ],
-        )
-
-        mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application",
-            "development",
-            "application",
-            "nonexistent-commit-hash"
-        )
-
-    @patch("subprocess.run")
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_codebase_deploy_aborts_with_a_nonexistent_image_tag(
-        self, get_aws_session_or_abort, mock_subprocess_run
-    ):
-        from dbt_platform_helper.commands.codebase import deploy
-
-        client = mock_aws_client(get_aws_session_or_abort)
-
-        client.get_parameter.return_value = {
-            "Parameter": {"Value": json.dumps({"name": "application"})},
-        }
-        client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
-        client.exceptions.RepositoryNotFoundException = (
-            real_ecr_client.exceptions.RepositoryNotFoundException
-        )
-        client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException(
-            {}, ""
-        )
+        mock_codebase_object_instance.deploy.side_effect = click.Abort
 
         result = CliRunner().invoke(
             deploy,
@@ -288,10 +248,10 @@ class TestCodebaseDeploy:
             ],
         )
 
-        assert (
-            'The commit hash "nonexistent-commit-hash" has not been built into an image, try the '
-            "`platform-helper codebase build` command first." in result.output
+        mock_codebase_object_instance.deploy.assert_called_once_with(
+            "test-application", "development", "application", "nonexistent-commit-hash"
         )
+        assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     def test_codebase_deploy_does_not_trigger_build_without_confirmation(

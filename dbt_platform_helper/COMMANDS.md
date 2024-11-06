@@ -406,8 +406,6 @@ platform-helper codebase build --app <application> --codebase <codebase>
 
 [↩ Parent](#platform-helper-codebase)
 
-    Trigger a CodePipeline pipeline based deployment.
-
 ## Usage
 
 ```

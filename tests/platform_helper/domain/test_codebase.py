@@ -1,13 +1,17 @@
 import json
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import call
+from unittest.mock import patch
 
 import boto3
 import click
 import pytest
 
 from dbt_platform_helper.domain.codebase import Codebase
-from dbt_platform_helper.utils.application import Application, ApplicationNotFoundError, Environment
-
+from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.application import Environment
 
 real_ecr_client = boto3.client("ecr")
 real_ssm_client = boto3.client("ssm")
@@ -56,6 +60,7 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
             ]
         )
 
+
 @pytest.mark.focus
 @patch("subprocess.run")
 def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subprocess_run):
@@ -78,33 +83,39 @@ def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subpro
             ]
         )
 
+
 @pytest.mark.focus
 @patch("subprocess.run")
-def test_codebase_build_does_not_trigger_build_without_confirmation(
-    mock_subprocess_run
-):
+def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subprocess_run):
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = False
     codebase = Codebase(**mocks.params())
-    
+
     mock_subprocess_run.return_value.stderr = ""
 
     codebase.build("test-application", "application", "ab1c234")
-    
+
     mocks.echo_fn.assert_has_calls(
-                [
-                    call(
-                        """Your build was not triggered.""",
-                    ),
-                ]
-            )
-    
+        [
+            call(
+                """Your build was not triggered.""",
+            ),
+        ]
+    )
+
+
 @pytest.mark.focus
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy():
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = True
     mock_application = Application(name="test-application")
-    mock_application.environments = {"development": Environment(name="development", account_id="1234", sessions={"111111111111": mocks.get_aws_session_or_abort_fn})}
+    mock_application.environments = {
+        "development": Environment(
+            name="development",
+            account_id="1234",
+            sessions={"111111111111": mocks.get_aws_session_or_abort_fn},
+        )
+    }
     mocks.load_application_fn.return_value = mock_application
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
@@ -133,26 +144,25 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy():
 
     mocks.confirm_fn.assert_has_calls(
         [
-        call(
-            'You are about to deploy "test-application" for "application" with commit '
-            '"ab1c23d" to the "development" environment. Do you want to continue?'
-        ),
+            call(
+                'You are about to deploy "test-application" for "application" with commit '
+                '"ab1c23d" to the "development" environment. Do you want to continue?'
+            ),
         ]
     )
 
     mocks.echo_fn.assert_has_calls(
-       [
-        call(
-        "Your deployment has been triggered. Check your build progress in the AWS Console: "
-        "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
-        "-project/build/build-project%3Abuild-id"
-        )
-       ] 
-    ) 
-    
+        [
+            call(
+                "Your deployment has been triggered. Check your build progress in the AWS Console: "
+                "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
+                "-project/build/build-project%3Abuild-id"
+            )
+        ]
+    )
 
-@patch("subprocess.run")
-def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(mock_subprocess_run):
+
+def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     mocks = CodebaseMocks()
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
@@ -172,4 +182,34 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(mock_subproc
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
-        mocks.echo_fn.assert_has_calls([call('The ECR Repository for codebase "application" does not exist.')])
+        mocks.echo_fn.assert_has_calls(
+            [call('The ECR Repository for codebase "application" does not exist.')]
+        )
+
+
+def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
+    mocks = CodebaseMocks()
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+    client.exceptions.RepositoryNotFoundException = (
+        real_ecr_client.exceptions.RepositoryNotFoundException
+    )
+
+    client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException({}, "")
+
+    with pytest.raises(click.Abort) as exc:
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+
+        mocks.echo_fn.assert_has_calls(
+            [
+                call(
+                    f'The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.'
+                )
+            ]
+        )
