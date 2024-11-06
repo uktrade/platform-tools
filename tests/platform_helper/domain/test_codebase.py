@@ -84,7 +84,6 @@ def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subpro
         )
 
 
-@pytest.mark.focus
 @patch("subprocess.run")
 def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subprocess_run):
     mocks = CodebaseMocks()
@@ -104,7 +103,6 @@ def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subproc
     )
 
 
-@pytest.mark.focus
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy():
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = True
@@ -211,5 +209,77 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
                 call(
                     f'The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.'
                 )
+            ]
+        )
+
+
+@patch("subprocess.run")
+def test_codebase_deploy_does_not_trigger_build_without_confirmation(mock_subprocess_run):
+    mocks = CodebaseMocks()
+    mock_subprocess_run.return_value.stderr = ""
+    mocks.confirm_fn.return_value = False
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
+    client.exceptions.RepositoryNotFoundException = (
+        real_ecr_client.exceptions.RepositoryNotFoundException
+    )
+    client.exceptions.ParameterNotFound = real_ssm_client.exceptions.ParameterNotFound
+    client.start_build.return_value = {
+        "build": {
+            "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
+        },
+    }
+
+    codebase = Codebase(**mocks.params())
+    codebase.deploy("test-application", "development", "application", "ab1c23d")
+
+    mocks.confirm_fn.assert_has_calls(
+        [
+            call(
+                'You are about to deploy "test-application" for "application" with commit '
+                '"ab1c23d" to the "development" environment. Do you want to continue?'
+            ),
+        ]
+    )
+
+    mocks.echo_fn.assert_has_calls([call("Your deployment was not triggered.")])
+
+
+def test_codebase_deploy_does_not_trigger_build_without_an_application():
+    mocks = CodebaseMocks()
+    mocks.load_application_fn.side_effect = ApplicationNotFoundError()
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(click.Abort) as exc:
+        codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
+        mocks.echo_fn.assert_has_calls(
+            [
+                call(
+                    """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+                    fg="red",
+                ),
+            ]
+        )
+
+
+def test_codebase_deploy_does_not_trigger_build_with_missing_environment():
+    mocks = CodebaseMocks()
+    mock_application = Application(name="test-application")
+    mock_application.environments = {}
+    mocks.load_application_fn.return_value = mock_application
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(click.Abort) as exc:
+        codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
+        mocks.echo_fn.assert_has_calls(
+            [
+                call(
+                    """The environment "not-an-environment" either does not exist or has not been deployed.""",
+                    fg="red",
+                ),
             ]
         )
