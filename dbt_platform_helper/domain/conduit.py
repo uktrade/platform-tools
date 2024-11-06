@@ -5,7 +5,7 @@ from dbt_platform_helper.utils.application import Application
 
 
 class Conduit:
-    def __init__(self, application: Application, subprocess: DBTSubprocess):
+    def __init__(self, application: Application, subprocess: DBTSubprocess = DBTSubprocess()):
         """
 
         Args:
@@ -28,7 +28,7 @@ class Conduit:
 
         return True
 
-    def start(self, env: str):
+    def start(self, env: str, addon_name: str):
         """
         application: str
         env: str,
@@ -79,7 +79,24 @@ class CreateTaskTimeoutConduitError(ConduitError):
     pass
 
 
+class InvalidAddonTypeConduitError(ConduitError):
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
+
+
 class NoClusterConduitError(ConduitError):
+    pass
+
+
+class SecretNotFoundConduitError(ConduitError):
+    pass
+
+
+class ParameterNotFoundConduitError(ConduitError):
+    pass
+
+
+class AddonNotFoundConduitError(ConduitError):
     pass
 
 
