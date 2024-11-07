@@ -415,6 +415,10 @@ class TestMakeAddonsCommand:
 
         # Add some legacy addon files:
         old_addon_files = [
+            "environments/addons/my-s3-bucket.yml",
+            "environments/addons/my-s3-bucket-with-an-object.yml",
+            "environments/addons/my-opensearch.yml",
+            "environments/addons/my-rds-db.yml",
             "web/addons/my-s3-bucket.yml",
             "web/addons/my-s3-bucket-with-an-object.yml",
             "web/addons/my-s3-bucket-bucket-access.yml",
@@ -449,7 +453,7 @@ class TestMakeAddonsCommand:
 
         for f in old_addon_files:
             path = Path("copilot", f)
-            assert not path.exists()
+            assert not path.exists(), f"{path} should not exist"
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",

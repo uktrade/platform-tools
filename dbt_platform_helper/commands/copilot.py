@@ -255,7 +255,11 @@ def make_addons():
 
     click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
 
-    _cleanup_old_files(config, output_dir)
+    env_path = Path(f"copilot/environments/")
+    env_addons_path = env_path / "addons"
+    env_overrides_path = env_path / "overrides"
+
+    _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
     _generate_env_overrides(output_dir)
     custom_resources = _get_custom_resources()
 
@@ -394,7 +398,7 @@ def _get_custom_resources():
     return custom_resources
 
 
-def _cleanup_old_files(config, output_dir):
+def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
     def _rmdir(path):
         if not path.exists():
             return
@@ -404,6 +408,9 @@ def _cleanup_old_files(config, output_dir):
             if f.is_dir():
                 _rmdir(f)
                 f.rmdir()
+
+    _rmdir(output_dir / env_addons_path)
+    _rmdir(output_dir / env_overrides_path)
 
     all_services = set()
     for services in [v["services"] for v in config.values() if "services" in v]:
