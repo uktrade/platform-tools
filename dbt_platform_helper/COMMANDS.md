@@ -363,8 +363,6 @@ platform-helper codebase prepare
 
 [↩ Parent](#platform-helper-codebase)
 
-    List available codebases for the application.
-
 ## Usage
 
 ```

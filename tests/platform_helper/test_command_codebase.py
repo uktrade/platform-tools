@@ -17,6 +17,7 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
+from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -308,20 +309,26 @@ class TestCodebaseDeploy:
 
 
 class TestCodebaseList:
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_lists_codebases_successfully(self, get_aws_session_or_abort):
-        client = mock_aws_client(get_aws_session_or_abort)
-        client.get_parameters_by_path.return_value = {
-            "Parameters": [
-                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
-            ],
-        }
-        from dbt_platform_helper.commands.codebase import list
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_lists_codebases_successfully(self, mock_codebase_object):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        os.environ["AWS_PROFILE"] = "foo"
 
-        result = CliRunner().invoke(list, ["--app", "test-application"])
+        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        assert "The following codebases are available:" in result.output
-        assert "- application (https://github.com/uktrade/example)" in result.output
+        mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
+        assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_aborts_when_application_has_no_codebases(self, mock_codebase_object):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.list.side_effect = SystemExit(1)
+        os.environ["AWS_PROFILE"] = "foo"
+
+        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
+
+        mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
+        assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     def test_lists_codebases_with_images_successfully(self, get_aws_session_or_abort):
@@ -488,18 +495,6 @@ class TestCodebaseList:
             """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
             in result.output
         )
-
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_aborts_when_application_has_no_codebases(self, get_aws_session_or_abort):
-        from dbt_platform_helper.commands.codebase import list
-
-        client = mock_aws_client(get_aws_session_or_abort)
-
-        client.get_parameters_by_path.return_value = {"Parameters": []}
-
-        result = CliRunner().invoke(list, ["--app", "test-application"])
-
-        assert 'No codebases found for application "test-application"' in result.output
 
 
 def is_same_files(compare_directories):

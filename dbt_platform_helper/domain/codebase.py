@@ -33,7 +33,6 @@ class Codebase:
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
 
-
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
         project."""
@@ -129,7 +128,7 @@ class Codebase:
             )
 
         return self.echo_fn("Your build was not triggered.")
-    
+
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
         session = self.get_aws_session_or_abort_fn()
@@ -160,6 +159,33 @@ class Codebase:
 
         return self.echo_fn("Your deployment was not triggered.")
 
+    def list(self, app: str, with_images: bool):
+        """List available codebases for the application."""
+        session = self.get_aws_session_or_abort_fn()
+        application = self.__load_application_or_abort(session, app)
+        ssm_client = session.client("ssm")
+        ecr_client = session.client("ecr")
+        parameters = ssm_client.get_parameters_by_path(
+            Path=f"/copilot/applications/{application.name}/codebases",
+            Recursive=True,
+        )["Parameters"]
+
+        codebases = [json.loads(p["Value"]) for p in parameters]
+
+        if not codebases:
+            self.echo_fn(f'No codebases found for application "{application.name}"', fg="red")
+            raise SystemExit(1)
+
+        self.echo_fn("The following codebases are available:")
+
+        for codebase in codebases:
+            self.echo_fn(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
+            if with_images:
+                self.list_latest_images(
+                    ecr_client, f"{application.name}/{codebase['name']}", codebase["repository"]
+                )
+
+        self.echo_fn("")
 
     def __get_build_url_from_arn(self, build_arn: str) -> str:
         _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
@@ -178,7 +204,7 @@ class Codebase:
                 fg="red",
             )
             raise click.Abort
-        
+
     def __load_application_with_environment(self, session: Session, app, env):
         application = self.__load_application_or_abort(session, app)
 
@@ -189,7 +215,6 @@ class Codebase:
             )
             raise click.Abort
         return application
-    
 
     def __check_codebase_exists(self, session: Session, application: Application, codebase: str):
         ssm_client = session.client("ssm")
@@ -199,14 +224,21 @@ class Codebase:
             )
             value = parameter["Parameter"]["Value"]
             json.loads(value)
-        except (KeyError, ValueError, json.JSONDecodeError, ssm_client.exceptions.ParameterNotFound):
+        except (
+            KeyError,
+            ValueError,
+            json.JSONDecodeError,
+            ssm_client.exceptions.ParameterNotFound,
+        ):
             self.echo_fn(
                 f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
                 fg="red",
             )
             raise click.Abort
-        
-    def __check_image_exists(self, session: Session, application: Application, codebase: str, commit: str):
+
+    def __check_image_exists(
+        self, session: Session, application: Application, codebase: str, commit: str
+    ):
         ecr_client = session.client("ecr")
         try:
             ecr_client.describe_images(
@@ -227,7 +259,9 @@ class Codebase:
             )
             raise click.Abort
 
-    def __start_build_with_confirmation(self, codebuild_client, confirmation_message, build_options):
+    def __start_build_with_confirmation(
+        self, codebuild_client, confirmation_message, build_options
+    ):
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
             return self.__get_build_url_from_arn(response["build"]["arn"])

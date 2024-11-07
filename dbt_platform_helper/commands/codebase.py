@@ -8,7 +8,6 @@ from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -67,32 +66,7 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
     is_flag=True,
 )
 def list(app, with_images):
-    """List available codebases for the application."""
-    session = get_aws_session_or_abort()
-    application = load_application_or_abort(session, app)
-    ssm_client = session.client("ssm")
-    ecr_client = session.client("ecr")
-    parameters = ssm_client.get_parameters_by_path(
-        Path=f"/copilot/applications/{application.name}/codebases",
-        Recursive=True,
-    )["Parameters"]
-
-    codebases = [json.loads(p["Value"]) for p in parameters]
-
-    if not codebases:
-        click.secho(f'No codebases found for application "{application.name}"', fg="red")
-        raise click.Abort
-
-    click.echo("The following codebases are available:")
-
-    for codebase in codebases:
-        click.echo(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
-        if with_images:
-            list_latest_images(
-                ecr_client, f"{application.name}/{codebase['name']}", codebase["repository"]
-            )
-
-    click.echo("")
+    Codebase().list(app, with_images)
 
 
 @codebase.command()
@@ -114,6 +88,7 @@ def build(app, codebase, commit):
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
     Codebase().deploy(app, env, codebase, commit)
+
 
 def load_application_or_abort(session: Session, app: str) -> Application:
     try:
