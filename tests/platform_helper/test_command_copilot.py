@@ -719,7 +719,10 @@ class TestMakeAddonsCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(self, fakefs):
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
+        self, mock_get_aws_session_or_abort, fakefs
+    ):
         services = ["web", "web-celery"]
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"extensions": {}}))
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
