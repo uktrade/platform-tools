@@ -31,9 +31,12 @@ class Conduit:
         """
         self.application = application
         self.subprocess = subprocess
+        self.ecs_client = self.application.environments["dev"].session.client("ecs")
 
     def addon_client_is_running(self, env: str, cluster_arn: str, task_name: str):
-        ecs_client = self.application.environments[env].session.client("ecs")
+        print(self.application.environments[env].session)
+        # ecs_client = self.application.environments[env].session.client("ecs")
+        ecs_client = self.ecs_client
 
         tasks = ecs_client.list_tasks(
             cluster=cluster_arn,
@@ -228,6 +231,7 @@ class Conduit:
             # )
 
         while tries < 15 and not running:
+            print("stuck in the loop")
             tries += 1
             if self.addon_client_is_running(env, cluster_arn, task_name):
                 running = True

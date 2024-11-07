@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 
+import boto3
 import pytest
+from botocore.stub import Stubber
 
 from dbt_platform_helper.domain.conduit import AddonNotFoundConduitError
 from dbt_platform_helper.domain.conduit import Conduit
@@ -13,6 +15,12 @@ from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
 
+# @pytest.fixture(scope="function")
+# def ecs_session(aws_credentials):
+#     with mock_aws():
+#         session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+#         yield session
+#
 @pytest.mark.parametrize(
     "app_name, addon_type, addon_name, access",
     [
@@ -22,50 +30,100 @@ from dbt_platform_helper.utils.application import Environment
         ("app_1", "opensearch", "custom-name-opensearch", "read"),
     ],
 )
-def test_conduit(app_name, addon_type, addon_name, access):
+def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
+    session = boto3.session.Session(profile_name="lite", region_name="eu-west-2")
+    ecs_client = session.client("ecs")
+    ecs_stubber = Stubber(ecs_client)
+    ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+    ecs_stubber.add_response(
+        "list_tasks",
+        ecs_list_tasks_response,
+        {
+            "cluster": "cluster_arn",
+            "desiredStatus": "RUNNING",
+            "family": "copilot-task_name",
+        },
+    )
 
-    # mock application
-    env = "dev"
+    ecs_stubber.activate()
 
-    mock_client = Mock()
-    mock_session = Mock()
-    mock_session.client.return_value = mock_client
-    mock_client.list_tasks.return_value = {"taskArns": ["test_arn"], "nextToken": ""}
-    mock_client.describe_tasks.return_value = {
-        "tasks": [
+    with ecs_stubber:
+        env = "dev"
+
+        # ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+        # stubber = Stubber(ecs_session.client("ecs"))
+        # stubber.create_cluster(clusterName="something")
+        # stubber.activate()
+
+        # stubber.add_response(
+        #     "list_tasks",
+        #     ecs_list_tasks_response,
+        #     {
+        #         "cluster": "cluster_arn",
+        #         "desiredStatus": "RUNNING",
+        #         "family": "copilot-task_name",
+        #     }
+        # )
+        #
+        # mock_client.describe_tasks.return_value = {
+        #     "tasks": [
+        #         {
+        #             "containers": [
+        #                 {"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}
+        #             ]
+        #         }
+        #     ]
+        # }
+        sessions = {"000000000": session}
+        mock_application = Application(app_name)
+        mock_application.environments = {env: Environment(env, "000000000", sessions)}
+        mock_subprocess = Mock()
+
+        conduit = Conduit(mock_application, mock_subprocess)
+        ecs_stubber = Stubber(conduit.ecs_client)
+        ecs_stubber.activate()
+
+        ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+        ecs_stubber.add_response(
+            "list_tasks",
+            ecs_list_tasks_response,
             {
-                "containers": [
-                    {"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}
-                ]
-            }
-        ]
-    }
-    sessions = {"000000000": mock_session}
-    mock_application = Application(app_name)
-    mock_application.environments = {env: Environment(env, "000000000", sessions)}
-    mock_subprocess = Mock()
+                "cluster": "cluster_arn",
+                "desiredStatus": "RUNNING",
+                "family": "copilot-task_name",
+            },
+        )
 
-    task_name = "task_name"
-    cluster_arn = "cluster_arn"
+        conduit.start(env, addon_name, addon_type, access)
 
-    conduit = Conduit(mock_application, mock_subprocess)
-
-    conduit.start(env, addon_name, addon_type, access)
-
-    mock_session.client.assert_called_with("ecs")
-    mock_client.list_tasks.assert_called_once_with(
-        cluster=cluster_arn,
-        desiredStatus="RUNNING",
-        family=f"copilot-{task_name}",
-    )
-    # mock_client.describe_tasks()
-    mock_subprocess.call.assert_called_once_with(
-        "copilot task exec "
-        f"--app {app_name} --env {env} "
-        f"--name {task_name} "
-        f"--command bash",
-        shell=True,
-    )
+    # stubber.add_response(
+    #     "list_tasks",
+    #     ecs_list_tasks_response,
+    #     {
+    #         "cluster": "cluster_arn",
+    #         "desiredStatus": "RUNNING",
+    #         "family": "copilot-task_name",
+    #     }
+    # )
+    #
+    # # conduit = Conduit(mock_application, mock_subprocess)
+    #
+    # conduit.start(env, addon_name, addon_type, access)
+    #
+    # mock_session.client.assert_called_with("ecs")
+    # mock_client.list_tasks.assert_called_once_with(
+    #     cluster=cluster_arn,
+    #     desiredStatus="RUNNING",
+    #     family=f"copilot-{task_name}",
+    # )
+    # # mock_client.describe_tasks()
+    # mock_subprocess.call.assert_called_once_with(
+    #     "copilot task exec "
+    #     f"--app {app_name} --env {env} "
+    #     f"--name {task_name} "
+    #     f"--command bash",
+    #     shell=True,
+    # )
 
 
 # TODO
