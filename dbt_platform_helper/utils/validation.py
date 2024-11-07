@@ -128,8 +128,6 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
-    _validate_s3_bucket_uniqueness({"extensions": addons})
-
     return errors
 
 
@@ -551,6 +549,7 @@ def _validate_s3_bucket_uniqueness(enriched_config):
         warn_on_s3_bucket_name_availability(name)
 
 
+# Todo: Lose disable_aws_validation
 def validate_platform_config(config, disable_aws_validation=False):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
@@ -558,8 +557,6 @@ def validate_platform_config(config, disable_aws_validation=False):
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
-    if not disable_aws_validation:
-        _validate_s3_bucket_uniqueness(enriched_config)
 
 
 def validate_database_copy_section(config):

@@ -344,6 +344,7 @@ class TestMakeAddonsCommand:
             len(actual_files) == len(all_expected_files) + 5
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
+    # Todo: confirm whether this is still relevant
     # @freeze_time("2023-08-22 16:00:00")
     # @patch(
     #     "dbt_platform_helper.utils.versioning.running_as_installed_package",
@@ -701,90 +702,6 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 1
         assert "No environments found in ./copilot/environments; exiting" in result.output
 
-    # @pytest.mark.parametrize(
-    #     "addon_config, has_postgres_addon",
-    #     [
-    #         ([REDIS_STORAGE_CONTENTS], False),
-    #         ([POSTGRES_STORAGE_CONTENTS], True),
-    #         ([AURORA_POSTGRES_STORAGE_CONTENTS], True),
-    #         ([OPENSEARCH_STORAGE_CONTENTS], False),
-    #         # Check when we have a mix of addons...
-    #         (
-    #             [
-    #                 POSTGRES_STORAGE_CONTENTS,
-    #                 OPENSEARCH_STORAGE_CONTENTS,
-    #                 S3_STORAGE_CONTENTS,
-    #             ],
-    #             True,
-    #         ),
-    #     ],
-    # )
-    # @patch(
-    #     "dbt_platform_helper.utils.versioning.running_as_installed_package",
-    #     new=Mock(return_value=False),
-    # )
-    # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    # @patch(
-    #     "dbt_platform_helper.commands.copilot.get_log_destination_arn",
-    #     new=Mock(
-    #         return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
-    #     ),
-    # )
-    # @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort", new=Mock())
-    # @mock_aws
-    # def test_addons_parameters_file_included_with_required_parameters_for_the_addon_types(
-    #     self, fakefs, addon_config, has_postgres_addon
-    # ):
-    #     def assert_in_addons_parameters_as_required(
-    #         checks, addons_parameters_contents, should_include
-    #     ):
-    #         should_or_should_not_string = "should"
-    #         if not should_include:
-    #             should_or_should_not_string += " not"
-    #         for check in checks:
-    #             assert (
-    #                 check in addons_parameters_contents
-    #             ) == should_include, (
-    #                 f"'{check}' {should_or_should_not_string} be included in addons.parameters.yml"
-    #             )
-    #
-    #     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
-    #
-    #     addons = {name: config for addon in addon_config for name, config in addon.items()}
-    #     create_test_manifests(addons, fakefs)
-    #
-    #     result = CliRunner().invoke(copilot, ["make-addons"])
-    #
-    #     assert result.exit_code == 0
-    #     assert (
-    #         "File copilot/environments/addons/addons.parameters.yml created" in result.output
-    #     ), "addons.parameters.yml should be included"
-    #     addons_parameters_contents = Path(
-    #         "/copilot/environments/addons/addons.parameters.yml"
-    #     ).read_text()
-    #     assert_in_addons_parameters_as_required(
-    #         checks=[
-    #             "EnvironmentSecurityGroup: !Ref EnvironmentSecurityGroup",
-    #             "PrivateSubnets: !Join [ ',', [ !Ref PrivateSubnet1, !Ref PrivateSubnet2, ] ]",
-    #             "PublicSubnets: !Join [ ',', [ !Ref PublicSubnet1, !Ref PublicSubnet2, ] ]",
-    #             "VpcId: !Ref VPC",
-    #         ],
-    #         addons_parameters_contents=addons_parameters_contents,
-    #         should_include=True,
-    #     )
-    #     assert_in_addons_parameters_as_required(
-    #         checks=[
-    #             "DefaultPublicRoute: !Ref DefaultPublicRoute",
-    #             "InternetGateway: !Ref InternetGateway",
-    #             "InternetGatewayAttachment: !Ref InternetGatewayAttachment",
-    #             "PublicRouteTable: !Ref PublicRouteTable",
-    #             "PublicSubnet1RouteTableAssociation: !Ref PublicSubnet1RouteTableAssociation",
-    #             "PublicSubnet2RouteTableAssociation: !Ref PublicSubnet2RouteTableAssociation",
-    #         ],
-    #         addons_parameters_contents=addons_parameters_contents,
-    #         should_include=has_postgres_addon,
-    #     )
-
     @pytest.mark.parametrize(
         "addon_config, addon_type, secret_name",
         [
@@ -894,22 +811,6 @@ def test_is_service_empty_manifest(fakefs, capfd):
 
     assert excinfo.value.code == 1
     assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
-
-
-# Todo: remove
-def setup_override_files_for_environments():
-    Path("./copilot/environments/overrides")
-    return [
-        # overrides_dir / "bin" / "override.ts",
-        # overrides_dir / ".gitignore",
-        # overrides_dir / "cdk.json",
-        # overrides_dir / "log_resource_policy.json",
-        # overrides_dir / "package-lock.json",
-        # overrides_dir / "package.json",
-        # overrides_dir / "README.md",
-        # overrides_dir / "stack.ts",
-        # overrides_dir / "tsconfig.json",
-    ]
 
 
 def create_test_manifests(addon_file_contents, fakefs):

@@ -4,17 +4,13 @@ from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import boto3
 import pytest
 import yaml
 from botocore.exceptions import ClientError
-from moto import mock_aws
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.validation import AVAILABILITY_UNCERTAIN_TEMPLATE
-from dbt_platform_helper.utils.validation import BUCKET_NAME_IN_USE_TEMPLATE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
@@ -26,7 +22,6 @@ from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
-from dbt_platform_helper.utils.validation import warn_on_s3_bucket_name_availability
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -81,9 +76,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "alb_addons.yml",
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_success(mock_name_is_available, addons_file):
-    mock_name_is_available.return_value = True
+def test_validate_addons_success(addons_file):
     errors = validate_addons(load_addons(addons_file))
 
     assert len(errors) == 0
@@ -258,18 +251,14 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_failure(mock_name_is_available, addons_file, exp_error):
-    mock_name_is_available.return_value = True
+def test_validate_addons_failure(addons_file, exp_error):
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
         assert bool(re.search(f"(?s)Error in {entry}:.*{error}", error_map[entry]))
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
-    mock_name_is_available.return_value = True
+def test_validate_addons_invalid_env_name_errors():
     error_map = validate_addons(
         {
             "my-s3": {
@@ -284,23 +273,6 @@ def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
             error_map["my-s3"],
         )
     )
-
-
-@pytest.mark.parametrize("http_code", ["403", "400"])
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, capfd):
-    client = mock_aws_client(mock_get_session)
-    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
-    validate_addons(
-        {
-            "my-s3": {
-                "type": "s3",
-                "environments": {"dev": {"bucket_name": "bucket"}},
-            }
-        }
-    )
-
-    assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
 def test_validate_addons_unsupported_addon():
@@ -371,62 +343,12 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
         ("bob--ol-s3", "Names cannot be suffixed '--ol-s3'."),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_s3_bucket_name_failure_cases(mock_name_is_available, bucket_name, error_message):
+def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
     exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
-    # We don't want to call out to AWS if the name isn't even valid.
-    mock_name_is_available.assert_not_called()
-
-
-@pytest.mark.parametrize("http_code", ["403", "400"])
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_warn_on_s3_bucket_name_availability_fails_40x(mock_get_session, http_code, capfd):
-    client = mock_aws_client(mock_get_session)
-    client.head_bucket.side_effect = ClientError({"Error": {"Code": http_code}}, "HeadBucket")
-
-    warn_on_s3_bucket_name_availability(f"bucket-name-{http_code}")
-
-    assert BUCKET_NAME_IN_USE_TEMPLATE.format(f"bucket-name-{http_code}") in capfd.readouterr().out
-
-
-@mock_aws
-def test_warn_on_s3_bucket_name_availability_success_200(capfd):
-    client = boto3.client("s3")
-    client.create_bucket(
-        Bucket="bucket-name-200", CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
-    )
-
-    warn_on_s3_bucket_name_availability(f"bucket-name-200")
-    assert "Warning:" not in capfd.readouterr().out
-
-
-@mock_aws
-def test_warn_on_s3_bucket_name_availability(clear_session_cache, capfd):
-    warn_on_s3_bucket_name_availability("brand-new-bucket")
-    assert "Warning:" not in capfd.readouterr().out
-
-
-@pytest.mark.parametrize(
-    "response",
-    [
-        {"Error": {"Code": "500"}},
-        {},
-    ],
-)
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_warn_on_s3_bucket_name_availability_error_conditions_display_error(
-    mock_get_session, response, capfd, clear_session_cache
-):
-    client = mock_aws_client(mock_get_session)
-    client.head_bucket.side_effect = ClientError(response, "HeadBucket")
-
-    warn_on_s3_bucket_name_availability("brand-new-bucket")
-
-    assert AVAILABILITY_UNCERTAIN_TEMPLATE.format("brand-new-bucket") in capfd.readouterr().out
 
 
 def test_validate_s3_bucket_name_multiple_failures():
@@ -445,24 +367,7 @@ def test_validate_s3_bucket_name_multiple_failures():
         assert exp_error in str(ex.value)
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_platform_config_success(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
-):
-    validate_platform_config(valid_platform_config)
-    assert mock_warn_on_s3_bucket_name_availability.called
-
-
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_platform_config_success_when_aws_validation_disabled(
-    mock_warn_on_s3_bucket_name_availability, valid_platform_config
-):
-    validate_platform_config(valid_platform_config, disable_aws_validation=True)
-    assert not mock_warn_on_s3_bucket_name_availability.called
-
-
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     mock_abort_with_error, valid_platform_config, pipeline_to_trigger
@@ -480,7 +385,6 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     )
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trigger_is_invalid(
     mock_abort_with_error, valid_platform_config
@@ -500,7 +404,6 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
     )
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_itself(
     mock_abort_with_error, valid_platform_config
@@ -522,7 +425,6 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
         ("non-prod-acc", ["dev", "prod"], ["prod"]),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
     mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
@@ -547,7 +449,6 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
     )
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     mock_abort_with_error,
@@ -576,7 +477,6 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     )
 
 
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 @patch("dbt_platform_helper.utils.validation.abort_with_error")
 def test_validate_platform_config_catches_database_copy_errors(
     mock_abort_with_error, platform_env_config
@@ -612,7 +512,6 @@ def test_validate_platform_config_catches_database_copy_errors(
         ("prod-acc", ["prod"]),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", new=Mock())
 def test_validate_platform_config_succeeds_if_pipeline_account_matches_environment_accounts(
     platform_env_config, account, envs
 ):
@@ -769,33 +668,11 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_validation_checks_s3_bucket_names(mock_get_session, s3_extensions_fixture, capfd):
-    load_and_validate_platform_config()
-
-    assert "Warning" not in capfd.readouterr().out
-    assert mock_get_session.called
-
-
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_aws_validation_can_be_switched_off(mock_get_session, s3_extensions_fixture, capfd):
     load_and_validate_platform_config(disable_aws_validation=True)
 
     assert "Warning" not in capfd.readouterr().out
     assert not mock_get_session.called
-
-
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
-    mock_get_session, s3_extensions_fixture, capfd
-):
-    client = mock_aws_client(mock_get_session)
-    response = {"Error": {"Code": "403"}}
-    client.head_bucket.side_effect = ClientError(response, "HeadBucket")
-
-    load_and_validate_platform_config()
-
-    assert "Warning" in capfd.readouterr().out
-    assert mock_get_session.called
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
