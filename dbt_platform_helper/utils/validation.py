@@ -42,6 +42,7 @@ AVAILABILITY_UNCERTAIN_TEMPLATE = (
 BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
 
 
+# Todo: Is this still relevant?
 def warn_on_s3_bucket_name_availability(name: str):
     """
     We try to find the bucket name in AWS.
