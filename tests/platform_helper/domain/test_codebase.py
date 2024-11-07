@@ -43,7 +43,6 @@ class CodebaseMocks:
         }
 
 
-@pytest.mark.focus
 def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
@@ -61,7 +60,6 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
         )
 
 
-@pytest.mark.focus
 @patch("subprocess.run")
 def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subprocess_run):
     mocks = CodebaseMocks()
@@ -279,6 +277,23 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment():
             [
                 call(
                     """The environment "not-an-environment" either does not exist or has not been deployed.""",
+                    fg="red",
+                ),
+            ]
+        )
+
+
+def test_codebase_list_does_not_trigger_build_without_an_application():
+    mocks = CodebaseMocks()
+    mocks.load_application_fn.side_effect = ApplicationNotFoundError()
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(click.Abort) as exc:
+        codebase.list("not-an-application", True)
+        mocks.echo_fn.assert_has_calls(
+            [
+                call(
+                    """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
                     fg="red",
                 ),
             ]

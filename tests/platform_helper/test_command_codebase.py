@@ -330,6 +330,17 @@ class TestCodebaseList:
         mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_aborts_when_application_does_not_exist(self, mock_codebase_object):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.list.side_effect = ApplicationNotFoundError
+        os.environ["AWS_PROFILE"] = "foo"
+
+        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
+
+        mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
+        assert result.exit_code == 1
+
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     def test_lists_codebases_with_images_successfully(self, get_aws_session_or_abort):
         client = mock_aws_client(get_aws_session_or_abort)
@@ -478,22 +489,6 @@ class TestCodebaseList:
             < result.output.index("commit/3")
             < result.output.index("commit/2")
             < result.output.index("commit/1")
-        )
-
-    @patch(
-        "dbt_platform_helper.commands.codebase.load_application",
-        side_effect=ApplicationNotFoundError,
-    )
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_aborts_when_application_does_not_exist(self, mock_aws_session, load_application):
-        from dbt_platform_helper.commands.codebase import list
-
-        os.environ["AWS_PROFILE"] = "foo"
-        result = CliRunner().invoke(list, ["--app", "not-an-application"])
-
-        assert (
-            """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-            in result.output
         )
 
 
