@@ -23,7 +23,9 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
 class Conduit:
-    def __init__(self, application: Application, subprocess: DBTSubprocess = DBTSubprocess()):
+    def __init__(
+        self, env: str, application: Application, subprocess: DBTSubprocess = DBTSubprocess()
+    ):
         """
 
         Args:
@@ -31,7 +33,14 @@ class Conduit:
         """
         self.application = application
         self.subprocess = subprocess
-        self.ecs_client = self.application.environments["dev"].session.client("ecs")
+        self.ecs_client = self.application.environments[env].session.client("ecs")
+        self.ssm_client = self.application.environments[env].session.client("ssm")
+        self.cloudformation_client = self.application.environments[env].session.client(
+            "cloudformation"
+        )
+        self.secretsmanager_client = self.application.environments[env].session.client(
+            "secretsmanager"
+        )
 
     def addon_client_is_running(self, env: str, cluster_arn: str, task_name: str):
         print(self.application.environments[env].session)

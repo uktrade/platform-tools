@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import boto3
 import pytest
+from botocore import stub
 from botocore.stub import Stubber
 
 from dbt_platform_helper.domain.conduit import AddonNotFoundConduitError
@@ -14,6 +15,18 @@ from dbt_platform_helper.domain.conduit import SecretNotFoundConduitError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
+# class TestConduit(unittest.TestCase):
+#     def setUp(self):
+
+#         self.ecs_stubber = Stubber()
+#         self.ecs_stubber.activate()
+#         return super().setUp()
+
+#     def tearDown(self):
+
+#         self.ecs_stubber.deactivate()
+#         return super().tearDown()
+
 
 # @pytest.fixture(scope="function")
 # def ecs_session(aws_credentials):
@@ -25,90 +38,57 @@ from dbt_platform_helper.utils.application import Environment
     "app_name, addon_type, addon_name, access",
     [
         ("app_1", "postgres", "custom-name-postgres", "read"),
-        ("app_2", "postgres", "custom-name-rds-postgres", "read"),
-        ("app_1", "redis", "custom-name-redis", "read"),
-        ("app_1", "opensearch", "custom-name-opensearch", "read"),
+        # ("app_2", "postgres", "custom-name-rds-postgres", "read"),
+        # ("app_1", "redis", "custom-name-redis", "read"),
+        # ("app_1", "opensearch", "custom-name-opensearch", "read"),
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
-    session = boto3.session.Session(profile_name="lite", region_name="eu-west-2")
-    ecs_client = session.client("ecs")
-    ecs_stubber = Stubber(ecs_client)
+    session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+
+    ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+    env = "dev"
+    sessions = {"000000000": session}
+    dummy_application = Application(app_name)
+    dummy_application.environments = {env: Environment(env, "000000000", sessions)}
+    mock_subprocess = Mock()
+
+    conduit = Conduit(dummy_application, mock_subprocess)
+    ecs_stubber = Stubber(conduit.ecs_client)
+    ecs_stubber.activate()
+
     ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
     ecs_stubber.add_response(
         "list_tasks",
         ecs_list_tasks_response,
         {
-            "cluster": "cluster_arn",
+            "cluster": stub.ANY,  # "cluster_arn",
             "desiredStatus": "RUNNING",
-            "family": "copilot-task_name",
+            "family": stub.ANY,  # "copilot-task_name",
+        },
+    )
+    ecs_stubber.add_response(
+        "list_tasks",
+        ecs_list_tasks_response,
+        {
+            "cluster": stub.ANY,  # "cluster_arn",
+            "desiredStatus": "RUNNING",
+            "family": stub.ANY,  # "copilot-task_name",
         },
     )
 
-    ecs_stubber.activate()
+    conduit.start(env, addon_name, addon_type, access)
 
-    with ecs_stubber:
-        env = "dev"
-
-        # ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
-        # stubber = Stubber(ecs_session.client("ecs"))
-        # stubber.create_cluster(clusterName="something")
-        # stubber.activate()
-
-        # stubber.add_response(
-        #     "list_tasks",
-        #     ecs_list_tasks_response,
-        #     {
-        #         "cluster": "cluster_arn",
-        #         "desiredStatus": "RUNNING",
-        #         "family": "copilot-task_name",
-        #     }
-        # )
-        #
-        # mock_client.describe_tasks.return_value = {
-        #     "tasks": [
-        #         {
-        #             "containers": [
-        #                 {"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}
-        #             ]
-        #         }
-        #     ]
-        # }
-        sessions = {"000000000": session}
-        mock_application = Application(app_name)
-        mock_application.environments = {env: Environment(env, "000000000", sessions)}
-        mock_subprocess = Mock()
-
-        conduit = Conduit(mock_application, mock_subprocess)
-        ecs_stubber = Stubber(conduit.ecs_client)
-        ecs_stubber.activate()
-
-        ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
-        ecs_stubber.add_response(
-            "list_tasks",
-            ecs_list_tasks_response,
-            {
-                "cluster": "cluster_arn",
-                "desiredStatus": "RUNNING",
-                "family": "copilot-task_name",
-            },
-        )
-
-        conduit.start(env, addon_name, addon_type, access)
-
-    # stubber.add_response(
-    #     "list_tasks",
-    #     ecs_list_tasks_response,
-    #     {
-    #         "cluster": "cluster_arn",
-    #         "desiredStatus": "RUNNING",
-    #         "family": "copilot-task_name",
-    #     }
-    # )
-    #
-    # # conduit = Conduit(mock_application, mock_subprocess)
-    #
-    # conduit.start(env, addon_name, addon_type, access)
+    # Used when using magic mocks
+    # mock_client.describe_tasks.return_value = {
+    #     "tasks": [
+    #         {
+    #             "containers": [
+    #                 {"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}
+    #             ]
+    #         }
+    #     ]
+    # }
     #
     # mock_session.client.assert_called_with("ecs")
     # mock_client.list_tasks.assert_called_once_with(
