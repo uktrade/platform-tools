@@ -181,7 +181,7 @@ class Codebase:
         for codebase in codebases:
             self.echo_fn(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
             if with_images:
-                self.list_latest_images(
+                self._list_latest_images(
                     ecr_client, f"{application.name}/{codebase['name']}", codebase["repository"]
                 )
 
@@ -265,3 +265,34 @@ class Codebase:
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
             return self.__get_build_url_from_arn(response["build"]["arn"])
+
+    def _list_latest_images(self, ecr_client, ecr_repository_name, codebase_repository):
+        paginator = ecr_client.get_paginator("describe_images")
+        describe_images_response_iterator = paginator.paginate(
+            repositoryName=ecr_repository_name,
+            filter={"tagStatus": "TAGGED"},
+        )
+        images = []
+        for page in describe_images_response_iterator:
+            images += page["imageDetails"]
+
+        sorted_images = sorted(
+            images,
+            key=lambda i: i["imagePushedAt"],
+            reverse=True,
+        )
+
+        MAX_RESULTS = 20
+
+        for image in sorted_images[:MAX_RESULTS]:
+            try:
+                commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+                if not commit_tag:
+                    continue
+
+                commit_hash = commit_tag.replace("commit-", "")
+                self.echo_fn(
+                    f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+                )
+            except StopIteration:
+                continue

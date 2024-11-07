@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
@@ -298,3 +299,55 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
                 ),
             ]
         )
+
+
+def test_lists_codebases_with_images_successfully():
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client.get_parameters_by_path.return_value = {
+        "Parameters": [
+            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+        ],
+    }
+    client.get_paginator.return_value.paginate.return_value = [
+        {
+            "imageDetails": [
+                {
+                    "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-ee4a82c"],
+                    "imagePushedAt": datetime(2023, 11, 8, 17, 55, 35),
+                },
+                {
+                    "imageTags": ["branch-main", "commit-d269d51"],
+                    "imagePushedAt": datetime(2023, 11, 8, 17, 20, 34),
+                },
+                {
+                    "imageTags": ["cache"],
+                    "imagePushedAt": datetime(2023, 11, 8, 10, 31, 8),
+                },
+                {
+                    "imageTags": ["commit-57c0a08"],
+                    "imagePushedAt": datetime(2023, 11, 1, 17, 37, 2),
+                },
+            ]
+        }
+    ]
+
+    codebase.list("test-application", True)
+
+    mocks.echo_fn.assert_has_calls(
+        [
+            call("The following codebases are available:"),
+            call("- application (https://github.com/uktrade/example)"),
+            call(
+                "  - https://github.com/uktrade/example/commit/ee4a82c - published: 2023-11-08 17:55:35"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/d269d51 - published: 2023-11-08 17:20:34"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/57c0a08 - published: 2023-11-01 17:37:02"
+            ),
+            call(""),
+        ]
+    )

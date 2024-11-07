@@ -25,38 +25,6 @@ def prepare():
     Codebase().prepare()
 
 
-def list_latest_images(ecr_client, ecr_repository_name, codebase_repository):
-    paginator = ecr_client.get_paginator("describe_images")
-    describe_images_response_iterator = paginator.paginate(
-        repositoryName=ecr_repository_name,
-        filter={"tagStatus": "TAGGED"},
-    )
-    images = []
-    for page in describe_images_response_iterator:
-        images += page["imageDetails"]
-
-    sorted_images = sorted(
-        images,
-        key=lambda i: i["imagePushedAt"],
-        reverse=True,
-    )
-
-    MAX_RESULTS = 20
-
-    for image in sorted_images[:MAX_RESULTS]:
-        try:
-            commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
-            if not commit_tag:
-                continue
-
-            commit_hash = commit_tag.replace("commit-", "")
-            click.echo(
-                f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
-            )
-        except StopIteration:
-            continue
-
-
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
 @click.option(
