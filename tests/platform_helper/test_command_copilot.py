@@ -344,42 +344,6 @@ class TestMakeAddonsCommand:
             len(actual_files) == len(all_expected_files) + 5
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
-    # Todo: confirm whether this is still relevant
-    # @freeze_time("2023-08-22 16:00:00")
-    # @patch(
-    #     "dbt_platform_helper.utils.versioning.running_as_installed_package",
-    #     new=Mock(return_value=False),
-    # )
-    # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    # @patch(
-    #     "dbt_platform_helper.commands.copilot.get_log_destination_arn",
-    #     new=Mock(
-    #         return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
-    #     ),
-    # )
-    # @mock_aws
-    # @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-    # def test_make_addons_success_but_warns_when_bucket_name_in_use(self, mock_get_session, fakefs):
-    #     """Test that make_addons generates the expected directories and file
-    #     contents."""
-    #     # Arrange
-    #     client = mock_aws_client(mock_get_session)
-    #     client.head_bucket.side_effect = ClientError({"Error": {"Code": "400"}}, "HeadBucket")
-    #     addons_dir = FIXTURES_DIR / "make_addons"
-    #     fakefs.add_real_directory(
-    #         addons_dir / "config/copilot", read_only=False, target_path="copilot"
-    #     )
-    #     fakefs.add_real_file(
-    #         addons_dir / "s3_addons.yml", read_only=False, target_path=PLATFORM_CONFIG_FILE
-    #     )
-    #     fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
-    #
-    #     # Act
-    #     result = CliRunner().invoke(copilot, ["make-addons"])
-    #
-    #     assert result.exit_code == 0
-    #     assert BUCKET_NAME_IN_USE_TEMPLATE.format("my-bucket") in result.output
-
     @freeze_time("2023-08-22 16:00:00")
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
