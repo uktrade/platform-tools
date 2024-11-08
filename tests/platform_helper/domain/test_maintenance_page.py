@@ -407,7 +407,9 @@ class TestCommandHelperMethods:
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
-        assert rules[1]["Conditions"][0]["SourceIpConfig"]["Values"] == ["1.2.3.4/32", "5.6.7.8/32"]
+        assert sorted(rules[1]["Conditions"][0]["SourceIpConfig"]["Values"]) == sorted(
+            ["1.2.3.4/32", "5.6.7.8/32"]
+        )
         assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
