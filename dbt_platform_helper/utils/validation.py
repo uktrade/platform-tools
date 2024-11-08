@@ -503,22 +503,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 )
 
 
-def _validate_s3_bucket_uniqueness(enriched_config):
-    extensions = enriched_config.get("extensions", {})
-    bucket_extensions = [
-        s3_ext
-        for s3_ext in extensions.values()
-        if "type" in s3_ext and s3_ext["type"] in ("s3", "s3-policy")
-    ]
-    environments = [
-        env for ext in bucket_extensions for env in ext.get("environments", {}).values()
-    ]
-    bucket_names = [env.get("bucket_name") for env in environments]
-
-    for name in bucket_names:
-        warn_on_s3_bucket_name_availability(name)
-
-
 def validate_platform_config(config):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)

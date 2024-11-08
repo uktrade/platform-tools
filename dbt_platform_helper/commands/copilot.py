@@ -275,8 +275,7 @@ def make_addons():
         environments = addon_config.pop("environments")
         if addon_template_map[addon_type].get("requires_addons_parameters", False):
             pass
-        # Todo: remove Aurora stuff
-        if addon_type in ["aurora-postgres", "postgres"]:
+        if addon_type in ["postgres"]:
             pass
 
         for environment_name, environment_config in environments.items():
