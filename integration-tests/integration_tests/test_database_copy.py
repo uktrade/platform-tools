@@ -68,4 +68,10 @@ def test_can_speak_to_s3(s3_client):
 
 def test_data_is_dumped_into_s3(s3_client):
     response = s3_client.list_objects_v2(Bucket="test-dump-bucket")
-    assert response["Contents"][0]["Key"] == "data_dump.sql"
+    object = s3_client.get_object(Bucket="test-dump-bucket", Key="data_dump.sql")
+    print(f"FILE CONTENTS: {object["Body"].read().decode("utf-8", errors='ignore')}")
+    # assert response["Contents"][0]["Key"] == "data_dump.sql"
+    assert False
+    
+# Trying to set up the source DB with a table so that there's something to migrate
+

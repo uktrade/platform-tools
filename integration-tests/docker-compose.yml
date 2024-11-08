@@ -27,6 +27,8 @@ services:
       - '5432:5432'
     networks:
       - test-net
+    volumes:
+      - ./source_db_init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d source -h source-db -p 5432 -U test_user | grep 'accepting connections' || exit 1"]
       interval: 10s
