@@ -368,8 +368,6 @@ def _generate_service_addons(
                 {
                     "addon_config": service_addon_config,
                     "log_destination": log_destination_arns,
-                    # todo: Lose this
-                    "is_terraform": True,
                 }
             )
 

@@ -1,11 +1,9 @@
 from pathlib import Path
 
-import pytest
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
-from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
 
@@ -23,21 +21,6 @@ def test_get_environment_pipeline_names_defaults_to_empty_list_when_theres_no_pl
     names = get_environment_pipeline_names()
 
     assert {} == names
-
-
-# Todo: Remove this
-@pytest.mark.parametrize(
-    "platform_config_content, expected_result",
-    [
-        ("application: my-app\nlegacy_project: True", True),
-        ("application: my-app\nlegacy_project: False", True),
-        ("application: my-app", True),
-    ],
-)
-def test_is_terraform_project(fakefs, platform_config_content, expected_result):
-    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=platform_config_content)
-
-    assert is_terraform_project() == expected_result
 
 
 def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(fakefs):

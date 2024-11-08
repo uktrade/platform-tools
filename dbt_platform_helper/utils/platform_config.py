@@ -25,8 +25,3 @@ def get_environment_pipeline_names():
     if pipelines_config:
         return pipelines_config.keys()
     return {}
-
-
-# Todo: Remove def is_terraform_project()
-def is_terraform_project() -> bool:
-    return True
