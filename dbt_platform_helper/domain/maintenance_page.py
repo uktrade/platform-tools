@@ -387,7 +387,7 @@ def create_header_rule(
     )
 
 
-def ip_to_cidr(ip: str, prefix_length: int):
+def ip_to_cidr_range(ip: str, prefix_length: int):
     if "/" in ip:
         return ip
     prefix = str(prefix_length)
@@ -408,7 +408,7 @@ def create_source_ip_rule(
     combined_conditions = [
         {
             "Field": "source-ip",
-            "SourceIpConfig": {"Values": [ip_to_cidr(value, 32) for value in values]},
+            "SourceIpConfig": {"Values": [ip_to_cidr_range(value, 32) for value in values]},
         }
     ] + conditions
 
