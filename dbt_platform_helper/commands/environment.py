@@ -10,7 +10,6 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.versioning import (
@@ -135,10 +134,6 @@ def generate(name, vpc_name):
     help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
-    if not is_terraform_project():
-        click.secho("This is not a terraform project. Exiting.", fg="red")
-        exit(1)
-
     conf = load_and_validate_platform_config()
 
     env_config = apply_environment_defaults(conf)["environments"][name]
