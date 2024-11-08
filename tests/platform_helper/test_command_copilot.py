@@ -390,11 +390,7 @@ class TestMakeAddonsCommand:
         ]
 
         for f in old_addon_files:
-            fakefs.add_real_file(
-                addons_dir / "expected" / f,
-                read_only=False,
-                target_path=Path("copilot", f),
-            )
+            fakefs.create_file(Path("copilot", f), contents="Does not matter")
 
         # Act
         CliRunner().invoke(copilot, ["make-addons"])
