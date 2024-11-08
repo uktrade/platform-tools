@@ -53,9 +53,18 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     dummy_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
 
-    conduit = Conduit(dummy_application, mock_subprocess)
+    conduit = Conduit(env, dummy_application, mock_subprocess)
+
+    cf_stubber = Stubber(conduit.cloudformation_client)
     ecs_stubber = Stubber(conduit.ecs_client)
+    iam_stubber = Stubber(conduit.iam_client)
+    sm_stubber = Stubber(conduit.secrets_manager_client)
+    ssm_stubber = Stubber(conduit.ssm_client)
+    cf_stubber.activate()
     ecs_stubber.activate()
+    iam_stubber.activate()
+    sm_stubber.activate()
+    ssm_stubber.activate()
 
     ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
     ecs_stubber.add_response(
@@ -150,7 +159,7 @@ def test_conduit_domain_when_no_cluster_exists():
         ]
     }
 
-    conduit = Conduit(mock_application)
+    conduit = Conduit(env, mock_application)
 
     with pytest.raises(NoClusterConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
@@ -173,7 +182,7 @@ def test_conduit_domain_when_no_connection_secret_exists():
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
 
-    conduit = Conduit(mock_application, mock_subprocess)
+    conduit = Conduit(env, mock_application, mock_subprocess)
 
     with pytest.raises(SecretNotFoundConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
@@ -200,7 +209,7 @@ def test_conduit_domain_when_client_task_fails_to_start():
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
 
-    conduit = Conduit(mock_application, mock_subprocess)
+    conduit = Conduit(env, mock_application, mock_subprocess)
 
     with pytest.raises(CreateTaskTimeoutConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
@@ -311,7 +320,7 @@ def test_conduit_domain_when_addon_type_is_invalid():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(mock_application)
+    conduit = Conduit(env, mock_application)
 
     with pytest.raises(InvalidAddonTypeConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
@@ -340,7 +349,7 @@ def test_conduit_domain_when_addon_does_not_exist():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(mock_application)
+    conduit = Conduit(env, mock_application)
 
     with pytest.raises(AddonNotFoundConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
@@ -362,7 +371,7 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(mock_application)
+    conduit = Conduit(env, mock_application)
 
     with pytest.raises(ParameterNotFoundConduitError) as exc:
         conduit.start(env, addon_name, addon_type, access)
