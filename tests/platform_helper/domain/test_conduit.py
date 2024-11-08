@@ -2,16 +2,14 @@ from unittest.mock import Mock
 
 import boto3
 import pytest
-from botocore import stub
-from botocore.stub import Stubber
 
 from dbt_platform_helper.domain.conduit import AddonNotFoundConduitError
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.domain.conduit import CreateTaskTimeoutConduitError
 from dbt_platform_helper.domain.conduit import InvalidAddonTypeConduitError
-from dbt_platform_helper.domain.conduit import NoClusterConduitError
 from dbt_platform_helper.domain.conduit import ParameterNotFoundConduitError
-from dbt_platform_helper.domain.conduit import SecretNotFoundConduitError
+from dbt_platform_helper.providers.aws import SecretNotFoundError
+from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
+from dbt_platform_helper.providers.copilot import NoClusterError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
@@ -45,65 +43,86 @@ from dbt_platform_helper.utils.application import Environment
 )
 def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-
     ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
     env = "dev"
     sessions = {"000000000": session}
     dummy_application = Application(app_name)
     dummy_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
-
-    conduit = Conduit(env, dummy_application, mock_subprocess)
-
-    cf_stubber = Stubber(conduit.cloudformation_client)
-    ecs_stubber = Stubber(conduit.ecs_client)
-    iam_stubber = Stubber(conduit.iam_client)
-    sm_stubber = Stubber(conduit.secrets_manager_client)
-    ssm_stubber = Stubber(conduit.ssm_client)
-    cf_stubber.activate()
-    ecs_stubber.activate()
-    iam_stubber.activate()
-    sm_stubber.activate()
-    ssm_stubber.activate()
-
-    ecs__list_clusters_response = {
-        "clusterArns": [
-            "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1",
-        ]
-    }
-    ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
-
-    list_tags_for_resource_response = {
-        "tags": [
-            {"key": "copilot-application", "value": app_name},
-            {"key": "copilot-environment", "value": env},
-            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-        ]
-    }
-
-    ecs_stubber.add_response("list_clusters", ecs__list_clusters_response)
-
-    ecs_stubber.add_response(
-        "list_tags_for_resource", list_tags_for_resource_response, {"resourceArn": stub.ANY}
+    addon_client_is_running_fn = Mock(return_value=True)
+    connect_to_addon_client_task_fn = Mock()
+    create_addon_client_task_fn = Mock()
+    create_postgres_admin_task_fn = Mock()
+    get_cluster_arn_fn = Mock(
+        return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
     )
-    ecs_stubber.add_response(
-        "list_tasks",
-        ecs_list_tasks_response,
-        {
-            "cluster": stub.ANY,  # "cluster_arn",
-            "desiredStatus": "RUNNING",
-            "family": stub.ANY,  # "copilot-task_name",
-        },
+    get_or_create_task_name_fn = Mock(return_value="task_name")
+    add_stack_delete_policy_to_task_role_fn = Mock()
+    update_conduit_stack_resources_fn = Mock()
+
+    conduit = Conduit(
+        env=env,
+        application=dummy_application,
+        subprocess=mock_subprocess,
+        addon_client_is_running_fn=addon_client_is_running_fn,
+        connect_to_addon_client_task_fn=connect_to_addon_client_task_fn,
+        create_addon_client_task_fn=create_addon_client_task_fn,
+        create_postgres_admin_task_fn=create_postgres_admin_task_fn,
+        get_cluster_arn_fn=get_cluster_arn_fn,
+        get_or_create_task_name_fn=get_or_create_task_name_fn,
+        add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role_fn,
+        update_conduit_stack_resources_fn=update_conduit_stack_resources_fn,
     )
-    ecs_stubber.add_response(
-        "list_tasks",
-        ecs_list_tasks_response,
-        {
-            "cluster": stub.ANY,  # "cluster_arn",
-            "desiredStatus": "RUNNING",
-            "family": stub.ANY,  # "copilot-task_name",
-        },
-    )
+
+    # cf_stubber = Stubber(conduit.cloudformation_client)
+    # ecs_stubber = Stubber(conduit.ecs_client)
+    # iam_stubber = Stubber(conduit.iam_client)
+    # sm_stubber = Stubber(conduit.secrets_manager_client)
+    # ssm_stubber = Stubber(conduit.ssm_client)
+    # cf_stubber.activate()
+    # ecs_stubber.activate()
+    # iam_stubber.activate()
+    # sm_stubber.activate()
+    # ssm_stubber.activate()
+
+    # ecs__list_clusters_response = {
+    #     "clusterArns": [
+    #         "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1",
+    #     ]
+    # }
+    # ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+    #
+    # list_tags_for_resource_response = {
+    #     "tags": [
+    #         {"key": "copilot-application", "value": app_name},
+    #         {"key": "copilot-environment", "value": env},
+    #         {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
+    #     ]
+    # }
+    #
+    # ecs_stubber.add_response("list_clusters", ecs__list_clusters_response)
+    #
+    # ecs_stubber.add_response(
+    #     "list_tags_for_resource", list_tags_for_resource_response, {"resourceArn": stub.ANY}
+    # )
+    # ecs_stubber.add_response(
+    #     "list_tasks",
+    #     ecs_list_tasks_response,
+    #     {
+    #         "cluster": stub.ANY,  # "cluster_arn",
+    #         "desiredStatus": "RUNNING",
+    #         "family": stub.ANY,  # "copilot-task_name",
+    #     },
+    # )
+    # ecs_stubber.add_response(
+    #     "list_tasks",
+    #     ecs_list_tasks_response,
+    #     {
+    #         "cluster": stub.ANY,  # "cluster_arn",
+    #         "desiredStatus": "RUNNING",
+    #         "family": stub.ANY,  # "copilot-task_name",
+    #     },
+    # )
 
     conduit.start(env, addon_name, addon_type, access)
 
@@ -139,7 +158,6 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
 
 
 def test_conduit_domain_when_no_cluster_exists():
-    # mock application
     app_name = "failed_app"
     addon_name = ""
     addon_type = "postgres"
@@ -149,8 +167,9 @@ def test_conduit_domain_when_no_cluster_exists():
     mock_client = Mock()
     mock_session = Mock()
     mock_session.client.return_value = mock_client
-    mock_client.list_tasks.return_value = {"taskArns": ["test_arn"], "nextToken": ""}
+    # mock_client.list_tasks.return_value = {"taskArns": ["test_arn"], "nextToken": ""}
     sessions = {"000000000": mock_session}
+    get_cluster_arn_fn = Mock(side_effect=NoClusterError())
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_client.describe_tasks.return_value = {
@@ -178,9 +197,9 @@ def test_conduit_domain_when_no_cluster_exists():
         ]
     }
 
-    conduit = Conduit(env, mock_application)
+    conduit = Conduit(env, mock_application, get_cluster_arn_fn=get_cluster_arn_fn)
 
-    with pytest.raises(NoClusterConduitError) as exc:
+    with pytest.raises(NoClusterError) as exc:
         conduit.start(env, addon_name, addon_type, access)
 
 
@@ -200,10 +219,16 @@ def test_conduit_domain_when_no_connection_secret_exists():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
+    create_addon_client_task_fn = Mock(side_effect=SecretNotFoundError())
 
-    conduit = Conduit(env, mock_application, mock_subprocess)
+    conduit = Conduit(
+        env,
+        mock_application,
+        mock_subprocess,
+        create_addon_client_task_fn=create_addon_client_task_fn,
+    )
 
-    with pytest.raises(SecretNotFoundConduitError) as exc:
+    with pytest.raises(SecretNotFoundError) as exc:
         conduit.start(env, addon_name, addon_type, access)
 
 
@@ -227,10 +252,16 @@ def test_conduit_domain_when_client_task_fails_to_start():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
+    connect_to_addon_client_task_fn = Mock(side_effect=CreateTaskTimeoutError())
 
-    conduit = Conduit(env, mock_application, mock_subprocess)
+    conduit = Conduit(
+        env,
+        mock_application,
+        mock_subprocess,
+        connect_to_addon_client_task_fn=connect_to_addon_client_task_fn,
+    )
 
-    with pytest.raises(CreateTaskTimeoutConduitError) as exc:
+    with pytest.raises(CreateTaskTimeoutError) as exc:
         conduit.start(env, addon_name, addon_type, access)
 
 
