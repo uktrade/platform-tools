@@ -33,7 +33,9 @@ def list(app, with_images):
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
 @click.option(
-    "--codebase", help="The codebase name as specified in the pipelines.yml file", required=True
+    "--codebase",
+    help="The codebase name as specified in the platform-config.yml file",
+    required=True,
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
@@ -44,7 +46,9 @@ def build(app, codebase, commit):
 @click.option("--app", help="AWS application name", required=True)
 @click.option("--env", help="AWS Copilot environment", required=True)
 @click.option(
-    "--codebase", help="The codebase name as specified in the pipelines.yml file", required=True
+    "--codebase",
+    help="The codebase name as specified in the platform-config.yml file",
+    required=True,
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
