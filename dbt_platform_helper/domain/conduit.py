@@ -37,7 +37,7 @@ class Conduit:
         self.application = application
         self.subprocess = subprocess
         self.ecs_client = self.application.environments[env].session.client("ecs")
-        self.iam_client = self.application.environments[env].session.client("iam_client")
+        self.iam_client = self.application.environments[env].session.client("iam")
         self.ssm_client = self.application.environments[env].session.client("ssm")
         self.cloudformation_client = self.application.environments[env].session.client(
             "cloudformation"
