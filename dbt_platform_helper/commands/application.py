@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# application commands are deprecated, do not spend time refactoring them
+
 import time
 from datetime import datetime
 from datetime import timedelta
@@ -91,19 +93,19 @@ def get_query_results(env, app, query_string, timeout):
     return cpu_response
 
 
-@click.group(chain=True, cls=ClickDocOptGroup)
+@click.group(chain=True, cls=ClickDocOptGroup, deprecated=True)
 def application():
-    """Application metrics."""
+    """[DEPRECATED] Application metrics."""
     check_platform_helper_version_needs_update()
 
 
-@application.command()
+@application.command(deprecated=True)
 @click.option("--env", type=str, required=True)
 @click.option("--app", type=str, required=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
 def container_stats(env, app, storage, network):
-    """Command to get application container level metrics."""
+    """[DEPRECATED] Command to get application container level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized) by TaskId, ContainerName, TaskDefinitionFamily, TaskDefinitionRevision, Image, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes | filter Type='Container' | sort TaskId, ContainerName desc"
@@ -217,14 +219,14 @@ def container_stats(env, app, storage, network):
         index = index + 1
 
 
-@application.command()
+@application.command(deprecated=True)
 @click.option("--env", type=str, required=True)
 @click.option("--app", type=str, required=True)
 @click.option("--disk", is_flag=True)
 @click.option("--storage", is_flag=True)
 @click.option("--network", is_flag=True)
 def task_stats(env, app, disk, storage, network):
-    """Command to get application task level metrics."""
+    """[DEPRECATED] Command to get application task level metrics."""
 
     # Query string to get the required container stats
     query_string = "stats max(CpuUtilized), max(MemoryUtilized), max(EphemeralStorageUtilized) by TaskId, TaskDefinitionFamily, TaskDefinitionRevision, StorageReadBytes, StorageWriteBytes, NetworkRxPackets, NetworkTxBytes, KnownStatus | filter Type='Task' | sort TaskId desc"

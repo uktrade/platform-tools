@@ -70,7 +70,7 @@ platform-helper <command> [--version]
 
 [↩ Parent](#platform-helper)
 
-    Application metrics.
+    [DEPRECATED] Application metrics.
 
 ## Usage
 
@@ -92,7 +92,7 @@ platform-helper application (container-stats|task-stats)
 
 [↩ Parent](#platform-helper-application)
 
-    Command to get application container level metrics.
+    [DEPRECATED] Command to get application container level metrics.
 
 ## Usage
 
@@ -118,7 +118,7 @@ platform-helper application container-stats --env <environment> --app <applicati
 
 [↩ Parent](#platform-helper-application)
 
-    Command to get application task level metrics.
+    [DEPRECATED] Command to get application task level metrics.
 
 ## Usage
 
