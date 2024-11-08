@@ -47,6 +47,8 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 `poetry run pytest --numprocesses 0`
 
+We use [Codecov](https://app.codecov.io/github/uktrade/platform-tools) to monitor the comprehensiveness and performance of our init tests.
+
 #### Manual testing
 
 You may want to test any CLI changes locally.
