@@ -122,6 +122,31 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
     assert is_same_files(compare_directories) is True
 
 
+def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
+    mocks = CodebaseMocks()
+    mocks.load_application_fn.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+    os.chdir(tmp_path)
+    Path(tmp_path / "copilot").mkdir()
+
+    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    codebase.prepare()
+
+    mocks.echo_fn.assert_has_calls(
+        [
+            call(
+                "You are in the deploy repository; make sure you are in the application codebase repository.",
+            ),
+        ]
+    )
+
+
 def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
@@ -139,26 +164,31 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
         )
 
 
-@patch("subprocess.run")
-def test_codebase_build_does_not_trigger_without_a_valid_commit_hash(mock_subprocess_run):
+def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
     mocks = CodebaseMocks()
+    mocks.load_application_fn.side_effect = SystemExit(1)
     codebase = Codebase(**mocks.params())
+    os.chdir(tmp_path)
+    Path(tmp_path / "copilot").mkdir()
+
+    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     with pytest.raises(SystemExit) as exc:
-        mock_subprocess_run.return_value = MagicMock(
-            stderr="The commit hash 'nonexistent-commit-hash' either does not exist or you need to run `git fetch`.",
-            returncode=1,
-        )
+        codebase.prepare()
 
-        codebase.build("test-application", "application", "nonexistent-commit-hash")
-        mocks.echo_fn.assert_has_calls(
-            [
-                call(
-                    """The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`.""",
-                    fg="red",
-                ),
-            ]
-        )
+    mocks.echo_fn.assert_has_calls(
+        [
+            call(
+                "You are in the deploy repository; make sure you are in the application codebase repository.",
+                fg="red",
+            ),
+        ]
+    )
 
 
 @patch("subprocess.run")
