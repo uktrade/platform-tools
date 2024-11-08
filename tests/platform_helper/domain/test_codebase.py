@@ -359,6 +359,63 @@ def test_lists_codebases_with_multiple_pages_of_images():
     )
 
 
+def test_lists_codebases_with_disordered_images_in_chronological_order():
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client.get_parameters_by_path.return_value = {
+        "Parameters": [
+            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+        ],
+    }
+    client.get_paginator.return_value.paginate.return_value = [
+        {
+            "imageDetails": [
+                {
+                    "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-4"],
+                    "imagePushedAt": datetime(2023, 11, 4, 00, 00, 00),
+                },
+                {
+                    "imageTags": ["branch-main", "commit-2"],
+                    "imagePushedAt": datetime(2023, 11, 2, 00, 00, 00),
+                },
+            ]
+        },
+        {
+            "imageDetails": [
+                {
+                    "imageTags": ["commit-1"],
+                    "imagePushedAt": datetime(2023, 11, 1, 00, 00, 00),
+                },
+                {
+                    "imageTags": ["commit-3"],
+                    "imagePushedAt": datetime(2023, 11, 3, 00, 00, 00),
+                },
+            ]
+        },
+    ]
+    codebase.list("test-application", True)
+
+    mocks.echo_fn.assert_has_calls(
+        [
+            call("The following codebases are available:"),
+            call("- application (https://github.com/uktrade/example)"),
+            call(
+                "  - https://github.com/uktrade/example/commit/4 - published: 2023-11-04 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/3 - published: 2023-11-03 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/2 - published: 2023-11-02 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/1 - published: 2023-11-01 00:00:00"
+            ),
+        ]
+    )
+
+
 def test_lists_codebases_with_images_successfully():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())

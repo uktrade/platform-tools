@@ -1,9 +1,7 @@
 import filecmp
-import json
 import os
 import stat
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import PropertyMock
@@ -340,53 +338,6 @@ class TestCodebaseList:
 
         mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
         assert result.exit_code == 1
-
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    def test_lists_codebases_with_disordered_images_in_chronological_order(
-        self, get_aws_session_or_abort
-    ):
-        client = mock_aws_client(get_aws_session_or_abort)
-        client.get_parameters_by_path.return_value = {
-            "Parameters": [
-                {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
-            ],
-        }
-        client.get_paginator.return_value.paginate.return_value = [
-            {
-                "imageDetails": [
-                    {
-                        "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-4"],
-                        "imagePushedAt": datetime(2023, 11, 4, 00, 00, 00),
-                    },
-                    {
-                        "imageTags": ["branch-main", "commit-2"],
-                        "imagePushedAt": datetime(2023, 11, 2, 00, 00, 00),
-                    },
-                ]
-            },
-            {
-                "imageDetails": [
-                    {
-                        "imageTags": ["commit-1"],
-                        "imagePushedAt": datetime(2023, 11, 1, 00, 00, 00),
-                    },
-                    {
-                        "imageTags": ["commit-3"],
-                        "imagePushedAt": datetime(2023, 11, 3, 00, 00, 00),
-                    },
-                ]
-            },
-        ]
-        from dbt_platform_helper.commands.codebase import list
-
-        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
-
-        assert (
-            result.output.index("commit/4")
-            < result.output.index("commit/3")
-            < result.output.index("commit/2")
-            < result.output.index("commit/1")
-        )
 
 
 def is_same_files(compare_directories):
