@@ -2,8 +2,6 @@
 
 import copy
 import json
-from os import listdir
-from os.path import isfile
 from pathlib import Path
 from pathlib import PosixPath
 
@@ -261,7 +259,6 @@ def make_addons():
 
     _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
     _generate_env_overrides(output_dir)
-    custom_resources = _get_custom_resources()
 
     svc_names = list_copilot_local_services()
     base_path = Path(".")
@@ -280,7 +277,6 @@ def make_addons():
 
         environment_addon_config = {
             "addon_type": addon_type,
-            "custom_resources": custom_resources,
             "environments": environments,
             "name": addon_config.get("name", None) or addon_name,
             "prefix": camel_case(addon_name),
@@ -368,25 +364,6 @@ def _generate_service_addons(
 
             (output_dir / service_path).mkdir(parents=True, exist_ok=True)
             click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=True))
-
-
-def _get_custom_resources():
-    custom_resources = {}
-    custom_resource_path = (Path(__file__).parent / "../custom_resources/").resolve()
-    for file in listdir(custom_resource_path):
-        file_path = custom_resource_path / file
-        if isfile(file_path) and file_path.name.endswith(".py") and file_path.name != "__init__.py":
-            custom_resource_contents = file_path.read_text()
-
-            def file_with_formatting_options(padding=0):
-                lines = [
-                    (" " * padding) + line if line.strip() else line.strip()
-                    for line in custom_resource_contents.splitlines(True)
-                ]
-                return "".join(lines)
-
-            custom_resources[file_path.name.rstrip(".py")] = file_with_formatting_options
-    return custom_resources
 
 
 def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):

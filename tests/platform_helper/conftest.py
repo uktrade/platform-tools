@@ -39,7 +39,6 @@ class NoSuchEntityException(ClientError):
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
-    fs.add_real_directory(BASE_DIR / "dbt_platform_helper/custom_resources", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/addon-plans.yml")
