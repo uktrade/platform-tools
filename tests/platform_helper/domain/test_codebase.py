@@ -301,6 +301,64 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
         )
 
 
+def test_lists_codebases_with_multiple_pages_of_images():
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client.get_parameters_by_path.return_value = {
+        "Parameters": [
+            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+        ],
+    }
+
+    client.get_paginator.return_value.paginate.return_value = [
+        {
+            "imageDetails": [
+                {
+                    "imageTags": ["latest", "tag-latest", "tag-1.0", "commit-10"],
+                    "imagePushedAt": datetime(2023, 11, 10, 00, 00, 00),
+                },
+                {
+                    "imageTags": ["branch-main", "commit-9"],
+                    "imagePushedAt": datetime(2023, 11, 9, 00, 00, 00),
+                },
+            ]
+        },
+        {
+            "imageDetails": [
+                {
+                    "imageTags": ["commit-8"],
+                    "imagePushedAt": datetime(2023, 11, 8, 00, 00, 00),
+                },
+                {
+                    "imageTags": ["commit-7"],
+                    "imagePushedAt": datetime(2023, 11, 7, 00, 00, 00),
+                },
+            ]
+        },
+    ]
+    codebase.list("test-application", True)
+
+    mocks.echo_fn.assert_has_calls(
+        [
+            call("- application (https://github.com/uktrade/example)"),
+            call(
+                "  - https://github.com/uktrade/example/commit/10 - published: 2023-11-10 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/9 - published: 2023-11-09 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/8 - published: 2023-11-08 00:00:00"
+            ),
+            call(
+                "  - https://github.com/uktrade/example/commit/7 - published: 2023-11-07 00:00:00"
+            ),
+            call(""),
+        ]
+    )
+
+
 def test_lists_codebases_with_images_successfully():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
