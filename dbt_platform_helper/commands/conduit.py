@@ -9,6 +9,7 @@ from botocore.exceptions import ClientError
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
+from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import (
@@ -417,7 +418,22 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     application = load_application(app)
 
     try:
-        addon_type = get_addon_type(application, env, addon_name)
+        Conduit(env, application).start(env, addon_name, access)
+    except NoClusterConduitError:
+        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
+    except SecretNotFoundConduitError as err:
+        click.secho(
+            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except CreateTaskTimeoutConduitError:
+        click.secho(
+            f"""Client ({addon_name}) ECS task has failed to start for "{app}" in "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
     except ParameterNotFoundConduitError:
         click.secho(
             f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
@@ -433,24 +449,6 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     except InvalidAddonTypeConduitError as err:
         click.secho(
             f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
-            fg="red",
-        )
-        exit(1)
-
-    try:
-        start_conduit(application, env, addon_type, addon_name, access)
-    except NoClusterConduitError:
-        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
-        exit(1)
-    except SecretNotFoundConduitError as err:
-        click.secho(
-            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
-            fg="red",
-        )
-        exit(1)
-    except CreateTaskTimeoutConduitError:
-        click.secho(
-            f"""Client ({addon_name}) ECS task has failed to start for "{app}" in "{env}" environment.""",
             fg="red",
         )
         exit(1)
