@@ -1,18 +1,25 @@
+import filecmp
 import json
+import os
+import subprocess
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import Mock
+from unittest.mock import PropertyMock
 from unittest.mock import call
 from unittest.mock import patch
 
 import boto3
 import click
 import pytest
+import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
+from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 real_ecr_client = boto3.client("ecr")
 real_ssm_client = boto3.client("ssm")
@@ -42,6 +49,77 @@ class CodebaseMocks:
             "echo_fn": self.echo_fn,
             "confirm_fn": self.confirm_fn,
         }
+
+
+@patch("requests.get")
+def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_path):
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    mocked_response_content = """
+        builders:
+            - name: paketobuildpacks/builder-jammy-full
+              versions:
+                - version: 0.3.294
+                - version: 0.3.288
+            - name: paketobuildpacks/builder-jammy-base
+              versions:
+                - version: 0.1.234
+                - version: 0.5.678
+            - name: paketobuildpacks/builder
+              deprecated: true
+              versions:
+                - version: 0.2.443-full
+        """
+
+    def mocked_response():
+        r = requests.Response()
+        r.status_code = 200
+        type(r).content = PropertyMock(return_value=mocked_response_content.encode("utf-8"))
+
+        return r
+
+    mocked_requests_get.return_value = mocked_response()
+
+    os.chdir(tmp_path)
+
+    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    codebase.prepare()
+
+    expected_files_dir = Path(EXPECTED_FILES_DIR) / ".copilot"
+    copilot_dir = Path.cwd() / ".copilot"
+
+    compare_directories = filecmp.dircmp(str(expected_files_dir), str(copilot_dir))
+
+    mocks.echo_fn.assert_has_calls(
+        [
+            call(
+                "File .copilot/image_build_run.sh created",
+            ),
+            call(
+                "File .copilot/config.yml created",
+            ),
+            call(
+                "File phases/build.sh created",
+            ),
+            call(
+                "File phases/install.sh created",
+            ),
+            call(
+                "File phases/post_build.sh created",
+            ),
+            call(
+                "File phases/pre_build.sh created",
+            ),
+        ]
+    )
+
+    assert is_same_files(compare_directories) is True
 
 
 def test_codebase_build_does_not_trigger_build_without_an_application():
@@ -466,3 +544,30 @@ def test_lists_codebases_with_images_successfully():
             call(""),
         ]
     )
+
+
+def is_same_files(compare_directories):
+    """
+    Recursively compare two directories to check if the files are the same or
+    not.
+
+    Returns True or False.
+    """
+    if (
+        compare_directories.diff_files
+        or compare_directories.left_only
+        or compare_directories.right_only
+    ):
+        for name in compare_directories.diff_files:
+            print(
+                "diff_file %s found in %s and %s"
+                % (name, compare_directories.left, compare_directories.right)
+            )
+
+        return False
+
+    for sub_compare_directories in compare_directories.subdirs.values():
+        if not is_same_files(sub_compare_directories):
+            return False
+
+    return True

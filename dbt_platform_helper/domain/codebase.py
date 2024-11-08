@@ -46,7 +46,7 @@ class Codebase:
         )
 
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            click.secho(
+            self.echo_fn(
                 "You are in the deploy repository; make sure you are in the application codebase repository.",
                 fg="red",
             )
@@ -77,7 +77,7 @@ class Codebase:
             repository=repository, builder_version=builder_version
         )
 
-        click.echo(
+        self.echo_fn(
             mkfile(
                 Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True
             )
@@ -86,12 +86,12 @@ class Codebase:
         image_build_run_file = Path(".copilot/image_build_run.sh")
         image_build_run_file.chmod(image_build_run_file.stat().st_mode | stat.S_IEXEC)
 
-        click.echo(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
+        self.echo_fn(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
 
         for phase in ["build", "install", "post_build", "pre_build"]:
             phase_contents = templates.get_template(f".copilot/phases/{phase}.sh").render()
 
-            click.echo(
+            self.echo_fn(
                 mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True)
             )
 

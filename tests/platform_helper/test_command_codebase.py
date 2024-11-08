@@ -1,23 +1,19 @@
-import filecmp
 import os
 import stat
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock
-from unittest.mock import PropertyMock
 from unittest.mock import patch
 
 import boto3
 import click
-import pytest
-import requests
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.commands.codebase import list
+from dbt_platform_helper.commands.codebase import prepare
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
-from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 real_ecr_client = boto3.client("ecr")
 real_ssm_client = boto3.client("ssm")
@@ -33,56 +29,14 @@ def mock_aws_client(get_aws_session_or_abort):
 
 
 class TestCodebasePrepare:
-    @patch("requests.get")
-    def test_codebase_prepare_generates_the_expected_files(self, mocked_requests_get, tmp_path):
-        from dbt_platform_helper.commands.codebase import prepare
-
-        mocked_response_content = """
-            builders:
-              - name: paketobuildpacks/builder-jammy-full
-                versions:
-                  - version: 0.3.294
-                  - version: 0.3.288
-              - name: paketobuildpacks/builder-jammy-base
-                versions:
-                  - version: 0.1.234
-                  - version: 0.5.678
-              - name: paketobuildpacks/builder
-                deprecated: true
-                versions:
-                  - version: 0.2.443-full
-        """
-
-        def mocked_response():
-            r = requests.Response()
-            r.status_code = 200
-            type(r).content = PropertyMock(return_value=mocked_response_content.encode("utf-8"))
-
-            return r
-
-        mocked_requests_get.return_value = mocked_response()
-
-        os.chdir(tmp_path)
-
-        subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(
-            ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_prepare_calls_codebase_prepare_method(self, mock_codebase_object):
+        mock_codebase_object_instance = mock_codebase_object.return_value
 
         result = CliRunner().invoke(prepare)
-
-        expected_files_dir = Path(EXPECTED_FILES_DIR) / ".copilot"
-        copilot_dir = Path.cwd() / ".copilot"
-
-        compare_directories = filecmp.dircmp(str(expected_files_dir), str(copilot_dir))
-
-        for phase in ["build", "install", "post_build", "pre_build"]:
-            assert f"phases/{phase}.sh" in result.stdout
+        mock_codebase_object_instance.prepare.assert_called_once()
 
         assert result.exit_code == 0
-        assert is_same_files(compare_directories) is True
 
     def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(self, tmp_path):
         from dbt_platform_helper.commands.codebase import prepare
@@ -145,7 +99,6 @@ class TestCodebasePrepare:
         assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
 
 
-@pytest.mark.focus
 class TestCodebaseBuild:
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_build_does_not_trigger_build_without_an_application(
@@ -199,7 +152,6 @@ class TestCodebaseBuild:
 
 
 class TestCodebaseDeploy:
-    @pytest.mark.focus
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
         self, codebase_object_mock
