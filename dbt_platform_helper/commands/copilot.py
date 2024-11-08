@@ -278,12 +278,6 @@ def make_addons():
         if addon_type in ["postgres"]:
             pass
 
-        for environment_name, environment_config in environments.items():
-            if not environment_config.get("deletion_policy"):
-                environments[environment_name]["deletion_policy"] = addon_config.get(
-                    "deletion_policy", "Delete"
-                )
-
         environment_addon_config = {
             "addon_type": addon_type,
             "custom_resources": custom_resources,
