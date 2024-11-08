@@ -5,7 +5,7 @@ Secret references:
   REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- elif service.addon_type == "opensearch" %}
   OPENSEARCH_CREDENTIALS: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
-{%- elif service.addon_type in ["postgres"] %}
+{%- elif service.addon_type == "postgres" %}
   DATABASE_CREDENTIALS:
     secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/{{ service.secret_name }}
 {%- endif -%}
