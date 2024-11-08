@@ -33,6 +33,13 @@ my-alb-cdn-domain-list-be-a-dict:
       cdn_domains_list: 1234 # Should be a tuple
 
 
+my-alb-cdn-timeout-seconds-should-be-an-int:
+  type: alb
+  environments:
+    dev:
+      cdn_timeout_seconds: "hello world" # Should be an int
+
+
 my-cdn-geo-locations-be-a-list:
   type: alb
   environments:

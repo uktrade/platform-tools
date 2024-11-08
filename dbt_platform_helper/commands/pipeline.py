@@ -5,6 +5,7 @@ from shutil import rmtree
 
 import click
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -24,6 +25,7 @@ from dbt_platform_helper.utils.versioning import (
 
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"
 ENVIRONMENTS_KEY = "environments"
+ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
@@ -33,17 +35,54 @@ def pipeline():
 
 
 @pipeline.command()
-def generate():
-    """Given a platform-config.yml file, generate environment and service
-    deployment pipelines."""
+@click.option(
+    "--terraform-platform-modules-version",
+    help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
+    Precedence of version used is version supplied via CLI, then the version found in 
+    platform-config.yml/default_versions/terraform-platform-modules. 
+    In absence of these inputs, defaults to version '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}'.""",
+)
+@click.option(
+    "--deploy-branch",
+    help="""Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+    This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+    (Default <application>-deploy branch is specified in 
+    <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
+    default=None,
+)
+def generate(terraform_platform_modules_version, deploy_branch):
+    """
+    Given a platform-config.yml file, generate environment and service
+    deployment pipelines.
+
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+
+    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
+    - Generates the copilot manifest.yml for copilot/environments/<environment>
+    """
     pipeline_config = load_and_validate_platform_config()
 
-    no_codebase_pipelines = CODEBASE_PIPELINES_KEY not in pipeline_config
-    no_environment_pipelines = ENVIRONMENTS_KEY not in pipeline_config
+    has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
+    has_legacy_environment_pipelines = ENVIRONMENTS_KEY in pipeline_config
+    has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
-    if no_codebase_pipelines and no_environment_pipelines:
+    if (
+        not has_codebase_pipelines
+        and not has_legacy_environment_pipelines
+        and not has_environment_pipelines
+    ):
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
+
+    platform_config_terraform_modules_default_version = pipeline_config.get(
+        "default_versions", {}
+    ).get("terraform-platform-modules", "")
 
     templates = setup_templates()
     app_name = get_application_name()
@@ -57,22 +96,34 @@ def generate():
         abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
     base_path = Path(".")
-    pipelines_dir = base_path / f"copilot/pipelines"
+    copilot_pipelines_dir = base_path / f"copilot/pipelines"
 
-    _clean_pipeline_config(pipelines_dir)
+    _clean_pipeline_config(copilot_pipelines_dir)
 
-    if not is_terraform_project() and ENVIRONMENTS_KEY in pipeline_config:
+    if is_terraform_project() and has_environment_pipelines:
+        environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
+
+        for config in environment_pipelines.values():
+            aws_account = config.get("account")
+            _generate_terraform_environment_pipeline_manifest(
+                pipeline_config["application"],
+                aws_account,
+                terraform_platform_modules_version,
+                platform_config_terraform_modules_default_version,
+                deploy_branch,
+            )
+    if not is_terraform_project() and has_legacy_environment_pipelines:
         _generate_copilot_environments_pipeline(
             app_name,
             codestar_connection_arn,
             git_repo,
             apply_environment_defaults(pipeline_config)[ENVIRONMENTS_KEY],
             base_path,
-            pipelines_dir,
+            copilot_pipelines_dir,
             templates,
         )
 
-    if CODEBASE_PIPELINES_KEY in pipeline_config:
+    if has_codebase_pipelines:
         account_id, _ = get_account_details()
 
         for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
@@ -83,7 +134,7 @@ def generate():
                 git_repo,
                 codebase,
                 base_path,
-                pipelines_dir,
+                copilot_pipelines_dir,
                 templates,
             )
 
@@ -170,3 +221,43 @@ def _create_file_from_template(
     ).render(template_data)
     message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
     click.echo(message)
+
+
+def _generate_terraform_environment_pipeline_manifest(
+    application,
+    aws_account,
+    cli_terraform_platform_modules_version,
+    platform_config_terraform_modules_default_version,
+    deploy_branch,
+):
+    env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
+
+    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
+        cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
+    )
+
+    contents = env_pipeline_template.render(
+        {
+            "application": application,
+            "aws_account": aws_account,
+            "terraform_platform_modules_version": terraform_platform_modules_version,
+            "deploy_branch": deploy_branch,
+        }
+    )
+
+    dir_path = f"terraform/environment-pipelines/{aws_account}"
+    makedirs(dir_path, exist_ok=True)
+
+    click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+
+
+def _determine_terraform_platform_modules_version(
+    cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
+):
+
+    version_preference_order = [
+        cli_terraform_platform_modules_version,
+        platform_config_terraform_modules_default_version,
+        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+    ]
+    return [version for version in version_preference_order if version][0]

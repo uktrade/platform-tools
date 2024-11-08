@@ -793,14 +793,36 @@ platform-helper pipeline generate
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
 
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+
+    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
+    - Generates the copilot manifest.yml for copilot/environments/<environment>
+
 ## Usage
 
 ```
-platform-helper pipeline generate 
+platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+                                  [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
+- `--terraform-platform-modules-version <text>`
+  - Override the default version of terraform-platform-modules with a specific version or branch. 
+Precedence of version used is version supplied via CLI, then the version found in 
+platform-config.yml/default_versions/terraform-platform-modules. 
+In absence of these inputs, defaults to version '5'.
+- `--deploy-branch <text>`
+  - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+(Default <application>-deploy branch is specified in 
+<application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

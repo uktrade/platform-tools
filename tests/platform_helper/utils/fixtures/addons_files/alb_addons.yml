@@ -12,6 +12,7 @@ my-alb:
         cdn_geo_restriction_type: "whitelist"
         cdn_logging_bucket: "bucket-name"
         cdn_logging_bucket_prefix: "myprefix"
+        cdn_timeout_seconds: 60
         default_waf: "waf_sentinel_012345678910_default"
         enable_logging: true
         forwarded_values_forward: "all"

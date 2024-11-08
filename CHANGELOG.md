@@ -1,5 +1,24 @@
 # Changelog
 
+## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
+
+
+### Features
+
+* DBTP-1431 Add validation for CDN timeout ([#609](https://github.com/uktrade/platform-tools/issues/609)) ([66a21c6](https://github.com/uktrade/platform-tools/commit/66a21c622937f7a2fc05caa75714a90ad1d82be0))
+
+## [11.2.0](https://github.com/uktrade/platform-tools/compare/11.1.0...11.2.0) (2024-11-04)
+
+
+### Features
+
+* DBTP-1071 Generate terraform config for environment pipeline ([#611](https://github.com/uktrade/platform-tools/issues/611)) ([237fb35](https://github.com/uktrade/platform-tools/commit/237fb35fe06df7fd13e93419d282dc067187d952))
+
+
+### Documentation
+
+* Call out the offline command fix in the changelog ([#613](https://github.com/uktrade/platform-tools/issues/613)) ([e2a6396](https://github.com/uktrade/platform-tools/commit/e2a63961260d3b60a1ae9aa99a1bd06927e98ae9))
+
 ## [11.1.0](https://github.com/uktrade/platform-tools/compare/11.0.1...11.1.0) (2024-10-30)
 
 

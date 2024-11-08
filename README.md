@@ -1,7 +1,5 @@
 # Platform Tools
 
-![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiS2t1L3UvQmVTbXZsOTVIOWxGanpwTTh4b3BNcUR4c0dNN2NoSUpGcVkzN0JEOFpvc2kwL2pGVC91TXNVcjFNK0d5eExia0R2SS9lZUhuWTZQOTlieVY0PSIsIml2UGFyYW1ldGVyU3BlYyI6Im5tS0pUVEwvT204WXdxT2wiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
-
 ## Using the dbt-platform-helper package
 
 See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/README.md) for detail on what the package is and how to use it.
@@ -65,9 +63,9 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-helper` installation back to what it was; e.g. `pip install dbt-platform-helper==0.1.39`.
 
-#### Regression/integration testing
+#### End to end testing
 
-Because this codebase is only fully exercised in conjunction with several others, we have [platform-regression-tests](https://github.com/uktrade/platform-regression-tests), which orchestrates the testing of them working together.
+Because this codebase is only fully exercised in conjunction with several others, we have [platform-end-to-end-tests](https://github.com/uktrade/platform-end-to-end-tests), which orchestrates the testing of them working together.
 
 ### Publishing
 
