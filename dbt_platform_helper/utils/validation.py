@@ -519,8 +519,7 @@ def _validate_s3_bucket_uniqueness(enriched_config):
         warn_on_s3_bucket_name_availability(name)
 
 
-# Todo: Lose disable_aws_validation
-def validate_platform_config(config, disable_aws_validation=False):
+def validate_platform_config(config):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
@@ -668,9 +667,7 @@ rules:
     return parsed_results
 
 
-def load_and_validate_platform_config(
-    path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
-):
+def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_file_check=False):
     if not disable_file_check:
         config_file_check(path)
     try:
@@ -682,7 +679,7 @@ def load_and_validate_platform_config(
                 + os.linesep
                 + os.linesep.join(duplicate_keys)
             )
-        validate_platform_config(conf, disable_aws_validation)
+        validate_platform_config(conf)
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")

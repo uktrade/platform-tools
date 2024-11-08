@@ -665,7 +665,7 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
-    load_and_validate_platform_config(disable_aws_validation=True)
+    load_and_validate_platform_config()
 
     assert "Warning" not in capfd.readouterr().out
 
