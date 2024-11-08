@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 import yaml
-from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -19,7 +18,6 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -40,34 +38,6 @@ AVAILABILITY_UNCERTAIN_TEMPLATE = (
     "Warning: Could not determine the availability of bucket name '{}'."
 )
 BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
-
-
-# Todo: Is this still relevant?
-def warn_on_s3_bucket_name_availability(name: str):
-    """
-    We try to find the bucket name in AWS.
-
-    The validation logic is:
-    True: if the response is a 200 (it exists and you have access - this bucket has probably already been deployed)
-    True: if the response is a 404 (it could not be found)
-    False: if the response is 40x (the bucket exists but you have no permission)
-    """
-    session = get_aws_session_or_abort()
-    client = session.client("s3")
-    try:
-        client.head_bucket(Bucket=name)
-        return
-    except ClientError as ex:
-        if "Error" not in ex.response or not "Code" in ex.response["Error"]:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-        if ex.response["Error"]["Code"] == "404":
-            return
-        if int(ex.response["Error"]["Code"]) > 499:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-
-    click.secho(BUCKET_NAME_IN_USE_TEMPLATE.format(name), fg="yellow")
 
 
 def validate_s3_bucket_name(name: str):
