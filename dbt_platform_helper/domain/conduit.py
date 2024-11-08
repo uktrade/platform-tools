@@ -6,6 +6,7 @@ from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
+from dbt_platform_helper.providers.copilot import get_addon_type
 from dbt_platform_helper.providers.copilot import get_cluster_arn
 from dbt_platform_helper.providers.copilot import get_or_create_task_name
 from dbt_platform_helper.providers.copilot import get_parameter_name
@@ -23,6 +24,7 @@ class Conduit:
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
+        get_addon_type_fn=get_addon_type,
         get_cluster_arn_fn=get_cluster_arn,
         get_parameter_name_fn=get_parameter_name,
         get_or_create_task_name_fn=get_or_create_task_name,
@@ -50,14 +52,17 @@ class Conduit:
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
         self.create_addon_client_task_fn = create_addon_client_task_fn
         self.create_postgres_admin_task = create_postgres_admin_task_fn
+        self.get_addon_type_fn = get_addon_type_fn
         self.get_cluster_arn_fn = get_cluster_arn_fn
         self.get_parameter_name_fn = get_parameter_name_fn
         self.get_or_create_task_name_fn = get_or_create_task_name_fn
         self.add_stack_delete_policy_to_task_role_fn = add_stack_delete_policy_to_task_role_fn
         self.update_conduit_stack_resources_fn = update_conduit_stack_resources_fn
 
-    def start(self, env: str, addon_name: str, addon_type: str, access: str = "read"):
+    def start(self, env: str, addon_name: str, access: str = "read"):
         """"""
+
+        addon_type = self.get_addon_type_fn(self.ssm_client, self.application.name, env, addon_name)
 
         cluster_arn = self.get_cluster_arn_fn(self.ecs_client, self.application, env)
         parameter_name = self.get_parameter_name_fn(

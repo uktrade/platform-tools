@@ -33,6 +33,47 @@ class CreateTaskTimeoutError(AWSError):
     pass
 
 
+class ParameterNotFoundError(AWSError):
+    pass
+
+
+class AddonNotFoundError(AWSError):
+    pass
+
+
+class InvalidAddonTypeError(AWSError):
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
+
+
+def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str) -> str:
+    addon_type = None
+
+    try:
+        addon_config = json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application_name}/environments/{env}/addons"
+            )["Parameter"]["Value"]
+        )
+    except ssm_client.exceptions.ParameterNotFound:
+        raise ParameterNotFoundError
+
+    if addon_name not in addon_config.keys():
+        raise AddonNotFoundError
+
+    for name, config in addon_config.items():
+        if name == addon_name:
+            addon_type = config["type"]
+
+    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
+        raise InvalidAddonTypeError(addon_type)
+
+    if "postgres" in addon_type:
+        addon_type = "postgres"
+
+    return addon_type
+
+
 def get_cluster_arn(ecs_client, application_name, env: str) -> str:
 
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:

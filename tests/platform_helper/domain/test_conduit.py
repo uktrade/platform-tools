@@ -3,13 +3,13 @@ from unittest.mock import Mock
 import boto3
 import pytest
 
-from dbt_platform_helper.domain.conduit import AddonNotFoundConduitError
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.domain.conduit import InvalidAddonTypeConduitError
-from dbt_platform_helper.domain.conduit import ParameterNotFoundConduitError
 from dbt_platform_helper.providers.aws import SecretNotFoundError
+from dbt_platform_helper.providers.copilot import AddonNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
+from dbt_platform_helper.providers.copilot import InvalidAddonTypeError
 from dbt_platform_helper.providers.copilot import NoClusterError
+from dbt_platform_helper.providers.copilot import ParameterNotFoundError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
@@ -53,6 +53,7 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     connect_to_addon_client_task_fn = Mock()
     create_addon_client_task_fn = Mock()
     create_postgres_admin_task_fn = Mock()
+    get_addon_type_fn = Mock(return_value=addon_type)
     get_cluster_arn_fn = Mock(
         return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
     )
@@ -68,6 +69,7 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
         connect_to_addon_client_task_fn=connect_to_addon_client_task_fn,
         create_addon_client_task_fn=create_addon_client_task_fn,
         create_postgres_admin_task_fn=create_postgres_admin_task_fn,
+        get_addon_type_fn=get_addon_type_fn,
         get_cluster_arn_fn=get_cluster_arn_fn,
         get_or_create_task_name_fn=get_or_create_task_name_fn,
         add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role_fn,
@@ -124,7 +126,7 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     #     },
     # )
 
-    conduit.start(env, addon_name, addon_type, access)
+    conduit.start(env, addon_name, access)
 
     # Used when using magic mocks
     # mock_client.describe_tasks.return_value = {
@@ -169,6 +171,7 @@ def test_conduit_domain_when_no_cluster_exists():
     mock_session.client.return_value = mock_client
     # mock_client.list_tasks.return_value = {"taskArns": ["test_arn"], "nextToken": ""}
     sessions = {"000000000": mock_session}
+    get_addon_type_fn = Mock(return_value=addon_type)
     get_cluster_arn_fn = Mock(side_effect=NoClusterError())
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
@@ -197,10 +200,15 @@ def test_conduit_domain_when_no_cluster_exists():
         ]
     }
 
-    conduit = Conduit(env, mock_application, get_cluster_arn_fn=get_cluster_arn_fn)
+    conduit = Conduit(
+        env,
+        mock_application,
+        get_addon_type_fn=get_addon_type_fn,
+        get_cluster_arn_fn=get_cluster_arn_fn,
+    )
 
     with pytest.raises(NoClusterError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
+        conduit.start(env, addon_name, access)
 
 
 # TODO when the connection details to the addon does not exist
@@ -219,17 +227,27 @@ def test_conduit_domain_when_no_connection_secret_exists():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
+    get_addon_type_fn = Mock(return_value=addon_type)
+    get_cluster_arn_fn = Mock(
+        return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
+    )
+    get_or_create_task_name_fn = Mock(return_value="task_name")
+    addon_client_is_running_fn = Mock(return_value=False)
     create_addon_client_task_fn = Mock(side_effect=SecretNotFoundError())
 
     conduit = Conduit(
         env,
         mock_application,
         mock_subprocess,
+        addon_client_is_running_fn=addon_client_is_running_fn,
         create_addon_client_task_fn=create_addon_client_task_fn,
+        get_addon_type_fn=get_addon_type_fn,
+        get_cluster_arn_fn=get_cluster_arn_fn,
+        get_or_create_task_name_fn=get_or_create_task_name_fn,
     )
 
     with pytest.raises(SecretNotFoundError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
+        conduit.start(env, addon_name, access)
 
 
 def test_conduit_domain_when_client_task_fails_to_start():
@@ -252,17 +270,29 @@ def test_conduit_domain_when_client_task_fails_to_start():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
     mock_subprocess = Mock()
+    get_addon_type_fn = Mock(return_value=addon_type)
+    get_cluster_arn_fn = Mock(
+        return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
+    )
+    get_or_create_task_name_fn = Mock(return_value="task_name")
+    # TODO add test where return value is False
+    addon_client_is_running_fn = Mock(return_value=True)
+
     connect_to_addon_client_task_fn = Mock(side_effect=CreateTaskTimeoutError())
 
     conduit = Conduit(
         env,
         mock_application,
         mock_subprocess,
+        addon_client_is_running_fn=addon_client_is_running_fn,
         connect_to_addon_client_task_fn=connect_to_addon_client_task_fn,
+        get_addon_type_fn=get_addon_type_fn,
+        get_cluster_arn_fn=get_cluster_arn_fn,
+        get_or_create_task_name_fn=get_or_create_task_name_fn,
     )
 
     with pytest.raises(CreateTaskTimeoutError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
+        conduit.start(env, addon_name, access)
 
 
 def normalise_secret_name(addon_name: str) -> str:
@@ -370,14 +400,20 @@ def test_conduit_domain_when_addon_type_is_invalid():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(env, mock_application)
+    get_addon_type_fn = Mock(side_effect=InvalidAddonTypeError(addon_type=addon_type))
 
-    with pytest.raises(InvalidAddonTypeConduitError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
-        mock_session.client.assert_called_with("ssm")
-        mock_session.client.assert_called_with("secretsmanager")
-        mock_session.client.assert_called_with("cloudformation")
-        mock_session.client.assert_called_with("iam")
+    conduit = Conduit(
+        env,
+        mock_application,
+        get_addon_type_fn=get_addon_type_fn,
+    )
+
+    with pytest.raises(InvalidAddonTypeError) as exc:
+        conduit.start(env, addon_name, access)
+        # mock_session.client.assert_called_with("ssm")
+        # mock_session.client.assert_called_with("secretsmanager")
+        # mock_session.client.assert_called_with("cloudformation")
+        # mock_session.client.assert_called_with("iam")
 
         # mock_client.list_stack_resources
         # mock_client.describe_secret
@@ -387,7 +423,6 @@ def test_conduit_domain_when_addon_type_is_invalid():
 def test_conduit_domain_when_addon_does_not_exist():
     app_name = "failed_app"
     addon_name = "addon_doesnt_exist"
-    addon_type = "postgres"
     env = "dev"
     access = "admin"
 
@@ -399,17 +434,22 @@ def test_conduit_domain_when_addon_does_not_exist():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(env, mock_application)
+    get_addon_type_fn = Mock(side_effect=AddonNotFoundError())
 
-    with pytest.raises(AddonNotFoundConduitError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
+    conduit = Conduit(
+        env,
+        mock_application,
+        get_addon_type_fn=get_addon_type_fn,
+    )
+
+    with pytest.raises(AddonNotFoundError) as exc:
+        conduit.start(env, addon_name, access)
 
 
 # TODO conduit requires addon type
 def test_conduit_domain_when_no_addon_config_parameter_exists():
     app_name = "failed_app"
     addon_name = "parameter_doesnt_exist"
-    addon_type = "postgres"
     env = "dev"
     access = "admin"
 
@@ -421,10 +461,16 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
     mock_application = Application(app_name)
     mock_application.environments = {env: Environment(env, "000000000", sessions)}
 
-    conduit = Conduit(env, mock_application)
+    get_addon_type_fn = Mock(side_effect=ParameterNotFoundError())
 
-    with pytest.raises(ParameterNotFoundConduitError) as exc:
-        conduit.start(env, addon_name, addon_type, access)
+    conduit = Conduit(
+        env,
+        mock_application,
+        get_addon_type_fn=get_addon_type_fn,
+    )
+
+    with pytest.raises(ParameterNotFoundError) as exc:
+        conduit.start(env, addon_name, access)
 
 
 """
