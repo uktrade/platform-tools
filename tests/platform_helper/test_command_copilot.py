@@ -29,14 +29,6 @@ POSTGRES_STORAGE_CONTENTS = {
     "rds": {"type": "postgres", "version": 14.4, "environments": {"default": {"plan": "small-ha"}}}
 }
 
-AURORA_POSTGRES_STORAGE_CONTENTS = {
-    "aurora": {
-        "type": "aurora-postgres",
-        "version": 14.4,
-        "environments": {"*": {"min_capacity": 0.5, "max_capacity": 8}},
-    }
-}
-
 OPENSEARCH_STORAGE_CONTENTS = {
     "opensearch": {
         "type": "opensearch",
@@ -666,7 +658,6 @@ class TestMakeAddonsCommand:
         [
             (REDIS_STORAGE_CONTENTS, "redis", "REDIS"),
             (POSTGRES_STORAGE_CONTENTS, "postgres", "RDS"),
-            (AURORA_POSTGRES_STORAGE_CONTENTS, "aurora-postgres", "AURORA"),
         ],
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))

@@ -446,17 +446,6 @@ extensions:
         engine: '7.1'
         plan: tiny
         apply_immediately: true
-        
-  test-app-aurora:
-    type: aurora-postgres
-    version: 19.5
-    environments:
-      dev:
-        snapshot_id: abc123
-        deletion_protection: true
-      staging:
-        deletion_protection: true
-        deletion_policy: Retain
 
   test-app-postgres:
     type: postgres

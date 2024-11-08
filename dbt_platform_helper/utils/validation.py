@@ -223,27 +223,6 @@ POSTGRES_DEFINITION = {
     ],
 }
 
-AURORA_DEFINITION = {
-    "type": "aurora-postgres",
-    "version": NUMBER,
-    Optional("deletion_policy"): DB_DELETION_POLICY,
-    Optional("environments"): {
-        ENV_NAME: {
-            Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("snapshot_id"): str,
-            Optional("deletion_policy"): DB_DELETION_POLICY,
-            Optional("deletion_protection"): DELETION_PROTECTION,
-        }
-    },
-    Optional("objects"): [
-        {
-            "key": str,
-            Optional("body"): str,
-        }
-    ],
-}
-
 LIFECYCLE_RULE = {
     Optional("filter_prefix"): str,
     "expiration_days": int,
@@ -488,7 +467,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
-                AURORA_DEFINITION,
                 POSTGRES_DEFINITION,
                 S3_DEFINITION,
                 S3_POLICY_DEFINITION,
@@ -712,7 +690,6 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
 
 S3_SCHEMA = Schema(S3_DEFINITION)
 S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
-AURORA_SCHEMA = Schema(AURORA_DEFINITION)
 POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
 REDIS_SCHEMA = Schema(REDIS_DEFINITION)
 
@@ -766,7 +743,6 @@ def no_param_schema(schema_type):
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
-    "aurora-postgres": AURORA_SCHEMA,
     "postgres": POSTGRES_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,

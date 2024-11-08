@@ -64,7 +64,6 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
     [
         "s3_addons.yml",
         "s3_policy_addons.yml",
-        "aurora_addons.yml",
         "postgres_addons.yml",
         "redis_addons.yml",
         "opensearch_addons.yml",
@@ -120,21 +119,6 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-policy-invalid-param": r"Wrong key 'unknown1'",
                 "my-s3-bucket-policy-invalid-object-param": r"Wrong key 'objects'",
                 "my-s3-bucket-policy-invalid-env-param": r"environments.*Wrong key 'unknown3'",
-            },
-        ),
-        (
-            "aurora_addons_bad_data.yml",
-            {
-                "my-aurora-db-missing-version": r"Missing key: 'version'",
-                "my-aurora-db-bad-deletion-policy": r"deletion_policy.*does not match 'None'",
-                "my-aurora-db-bad-env-name": r"environments.*Missing key: Regex",
-                "my-aurora-db-capacity-too-small": r"environments.*default.*min_capacity.*should be a number between 0.5 and 128 in increments of 0.5",
-                "my-aurora-db-capacity-too-big": r"environments.*default.*max_capacity.*should be a number between 0.5 and 128 in increments of 0.5",
-                "my-aurora-db-id-should-be-string": r"environments.*default.*snapshot_id.*should be instance of 'str'",
-                "my-aurora-db-deletion-protection-should-be-bool": r"environments.*default.*deletion_protection.*should be instance of 'bool'",
-                "my-aurora-db-invalid-deletion-policy": r"environments.*default.*deletion_policy.*does not match 'Slapstick'",
-                "my-aurora-db-invalid-param": r"Wrong key 'bad_key'",
-                "my-aurora-db-invalid-env-param": r"environments.*default.*Wrong key 'bad_env_key'",
             },
         ),
         (
