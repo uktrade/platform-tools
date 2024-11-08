@@ -387,6 +387,10 @@ class TestCommandHelperMethods:
                 ["1.2.3.4", "5.6.7.8"],
                 ["1.2.3.4/32", "5.6.7.8/32"],
             ),
+            (
+                ["1.2.3.4/32", "5.6.7.8/24"],
+                ["1.2.3.4/32", "5.6.7.8/24"],
+            ),
         ],
     )
     @mock_aws
@@ -424,7 +428,7 @@ class TestCommandHelperMethods:
         captured = capsys.readouterr()
 
         assert (
-            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
+            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )
 
@@ -513,3 +517,21 @@ class TestCommandHelperMethods:
 
         assert tag_descriptions == ["TagDescriptions1", "TagDescriptions2"]
         assert mock_client.describe_tags.call_count == 2
+
+    @pytest.mark.parametrize(
+        "ip, prefix, expected_cidr",
+        [
+            (
+                "1.2.3.4",
+                32,
+                "1.2.3.4/32",
+            ),
+            (
+                "1.2.3.4",
+                24,
+                "1.2.3.4/24",
+            ),
+        ],
+    )
+    def test_ip_to_cidr(self, ip, prefix, expected_cidr):
+        assert ip_to_cidr(ip, prefix) == expected_cidr

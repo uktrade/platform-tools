@@ -387,6 +387,13 @@ def create_header_rule(
     )
 
 
+def ip_to_cidr(ip: str, prefix_length: int):
+    if "/" in ip:
+        return ip
+    prefix = str(prefix_length)
+    return ip + "/" + prefix
+
+
 def create_source_ip_rule(
     lb_client: boto3.client,
     listener_arn: str,
@@ -401,7 +408,7 @@ def create_source_ip_rule(
     combined_conditions = [
         {
             "Field": "source-ip",
-            "SourceIpConfig": {"Values": [value + "/32" for value in values]},
+            "SourceIpConfig": {"Values": [ip_to_cidr(value, 32) for value in values]},
         }
     ] + conditions
 
