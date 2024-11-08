@@ -380,8 +380,17 @@ class TestCommandHelperMethods:
             in captured.out
         )
 
+    @pytest.mark.parametrize(
+        "allowed_ips, expected_rule_cidr",
+        [
+            (
+                ["1.2.3.4", "5.6.7.8"],
+                ["1.2.3.4/32", "5.6.7.8/32"],
+            ),
+        ],
+    )
     @mock_aws
-    def test_create_source_ip_rule(self, capsys):
+    def test_create_source_ip_rule(self, allowed_ips, expected_rule_cidr, capsys):
 
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
@@ -400,7 +409,7 @@ class TestCommandHelperMethods:
             elbv2_client,
             listener_arn,
             target_group_arn,
-            ["1.2.3.4", "5.6.7.8"],
+            allowed_ips,
             "AllowedSourceIps",
             333,
         )
@@ -408,7 +417,7 @@ class TestCommandHelperMethods:
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
         assert sorted(rules[1]["Conditions"][0]["SourceIpConfig"]["Values"]) == sorted(
-            ["1.2.3.4/32", "5.6.7.8/32"]
+            expected_rule_cidr
         )
         assert rules[1]["Priority"] == "333"
 
