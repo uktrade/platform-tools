@@ -53,8 +53,6 @@ class AddonNotFoundConduitError(ConduitError):
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 CONDUIT_ADDON_TYPES = [
     "opensearch",
-    "rds-postgres",
-    "aurora-postgres",
     "postgres",
     "redis",
 ]

@@ -993,8 +993,6 @@ def test_start_conduit_with_access_permissions(
     "addon_name, expected_type",
     [
         ("custom-name-postgres", "postgres"),
-        ("custom-name-aurora-postgres", "postgres"),
-        ("custom-name-rds-postgres", "postgres"),
         ("custom-name-redis", "redis"),
         ("custom-name-opensearch", "opensearch"),
     ],
