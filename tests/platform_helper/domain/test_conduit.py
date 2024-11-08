@@ -66,7 +66,26 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     sm_stubber.activate()
     ssm_stubber.activate()
 
+    ecs__list_clusters_response = {
+        "clusterArns": [
+            "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1",
+        ]
+    }
     ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
+
+    list_tags_for_resource_response = {
+        "tags": [
+            {"key": "copilot-application", "value": app_name},
+            {"key": "copilot-environment", "value": env},
+            {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
+        ]
+    }
+
+    ecs_stubber.add_response("list_clusters", ecs__list_clusters_response)
+
+    ecs_stubber.add_response(
+        "list_tags_for_resource", list_tags_for_resource_response, {"resourceArn": stub.ANY}
+    )
     ecs_stubber.add_response(
         "list_tasks",
         ecs_list_tasks_response,
