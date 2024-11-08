@@ -538,5 +538,5 @@ class TestCommandHelperMethods:
             ),
         ],
     )
-    def test_ip_to_cidr_range(self, ip, prefix, expected_cidr):
-        assert ip_to_cidr_range(ip, prefix) == expected_cidr
+    def test_add_default_cidr_prefix(self, ip, prefix, expected_cidr):
+        assert add_default_cidr_prefix(ip, prefix) == expected_cidr
