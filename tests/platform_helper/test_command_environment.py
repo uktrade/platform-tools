@@ -441,7 +441,6 @@ class TestGenerate:
         return_value=(["def456"], ["ghi789"]),
     )
     @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     @pytest.mark.parametrize(
         "environment_config, expected_vpc",
@@ -455,7 +454,6 @@ class TestGenerate:
     def test_generate(
         self,
         mock_get_aws_session_1,
-        mock_get_aws_session_2,
         mock_get_vpc_id,
         mock_get_subnet_ids,
         mock_get_cert_arn,
@@ -472,7 +470,6 @@ class TestGenerate:
 
         mocked_session = MagicMock()
         mock_get_aws_session_1.return_value = mocked_session
-        mock_get_aws_session_2.return_value = mocked_session
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
@@ -497,7 +494,6 @@ class TestGenerate:
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     @pytest.mark.parametrize(
         "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
@@ -512,7 +508,6 @@ class TestGenerate:
     def test_generate_terraform(
         self,
         mock_get_aws_session_1,
-        mock_get_aws_session_2,
         fakefs,
         env_modules_version,
         cli_modules_version,
@@ -538,7 +533,6 @@ class TestGenerate:
 
         mocked_session = MagicMock()
         mock_get_aws_session_1.return_value = mocked_session
-        mock_get_aws_session_2.return_value = mocked_session
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
@@ -566,9 +560,8 @@ class TestGenerate:
         moved_block = "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         assert moved_block in content
 
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    def test_fail_early_if_platform_config_invalid(self, mock_session_1, mock_session_2, fakefs):
+    def test_fail_early_if_platform_config_invalid(self, mock_session_1, fakefs):
 
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
@@ -578,7 +571,6 @@ class TestGenerate:
 
         mock_session = MagicMock()
         mock_session_1.return_value = mock_session
-        mock_session_2.return_value = mock_session
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 

@@ -1,12 +1,10 @@
 import os
 import re
 from pathlib import Path
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
 import yaml
-from botocore.exceptions import ClientError
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -24,7 +22,6 @@ from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
-from tests.platform_helper.conftest import mock_aws_client
 
 
 def load_addons(addons_file):
@@ -667,29 +664,12 @@ def test_validation_runs_against_platform_config_yml(fakefs):
     assert config["application"] == "my_app"
 
 
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_aws_validation_can_be_switched_off(mock_get_session, s3_extensions_fixture, capfd):
+def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
     load_and_validate_platform_config(disable_aws_validation=True)
 
     assert "Warning" not in capfd.readouterr().out
-    assert not mock_get_session.called
 
 
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_aws_validation_does_not_warn_for_duplicate_s3_bucket_names_if_aws_validation_off(
-    mock_get_session, s3_extensions_fixture, capfd
-):
-    client = mock_aws_client(mock_get_session)
-    response = {"Error": {"Code": "403"}}
-    client.head_bucket.side_effect = ClientError(response, "HeadBucket")
-
-    load_and_validate_platform_config(disable_aws_validation=True)
-
-    assert "Warning" not in capfd.readouterr().out
-    assert not mock_get_session.called
-
-
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 @patch("dbt_platform_helper.utils.validation.config_file_check")
 def test_load_and_validate_platform_config_skips_file_check_when_disable_file_check_parameter_passed(
     mock_config_file_check, capfd, fakefs

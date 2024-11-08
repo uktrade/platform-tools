@@ -615,7 +615,6 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
     def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which
