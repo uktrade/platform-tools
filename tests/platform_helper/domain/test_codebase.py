@@ -191,6 +191,26 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     )
 
 
+def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):
+    mocks = CodebaseMocks()
+    codebase = Codebase(**mocks.params())
+    os.chdir(tmp_path)
+
+    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:uktrade/another-test-app.git"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    codebase.prepare()
+
+    image_build_run_path = Path(".copilot/image_build_run.sh")
+    assert image_build_run_path.exists()
+    assert image_build_run_path.is_file()
+    assert os.access(image_build_run_path, os.X_OK)
+
+
 @patch("subprocess.run")
 def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subprocess_run):
     mocks = CodebaseMocks()

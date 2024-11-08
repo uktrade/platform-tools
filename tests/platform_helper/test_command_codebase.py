@@ -1,7 +1,4 @@
 import os
-import stat
-import subprocess
-from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -37,66 +34,6 @@ class TestCodebasePrepare:
         mock_codebase_object_instance.prepare.assert_called_once()
 
         assert result.exit_code == 0
-
-    def test_codebase_prepare_does_not_generate_files_in_the_deploy_repo(self, tmp_path):
-        from dbt_platform_helper.commands.codebase import prepare
-
-        os.chdir(tmp_path)
-
-        subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(
-            ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app-deploy.git"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        result = CliRunner().invoke(prepare)
-
-        assert (
-            "You are in the deploy repository; make sure you are in the application codebase repository."
-            in result.stdout
-        )
-        assert result.exit_code == 1
-
-    def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(
-        self, tmp_path
-    ):
-        from dbt_platform_helper.commands.codebase import prepare
-
-        os.chdir(tmp_path)
-        Path(tmp_path / "copilot").mkdir()
-
-        subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(
-            ["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        result = CliRunner().invoke(prepare)
-
-        assert (
-            "You are in the deploy repository; make sure you are in the application codebase repository."
-            in result.stdout
-        )
-        assert result.exit_code == 1
-
-    def test_codebase_prepare_generates_an_executable_image_build_run_file(self, tmp_path):
-        from dbt_platform_helper.commands.codebase import prepare
-
-        os.chdir(tmp_path)
-
-        subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(
-            ["git", "remote", "add", "origin", "git@github.com:uktrade/another-test-app.git"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        result = CliRunner().invoke(prepare)
-
-        assert result.exit_code == 0
-        assert stat.filemode(Path(".copilot/image_build_run.sh").stat().st_mode) == "-rwxr--r--"
 
 
 class TestCodebaseBuild:
