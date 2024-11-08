@@ -1,5 +1,17 @@
 # Changelog
 
+## [11.4.0](https://github.com/uktrade/platform-tools/compare/11.3.0...11.4.0) (2024-11-08)
+
+
+### Features
+
+* Fall back on profile_account_id when trying to match account id to profile name. ([#626](https://github.com/uktrade/platform-tools/issues/626)) ([0694775](https://github.com/uktrade/platform-tools/commit/069477584930961798bf5a42ebf6c5aec60dde21))
+
+
+### Documentation
+
+* DBTP-1511 Link to Codecov in unit tests section of README ([#627](https://github.com/uktrade/platform-tools/issues/627)) ([3179945](https://github.com/uktrade/platform-tools/commit/3179945980e0fafaf94f5141abbda80cafc871bf))
+
 ## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
 
 
