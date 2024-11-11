@@ -7,6 +7,10 @@
 
 * DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621))
 
+#### Upgrade path
+
+We have moved the last application off the fully AWS Copilot version of the DBT Platform Tooling. So whilst this is technically a breaking change, no action should be required on your part to upgrade from the previous major version.
+
 ### Features
 
 * DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621)) ([c7a223c](https://github.com/uktrade/platform-tools/commit/c7a223c44467807eab4f68de1ee11fbc4f9b0a21))
