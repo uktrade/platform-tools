@@ -38,12 +38,14 @@ class CodebaseMocks:
         self.input_fn = Mock(return_value="yes")
         self.echo_fn = Mock()
         self.confirm_fn = Mock(return_value=True)
+        self.check_codebase_exists_fn = Mock(return_value=True)
         self.subprocess = Mock()
 
     def params(self):
         return {
             "load_application_fn": self.load_application_fn,
             "get_aws_session_or_abort_fn": self.get_aws_session_or_abort_fn,
+            "check_codebase_exists_fn": self.check_codebase_exists_fn,
             "input_fn": self.input_fn,
             "echo_fn": self.echo_fn,
             "confirm_fn": self.confirm_fn,

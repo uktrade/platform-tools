@@ -10,10 +10,11 @@ import requests
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import check_codebase_exists, get_aws_session_or_abort
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -26,6 +27,7 @@ class Codebase:
         confirm_fn: Callable[[str], bool] = click.confirm,
         load_application_fn: Callable[[str], Application] = load_application,
         get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
+        check_codebase_exists_fn: Callable[[str], str] = check_codebase_exists,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -33,6 +35,7 @@ class Codebase:
         self.confirm_fn = confirm_fn
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
+        self.check_codebase_exists_fn = check_codebase_exists
         self.subprocess = subprocess
 
     def prepare(self):
@@ -218,18 +221,11 @@ class Codebase:
         return application
 
     def __check_codebase_exists(self, session: Session, application: Application, codebase: str):
-        ssm_client = session.client("ssm")
         try:
-            parameter = ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
-            )
-            value = parameter["Parameter"]["Value"]
-            json.loads(value)
+            json.loads(self.check_codebase_exists_fn(session, application, codebase))
         except (
-            KeyError,
-            ValueError,
+            AWSException,
             json.JSONDecodeError,
-            ssm_client.exceptions.ParameterNotFound,
         ):
             self.echo_fn(
                 f"""The codebase "{codebase}" either does not exist or has not been deployed.""",

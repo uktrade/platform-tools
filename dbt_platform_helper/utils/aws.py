@@ -420,3 +420,20 @@ def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) ->
         raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
     return Vpc(subnets, sec_groups)
+
+
+def check_codebase_exists(session: Session, application, codebase: str):
+    try:
+        ssm_client = session.client("ssm")
+        parameter = ssm_client.get_parameter(
+            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+        )
+        value = parameter["Parameter"]["Value"]
+        return value
+    except (
+        KeyError,
+        ValueError,
+        ssm_client.exceptions.ParameterNotFound,
+    ):
+        raise AWSException
+    
