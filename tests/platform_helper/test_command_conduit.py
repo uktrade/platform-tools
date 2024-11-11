@@ -282,7 +282,7 @@ def test_start_conduit_exception_invalid_addon_type(
     assert result.exit_code == 1
 
     mock_click.assert_called_with(
-        f"""Addon type "{addon_type}" is not supported, we support: opensearch, postgres, redis..""",
+        f"""Addon type "{addon_type}" is not supported, we support: opensearch, postgres, redis.""",
         fg="red",
     )
     validate_version.assert_called_once()
