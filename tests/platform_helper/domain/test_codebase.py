@@ -1,7 +1,6 @@
 import filecmp
 import json
 import os
-import subprocess
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -39,6 +38,7 @@ class CodebaseMocks:
         self.input_fn = Mock(return_value="yes")
         self.echo_fn = Mock()
         self.confirm_fn = Mock(return_value=True)
+        self.subprocess = Mock()
 
     def params(self):
         return {
@@ -47,6 +47,7 @@ class CodebaseMocks:
             "input_fn": self.input_fn,
             "echo_fn": self.echo_fn,
             "confirm_fn": self.confirm_fn,
+            "subprocess": self.subprocess,
         }
 
 
@@ -81,12 +82,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     os.chdir(tmp_path)
 
-    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(
-        ["git", "remote", "add", "origin", "git@github.com:uktrade/test-app.git"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    mocks.subprocess.return_value.stdout = "demodjango"
 
     codebase.prepare()
 
@@ -128,12 +124,7 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(
-        ["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    mocks.subprocess.return_value.stderr = mock_suprocess_fixture()
 
     codebase.prepare()
 
@@ -166,16 +157,11 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
 def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
     mocks = CodebaseMocks()
     mocks.load_application_fn.side_effect = SystemExit(1)
+
+    mocks.subprocess.return_value = mock_suprocess_fixture()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
-
-    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(
-        ["git", "remote", "add", "origin", "git@github.com:uktrade/some-test-app.git"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
 
     with pytest.raises(SystemExit) as exc:
         codebase.prepare()
@@ -194,13 +180,7 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
-
-    subprocess.run(["git", "init"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subprocess.run(
-        ["git", "remote", "add", "origin", "git@github.com:uktrade/another-test-app.git"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    mocks.subprocess.return_value.stdout = "demodjango"
 
     codebase.prepare()
 
@@ -210,13 +190,14 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
     assert os.access(image_build_run_path, os.X_OK)
 
 
-@patch("subprocess.run")
-def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subprocess_run):
+def test_codebase_build_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = False
+    mocks.subprocess.return_value.stderr = ""
+
     codebase = Codebase(**mocks.params())
 
-    mock_subprocess_run.return_value.stderr = ""
+    mocks.subprocess.return_value.stderr = ""
 
     codebase.build("test-application", "application", "ab1c234")
 
@@ -338,10 +319,9 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
         )
 
 
-@patch("subprocess.run")
-def test_codebase_deploy_does_not_trigger_build_without_confirmation(mock_subprocess_run):
+def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
-    mock_subprocess_run.return_value.stderr = ""
+    mocks.subprocess.return_value.stderr = ""
     mocks.confirm_fn.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -618,3 +598,9 @@ def is_same_files(compare_directories):
             return False
 
     return True
+
+
+def mock_suprocess_fixture():
+    mock_stdout = MagicMock()
+    mock_stdout.configure_mock(**{"stdout.decode.return_value": '{"A": 3}'})
+    return mock_stdout

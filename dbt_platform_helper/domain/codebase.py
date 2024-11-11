@@ -26,12 +26,14 @@ class Codebase:
         confirm_fn: Callable[[str], bool] = click.confirm,
         load_application_fn: Callable[[str], Application] = load_application,
         get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
+        subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
         self.echo_fn = echo_fn
         self.confirm_fn = confirm_fn
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
+        self.subprocess = subprocess
 
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
@@ -39,12 +41,11 @@ class Codebase:
         templates = setup_templates()
 
         repository = (
-            subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True)
+            self.subprocess(["git", "remote", "get-url", "origin"], capture_output=True, text=True)
             .stdout.split("/")[-1]
             .strip()
             .removesuffix(".git")
         )
-
         if repository.endswith("-deploy") or Path("./copilot").exists():
             self.echo_fn(
                 "You are in the deploy repository; make sure you are in the application codebase repository.",
@@ -100,7 +101,7 @@ class Codebase:
         session = self.get_aws_session_or_abort_fn()
         self.__load_application_or_abort(session, app)
 
-        check_if_commit_exists = subprocess.run(
+        check_if_commit_exists = self.subprocess(
             ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
         )
 
