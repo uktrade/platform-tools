@@ -1,3 +1,5 @@
+# application commands are deprecated, do not spend time refactoring them
+
 from unittest.mock import patch
 
 from click.testing import CliRunner

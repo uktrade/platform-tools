@@ -172,9 +172,6 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    # TODO: The next line doesn't appear to do anything.
-    tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
-    # TODO: In fact the following line seems to do the same but better.
     tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
         "TagDescriptions"
     ]

@@ -3,15 +3,15 @@
 ##### general structure:
 
 # my-thing: # the name of addon item
-#   type: X   # options: s3, s3-policy, redis, opensearch, rds-postgres, aurora-postgres
-#   deletion_policy: X # options: Delete, Retain, Snapshot (redis, rds-postgres and aurora-postgres only). Optional. Defaults to Delete. Can be overriden per environment
+#   type: X   # options: s3, s3-policy, redis, opensearch, postgres
+#   deletion_policy: X # options: Delete, Retain, Snapshot (redis, postgres only). Optional. Defaults to Delete. Can be overriden per environment
 #
 #   environments:  # per environment configuration is defined here.
 #     default:   # the optional default key is used to apply a default value to all environments
 #       some_setting: x
 #       another_setting: y
 #       plan: a-valid-plan  # some addon types support plans/t-shirt sizes.  These are listed in addon-plans.yaml in this repo.
-#       deletion_protection: false # true|false rds-postgres and aurora-postgres only
+#       deletion_protection: false # true|false postgres only
 #
 #     production:  # you can override defaults on a per environment basis
 #       plan: some-other-plan  # some of the keys defined in an addon plan can also be overridden
@@ -96,24 +96,6 @@ my-rds-db:
       deletion_policy: Retain
       deletion_protection: true
       backup_retention_days: 10 # Optional.  Defaults to 7 if absent.
-
-
-##### Aurora serverless v2 example:
-
-my-aurora-db:
-  type: aurora-postgres
-  version: 14.4
-  deletion_policy: Delete # Delete|Retain|Snapshot. Optional.
-
-  environments:
-    default:
-      min_capacity: 0.5 # AllowedValues: from 0.5 through 128
-      max_capacity: 8   # AllowedValues: from 0.5 through 128
-      deletion_protection: false # Optional.
-
-    production:
-      deletion_policy: Retain
-      deletion_protection: true
 
 
 ##### Opensearch example:

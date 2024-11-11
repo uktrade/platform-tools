@@ -1,6 +1,6 @@
-import yaml
-
 from pathlib import Path
+
+import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 
@@ -25,8 +25,3 @@ def get_environment_pipeline_names():
     if pipelines_config:
         return pipelines_config.keys()
     return {}
-
-
-def is_terraform_project() -> bool:
-    config = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    return not config.get("legacy_project", False)
