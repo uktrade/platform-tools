@@ -1,5 +1,16 @@
 # Changelog
 
+## [12.0.0](https://github.com/uktrade/platform-tools/compare/11.4.0...12.0.0) (2024-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621))
+
+### Features
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621)) ([c7a223c](https://github.com/uktrade/platform-tools/commit/c7a223c44467807eab4f68de1ee11fbc4f9b0a21))
+
 ## [11.4.0](https://github.com/uktrade/platform-tools/compare/11.3.0...11.4.0) (2024-11-08)
 
 
