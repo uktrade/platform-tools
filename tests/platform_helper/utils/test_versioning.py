@@ -256,10 +256,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-def test_get_platform_helper_versions(
-    mock_aws, mock_version, mock_get, fakefs, valid_platform_config
-):
+def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_platform_config):
     mock_version.return_value = "1.1.1"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
@@ -275,7 +272,6 @@ def test_get_platform_helper_versions(
     assert versions.platform_helper_file_version == (5, 6, 7)
     assert versions.platform_config_default == (10, 2, 0)
     assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
-    assert not mock_aws.called  # Ensure that an AWS session is not required for this function
 
 
 @patch("requests.get")
@@ -353,9 +349,7 @@ def test_get_platform_helper_versions_with_invalid_config(
 @patch("click.secho")
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
 def test_platform_helper_version_warnings(
-    mock_aws,
     mock_version,
     mock_get,
     secho,
@@ -416,7 +410,6 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
 )
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_required_platform_helper_version(
     mock_get,
     mock_version,
@@ -459,7 +452,6 @@ def test_get_required_platform_helper_version(
 )
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_required_platform_helper_version_in_pipeline(
     mock_get,
     mock_version,
@@ -500,7 +492,6 @@ def test_get_required_platform_helper_version_in_pipeline(
 @patch("click.secho")
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_required_platform_helper_version_errors_when_no_platform_config_version_available(
     mock_get,
     mock_version,
@@ -529,7 +520,6 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 @patch("click.secho")
 @patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort", new=Mock())
 def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
     mock_get,
     mock_version,

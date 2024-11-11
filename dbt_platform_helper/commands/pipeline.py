@@ -11,12 +11,10 @@ from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.versioning import (
@@ -100,7 +98,7 @@ def generate(terraform_platform_modules_version, deploy_branch):
 
     _clean_pipeline_config(copilot_pipelines_dir)
 
-    if is_terraform_project() and has_environment_pipelines:
+    if has_environment_pipelines:
         environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
 
         for config in environment_pipelines.values():
@@ -112,16 +110,6 @@ def generate(terraform_platform_modules_version, deploy_branch):
                 platform_config_terraform_modules_default_version,
                 deploy_branch,
             )
-    if not is_terraform_project() and has_legacy_environment_pipelines:
-        _generate_copilot_environments_pipeline(
-            app_name,
-            codestar_connection_arn,
-            git_repo,
-            apply_environment_defaults(pipeline_config)[ENVIRONMENTS_KEY],
-            base_path,
-            copilot_pipelines_dir,
-            templates,
-        )
 
     if has_codebase_pipelines:
         account_id, _ = get_account_details()

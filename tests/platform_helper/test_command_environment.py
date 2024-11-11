@@ -441,10 +441,7 @@ class TestGenerate:
         return_value=(["def456"], ["ghi789"]),
     )
     @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.environment.is_terraform_project")
-    @pytest.mark.parametrize("is_terraform", [True, False])
     @pytest.mark.parametrize(
         "environment_config, expected_vpc",
         [
@@ -456,18 +453,14 @@ class TestGenerate:
     )
     def test_generate(
         self,
-        mock_is_terraform_project,
         mock_get_aws_session_1,
-        mock_get_aws_session_2,
         mock_get_vpc_id,
         mock_get_subnet_ids,
         mock_get_cert_arn,
         fakefs,
-        is_terraform,
         environment_config,
         expected_vpc,
     ):
-
         default_conf = environment_config.get("*", {})
         default_conf["accounts"] = {
             "deploy": {"name": "non-prod-acc", "id": "1122334455"},
@@ -477,7 +470,6 @@ class TestGenerate:
 
         mocked_session = MagicMock()
         mock_get_aws_session_1.return_value = mocked_session
-        mock_get_aws_session_2.return_value = mocked_session
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
@@ -485,7 +477,6 @@ class TestGenerate:
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump({"application": "my-app", "environments": environment_config}),
         )
-        mock_is_terraform_project.return_value = is_terraform
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 
@@ -503,9 +494,7 @@ class TestGenerate:
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=True)
     @pytest.mark.parametrize(
         "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
@@ -518,9 +507,7 @@ class TestGenerate:
     )
     def test_generate_terraform(
         self,
-        mock_is_terraform_project,
         mock_get_aws_session_1,
-        mock_get_aws_session_2,
         fakefs,
         env_modules_version,
         cli_modules_version,
@@ -546,7 +533,6 @@ class TestGenerate:
 
         mocked_session = MagicMock()
         mock_get_aws_session_1.return_value = mocked_session
-        mock_get_aws_session_2.return_value = mocked_session
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
@@ -574,44 +560,8 @@ class TestGenerate:
         moved_block = "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         assert moved_block in content
 
-    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch("dbt_platform_helper.commands.environment.is_terraform_project", return_value=False)
-    def test_generate_terraform_errors_if_this_is_a_legacy_project(
-        self,
-        mock_is_terraform_project,
-        fakefs,
-    ):
-
-        environment_config = {
-            "*": {
-                "vpc": "vpc3",
-                "accounts": {
-                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
-                },
-            },
-            "test": None,
-        }
-
-        fakefs.create_file(
-            PLATFORM_CONFIG_FILE,
-            contents=yaml.dump(
-                {
-                    "application": "my-app",
-                    "legacy_project": True,
-                    "environments": environment_config,
-                }
-            ),
-        )
-
-        result = CliRunner().invoke(generate_terraform, ["--name", "test"])
-
-        assert result.exit_code != 0
-        assert "This is not a terraform project. Exiting." in result.output
-
-    @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    def test_fail_early_if_platform_config_invalid(self, mock_session_1, mock_session_2, fakefs):
+    def test_fail_early_if_platform_config_invalid(self, mock_session_1, fakefs):
 
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
@@ -621,7 +571,6 @@ class TestGenerate:
 
         mock_session = MagicMock()
         mock_session_1.return_value = mock_session
-        mock_session_2.return_value = mock_session
 
         result = CliRunner().invoke(generate, ["--name", "test"])
 
