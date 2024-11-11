@@ -16,7 +16,6 @@ import pytest
 import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
-from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
@@ -230,10 +229,9 @@ def test_codebase_build_does_not_trigger_build_without_confirmation(mock_subproc
     )
 
 
-def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy():
+def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = True
-    mock_application = Application(name="test-application")
     mock_application.environments = {
         "development": Environment(
             name="development",
@@ -393,9 +391,8 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
         )
 
 
-def test_codebase_deploy_does_not_trigger_build_with_missing_environment():
+def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_application):
     mocks = CodebaseMocks()
-    mock_application = Application(name="test-application")
     mock_application.environments = {}
     mocks.load_application_fn.return_value = mock_application
     codebase = Codebase(**mocks.params())
