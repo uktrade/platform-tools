@@ -82,7 +82,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     os.chdir(tmp_path)
 
-    mocks.subprocess.return_value.stdout = "demodjango"
+    mocks.subprocess.return_value.stdout = "git@github.com:uktrade/test-app.git"
 
     codebase.prepare()
 
