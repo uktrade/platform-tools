@@ -6,7 +6,6 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.conduit import conduit
 from dbt_platform_helper.providers.aws import SecretNotFoundError
-from dbt_platform_helper.providers.copilot import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.providers.copilot import AddonNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import InvalidAddonTypeError
@@ -283,7 +282,7 @@ def test_start_conduit_exception_invalid_addon_type(
     assert result.exit_code == 1
 
     mock_click.assert_called_with(
-        f"""Addon type "{addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
+        f"""Addon type "{addon_type}" is not supported, we support: opensearch, postgres, redis..""",
         fg="red",
     )
     validate_version.assert_called_once()

@@ -1,5 +1,32 @@
 # Changelog
 
+## [12.0.0](https://github.com/uktrade/platform-tools/compare/11.4.0...12.0.0) (2024-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621))
+
+#### Upgrade path
+
+We have moved the last application off the fully AWS Copilot version of the DBT Platform Tooling. So whilst this is technically a breaking change, no action should be required on your part to upgrade from the previous major version.
+
+### Features
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621)) ([c7a223c](https://github.com/uktrade/platform-tools/commit/c7a223c44467807eab4f68de1ee11fbc4f9b0a21))
+
+## [11.4.0](https://github.com/uktrade/platform-tools/compare/11.3.0...11.4.0) (2024-11-08)
+
+
+### Features
+
+* DBTP-1109 Fall back on profile_account_id when trying to match account id to profile name. ([#626](https://github.com/uktrade/platform-tools/issues/626)) ([0694775](https://github.com/uktrade/platform-tools/commit/069477584930961798bf5a42ebf6c5aec60dde21))
+
+
+### Documentation
+
+* DBTP-1511 Link to Codecov in unit tests section of README ([#627](https://github.com/uktrade/platform-tools/issues/627)) ([3179945](https://github.com/uktrade/platform-tools/commit/3179945980e0fafaf94f5141abbda80cafc871bf))
+
 ## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
 
 

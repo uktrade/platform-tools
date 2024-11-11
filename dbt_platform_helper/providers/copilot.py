@@ -12,13 +12,10 @@ from dbt_platform_helper.providers.aws import (
 )
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.platform_config import is_terraform_project
 
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 CONDUIT_ADDON_TYPES = [
     "opensearch",
-    "rds-postgres",
-    "aurora-postgres",
     "postgres",
     "redis",
 ]
@@ -153,7 +150,7 @@ def create_addon_client_task(
             secret_name += "_READ_ONLY_USER"
         elif access == "write":
             secret_name += "_APPLICATION_USER"
-        elif access == "admin" and is_terraform_project():
+        elif access == "admin":
             create_postgres_admin_task(
                 ssm_client,
                 secrets_manager_client,

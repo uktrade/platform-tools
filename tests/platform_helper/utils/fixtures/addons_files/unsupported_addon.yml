@@ -1,4 +1,4 @@
-##### Aurora serverless v2 example:
+##### Unsupported example:
 
 my-unsupported-addon:
   type: unsupported_addon

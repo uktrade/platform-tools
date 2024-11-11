@@ -2,8 +2,6 @@
 
 import copy
 import json
-from os import listdir
-from os.path import isfile
 from pathlib import Path
 from pathlib import PosixPath
 
@@ -17,7 +15,6 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.platform_config import is_terraform_project
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import config_file_check
@@ -244,7 +241,6 @@ def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
     config_file_check()
-    is_terraform = is_terraform_project()
 
     templates = setup_templates()
     config = _get_config()
@@ -255,20 +251,14 @@ def make_addons():
     with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
         addon_template_map = yaml.safe_load(fd)
 
-    if is_terraform:
-        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
-    else:
-        click.echo("\n>>> Generating addons CloudFormation\n")
+    click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
 
     env_path = Path(f"copilot/environments/")
     env_addons_path = env_path / "addons"
     env_overrides_path = env_path / "overrides"
 
-    (output_dir / env_addons_path).mkdir(parents=True, exist_ok=True)
-
     _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
-    _generate_env_overrides(output_dir, is_terraform)
-    custom_resources = _get_custom_resources()
+    _generate_env_overrides(output_dir)
 
     svc_names = list_copilot_local_services()
     base_path = Path(".")
@@ -276,26 +266,17 @@ def make_addons():
         _generate_svc_overrides(base_path, templates, svc_name)
 
     services = []
-    has_addons_parameters = False
-    has_postgres_addon = False
     for addon_name, addon_config in config.items():
         print(f">>>>>>>>> {addon_name}")
         addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
         if addon_template_map[addon_type].get("requires_addons_parameters", False):
-            has_addons_parameters = True
-        if addon_type in ["aurora-postgres", "postgres"]:
-            has_postgres_addon = True
-
-        for environment_name, environment_config in environments.items():
-            if not environment_config.get("deletion_policy"):
-                environments[environment_name]["deletion_policy"] = addon_config.get(
-                    "deletion_policy", "Delete"
-                )
+            pass
+        if addon_type in ["postgres"]:
+            pass
 
         environment_addon_config = {
             "addon_type": addon_type,
-            "custom_resources": custom_resources,
             "environments": environments,
             "name": addon_config.get("name", None) or addon_name,
             "prefix": camel_case(addon_name),
@@ -318,28 +299,13 @@ def make_addons():
         if addon_type in ["s3", "s3-policy"]:
             if config[addon_name].get("serve_static_content"):
                 continue
-            if is_terraform:
-                s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, environments)
-                for environment_name in environments:
-                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
-                        environment_name, "kms-key-not-found"
-                    )
-            else:
-                service_addon_config["kms_key_reference"] = service_addon_config["prefix"].rsplit(
-                    "BucketAccess", 1
-                )[0]
 
-        if not is_terraform:
-            _generate_env_addons(
-                addon_name,
-                addon_template_map,
-                config.items(),
-                env_addons_path,
-                environment_addon_config,
-                output_dir,
-                templates,
-                log_destination_arns,
-            )
+            s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, environments)
+            for environment_name in environments:
+                environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
+                    environment_name, "kms-key-not-found"
+                )
+
         _generate_service_addons(
             addon_config,
             addon_name,
@@ -349,20 +315,6 @@ def make_addons():
             service_addon_config,
             templates,
             log_destination_arns,
-            is_terraform=is_terraform,
-        )
-
-        if addon_type in ["aurora-postgres", "postgres"] and not is_terraform:
-            click.secho(
-                "\nNote: The key DATABASE_CREDENTIALS may need to be changed to match your Django settings configuration.",
-                fg="yellow",
-            )
-
-    if has_addons_parameters and not is_terraform:
-        template = templates.get_template("addons/env/addons.parameters.yml")
-        contents = template.render({"has_postgres_addon": has_postgres_addon})
-        click.echo(
-            mkfile(output_dir, env_addons_path / "addons.parameters.yml", contents, overwrite=True)
         )
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
@@ -375,40 +327,13 @@ def _get_config():
     return config
 
 
-def _generate_env_overrides(output_dir, is_terraform):
-    path = "templates/env/terraform-overrides" if is_terraform else "templates/env/overrides"
+def _generate_env_overrides(output_dir):
+    path = "templates/env/terraform-overrides"
     click.echo("\n>>> Generating Environment overrides\n")
     overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
     overrides_path.mkdir(parents=True, exist_ok=True)
     template_overrides_path = Path(__file__).parent.parent.joinpath(path)
     generate_override_files(Path("."), template_overrides_path, overrides_path)
-
-
-def _generate_env_addons(
-    addon_name,
-    addon_template_map,
-    addons,
-    env_addons_path,
-    environment_addon_config,
-    output_dir,
-    templates,
-    log_destination_arns,
-):
-    # generate env addons
-    addon_type = environment_addon_config["addon_type"]
-    for addon in addon_template_map[addon_type].get("env", []):
-        template = templates.get_template(addon["template"])
-        contents = template.render(
-            {
-                "addon_config": environment_addon_config,
-                "addons": addons,
-                "log_destination": log_destination_arns,
-            }
-        )
-
-        filename = addon.get("filename", f"{addon_name}.yml")
-
-        click.echo(mkfile(output_dir, env_addons_path / filename, contents, overwrite=True))
 
 
 def _generate_service_addons(
@@ -420,7 +345,6 @@ def _generate_service_addons(
     service_addon_config,
     templates,
     log_destination_arns,
-    is_terraform,
 ):
     # generate svc addons
     for addon in addon_template_map[addon_type].get("svc", []):
@@ -433,7 +357,6 @@ def _generate_service_addons(
                 {
                     "addon_config": service_addon_config,
                     "log_destination": log_destination_arns,
-                    "is_terraform": is_terraform,
                 }
             )
 
@@ -441,25 +364,6 @@ def _generate_service_addons(
 
             (output_dir / service_path).mkdir(parents=True, exist_ok=True)
             click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=True))
-
-
-def _get_custom_resources():
-    custom_resources = {}
-    custom_resource_path = (Path(__file__).parent / "../custom_resources/").resolve()
-    for file in listdir(custom_resource_path):
-        file_path = custom_resource_path / file
-        if isfile(file_path) and file_path.name.endswith(".py") and file_path.name != "__init__.py":
-            custom_resource_contents = file_path.read_text()
-
-            def file_with_formatting_options(padding=0):
-                lines = [
-                    (" " * padding) + line if line.strip() else line.strip()
-                    for line in custom_resource_contents.splitlines(True)
-                ]
-                return "".join(lines)
-
-            custom_resources[file_path.name.rstrip(".py")] = file_with_formatting_options
-    return custom_resources
 
 
 def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
