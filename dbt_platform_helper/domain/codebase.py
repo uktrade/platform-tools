@@ -14,7 +14,7 @@ from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import check_codebase_exists, get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import check_codebase_exists, check_image_exists, get_aws_session_or_abort
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -28,6 +28,7 @@ class Codebase:
         load_application_fn: Callable[[str], Application] = load_application,
         get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
         check_codebase_exists_fn: Callable[[str], str] = check_codebase_exists,
+        check_image_exists_fn: Callable[[str], str] = check_image_exists,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -35,7 +36,8 @@ class Codebase:
         self.confirm_fn = confirm_fn
         self.load_application_fn = load_application_fn
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
-        self.check_codebase_exists_fn = check_codebase_exists
+        self.check_codebase_exists_fn = check_codebase_exists_fn
+        self.check_image_exists_fn = check_image_exists_fn
         self.subprocess = subprocess
 
     def prepare(self):
@@ -236,19 +238,9 @@ class Codebase:
     def __check_image_exists(
         self, session: Session, application: Application, codebase: str, commit: str
     ):
-        ecr_client = session.client("ecr")
         try:
-            ecr_client.describe_images(
-                repositoryName=f"{application.name}/{codebase}",
-                imageIds=[{"imageTag": f"commit-{commit}"}],
-            )
-        except ecr_client.exceptions.RepositoryNotFoundException:
-            self.echo_fn(
-                f'The ECR Repository for codebase "{codebase}" does not exist.',
-                fg="red",
-            )
-            raise click.Abort
-        except ecr_client.exceptions.ImageNotFoundException:
+            self.check_image_exists_fn(session, application, codebase, commit)
+        except AWSException:
             self.echo_fn(
                 f'The commit hash "{commit}" has not been built into an image, try the '
                 "`platform-helper codebase build` command first.",

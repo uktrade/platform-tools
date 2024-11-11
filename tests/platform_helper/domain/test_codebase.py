@@ -15,6 +15,7 @@ import pytest
 import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
@@ -38,7 +39,14 @@ class CodebaseMocks:
         self.input_fn = Mock(return_value="yes")
         self.echo_fn = Mock()
         self.confirm_fn = Mock(return_value=True)
-        self.check_codebase_exists_fn = Mock(return_value=True)
+        self.check_codebase_exists_fn = Mock(return_value="""
+                                             {
+                                                "name": "test-app", 
+                                                "repository": "uktrade/test-app",
+                                                "services": "1234"
+                                             }
+                                        """)
+        self.check_image_exists_fn = Mock(return_value="")
         self.subprocess = Mock()
 
     def params(self):
@@ -46,6 +54,7 @@ class CodebaseMocks:
             "load_application_fn": self.load_application_fn,
             "get_aws_session_or_abort_fn": self.get_aws_session_or_abort_fn,
             "check_codebase_exists_fn": self.check_codebase_exists_fn,
+            "check_image_exists_fn": self.check_image_exists_fn,
             "input_fn": self.input_fn,
             "echo_fn": self.echo_fn,
             "confirm_fn": self.confirm_fn,
@@ -270,6 +279,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     mocks = CodebaseMocks()
+    mocks.check_image_exists_fn.side_effect = AWSException
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -295,7 +305,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
     mocks = CodebaseMocks()
-
+    mocks.check_image_exists_fn.side_effect = AWSException
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
     client.get_parameter.return_value = {

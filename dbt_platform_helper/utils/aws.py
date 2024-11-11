@@ -437,3 +437,15 @@ def check_codebase_exists(session: Session, application, codebase: str):
     ):
         raise AWSException
     
+
+def check_image_exists(session, application, codebase, commit):
+    ecr_client = session.client("ecr")
+    try:
+        ecr_client.describe_images(
+            repositoryName=f"{application.name}/{codebase}",
+            imageIds=[{"imageTag": f"commit-{commit}"}],
+        )
+    except ecr_client.exceptions.RepositoryNotFoundException:
+        raise AWSException
+    except ecr_client.exceptions.ImageNotFoundException:
+        raise AWSException
