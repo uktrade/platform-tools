@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 import yaml
-from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -19,7 +18,6 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -40,33 +38,6 @@ AVAILABILITY_UNCERTAIN_TEMPLATE = (
     "Warning: Could not determine the availability of bucket name '{}'."
 )
 BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
-
-
-def warn_on_s3_bucket_name_availability(name: str):
-    """
-    We try to find the bucket name in AWS.
-
-    The validation logic is:
-    True: if the response is a 200 (it exists and you have access - this bucket has probably already been deployed)
-    True: if the response is a 404 (it could not be found)
-    False: if the response is 40x (the bucket exists but you have no permission)
-    """
-    session = get_aws_session_or_abort()
-    client = session.client("s3")
-    try:
-        client.head_bucket(Bucket=name)
-        return
-    except ClientError as ex:
-        if "Error" not in ex.response or not "Code" in ex.response["Error"]:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-        if ex.response["Error"]["Code"] == "404":
-            return
-        if int(ex.response["Error"]["Code"]) > 499:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-
-    click.secho(BUCKET_NAME_IN_USE_TEMPLATE.format(name), fg="yellow")
 
 
 def validate_s3_bucket_name(name: str):
@@ -126,8 +97,6 @@ def validate_addons(addons: dict):
             schema.validate(addon)
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
-
-    _validate_s3_bucket_uniqueness({"extensions": addons})
 
     return errors
 
@@ -246,27 +215,6 @@ POSTGRES_DEFINITION = {
         }
     },
     Optional("database_copy"): [DATABASE_COPY],
-    Optional("objects"): [
-        {
-            "key": str,
-            Optional("body"): str,
-        }
-    ],
-}
-
-AURORA_DEFINITION = {
-    "type": "aurora-postgres",
-    "version": NUMBER,
-    Optional("deletion_policy"): DB_DELETION_POLICY,
-    Optional("environments"): {
-        ENV_NAME: {
-            Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("snapshot_id"): str,
-            Optional("deletion_policy"): DB_DELETION_POLICY,
-            Optional("deletion_protection"): DELETION_PROTECTION,
-        }
-    },
     Optional("objects"): [
         {
             "key": str,
@@ -519,7 +467,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
-                AURORA_DEFINITION,
                 POSTGRES_DEFINITION,
                 S3_DEFINITION,
                 S3_POLICY_DEFINITION,
@@ -534,31 +481,13 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 )
 
 
-def _validate_s3_bucket_uniqueness(enriched_config):
-    extensions = enriched_config.get("extensions", {})
-    bucket_extensions = [
-        s3_ext
-        for s3_ext in extensions.values()
-        if "type" in s3_ext and s3_ext["type"] in ("s3", "s3-policy")
-    ]
-    environments = [
-        env for ext in bucket_extensions for env in ext.get("environments", {}).values()
-    ]
-    bucket_names = [env.get("bucket_name") for env in environments]
-
-    for name in bucket_names:
-        warn_on_s3_bucket_name_availability(name)
-
-
-def validate_platform_config(config, disable_aws_validation=False):
+def validate_platform_config(config):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
-    if not disable_aws_validation:
-        _validate_s3_bucket_uniqueness(enriched_config)
 
 
 def validate_database_copy_section(config):
@@ -700,9 +629,7 @@ rules:
     return parsed_results
 
 
-def load_and_validate_platform_config(
-    path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
-):
+def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_file_check=False):
     if not disable_file_check:
         config_file_check(path)
     try:
@@ -714,7 +641,7 @@ def load_and_validate_platform_config(
                 + os.linesep
                 + os.linesep.join(duplicate_keys)
             )
-        validate_platform_config(conf, disable_aws_validation)
+        validate_platform_config(conf)
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
@@ -763,7 +690,6 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
 
 S3_SCHEMA = Schema(S3_DEFINITION)
 S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
-AURORA_SCHEMA = Schema(AURORA_DEFINITION)
 POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
 REDIS_SCHEMA = Schema(REDIS_DEFINITION)
 
@@ -817,7 +743,6 @@ def no_param_schema(schema_type):
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
-    "aurora-postgres": AURORA_SCHEMA,
     "postgres": POSTGRES_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,

@@ -1,7 +1,7 @@
-import pytest
 import re
-
 from unittest.mock import patch
+
+import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.version import VersionCommand
