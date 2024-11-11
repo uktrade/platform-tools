@@ -519,24 +519,21 @@ class TestCommandHelperMethods:
         assert mock_client.describe_tags.call_count == 2
 
     @pytest.mark.parametrize(
-        "ip, prefix, expected_cidr",
+        "ip, expected_cidr",
         [
             (
                 "1.2.3.4",
-                32,
                 "1.2.3.4/32",
             ),
             (
-                "1.2.3.4",
-                24,
-                "1.2.3.4/24",
+                "1.2.3.4/32",
+                "1.2.3.4/32",
             ),
             (
                 "1.2.3.4/128",
-                32,
                 "1.2.3.4/128",
             ),
         ],
     )
-    def test_add_default_cidr_prefix(self, ip, prefix, expected_cidr):
-        assert add_default_cidr_prefix(ip, prefix) == expected_cidr
+    def test_normalise_to_cidr(self, ip, expected_cidr):
+        assert normalise_to_cidr(ip) == expected_cidr

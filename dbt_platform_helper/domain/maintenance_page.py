@@ -387,10 +387,11 @@ def create_header_rule(
     )
 
 
-def add_default_cidr_prefix(ip_network: str, default_cidr_prefix_length: int):
-    if "/" in ip_network:
-        return ip_network
-    return ip_network + "/" + str(default_cidr_prefix_length)
+def normalise_to_cidr(ip: str):
+    if "/" in ip:
+        return ip
+    SINGLE_IPV4_CIDR_PREFIX_LENGTH = "32"
+    return f"{ip}/{SINGLE_IPV4_CIDR_PREFIX_LENGTH}"
 
 
 def create_source_ip_rule(
@@ -404,10 +405,11 @@ def create_source_ip_rule(
     conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
 
     # add new condition to existing conditions
+
     combined_conditions = [
         {
             "Field": "source-ip",
-            "SourceIpConfig": {"Values": [add_default_cidr_prefix(value, 32) for value in values]},
+            "SourceIpConfig": {"Values": [normalise_to_cidr(value) for value in values]},
         }
     ] + conditions
 
