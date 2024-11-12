@@ -458,3 +458,35 @@ def get_build_url_from_arn(build_arn: str) -> str:
         f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
         f"{project_name}/build/{project_name}%3A{build_id}"
     )
+
+
+def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo_fn):
+    paginator = ecr_client.get_paginator("describe_images")
+    describe_images_response_iterator = paginator.paginate(
+        repositoryName=ecr_repository_name,
+        filter={"tagStatus": "TAGGED"},
+    )
+    images = []
+    for page in describe_images_response_iterator:
+        images += page["imageDetails"]
+
+    sorted_images = sorted(
+        images,
+        key=lambda i: i["imagePushedAt"],
+        reverse=True,
+    )
+
+    MAX_RESULTS = 20
+
+    for image in sorted_images[:MAX_RESULTS]:
+        try:
+            commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+            if not commit_tag:
+                continue
+
+            commit_hash = commit_tag.replace("commit-", "")
+            echo_fn(
+                f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+            )
+        except StopIteration:
+            continue

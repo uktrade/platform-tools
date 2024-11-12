@@ -18,6 +18,7 @@ from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
+from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -33,6 +34,7 @@ class Codebase:
         check_codebase_exists_fn: Callable[[str], str] = check_codebase_exists,
         check_image_exists_fn: Callable[[str], str] = check_image_exists,
         get_build_url_from_arn_fn: Callable[[str], str] = get_build_url_from_arn,
+        list_latest_images_fn: Callable[[str], str] = list_latest_images,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -43,6 +45,7 @@ class Codebase:
         self.check_codebase_exists_fn = check_codebase_exists_fn
         self.check_image_exists_fn = check_image_exists_fn
         self.get_build_url_from_arn_fn = get_build_url_from_arn_fn
+        self.list_latest_images_fn = list_latest_images_fn
         self.subprocess = subprocess
 
     def prepare(self):
@@ -192,8 +195,11 @@ class Codebase:
         for codebase in codebases:
             self.echo_fn(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
             if with_images:
-                self._list_latest_images(
-                    ecr_client, f"{application.name}/{codebase['name']}", codebase["repository"]
+                self.list_latest_images_fn(
+                    ecr_client,
+                    f"{application.name}/{codebase['name']}",
+                    codebase["repository"],
+                    self.echo_fn,
                 )
 
         self.echo_fn("")
@@ -251,34 +257,3 @@ class Codebase:
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
             return self.get_build_url_from_arn_fn(response["build"]["arn"])
-
-    def _list_latest_images(self, ecr_client, ecr_repository_name, codebase_repository):
-        paginator = ecr_client.get_paginator("describe_images")
-        describe_images_response_iterator = paginator.paginate(
-            repositoryName=ecr_repository_name,
-            filter={"tagStatus": "TAGGED"},
-        )
-        images = []
-        for page in describe_images_response_iterator:
-            images += page["imageDetails"]
-
-        sorted_images = sorted(
-            images,
-            key=lambda i: i["imagePushedAt"],
-            reverse=True,
-        )
-
-        MAX_RESULTS = 20
-
-        for image in sorted_images[:MAX_RESULTS]:
-            try:
-                commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
-                if not commit_tag:
-                    continue
-
-                commit_hash = commit_tag.replace("commit-", "")
-                self.echo_fn(
-                    f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
-                )
-            except StopIteration:
-                continue
