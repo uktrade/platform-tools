@@ -423,7 +423,6 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
 def test_lists_codebases_with_multiple_pages_of_images():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
-
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
     client.get_parameters_by_path.return_value = {
         "Parameters": [

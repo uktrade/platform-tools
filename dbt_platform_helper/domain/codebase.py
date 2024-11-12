@@ -14,7 +14,9 @@ from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import check_codebase_exists, check_image_exists, get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import check_codebase_exists
+from dbt_platform_helper.utils.aws import check_image_exists
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 

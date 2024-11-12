@@ -436,7 +436,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         ssm_client.exceptions.ParameterNotFound,
     ):
         raise AWSException
-    
+
 
 def check_image_exists(session, application, codebase, commit):
     ecr_client = session.client("ecr")
