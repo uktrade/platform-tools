@@ -490,3 +490,11 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, ech
             )
         except StopIteration:
             continue
+
+
+def start_build_with_confirmation(
+    confirm_fn, codebuild_client, get_build_url_from_arn_fn, confirmation_message, build_options
+) -> str:
+    if confirm_fn(confirmation_message):
+        response = codebuild_client.start_build(**build_options)
+        return get_build_url_from_arn_fn(response["build"]["arn"])
