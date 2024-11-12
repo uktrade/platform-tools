@@ -125,6 +125,7 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
         family=f"copilot-{task_name}",
     )
 
+    print(tasks)
     if not tasks["taskArns"]:
         return False
 
@@ -238,7 +239,6 @@ def connect_to_addon_client_task(
     running = False
     tries = 0
     while tries < 15 and not running:
-        print("stuck in the loop")
         tries += 1
         if addon_client_is_running(ecs_client, cluster_arn, task_name):
             running = True

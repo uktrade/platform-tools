@@ -1,7 +1,19 @@
+import json
+from unittest.mock import patch
+
+import boto3
+import pytest
+from cfn_tools import load_yaml
+from moto import mock_aws
+
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
 from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
+from tests.platform_helper.conftest import mock_parameter_name
+from tests.platform_helper.conftest import mock_task_name
+
+env = "development"
 
 
 @mock_aws
@@ -40,9 +52,21 @@ def test_update_conduit_stack_resources(
     mock_stack(addon_name)
     task_name = mock_task_name(addon_name)
     parameter_name = mock_parameter_name(mock_application, addon_type, addon_name)
+    cloudformation_client = mock_application.environments[env].session.client("cloudformation")
+    iam_client = mock_application.environments[env].session.client("iam")
+    ssm_client = mock_application.environments[env].session.client("ssm")
 
     update_conduit_stack_resources(
-        mock_application, "development", addon_type, addon_name, task_name, parameter_name, "read"
+        cloudformation_client,
+        iam_client,
+        ssm_client,
+        mock_application.name,
+        env,
+        addon_type,
+        addon_name,
+        task_name,
+        parameter_name,
+        "read",
     )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
@@ -76,6 +100,8 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
 
     task_name = mock_task_name(addon_name)
     stack_name = f"task-{task_name}"
+    cloudformation_client = mock_application.environments[env].session.client("cloudformation")
+    iam_client = mock_application.environments[env].session.client("iam")
 
     mock_stack(addon_name)
     mock_policy = {
@@ -89,7 +115,7 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
         ],
     }
 
-    add_stack_delete_policy_to_task_role(mock_application, "development", task_name)
+    add_stack_delete_policy_to_task_role(cloudformation_client, iam_client, task_name)
 
     stack_resources = boto3.client("cloudformation").list_stack_resources(StackName=stack_name)[
         "StackResourceSummaries"

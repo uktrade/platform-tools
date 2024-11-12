@@ -1,3 +1,6 @@
+from moto import mock_aws
+
+
 @mock_aws
 def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     """Test that, given app, environment and secret name strings,

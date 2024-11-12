@@ -80,29 +80,35 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
     env = "development"
     addon_name = "dummy-postgres"
     master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+    ssm_client = mock_application.environments[env].session.client("ssm")
+    secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
+
+    print(master_secret_name)
     boto3.client("ssm").put_parameter(
         Name=master_secret_name, Value="master-secret-arn", Type="String"
     )
     mock_subprocess = Mock()
 
     create_postgres_admin_task(
-        boto3.client("ssm"),
-        boto3.client("secretsmanager"),
+        ssm_client,
+        secrets_manager_client,
         mock_subprocess,
         mock_application,
+        addon_name,
+        "postgres",
         env,
         "POSTGRES_SECRET_NAME",
         "test-task",
-        "postgres",
-        addon_name,
     )
 
     mock_update_parameter.assert_called_once_with(
-        mock_application.environments[env].session,
+        ssm_client,
+        secrets_manager_client,
         "POSTGRES_SECRET_NAME_READ_ONLY_USER",
         "master-secret-arn",
     )
-    mock_subprocess.assert_called_once_with(
+
+    mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app {mock_application.name} --env {env} "
         f"--task-group-name test-task "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
@@ -149,6 +155,7 @@ def test_create_redis_or_opensearch_addon_client_task(
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
     secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
+
     create_addon_client_task(
         iam_client,
         ssm_client,
@@ -166,8 +173,8 @@ def test_create_redis_or_opensearch_addon_client_task(
     get_connection_secret_arn.assert_called_once_with(
         ssm_client, secretsmanager_client, secret_name
     )
-    mock_subprocess.assert_called()
-    mock_subprocess.assert_called_once_with(
+    mock_subprocess.call.assert_called()
+    mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
         f"--task-group-name {task_name} "
         f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
@@ -413,18 +420,22 @@ def test_addon_client_is_running_when_no_client_agent_running(
     """Test that, given cluster ARN, addon type and without a running agent,
     addon_client_is_running returns False."""
 
-    env = "development"
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, "ACTIVATING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments[env].session.client("ecs")
 
-    with patch(
-        "dbt_platform_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
-    ):
-        assert (
-            addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
-            is False
+    result = mocked_cluster_for_client.list_tasks(
+        cluster=mocked_cluster_arn,
+        desiredStatus="foobar",
+        family=f"copilot-{mock_task_name(addon_type)}",
+    )
+    print(result)
+
+    assert (
+        addon_client_is_running(
+            mocked_cluster_for_client, mocked_cluster_arn, mock_task_name(addon_type)
         )
+        is False
+    )
 
 
 @mock_aws
@@ -554,9 +565,9 @@ def test_connect_to_addon_client_task_when_timeout_reached(
             ecs_client, mock_subprocess, mock_application, env, "test-arn", task_name
         )
 
-    addon_client_is_running.assert_called_with(mock_application, env, "test-arn", task_name)
+    addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name)
     assert addon_client_is_running.call_count == 15
-    mock_subprocess.assert_not_called()
+    mock_subprocess.call.assert_not_called()
 
 
 @mock_aws

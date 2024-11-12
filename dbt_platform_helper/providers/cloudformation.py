@@ -53,9 +53,9 @@ def update_conduit_stack_resources(
         f"""
         Type: AWS::SSM::Parameter
         Properties:
-        Name: {parameter_name}
-        Type: String
-        Value: {task_name}
+          Name: {parameter_name}
+          Type: String
+          Value: {task_name}
         """
     )
 
@@ -74,11 +74,11 @@ def update_conduit_stack_resources(
         Type: AWS::Logs::SubscriptionFilter
         DeletionPolicy: Retain
         Properties:
-        RoleArn: {log_filter_role_arn}
-        LogGroupName: /copilot/{task_name}
-        FilterName: /copilot/conduit/{application_name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}/{access}
-        FilterPattern: ''
-        DestinationArn: {destination_arn}
+          RoleArn: {log_filter_role_arn}
+          LogGroupName: /copilot/{task_name}
+          FilterName: /copilot/conduit/{application_name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit("-", 1)[1]}/{access}
+          FilterPattern: ''
+          DestinationArn: {destination_arn}
         """
     )
 
@@ -87,6 +87,7 @@ def update_conduit_stack_resources(
         for param in template_yml["Parameters"]:
             params.append({"ParameterKey": param, "UsePreviousValue": True})
 
+    print(template_yml)
     cloudformation_client.update_stack(
         StackName=conduit_stack_name,
         TemplateBody=dump_yaml(template_yml),
