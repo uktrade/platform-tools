@@ -25,7 +25,6 @@ from dbt_platform_helper.utils.application import Environment
 )
 def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-    ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
     env = "dev"
     sessions = {"000000000": session}
     dummy_application = Application(app_name)
@@ -44,7 +43,6 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     update_conduit_stack_resources_fn = Mock()
 
     conduit = Conduit(
-        env=env,
         application=dummy_application,
         subprocess=mock_subprocess,
         addon_client_is_running_fn=addon_client_is_running_fn,
@@ -106,7 +104,6 @@ def test_conduit_domain_when_no_cluster_exists():
     }
 
     conduit = Conduit(
-        env,
         mock_application,
         get_addon_type_fn=get_addon_type_fn,
         get_cluster_arn_fn=get_cluster_arn_fn,
@@ -141,7 +138,6 @@ def test_conduit_domain_when_no_connection_secret_exists():
     create_addon_client_task_fn = Mock(side_effect=SecretNotFoundError())
 
     conduit = Conduit(
-        env,
         mock_application,
         mock_subprocess,
         addon_client_is_running_fn=addon_client_is_running_fn,
@@ -186,7 +182,6 @@ def test_conduit_domain_when_client_task_fails_to_start():
     connect_to_addon_client_task_fn = Mock(side_effect=CreateTaskTimeoutError())
 
     conduit = Conduit(
-        env,
         mock_application,
         mock_subprocess,
         addon_client_is_running_fn=addon_client_is_running_fn,
@@ -308,7 +303,6 @@ def test_conduit_domain_when_addon_type_is_invalid():
     get_addon_type_fn = Mock(side_effect=InvalidAddonTypeError(addon_type=addon_type))
 
     conduit = Conduit(
-        env,
         mock_application,
         get_addon_type_fn=get_addon_type_fn,
     )
@@ -335,7 +329,6 @@ def test_conduit_domain_when_addon_does_not_exist():
     get_addon_type_fn = Mock(side_effect=AddonNotFoundError())
 
     conduit = Conduit(
-        env,
         mock_application,
         get_addon_type_fn=get_addon_type_fn,
     )
@@ -362,7 +355,6 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
     get_addon_type_fn = Mock(side_effect=ParameterNotFoundError())
 
     conduit = Conduit(
-        env,
         mock_application,
         get_addon_type_fn=get_addon_type_fn,
     )

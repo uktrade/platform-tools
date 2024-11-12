@@ -17,7 +17,6 @@ from dbt_platform_helper.utils.application import Application
 class Conduit:
     def __init__(
         self,
-        env: str,
         application: Application,
         subprocess: DBTSubprocess = DBTSubprocess(),
         addon_client_is_running_fn=addon_client_is_running,
@@ -38,15 +37,6 @@ class Conduit:
         """
         self.application = application
         self.subprocess = subprocess
-        self.ecs_client = self.application.environments[env].session.client("ecs")
-        self.iam_client = self.application.environments[env].session.client("iam")
-        self.ssm_client = self.application.environments[env].session.client("ssm")
-        self.cloudformation_client = self.application.environments[env].session.client(
-            "cloudformation"
-        )
-        self.secrets_manager_client = self.application.environments[env].session.client(
-            "secretsmanager"
-        )
 
         self.addon_client_is_running_fn = addon_client_is_running_fn
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
@@ -62,21 +52,27 @@ class Conduit:
     def start(self, env: str, addon_name: str, access: str = "read"):
         """"""
 
-        addon_type = self.get_addon_type_fn(self.ssm_client, self.application.name, env, addon_name)
+        ecs_client = self.application.environments[env].session.client("ecs")
+        iam_client = self.application.environments[env].session.client("iam")
+        ssm_client = self.application.environments[env].session.client("ssm")
+        cloudformation_client = self.application.environments[env].session.client("cloudformation")
+        secrets_manager_client = self.application.environments[env].session.client("secretsmanager")
 
-        cluster_arn = self.get_cluster_arn_fn(self.ecs_client, self.application, env)
+        addon_type = self.get_addon_type_fn(ssm_client, self.application.name, env, addon_name)
+
+        cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application, env)
         parameter_name = self.get_parameter_name_fn(
             self.application.name, env, addon_type, addon_name, access
         )
         task_name = self.get_or_create_task_name_fn(
-            self.ssm_client, self.application.name, env, addon_name, parameter_name
+            ssm_client, self.application.name, env, addon_name, parameter_name
         )
 
-        if not self.addon_client_is_running_fn(self.ecs_client, cluster_arn, task_name):
+        if not self.addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
             self.create_addon_client_task_fn(
-                self.iam_client,
-                self.ssm_client,
-                self.secrets_manager_client,
+                iam_client,
+                ssm_client,
+                secrets_manager_client,
                 self.subprocess,
                 self.application,
                 env,
@@ -85,11 +81,11 @@ class Conduit:
                 task_name,
                 access,
             )
-            self.add_stack_delete_policy_to_task_role_fn(self.cloudformation_client, env, task_name)
+            self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, env, task_name)
             self.update_conduit_stack_resources_fn(
-                self.cloudformation_client,
-                self.iam_client,
-                self.ssm_client,
+                cloudformation_client,
+                iam_client,
+                ssm_client,
                 self.application.name,
                 env,
                 addon_type,
@@ -100,7 +96,7 @@ class Conduit:
             )
 
         self.connect_to_addon_client_task_fn(
-            self.ecs_client, self.subprocess, self.application.name, env, cluster_arn, task_name
+            ecs_client, self.subprocess, self.application.name, env, cluster_arn, task_name
         )
 
 

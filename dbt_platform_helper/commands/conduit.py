@@ -33,7 +33,7 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     application = load_application(app)
 
     try:
-        Conduit(env, application).start(env, addon_name, access)
+        Conduit(application).start(env, addon_name, access)
     except NoClusterError:
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
