@@ -17,6 +17,7 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -195,14 +196,6 @@ class Codebase:
 
         self.echo_fn("")
 
-    def __get_build_url_from_arn(self, build_arn: str) -> str:
-        _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
-        project_name = project_name.removeprefix("build/")
-        return (
-            f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
-            f"{project_name}/build/{project_name}%3A{build_id}"
-        )
-
     def __load_application_or_abort(self, session: Session, app: str) -> Application:
         try:
             return self.load_application_fn(app, default_session=session)
@@ -255,7 +248,7 @@ class Codebase:
     ):
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
-            return self.__get_build_url_from_arn(response["build"]["arn"])
+            return get_build_url_from_arn(response["build"]["arn"])
 
     def _list_latest_images(self, ecr_client, ecr_repository_name, codebase_repository):
         paginator = ecr_client.get_paginator("describe_images")

@@ -449,3 +449,12 @@ def check_image_exists(session, application, codebase, commit):
         raise AWSException
     except ecr_client.exceptions.ImageNotFoundException:
         raise AWSException
+
+
+def get_build_url_from_arn(build_arn: str) -> str:
+    _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
+    project_name = project_name.removeprefix("build/")
+    return (
+        f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
+        f"{project_name}/build/{project_name}%3A{build_id}"
+    )
