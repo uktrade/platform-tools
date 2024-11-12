@@ -259,10 +259,10 @@ def test_validate_addons_success(mock_name_is_available, addons_file):
 @patch(
     "dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability", return_value=True
 )
-@patch("dbt_platform_helper.utils.validation.cache_refresh_required", return_value=True)
-@patch("dbt_platform_helper.utils.validation.get_redis_supported_versions", return_value=["6.2"])
+@patch("dbt_platform_helper.utils.files.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["6.2"])
 @patch(
-    "dbt_platform_helper.utils.validation.get_opensearch_supported_versions", return_value=["1.3"]
+    "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", return_value=["1.3"]
 )
 def test_validate_addons_failure(
     mock_name_is_available,

@@ -19,13 +19,13 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
-from dbt_platform_helper.utils.aws import get_opensearch_supported_versions
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import (
     get_postgres_connection_data_updated_with_master_secret,
 )
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
-from dbt_platform_helper.utils.aws import get_redis_supported_versions
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
@@ -604,7 +604,7 @@ def test_update_postgres_parameter_with_master_secret():
     }
 
 
-def test_get_redis_supported_versions_when_cache_refresh_required():
+def test_get_supported_redis_versions_when_cache_refresh_required():
 
     list_redis_versions_response = [
         {
@@ -659,7 +659,7 @@ def test_get_redis_supported_versions_when_cache_refresh_required():
     elasticache_stubber.activate()
 
     try:
-        supported_redis_versions_response = get_redis_supported_versions(mock_elasticache_client)
+        supported_redis_versions_response = get_supported_redis_versions(mock_elasticache_client)
         assert supported_redis_versions_response == ["4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1"]
         elasticache_stubber.assert_no_pending_responses()
 
@@ -667,7 +667,7 @@ def test_get_redis_supported_versions_when_cache_refresh_required():
         elasticache_stubber.deactivate()
 
 
-def test_get_opensearch_supported_versions_when_cache_refresh_required():
+def test_get_supported_opensearch_versions_when_cache_refresh_required():
 
     list_opensearch_supported_versions = [
         "OpenSearch_2.15",
@@ -710,7 +710,7 @@ def test_get_opensearch_supported_versions_when_cache_refresh_required():
     opensearch_stubber.activate()
 
     try:
-        supported_opensearch_versions_response = get_opensearch_supported_versions(
+        supported_opensearch_versions_response = get_supported_opensearch_versions(
             mock_opensearch_client
         )
         assert supported_opensearch_versions_response == [
