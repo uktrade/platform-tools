@@ -32,6 +32,7 @@ class Codebase:
         get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
         check_codebase_exists_fn: Callable[[str], str] = check_codebase_exists,
         check_image_exists_fn: Callable[[str], str] = check_image_exists,
+        get_build_url_from_arn_fn: Callable[[str], str] = get_build_url_from_arn,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -41,6 +42,7 @@ class Codebase:
         self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
         self.check_codebase_exists_fn = check_codebase_exists_fn
         self.check_image_exists_fn = check_image_exists_fn
+        self.get_build_url_from_arn_fn = get_build_url_from_arn_fn
         self.subprocess = subprocess
 
     def prepare(self):
@@ -248,7 +250,7 @@ class Codebase:
     ):
         if self.confirm_fn(confirmation_message):
             response = codebuild_client.start_build(**build_options)
-            return get_build_url_from_arn(response["build"]["arn"])
+            return self.get_build_url_from_arn_fn(response["build"]["arn"])
 
     def _list_latest_images(self, ecr_client, ecr_repository_name, codebase_repository):
         paginator = ecr_client.get_paginator("describe_images")
