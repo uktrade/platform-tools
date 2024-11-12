@@ -2,7 +2,6 @@ import click
 
 from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.providers.aws import SecretNotFoundError
-from dbt_platform_helper.providers.copilot import CONDUIT_ACCESS_OPTIONS
 from dbt_platform_helper.providers.copilot import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.providers.copilot import AddonNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
@@ -14,6 +13,8 @@ from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
+
+CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
 @click.command(cls=ClickDocOptCommand)

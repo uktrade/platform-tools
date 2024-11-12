@@ -19,7 +19,6 @@ CONDUIT_ADDON_TYPES = [
     "postgres",
     "redis",
 ]
-CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
 class NoClusterError(AWSError):
