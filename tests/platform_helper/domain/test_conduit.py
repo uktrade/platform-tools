@@ -21,7 +21,7 @@ env = "development"
 class ConduitMocks:
     def __init__(self, app_name="test-application", addon_type="postgres", *args, **kwargs):
 
-        session = Mock()  # boto3.session.Session(profile_name="foo", region_name="eu-west-2")
+        session = Mock()
         sessions = {"000000000": session}
         dummy_application = Application(app_name)
         dummy_application.environments = {env: Environment(env, "000000000", sessions)}
