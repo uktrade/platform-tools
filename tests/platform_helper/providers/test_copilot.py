@@ -72,19 +72,17 @@ def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
 
 
 @mock_aws
-@patch(
+@patch(  # Nested function within provider function
     "dbt_platform_helper.providers.copilot.get_postgres_connection_data_updated_with_master_secret",
     return_value="connection string",
 )
 def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
-    env = "development"
     addon_name = "dummy-postgres"
     master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
 
-    print(master_secret_name)
     boto3.client("ssm").put_parameter(
         Name=master_secret_name, Value="master-secret-arn", Type="String"
     )
@@ -146,7 +144,6 @@ def test_create_redis_or_opensearch_addon_client_task(
     get_connection_secret_arn with the default secret name and subsequently
     subprocess.call with the correct secret ARN and execution role."""
 
-    env = "development"
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
@@ -193,7 +190,6 @@ def test_create_postgres_addon_client_task(
     mock_application,
 ):
 
-    env = "development"
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
     mock_subprocess = Mock()
@@ -226,7 +222,6 @@ def test_create_postgres_addon_client_task(
         secret_name,
         task_name,
     )
-    # mock_subprocess.call.assert_called()
 
 
 @patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
@@ -241,7 +236,6 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     addon_name = "postgres"
     addon_type = "custom-name-postgres"
     access = "read"
-    env = "development"
     mock_subprocess = Mock()
     mock_application.environments[env] = Mock()
     mock_application.environments[env].session.client.return_value = Mock()
@@ -295,7 +289,6 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     addon_name = "postgres"
     addon_type = "custom-name-postgres"
     access = "read"
-    env = "development"
     mock_subprocess = Mock()
     mock_application.environments[env] = Mock()
     mock_application.environments[env].session.client.return_value = Mock()
@@ -338,7 +331,6 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
 
-    env = "development"
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
@@ -376,7 +368,6 @@ def test_addon_client_is_running(
     """Test that, given cluster ARN, addon type and with a running agent,
     addon_client_is_running returns True."""
 
-    env = "development"
     mocked_cluster_for_client = mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments[env].session.client("ecs")
@@ -397,7 +388,6 @@ def test_addon_client_is_running_when_no_client_task_running(
     """Test that, given cluster ARN, addon type and without a running client
     task, addon_client_is_running returns False."""
 
-    env = "development"
     mocked_cluster_for_client = mock_cluster_client_task(addon_type, task_running=False)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments[env].session.client("ecs")
@@ -460,7 +450,6 @@ def test_get_or_create_task_name(mock_application):
     parameter store when it has been stored."""
 
     addon_name = "app-postgres"
-    env = "development"
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
     mock_application.environments[env].session.client("ssm")
     mock_ssm = boto3.client("ssm")
@@ -484,7 +473,6 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     parameter store."""
 
     addon_name = "app-postgres"
-    env = "development"
     ssm_client = mock_application.environments[env].session.client("ssm")
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
     task_name = get_or_create_task_name(
@@ -539,7 +527,6 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
     addon type.
     """
 
-    env = "development"
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
@@ -572,7 +559,6 @@ def test_connect_to_addon_client_task_when_timeout_reached(
     not call subprocess.call."""
 
     task_name = mock_task_name(addon_type)
-    env = "development"
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
 
@@ -598,7 +584,6 @@ def test_connect_to_addon_client_task_when_timeout_reached(
 def test_get_addon_type(addon_name, expected_type, mock_application):
     """Test that get_addon_type returns the expected addon type."""
 
-    env = "development"
     ssm_client = mock_application.environments[env].session.client("ssm")
 
     add_addon_config_parameter()
@@ -613,7 +598,6 @@ def test_get_addon_type_when_addon_not_found(mock_application):
     found in the config file."""
 
     add_addon_config_parameter({"different-name": {"type": "redis"}})
-    env = "development"
     ssm_client = mock_application.environments[env].session.client("ssm")
 
     with pytest.raises(AddonNotFoundError):
@@ -625,7 +609,6 @@ def test_get_addon_type_when_parameter_not_found(mock_application):
     """Test that get_addon_type raises the expected error when the addon config
     parameter is not found."""
 
-    env = "development"
     ssm_client = mock_application.environments[env].session.client("ssm")
 
     mock_ssm = boto3.client("ssm")

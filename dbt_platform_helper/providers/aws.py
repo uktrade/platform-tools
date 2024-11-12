@@ -1,24 +1,6 @@
 import json
 import urllib
 
-import boto3
-
-
-class AWSProvider:
-    # TODO Unused class probably remove
-    def __init__(self, session=boto3.Session()):
-        self.session = session
-        self.clients = {}
-
-    def register_client(self, service_name):
-        if service_name not in self.clients:
-            self.clients[service_name] = self.session.client(service_name)
-
-    def get_client(self, service_name):
-        if service_name not in self.clients:
-            self.register_client(service_name)
-        return self.clients[service_name]
-
 
 class AWSError(Exception):
     pass
@@ -31,8 +13,6 @@ class SecretNotFoundError(AWSError):
 def get_postgres_connection_data_updated_with_master_secret(
     ssm_client, secrets_manager_client, parameter_name, secret_arn
 ):
-    # ssm_client = session.client("ssm")
-    # secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
     parameter_value = response["Parameter"]["Value"]
 

@@ -87,7 +87,6 @@ def update_conduit_stack_resources(
         for param in template_yml["Parameters"]:
             params.append({"ParameterKey": param, "UsePreviousValue": True})
 
-    print(template_yml)
     cloudformation_client.update_stack(
         StackName=conduit_stack_name,
         TemplateBody=dump_yaml(template_yml),

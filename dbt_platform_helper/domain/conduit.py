@@ -1,3 +1,5 @@
+import subprocess
+
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
@@ -10,7 +12,6 @@ from dbt_platform_helper.providers.copilot import get_addon_type
 from dbt_platform_helper.providers.copilot import get_cluster_arn
 from dbt_platform_helper.providers.copilot import get_or_create_task_name
 from dbt_platform_helper.providers.copilot import get_parameter_name
-from dbt_platform_helper.providers.subprocess import DBTSubprocess
 from dbt_platform_helper.utils.application import Application
 
 
@@ -18,7 +19,7 @@ class Conduit:
     def __init__(
         self,
         application: Application,
-        subprocess: DBTSubprocess = DBTSubprocess(),
+        subprocess: subprocess = subprocess,
         addon_client_is_running_fn=addon_client_is_running,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
@@ -98,32 +99,3 @@ class Conduit:
         self.connect_to_addon_client_task_fn(
             ecs_client, self.subprocess, self.application.name, env, cluster_arn, task_name
         )
-
-
-class ConduitError(Exception):
-    pass
-
-
-class CreateTaskTimeoutConduitError(ConduitError):
-    pass
-
-
-class InvalidAddonTypeConduitError(ConduitError):
-    def __init__(self, addon_type):
-        self.addon_type = addon_type
-
-
-class NoClusterConduitError(ConduitError):
-    pass
-
-
-class SecretNotFoundConduitError(ConduitError):
-    pass
-
-
-class ParameterNotFoundConduitError(ConduitError):
-    pass
-
-
-class AddonNotFoundConduitError(ConduitError):
-    pass

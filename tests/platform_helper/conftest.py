@@ -207,18 +207,32 @@ def mock_cluster_client_task(mocked_cluster):
                     enableExecuteCommand=True,
                 )
 
-            def list_tasks(cluster, desiredStatus, family):
-                if agent_last_status == "RUNNING":
-                    return {
-                        "taskArns": [
-                            "arn:aws:ecs:us-west-2:123456789012:task/a1b2c3d4-5678-90ab-cdef-11111EXAMPLE",
-                            "arn:aws:ecs:us-west-2:123456789012:task/a1b2c3d4-5678-90ab-cdef-22222EXAMPLE",
-                        ]
-                    }
-                else:
-                    return {"taskArns": []}
+            def describe_tasks(cluster, tasks):
+                """Moto does not yet provide the ability to mock an executable
+                task and its managed agents / containers, so we need to patch
+                the expected response."""
+                if not task_running:
+                    raise Exception
 
-            mocked_ecs_client.list_tasks = list_tasks
+                return {
+                    "tasks": [
+                        {
+                            "lastStatus": "RUNNING",
+                            "containers": [
+                                {
+                                    "managedAgents": [
+                                        {
+                                            "name": "ExecuteCommandAgent",
+                                            "lastStatus": agent_last_status,
+                                        }
+                                    ],
+                                }
+                            ],
+                        }
+                    ],
+                }
+
+            mocked_ecs_client.describe_tasks = describe_tasks
 
             return mocked_ecs_client
 

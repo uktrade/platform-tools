@@ -44,7 +44,6 @@ class InvalidAddonTypeError(AWSError):
 
 def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str) -> str:
     addon_type = None
-
     try:
         addon_config = json.loads(
             ssm_client.get_parameter(
@@ -71,7 +70,6 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
 
 
 def get_cluster_arn(ecs_client, application_name, env: str) -> str:
-
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
         tags = tags_response["tags"]
@@ -108,7 +106,6 @@ def get_parameter_name(
 def get_or_create_task_name(
     ssm_client, application_name: str, env: str, addon_name: str, parameter_name: str
 ) -> str:
-
     try:
         return ssm_client.get_parameter(Name=parameter_name)["Parameter"]["Value"]
     except ssm_client.exceptions.ParameterNotFound:
@@ -117,14 +114,12 @@ def get_or_create_task_name(
 
 
 def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
-
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
         family=f"copilot-{task_name}",
     )
 
-    print(tasks)
     if not tasks["taskArns"]:
         return False
 
@@ -176,6 +171,7 @@ def create_addon_client_task(
         # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
         # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
+            # TODO this should raise an exception and caught at the command layer
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
@@ -207,7 +203,6 @@ def create_postgres_admin_task(
     secret_name: str,
     task_name: str,
 ):
-
     read_only_secret_name = secret_name + "_READ_ONLY_USER"
     master_secret_name = (
         f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
