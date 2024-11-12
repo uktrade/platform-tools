@@ -27,6 +27,8 @@ from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
+env = "development"
+
 
 @pytest.mark.parametrize(
     "test_string",
@@ -47,7 +49,6 @@ def test_normalise_secret_name(test_string):
 def test_get_cluster_arn(mocked_cluster, mock_application):
     """Test that, given app and environment strings, get_cluster_arn returns the
     arn of a cluster tagged with these strings."""
-    env = "development"
 
     assert (
         get_cluster_arn(
@@ -281,7 +282,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
 
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn", return_value="test-arn")
+@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
 @patch("click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
@@ -331,8 +332,8 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     )
 
 
-@patch("dbt_platform_helper.commands.conduit.get_connection_secret_arn")
-def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, subprocess_call):
+@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn")
+def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
@@ -362,7 +363,7 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
             "read",
         )
 
-        mock_subprocess.assert_not_called()
+        mock_subprocess.call.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -410,32 +411,47 @@ def test_addon_client_is_running_when_no_client_task_running(
         )
 
 
+@mock_aws
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
 def test_addon_client_is_running_when_no_client_agent_running(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
+    addon_type, mock_application, mocked_cluster
 ):
-    """Test that, given cluster ARN, addon type and without a running agent,
-    addon_client_is_running returns False."""
+    ecs_client = mock_application.environments[env].session.client("ecs")
+    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+    task_name = "some-task-name"
+    ec2 = boto3.resource("ec2")
+    vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+    subnet = ec2.create_subnet(VpcId=vpc.id, CidrBlock="10.0.0.0/18")
 
-    mocked_cluster_for_client = mock_cluster_client_task(addon_type, "ACTIVATING")
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-
-    result = mocked_cluster_for_client.list_tasks(
-        cluster=mocked_cluster_arn,
-        desiredStatus="foobar",
-        family=f"copilot-{mock_task_name(addon_type)}",
+    mocked_task_definition_arn = ecs_client.register_task_definition(
+        family=f"copilot-foobar",
+        requiresCompatibilities=["FARGATE"],
+        networkMode="awsvpc",
+        containerDefinitions=[
+            {
+                "name": "test_container",
+                "image": "test_image",
+                "cpu": 256,
+                "memory": 512,
+                "essential": True,
+            }
+        ],
+    )["taskDefinition"]["taskDefinitionArn"]
+    ecs_client.run_task(
+        taskDefinition=mocked_task_definition_arn,
+        launchType="FARGATE",
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": [subnet.id],
+                "securityGroups": ["something-sg"],
+            }
+        },
     )
-    print(result)
 
-    assert (
-        addon_client_is_running(
-            mocked_cluster_for_client, mocked_cluster_arn, mock_task_name(addon_type)
-        )
-        is False
-    )
+    assert addon_client_is_running(ecs_client, cluster_arn, task_name) is False
 
 
 @mock_aws

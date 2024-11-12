@@ -13,32 +13,14 @@ from dbt_platform_helper.providers.copilot import ParameterNotFoundError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
-# class TestConduit(unittest.TestCase):
-#     def setUp(self):
 
-#         self.ecs_stubber = Stubber()
-#         self.ecs_stubber.activate()
-#         return super().setUp()
-
-#     def tearDown(self):
-
-#         self.ecs_stubber.deactivate()
-#         return super().tearDown()
-
-
-# @pytest.fixture(scope="function")
-# def ecs_session(aws_credentials):
-#     with mock_aws():
-#         session = boto3.session.Session(profile_name="foo", region_name="eu-west-2")
-#         yield session
-#
 @pytest.mark.parametrize(
     "app_name, addon_type, addon_name, access",
     [
         ("app_1", "postgres", "custom-name-postgres", "read"),
-        # ("app_2", "postgres", "custom-name-rds-postgres", "read"),
-        # ("app_1", "redis", "custom-name-redis", "read"),
-        # ("app_1", "opensearch", "custom-name-opensearch", "read"),
+        ("app_2", "postgres", "custom-name-rds-postgres", "read"),
+        ("app_1", "redis", "custom-name-redis", "read"),
+        ("app_1", "opensearch", "custom-name-opensearch", "read"),
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
@@ -76,83 +58,7 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
         update_conduit_stack_resources_fn=update_conduit_stack_resources_fn,
     )
 
-    # cf_stubber = Stubber(conduit.cloudformation_client)
-    # ecs_stubber = Stubber(conduit.ecs_client)
-    # iam_stubber = Stubber(conduit.iam_client)
-    # sm_stubber = Stubber(conduit.secrets_manager_client)
-    # ssm_stubber = Stubber(conduit.ssm_client)
-    # cf_stubber.activate()
-    # ecs_stubber.activate()
-    # iam_stubber.activate()
-    # sm_stubber.activate()
-    # ssm_stubber.activate()
-
-    # ecs__list_clusters_response = {
-    #     "clusterArns": [
-    #         "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1",
-    #     ]
-    # }
-    # ecs_list_tasks_response = {"taskArns": ["test_arn"], "nextToken": ""}
-    #
-    # list_tags_for_resource_response = {
-    #     "tags": [
-    #         {"key": "copilot-application", "value": app_name},
-    #         {"key": "copilot-environment", "value": env},
-    #         {"key": "aws:cloudformation:logical-id", "value": "Cluster"},
-    #     ]
-    # }
-    #
-    # ecs_stubber.add_response("list_clusters", ecs__list_clusters_response)
-    #
-    # ecs_stubber.add_response(
-    #     "list_tags_for_resource", list_tags_for_resource_response, {"resourceArn": stub.ANY}
-    # )
-    # ecs_stubber.add_response(
-    #     "list_tasks",
-    #     ecs_list_tasks_response,
-    #     {
-    #         "cluster": stub.ANY,  # "cluster_arn",
-    #         "desiredStatus": "RUNNING",
-    #         "family": stub.ANY,  # "copilot-task_name",
-    #     },
-    # )
-    # ecs_stubber.add_response(
-    #     "list_tasks",
-    #     ecs_list_tasks_response,
-    #     {
-    #         "cluster": stub.ANY,  # "cluster_arn",
-    #         "desiredStatus": "RUNNING",
-    #         "family": stub.ANY,  # "copilot-task_name",
-    #     },
-    # )
-
     conduit.start(env, addon_name, access)
-
-    # Used when using magic mocks
-    # mock_client.describe_tasks.return_value = {
-    #     "tasks": [
-    #         {
-    #             "containers": [
-    #                 {"managedAgents": [{"name": "ExecuteCommandAgent", "lastStatus": "RUNNING"}]}
-    #             ]
-    #         }
-    #     ]
-    # }
-    #
-    # mock_session.client.assert_called_with("ecs")
-    # mock_client.list_tasks.assert_called_once_with(
-    #     cluster=cluster_arn,
-    #     desiredStatus="RUNNING",
-    #     family=f"copilot-{task_name}",
-    # )
-    # # mock_client.describe_tasks()
-    # mock_subprocess.call.assert_called_once_with(
-    #     "copilot task exec "
-    #     f"--app {app_name} --env {env} "
-    #     f"--name {task_name} "
-    #     f"--command bash",
-    #     shell=True,
-    # )
 
 
 # TODO
@@ -169,7 +75,6 @@ def test_conduit_domain_when_no_cluster_exists():
     mock_client = Mock()
     mock_session = Mock()
     mock_session.client.return_value = mock_client
-    # mock_client.list_tasks.return_value = {"taskArns": ["test_arn"], "nextToken": ""}
     sessions = {"000000000": mock_session}
     get_addon_type_fn = Mock(return_value=addon_type)
     get_cluster_arn_fn = Mock(side_effect=NoClusterError())
@@ -410,13 +315,6 @@ def test_conduit_domain_when_addon_type_is_invalid():
 
     with pytest.raises(InvalidAddonTypeError) as exc:
         conduit.start(env, addon_name, access)
-        # mock_session.client.assert_called_with("ssm")
-        # mock_session.client.assert_called_with("secretsmanager")
-        # mock_session.client.assert_called_with("cloudformation")
-        # mock_session.client.assert_called_with("iam")
-
-        # mock_client.list_stack_resources
-        # mock_client.describe_secret
 
 
 # TODO conduit requires addon type
@@ -471,37 +369,3 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
 
     with pytest.raises(ParameterNotFoundError) as exc:
         conduit.start(env, addon_name, access)
-
-
-"""
-
-    mock_client_attrs = {'get_parameter.side_effect': set_get_parameter_return_value}
-
-    mock_client.configure_mock(**mock_client_attrs)
-
-    def set_get_parameter_return_value(Name,WithDecryption):
-        print("param name for side effect: %s",Name)
-        if Name == f"/copilot/{app_name}/{env}/secrets/{addon_name}_RDS_MASTER_ARN":
-            return {
-            "Parameter": {
-                "Value": "arn::some-arn",
-                "Name": f"/copilot/{app_name}/{env}/secrets/{addon_name}_RDS_MASTER_ARN",
-            }
-        }
-        elif Name == f"/copilot/{app_name}/{env}/secrets/{normalise_secret_name(addon_name)}_READ_ONLY_USER":
-            return {
-                "Parameter": {
-                    "Value": {
-                        "username": "read_only",
-                        "password": "fake_pass",
-                        "engine": "postgres", 
-                        "port": 5432, 
-                        "dbname": "main", 
-                        "host": "demodjango-anthoni-demodjango-postgres..eu-west-2.rds.amazonaws.com", 
-                        "dbInstanceIdentifier": "db-XXXXXXXXXXXXXXX"
-                        },
-                    "Name": f"/copilot/{app_name}/{env}/secrets/{normalise_secret_name(addon_name)}_READ_ONLY_USER",
-                    },
-            } 
-
-"""
