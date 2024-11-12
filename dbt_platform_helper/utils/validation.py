@@ -622,7 +622,7 @@ def _validate_extension_supported_versions(config, extension_type, version_key, 
 
     for version_failure in extensions_with_invalid_version:
         click.secho(
-            f'{extension_type} version for environment "{version_failure['environment']}" is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['extension_version']}',
+            f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['extension_version']}",
             fg="red",
         )
 
