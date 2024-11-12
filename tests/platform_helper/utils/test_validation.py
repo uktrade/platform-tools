@@ -279,9 +279,8 @@ def test_validate_addons_failure(
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_addons_invalid_env_name_errors(
-    mock_name_is_available, mock_validate_opensearch_versions
+    mock_name_is_available
 ):
     mock_name_is_available.return_value = True
     error_map = validate_addons(
@@ -317,16 +316,14 @@ def test_validate_addons_unavailable_bucket_name(mock_get_session, http_code, ca
     assert BUCKET_NAME_IN_USE_TEMPLATE.format("bucket") in capfd.readouterr().out
 
 
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
-def test_validate_addons_unsupported_addon(mock_validate_opensearch_versions):
+def test_validate_addons_unsupported_addon():
     error_map = validate_addons(load_addons("unsupported_addon.yml"))
 
     for entry, error in error_map.items():
         assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
 
 
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
-def test_validate_addons_missing_type(mock_validate_opensearch_versions):
+def test_validate_addons_missing_type():
     error_map = validate_addons(load_addons("missing_type_addon.yml"))
     assert (
         "Missing addon type in addon 'my-missing-type-addon'" == error_map["my-missing-type-addon"]
@@ -463,33 +460,21 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success(
     mock_warn_on_s3_bucket_name_availability,
-    mock_validate_redis_versions,
-    mock_validate_opensearch_versions,
     valid_platform_config,
 ):
     validate_platform_config(valid_platform_config, disable_aws_validation=False)
     assert mock_warn_on_s3_bucket_name_availability.called
-    assert mock_validate_redis_versions.called
-    assert mock_validate_opensearch_versions.called
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-@patch("dbt_platform_helper.utils.validation._validate_redis_versions")
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validate_platform_config_success_when_aws_validation_disabled(
     mock_warn_on_s3_bucket_name_availability,
-    mock_validate_redis_versions,
-    mock_validate_opensearch_versions,
     valid_platform_config,
 ):
     validate_platform_config(valid_platform_config, disable_aws_validation=True)
     assert not mock_warn_on_s3_bucket_name_availability.called
-    assert not mock_validate_redis_versions.called
-    assert not mock_validate_opensearch_versions.called
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
@@ -800,10 +785,8 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
-@patch("dbt_platform_helper.utils.validation._validate_opensearch_versions")
 def test_validation_checks_s3_bucket_names(
     mock_get_session,
-    mock_validate_opensearch_versions,
     s3_extensions_fixture,
     capfd,
 ):
@@ -829,12 +812,10 @@ def test_validation_checks_and_warns_for_duplicate_s3_bucket_names(
     response = {"Error": {"Code": "403"}}
     client.head_bucket.side_effect = ClientError(response, "HeadBucket")
 
-    with patch("dbt_platform_helper.utils.validation._validate_opensearch_versions"):
+    load_and_validate_platform_config(disable_aws_validation=False)
 
-        load_and_validate_platform_config(disable_aws_validation=False)
-
-        assert "Warning" in capfd.readouterr().out
-        assert mock_get_session.called
+    assert "Warning" in capfd.readouterr().out
+    assert mock_get_session.called
 
 
 @patch("dbt_platform_helper.utils.validation.get_aws_session_or_abort")
@@ -1112,3 +1093,5 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
+
+# TODO - deffo want some tests for _validate_extensions_versions
