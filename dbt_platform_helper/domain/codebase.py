@@ -19,7 +19,7 @@ from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import list_latest_images
-from dbt_platform_helper.utils.aws import start_build_with_confirmation
+from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -36,7 +36,7 @@ class Codebase:
         check_image_exists_fn: Callable[[str], str] = check_image_exists,
         get_build_url_from_arn_fn: Callable[[str], str] = get_build_url_from_arn,
         list_latest_images_fn: Callable[[str], str] = list_latest_images,
-        start_build_with_confirmation_fn: Callable[[str], str] = start_build_with_confirmation,
+        start_build_extraction_fn: Callable[[str], str] = start_build_extraction,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -48,7 +48,7 @@ class Codebase:
         self.check_image_exists_fn = check_image_exists_fn
         self.get_build_url_from_arn_fn = get_build_url_from_arn_fn
         self.list_latest_images_fn = list_latest_images_fn
-        self.start_build_with_confirmation_fn = start_build_with_confirmation_fn
+        self.start_build_extraction_fn = start_build_extraction_fn
         self.subprocess = subprocess
 
     def prepare(self):
@@ -129,7 +129,7 @@ class Codebase:
             raise SystemExit(1)
 
         codebuild_client = session.client("codebuild")
-        build_url = self.start_build_with_confirmation_fn(
+        build_url = self.__start_build_with_confirmation(
             self.confirm_fn,
             codebuild_client,
             self.get_build_url_from_arn_fn,
@@ -156,7 +156,7 @@ class Codebase:
         self.__check_image_exists(session, application, codebase, commit)
 
         codebuild_client = session.client("codebuild")
-        build_url = self.start_build_with_confirmation_fn(
+        build_url = self.__start_build_with_confirmation(
             self.confirm_fn,
             codebuild_client,
             self.get_build_url_from_arn_fn,
@@ -257,3 +257,16 @@ class Codebase:
                 fg="red",
             )
             raise click.Abort
+
+    def __start_build_with_confirmation(
+        self,
+        confirm_fn,
+        codebuild_client,
+        get_build_url_from_arn_fn,
+        confirmation_message,
+        build_options,
+    ):
+        if confirm_fn(confirmation_message):
+            build_arn = self.start_build_extraction_fn(codebuild_client, build_options)
+            return get_build_url_from_arn_fn(build_arn)
+        return None
