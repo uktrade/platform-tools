@@ -19,6 +19,7 @@ from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 real_ecr_client = boto3.client("ecr")
@@ -34,23 +35,27 @@ def mock_aws_client(get_aws_session_or_abort):
 
 
 class CodebaseMocks:
-    def __init__(self):
-        self.load_application_fn = Mock()
-        self.get_aws_session_or_abort_fn = Mock()
-        self.input_fn = Mock(return_value="yes")
-        self.echo_fn = Mock()
-        self.confirm_fn = Mock(return_value=True)
-        self.check_codebase_exists_fn = Mock(
-            return_value="""
+    def __init__(self, **kwargs):
+        self.load_application_fn = kwargs.get("load_application_fn", Mock())
+        self.get_aws_session_or_abort_fn = kwargs.get("get_aws_session_or_abort_fn", Mock())
+        self.input_fn = kwargs.get("input_fn", Mock(return_value="yes"))
+        self.echo_fn = kwargs.get("echo_fn", Mock())
+        self.confirm_fn = kwargs.get("echo_fn", Mock(return_value=True))
+        self.check_codebase_exists_fn = kwargs.get(
+            "check_codebase_exists_fn",
+            Mock(
+                return_value="""
                                              {
                                                 "name": "test-app", 
                                                 "repository": "uktrade/test-app",
                                                 "services": "1234"
                                              }
                                         """
+            ),
         )
-        self.check_image_exists_fn = Mock(return_value="")
-        self.subprocess = Mock()
+        self.check_image_exists_fn = kwargs.get("check_image_exists_fn", Mock(return_value=""))
+        self.subprocess = kwargs.get("subprocess", Mock())
+        self.check_if_commit_exists_fn = kwargs.get("check_if_commit_exists_fn", Mock())
 
     def params(self):
         return {
@@ -62,6 +67,7 @@ class CodebaseMocks:
             "echo_fn": self.echo_fn,
             "confirm_fn": self.confirm_fn,
             "subprocess": self.subprocess,
+            "check_if_commit_exists_fn": self.check_if_commit_exists_fn,
         }
 
 
@@ -156,7 +162,7 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundError) as exc:
+    with pytest.raises(ApplicationNotFoundError):
         codebase.build("not-an-application", "application", "ab1c23d")
         mocks.echo_fn.assert_has_calls(
             [
@@ -168,6 +174,15 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
         )
 
 
+def test_codebase_build_commit_not_found():
+    mocks = CodebaseMocks(check_if_commit_exists_fn=Mock(side_effect=CommitNotFoundError()))
+
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(CommitNotFoundError):
+        codebase.build("not-an-application", "application", "ab1c23d")
+
+
 def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
     mocks = CodebaseMocks()
     mocks.load_application_fn.side_effect = SystemExit(1)
@@ -177,7 +192,7 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    with pytest.raises(SystemExit) as exc:
+    with pytest.raises(SystemExit):
         codebase.prepare()
 
     mocks.echo_fn.assert_has_calls(
@@ -207,7 +222,6 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
 def test_codebase_build_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
     mocks.confirm_fn.return_value = False
-    mocks.subprocess.return_value.stderr = ""
 
     codebase = Codebase(**mocks.params())
 
@@ -376,6 +390,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
 
     with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
+        # TODO review
         mocks.echo_fn.assert_has_calls(
             [
                 call(

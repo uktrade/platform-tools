@@ -6,6 +6,7 @@ from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.git import CommitNotFoundError
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -48,6 +49,12 @@ def build(app, codebase, commit):
     except ApplicationNotFoundError:
         click.secho(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
+    except CommitNotFoundError:
+        click.secho(
+            f'The commit hash "{commit}" either does not exist or you need to run `git fetch`.',
             fg="red",
         )
         raise click.Abort

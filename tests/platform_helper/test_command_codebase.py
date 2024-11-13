@@ -11,6 +11,7 @@ from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -61,9 +62,12 @@ class TestCodebaseBuild:
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(self, mock_codebase_object):
+    @patch("click.secho")
+    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
+        self, mock_click, mock_codebase_object
+    ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.build.side_effect = SystemExit(1)
+        mock_codebase_object_instance.build.side_effect = CommitNotFoundError()
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -81,6 +85,8 @@ class TestCodebaseBuild:
         mock_codebase_object_instance.build.assert_called_once_with(
             "test-application", "application", "nonexistent-commit-hash"
         )
+        expected_message = f"""The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

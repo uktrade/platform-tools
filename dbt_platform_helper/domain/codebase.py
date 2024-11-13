@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.git import check_if_commit_exists
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -36,6 +37,7 @@ class Codebase:
         get_build_url_from_arn_fn: Callable[[str], str] = get_build_url_from_arn,
         list_latest_images_fn: Callable[[str], str] = list_latest_images,
         start_build_extraction_fn: Callable[[str], str] = start_build_extraction,
+        check_if_commit_exists_fn: Callable[[str], str] = check_if_commit_exists,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input_fn = input_fn
@@ -48,6 +50,7 @@ class Codebase:
         self.get_build_url_from_arn_fn = get_build_url_from_arn_fn
         self.list_latest_images_fn = list_latest_images_fn
         self.start_build_extraction_fn = start_build_extraction_fn
+        self.check_if_commit_exists_fn = check_if_commit_exists_fn
         self.subprocess = subprocess
 
     def prepare(self):
@@ -113,16 +116,7 @@ class Codebase:
         session = self.get_aws_session_or_abort_fn()
         self.load_application_fn(app, default_session=session)
 
-        check_if_commit_exists = self.subprocess(
-            ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
-        )
-
-        if check_if_commit_exists.stderr:
-            self.echo_fn(
-                f'The commit hash "{commit}" either does not exist or you need to run `git fetch`.',
-                fg="red",
-            )
-            raise SystemExit(1)
+        self.check_if_commit_exists_fn(commit)
 
         codebuild_client = session.client("codebuild")
         build_url = self.__start_build_with_confirmation(
