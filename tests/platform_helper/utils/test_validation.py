@@ -281,9 +281,7 @@ def test_validate_addons_failure(
 
 
 @patch("dbt_platform_helper.utils.validation.warn_on_s3_bucket_name_availability")
-def test_validate_addons_invalid_env_name_errors(
-    mock_name_is_available
-):
+def test_validate_addons_invalid_env_name_errors(mock_name_is_available):
     mock_name_is_available.return_value = True
     error_map = validate_addons(
         {
@@ -1097,29 +1095,24 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
     )
 
 
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=['7.1'])
-def test_validate_extensions_supported_versions_successful_with_supported_version(mock_supported_versions, capsys):
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
+def test_validate_extensions_supported_versions_successful_with_supported_version(
+    mock_supported_versions, capsys
+):
 
     config = {
         "application": "test-app",
         "environments": {"dev": {}, "test": {}, "prod": {}},
         "extensions": {
-            "connors-redis": {
-                "type": "redis",
-                "environments": {
-                    "*": {
-                        "engine": '7.1'
-                    }
-                }
-            }
-        }
+            "connors-redis": {"type": "redis", "environments": {"*": {"engine": "7.1"}}}
+        },
     }
 
     _validate_extension_supported_versions(
         config=config,
-        extension_type='redis',
-        version_key='engine',
-        get_supported_versions_fn=mock_supported_versions
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=mock_supported_versions,
     )
 
     # Nothing should be logged if the version is valid.
@@ -1128,8 +1121,10 @@ def test_validate_extensions_supported_versions_successful_with_supported_versio
     assert captured.err == ""
 
 
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=['7.1'])
-def test_validate_extensions_supported_versions_fails_with_unsupported_version(mock_supported_versions, capsys):
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
+def test_validate_extensions_supported_versions_fails_with_unsupported_version(
+    mock_supported_versions, capsys
+):
 
     config = {
         "application": "test-app",
@@ -1137,22 +1132,21 @@ def test_validate_extensions_supported_versions_fails_with_unsupported_version(m
         "extensions": {
             "connors-redis": {
                 "type": "redis",
-                "environments": {
-                    "*": {
-                        "engine": 'some-engine-which-probably-doesnt-exist'
-                    }
-                }
+                "environments": {"*": {"engine": "some-engine-which-probably-doesnt-exist"}},
             }
-        }
+        },
     }
 
     _validate_extension_supported_versions(
         config=config,
-        extension_type='redis',
-        version_key='engine',
-        get_supported_versions_fn=mock_supported_versions
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=mock_supported_versions,
     )
 
     captured = capsys.readouterr()
-    assert "redis version for environment * is not in the list of supported redis versions" in captured.out
+    assert (
+        "redis version for environment * is not in the list of supported redis versions"
+        in captured.out
+    )
     assert captured.err == ""

@@ -131,17 +131,17 @@ def validate_addons(addons: dict):
 
     _validate_s3_bucket_uniqueness({"extensions": addons})
     _validate_extension_supported_versions(
-            config={"extensions": addons},
-            extension_type='redis',
-            version_key='engine',
-            get_supported_versions_fn=get_supported_redis_versions
-        )
+        config={"extensions": addons},
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_redis_versions,
+    )
     _validate_extension_supported_versions(
-            config={"extensions": addons},
-            extension_type='opensearch',
-            version_key='engine',
-            get_supported_versions_fn=get_supported_opensearch_versions
-        )
+        config={"extensions": addons},
+        extension_type="opensearch",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_opensearch_versions,
+    )
 
     return errors
 
@@ -576,25 +576,31 @@ def validate_platform_config(config, disable_aws_validation=False):
         _validate_s3_bucket_uniqueness(enriched_config)
         _validate_extension_supported_versions(
             config=config,
-            extension_type='redis',
-            version_key='engine',
-            get_supported_versions_fn=get_supported_redis_versions
+            extension_type="redis",
+            version_key="engine",
+            get_supported_versions_fn=get_supported_redis_versions,
         )
         _validate_extension_supported_versions(
             config=config,
-            extension_type='opensearch',
-            version_key='engine',
-            get_supported_versions_fn=get_supported_opensearch_versions
+            extension_type="opensearch",
+            version_key="engine",
+            get_supported_versions_fn=get_supported_opensearch_versions,
         )
 
 
-def _validate_extension_supported_versions(config, extension_type, version_key, get_supported_versions_fn):
+def _validate_extension_supported_versions(
+    config, extension_type, version_key, get_supported_versions_fn
+):
 
     extensions = config.get("extensions", {})
     if not extensions:
         return
 
-    extensions_for_type = [extension for extension in config.get("extensions", {}).values() if extension.get("type") == extension_type]
+    extensions_for_type = [
+        extension
+        for extension in config.get("extensions", {}).values()
+        if extension.get("type") == extension_type
+    ]
 
     supported_extension_versions = get_supported_versions_fn()
     extensions_with_invalid_version = []
@@ -613,10 +619,7 @@ def _validate_extension_supported_versions(config, extension_type, version_key, 
             extension_version = env_config.get(version_key)
             if extension_version not in supported_extension_versions:
                 extensions_with_invalid_version.append(
-                    {
-                        'environment': environment,
-                        'version': extension_version
-                    }
+                    {"environment": environment, "version": extension_version}
                 )
 
     for version_failure in extensions_with_invalid_version:

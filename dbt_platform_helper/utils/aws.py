@@ -14,7 +14,11 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import write_to_cache, cache_refresh_required, read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import (
+    write_to_cache,
+    cache_refresh_required,
+    read_supported_versions_from_cache,
+)
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -352,52 +356,57 @@ def get_postgres_connection_data_updated_with_master_secret(session, parameter_n
 
 def get_supported_redis_versions(elasticache_client=None):
 
-    if cache_refresh_required('redis'):
+    if cache_refresh_required("redis"):
 
         supported_versions = []
 
         if not elasticache_client:
             session = get_aws_session_or_abort()
-            elasticache_client = session.client('elasticache')
+            elasticache_client = session.client("elasticache")
 
-        supported_versions_response = elasticache_client.describe_cache_engine_versions(Engine='redis')
+        supported_versions_response = elasticache_client.describe_cache_engine_versions(
+            Engine="redis"
+        )
 
         supported_versions = [
-            version['EngineVersion'] for version in supported_versions_response['CacheEngineVersions']
+            version["EngineVersion"]
+            for version in supported_versions_response["CacheEngineVersions"]
         ]
 
-        write_to_cache('redis', supported_versions)
+        write_to_cache("redis", supported_versions)
 
         return supported_versions
 
     else:
-        return read_supported_versions_from_cache('redis')
+        return read_supported_versions_from_cache("redis")
 
 
 def get_supported_opensearch_versions(opensearch_client=None):
 
-    if cache_refresh_required('opensearch'):
+    if cache_refresh_required("opensearch"):
 
         supported_versions = []
 
         if not opensearch_client:
             session = get_aws_session_or_abort()
-            opensearch_client = session.client('opensearch')
+            opensearch_client = session.client("opensearch")
 
         response = opensearch_client.list_versions()
-        all_versions = response['Versions']
+        all_versions = response["Versions"]
 
         opensearch_versions = [
             version for version in all_versions if not version.startswith("Elasticsearch_")
         ]
-        supported_versions = [version.removeprefix("OpenSearch_") for version in opensearch_versions]
+        supported_versions = [
+            version.removeprefix("OpenSearch_") for version in opensearch_versions
+        ]
 
         write_to_cache("opensearch", supported_versions)
 
         return supported_versions
 
     else:
-        return read_supported_versions_from_cache('opensearch')
+        return read_supported_versions_from_cache("opensearch")
 
 
 def get_connection_string(
