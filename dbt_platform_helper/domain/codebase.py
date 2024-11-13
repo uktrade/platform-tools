@@ -82,8 +82,6 @@ class Codebase:
             None,
         )
         builder_version = max(x["version"] for x in builder_versions["versions"])
-        # Temporary hack until https://uktrade.atlassian.net/browse/DBTP-351 is done
-        # Will need a change in tests/platform_helper/expected_files/.copilot/config.yml, when removed.
         builder_version = min(builder_version, "0.4.240")
 
         Path("./.copilot/phases").mkdir(parents=True, exist_ok=True)
