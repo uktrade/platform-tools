@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.0.2](https://github.com/uktrade/platform-tools/compare/12.0.1...12.0.2) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1534 - Removed autocompletion for the version get-platform-helper-for-project ([#631](https://github.com/uktrade/platform-tools/issues/631)) ([6da392b](https://github.com/uktrade/platform-tools/commit/6da392b2d5d3d00e5277cba69e69f837d3a3bcc8))
+
 ## [12.0.1](https://github.com/uktrade/platform-tools/compare/12.0.0...12.0.1) (2024-11-13)
 
 
