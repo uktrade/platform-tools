@@ -51,7 +51,7 @@ class DatabaseCopy:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort_fn("You must either be in a deploy repo, or provide the --app option.")
 
-            config = load_and_validate_platform_config(disable_aws_validation=True)
+            config = load_and_validate_platform_config()
             self.app = config["application"]
 
         try:
@@ -110,7 +110,7 @@ class DatabaseCopy:
                 self.abort_fn(
                     "You must either be in a deploy repo, or provide the vpc name option."
                 )
-            config = load_and_validate_platform_config(disable_aws_validation=True)
+            config = load_and_validate_platform_config()
             vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
         return vpc_name
 

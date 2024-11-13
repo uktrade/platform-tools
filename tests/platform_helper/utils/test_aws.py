@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import mock_open
@@ -445,6 +446,25 @@ def test_get_profile_name_from_account_id(fakefs):
     assert get_profile_name_from_account_id("000000000") == "development"
     assert get_profile_name_from_account_id("111111111") == "staging"
     assert get_profile_name_from_account_id("222222222") == "production"
+
+
+def test_get_profile_name_from_account_id_when_not_using_sso(fs):
+    fs.create_file(
+        Path.home().joinpath(".aws/config"),
+        contents="""
+[profile development]
+region = eu-west-2
+output = json
+profile_account_id = 123456789
+
+[profile staging]
+region = eu-west-2
+output = json
+profile_account_id = 987654321
+""",
+    )
+    assert get_profile_name_from_account_id("123456789") == "development"
+    assert get_profile_name_from_account_id("987654321") == "staging"
 
 
 def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):

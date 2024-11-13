@@ -1,5 +1,46 @@
 # Changelog
 
+## [12.0.2](https://github.com/uktrade/platform-tools/compare/12.0.1...12.0.2) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1534 - Removed autocompletion for the version get-platform-helper-for-project ([#631](https://github.com/uktrade/platform-tools/issues/631)) ([6da392b](https://github.com/uktrade/platform-tools/commit/6da392b2d5d3d00e5277cba69e69f837d3a3bcc8))
+
+## [12.0.1](https://github.com/uktrade/platform-tools/compare/12.0.0...12.0.1) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1548 - Maintenance page listener rules can be based on both CIDR range or IP in EGRESS_IP ssm parameter ([#625](https://github.com/uktrade/platform-tools/issues/625)) ([6712e9b](https://github.com/uktrade/platform-tools/commit/6712e9b1c12aca0bdc68f09e85b6212b7a4e1ee8))
+
+## [12.0.0](https://github.com/uktrade/platform-tools/compare/11.4.0...12.0.0) (2024-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621))
+
+#### Upgrade path
+
+We have moved the last application off the fully AWS Copilot version of the DBT Platform Tooling. So whilst this is technically a breaking change, no action should be required on your part to upgrade from the previous major version.
+
+### Features
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621)) ([c7a223c](https://github.com/uktrade/platform-tools/commit/c7a223c44467807eab4f68de1ee11fbc4f9b0a21))
+
+## [11.4.0](https://github.com/uktrade/platform-tools/compare/11.3.0...11.4.0) (2024-11-08)
+
+
+### Features
+
+* DBTP-1109 Fall back on profile_account_id when trying to match account id to profile name. ([#626](https://github.com/uktrade/platform-tools/issues/626)) ([0694775](https://github.com/uktrade/platform-tools/commit/069477584930961798bf5a42ebf6c5aec60dde21))
+
+
+### Documentation
+
+* DBTP-1511 Link to Codecov in unit tests section of README ([#627](https://github.com/uktrade/platform-tools/issues/627)) ([3179945](https://github.com/uktrade/platform-tools/commit/3179945980e0fafaf94f5141abbda80cafc871bf))
+
 ## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
 
 
