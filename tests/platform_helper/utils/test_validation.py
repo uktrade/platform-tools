@@ -21,7 +21,6 @@ from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
-from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
