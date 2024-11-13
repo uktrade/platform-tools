@@ -16,6 +16,7 @@ import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
@@ -373,7 +374,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
         mocks.echo_fn.assert_has_calls(
             [
@@ -391,7 +392,7 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
     mocks.load_application_fn.return_value = mock_application
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(ApplicationEnvironmentNotFoundError) as exc:
         codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
         mocks.echo_fn.assert_has_calls(
             [

@@ -1,5 +1,4 @@
 import json
-import os
 import stat
 import subprocess
 from collections.abc import Callable
@@ -12,7 +11,7 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
@@ -150,7 +149,11 @@ class Codebase:
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
         session = self.get_aws_session_or_abort_fn()
-        application = self.__load_application_with_environment(session, app, env)
+
+        application = self.load_application_fn(app, default_session=session)
+        if not application.environments.get(env):
+            raise ApplicationEnvironmentNotFoundError()
+
         self.__check_codebase_exists(session, application, codebase)
         self.__check_image_exists(session, application, codebase, commit)
 
@@ -209,27 +212,6 @@ class Codebase:
                 )
 
         self.echo_fn("")
-
-    def __load_application_or_abort(self, session: Session, app: str) -> Application:
-        try:
-            return self.load_application_fn(app, default_session=session)
-        except ApplicationNotFoundError:
-            self.echo_fn(
-                f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-                fg="red",
-            )
-            raise click.Abort
-
-    def __load_application_with_environment(self, session: Session, app, env):
-        application = self.__load_application_or_abort(session, app)
-
-        if not application.environments.get(env):
-            self.echo_fn(
-                f"""The environment "{env}" either does not exist or has not been deployed.""",
-                fg="red",
-            )
-            raise click.Abort
-        return application
 
     def __check_codebase_exists(self, session: Session, application: Application, codebase: str):
         try:

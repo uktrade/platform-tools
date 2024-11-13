@@ -71,6 +71,10 @@ class ApplicationNotFoundError(Exception):
     pass
 
 
+class ApplicationEnvironmentNotFoundError(Exception):
+    pass
+
+
 def load_application(app: str = None, default_session: Session = None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()

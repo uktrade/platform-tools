@@ -62,4 +62,17 @@ def build(app, codebase, commit):
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
-    Codebase().deploy(app, env, codebase, commit)
+    try:
+        Codebase().deploy(app, env, codebase, commit)
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
+    # except ApplicationEnvironmentNotFoundError:
+    #     click.secho(
+    #         f"""The environment "{env}" either does not exist or has not been deployed.""",
+    #         fg="red",
+    #     )
+    #     raise click.Abort
