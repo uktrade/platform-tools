@@ -39,13 +39,12 @@ class TestVersionCommandWithValidConfig:
         assert result.exit_code == 0
         assert re.match(r"\s*1\.2\.3\s*", result.output)
 
-    def test_fail_if_pipeline_option_is_not_a_pipeline(self):
+    def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(self):
         command = VersionCommand().command
         result = CliRunner().invoke(command, ["--pipeline", "bogus"])
 
-        assert result.exit_code != 0
-        assert "'bogus' is not one of" in result.output
-        assert "'main'" in result.output
+        assert result.exit_code == 0
+        assert result.output == "10.2.0\n"
 
 
 @pytest.mark.usefixtures("create_invalid_platform_config_file")
@@ -64,13 +63,3 @@ class TestVersionCommandWithInvalidConfig:
 
         assert result.exit_code == 0
         assert result.output == "9.0.9\n"
-
-    def test_fails_if_pipeline_option_is_not_a_pipeline_given_invalid_config(
-        self, mock_latest_release
-    ):
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "bogus"])
-
-        assert result.exit_code != 0
-        assert "'bogus' is not " in result.output
-        assert "'prod-main'" in result.output
