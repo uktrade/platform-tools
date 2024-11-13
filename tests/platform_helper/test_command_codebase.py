@@ -9,6 +9,7 @@ from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
+from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 
 
@@ -136,11 +137,12 @@ class TestCodebaseDeploy:
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_without_an_application(
-        self, mock_codebase_object
+        self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.deploy.side_effect = click.Abort
+        mock_codebase_object_instance.deploy.side_effect = ApplicationNotFoundError
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -160,14 +162,17 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "not-an-application", "dev", "application", "ab1c23d"
         )
+        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
-        self, mock_codebase_object
+        self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.deploy.side_effect = click.Abort
+        mock_codebase_object_instance.deploy.side_effect = ApplicationEnvironmentNotFoundError
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -187,6 +192,8 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "not-an-environment", "application", "ab1c23d"
         )
+        expected_message = f"""The environment "not-an-environment" either does not exist or has not been deployed."""
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

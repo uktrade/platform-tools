@@ -3,6 +3,7 @@ import os
 import click
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
@@ -70,9 +71,9 @@ def deploy(app, env, codebase, commit):
             fg="red",
         )
         raise click.Abort
-    # except ApplicationEnvironmentNotFoundError:
-    #     click.secho(
-    #         f"""The environment "{env}" either does not exist or has not been deployed.""",
-    #         fg="red",
-    #     )
-    #     raise click.Abort
+    except ApplicationEnvironmentNotFoundError:
+        click.secho(
+            f"""The environment "{env}" either does not exist or has not been deployed.""",
+            fg="red",
+        )
+        raise click.Abort
