@@ -1,6 +1,9 @@
+import os
+
 import click
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -39,7 +42,14 @@ def list(app, with_images):
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
-    Codebase().build(app, codebase, commit)
+    try:
+        Codebase().build(app, codebase, commit)
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
 
 
 @codebase.command()

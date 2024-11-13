@@ -93,7 +93,6 @@ class Codebase:
         config_contents = templates.get_template(f".copilot/config.yml").render(
             repository=repository, builder_version=builder_version
         )
-
         self.echo_fn(
             mkfile(
                 Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True
@@ -115,7 +114,7 @@ class Codebase:
     def build(self, app: str, codebase: str, commit: str):
         """Trigger a CodePipeline pipeline based build."""
         session = self.get_aws_session_or_abort_fn()
-        self.__load_application_or_abort(session, app)
+        self.load_application_fn(app, default_session=session)
 
         check_if_commit_exists = self.subprocess(
             ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
@@ -183,7 +182,7 @@ class Codebase:
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
         session = self.get_aws_session_or_abort_fn()
-        application = self.__load_application_or_abort(session, app)
+        application = self.load_application_fn(session, app)
         ssm_client = session.client("ssm")
         ecr_client = session.client("ecr")
         parameters = ssm_client.get_parameters_by_path(

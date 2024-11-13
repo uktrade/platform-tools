@@ -155,7 +155,7 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.build("not-an-application", "application", "ab1c23d")
         mocks.echo_fn.assert_has_calls(
             [
@@ -408,7 +408,7 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks.load_application_fn.side_effect = ApplicationNotFoundError()
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.list("not-an-application", True)
         mocks.echo_fn.assert_has_calls(
             [

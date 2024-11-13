@@ -2,18 +2,14 @@ import os
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import boto3
 import click
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.commands.codebase import list
-from dbt_platform_helper.commands.codebase import prepare
+from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
-
-real_ecr_client = boto3.client("ecr")
-real_ssm_client = boto3.client("ssm")
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -30,7 +26,7 @@ class TestCodebasePrepare:
     def test_codebase_prepare_calls_codebase_prepare_method(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
 
-        result = CliRunner().invoke(prepare)
+        result = CliRunner().invoke(prepare_command)
         mock_codebase_object_instance.prepare.assert_called_once()
 
         assert result.exit_code == 0
@@ -38,12 +34,13 @@ class TestCodebasePrepare:
 
 class TestCodebaseBuild:
     @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
     def test_codebase_build_does_not_trigger_build_without_an_application(
-        self, mock_codebase_object
+        self, mock_click, mock_codebase_object
     ):
 
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.build.side_effect = click.Abort
+        mock_codebase_object_instance.build.side_effect = ApplicationNotFoundError
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -57,11 +54,9 @@ class TestCodebaseBuild:
                 "ab1c23d",
             ],
         )
+        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        mock_click.assert_called_with(expected_message, fg="red")
 
-        # Assert
-        mock_codebase_object_instance.build.assert_called_once_with(
-            "not-an-application", "application", "ab1c23d"
-        )
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
