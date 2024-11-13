@@ -11,6 +11,7 @@ from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
@@ -199,6 +200,38 @@ class TestCodebaseDeploy:
             "test-application", "not-an-environment", "application", "ab1c23d"
         )
         expected_message = f"""The environment "not-an-environment" either does not exist or has not been deployed."""
+        mock_click.assert_called_with(expected_message, fg="red")
+        assert result.exit_code == 1
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
+    def test_codebase_deploy_does_not_trigger_build_with_missing_codebase(
+        self, mock_click, mock_codebase_object
+    ):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.deploy.side_effect = CopilotCodebaseNotFoundError
+        os.environ["AWS_PROFILE"] = "foo"
+
+        result = CliRunner().invoke(
+            deploy,
+            [
+                "--app",
+                "test-application",
+                "--env",
+                "test-environment",
+                "--codebase",
+                "not-a-codebase",
+                "--commit",
+                "ab1c23d",
+            ],
+        )
+
+        mock_codebase_object_instance.deploy.assert_called_once_with(
+            "test-application", "test-environment", "not-a-codebase", "ab1c23d"
+        )
+        expected_message = (
+            f"""The codebase "not-a-codebase" either does not exist or has not been deployed."""
+        )
         mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 

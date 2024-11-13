@@ -427,6 +427,14 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+class CopilotCodebaseNotFoundError(Exception):
+    pass
+
+
+class NotFoundError(Exception):
+    pass
+
+
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
         ssm_client = session.client("ssm")
@@ -440,7 +448,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         ValueError,
         ssm_client.exceptions.ParameterNotFound,
     ):
-        raise AWSException
+        raise CopilotCodebaseNotFoundError
 
 
 def check_image_exists(session, application, codebase, commit):

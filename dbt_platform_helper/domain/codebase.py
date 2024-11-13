@@ -146,7 +146,8 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundError()
 
-        self.__check_codebase_exists(session, application, codebase)
+        json.loads(self.check_codebase_exists_fn(session, application, codebase))
+
         self.__check_image_exists(session, application, codebase, commit)
 
         codebuild_client = session.client("codebuild")
@@ -204,19 +205,6 @@ class Codebase:
                 )
 
         self.echo_fn("")
-
-    def __check_codebase_exists(self, session: Session, application: Application, codebase: str):
-        try:
-            json.loads(self.check_codebase_exists_fn(session, application, codebase))
-        except (
-            AWSException,
-            json.JSONDecodeError,
-        ):
-            self.echo_fn(
-                f"""The codebase "{codebase}" either does not exist or has not been deployed.""",
-                fg="red",
-            )
-            raise click.Abort
 
     def __check_image_exists(
         self, session: Session, application: Application, codebase: str, commit: str

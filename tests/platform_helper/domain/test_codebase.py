@@ -19,6 +19,7 @@ from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -292,6 +293,38 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
             )
         ]
     )
+
+
+def test_codebase_deploy_exception_with_a_nonexistent_codebase():
+    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError()))
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+
+    with pytest.raises(CopilotCodebaseNotFoundError):
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+
+        # mocks.echo_fn.assert_has_calls(
+        #     [call('The ECR Repository for codebase "application" does not exist.')]
+        # )
+
+
+def test_codebase_deploy_exception_with_malformed_json():
+    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(return_value="{ mlaf = josn}"))
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+
+    with pytest.raises(json.JSONDecodeError):
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
