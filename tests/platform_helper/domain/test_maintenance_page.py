@@ -380,8 +380,21 @@ class TestCommandHelperMethods:
             in captured.out
         )
 
+    @pytest.mark.parametrize(
+        "allowed_ips, expected_rule_cidr",
+        [
+            (
+                ["1.2.3.4", "5.6.7.8"],
+                ["1.2.3.4/32", "5.6.7.8/32"],
+            ),
+            (
+                ["1.2.3.4/32", "5.6.7.8/24"],
+                ["1.2.3.4/32", "5.6.7.8/24"],
+            ),
+        ],
+    )
     @mock_aws
-    def test_create_source_ip_rule(self, capsys):
+    def test_create_source_ip_rule(self, allowed_ips, expected_rule_cidr, capsys):
 
         elbv2_client = boto3.client("elbv2")
         listener_arn = self._create_listener(elbv2_client)
@@ -400,20 +413,22 @@ class TestCommandHelperMethods:
             elbv2_client,
             listener_arn,
             target_group_arn,
-            ["1.2.3.4", "5.6.7.8"],
+            allowed_ips,
             "AllowedSourceIps",
             333,
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
-        assert rules[1]["Conditions"][0]["SourceIpConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert sorted(rules[1]["Conditions"][0]["SourceIpConfig"]["Values"]) == sorted(
+            expected_rule_cidr
+        )
         assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
 
         assert (
-            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
+            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}."
             in captured.out
         )
 
@@ -424,6 +439,11 @@ class TestCommandHelperMethods:
                 "vpc1",
                 "192.168.1.1,192.168.1.2,192.168.1.3",
                 ["192.168.1.1", "192.168.1.2", "192.168.1.3"],
+            ),
+            (
+                "vpc1",
+                "192.168.1.1/32",
+                ["192.168.1.1/32"],
             ),
             (
                 "vpc2",
@@ -497,3 +517,23 @@ class TestCommandHelperMethods:
 
         assert tag_descriptions == ["TagDescriptions1", "TagDescriptions2"]
         assert mock_client.describe_tags.call_count == 2
+
+    @pytest.mark.parametrize(
+        "ip, expected_cidr",
+        [
+            (
+                "1.2.3.4",
+                "1.2.3.4/32",
+            ),
+            (
+                "1.2.3.4/32",
+                "1.2.3.4/32",
+            ),
+            (
+                "1.2.3.4/128",
+                "1.2.3.4/128",
+            ),
+        ],
+    )
+    def test_normalise_to_cidr(self, ip, expected_cidr):
+        assert normalise_to_cidr(ip) == expected_cidr

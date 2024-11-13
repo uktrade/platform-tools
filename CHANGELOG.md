@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.0.1](https://github.com/uktrade/platform-tools/compare/12.0.0...12.0.1) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1548 - Maintenance page listener rules can be based on both CIDR range or IP in EGRESS_IP ssm parameter ([#625](https://github.com/uktrade/platform-tools/issues/625)) ([6712e9b](https://github.com/uktrade/platform-tools/commit/6712e9b1c12aca0bdc68f09e85b6212b7a4e1ee8))
+
 ## [12.0.0](https://github.com/uktrade/platform-tools/compare/11.4.0...12.0.0) (2024-11-11)
 
 
