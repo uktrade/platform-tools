@@ -609,7 +609,6 @@ def _validate_extension_supported_versions(config, extension_type, version_key, 
                 fg="red",
             )
             continue
-
         for environment, env_config in environments.items():
             extension_version = env_config.get(version_key)
             if extension_version not in supported_extension_versions:

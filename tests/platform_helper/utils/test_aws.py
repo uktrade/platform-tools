@@ -620,35 +620,7 @@ def test_get_supported_redis_versions_when_cache_refresh_required():
             "CacheParameterGroupFamily": "redis5.0",
             "CacheEngineDescription": "Redis",
             "CacheEngineVersionDescription": "redis version 5.0.6",
-        },
-        {
-            "Engine": "redis",
-            "EngineVersion": "6.0",
-            "CacheParameterGroupFamily": "redis6.x",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 6.0.5",
-        },
-        {
-            "Engine": "redis",
-            "EngineVersion": "6.2",
-            "CacheParameterGroupFamily": "redis6.x",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 6.2.6",
-        },
-        {
-            "Engine": "redis",
-            "EngineVersion": "7.0",
-            "CacheParameterGroupFamily": "redis7",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 7.0.7",
-        },
-        {
-            "Engine": "redis",
-            "EngineVersion": "7.1",
-            "CacheParameterGroupFamily": "redis7",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 7.1.0",
-        },
+        }
     ]
 
     mock_elasticache_client = boto3.client("elasticache")
@@ -660,7 +632,7 @@ def test_get_supported_redis_versions_when_cache_refresh_required():
 
     try:
         supported_redis_versions_response = get_supported_redis_versions(mock_elasticache_client)
-        assert supported_redis_versions_response == ["4.0.10", "5.0.6", "6.0", "6.2", "7.0", "7.1"]
+        assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
         elasticache_stubber.assert_no_pending_responses()
 
     finally:
@@ -674,32 +646,8 @@ def test_get_supported_opensearch_versions_when_cache_refresh_required():
         "OpenSearch_2.13",
         "OpenSearch_2.11",
         "OpenSearch_2.9",
-        "OpenSearch_2.7",
-        "OpenSearch_2.5",
-        "OpenSearch_2.3",
-        "OpenSearch_1.3",
-        "OpenSearch_1.2",
-        "OpenSearch_1.1",
-        "OpenSearch_1.0",
         "Elasticsearch_7.10",
-        "Elasticsearch_7.9",
-        "Elasticsearch_7.8",
-        "Elasticsearch_7.7",
-        "Elasticsearch_7.4",
-        "Elasticsearch_7.1",
-        "Elasticsearch_6.8",
-        "Elasticsearch_6.7",
-        "Elasticsearch_6.5",
-        "Elasticsearch_6.4",
-        "Elasticsearch_6.3",
-        "Elasticsearch_6.2",
-        "Elasticsearch_6.0",
-        "Elasticsearch_5.6",
-        "Elasticsearch_5.5",
-        "Elasticsearch_5.3",
-        "Elasticsearch_5.1",
-        "Elasticsearch_2.3",
-        "Elasticsearch_1.5",
+        "Elasticsearch_7.9"
     ]
 
     mock_opensearch_client = boto3.client("opensearch")
@@ -717,14 +665,7 @@ def test_get_supported_opensearch_versions_when_cache_refresh_required():
             "2.15",
             "2.13",
             "2.11",
-            "2.9",
-            "2.7",
-            "2.5",
-            "2.3",
-            "1.3",
-            "1.2",
-            "1.1",
-            "1.0",
+            "2.9"
         ]
         opensearch_stubber.assert_no_pending_responses()
 
