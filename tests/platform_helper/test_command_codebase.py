@@ -46,12 +46,8 @@ class TestCodebasePrepare:
 
         result = CliRunner().invoke(prepare_command)
 
-        print(result.output)
-
         expected_message = "You are in the deploy repository; make sure you are in the application codebase repository."
-        # mock_click.assert_called_once()
-        # mock_click.assert_called_with(expected_message, fg="red")
-        print(result.output.std)
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

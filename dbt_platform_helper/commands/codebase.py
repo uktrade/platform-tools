@@ -10,6 +10,7 @@ from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
+from dbt_platform_helper.utils.aws import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from dbt_platform_helper.utils.versioning import (
@@ -26,10 +27,8 @@ def codebase():
 @codebase.command()
 def prepare():
     try:
-        print("we are hererererererer 1")
         Codebase().prepare()
     except NotInCodeBaseRepositoryError:
-        print("we are hererererererer 3")
         click.secho(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
             fg="red",
