@@ -651,8 +651,9 @@ def test_get_connection_string():
     )
     # Ignoring this does not work, see https://github.com/trufflesecurity/trufflehog/issues/3602
     assert (
-        connection_string == "postgres://master_user:master_password@hostname:1234/main"
-    )  # trufflehog:ignore
+        connection_string
+        == "postgres://master_user:master_password@hostname:1234/main"  # trufflehog:ignore
+    )
 
 
 class ObjectWithId:
