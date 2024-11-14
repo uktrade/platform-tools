@@ -12,6 +12,7 @@ from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFound
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
+from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
@@ -249,15 +250,19 @@ class TestCodebaseList:
         mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
         assert result.exit_code == 0
 
+    @patch("click.secho")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_aborts_when_application_has_no_codebases(self, mock_codebase_object):
+    def test_list_aborts_when_application_has_no_codebases(self, mock_codebase_object, mock_click):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.list.side_effect = SystemExit(1)
+        mock_codebase_object_instance.list.side_effect = NoCopilotCodebasesFoundError
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
+        print("LOOKHERE", result.output)
+
+        expected_message = "No codebases found for application test-application"
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")

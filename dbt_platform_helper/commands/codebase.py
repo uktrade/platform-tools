@@ -9,6 +9,7 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
+from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from dbt_platform_helper.utils.versioning import (
@@ -36,7 +37,15 @@ def prepare():
     is_flag=True,
 )
 def list(app, with_images):
-    Codebase().list(app, with_images)
+    try:
+        Codebase().list(app, with_images)
+        breakpoint()
+    except NoCopilotCodebasesFoundError:
+        click.secho(
+            f"""No codebases found for application "{app.name}""",
+            fg="red",
+        )
+        raise click.Abort
 
 
 @codebase.command()
@@ -94,6 +103,7 @@ def deploy(app, env, codebase, commit):
             fg="red",
         )
         raise click.Abort
+    # TODO: dont except json decode error
     except (
         CopilotCodebaseNotFoundError,
         json.JSONDecodeError,

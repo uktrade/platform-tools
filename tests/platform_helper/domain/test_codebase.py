@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
+from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -450,14 +451,20 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
 
     with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.list("not-an-application", True)
-        mocks.echo_fn.assert_has_calls(
-            [
-                call(
-                    """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-                    fg="red",
-                ),
-            ]
-        )
+
+
+def test_codebase_list_raises_exception_when_no_codebases():
+    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(side_effect=NoCopilotCodebasesFoundError()))
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+
+    with pytest.raises(NoCopilotCodebasesFoundError):
+        codebase = Codebase(**mocks.params())
+        codebase.list("test-application", True)
 
 
 def test_lists_codebases_with_multiple_pages_of_images():

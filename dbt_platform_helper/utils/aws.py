@@ -431,6 +431,10 @@ class CopilotCodebaseNotFoundError(Exception):
     pass
 
 
+class NoCopilotCodebasesFoundError(Exception):
+    pass
+
+
 class ImageNotFoundError(Exception):
     pass
 

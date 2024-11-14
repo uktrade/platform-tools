@@ -13,6 +13,7 @@ from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -181,16 +182,7 @@ class Codebase:
         application = self.load_application_fn(session, app)
         ssm_client = session.client("ssm")
         ecr_client = session.client("ecr")
-        parameters = ssm_client.get_parameters_by_path(
-            Path=f"/copilot/applications/{application.name}/codebases",
-            Recursive=True,
-        )["Parameters"]
-
-        codebases = [json.loads(p["Value"]) for p in parameters]
-
-        if not codebases:
-            self.echo_fn(f'No codebases found for application "{application.name}"', fg="red")
-            raise SystemExit(1)
+        codebases = self.__get_codebases(application, ssm_client)
 
         self.echo_fn("The following codebases are available:")
 
@@ -205,6 +197,19 @@ class Codebase:
                 )
 
         self.echo_fn("")
+
+    # TODO return empty list without exception
+    def __get_codebases(self, application, ssm_client):
+        parameters = ssm_client.get_parameters_by_path(
+            Path=f"/copilot/applications/{application.name}/codebases",
+            Recursive=True,
+        )["Parameters"]
+
+        codebases = [json.loads(p["Value"]) for p in parameters]
+
+        if not codebases:
+            raise NoCopilotCodebasesFoundError
+        return codebases
 
     def __start_build_with_confirmation(
         self,
