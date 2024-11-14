@@ -170,8 +170,6 @@ platform-helper codebase (prepare|list|build|deploy)
 
 [↩ Parent](#platform-helper-codebase)
 
-    Sets up an application codebase for use within a DBT platform project.
-
 ## Usage
 
 ```
@@ -186,8 +184,6 @@ platform-helper codebase prepare
 # platform-helper codebase list
 
 [↩ Parent](#platform-helper-codebase)
-
-    List available codebases for the application.
 
 ## Usage
 
@@ -208,8 +204,6 @@ platform-helper codebase list --app <application> [--with-images]
 
 [↩ Parent](#platform-helper-codebase)
 
-    Trigger a CodePipeline pipeline based build.
-
 ## Usage
 
 ```
@@ -222,7 +216,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - The codebase name as specified in the pipelines.yml file
+  - The codebase name as specified in the platform-config.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -231,8 +225,6 @@ platform-helper codebase build --app <application> --codebase <codebase>
 # platform-helper codebase deploy
 
 [↩ Parent](#platform-helper-codebase)
-
-    Trigger a CodePipeline pipeline based deployment.
 
 ## Usage
 
@@ -248,7 +240,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - The codebase name as specified in the pipelines.yml file
+  - The codebase name as specified in the platform-config.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -881,12 +873,12 @@ platform-helper version get-platform-helper-for-project
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline (main|test|prod-main)] 
+platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
 ```
 
 ## Options
 
-- `--pipeline <choice>`
+- `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

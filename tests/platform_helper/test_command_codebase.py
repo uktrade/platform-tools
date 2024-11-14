@@ -264,14 +264,17 @@ class TestCodebaseList:
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_aborts_when_application_does_not_exist(self, mock_codebase_object):
+    @patch("click.secho")
+    def test_aborts_when_application_does_not_exist(self, mock_click, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.list.side_effect = ApplicationNotFoundError
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
+        app = "test-application"
+        expected_message = f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

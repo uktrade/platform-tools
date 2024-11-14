@@ -45,6 +45,12 @@ def list(app, with_images):
             fg="red",
         )
         raise click.Abort
+    except ApplicationNotFoundError:
+        click.secho(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            fg="red",
+        )
+        raise click.Abort
 
 
 @codebase.command()
