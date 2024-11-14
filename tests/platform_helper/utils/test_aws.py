@@ -716,7 +716,11 @@ def test_get_connection_string():
     mock_connection_data.assert_called_once_with(
         session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
     )
-    assert connection_string == "postgres://master_user:master_password@hostname:1234/main"
+    # Ignoring this does not work, see https://github.com/trufflesecurity/trufflehog/issues/3602
+    assert (
+        connection_string
+        == "postgres://master_user:master_password@hostname:1234/main"  # trufflehog:ignore
+    )
 
 
 class ObjectWithId:

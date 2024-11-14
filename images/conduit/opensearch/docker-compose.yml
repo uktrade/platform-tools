@@ -1,5 +1,5 @@
 version: '3.8'
-services: 
+services:
   search:
     image: opensearchproject/opensearch
     environment:
@@ -8,6 +8,6 @@ services:
     build:
       context: .
     environment:
-      - CONNECTION_SECRET=https://admin:admin@search:9200
+      - CONNECTION_SECRET=https://admin:admin@search:9200 # trufflehog:ignore
     links:
       - search
