@@ -25,7 +25,8 @@ from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
-real_ecr_client = boto3.client("ecr")
+ecr_exceptions = boto3.client("ecr").exceptions
+
 real_ssm_client = boto3.client("ssm")
 
 
@@ -318,13 +319,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
-    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
-    client.exceptions.RepositoryNotFoundException = (
-        real_ecr_client.exceptions.RepositoryNotFoundException
-    )
-    client.describe_images.side_effect = real_ecr_client.exceptions.RepositoryNotFoundException(
-        {}, ""
-    )
+    client.describe_images.side_effect = ecr_exceptions.RepositoryNotFoundException({}, "")
 
     with pytest.raises(ImageNotFoundError):
         codebase = Codebase(**mocks.params())
@@ -339,12 +334,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
-    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
-    client.exceptions.RepositoryNotFoundException = (
-        real_ecr_client.exceptions.RepositoryNotFoundException
-    )
-
-    client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException({}, "")
+    client.describe_images.side_effect = ecr_exceptions.ImageNotFoundException({}, "")
 
     with pytest.raises(ImageNotFoundError):
         codebase = Codebase(**mocks.params())
@@ -360,10 +350,6 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
-    client.exceptions.ImageNotFoundException = real_ecr_client.exceptions.ImageNotFoundException
-    client.exceptions.RepositoryNotFoundException = (
-        real_ecr_client.exceptions.RepositoryNotFoundException
-    )
     client.exceptions.ParameterNotFound = real_ssm_client.exceptions.ParameterNotFound
     client.start_build.return_value = {
         "build": {
