@@ -14,6 +14,7 @@ from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFound
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
+from dbt_platform_helper.utils.aws import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -66,11 +67,12 @@ class Codebase:
             .removesuffix(".git")
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            self.echo_fn(
-                "You are in the deploy repository; make sure you are in the application codebase repository.",
-                fg="red",
-            )
-            exit(1)
+            raise NotInCodeBaseRepositoryError
+            # self.echo_fn(
+            #     "You are in the deploy repository; make sure you are in the application codebase repository.",
+            #     fg="red",
+            # )
+            # exit(1)
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)

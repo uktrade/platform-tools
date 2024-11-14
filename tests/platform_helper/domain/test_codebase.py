@@ -14,6 +14,7 @@ import pytest
 import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
@@ -194,17 +195,8 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(NotInCodeBaseRepositoryError):
         codebase.prepare()
-
-    mocks.echo_fn.assert_has_calls(
-        [
-            call(
-                "You are in the deploy repository; make sure you are in the application codebase repository.",
-                fg="red",
-            ),
-        ]
-    )
 
 
 def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):

@@ -25,7 +25,16 @@ def codebase():
 
 @codebase.command()
 def prepare():
-    Codebase().prepare()
+    try:
+        print("we are hererererererer 1")
+        Codebase().prepare()
+    except NotInCodeBaseRepositoryError:
+        print("we are hererererererer 3")
+        click.secho(
+            "You are in the deploy repository; make sure you are in the application codebase repository.",
+            fg="red",
+        )
+        raise click.Abort
 
 
 @codebase.command()

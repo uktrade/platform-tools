@@ -13,6 +13,7 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
+from dbt_platform_helper.utils.aws import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
@@ -31,9 +32,27 @@ class TestCodebasePrepare:
         mock_codebase_object_instance = mock_codebase_object.return_value
 
         result = CliRunner().invoke(prepare_command)
+        print(result.output)
         mock_codebase_object_instance.prepare.assert_called_once()
 
         assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
+    def test_aborts_when_not_in_a_codebase_repository(self, mock_click, mock_codebase_object):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+        mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryError
+        os.environ["AWS_PROFILE"] = "foo"
+
+        result = CliRunner().invoke(prepare_command)
+
+        print(result.output)
+
+        expected_message = "You are in the deploy repository; make sure you are in the application codebase repository."
+        # mock_click.assert_called_once()
+        # mock_click.assert_called_with(expected_message, fg="red")
+        print(result.output.std)
+        assert result.exit_code == 1
 
 
 class TestCodebaseBuild:

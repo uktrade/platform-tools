@@ -427,7 +427,14 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+# TODO: Move exceptions below to sensible place
+
+
 class CopilotCodebaseNotFoundError(Exception):
+    pass
+
+
+class NotInCodeBaseRepositoryError(Exception):
     pass
 
 
