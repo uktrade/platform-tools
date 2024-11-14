@@ -39,10 +39,9 @@ def prepare():
 def list(app, with_images):
     try:
         Codebase().list(app, with_images)
-        breakpoint()
     except NoCopilotCodebasesFoundError:
         click.secho(
-            f"""No codebases found for application "{app.name}""",
+            f"""No codebases found for application "{app}""",
             fg="red",
         )
         raise click.Abort
