@@ -623,69 +623,54 @@ def test_update_postgres_parameter_with_master_secret():
         "port": 5432,
     }
 
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_redis_versions_when_cache_refresh_required(mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache):
 
-def test_get_supported_redis_versions_when_cache_refresh_required():
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.describe_cache_engine_versions.return_value = {
+        "CacheEngineVersions": [
+            {
+                "Engine": "redis",
+                "EngineVersion": "4.0.10",
+                "CacheParameterGroupFamily": "redis4.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 4.0.10",
+            },
+            {
+                "Engine": "redis",
+                "EngineVersion": "5.0.6",
+                "CacheParameterGroupFamily": "redis5.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 5.0.6",
+            }
+        ]
+    }
 
-    list_redis_versions_response = [
-        {
-            "Engine": "redis",
-            "EngineVersion": "4.0.10",
-            "CacheParameterGroupFamily": "redis4.0",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 4.0.10",
-        },
-        {
-            "Engine": "redis",
-            "EngineVersion": "5.0.6",
-            "CacheParameterGroupFamily": "redis5.0",
-            "CacheEngineDescription": "Redis",
-            "CacheEngineVersionDescription": "redis version 5.0.6",
-        },
-    ]
-
-    mock_elasticache_client = boto3.client("elasticache")
-    elasticache_stubber = Stubber(mock_elasticache_client)
-    elasticache_stubber.add_response(
-        "describe_cache_engine_versions", {"CacheEngineVersions": list_redis_versions_response}
-    )
-    elasticache_stubber.activate()
-
-    try:
-        supported_redis_versions_response = get_supported_redis_versions(mock_elasticache_client)
-        assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
-        elasticache_stubber.assert_no_pending_responses()
-
-    finally:
-        elasticache_stubber.deactivate()
+    supported_redis_versions_response = get_supported_redis_versions()
+    assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
 
 
-def test_get_supported_opensearch_versions_when_cache_refresh_required():
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_opensearch_versions_when_cache_refresh_required(mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache):
 
-    list_opensearch_supported_versions = [
-        "OpenSearch_2.15",
-        "OpenSearch_2.13",
-        "OpenSearch_2.11",
-        "OpenSearch_2.9",
-        "Elasticsearch_7.10",
-        "Elasticsearch_7.9",
-    ]
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.list_versions.return_value = {
+        "Versions": [
+            "OpenSearch_2.15",
+            "OpenSearch_2.13",
+            "OpenSearch_2.11",
+            "OpenSearch_2.9",
+            "Elasticsearch_7.10",
+            "Elasticsearch_7.9"
+        ]
+    }
 
-    mock_opensearch_client = boto3.client("opensearch")
-    opensearch_stubber = Stubber(mock_opensearch_client)
-    opensearch_stubber.add_response(
-        "list_versions", {"Versions": list_opensearch_supported_versions}
-    )
-    opensearch_stubber.activate()
-
-    try:
-        supported_opensearch_versions_response = get_supported_opensearch_versions(
-            mock_opensearch_client
-        )
-        assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]
-        opensearch_stubber.assert_no_pending_responses()
-
-    finally:
-        opensearch_stubber.deactivate()
+    supported_opensearch_versions_response = get_supported_opensearch_versions()
+    assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]
 
 
 @mock_aws
