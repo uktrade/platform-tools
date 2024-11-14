@@ -4,5 +4,4 @@ codecov:
     after_n_builds: 4
 
 ignore:
-  - "conftest.py"
-  - "test_*.py"
+  - "**/tests/**"
