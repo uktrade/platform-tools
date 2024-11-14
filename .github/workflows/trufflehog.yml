@@ -1,0 +1,18 @@
+name: Trufflehog scan
+
+on: [push]
+
+permissions: read-all
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          base: ""
+          head: ${{ github.ref_name }}
+          extra_args: --no-verification --exclude-paths=.trufflehogignore
