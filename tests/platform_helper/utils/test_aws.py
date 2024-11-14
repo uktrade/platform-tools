@@ -623,10 +623,13 @@ def test_update_postgres_parameter_with_master_secret():
         "port": 5432,
     }
 
+
 @patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.utils.aws.write_to_cache")
-def test_get_supported_redis_versions_when_cache_refresh_required(mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache):
+def test_get_supported_redis_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
 
     client = mock_aws_client(mock_get_aws_session_or_abort)
     client.describe_cache_engine_versions.return_value = {
@@ -644,7 +647,7 @@ def test_get_supported_redis_versions_when_cache_refresh_required(mock_cache_ref
                 "CacheParameterGroupFamily": "redis5.0",
                 "CacheEngineDescription": "Redis",
                 "CacheEngineVersionDescription": "redis version 5.0.6",
-            }
+            },
         ]
     }
 
@@ -655,7 +658,9 @@ def test_get_supported_redis_versions_when_cache_refresh_required(mock_cache_ref
 @patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 @patch("dbt_platform_helper.utils.aws.write_to_cache")
-def test_get_supported_opensearch_versions_when_cache_refresh_required(mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache):
+def test_get_supported_opensearch_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
 
     client = mock_aws_client(mock_get_aws_session_or_abort)
     client.list_versions.return_value = {
@@ -665,7 +670,7 @@ def test_get_supported_opensearch_versions_when_cache_refresh_required(mock_cach
             "OpenSearch_2.11",
             "OpenSearch_2.9",
             "Elasticsearch_7.10",
-            "Elasticsearch_7.9"
+            "Elasticsearch_7.9",
         ]
     }
 
