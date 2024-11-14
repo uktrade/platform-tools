@@ -114,6 +114,13 @@ my-alb-origin-ssl-protocols-should-be-a-list:
   environments:
     dev:
       origin_ssl_protocols: False # Should be a list
+      
+
+my-alb-slack-alert-channel-alb-secret-rotation-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      slack_alert_channel_alb_secret_rotation: 12345 # Should be a string
 
 
 my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string:

@@ -225,6 +225,7 @@ def test_validate_addons_success(addons_file):
                 "my-alb-forwarded-values-query-string-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
                 "my-alb-origin-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-origin-ssl-protocols-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-slack-alert-channel-alb-secret-rotation-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
