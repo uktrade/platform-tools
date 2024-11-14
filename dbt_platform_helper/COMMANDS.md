@@ -882,12 +882,12 @@ platform-helper version get-platform-helper-for-project
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline (main|test|prod-main)] 
+platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
 ```
 
 ## Options
 
-- `--pipeline <choice>`
+- `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
