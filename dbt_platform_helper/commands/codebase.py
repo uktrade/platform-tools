@@ -30,6 +30,7 @@ def prepare():
     try:
         Codebase().prepare()
     except NotInCodeBaseRepositoryError:
+        # TODO print error attached to exception
         click.secho(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
             fg="red",
