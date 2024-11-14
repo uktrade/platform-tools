@@ -18,7 +18,7 @@ from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFound
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.utils.aws import CopilotCommitNotFoundError
+from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -327,7 +327,7 @@ def test_codebase_deploy_exception_with_malformed_json():
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
-    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=CopilotCommitNotFoundError))
+    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=ImageNotFoundError))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -342,13 +342,13 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
         {}, ""
     )
 
-    with pytest.raises(CopilotCommitNotFoundError):
+    with pytest.raises(ImageNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
-    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=CopilotCommitNotFoundError))
+    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=ImageNotFoundError))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -362,7 +362,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
     client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException({}, "")
 
-    with pytest.raises(CopilotCommitNotFoundError):
+    with pytest.raises(ImageNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 

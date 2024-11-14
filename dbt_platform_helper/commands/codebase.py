@@ -7,7 +7,7 @@ from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.utils.aws import CopilotCommitNotFoundError
+from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from dbt_platform_helper.utils.versioning import (
@@ -96,7 +96,7 @@ def deploy(app, env, codebase, commit):
             fg="red",
         )
         raise click.Abort
-    except CopilotCommitNotFoundError:
+    except ImageNotFoundError:
         click.secho(
             f'The commit hash "{commit}" has not been built into an image, try the '
             "`platform-helper codebase build` command first.",

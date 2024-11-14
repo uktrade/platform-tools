@@ -11,7 +11,7 @@ from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.utils.aws import CopilotCommitNotFoundError
+from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
@@ -123,7 +123,7 @@ class TestCodebaseDeploy:
         self, mock_click, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
-        mock_codebase_object_instance.deploy.side_effect = CopilotCommitNotFoundError
+        mock_codebase_object_instance.deploy.side_effect = ImageNotFoundError
         result = CliRunner().invoke(
             deploy,
             [
