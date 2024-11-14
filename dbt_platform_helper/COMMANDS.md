@@ -185,6 +185,8 @@ platform-helper codebase prepare
 
 [↩ Parent](#platform-helper-codebase)
 
+    List available codebases for the application.
+
 ## Usage
 
 ```
@@ -203,6 +205,8 @@ platform-helper codebase list --app <application> [--with-images]
 # platform-helper codebase build
 
 [↩ Parent](#platform-helper-codebase)
+
+    Trigger a CodePipeline pipeline based build.
 
 ## Usage
 

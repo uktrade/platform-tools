@@ -45,6 +45,7 @@ def prepare():
     is_flag=True,
 )
 def list(app, with_images):
+    """List available codebases for the application."""
     try:
         Codebase().list(app, with_images)
     except NoCopilotCodebasesFoundError:
@@ -70,6 +71,7 @@ def list(app, with_images):
 )
 @click.option("--commit", help="GitHub commit hash", required=True)
 def build(app, codebase, commit):
+    """Trigger a CodePipeline pipeline based build."""
     try:
         Codebase().build(app, codebase, commit)
     except ApplicationNotFoundError:
