@@ -26,6 +26,7 @@ def codebase():
 
 @codebase.command()
 def prepare():
+    """Sets up an application codebase for use within a DBT platform project."""
     try:
         Codebase().prepare()
     except NotInCodeBaseRepositoryError:
