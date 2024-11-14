@@ -10,16 +10,15 @@ from unittest.mock import call
 from unittest.mock import patch
 
 import boto3
-import click
 import pytest
 import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
-from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
+from dbt_platform_helper.utils.aws import CopilotCommitNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
@@ -328,8 +327,7 @@ def test_codebase_deploy_exception_with_malformed_json():
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
-    mocks = CodebaseMocks()
-    mocks.check_image_exists_fn.side_effect = AWSException
+    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=CopilotCommitNotFoundError))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -344,18 +342,14 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
         {}, ""
     )
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(CopilotCommitNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
-        mocks.echo_fn.assert_has_calls(
-            [call('The ECR Repository for codebase "application" does not exist.')]
-        )
-
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
-    mocks = CodebaseMocks()
-    mocks.check_image_exists_fn.side_effect = AWSException
+    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=CopilotCommitNotFoundError))
+
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
     client.get_parameter.return_value = {
@@ -368,17 +362,9 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
     client.describe_images.side_effect = real_ecr_client.exceptions.ImageNotFoundException({}, "")
 
-    with pytest.raises(click.Abort) as exc:
+    with pytest.raises(CopilotCommitNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
-
-        mocks.echo_fn.assert_has_calls(
-            [
-                call(
-                    f'The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.'
-                )
-            ]
-        )
 
 
 def test_codebase_deploy_does_not_trigger_build_without_confirmation():

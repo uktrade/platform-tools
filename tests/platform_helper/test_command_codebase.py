@@ -2,7 +2,6 @@ import os
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import click
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
@@ -12,6 +11,7 @@ from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
+from dbt_platform_helper.utils.aws import CopilotCommitNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 
@@ -118,12 +118,12 @@ class TestCodebaseDeploy:
         )
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
+    @patch("click.secho")
     def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_image_tag(
-        self, codebase_object_mock
+        self, mock_click, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
-        mock_codebase_object_instance.deploy.side_effect = click.Abort
-
+        mock_codebase_object_instance.deploy.side_effect = CopilotCommitNotFoundError
         result = CliRunner().invoke(
             deploy,
             [
@@ -141,6 +141,8 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "development", "application", "nonexistent-commit-hash"
         )
+        expected_message = f"""The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first."""
+        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")

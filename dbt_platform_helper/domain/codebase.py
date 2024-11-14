@@ -9,7 +9,6 @@ import requests
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import load_application
@@ -148,7 +147,7 @@ class Codebase:
 
         json.loads(self.check_codebase_exists_fn(session, application, codebase))
 
-        self.__check_image_exists(session, application, codebase, commit)
+        self.check_image_exists_fn(session, application, codebase, commit)
 
         codebuild_client = session.client("codebuild")
         build_url = self.__start_build_with_confirmation(
@@ -205,19 +204,6 @@ class Codebase:
                 )
 
         self.echo_fn("")
-
-    def __check_image_exists(
-        self, session: Session, application: Application, codebase: str, commit: str
-    ):
-        try:
-            self.check_image_exists_fn(session, application, codebase, commit)
-        except AWSException:
-            self.echo_fn(
-                f'The commit hash "{commit}" has not been built into an image, try the '
-                "`platform-helper codebase build` command first.",
-                fg="red",
-            )
-            raise click.Abort
 
     def __start_build_with_confirmation(
         self,

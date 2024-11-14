@@ -431,7 +431,7 @@ class CopilotCodebaseNotFoundError(Exception):
     pass
 
 
-class NotFoundError(Exception):
+class CopilotCommitNotFoundError(Exception):
     pass
 
 
@@ -458,10 +458,11 @@ def check_image_exists(session, application, codebase, commit):
             repositoryName=f"{application.name}/{codebase}",
             imageIds=[{"imageTag": f"commit-{commit}"}],
         )
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        raise AWSException
-    except ecr_client.exceptions.ImageNotFoundException:
-        raise AWSException
+    except (
+        ecr_client.exceptions.RepositoryNotFoundException,
+        ecr_client.exceptions.ImageNotFoundException,
+    ):
+        raise CopilotCommitNotFoundError
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
