@@ -62,6 +62,12 @@ def build(app, codebase, commit):
             fg="red",
         )
         raise click.Abort
+    except ApplicationDeploymentNotTriggered:
+        click.secho(
+            f"Your build for {codebase} was not triggered.",
+            fg="red",
+        )
+        raise click.Abort
 
 
 @codebase.command()

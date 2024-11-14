@@ -220,23 +220,17 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
     assert os.access(image_build_run_path, os.X_OK)
 
 
-def test_codebase_build_does_not_trigger_build_without_confirmation():
-    mocks = CodebaseMocks()
-    mocks.confirm_fn.return_value = False
+def test_codebase_build_does_not_trigger_deployment_without_confirmation():
+    mocks = CodebaseMocks(confirm_fn=Mock(return_value=False))
 
-    codebase = Codebase(**mocks.params())
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
 
-    mocks.subprocess.return_value.stderr = ""
-
-    codebase.build("test-application", "application", "ab1c234")
-
-    mocks.echo_fn.assert_has_calls(
-        [
-            call(
-                """Your build was not triggered.""",
-            ),
-        ]
-    )
+    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+        codebase = Codebase(**mocks.params())
+        codebase.build("test-application", "application", "ab1c234")
 
 
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
@@ -307,10 +301,6 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
     with pytest.raises(CopilotCodebaseNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
-
-        # mocks.echo_fn.assert_has_calls(
-        #     [call('The ECR Repository for codebase "application" does not exist.')]
-        # )
 
 
 def test_codebase_deploy_exception_with_malformed_json():
@@ -440,7 +430,7 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
         )
 
 
-def test_codebase_deploy_does_not_trigger_deployment():
+def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
     mocks = CodebaseMocks(confirm_fn=Mock(return_value=False))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
@@ -451,13 +441,6 @@ def test_codebase_deploy_does_not_trigger_deployment():
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
-    # mocks.echo_fn.assert_has_calls(
-    #         [
-    #             call(
-    #                 """Your deployment was not triggered."""
-    #             ),
-    #         ]
-    #     )
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():

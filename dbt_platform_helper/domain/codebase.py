@@ -136,7 +136,7 @@ class Codebase:
                 f"Your build has been triggered. Check your build progress in the AWS Console: {build_url}"
             )
 
-        return self.echo_fn("Your build was not triggered.")
+        raise ApplicationDeploymentNotTriggered()
 
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
@@ -173,8 +173,7 @@ class Codebase:
                 f"{build_url}",
             )
 
-        if not build_url:
-            raise ApplicationDeploymentNotTriggered()
+        raise ApplicationDeploymentNotTriggered()
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
