@@ -68,11 +68,6 @@ class Codebase:
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
             raise NotInCodeBaseRepositoryError
-            # self.echo_fn(
-            #     "You are in the deploy repository; make sure you are in the application codebase repository.",
-            #     fg="red",
-            # )
-            # exit(1)
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)
@@ -181,7 +176,7 @@ class Codebase:
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
         session = self.get_aws_session_or_abort_fn()
-        application = self.load_application_fn(session, app)
+        application = self.load_application_fn(app, session)
         ssm_client = session.client("ssm")
         ecr_client = session.client("ecr")
         codebases = self.__get_codebases(application, ssm_client)
