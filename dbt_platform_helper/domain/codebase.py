@@ -12,6 +12,7 @@ from boto3 import Session
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -172,7 +173,8 @@ class Codebase:
                 f"{build_url}",
             )
 
-        return self.echo_fn("Your deployment was not triggered.")
+        if not build_url:
+            raise ApplicationDeploymentNotTriggered()
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""

@@ -435,6 +435,10 @@ class ImageNotFoundError(Exception):
     pass
 
 
+class ApplicationDeploymentNotTriggered(Exception):
+    pass
+
+
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
         ssm_client = session.client("ssm")

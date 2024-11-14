@@ -6,6 +6,7 @@ import click
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
+from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -100,6 +101,12 @@ def deploy(app, env, codebase, commit):
         click.secho(
             f'The commit hash "{commit}" has not been built into an image, try the '
             "`platform-helper codebase build` command first.",
+            fg="red",
+        )
+        raise click.Abort
+    except ApplicationDeploymentNotTriggered:
+        click.secho(
+            f"Your deployment for {codebase} was not triggered.",
             fg="red",
         )
         raise click.Abort

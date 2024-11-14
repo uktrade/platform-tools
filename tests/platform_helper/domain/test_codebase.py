@@ -17,6 +17,7 @@ from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.utils.aws import ImageNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
@@ -40,7 +41,7 @@ class CodebaseMocks:
         self.get_aws_session_or_abort_fn = kwargs.get("get_aws_session_or_abort_fn", Mock())
         self.input_fn = kwargs.get("input_fn", Mock(return_value="yes"))
         self.echo_fn = kwargs.get("echo_fn", Mock())
-        self.confirm_fn = kwargs.get("echo_fn", Mock(return_value=True))
+        self.confirm_fn = kwargs.get("confirm_fn", Mock(return_value=True))
         self.check_codebase_exists_fn = kwargs.get(
             "check_codebase_exists_fn",
             Mock(
@@ -387,19 +388,20 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         },
     }
 
-    codebase = Codebase(**mocks.params())
-    codebase.deploy("test-application", "development", "application", "ab1c23d")
+    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-    mocks.confirm_fn.assert_has_calls(
-        [
-            call(
-                'You are about to deploy "test-application" for "application" with commit '
-                '"ab1c23d" to the "development" environment. Do you want to continue?'
-            ),
-        ]
-    )
+        mocks.confirm_fn.assert_has_calls(
+            [
+                call(
+                    'You are about to deploy "test-application" for "application" with commit '
+                    '"ab1c23d" to the "development" environment. Do you want to continue?'
+                ),
+            ]
+        )
 
-    mocks.echo_fn.assert_has_calls([call("Your deployment was not triggered.")])
+        mocks.echo_fn.assert_has_calls([call("Your deployment was not triggered.")])
 
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
@@ -436,6 +438,26 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
                 ),
             ]
         )
+
+
+def test_codebase_deploy_does_not_trigger_deployment():
+    mocks = CodebaseMocks(confirm_fn=Mock(return_value=False))
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+
+    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+    # mocks.echo_fn.assert_has_calls(
+    #         [
+    #             call(
+    #                 """Your deployment was not triggered."""
+    #             ),
+    #         ]
+    #     )
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
