@@ -19,11 +19,13 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import (
     get_postgres_connection_data_updated_with_master_secret,
 )
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
@@ -619,6 +621,60 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
+
+
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_redis_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
+
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.describe_cache_engine_versions.return_value = {
+        "CacheEngineVersions": [
+            {
+                "Engine": "redis",
+                "EngineVersion": "4.0.10",
+                "CacheParameterGroupFamily": "redis4.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 4.0.10",
+            },
+            {
+                "Engine": "redis",
+                "EngineVersion": "5.0.6",
+                "CacheParameterGroupFamily": "redis5.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 5.0.6",
+            },
+        ]
+    }
+
+    supported_redis_versions_response = get_supported_redis_versions()
+    assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
+
+
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_opensearch_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
+
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.list_versions.return_value = {
+        "Versions": [
+            "OpenSearch_2.15",
+            "OpenSearch_2.13",
+            "OpenSearch_2.11",
+            "OpenSearch_2.9",
+            "Elasticsearch_7.10",
+            "Elasticsearch_7.9",
+        ]
+    }
+
+    supported_opensearch_versions_response = get_supported_opensearch_versions()
+    assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]
 
 
 @mock_aws
