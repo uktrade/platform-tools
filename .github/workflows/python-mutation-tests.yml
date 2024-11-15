@@ -1,0 +1,43 @@
+name: Python mutation tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * *'
+  # Todo; remove the push, they take to long
+  push:
+    branches:
+      - add-mutation-testing-with-cosmic-ray
+
+jobs:
+  tests:
+    name: Test against Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Display Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run mutation tests
+        run: |
+          cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite
+          cosmic-ray exec cosmic-ray.toml cosmic-ray.sqlite
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}

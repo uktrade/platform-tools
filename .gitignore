@@ -26,6 +26,8 @@ __py_cache__/
 
 .pytest_cache/
 
+cosmic-ray.sqlite
+
 staticfiles/
 node_modules/
 
