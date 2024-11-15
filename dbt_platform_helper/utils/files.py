@@ -166,7 +166,7 @@ def check_if_cached_datetime_is_greater_than_interval(date_retrieved, interval_i
     cached_datetime = datetime.strptime(date_retrieved, "%d-%m-%y %H:%M:%S")
     delta = current_datetime - cached_datetime
 
-    return False if delta.days < interval_in_days else True
+    return delta.days > interval_in_days
 
 
 def read_file_as_yaml(file_name):
