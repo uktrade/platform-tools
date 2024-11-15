@@ -5,12 +5,12 @@ import click
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.exceptions import ApplicationNotFoundError
 from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
-from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from dbt_platform_helper.utils.versioning import (

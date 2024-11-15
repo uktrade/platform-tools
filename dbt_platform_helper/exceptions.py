@@ -38,3 +38,11 @@ class ImageNotFoundError(Exception):
 
 class ApplicationDeploymentNotTriggered(Exception):
     pass
+
+
+class ApplicationNotFoundError(Exception):
+    pass
+
+
+class ApplicationEnvironmentNotFoundError(Exception):
+    pass

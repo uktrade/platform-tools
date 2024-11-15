@@ -10,10 +10,10 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
