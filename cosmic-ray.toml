@@ -1,7 +1,9 @@
 [cosmic-ray]
 module-path = "dbt_platform_helper"
 timeout = 10.0
-excluded-modules = []
+excluded-modules = [
+    "tests/platform_helper"
+]
 test-command = "poetry run pytest"
 
 [cosmic-ray.distributor]
