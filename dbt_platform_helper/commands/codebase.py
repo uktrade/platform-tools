@@ -120,7 +120,7 @@ def deploy(app, env, codebase, commit):
             fg="red",
         )
         raise click.Abort
-    # TODO: dont except json decode error
+    # TODO: don't hide json decode error
     except (
         CopilotCodebaseNotFoundError,
         json.JSONDecodeError,
