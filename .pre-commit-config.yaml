@@ -49,3 +49,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: bash -c 'trufflehog filesystem . --no-verification --fail --exclude-paths=.trufflehogignore'
+        language: system
+        stages: ["commit", "push"]

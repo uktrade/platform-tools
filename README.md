@@ -20,11 +20,27 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
    git clone https://github.com/uktrade/platform-tools.git && cd platform-tools
    ```
 
-2. Install the required dependencies:
+2. Install dependencies:
 
-   ```
-   pip install poetry && poetry install && poetry run pre-commit install
-   ```
+    ```shell
+    pip install poetry && poetry install
+    ```
+   
+3. Install Trufflehog for the pre-commit hook:
+
+    ```shell
+    # Installation on Mac
+    
+    brew install trufflehog
+    ```
+
+   Alternative installation methods [here](https://github.com/trufflesecurity/trufflehog)
+
+4. Install pre-commit hook:
+
+    ```shell
+    poetry run pre-commit install
+    ```
 
 ### Testing
 
