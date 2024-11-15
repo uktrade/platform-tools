@@ -13,6 +13,8 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -425,29 +427,6 @@ def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) ->
 def start_build_extraction(codebuild_client, build_options):
     response = codebuild_client.start_build(**build_options)
     return response["build"]["arn"]
-
-
-# TODO: Move exceptions below to sensible place
-
-
-class CopilotCodebaseNotFoundError(Exception):
-    pass
-
-
-class NotInCodeBaseRepositoryError(Exception):
-    pass
-
-
-class NoCopilotCodebasesFoundError(Exception):
-    pass
-
-
-class ImageNotFoundError(Exception):
-    pass
-
-
-class ApplicationDeploymentNotTriggered(Exception):
-    pass
 
 
 def check_codebase_exists(session: Session, application, codebase: str):

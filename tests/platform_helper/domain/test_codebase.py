@@ -15,19 +15,18 @@ import requests
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
+from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.exceptions import ImageNotFoundError
+from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Environment
-from dbt_platform_helper.utils.aws import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.utils.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.utils.aws import ImageNotFoundError
-from dbt_platform_helper.utils.aws import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 ecr_exceptions = boto3.client("ecr").exceptions
-
-real_ssm_client = boto3.client("ssm")
+ssm_exceptions = boto3.client("ssm").exceptions
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -350,7 +349,7 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
-    client.exceptions.ParameterNotFound = real_ssm_client.exceptions.ParameterNotFound
+    client.exceptions.ParameterNotFound = ssm_exceptions.ParameterNotFound
     client.start_build.return_value = {
         "build": {
             "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
