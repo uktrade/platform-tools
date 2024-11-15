@@ -5,4 +5,12 @@ excluded-modules = []
 test-command = "poetry run pytest tests/platform_helper/domain"
 
 [cosmic-ray.distributor]
-name = "local"
+name = "http"
+
+[cosmic-ray.distributor.http]
+worker-urls = [
+    "http://localhost:9876",
+    "http://localhost:9877",
+    "http://localhost:9878",
+    "http://localhost:9879"
+]
