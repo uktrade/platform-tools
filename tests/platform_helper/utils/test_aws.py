@@ -8,7 +8,6 @@ from unittest.mock import patch
 import boto3
 import botocore
 import pytest
-from botocore.stub import Stubber
 from moto import mock_aws
 
 from dbt_platform_helper.exceptions import AWSException
