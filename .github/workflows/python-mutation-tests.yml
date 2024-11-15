@@ -38,6 +38,6 @@ jobs:
       - name: Run mutation tests
         run: |
           poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite
-          poetry run cosmic-ray exec cosmic-ray.toml cosmic-ray.sqlite
+          poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
