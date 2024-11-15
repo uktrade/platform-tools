@@ -18,6 +18,8 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -98,6 +100,19 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
+    _validate_extension_supported_versions(
+        config={"extensions": addons},
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_redis_versions,
+    )
+    _validate_extension_supported_versions(
+        config={"extensions": addons},
+        extension_type="opensearch",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_opensearch_versions,
+    )
+
     return errors
 
 
@@ -152,7 +167,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
+REDIS_ENGINE_VERSIONS = str
 
 REDIS_DEFINITION = {
     "type": "redis",
@@ -300,7 +315,7 @@ MONITORING_DEFINITION = {
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
-OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+OPENSEARCH_ENGINE_VERSIONS = str
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 OPENSEARCH_MAX_VOLUME_SIZE = {
     "tiny": 100,
@@ -489,6 +504,60 @@ def validate_platform_config(config):
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
+
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_redis_versions,
+    )
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="opensearch",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_opensearch_versions,
+    )
+
+
+def _validate_extension_supported_versions(
+    config, extension_type, version_key, get_supported_versions_fn
+):
+
+    extensions = config.get("extensions", {})
+    if not extensions:
+        return
+
+    extensions_for_type = [
+        extension
+        for extension in config.get("extensions", {}).values()
+        if extension.get("type") == extension_type
+    ]
+
+    supported_extension_versions = get_supported_versions_fn()
+    extensions_with_invalid_version = []
+
+    for extension in extensions_for_type:
+
+        environments = extension.get("environments", {})
+
+        if not isinstance(environments, dict):
+            click.secho(
+                "Error: Opensearch extension definition is invalid type, expected dictionary",
+                fg="red",
+            )
+            continue
+        for environment, env_config in environments.items():
+            extension_version = env_config.get(version_key)
+            if extension_version not in supported_extension_versions:
+                extensions_with_invalid_version.append(
+                    {"environment": environment, "version": extension_version}
+                )
+
+    for version_failure in extensions_with_invalid_version:
+        click.secho(
+            f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
+            fg="red",
+        )
 
 
 def validate_database_copy_section(config):

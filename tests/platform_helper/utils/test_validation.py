@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
+from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -146,7 +147,6 @@ def test_validate_addons_success(addons_file):
             "redis_addons_bad_data.yml",
             {
                 "my-redis-bad-key": r"Wrong key 'bad_key' in",
-                "my-redis-bad-engine-size": r"environments.*default.*engine.*'6.2' does not match 'a-big-engine'",
                 "my-redis-bad-plan": r"environments.*default.*plan.*does not match 'enormous'",
                 "my-redis-too-many-replicas": r"environments.*default.*replicas.*should be an integer between 0 and 5",
                 "my-redis-bad-deletion-policy": r"environments.*default.*deletion_policy.*does not match 'Never'",
@@ -163,7 +163,6 @@ def test_validate_addons_success(addons_file):
                 "my-opensearch-environments-should-be-list": r"environments.*False should be instance of 'dict'",
                 "my-opensearch-bad-env-param": r"environments.*Wrong key 'opensearch_plan'",
                 "my-opensearch-bad-plan": r"environments.*dev.*plan.*does not match 'largish'",
-                "my-opensearch-bad-engine-size": r"environments.*dev.*engine.*does not match 7.3",
                 "my-opensearch-no-plan": r"Missing key: 'plan'",
                 "my-opensearch-volume-size-too-small": r"environments.*dev.*volume_size.*should be an integer greater than 10",
                 "my-opensearch-invalid-size-for-small": r"environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*",
@@ -233,7 +232,16 @@ def test_validate_addons_success(addons_file):
         ),
     ],
 )
-def test_validate_addons_failure(addons_file, exp_error):
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["6.2"])
+@patch(
+    "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", return_value=["1.3"]
+)
+def test_validate_addons_failure(
+    mock_get_redis_versions,
+    mock_get_opensearch_versions,
+    addons_file,
+    exp_error,
+):
     error_map = validate_addons(load_addons(addons_file))
     for entry, error in exp_error.items():
         assert entry in error_map
@@ -259,6 +267,7 @@ def test_validate_addons_invalid_env_name_errors():
 
 def test_validate_addons_unsupported_addon():
     error_map = validate_addons(load_addons("unsupported_addon.yml"))
+
     for entry, error in error_map.items():
         assert "Unsupported addon type 'unsupported_addon' in addon 'my-unsupported-addon'" == error
 
@@ -915,3 +924,60 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
+
+
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
+def test_validate_extensions_supported_versions_successful_with_supported_version(
+    mock_supported_versions, capsys
+):
+
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "connors-redis": {"type": "redis", "environments": {"*": {"engine": "7.1"}}}
+        },
+    }
+
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=mock_supported_versions,
+    )
+
+    # Nothing should be logged if the version is valid.
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+
+
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
+def test_validate_extensions_supported_versions_fails_with_unsupported_version(
+    mock_supported_versions, capsys
+):
+
+    config = {
+        "application": "test-app",
+        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "extensions": {
+            "connors-redis": {
+                "type": "redis",
+                "environments": {"*": {"engine": "some-engine-which-probably-doesnt-exist"}},
+            }
+        },
+    }
+
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=mock_supported_versions,
+    )
+
+    captured = capsys.readouterr()
+    assert (
+        "redis version for environment * is not in the list of supported redis versions"
+        in captured.out
+    )
+    assert captured.err == ""
