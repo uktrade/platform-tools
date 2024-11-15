@@ -63,7 +63,11 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 `poetry run pytest --numprocesses 0`
 
+##### Monitoring the quality of our Python unit tests
+
 We use [Codecov](https://app.codecov.io/github/uktrade/platform-tools) to monitor the comprehensiveness and performance of our unit tests.
+
+We use [Cosmic Ray](https://cosmic-ray.readthedocs.io/en/latest/index.html) to run [Python mutation tests in GitHub Actions](https://github.com/uktrade/platform-tools/actions/workflows/python-mutation-tests.yml) on a schedule to help identify areas of our code which are not covered by our tests.
 
 #### Manual testing
 
