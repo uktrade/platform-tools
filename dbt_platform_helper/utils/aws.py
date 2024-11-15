@@ -16,11 +16,9 @@ from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import (
-    write_to_cache,
-    cache_refresh_required,
-    read_supported_versions_from_cache,
-)
+from dbt_platform_helper.utils.files import cache_refresh_required
+from dbt_platform_helper.utils.files import read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import write_to_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -490,11 +488,9 @@ def start_build_extraction(codebuild_client, build_options):
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
         ssm_client = session.client("ssm")
-        parameter = ssm_client.get_parameter(
+        ssm_client.get_parameter(
             Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
-        )
-        value = parameter["Parameter"]["Value"]
-        return value
+        )["Parameter"]["Value"]
     except (
         KeyError,
         ValueError,
