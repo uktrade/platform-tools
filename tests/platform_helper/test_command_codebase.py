@@ -32,7 +32,6 @@ class TestCodebasePrepare:
         mock_codebase_object_instance = mock_codebase_object.return_value
 
         result = CliRunner().invoke(prepare_command)
-        print(result.output)
         mock_codebase_object_instance.prepare.assert_called_once()
 
         assert result.exit_code == 0
