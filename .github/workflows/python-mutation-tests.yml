@@ -40,29 +40,37 @@ jobs:
           mkdir cosmic-ray-worker1
           cp -R ./dbt_platform_helper cosmic-ray-worker1
           cp -R ./tests cosmic-ray-worker1
+          ls cosmic-ray-worker1
           mkdir cosmic-ray-worker2
           cp -R ./dbt_platform_helper cosmic-ray-worker2
           cp -R ./tests cosmic-ray-worker2
+          ls cosmic-ray-worker2
           mkdir cosmic-ray-worker3
           cp -R ./dbt_platform_helper cosmic-ray-worker3
-          cp -R ./tests cosmic-ray-worker2
+          cp -R ./tests cosmic-ray-worker3
+          ls cosmic-ray-worker3
           mkdir cosmic-ray-worker4
           cp -R ./dbt_platform_helper cosmic-ray-worker4
-          cp -R ./tests cosmic-ray-worker2
+          cp -R ./tests cosmic-ray-worker4
+          ls cosmic-ray-worker4
           cd cosmic-ray-worker1
           cosmic-ray --verbosity INFO http-worker --port 9876 > /dev/null 2>&1 & 
           cd ../
+          echo "Started worker1"
           cd cosmic-ray-worker2
           cosmic-ray --verbosity INFO http-worker --port 9877 > /dev/null 2>&1 &
           cd ../
+          echo "Started worker2"
           cd cosmic-ray-worker3
           cosmic-ray --verbosity INFO http-worker --port 9878 > /dev/null 2>&1 &
           cd ../
+          echo "Started worker3"
           cd cosmic-ray-worker4
           cosmic-ray --verbosity INFO http-worker --port 9879 > /dev/null 2>&1 &
           cd ../
+          echo "Started worker4"
           poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
+          echo "Initialised"
           poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
-          cr-report cosmic-ray.sqlite
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
