@@ -69,6 +69,11 @@ We use [Codecov](https://app.codecov.io/github/uktrade/platform-tools) to monito
 
 We use [Cosmic Ray](https://cosmic-ray.readthedocs.io/en/latest/index.html) to run [Python mutation tests in GitHub Actions](https://github.com/uktrade/platform-tools/actions/workflows/python-mutation-tests.yml) on a schedule to help identify areas of our code which are not covered by our tests.
 
+You can run the mutation tests locally, but:
+
+- they take a very long time to run as they run the whole unit test suite for each mutation.
+- they actually your source files while they run, so you cannot work on the code until it's finished.
+
 #### Manual testing
 
 You may want to test any CLI changes locally.
