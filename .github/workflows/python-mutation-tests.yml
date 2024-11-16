@@ -72,5 +72,6 @@ jobs:
           poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
           echo "Initialised"
           poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
+          cr-report cosmic-ray.sqlite
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
