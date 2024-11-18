@@ -4,12 +4,12 @@ from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
 from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
-from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.copilot import get_cluster_arn
-from dbt_platform_helper.providers.copilot import get_or_create_task_name
+from dbt_platform_helper.providers.ecs import addon_client_is_running
+from dbt_platform_helper.providers.ecs import get_cluster_arn
+from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
 from dbt_platform_helper.utils.application import Application
