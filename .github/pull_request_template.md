@@ -1,7 +1,5 @@
 Addresses [DBTP-<ticket>](https://uktrade.atlassian.net/browse/DBTP-<ticket>)
 
-Please add any relevant context for you pull request here, or delete this if none needed.
-
 ---
 ## Checklist:
 
