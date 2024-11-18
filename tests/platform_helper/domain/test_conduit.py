@@ -3,11 +3,11 @@ from unittest.mock import Mock
 import pytest
 
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.providers.copilot import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import InvalidAddonTypeError
+from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
-from dbt_platform_helper.providers.copilot import InvalidAddonTypeError
 from dbt_platform_helper.providers.copilot import NoClusterError
-from dbt_platform_helper.providers.copilot import ParameterNotFoundError
 from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment

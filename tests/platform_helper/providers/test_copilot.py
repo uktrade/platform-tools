@@ -7,20 +7,22 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.providers.copilot import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import NoClusterError
-from dbt_platform_helper.providers.copilot import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.copilot import get_addon_type
 from dbt_platform_helper.providers.copilot import get_cluster_arn
 from dbt_platform_helper.providers.copilot import get_or_create_task_name
-from dbt_platform_helper.providers.copilot import get_parameter_name
-from dbt_platform_helper.providers.copilot import normalise_secret_name
 from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.providers.secrets import (
+    _normalise_secret_name as normalise_secret_name,
+)
+from dbt_platform_helper.providers.secrets import get_addon_type
+from dbt_platform_helper.providers.secrets import get_parameter_name
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import expected_connection_secret_name

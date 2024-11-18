@@ -5,7 +5,9 @@ import time
 
 from botocore.exceptions import ClientError
 
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
+from dbt_platform_helper.exceptions import CreateTaskTimeoutError
+from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.providers.secrets import get_connection_secret_arn
 from dbt_platform_helper.providers.secrets import (
     get_postgres_connection_data_updated_with_master_secret,
@@ -13,65 +15,7 @@ from dbt_platform_helper.providers.secrets import (
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
 
-# TODO move to constants
-CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
-CONDUIT_ADDON_TYPES = [
-    "opensearch",
-    "postgres",
-    "redis",
-]
 
-
-# TODO exceptions?
-class NoClusterError(AWSException):
-    pass
-
-
-class CreateTaskTimeoutError(AWSException):
-    pass
-
-
-class ParameterNotFoundError(AWSException):
-    pass
-
-
-class AddonNotFoundError(AWSException):
-    pass
-
-
-class InvalidAddonTypeError(AWSException):
-    def __init__(self, addon_type):
-        self.addon_type = addon_type
-
-
-def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str) -> str:
-    addon_type = None
-    try:
-        addon_config = json.loads(
-            ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application_name}/environments/{env}/addons"
-            )["Parameter"]["Value"]
-        )
-    except ssm_client.exceptions.ParameterNotFound:
-        raise ParameterNotFoundError
-
-    if addon_name not in addon_config.keys():
-        raise AddonNotFoundError
-
-    for name, config in addon_config.items():
-        if name == addon_name:
-            addon_type = config["type"]
-
-    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
-        raise InvalidAddonTypeError(addon_type)
-
-    if "postgres" in addon_type:
-        addon_type = "postgres"
-
-    return addon_type
-
-
-# TODO ECS method
 def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
 
     # TODO refactor
@@ -95,17 +39,6 @@ def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
             return cluster_arn
 
     raise NoClusterError
-
-
-def get_parameter_name(
-    application_name: str, env: str, addon_type: str, addon_name: str, access: str
-) -> str:
-    if addon_type == "postgres":
-        return f"/copilot/{application_name}/{env}/conduits/{normalise_secret_name(addon_name)}_{access.upper()}"
-    elif addon_type == "redis" or addon_type == "opensearch":
-        return f"/copilot/{application_name}/{env}/conduits/{normalise_secret_name(addon_name)}_ENDPOINT"
-    else:
-        return f"/copilot/{application_name}/{env}/conduits/{normalise_secret_name(addon_name)}"
 
 
 # TODO ECS???
@@ -145,7 +78,7 @@ def create_addon_client_task(
     task_name: str,
     access: str,
 ):
-    secret_name = f"/copilot/{application.name}/{env}/secrets/{normalise_secret_name(addon_name)}"
+    secret_name = f"/copilot/{application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}"
 
     if addon_type == "postgres":
         if access == "read":
@@ -195,10 +128,6 @@ def create_addon_client_task(
     )
 
 
-def normalise_secret_name(addon_name: str) -> str:
-    return addon_name.replace("-", "_").upper()
-
-
 def create_postgres_admin_task(
     ssm_client,
     secrets_manager_client,
@@ -212,7 +141,7 @@ def create_postgres_admin_task(
 ):
     read_only_secret_name = secret_name + "_READ_ONLY_USER"
     master_secret_name = (
-        f"/copilot/{app.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+        f"/copilot/{app.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
     )
     master_secret_arn = ssm_client.get_parameter(Name=master_secret_name, WithDecryption=True)[
         "Parameter"
@@ -254,3 +183,7 @@ def connect_to_addon_client_task(
         time.sleep(1)
     if not running:
         raise CreateTaskTimeoutError
+
+
+def _normalise_secret_name(addon_name: str) -> str:
+    return addon_name.replace("-", "_").upper()

@@ -20,6 +20,27 @@ class IncompatibleMinorVersion(ValidationException):
         self.check_version = check_version
 
 
+class NoClusterError(AWSException):
+    pass
+
+
+class CreateTaskTimeoutError(AWSException):
+    pass
+
+
+class ParameterNotFoundError(AWSException):
+    pass
+
+
+class AddonNotFoundError(AWSException):
+    pass
+
+
+class InvalidAddonTypeError(AWSException):
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
+
+
 class CopilotCodebaseNotFoundError(Exception):
     pass
 
