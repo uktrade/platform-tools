@@ -16,6 +16,9 @@ app_name = "failed_app"
 addon_name = "important-db"
 addon_type = "postgres"
 env = "development"
+cluster_name = "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
+task_name = "task_name"
+addon_name = "custom-name-rds-postgres"
 
 
 class ConduitMocks:
@@ -49,6 +52,9 @@ class ConduitMocks:
         )
 
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
+        self.get_parameter_name_fn = kwargs.get(
+            "get_parameter_name", Mock(return_value="parameter_name")
+        )
 
     def params(self):
         return {
@@ -63,18 +69,8 @@ class ConduitMocks:
             "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
             "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
             "update_conduit_stack_resources_fn": self.update_conduit_stack_resources_fn,
+            "get_parameter_name_fn": self.get_parameter_name_fn,
         }
-
-    def assert_happy_path_called(self):
-        self.addon_client_is_running_fn.assert_called_once()
-        self.connect_to_addon_client_task_fn.assert_called_once()
-        self.get_addon_type_fn.assert_called_once()
-        self.get_cluster_arn_fn.assert_called_once()
-        self.get_or_create_task_name_fn.assert_called_once()
-
-        self.create_addon_client_task_fn.assert_not_called()
-        self.add_stack_delete_policy_to_task_role_fn.assert_not_called()
-        self.update_conduit_stack_resources_fn.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -87,17 +83,26 @@ class ConduitMocks:
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
-
     conduit_mocks = ConduitMocks(app_name, addon_type)
     conduit = Conduit(**conduit_mocks.params())
 
     conduit.start(env, addon_name, access)
+    ecs_client = conduit.application.environments[env].session.client("ecs")
+    ssm_client = conduit.application.environments[env].session.client("ssm")
 
-    conduit_mocks.assert_happy_path_called()
+    conduit.addon_client_is_running_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+    conduit.connect_to_addon_client_task_fn.assert_called_once_with(
+        ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
+    )
+    conduit.get_addon_type_fn.assert_called_once_with(ssm_client, app_name, env, addon_name)
+    conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+    conduit.get_or_create_task_name_fn.assert_called_once_with(
+        ssm_client, app_name, env, addon_name, "parameter_name"
+    )
 
-
-# TODO
-# Test retry of client_is_running check
+    conduit.create_addon_client_task_fn.assert_not_called()
+    conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
+    conduit.update_conduit_stack_resources_fn.assert_not_called()
 
 
 def test_conduit_domain_when_no_cluster_exists():
