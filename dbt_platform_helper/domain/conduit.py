@@ -31,27 +31,8 @@ class Conduit:
         add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=update_conduit_stack_resources,
     ):
-        """
-        Initialise a conduit domain which can be used to spin up a conduit
-        instance to connect to a service.
-
-        Args:
-            application(Application): an object with the data of the deployed application
-            subprocess_fn: inject the subprocess function to call and execute shell commands
-            addon_client_is_running_fn: inject the function which will check if a conduit instance to the addon is running
-            connect_to_addon_client_task_fn: inject the function used to connect to the conduit instance,
-            create_addon_client_task_fn: inject the function used to create the conduit task to connect too
-            create_postgres_admin_task_fn: inject the function used to create the conduit task with admin access to postgres
-            get_addon_type_fn=get_addon_type: inject the function used to get the addon type from addon name
-            get_cluster_arn_fn: inject the function used to get the cluster arn from the application name and environment
-            get_parameter_name_fn: inject the function used to get the parameter name from the application and addon
-            get_or_create_task_name_fn: inject the function used to get an existing conduit task or generate a new task
-            add_stack_delete_policy_to_task_role_fn: inject the function used to create the delete task permission in cloudformation
-            update_conduit_stack_resources_fn: inject the function used to add the conduit instance into the cloudformation stack
-        """
         self.application = application
         self.subprocess_fn = subprocess_fn
-
         self.addon_client_is_running_fn = addon_client_is_running_fn
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
         self.create_addon_client_task_fn = create_addon_client_task_fn
@@ -64,24 +45,55 @@ class Conduit:
         self.update_conduit_stack_resources_fn = update_conduit_stack_resources_fn
 
     def start(self, env: str, addon_name: str, access: str = "read"):
-        """
-        Start a conduit connection to the addon for a particular environment
-        with specific access.
+        clients = self._initialise_clients(env)
+        addon_type, cluster_arn, parameter_name, task_name = self._get_addon_details(
+            env, addon_name, access
+        )
+        self._ensure_addon_client_running(
+            clients["ecs"],
+            cluster_arn,
+            task_name,
+            clients["iam"],
+            clients["ssm"],
+            clients["secrets_manager"],
+            self.subprocess_fn,
+            self.application,
+            env,
+            addon_type,
+            addon_name,
+            task_name,
+            access,
+        )
+        self._update_stack_resources(
+            clients["cloudformation"],
+            clients["iam"],
+            clients["ssm"],
+            self.application.name,
+            env,
+            addon_type,
+            addon_name,
+            task_name,
+            parameter_name,
+            access,
+        )
+        self.connect_to_addon_client_task_fn(
+            clients["ecs"], self.subprocess_fn, self.application.name, env, cluster_arn, task_name
+        )
 
-        Args:
-            env(str): environment you are connecting too
-            addon_name(str): name of the addon (service) you will be connecting too
-            access(str): access type you will have to the service
-        """
+    def _initialise_clients(self, env):
+        return {
+            "ecs": self.application.environments[env].session.client("ecs"),
+            "iam": self.application.environments[env].session.client("iam"),
+            "ssm": self.application.environments[env].session.client("ssm"),
+            "cloudformation": self.application.environments[env].session.client("cloudformation"),
+            "secrets_manager": self.application.environments[env].session.client("secretsmanager"),
+        }
 
-        ecs_client = self.application.environments[env].session.client("ecs")
-        iam_client = self.application.environments[env].session.client("iam")
+    def _get_addon_details(self, env, addon_name, access):
         ssm_client = self.application.environments[env].session.client("ssm")
-        cloudformation_client = self.application.environments[env].session.client("cloudformation")
-        secrets_manager_client = self.application.environments[env].session.client("secretsmanager")
+        ecs_client = self.application.environments[env].session.client("ecs")
 
         addon_type = self.get_addon_type_fn(ssm_client, self.application.name, env, addon_name)
-
         cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application.name, env)
         parameter_name = self.get_parameter_name_fn(
             self.application.name, env, addon_type, addon_name, access
@@ -90,35 +102,12 @@ class Conduit:
             ssm_client, self.application.name, env, addon_name, parameter_name
         )
 
-        if not self.addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
-            self.create_addon_client_task_fn(
-                iam_client,
-                ssm_client,
-                secrets_manager_client,
-                self.subprocess_fn,
-                self.application,
-                env,
-                addon_type,
-                addon_name,
-                task_name,
-                access,
-            )
-            self.add_stack_delete_policy_to_task_role_fn(
-                cloudformation_client, iam_client, task_name
-            )
-            self.update_conduit_stack_resources_fn(
-                cloudformation_client,
-                iam_client,
-                ssm_client,
-                self.application.name,
-                env,
-                addon_type,
-                addon_name,
-                task_name,
-                parameter_name,
-                access,
-            )
+        return addon_type, cluster_arn, parameter_name, task_name
 
-        self.connect_to_addon_client_task_fn(
-            ecs_client, self.subprocess_fn, self.application.name, env, cluster_arn, task_name
-        )
+    def _ensure_addon_client_running(self, ecs_client, cluster_arn, task_name, *args):
+        if not self.addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
+            self.create_addon_client_task_fn(*args)
+
+    def _update_stack_resources(self, cloudformation_client, iam_client, ssm_client, *args):
+        self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, *args)
+        self.update_conduit_stack_resources_fn(cloudformation_client, *args)

@@ -82,11 +82,13 @@ class ConduitMocks:
         ("app_1", "opensearch", "custom-name-opensearch", "read"),
     ],
 )
-def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
+def test_conduit(app_name, addon_type, addon_name, access):
     conduit_mocks = ConduitMocks(app_name, addon_type)
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
+    cloudformation_client = conduit.application.environments[env].session.client("cloudformation")
+    iam_client = conduit.application.environments[env].session.client("iam")
 
     conduit.start(env, addon_name, access)
 
@@ -99,9 +101,29 @@ def test_conduit(app_name, addon_type, addon_name, access, aws_credentials):
     conduit.get_or_create_task_name_fn.assert_called_once_with(
         ssm_client, app_name, env, addon_name, "parameter_name"
     )
+
+    conduit.add_stack_delete_policy_to_task_role_fn.assert_called_once_with(
+        cloudformation_client,
+        iam_client,
+        app_name,
+        env,
+        addon_type,
+        addon_name,
+        task_name,
+        "parameter_name",
+        access,
+    )
+    conduit.update_conduit_stack_resources_fn.assert_called_once_with(
+        cloudformation_client,
+        app_name,
+        env,
+        addon_type,
+        addon_name,
+        task_name,
+        "parameter_name",
+        access,
+    )
     conduit.create_addon_client_task_fn.assert_not_called()
-    conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
-    conduit.update_conduit_stack_resources_fn.assert_not_called()
 
 
 def test_conduit_domain_when_no_cluster_exists():
