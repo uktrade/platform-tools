@@ -46,3 +46,7 @@ class ApplicationNotFoundError(Exception):
 
 class ApplicationEnvironmentNotFoundError(Exception):
     pass
+
+
+class SecretNotFoundError(AWSException):
+    pass

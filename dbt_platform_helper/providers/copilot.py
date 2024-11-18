@@ -5,9 +5,9 @@ import time
 
 from botocore.exceptions import ClientError
 
-from dbt_platform_helper.providers.aws import AWSError
-from dbt_platform_helper.providers.aws import get_connection_secret_arn
-from dbt_platform_helper.providers.aws import (
+from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.secrets import get_connection_secret_arn
+from dbt_platform_helper.providers.secrets import (
     get_postgres_connection_data_updated_with_master_secret,
 )
 from dbt_platform_helper.utils.application import Application
@@ -23,23 +23,23 @@ CONDUIT_ADDON_TYPES = [
 
 
 # TODO exceptions?
-class NoClusterError(AWSError):
+class NoClusterError(AWSException):
     pass
 
 
-class CreateTaskTimeoutError(AWSError):
+class CreateTaskTimeoutError(AWSException):
     pass
 
 
-class ParameterNotFoundError(AWSError):
+class ParameterNotFoundError(AWSException):
     pass
 
 
-class AddonNotFoundError(AWSError):
+class AddonNotFoundError(AWSException):
     pass
 
 
-class InvalidAddonTypeError(AWSError):
+class InvalidAddonTypeError(AWSException):
     def __init__(self, addon_type):
         self.addon_type = addon_type
 

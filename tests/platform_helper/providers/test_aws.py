@@ -2,8 +2,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.providers.aws import SecretNotFoundError
-from dbt_platform_helper.providers.aws import get_connection_secret_arn
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.providers.secrets import get_connection_secret_arn
 
 env = "development"
 

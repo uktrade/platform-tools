@@ -7,7 +7,6 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.providers.aws import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import AddonNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import NoClusterError
@@ -21,6 +20,7 @@ from dbt_platform_helper.providers.copilot import get_cluster_arn
 from dbt_platform_helper.providers.copilot import get_or_create_task_name
 from dbt_platform_helper.providers.copilot import get_parameter_name
 from dbt_platform_helper.providers.copilot import normalise_secret_name
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import expected_connection_secret_name
