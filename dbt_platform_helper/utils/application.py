@@ -8,6 +8,7 @@ import yaml
 from boto3 import Session
 from yaml.parser import ParserError
 
+from dbt_platform_helper.exceptions import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_ssm_secrets
@@ -65,10 +66,6 @@ class Application:
 
     def __eq__(self, other):
         return str(self) == str(other)
-
-
-class ApplicationNotFoundError(Exception):
-    pass
 
 
 def load_application(app: str = None, default_session: Session = None) -> Application:
