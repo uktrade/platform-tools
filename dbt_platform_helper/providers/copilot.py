@@ -71,6 +71,7 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
     return addon_type
 
 
+# TODO ECS method
 def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
 
     # TODO refactor
@@ -107,6 +108,7 @@ def get_parameter_name(
         return f"/copilot/{application_name}/{env}/conduits/{normalise_secret_name(addon_name)}"
 
 
+# TODO ECS???
 def get_or_create_task_name(
     ssm_client, application_name: str, env: str, addon_name: str, parameter_name: str
 ) -> str:
@@ -117,6 +119,7 @@ def get_or_create_task_name(
         return f"conduit-{application_name}-{env}-{addon_name}-{random_id}"
 
 
+# TODO ECS method
 def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,

@@ -53,7 +53,7 @@ class ConduitMocks:
     def params(self):
         return {
             "application": self.application,
-            "subprocess": self.subprocess,
+            "subprocess_fn": self.subprocess,
             "addon_client_is_running_fn": self.addon_client_is_running_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
