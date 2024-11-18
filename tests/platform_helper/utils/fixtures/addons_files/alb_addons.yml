@@ -2,6 +2,41 @@ my-alb:
   type: alb
   environments:
     dev:
+        cache_policy:
+            "test-policy":
+                min_ttl: 3600
+                max_ttl: 31536000
+                default_ttl: 14400
+                cookies_config: "whitelist"
+                cookie_list: [ "x-csrf-token" ]
+                header: "whitelist"
+                headers_list: [ "CloudFront-Viewer-Country" ]
+                query_string_behavior: "whitelist"
+                cache_policy_query_strings: [ "q", "market" ]
+            "test-policy-2":
+                min_ttl: 3600
+                max_ttl: 31536000
+                default_ttl: 14400
+                cookies_config: "all"
+                cookie_list: [ ]
+                header: "none"
+                headers_list: [ ]
+                query_string_behavior: "all"
+                cache_policy_query_strings: [ ]
+        origin_request_policy:
+            "test-origin-request": { }
+        paths:
+            dev.application.uktrade.digital:
+                default:
+                    cache: "test-policy"
+                    request: "test-origin-request"
+                additional:
+                    - path: "/static"
+                      cache: "test-policy"
+                      request: "test-origin-request"
+                    - path: "/images"
+                      cache: "test-policy-2"
+                      request: "test-origin-request"
         additional_address_list: ["internal.api"]
         allowed_methods: ["GET", "POST", "OPTIONS"]
         cached_methods: ["GET", "HEAD"]
