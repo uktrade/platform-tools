@@ -19,14 +19,14 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
-from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import (
     get_postgres_connection_data_updated_with_master_secret,
 )
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
-from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_ssm_secrets
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from tests.platform_helper.conftest import mock_aws_client
@@ -705,7 +705,6 @@ def test_get_connection_string():
     mock_connection_data.assert_called_once_with(
         session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
     )
-    # Ignoring this does not work, see https://github.com/trufflesecurity/trufflehog/issues/3602
     assert (
         connection_string
         == "postgres://master_user:master_password@hostname:1234/main"  # trufflehog:ignore
