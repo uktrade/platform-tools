@@ -3,6 +3,3 @@
 node_modules
 poetry.lock
 venv
-
-# See https://github.com/trufflesecurity/trufflehog/issues/3602
-tests/platform_helper/utils/test_aws.py
