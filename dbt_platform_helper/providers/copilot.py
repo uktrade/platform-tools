@@ -13,6 +13,7 @@ from dbt_platform_helper.providers.aws import (
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
 
+# TODO move to constants
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
 CONDUIT_ADDON_TYPES = [
     "opensearch",
@@ -21,6 +22,7 @@ CONDUIT_ADDON_TYPES = [
 ]
 
 
+# TODO exceptions?
 class NoClusterError(AWSError):
     pass
 
@@ -69,7 +71,9 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
     return addon_type
 
 
-def get_cluster_arn(ecs_client, application_name, env: str) -> str:
+def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
+
+    # TODO refactor
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
         tags = tags_response["tags"]

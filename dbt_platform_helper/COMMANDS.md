@@ -258,8 +258,8 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 
 [↩ Parent](#platform-helper)
 
-    For a given addon_name create a conduit connection to interact with
-    postgres, opensearch or redis.
+    Opens a shell for a given addon_name create a conduit connection to
+    interact with postgres, opensearch or redis.
 
 ## Usage
 

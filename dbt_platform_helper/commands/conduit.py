@@ -28,8 +28,8 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
     help="Allow read, write or admin access to the database addons.",
 )
 def conduit(addon_name: str, app: str, env: str, access: str):
-    """For a given addon_name create a conduit connection to interact with
-    postgres, opensearch or redis."""
+    """Opens a shell for a given addon_name create a conduit connection to
+    interact with postgres, opensearch or redis."""
     check_platform_helper_version_needs_update()
     application = load_application(app)
 

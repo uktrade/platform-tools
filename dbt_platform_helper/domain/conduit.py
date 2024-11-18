@@ -82,7 +82,7 @@ class Conduit:
 
         addon_type = self.get_addon_type_fn(ssm_client, self.application.name, env, addon_name)
 
-        cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application, env)
+        cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application.name, env)
         parameter_name = self.get_parameter_name_fn(
             self.application.name, env, addon_type, addon_name, access
         )
@@ -103,7 +103,9 @@ class Conduit:
                 task_name,
                 access,
             )
-            self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, env, task_name)
+            self.add_stack_delete_policy_to_task_role_fn(
+                cloudformation_client, iam_client, task_name
+            )
             self.update_conduit_stack_resources_fn(
                 cloudformation_client,
                 iam_client,
