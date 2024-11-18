@@ -37,6 +37,7 @@ jobs:
 
       - name: Run mutation tests
         run: |
+          # Todo: Can we make it faster in GitHub Actions
           # mkdir cosmic-ray-worker1
           # cp -R ./dbt_platform_helper cosmic-ray-worker1
           # cp -R ./tests cosmic-ray-worker1
@@ -69,6 +70,7 @@ jobs:
           # cosmic-ray --verbosity INFO http-worker --port 9879 > /dev/null 2>&1 &
           # cd ../
           # echo "Started worker4"
+          # Todo: Drop the --force, it just here for easy local copy and paste
           poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
           echo "Initialised"
           poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
