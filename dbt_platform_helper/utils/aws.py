@@ -13,12 +13,12 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.files import (
-    write_to_cache,
-    cache_refresh_required,
-    read_supported_versions_from_cache,
-)
+from dbt_platform_helper.utils.files import cache_refresh_required
+from dbt_platform_helper.utils.files import read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import write_to_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -478,3 +478,77 @@ def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) ->
         raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
     return Vpc(subnets, sec_groups)
+
+
+def start_build_extraction(codebuild_client, build_options):
+    response = codebuild_client.start_build(**build_options)
+    return response["build"]["arn"]
+
+
+def check_codebase_exists(session: Session, application, codebase: str):
+    try:
+        ssm_client = session.client("ssm")
+        ssm_client.get_parameter(
+            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+        )["Parameter"]["Value"]
+    except (
+        KeyError,
+        ValueError,
+        ssm_client.exceptions.ParameterNotFound,
+    ):
+        raise CopilotCodebaseNotFoundError
+
+
+def check_image_exists(session, application, codebase, commit):
+    ecr_client = session.client("ecr")
+    try:
+        ecr_client.describe_images(
+            repositoryName=f"{application.name}/{codebase}",
+            imageIds=[{"imageTag": f"commit-{commit}"}],
+        )
+    except (
+        ecr_client.exceptions.RepositoryNotFoundException,
+        ecr_client.exceptions.ImageNotFoundException,
+    ):
+        raise ImageNotFoundError
+
+
+def get_build_url_from_arn(build_arn: str) -> str:
+    _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
+    project_name = project_name.removeprefix("build/")
+    return (
+        f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
+        f"{project_name}/build/{project_name}%3A{build_id}"
+    )
+
+
+def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo_fn):
+    paginator = ecr_client.get_paginator("describe_images")
+    describe_images_response_iterator = paginator.paginate(
+        repositoryName=ecr_repository_name,
+        filter={"tagStatus": "TAGGED"},
+    )
+    images = []
+    for page in describe_images_response_iterator:
+        images += page["imageDetails"]
+
+    sorted_images = sorted(
+        images,
+        key=lambda i: i["imagePushedAt"],
+        reverse=True,
+    )
+
+    MAX_RESULTS = 20
+
+    for image in sorted_images[:MAX_RESULTS]:
+        try:
+            commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+            if not commit_tag:
+                continue
+
+            commit_hash = commit_tag.replace("commit-", "")
+            echo_fn(
+                f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+            )
+        except StopIteration:
+            continue
