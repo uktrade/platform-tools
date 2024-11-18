@@ -118,7 +118,6 @@ def test_conduit_domain_when_no_cluster_exists():
         conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
 
 
-# TODO when the connection details to the addon does not exist
 def test_conduit_domain_when_no_connection_secret_exists():
     conduit_mocks = ConduitMocks(
         app_name,
@@ -141,26 +140,37 @@ def test_conduit_domain_when_no_connection_secret_exists():
         )
 
 
-# TODO add test where addon_client_is_running_fn return value is False
 def test_conduit_domain_when_client_task_fails_to_start():
-
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
         connect_to_addon_client_task_fn=Mock(side_effect=CreateTaskTimeoutError()),
     )
-
     conduit = Conduit(**conduit_mocks.params())
+    ecs_client = conduit.application.environments[env].session.client("ecs")
+    ssm_client = conduit.application.environments[env].session.client("ssm")
 
     with pytest.raises(CreateTaskTimeoutError) as exc:
         conduit.start(env, addon_name)
+        conduit.addon_client_is_running_fn.assert_called_once_with(
+            ecs_client, cluster_name, task_name
+        )
+        conduit.connect_to_addon_client_task_fn.assert_called_once_with(
+            ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
+        )
+        conduit.get_addon_type_fn.assert_called_once_with(ssm_client, app_name, env, addon_name)
+        conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+        conduit.get_or_create_task_name_fn.assert_called_once_with(
+            ssm_client, app_name, env, addon_name, "parameter_name"
+        )
+        conduit.create_addon_client_task_fn.assert_not_called()
+        conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
+        conduit.update_conduit_stack_resources_fn.assert_not_called()
 
 
 def test_conduit_domain_when_addon_type_is_invalid():
-
     addon_name = "invalid_addon"
     addon_type = "invalid_addon_type"
-
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
@@ -168,33 +178,42 @@ def test_conduit_domain_when_addon_type_is_invalid():
     )
 
     conduit = Conduit(**conduit_mocks.params())
+    ecs_client = conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(InvalidAddonTypeError) as exc:
         conduit.start(env, addon_name)
+        conduit.addon_client_is_running_fn.assert_called_once_with(
+            ecs_client, cluster_name, task_name
+        )
 
 
-# TODO conduit requires addon type
 def test_conduit_domain_when_addon_does_not_exist():
     addon_name = "addon_doesnt_exist"
-
     conduit_mocks = ConduitMocks(
         app_name, addon_type, get_addon_type_fn=Mock(side_effect=AddonNotFoundError())
     )
 
     conduit = Conduit(**conduit_mocks.params())
+    ecs_client = conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(AddonNotFoundError) as exc:
         conduit.start(env, addon_name)
+        conduit.addon_client_is_running_fn.assert_called_once_with(
+            ecs_client, cluster_name, task_name
+        )
 
 
 def test_conduit_domain_when_no_addon_config_parameter_exists():
     addon_name = "parameter_doesnt_exist"
-
     conduit_mocks = ConduitMocks(
         app_name, addon_type, get_addon_type_fn=Mock(side_effect=ParameterNotFoundError())
     )
 
     conduit = Conduit(**conduit_mocks.params())
+    ecs_client = conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(ParameterNotFoundError) as exc:
         conduit.start(env, addon_name)
+        conduit.addon_client_is_running_fn.assert_called_once_with(
+            ecs_client, cluster_name, task_name
+        )
