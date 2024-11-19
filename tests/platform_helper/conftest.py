@@ -265,12 +265,6 @@ def validate_version():
 @pytest.fixture(scope="function")
 def mock_stack():
     def _create_stack(addon_name):
-        params = [
-            {
-                "ParameterKey": "ExistingParameter",
-                "ParameterValue": "does-not-matter",
-            }
-        ]
         with mock_aws():
             with open(FIXTURES_DIR / "test_cloudformation_template.yml") as f:
                 template = yaml.safe_load(f)
@@ -278,7 +272,6 @@ def mock_stack():
             cf.create_stack(
                 StackName=f"task-{mock_task_name(addon_name)}",
                 TemplateBody=yaml.dump(template),
-                Parameters=params,
             )
 
     return _create_stack
