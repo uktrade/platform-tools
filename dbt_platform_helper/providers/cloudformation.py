@@ -85,6 +85,7 @@ def update_conduit_stack_resources(
     params = []
     if "Parameters" in template_yml:
         for param in template_yml["Parameters"]:
+            # TODO testing missed in codecov, update test to assert on method call below with params including ExistingParameter from cloudformation template.
             params.append({"ParameterKey": param, "UsePreviousValue": True})
 
     cloudformation_client.update_stack(

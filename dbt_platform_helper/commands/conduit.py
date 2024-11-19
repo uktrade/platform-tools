@@ -3,6 +3,7 @@ import click
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import NoClusterError
@@ -20,7 +21,7 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 @click.command(cls=ClickDocOptCommand)
 @click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="Application name", required=True)
-@click.option("--env", help="Service environment name", required=True)
+@click.option("--env", help="Environment name", required=True)
 @click.option(
     "--access",
     default="read",
@@ -65,6 +66,12 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     except InvalidAddonTypeError as err:
         click.secho(
             f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            fg="red",
+        )
+        exit(1)
+    except AddonTypeMissingFromConfigError:
+        click.secho(
+            f"""The configuration for the addon {addon_name}, is missconfigured and missing the addon type.""",
             fg="red",
         )
         exit(1)

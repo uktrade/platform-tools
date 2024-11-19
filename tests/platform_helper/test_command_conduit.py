@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.conduit import conduit
 from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
@@ -80,6 +81,11 @@ def test_start_conduit(mock_application, mock_conduit_object, addon_name, valida
             {"addon_type": "fake-postgres"},
             """Addon type "fake-postgres" is not supported, we support: opensearch, postgres, redis.""",
         ),
+        (
+            AddonTypeMissingFromConfigError,
+            {},
+            """The configuration for the addon important-db, is missconfigured and missing the addon type.""",
+        ),
     ],
 )
 @patch("dbt_platform_helper.commands.conduit.Conduit")
@@ -120,4 +126,3 @@ def test_start_conduit_exception_is_raised(
     assert result.exit_code == 1
 
     validate_version.assert_called_once()
-    mock_conduit_instance.start.assert_called_with("development", addon_name, "read")

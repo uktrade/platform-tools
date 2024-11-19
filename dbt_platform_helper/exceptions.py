@@ -41,6 +41,10 @@ class InvalidAddonTypeError(AWSException):
         self.addon_type = addon_type
 
 
+class AddonTypeMissingFromConfigError(AWSException):
+    pass
+
+
 class CopilotCodebaseNotFoundError(Exception):
     pass
 

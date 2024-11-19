@@ -18,16 +18,17 @@ env = "development"
 
 @mock_aws
 @pytest.mark.parametrize(
-    "addon_type, addon_name, parameter_suffix",
+    "addon_type, addon_name, parameter_suffix, env",
     [
-        ("postgres", "custom-name-postgres", "_READ_ONLY"),
-        ("postgres", "custom-name-rds-postgres", "_READ_ONLY"),
-        ("redis", "custom-name-redis", ""),
-        ("opensearch", "custom-name-opensearch", ""),
+        ("postgres", "custom-name-postgres", "_READ_ONLY", "development"),
+        ("postgres", "custom-name-rds-postgres", "_READ_ONLY", "development"),
+        ("redis", "custom-name-redis", "", "development"),
+        ("opensearch", "custom-name-opensearch", "", "development"),
+        ("postgres", "custom-prod-name-postgres", "", "production"),
     ],
 )
 def test_update_conduit_stack_resources(
-    mock_stack, addon_type, addon_name, parameter_suffix, mock_application
+    mock_stack, addon_type, addon_name, parameter_suffix, env, mock_application
 ):
     """Test that, given app, env and addon name update_conduit_stack_resources
     updates the conduit CloudFormation stack to add DeletionPolicy:Retain and
@@ -38,14 +39,13 @@ def test_update_conduit_stack_resources(
         AssumeRolePolicyDocument="123",
     )
 
+    ssm_response = {
+        "prod": "arn:aws:logs:eu-west-2:prod_account_id:destination:test_log_destination",
+        "dev": "arn:aws:logs:eu-west-2:dev_account_id:destination:test_log_destination",
+    }
     boto3.client("ssm").put_parameter(
         Name="/copilot/tools/central_log_groups",
-        Value=json.dumps(
-            {
-                "prod": "arn:aws:logs:eu-west-2:prod_account_id:destination:test_log_destination",
-                "dev": "arn:aws:logs:eu-west-2:dev_account_id:destination:test_log_destination",
-            }
-        ),
+        Value=json.dumps(ssm_response),
         Type="String",
     )
 
@@ -77,13 +77,12 @@ def test_update_conduit_stack_resources(
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["LogGroupName"]
         == f"/copilot/{task_name}"
     )
-    assert (
-        "dev_account_id"
-        in template_yml["Resources"]["SubscriptionFilter"]["Properties"]["DestinationArn"]
-    )
+    assert ("dev_account_id" if "dev" in env else "prod_account_id") in template_yml["Resources"][
+        "SubscriptionFilter"
+    ]["Properties"]["DestinationArn"]
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
-        == f"/copilot/conduit/{mock_application.name}/development/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
+        == f"/copilot/conduit/{mock_application.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
     )
 
 

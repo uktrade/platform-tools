@@ -31,7 +31,7 @@ class ConduitMocks:
         self.application = dummy_application
 
         self.addon_client_is_running_fn = kwargs.get(
-            "addon_client_is_running_fn", Mock(return_value=True)
+            "addon_client_is_running_fn", Mock(return_value=False)
         )
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
@@ -89,6 +89,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
     ssm_client = conduit.application.environments[env].session.client("ssm")
     cloudformation_client = conduit.application.environments[env].session.client("cloudformation")
     iam_client = conduit.application.environments[env].session.client("iam")
+    secretsmanager_client = conduit.application.environments[env].session.client("secretsmanager")
 
     conduit.start(env, addon_name, access)
 
@@ -103,18 +104,12 @@ def test_conduit(app_name, addon_type, addon_name, access):
     )
 
     conduit.add_stack_delete_policy_to_task_role_fn.assert_called_once_with(
-        cloudformation_client,
-        iam_client,
-        app_name,
-        env,
-        addon_type,
-        addon_name,
-        task_name,
-        "parameter_name",
-        access,
+        cloudformation_client, iam_client, task_name
     )
     conduit.update_conduit_stack_resources_fn.assert_called_once_with(
         cloudformation_client,
+        iam_client,
+        ssm_client,
         app_name,
         env,
         addon_type,
@@ -123,6 +118,41 @@ def test_conduit(app_name, addon_type, addon_name, access):
         "parameter_name",
         access,
     )
+    conduit.create_addon_client_task_fn.assert_called_once_with(
+        iam_client,
+        ssm_client,
+        secretsmanager_client,
+        conduit.subprocess_fn,
+        conduit.application,
+        env,
+        addon_type,
+        addon_name,
+        task_name,
+        access,
+    )
+
+
+def test_conduit_client_already_running():
+    conduit_mocks = ConduitMocks(
+        app_name, addon_type, addon_client_is_running_fn=Mock(return_value=True)
+    )
+    conduit = Conduit(**conduit_mocks.params())
+    ecs_client = conduit.application.environments[env].session.client("ecs")
+    ssm_client = conduit.application.environments[env].session.client("ssm")
+
+    conduit.start(env, addon_name, "read")
+
+    conduit.addon_client_is_running_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+    conduit.connect_to_addon_client_task_fn.assert_called_once_with(
+        ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
+    )
+    conduit.get_addon_type_fn.assert_called_once_with(ssm_client, app_name, env, addon_name)
+    conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+    conduit.get_or_create_task_name_fn.assert_called_once_with(
+        ssm_client, app_name, env, addon_name, "parameter_name"
+    )
+    conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
+    conduit.update_conduit_stack_resources_fn.assert_not_called()
     conduit.create_addon_client_task_fn.assert_not_called()
 
 

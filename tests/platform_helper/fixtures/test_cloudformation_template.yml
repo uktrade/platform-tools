@@ -1,3 +1,6 @@
+Parameters:
+  ExistingParameter:
+    Type: String
 Resources:
   DefaultTaskRole:
     Type: 'AWS::IAM::Role'

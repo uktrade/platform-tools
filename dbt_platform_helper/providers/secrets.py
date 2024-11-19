@@ -3,6 +3,7 @@ import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.exceptions import SecretNotFoundError
@@ -56,6 +57,8 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
 
     for name, config in addon_config.items():
         if name == addon_name:
+            if not config.get("type"):
+                raise AddonTypeMissingFromConfigError()
             addon_type = config["type"]
 
     if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
