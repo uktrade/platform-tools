@@ -39,6 +39,10 @@ class AddonNotFoundError(AWSError):
     pass
 
 
+class AddonTypeMissingFromConfigError(AWSError):
+    pass
+
+
 class InvalidAddonTypeError(AWSError):
     def __init__(self, addon_type):
         self.addon_type = addon_type
@@ -60,9 +64,11 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
 
     for name, config in addon_config.items():
         if name == addon_name:
+            if not config.get("type"):
+                raise AddonTypeMissingFromConfigError()
             addon_type = config["type"]
 
-    if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
+    if addon_type not in CONDUIT_ADDON_TYPES:
         raise InvalidAddonTypeError(addon_type)
 
     if "postgres" in addon_type:

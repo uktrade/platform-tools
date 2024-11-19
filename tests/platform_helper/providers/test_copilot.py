@@ -9,7 +9,9 @@ from moto import mock_aws
 
 from dbt_platform_helper.providers.aws import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import AddonNotFoundError
+from dbt_platform_helper.providers.copilot import AddonTypeMissingFromConfigError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
+from dbt_platform_helper.providers.copilot import InvalidAddonTypeError
 from dbt_platform_helper.providers.copilot import NoClusterError
 from dbt_platform_helper.providers.copilot import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import addon_client_is_running
@@ -605,7 +607,7 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
 )
 @patch("time.sleep", return_value=None)
 @patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=False)
-def test_connect_to_addon_client_task_when_timeout_reached(
+def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     addon_client_is_running, sleep, addon_type, mock_application
 ):
     """Test that, given app, env, ECS cluster ARN and addon type, when the
@@ -648,7 +650,7 @@ def test_get_addon_type(addon_name, expected_type, mock_application):
 
 
 @mock_aws
-def test_get_addon_type_when_addon_not_found(mock_application):
+def test_get_addon_type_with_not_found_throws_exception(mock_application):
     """Test that get_addon_type raises the expected error when the addon is not
     found in the config file."""
 
@@ -660,7 +662,7 @@ def test_get_addon_type_when_addon_not_found(mock_application):
 
 
 @mock_aws
-def test_get_addon_type_when_parameter_not_found(mock_application):
+def test_get_addon_type_with_parameter_not_found_throws_exception(mock_application):
     """Test that get_addon_type raises the expected error when the addon config
     parameter is not found."""
 
@@ -675,3 +677,39 @@ def test_get_addon_type_when_parameter_not_found(mock_application):
 
     with pytest.raises(ParameterNotFoundError):
         get_addon_type(ssm_client, mock_application.name, env, "custom-name-postgres")
+
+
+@mock_aws
+def test_get_addon_type_with_invalid_type_throws_exception(mock_application):
+    """Test that get_addon_type raises the expected error when the config
+    contains an invalid addon type."""
+
+    add_addon_config_parameter(param_value={"invalid-extension": {"type": "invalid"}})
+    ssm_client = mock_application.environments[env].session.client("ssm")
+
+    with pytest.raises(InvalidAddonTypeError):
+        get_addon_type(ssm_client, mock_application.name, env, "invalid-extension")
+
+
+@mock_aws
+def test_get_addon_type_with_blank_type_throws_exception(mock_application):
+    """Test that get_addon_type raises the expected error when the config
+    contains an empty addon type."""
+
+    add_addon_config_parameter(param_value={"blank-extension": {}})
+    ssm_client = mock_application.environments[env].session.client("ssm")
+
+    with pytest.raises(AddonTypeMissingFromConfigError):
+        get_addon_type(ssm_client, mock_application.name, env, "blank-extension")
+
+
+@mock_aws
+def test_get_addon_type_with_unspecified_type_throws_exception(mock_application):
+    """Test that get_addon_type raises the expected error when the config
+    contains an empty addon type."""
+
+    add_addon_config_parameter(param_value={"addon-type-unspecified": {"type": None}})
+    ssm_client = mock_application.environments[env].session.client("ssm")
+
+    with pytest.raises(AddonTypeMissingFromConfigError):
+        get_addon_type(ssm_client, mock_application.name, env, "addon-type-unspecified")
