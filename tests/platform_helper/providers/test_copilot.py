@@ -184,8 +184,62 @@ def test_create_redis_or_opensearch_addon_client_task(
     )
 
 
-@patch("dbt_platform_helper.providers.copilot.create_postgres_admin_task")
+@pytest.mark.parametrize(
+    "access",
+    [
+        "read",
+        "write",
+    ],
+)
+@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
 def test_create_postgres_addon_client_task(
+    get_connection_secret_arn,
+    access,
+):
+
+    addon_name = "custom-name-postgres"
+    addon_type = "postgres"
+    mock_application = Mock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": Mock()}
+    task_name = mock_task_name(addon_name)
+    mock_subprocess = Mock()
+
+    iam_client = mock_application.environments[env].session.client("iam")
+    ssm_client = mock_application.environments[env].session.client("ssm")
+    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
+
+    create_addon_client_task(
+        iam_client,
+        ssm_client,
+        secretsmanager_client,
+        mock_subprocess,
+        mock_application,
+        env,
+        "postgres",
+        addon_name,
+        task_name,
+        access,
+    )
+    secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
+    get_connection_secret_arn.assert_called_once_with(
+        ssm_client, secretsmanager_client, secret_name
+    )
+    mock_subprocess.call.assert_called()
+    mock_subprocess.call.assert_called_once_with(
+        f"copilot task run --app test-application --env {env} "
+        f"--task-group-name {task_name} "
+        f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
+        f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
+        "--secrets CONNECTION_SECRET=test-arn "
+        "--platform-os linux "
+        "--platform-arch arm64",
+        shell=True,
+    )
+
+
+@patch("dbt_platform_helper.providers.copilot.create_postgres_admin_task")
+def test_create_postgres_addon_client_task_admin(
     mock_create_postgres_admin_task,
     mock_application,
 ):
