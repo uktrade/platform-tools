@@ -103,15 +103,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
     )
 
     conduit.add_stack_delete_policy_to_task_role_fn.assert_called_once_with(
-        cloudformation_client,
-        iam_client,
-        app_name,
-        env,
-        addon_type,
-        addon_name,
-        task_name,
-        "parameter_name",
-        access,
+        cloudformation_client, iam_client, task_name
     )
     conduit.update_conduit_stack_resources_fn.assert_called_once_with(
         cloudformation_client,
