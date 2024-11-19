@@ -69,6 +69,8 @@ We use [Codecov](https://app.codecov.io/github/uktrade/platform-tools) to monito
 
 You may want to test any CLI changes locally.
 
+##### Option 1 - Build and install `platform-helper` from your local source code
+
 Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so. To bump the version go to `pyproject.toml/version`
 
 Copy the package file(s) to the directory where you would like to test your changes, and make sure you are in a virtual environment. Run `platform-helper --version` to check the installed package version (e.g. `0.1.39`).
