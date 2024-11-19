@@ -71,9 +71,6 @@ class Conduit:
 
         if not self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name):
             self.create_addon_client_task_fn(
-                clients["ecs"],
-                cluster_arn,
-                task_name,
                 clients["iam"],
                 clients["ssm"],
                 clients["secrets_manager"],

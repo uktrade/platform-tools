@@ -119,9 +119,6 @@ def test_conduit(app_name, addon_type, addon_name, access):
         access,
     )
     conduit.create_addon_client_task_fn.assert_called_once_with(
-        ecs_client,
-        cluster_name,
-        task_name,
         iam_client,
         ssm_client,
         secretsmanager_client,
