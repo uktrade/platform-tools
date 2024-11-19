@@ -129,4 +129,4 @@ class Conduit:
 
     def _update_stack_resources(self, cloudformation_client, iam_client, ssm_client, *args):
         self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, *args)
-        self.update_conduit_stack_resources_fn(cloudformation_client, *args)
+        self.update_conduit_stack_resources_fn(cloudformation_client, iam_client, ssm_client, *args)

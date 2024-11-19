@@ -115,6 +115,8 @@ def test_conduit(app_name, addon_type, addon_name, access):
     )
     conduit.update_conduit_stack_resources_fn.assert_called_once_with(
         cloudformation_client,
+        iam_client,
+        ssm_client,
         app_name,
         env,
         addon_type,

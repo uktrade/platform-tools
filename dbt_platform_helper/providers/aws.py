@@ -2,7 +2,6 @@ import json
 import urllib
 
 
-# TODO exceptions
 class AWSError(Exception):
     pass
 
@@ -11,7 +10,7 @@ class SecretNotFoundError(AWSError):
     pass
 
 
-# TODO extract some business knowledge
+# TODO Attempt to extract speicifc conduit business logic and leave the AWS specific functionality in provider layer
 def get_postgres_connection_data_updated_with_master_secret(
     ssm_client, secrets_manager_client, parameter_name, secret_arn
 ):

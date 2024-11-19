@@ -22,7 +22,6 @@ CONDUIT_ADDON_TYPES = [
 ]
 
 
-# TODO exceptions?
 class NoClusterError(AWSError):
     pass
 
@@ -77,10 +76,9 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
     return addon_type
 
 
-# TODO ECS method
+# TODO Refactor this to support passing a list of tags to check against, allowing for a more generic implementation
 def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
 
-    # TODO refactor
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)
         tags = tags_response["tags"]
