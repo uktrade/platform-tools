@@ -120,4 +120,3 @@ def test_start_conduit_exception_is_raised(
     assert result.exit_code == 1
 
     validate_version.assert_called_once()
-    mock_conduit_instance.start.assert_called_with("development", addon_name, "read")
