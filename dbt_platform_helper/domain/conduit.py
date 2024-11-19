@@ -127,6 +127,29 @@ class Conduit:
         if not self.addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
             self.create_addon_client_task_fn(*args)
 
-    def _update_stack_resources(self, cloudformation_client, iam_client, ssm_client, *args):
-        self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, *args)
-        self.update_conduit_stack_resources_fn(cloudformation_client, iam_client, ssm_client, *args)
+    def _update_stack_resources(
+        self,
+        cloudformation_client,
+        iam_client,
+        ssm_client,
+        app_name,
+        env,
+        addon_type,
+        addon_name,
+        task_name,
+        parameter_name,
+        access,
+    ):
+        self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, task_name)
+        self.update_conduit_stack_resources_fn(
+            cloudformation_client,
+            iam_client,
+            ssm_client,
+            app_name,
+            env,
+            addon_type,
+            addon_name,
+            task_name,
+            parameter_name,
+            access,
+        )
