@@ -500,6 +500,7 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
         ("postgres", "custom-name-rds-postgres"),
         ("redis", "custom-name-redis"),
         ("opensearch", "custom-name-opensearch"),
+        ("s3", "custon-name-s3"),
     ],
 )
 def test_get_parameter_name(access, addon_type, addon_name, mock_application):
