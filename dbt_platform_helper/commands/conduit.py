@@ -20,7 +20,7 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 @click.command(cls=ClickDocOptCommand)
 @click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="Application name", required=True)
-@click.option("--env", help="Service environment name", required=True)
+@click.option("--env", help="Environment name", required=True)
 @click.option(
     "--access",
     default="read",

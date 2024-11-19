@@ -275,7 +275,7 @@ platform-helper conduit <addon_name>
 - `--app <text>`
   - Application name
 - `--env <text>`
-  - Service environment name
+  - Environment name
 - `--access <choice>` _Defaults to read._
   - Allow read, write or admin access to the database addons.
 - `--help <boolean>` _Defaults to False._

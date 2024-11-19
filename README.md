@@ -83,6 +83,19 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-helper` installation back to what it was; e.g. `pip install dbt-platform-helper==0.1.39`.
 
+##### Option 2 - Run the python files directly.
+
+This assumes that the virtual python environment where you are running them from already has the dependencies installed and the directory is at the same level as your platform-tools directory.
+
+Example usage:
+
+```
+# From <application>-deploy
+
+../platform-tools/platform_helper.py <command> <options>
+```
+
+
 #### End to end testing
 
 Because this codebase is only fully exercised in conjunction with several others, we have [platform-end-to-end-tests](https://github.com/uktrade/platform-end-to-end-tests), which orchestrates the testing of them working together.
