@@ -2143,13 +2143,13 @@ dev = ["build", "pytest", "pytest-cov", "twine"]
 
 [[package]]
 name = "mutmut"
-version = "3.2.1"
+version = "3.2.2"
 description = "mutation testing for Python 3"
 optional = false
 python-versions = "*"
 files = [
-    {file = "mutmut-3.2.1-py3-none-any.whl", hash = "sha256:d9f64a4fc5e4d5c9e9fe73f11c4c54b0939bb84eb2f15a0c4a02f3231b76d622"},
-    {file = "mutmut-3.2.1.tar.gz", hash = "sha256:76cfed66dbe4d5502e66583e4e0c6c5bbf07399e20a5ea544d2462837de7bf92"},
+    {file = "mutmut-3.2.2-py3-none-any.whl", hash = "sha256:a548b1c443b62c8f1f66a3e601d6d98331d050db8bc47004bb583a0d6c491949"},
+    {file = "mutmut-3.2.2.tar.gz", hash = "sha256:db6d2e10c57226cb0525b10aa5e665a34587ae1f212eb521b40c57e97de1d2f6"},
 ]
 
 [package.dependencies]
@@ -3447,13 +3447,13 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "stevedore"
-version = "5.3.0"
+version = "5.4.0"
 description = "Manage dynamic plugins for Python applications"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "stevedore-5.3.0-py3-none-any.whl", hash = "sha256:1efd34ca08f474dad08d9b19e934a22c68bb6fe416926479ba29e5013bcc8f78"},
-    {file = "stevedore-5.3.0.tar.gz", hash = "sha256:9a64265f4060312828151c204efbe9b7a9852a0d9228756344dbc7e4023e375a"},
+    {file = "stevedore-5.4.0-py3-none-any.whl", hash = "sha256:b0be3c4748b3ea7b854b265dcb4caa891015e442416422be16f8b31756107857"},
+    {file = "stevedore-5.4.0.tar.gz", hash = "sha256:79e92235ecb828fe952b6b8b0c6c87863248631922c8e8e0fa5b17b232c4514d"},
 ]
 
 [package.dependencies]
@@ -3917,4 +3917,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1b4b2240f544bf0db626f913fc73eca7ec2c2efb108f26db57abac4edac4123f"
+content-hash = "8ab38ff166f455a82debd5a99eeffc679760e0a7b0e222abf46e77aa0fdecdd4"
