@@ -1,4 +1,5 @@
 import json
+import time
 
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
@@ -94,3 +95,15 @@ def update_conduit_stack_resources(
         Parameters=params,
         Capabilities=["CAPABILITY_IAM"],
     )
+
+    waiting_for_cloudformation = True
+    tries = 0
+    while waiting_for_cloudformation and tries < 60:
+        stacks = cloudformation_client.describe_stacks(
+            StackName=conduit_stack_name,
+        )["Stacks"]
+        if stacks and stacks[0]["StackStatus"] == "UPDATE_COMPLETE":
+            waiting_for_cloudformation = False
+        else:
+            tries += 1
+            time.sleep(1)

@@ -243,7 +243,7 @@ def connect_to_addon_client_task(
 ):
     running = False
     tries = 0
-    while tries < 30 and not running:
+    while tries < 15 and not running:
         tries += 1
         if addon_client_is_running(ecs_client, cluster_arn, task_name):
             running = True
