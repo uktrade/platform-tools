@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
 
@@ -140,13 +141,14 @@ def test_conduit(app_name, addon_type, addon_name, access):
         access,
     )
 
-    # conduit_mocks.echo_fn.assert_has_calls(
-    #     [
-    #         call(
-    #             "",
-    #         ),
-    #     ]
-    # )
+    conduit_mocks.echo_fn.assert_has_calls(
+        [
+            call("Creating conduit task"),
+            call("Updating conduit task"),
+            call("Waiting for conduit task update to complete..."),
+            call("Connecting to conduit task"),
+        ]
+    )
 
 
 def test_conduit_client_already_running():
@@ -171,6 +173,8 @@ def test_conduit_client_already_running():
     conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
     conduit.update_conduit_stack_resources_fn.assert_not_called()
     conduit.create_addon_client_task_fn.assert_not_called()
+
+    conduit_mocks.echo_fn.assert_called_once_with("Connecting to conduit task")
 
 
 def test_conduit_domain_when_no_cluster_exists():

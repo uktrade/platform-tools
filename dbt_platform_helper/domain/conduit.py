@@ -81,6 +81,7 @@ class Conduit:
         )
 
         if not self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name):
+            self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
                 clients["iam"],
                 clients["ssm"],
@@ -94,6 +95,7 @@ class Conduit:
                 access,
             )
 
+            self.echo_fn("Updating conduit task")
             self._update_stack_resources(
                 clients["cloudformation"],
                 clients["iam"],
@@ -106,6 +108,8 @@ class Conduit:
                 parameter_name,
                 access,
             )
+
+        self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(
             clients["ecs"], self.subprocess_fn, self.application.name, env, cluster_arn, task_name
         )
@@ -160,6 +164,7 @@ class Conduit:
             parameter_name,
             access,
         )
+        self.echo_fn("Waiting for conduit task update to complete...")
         self.wait_for_cloudformation_to_reach_status_fn(
             cloudformation_client, "stack_update_complete", stack_name
         )
