@@ -73,4 +73,4 @@ jobs:
 
       - name: Run mutation tests
         run: |
-          poetry run mutmut run "utils.*"
+          poetry run mutmut run
