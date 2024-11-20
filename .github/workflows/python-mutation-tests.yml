@@ -38,9 +38,9 @@ jobs:
       - name: Run mutation tests
         run: |
           # Todo: Drop the --force, it just here for easy local copy and paste
-          poetry run cosmic-ray init setup.cfg cosmic-ray.sqlite --force
+          poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
           echo "Initialised"
-          poetry run cosmic-ray --verbosity INFO exec setup.cfg cosmic-ray.sqlite
+          poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
 
       - name: Report results
         # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
