@@ -98,7 +98,7 @@ def update_conduit_stack_resources(
 
     waiting_for_cloudformation = True
     tries = 0
-    while waiting_for_cloudformation and tries < 60:
+    while waiting_for_cloudformation and tries < 20:
         stacks = cloudformation_client.describe_stacks(
             StackName=conduit_stack_name,
         )["Stacks"]
@@ -106,4 +106,4 @@ def update_conduit_stack_resources(
             waiting_for_cloudformation = False
         else:
             tries += 1
-            time.sleep(1)
+            time.sleep(5)

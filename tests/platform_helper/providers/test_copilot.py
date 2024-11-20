@@ -625,7 +625,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
         )
 
     addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name)
-    assert addon_client_is_running.call_count == 30
+    assert addon_client_is_running.call_count == 15
     mock_subprocess.call.assert_not_called()
 
 
