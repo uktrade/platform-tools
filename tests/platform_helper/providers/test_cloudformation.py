@@ -1,4 +1,5 @@
 import json
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
@@ -56,6 +57,10 @@ def test_update_conduit_stack_resources(
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
 
+    mock_return = Mock()
+    mock_waiter = Mock(return_value=mock_return)
+    cloudformation_client.get_waiter = mock_waiter
+
     update_conduit_stack_resources(
         cloudformation_client,
         iam_client,
@@ -84,6 +89,11 @@ def test_update_conduit_stack_resources(
     assert (
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
         == f"/copilot/conduit/{mock_application.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
+    )
+
+    mock_waiter.assert_called()
+    mock_return.wait.assert_called_with(
+        StackName=f"task-{task_name}", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
     )
 
 
