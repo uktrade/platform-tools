@@ -37,7 +37,6 @@ requests = "^2.31.0"
 prettytable = "^3.9.0"
 semver = "^3.0.2"
 tomlkit = "^0.12.2"
-checkov = "^3.1.67"
 slack-sdk = "^3.27.1"
 jsonschema = "~=4.17.0"
 cfn-lint = "^1.4.2"
@@ -54,6 +53,7 @@ parameterized = "^0.9.0"
 pytest-xdist = "^3.5.0"
 pytest-cov = "^6.0.0"
 cosmic-ray = "^8.4.1"
+mutmut = "^3.2.1"
 
 [build-system]
 requires = ["poetry-core"]
