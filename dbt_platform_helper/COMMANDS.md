@@ -222,7 +222,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the pipelines.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -231,6 +231,8 @@ platform-helper codebase build --app <application> --codebase <codebase>
 # platform-helper codebase deploy
 
 [↩ Parent](#platform-helper-codebase)
+
+    Trigger a CodePipeline pipeline based deployment.
 
 ## Usage
 
@@ -246,7 +248,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the pipelines.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -879,12 +881,12 @@ platform-helper version get-platform-helper-for-project
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
+platform-helper version get-platform-helper-for-project [--pipeline (main|test|prod-main)] 
 ```
 
 ## Options
 
-- `--pipeline <text>`
+- `--pipeline <choice>`
   - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -10,6 +10,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
@@ -20,7 +21,6 @@ from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
-from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -107,6 +107,8 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-data-migration-source-bucket-invalid-arn": r"source_bucket_arn must contain a valid ARN for an S3 bucket",
                 "my-s3-bucket-data-migration-source-kms-key-invalid-arn": r"source_kms_key_arn must contain a valid ARN for a KMS key",
                 "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-arn": r"role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
             },
         ),
         (
