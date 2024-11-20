@@ -1,0 +1,80 @@
+# {% extra_header %}
+# {% version_info %}
+# Buildspec runs in the build stage of your environment pipeline to generate the environment CloudFormation stack config.
+version: 0.2
+env:
+  variables:
+    DYFF_VERSION: 1.5.8
+phases:
+  install:
+    commands:
+      - cd $CODEBUILD_SRC_DIR
+      - |
+        if [ ! -f .copilot-version ]; then
+          echo "Cannot find .copilot-version file"
+          exit 1
+        fi
+      - COPILOT_VERSION=$(cat .copilot-version)
+      # Install pyyaml and dbt-platform-helper
+      - pip install PyYAML dbt-platform-helper
+      # Reinstall if we require a different version to the latest
+      - CURRENT_PLATFORM_HELPER_VERSION=$(platform-helper --version)
+      - export PLATFORM_HELPER_VERSION=$(platform-helper version get-platform-helper-for-project)
+      - |
+        if [ ! "${PLATFORM_HELPER_VERSION}" == "${CURRENT_PLATFORM_HELPER_VERSION}" ]
+        then
+          pip uninstall dbt-platform-helper
+          pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION
+        fi
+      - mkdir ./build-tools
+      - cd ./build-tools
+      # Install copilot
+      - wget -q "https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}"
+      - mv "./copilot-linux-v${COPILOT_VERSION}" ./copilot
+      - chmod +x ./copilot
+      # Install dyff - yaml differ
+      - wget -q "https://github.com/homeport/dyff/releases/download/v${DYFF_VERSION}/dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
+      - tar -zxvf "dyff_${DYFF_VERSION}_linux_amd64.tar.gz"
+      - chmod +x ./dyff
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR
+      - cp -r copilot/ current-copilot/
+      - platform-helper copilot make-addons
+      - >
+        for FILE in $(ls copilot/**/addons/*.yml); do
+          ./build-tools/dyff between --omit-header $FILE current-$FILE >> ./build-tools/file-differences
+        done;
+      - |
+        if [[ "$(cat ./build-tools/file-differences)" = *[![:space:]]* ]]; then
+          echo 'Changes are introduced with version ${PLATFORM_HELPER_VERSION} of platform-helper:'
+          echo
+          for FILE in $(ls copilot/**/addons/*.yml); do
+            echo "Changes in $FILE:"
+            ./build-tools/dyff between --omit-header $FILE current-$FILE
+          done;
+          echo
+          echo 'Ensure you are running version ${PLATFORM_HELPER_VERSION} with pip install dbt-platform-helper==${PLATFORM_HELPER_VERSION}'
+          echo 'And run platform-helper copilot make-addons to regenerate your addons templates'
+          exit 1
+        fi
+  post_build:
+    commands:
+      - git checkout -- .
+      - export COLOR="false"
+      - export CI="true"
+      - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/environments/manifest.yml | python -c 'import sys, json, yaml; print(json.dumps(yaml.safe_load(sys.stdin.read())))')
+      - stages=$(echo $pipeline | jq -r '.stages[].name')
+      # Generate the cloudformation templates.
+      - >
+        for env in $stages; do
+          ./build-tools/copilot env package -n $env --output-dir './infrastructure' --upload-assets --force;
+          if [ $? -ne 0 ]; then
+            echo "Cloudformation stack and config files were not generated. Please check build logs to see if there was a manifest validation error." 1>&2;
+            exit 1;
+          fi
+        done;
+      - ls -lah ./infrastructure
+artifacts:
+  files:
+    - "infrastructure/*"

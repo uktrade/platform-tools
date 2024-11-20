@@ -1,0 +1,26 @@
+# rules in this file are applied by default
+
+# Add the IP filter AppConfig policy to every service
+appconfig-ipfilter:
+  type: appconfig-ipfilter
+  services: __all__
+
+subscription-filter:
+  type: subscription-filter
+  services: __all__
+
+vpc:
+  type: vpc
+
+monitoring:
+  type: monitoring
+  environments:
+    "*":
+      enable_ops_center: false
+
+prometheus:
+  type: prometheus-policy
+  services: __all__
+  environments:
+    "*":
+      role_arn: arn:aws:iam::480224066791:role/amp-prometheus-role

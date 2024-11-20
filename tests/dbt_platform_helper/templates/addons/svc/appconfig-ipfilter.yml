@@ -1,0 +1,29 @@
+# {% extra_header %}
+# {% version_info %}
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+Resources:
+  appConfigAccessPolicy:
+    Metadata:
+      'aws:copilot:description': 'An IAM ManagedPolicy for your service to assume the AppConfig role from the tooling account'
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows the service to assume the AppConfig role
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: "arn:aws:iam::763451185160:role/AppConfigIpFilterRole"
+Outputs:
+  appConfigAccessPolicy:
+    Description: "The IAM::ManagedPolicy to attach to the task role"
+    Value: !Ref appConfigAccessPolicy

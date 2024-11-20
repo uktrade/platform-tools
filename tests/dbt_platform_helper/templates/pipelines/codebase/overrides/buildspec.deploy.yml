@@ -1,0 +1,29 @@
+version: 0.2
+env:
+  git-credential-helper: yes
+  parameter-store:
+    SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+  variables:
+    COLOR: false
+    CI: true
+phases:
+  build:
+    commands:
+      - echo "Copilot environment is ${COPILOT_ENVIRONMENT}"
+      - /work/cli deploy --send-notifications
+
+  post_build:
+    commands:
+      - |
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
+          echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
+          
+          echo -e "\nInstalling dependencies"
+          pip install dbt-platform-helper
+          
+          MESSAGE=":no_entry::construction: Build failure in codebuild project: <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|${BUILD_ID_PREFIX} - build ${CODEBUILD_BUILD_NUMBER}>"
+          
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "" "${MESSAGE}"
+        fi

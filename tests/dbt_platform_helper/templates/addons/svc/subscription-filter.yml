@@ -1,0 +1,26 @@
+# {% extra_header %}
+# {% version_info %}
+
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+
+Conditions:
+  CreateProdSubFilter: !Or [!Equals [!Ref Env, prod], !Equals [!Ref Env, production], !Equals [!Ref Env, PROD], !Equals [!Ref Env, PRODUCTION]]
+
+Resources:
+  SubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CWLtoSubscriptionFilterRole"
+      LogGroupName: !Sub "/copilot/${App}/${Env}/${Name}"
+      FilterName: !Sub "/copilot/${App}/${Env}/${Name}"
+      FilterPattern: ""
+      DestinationArn: !If [CreateProdSubFilter, '{{ log_destination.prod }}', '{{ log_destination.dev }}']

@@ -36,8 +36,8 @@ jobs:
           poetry install
 
       - name: Run mutation tests
+        # Todo: Drop the --force, it just here for easy local copy and paste
         run: |
-          # Todo: Drop the --force, it just here for easy local copy and paste
           poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
           echo "Initialised"
           poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
@@ -72,7 +72,10 @@ jobs:
           poetry install
 
       - name: Run mutation tests
+        # Todo: Remove hack to copy dbt_platform_helper before running clean tests
         run: |
+          mkdir mutants
+          cp -R dbt_platform_helper mutants
           poetry run mutmut run
 
       - name: Report results

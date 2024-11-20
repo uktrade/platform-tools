@@ -1,0 +1,66 @@
+# {% extra_header %}
+# {% version_info %}
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001 # Parameter not used
+
+Parameters:
+  # Copilot required Parameters...
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+
+Mappings:
+  {{ addon_config.prefix }}EnvironmentConfigMap:
+    # Create an entry for each environment
+{% for env_name, config in addon_config.environments.items() %}
+    {{ env_name }}:
+      BucketName: '{{ config.bucket_name }}'
+      KmsKeyArn: '{{ config.kms_key_arn }}'
+{% endfor %}
+
+Resources:
+  {{ addon_config.prefix }}S3AccessPolicy:
+    Metadata:
+      'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants Read access to the S3 bucket.
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: KMSDecryptAndGenerate
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, KmsKeyArn]
+          - Sid: S3ObjectActions
+            Effect: Allow
+            Action:
+{%- if addon_config.readonly %}
+              - s3:GetObject
+{% else %}
+              - s3:*Object
+{% endif %}
+            Resource: !Sub
+              - "arn:aws:s3:::${bucket_name}/*"
+              - bucket_name: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+          - Sid: S3ListAction
+            Effect: Allow
+            Action: s3:ListBucket
+            Resource: !Sub
+              - "arn:aws:s3:::${bucket_name}"
+              - bucket_name: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, BucketName]
+Outputs:
+  {{ addon_config.prefix }}AccessPolicy:
+    Description: "The IAM::ManagedPolicy to attach to the task role"
+    Value: !Ref {{ addon_config.prefix }}S3AccessPolicy

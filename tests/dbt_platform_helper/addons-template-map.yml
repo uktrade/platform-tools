@@ -1,0 +1,29 @@
+# This file maps addon types to svc level templates
+
+# explanation:
+
+# {addons-type}:
+#   svc:
+#     - template: path/to/template.yml
+
+redis: {}
+postgres: {}
+opensearch: {}
+s3:
+  svc:
+    - template: addons/svc/s3-policy.yml
+s3-policy:
+  svc:
+    - template: addons/svc/s3-policy.yml
+appconfig-ipfilter:
+  svc:
+    - template: addons/svc/appconfig-ipfilter.yml
+subscription-filter:
+  svc:
+    - template: addons/svc/subscription-filter.yml
+monitoring: {}
+vpc: {}
+alb: {}
+prometheus-policy:
+  svc:
+    - template: addons/svc/prometheus-policy.yml
