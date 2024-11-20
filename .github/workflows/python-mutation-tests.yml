@@ -71,14 +71,6 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: Run mutation tests but don't exit 1
-        run: |
-          poetry run mutmut run || true
-
       - name: Run mutation tests
         run: |
           poetry run mutmut run "utils.*"
-
-      - name: Report results
-        # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
-        run: poetry run mutmut results
