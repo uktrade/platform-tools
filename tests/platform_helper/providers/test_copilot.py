@@ -601,6 +601,22 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
     )
 
 
+# Todo: Implement this test
+# @patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=True)
+# def test_connect_to_addon_client_task_waits_for_command_agent(addon_client_is_running, mock_application):
+#     task_name = mock_task_name("postgres") # Addon type for this test does not matter
+#     ecs_client = mock_application.environments[env].session.client("ecs")
+#     mock_subprocess = Mock()
+#     # We want this to throw InvalidParameterException the first time, then behave as normal
+#
+#     connect_to_addon_client_task(
+#         ecs_client, mock_subprocess, mock_application.name, env, "test-arn", task_name
+#     )
+#
+#     # Assert "Unable to connect, execute command agent probably isn’t running yet" in output
+#     # If it doesn't bomb out with CreateTaskTimeoutError all is good
+
+
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
