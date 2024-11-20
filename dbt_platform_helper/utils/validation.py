@@ -365,11 +365,11 @@ CACHE_POLICY_DEFINITION = {
 }
 
 PATHS_DEFINITION = {
-    "default": {
+    Optional("default"): {
         "cache": str,
         "request": str,
     },
-    "additional": list[
+    Optional("additional"): list[
         {
             "path": str,
             "cache": str,
