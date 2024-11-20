@@ -95,6 +95,10 @@ def update_conduit_stack_resources(
         Capabilities=["CAPABILITY_IAM"],
     )
 
-    waiter = cloudformation_client.get_waiter("stack_create_complete")
+    return conduit_stack_name
 
-    waiter.wait(StackName=conduit_stack_name, WaiterConfig={"Delay": 5, "MaxAttempts": 20})
+
+def wait_for_cloudformation_to_reach_status(cloudformation_client, stack_status, stack_name):
+
+    waiter = cloudformation_client.get_waiter(stack_status)
+    waiter.wait(StackName=stack_name, WaiterConfig={"Delay": 5, "MaxAttempts": 20})
