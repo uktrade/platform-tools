@@ -608,7 +608,7 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
 @patch("time.sleep", return_value=None)
 @patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=False)
 def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
-    addon_client_is_running, sleep, addon_type, mock_application
+    addon_client_is_running, *sleep, addon_type, mock_application
 ):
     """Test that, given app, env, ECS cluster ARN and addon type, when the
     client agent fails to start, connect_to_addon_client_task calls
