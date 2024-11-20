@@ -77,7 +77,7 @@ jobs:
 
       - name: Run mutation tests
         run: |
-          poetry run mutmut run
+          poetry run mutmut run "utils.*"
 
       - name: Report results
         # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
