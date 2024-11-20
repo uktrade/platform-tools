@@ -71,11 +71,12 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: Run mutation tests
-        # Todo: Remove hack to copy dbt_platform_helper before running clean tests
+      - name: Run mutation tests but don't exit 1
         run: |
-          mkdir mutants
-          cp -R dbt_platform_helper mutants
+          poetry run mutmut run || true
+
+      - name: Run mutation tests
+        run: |
           poetry run mutmut run
 
       - name: Report results
