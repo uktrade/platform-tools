@@ -1,5 +1,7 @@
 import subprocess
 from collections.abc import Callable
+from datetime import datetime
+from time import sleep
 
 import click
 
@@ -165,6 +167,10 @@ class Conduit:
             access,
         )
         self.echo_fn("Waiting for conduit task update to complete...")
+        self.echo_fn(str(datetime.now()))
         self.wait_for_cloudformation_to_reach_status_fn(
             cloudformation_client, "stack_update_complete", stack_name
         )
+        self.echo_fn(str(datetime.now()))
+        sleep(1)
+        self.echo_fn(str(datetime.now()))
