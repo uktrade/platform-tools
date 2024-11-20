@@ -161,5 +161,5 @@ class Conduit:
             access,
         )
         self.wait_for_cloudformation_to_reach_status_fn(
-            cloudformation_client, "stack_udpate_complete", stack_name
+            cloudformation_client, "stack_update_complete", stack_name
         )
