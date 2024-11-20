@@ -7,11 +7,11 @@ on:
   # Todo; remove the push, they take to long
   push:
     branches:
-      - add-mutation-testing-with-cosmic-ray
+      - add-mutation-testing
 
 jobs:
-  tests:
-    name: Python mutation tests
+  cosmic-ray:
+    name: Python mutation tests - Cosmic Ray
     runs-on: ubuntu-latest
 
     strategy:
@@ -37,7 +37,6 @@ jobs:
 
       - name: Run mutation tests
         run: |
-          # Todo: Can we make it faster in GitHub Actions
           # Todo: Drop the --force, it just here for easy local copy and paste
           poetry run cosmic-ray init setup.cfg cosmic-ray.sqlite --force
           echo "Initialised"
@@ -46,5 +45,36 @@ jobs:
       - name: Report results
         # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
         run: poetry run cr-report cosmic-ray.sqlite --show-diff
-        env:
-          PYTHON_VERSION: ${{ matrix.python-version }}
+
+  mutmut:
+    name: Python mutation tests - mutmut
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Display Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run mutation tests
+        run: |
+          poetry run mutmut run
+
+      - name: Report results
+        # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
+        run: poetry run mutmut results
