@@ -1,5 +1,18 @@
 # Changelog
 
+## [12.1.0](https://github.com/uktrade/platform-tools/compare/12.0.2...12.1.0) (2024-11-21)
+
+
+### Features
+
+* DBTP-1380 Get Opensearch/Redis versions from AWS API - Platform-tools changes/Caching of AWS API calls ([#624](https://github.com/uktrade/platform-tools/issues/624)) ([72d0dd7](https://github.com/uktrade/platform-tools/commit/72d0dd70396a4632e5cb5b1f6c80b2df772a89ad))
+* DBTP-1434 - CDN cache policy ([#642](https://github.com/uktrade/platform-tools/issues/642)) ([8cc2c0c](https://github.com/uktrade/platform-tools/commit/8cc2c0caf137889115c9d84c1c9895dae2a808c9))
+
+
+### Reverts
+
+* DBTP-1520 refactor conduit command ([#647](https://github.com/uktrade/platform-tools/issues/647)) ([7b56c5e](https://github.com/uktrade/platform-tools/commit/7b56c5e1a4324fbfb2585877dd38c4857c1544cc))
+
 ## [12.0.2](https://github.com/uktrade/platform-tools/compare/12.0.1...12.0.2) (2024-11-13)
 
 
