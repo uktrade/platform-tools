@@ -258,8 +258,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 
 [↩ Parent](#platform-helper)
 
-    Opens a shell for a given addon_name create a conduit connection to
-    interact with postgres, opensearch or redis.
+    Create a conduit connection to an addon.
 
 ## Usage
 
@@ -275,11 +274,11 @@ platform-helper conduit <addon_name>
 ## Options
 
 - `--app <text>`
-  - Application name
+  - AWS application name
 - `--env <text>`
-  - Environment name
+  - AWS environment name
 - `--access <choice>` _Defaults to read._
-  - Allow read, write or admin access to the database addons.
+  - Allow write or admin access to database addons
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
