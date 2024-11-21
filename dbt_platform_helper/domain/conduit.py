@@ -61,6 +61,7 @@ class Conduit:
         Args:
             application(Application): an object with the data of the deployed application
             subprocess_fn: inject the subprocess function to call and execute shell commands
+            echo_fn: a function to echo messages too
             addon_client_is_running_fn: inject the function which will check if a conduit instance to the addon is running
             connect_to_addon_client_task_fn: inject the function used to connect to the conduit instance,
             create_addon_client_task_fn: inject the function used to create the conduit task to connect too
