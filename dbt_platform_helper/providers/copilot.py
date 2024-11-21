@@ -5,7 +5,6 @@ import time
 
 import click
 from botocore.exceptions import ClientError
-from moto.cognitoidp.exceptions import InvalidParameterException
 
 from dbt_platform_helper.providers.aws import AWSError
 from dbt_platform_helper.providers.aws import get_connection_secret_arn
@@ -257,7 +256,7 @@ def connect_to_addon_client_task(
                     shell=True,
                 )
                 running = True
-            except InvalidParameterException:
+            except ecs_client.exceptions.InvalidParameterException:
                 # Unable to connect, execute command agent probably isn’t running yet
                 click.echo("Unable to connect, execute command agent probably isn’t running yet")
 
