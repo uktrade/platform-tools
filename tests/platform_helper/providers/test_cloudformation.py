@@ -1,4 +1,5 @@
 import json
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
@@ -10,6 +11,9 @@ from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
 from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
+from dbt_platform_helper.providers.cloudformation import (
+    wait_for_cloudformation_to_reach_status,
+)
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -132,3 +136,19 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
 
     assert policy_name == "DeleteCloudFormationStack"
     assert policy_document == mock_policy
+
+
+def test_wait_for_cloudformation_to_reach_status():
+
+    cloudformation_client = Mock()
+    mock_return = Mock()
+    mock_waiter = Mock(return_value=mock_return)
+    cloudformation_client.get_waiter = mock_waiter
+
+    wait_for_cloudformation_to_reach_status(
+        cloudformation_client, "stack_update_complete", "task-stack-name"
+    )
+    mock_waiter.assert_called()
+    mock_return.wait.assert_called_with(
+        StackName="task-stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
+    )

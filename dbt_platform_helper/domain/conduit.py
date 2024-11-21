@@ -1,9 +1,16 @@
 import subprocess
+from collections.abc import Callable
+
+import click
 
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
 from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
+from dbt_platform_helper.providers.cloudformation import (
+    wait_for_cloudformation_to_reach_status,
+)
+from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
@@ -19,6 +26,7 @@ class Conduit:
     def __init__(
         self,
         application: Application,
+        echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
         addon_client_is_running_fn=addon_client_is_running,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
@@ -30,10 +38,12 @@ class Conduit:
         get_or_create_task_name_fn=get_or_create_task_name,
         add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=update_conduit_stack_resources,
+        wait_for_cloudformation_to_reach_status_fn=wait_for_cloudformation_to_reach_status,
     ):
 
         self.application = application
         self.subprocess_fn = subprocess_fn
+        self.echo_fn = echo_fn
         self.addon_client_is_running_fn = addon_client_is_running_fn
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
         self.create_addon_client_task_fn = create_addon_client_task_fn
@@ -44,13 +54,15 @@ class Conduit:
         self.get_or_create_task_name_fn = get_or_create_task_name_fn
         self.add_stack_delete_policy_to_task_role_fn = add_stack_delete_policy_to_task_role_fn
         self.update_conduit_stack_resources_fn = update_conduit_stack_resources_fn
-
-    """
+        self.wait_for_cloudformation_to_reach_status_fn = wait_for_cloudformation_to_reach_status_fn
+        """
         Initialise a conduit domain which can be used to spin up a conduit
         instance to connect to a service.
+
         Args:
             application(Application): an object with the data of the deployed application
             subprocess_fn: inject the subprocess function to call and execute shell commands
+            echo_fn: a function to echo messages too
             addon_client_is_running_fn: inject the function which will check if a conduit instance to the addon is running
             connect_to_addon_client_task_fn: inject the function used to connect to the conduit instance,
             create_addon_client_task_fn: inject the function used to create the conduit task to connect too
@@ -61,7 +73,8 @@ class Conduit:
             get_or_create_task_name_fn: inject the function used to get an existing conduit task or generate a new task
             add_stack_delete_policy_to_task_role_fn: inject the function used to create the delete task permission in cloudformation
             update_conduit_stack_resources_fn: inject the function used to add the conduit instance into the cloudformation stack
-    """
+            wait_for_cloudformation_to_reach_status_fn: inject waiter function for cloudformation
+        """
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
@@ -70,6 +83,7 @@ class Conduit:
         )
 
         if not self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name):
+            self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
                 clients["iam"],
                 clients["ssm"],
@@ -83,6 +97,7 @@ class Conduit:
                 access,
             )
 
+            self.echo_fn("Updating conduit task")
             self._update_stack_resources(
                 clients["cloudformation"],
                 clients["iam"],
@@ -95,6 +110,8 @@ class Conduit:
                 parameter_name,
                 access,
             )
+
+        self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(
             clients["ecs"], self.subprocess_fn, self.application.name, env, cluster_arn, task_name
         )
@@ -137,7 +154,7 @@ class Conduit:
         access,
     ):
         self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, task_name)
-        self.update_conduit_stack_resources_fn(
+        stack_name = self.update_conduit_stack_resources_fn(
             cloudformation_client,
             iam_client,
             ssm_client,
@@ -148,4 +165,8 @@ class Conduit:
             task_name,
             parameter_name,
             access,
+        )
+        self.echo_fn("Waiting for conduit task update to complete...")
+        self.wait_for_cloudformation_to_reach_status_fn(
+            cloudformation_client, "stack_update_complete", stack_name
         )
