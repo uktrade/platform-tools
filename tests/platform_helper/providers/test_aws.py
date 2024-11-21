@@ -14,6 +14,7 @@ env = "development"
 @mock_aws
 def test_update_postgres_parameter_with_master_secret():
     session = boto3.session.Session()
+
     parameter_name = "test-parameter"
     ssm_client = session.client("ssm")
     secretsmanager_client = session.client("secretsmanager")
