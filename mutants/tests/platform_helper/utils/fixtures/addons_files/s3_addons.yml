@@ -1,0 +1,61 @@
+my-s3-bucket:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+    - "other"
+  environments:
+    default:
+      bucket_name: my-bucket-default
+      retention_policy:
+        mode: COMPLIANCE
+        days: 10
+    development:
+      bucket_name: my-bucket-dev
+      retention_policy:
+    prod:
+      bucket_name: my-bucket-prod
+      retention_policy:
+        mode: GOVERNANCE
+        years: 1
+      versioning: true
+
+my-s3-bucket-with-an-object:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket_name: my-bucket-dev
+      deletion_policy: Delete
+  objects:
+    - key: healthcheck.txt
+      body: |
+        HEALTHCHECK WORKS!
+    - key: empty.txt
+
+my-s3-bucket-with-a-lifecycle-rule:
+  type: s3
+  readonly: true
+  services:
+    - "web"
+  environments:
+    development:
+      bucket_name: my-bucket-dev
+      lifecycle_rules:
+        - filter_prefix: "bananas/"
+          expiration_days: 10
+          enabled: true
+
+my-s3-bucket-with-data-migration:
+  type: s3
+  environments:
+    dev:
+      bucket_name: s3-data-migration
+      versioning: false
+      data_migration:
+        import: 
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role

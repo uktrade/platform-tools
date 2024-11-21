@@ -1,0 +1,5 @@
+##### Unsupported example:
+
+my-unsupported-addon:
+  type: unsupported_addon
+  version: 14.4

@@ -1,0 +1,12 @@
+extensions:
+  ##### Redis example:
+
+  my-redis:
+    type: redis
+
+    environments:
+      default:
+        engine: '6.2'
+        # available engine versions: https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
+
+        plan: small  # The redis plan defines the instance type and number of replicas. HA instances require 1 or more replicas. See addon-plans.yaml.

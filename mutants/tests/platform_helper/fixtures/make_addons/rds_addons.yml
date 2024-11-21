@@ -1,0 +1,16 @@
+extensions:
+  ##### RDS postgres example:
+
+  my-rds-db:
+    type: postgres
+    version: 14.4
+
+    environments:
+      default:
+        plan: small
+        snapshot_id: test-snapshot-id
+
+      production:
+        plan: large-ha
+        snapshot_id: ""
+        iops: 1000

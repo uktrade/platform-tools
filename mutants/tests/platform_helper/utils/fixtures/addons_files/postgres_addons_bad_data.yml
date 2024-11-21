@@ -1,0 +1,109 @@
+##### RDS postgres example:
+
+my-rds-db-invalid-param:
+  type: postgres
+  version: 14.4
+  im_invalid: true
+
+my-rds-db-missing-version:
+  type: postgres
+
+my-rds-db-bad-deletion-policy:
+  type: postgres
+  version: 14.4
+  deletion_policy: 77
+
+my-rds-db-bad-plan:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      plan: cunning
+
+my-rds-db-volume-too-small:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: 1
+
+my-rds-db-volume-too-big:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: 8000000
+
+my-rds-db-volume-not-an-int:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      volume_size: two hundred
+
+my-rds-db-snapshot_id_should_be_a_str:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      snapshot_id: false
+
+my-rds-db-invalid-policy:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      deletion_policy: "None"
+
+my-rds-db-protection-should-be-bool:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      deletion_protection: 12
+
+my-rds-multi_az-should-be-bool:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      multi_az: 10
+
+my-rds-storage_type-should-valid-option:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      storage_type: "floppydisc"
+
+my-rds-backup-retention-too-high:
+  type: postgres
+  version: 14.4
+  environments:
+    default:
+      backup_retention_days: 36
+
+my-rds-data-migration-invalid-key:
+  type: postgres
+  version: 14.4
+  environments:
+    prod: {}
+  database_copy:
+    - from: prod
+      non-existent-key: hotfix
+      to: dev
+
+my-rds-data-migration-missing-key:
+  type: postgres
+  version: 14.4
+  environments:
+    prod: {}
+  database_copy:
+    - from: prod
+
+my-rds-data-migration-invalid-environments:
+  type: postgres
+  version: 14.4
+  database_copy:
+    - from: $
+      to: £

@@ -1,0 +1,26 @@
+- op: replace
+  path: /Resources/LogGroup/Properties/LogGroupName
+  value: !Sub '/copilot/${AppName}/${EnvName}/${WorkloadName}'
+
+- op: add
+  path: /Resources/TaskDefinition/Properties/ContainerDefinitions/0/MountPoints
+  value:
+    - ContainerPath: /tmp
+      SourceVolume: temporary-fs
+
+- op: add
+  path: /Resources/TaskDefinition/Properties/Volumes
+  value:
+    - Name: temporary-fs
+
+- op: add
+  path: /Resources/ExecutionRole/Properties/Policies/0/PolicyDocument/Statement/4
+  value:
+    Effect: 'Allow'
+    Action:
+      - 'ssm:GetParameters'
+    Resource:
+      - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*'
+    Condition:
+      StringEquals:
+          'ssm:ResourceTag/copilot-application': '__all__'

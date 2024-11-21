@@ -1,0 +1,27 @@
+application: my-app
+legacy_project: true
+accounts:
+  - 111111111
+  - 222222222
+
+environments:
+  dev:
+  prod:
+    requires_approval: true
+
+codebase_pipelines:
+  - name: application
+    repository: organisation/repository
+    services:
+      - web
+    pipelines:
+      - name: main
+        branch: main
+        environments:
+          - name: dev
+      - name: tagged
+        tag: true
+        environments:
+          - name: staging
+          - name: prod
+            requires_approval: true

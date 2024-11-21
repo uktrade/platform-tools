@@ -1,5 +1,3 @@
-# {% extra_header %}
-# {% version_info %}
 Parameters:
   App:
     Type: String
@@ -12,12 +10,14 @@ Parameters:
     Description: The name of the service, job, or workflow being deployed.
 
 Mappings:
-  {{ addon_config.prefix }}EnvironmentConfigMap:
+  prometheusTestEnvironmentConfigMap:
     # Create an entry for each environment
-{% for env_name, config in addon_config.environments.items() %}
-    {{ env_name }}:
-      RoleArn: '{{ config.role_arn }}'
-{% endfor %}
+
+    development:
+      RoleArn: 'dev-prometheus-role-arn'
+
+    production:
+      RoleArn: 'prod-prometheus-role-arn'
 
 Resources:
   PromCrossAccountPolicy:
@@ -29,7 +29,7 @@ Resources:
           - Effect: Allow
             Action:
               - sts:AssumeRole
-            Resource: !FindInMap [{{ addon_config.prefix }}EnvironmentConfigMap, !Ref Env, RoleArn]
+            Resource: !FindInMap [prometheusTestEnvironmentConfigMap, !Ref Env, RoleArn]
 Outputs:
   AMPAccessPolicyArn:
     Description: "Allow the task to assume the prometheus writer role in the central account"

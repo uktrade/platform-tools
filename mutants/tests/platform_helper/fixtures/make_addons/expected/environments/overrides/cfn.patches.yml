@@ -1,0 +1,7 @@
+# Set ECS Cluster name so that we can reference it in Terraform without using an external data source
+- op: add
+  path: /Resources/Cluster/Properties/ClusterName
+  value: !Sub '${AppName}-${EnvironmentName}'
+
+- op: remove
+  path: /Resources/LogResourcePolicy
