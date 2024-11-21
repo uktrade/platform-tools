@@ -285,7 +285,6 @@ EXTERNAL_ROLE_ACCESS_NAME = Regex(
     error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
 )
 
-
 DATA_IMPORT = {
     Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
     "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
