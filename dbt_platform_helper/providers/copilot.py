@@ -247,6 +247,8 @@ def connect_to_addon_client_task(
     while tries < 15 and not running:
         tries += 1
         if addon_client_is_running(ecs_client, cluster_arn, task_name):
+            # TODO user ecs.describe_task to check if exec agent is running before call subprocess
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/describe_tasks.html
             try:
                 subprocess.call(
                     "copilot task exec "
