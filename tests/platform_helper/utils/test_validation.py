@@ -10,6 +10,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import int_between
@@ -20,7 +21,6 @@ from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from dbt_platform_helper.utils.validation import validate_s3_bucket_name
 from dbt_platform_helper.utils.validation import validate_string
-from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -228,6 +228,19 @@ def test_validate_addons_success(addons_file):
                 "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cache-policy-min-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-max-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-default-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-cookies-config-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-cookies-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cache-policy-header-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-headers-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cache-policy-query-string-behavior-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-cache-policy-query-strings-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-origin-request-policy-should-be-a-dict": r"environments.*dev.*should be instance of 'dict'",
+                "my-alb-paths-default-cache-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-paths-default-request-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-paths-additional-should-be-a-list": r"environments.*dev.*raised TypeError",
             },
         ),
     ],

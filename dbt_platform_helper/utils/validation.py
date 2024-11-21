@@ -352,6 +352,32 @@ OPENSEARCH_DEFINITION = {
     },
 }
 
+CACHE_POLICY_DEFINITION = {
+    "min_ttl": int,
+    "max_ttl": int,
+    "default_ttl": int,
+    "cookies_config": Or("none", "whitelist", "allExcept", "all"),
+    "header": Or("none", "whitelist"),
+    "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
+    Optional("cookie_list"): list,
+    Optional("headers_list"): list,
+    Optional("cache_policy_query_strings"): list,
+}
+
+PATHS_DEFINITION = {
+    Optional("default"): {
+        "cache": str,
+        "request": str,
+    },
+    Optional("additional"): list[
+        {
+            "path": str,
+            "cache": str,
+            "request": str,
+        }
+    ],
+}
+
 ALB_DEFINITION = {
     "type": "alb",
     Optional("environments"): {
@@ -380,6 +406,9 @@ ALB_DEFINITION = {
                 Optional("viewer_certificate_minimum_protocol_version"): str,
                 Optional("viewer_certificate_ssl_support_method"): str,
                 Optional("viewer_protocol_policy"): str,
+                Optional("cache_policy"): dict({str: CACHE_POLICY_DEFINITION}),
+                Optional("origin_request_policy"): dict({str: {}}),
+                Optional("paths"): dict({str: PATHS_DEFINITION}),
             },
             None,
         )
@@ -522,7 +551,6 @@ def validate_platform_config(config):
 def _validate_extension_supported_versions(
     config, extension_type, version_key, get_supported_versions_fn
 ):
-
     extensions = config.get("extensions", {})
     if not extensions:
         return
