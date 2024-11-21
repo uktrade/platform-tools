@@ -1,6 +1,0 @@
-PLATFORM_CONFIG_FILE = "platform-config.yml"
-PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
-CODEBASE_PIPELINES_KEY = "codebase_pipelines"
-ENVIRONMENTS_KEY = "environments"
-DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "5"
-PLATFORM_HELPER_CACHE_FILE = ".platform-helper-config-cache.yml"
