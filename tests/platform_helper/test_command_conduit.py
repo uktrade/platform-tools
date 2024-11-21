@@ -5,12 +5,13 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.conduit import conduit
-from dbt_platform_helper.providers.aws import SecretNotFoundError
-from dbt_platform_helper.providers.copilot import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
+from dbt_platform_helper.exceptions import InvalidAddonTypeError
+from dbt_platform_helper.exceptions import NoClusterError
+from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
-from dbt_platform_helper.providers.copilot import InvalidAddonTypeError
-from dbt_platform_helper.providers.copilot import NoClusterError
-from dbt_platform_helper.providers.copilot import ParameterNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 
 
 @pytest.mark.parametrize(
@@ -79,6 +80,11 @@ def test_start_conduit(mock_application, mock_conduit_object, addon_name, valida
             InvalidAddonTypeError,
             {"addon_type": "fake-postgres"},
             """Addon type "fake-postgres" is not supported, we support: opensearch, postgres, redis.""",
+        ),
+        (
+            AddonTypeMissingFromConfigError,
+            {},
+            """The configuration for the addon important-db, is missconfigured and missing the addon type.""",
         ),
     ],
 )
