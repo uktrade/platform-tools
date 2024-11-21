@@ -1,0 +1,5 @@
+.git
+.playwright-browsers
+node_modules
+poetry.lock
+venv

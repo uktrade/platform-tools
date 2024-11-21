@@ -13,7 +13,6 @@ from tests.platform_helper.conftest import add_addon_config_parameter
     "addon_type, addon_name",
     [
         ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
         ("redis", "custom-name-redis"),
         ("opensearch", "custom-name-opensearch"),
     ],
@@ -186,7 +185,7 @@ def test_conduit_command_when_addon_type_is_invalid(start_conduit, secho, valida
     validate_version.assert_called_once()
     start_conduit.assert_not_called()
     secho.assert_called_once_with(
-        """Addon type "nope" is not supported, we support: opensearch, rds-postgres, aurora-postgres, postgres, redis.""",
+        """Addon type "nope" is not supported, we support: opensearch, postgres, redis.""",
         fg="red",
     )
 

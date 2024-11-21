@@ -4,13 +4,6 @@
 - [platform-helper application](#platform-helper-application)
 - [platform-helper application container-stats](#platform-helper-application-container-stats)
 - [platform-helper application task-stats](#platform-helper-application-task-stats)
-- [platform-helper cdn](#platform-helper-cdn)
-- [platform-helper cdn assign](#platform-helper-cdn-assign)
-- [platform-helper cdn delete](#platform-helper-cdn-delete)
-- [platform-helper cdn list](#platform-helper-cdn-list)
-- [platform-helper check-cloudformation](#platform-helper-check-cloudformation)
-- [platform-helper check-cloudformation lint](#platform-helper-check-cloudformation-lint)
-- [platform-helper check-cloudformation check-security](#platform-helper-check-cloudformation-check-security)
 - [platform-helper codebase](#platform-helper-codebase)
 - [platform-helper codebase prepare](#platform-helper-codebase-prepare)
 - [platform-helper codebase list](#platform-helper-codebase-list)
@@ -22,9 +15,6 @@
 - [platform-helper config aws](#platform-helper-config-aws)
 - [platform-helper copilot](#platform-helper-copilot)
 - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
-- [platform-helper domain](#platform-helper-domain)
-- [platform-helper domain configure](#platform-helper-domain-configure)
-- [platform-helper domain assign](#platform-helper-domain-assign)
 - [platform-helper environment](#platform-helper-environment)
 - [platform-helper environment offline](#platform-helper-environment-offline)
 - [platform-helper environment online](#platform-helper-environment-online)
@@ -42,6 +32,7 @@
 - [platform-helper database](#platform-helper-database)
 - [platform-helper database dump](#platform-helper-database-dump)
 - [platform-helper database load](#platform-helper-database-load)
+- [platform-helper database copy](#platform-helper-database-copy)
 - [platform-helper version](#platform-helper-version)
 - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
@@ -63,14 +54,11 @@ platform-helper <command> [--version]
 ## Commands
 
 - [`application` ↪](#platform-helper-application)
-- [`cdn` ↪](#platform-helper-cdn)
-- [`check-cloudformation` ↪](#platform-helper-check-cloudformation)
 - [`codebase` ↪](#platform-helper-codebase)
 - [`conduit` ↪](#platform-helper-conduit)
 - [`config` ↪](#platform-helper-config)
 - [`copilot` ↪](#platform-helper-copilot)
 - [`database` ↪](#platform-helper-database)
-- [`domain` ↪](#platform-helper-domain)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`notify` ↪](#platform-helper-notify)
@@ -82,7 +70,7 @@ platform-helper <command> [--version]
 
 [↩ Parent](#platform-helper)
 
-    Application metrics.
+    [DEPRECATED] Application metrics.
 
 ## Usage
 
@@ -104,7 +92,7 @@ platform-helper application (container-stats|task-stats)
 
 [↩ Parent](#platform-helper-application)
 
-    Command to get application container level metrics.
+    [DEPRECATED] Command to get application container level metrics.
 
 ## Usage
 
@@ -130,7 +118,7 @@ platform-helper application container-stats --env <environment> --app <applicati
 
 [↩ Parent](#platform-helper-application)
 
-    Command to get application task level metrics.
+    [DEPRECATED] Command to get application task level metrics.
 
 ## Usage
 
@@ -150,171 +138,6 @@ platform-helper application task-stats --env <environment> --app <application> [
 - `--storage <boolean>` _Defaults to False._
 
 - `--network <boolean>` _Defaults to False._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn
-
-[↩ Parent](#platform-helper)
-
-## Usage
-
-```
-platform-helper cdn (assign|delete|list) 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`assign` ↪](#platform-helper-cdn-assign)
-- [`delete` ↪](#platform-helper-cdn-delete)
-- [`list` ↪](#platform-helper-cdn-list)
-
-# platform-helper cdn assign
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn assign --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn delete
-
-[↩ Parent](#platform-helper-cdn)
-
-    Assigns a CDN domain name to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn delete --project-profile <project_profile> --env <environment> 
-                           --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper cdn list
-
-[↩ Parent](#platform-helper-cdn)
-
-    List CDN domain name attached to application loadbalancer.
-
-## Usage
-
-```
-platform-helper cdn list --project-profile <project_profile> --env <environment> 
-                         --app <application> --svc <service> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--app <text>`
-  - Application Name
-- `--svc <text>`
-  - Service Name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper check-cloudformation
-
-[↩ Parent](#platform-helper)
-
-    Runs the checks passed in the command arguments.
-
-    If no argument is passed, it will run all the checks.
-
-## Usage
-
-```
-platform-helper check-cloudformation (lint|check-security) 
-                                     [-d <directory>] 
-```
-
-## Options
-
-- `-d
---directory <text>` _Defaults to copilot._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`check-security` ↪](#platform-helper-check-cloudformation-check-security)
-- [`lint` ↪](#platform-helper-check-cloudformation-lint)
-
-# platform-helper check-cloudformation lint
-
-[↩ Parent](#platform-helper-check-cloudformation)
-
-    Runs cfn-lint against the generated CloudFormation templates.
-
-## Usage
-
-```
-platform-helper check-cloudformation lint [-d <directory>] 
-```
-
-## Options
-
-- `-d
---directory <text>` _Defaults to copilot._
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper check-cloudformation check-security
-
-[↩ Parent](#platform-helper-check-cloudformation)
-
-## Usage
-
-```
-platform-helper check-cloudformation check-security [-d <directory>] 
-```
-
-## Options
-
-- `-d
---directory <text>` _Defaults to copilot._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -399,7 +222,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - The codebase name as specified in the pipelines.yml file
+  - The codebase name as specified in the platform-config.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -408,8 +231,6 @@ platform-helper codebase build --app <application> --codebase <codebase>
 # platform-helper codebase deploy
 
 [↩ Parent](#platform-helper-codebase)
-
-    Trigger a CodePipeline pipeline based deployment.
 
 ## Usage
 
@@ -425,7 +246,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - The codebase name as specified in the pipelines.yml file
+  - The codebase name as specified in the platform-config.yml file
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -554,77 +375,6 @@ platform-helper copilot make-addons
 
 ## Options
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper domain
-
-[↩ Parent](#platform-helper)
-
-## Usage
-
-```
-platform-helper domain (configure|assign) 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`assign` ↪](#platform-helper-domain-assign)
-- [`configure` ↪](#platform-helper-domain-configure)
-
-# platform-helper domain configure
-
-[↩ Parent](#platform-helper-domain)
-
-    Creates subdomains if they do not exist and then creates certificates for
-    them.
-
-## Usage
-
-```
-platform-helper domain configure --project-profile <project_profile> 
-                                 --env <environment> 
-```
-
-## Options
-
-- `--project-profile <text>`
-  - AWS account profile name for certificates account
-- `--env <text>`
-  - AWS Copilot environment name
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper domain assign
-
-[↩ Parent](#platform-helper-domain)
-
-    Assigns the load balancer for a service to its domain name.
-
-## Usage
-
-```
-platform-helper domain assign --app <application> --env <environment> --svc <service> 
-                              --domain-profile (dev|live) --project-profile <project_profile> 
-```
-
-## Options
-
-- `--app <text>`
-  - Application Name
-- `--env <text>`
-  - Environment
-- `--svc <text>`
-  - Service Name
-- `--domain-profile <choice>`
-  - AWS account profile name for Route53 domains account
-- `--project-profile <text>`
-  - AWS account profile name for application account
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -792,14 +542,36 @@ platform-helper pipeline generate
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
 
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+
+    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
+    - Generates the copilot manifest.yml for copilot/environments/<environment>
+
 ## Usage
 
 ```
-platform-helper pipeline generate 
+platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+                                  [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
+- `--terraform-platform-modules-version <text>`
+  - Override the default version of terraform-platform-modules with a specific version or branch. 
+Precedence of version used is version supplied via CLI, then the version found in 
+platform-config.yml/default_versions/terraform-platform-modules. 
+In absence of these inputs, defaults to version '5'.
+- `--deploy-branch <text>`
+  - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
+This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
+(Default <application>-deploy branch is specified in 
+<application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -962,10 +734,12 @@ platform-helper notify add-comment <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper)
 
+    Commands to copy data between databases.
+
 ## Usage
 
 ```
-platform-helper database (dump|load) 
+platform-helper database (dump|load|copy) 
 ```
 
 ## Options
@@ -975,6 +749,7 @@ platform-helper database (dump|load)
 
 ## Commands
 
+- [`copy` ↪](#platform-helper-database-copy)
 - [`dump` ↪](#platform-helper-database-dump)
 - [`load` ↪](#platform-helper-database-load)
 
@@ -987,23 +762,20 @@ platform-helper database (dump|load)
 ## Usage
 
 ```
-platform-helper database dump --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database dump --from <from_env> --database <database> 
+                              [--app <application>] [--from-vpc <from_vpc>] 
 ```
 
 ## Options
 
-- `--account-id <text>`
-
 - `--app <text>`
-
-- `--env <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are dumping data from
 - `--database <text>`
-
-- `--vpc-name <text>`
-
+  - The name of the database you are dumping data from
+- `--from-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -1016,22 +788,62 @@ platform-helper database dump --account-id <account_id> --app <application>
 ## Usage
 
 ```
-platform-helper database load --account-id <account_id> --app <application> 
-                              --env <environment> --database <database> 
-                              --vpc-name <vpc_name> 
+platform-helper database load --to <to_env> --database <database> 
+                              [--app <application>] [--to-vpc <to_vpc>] 
+                              [--auto-approve] 
 ```
 
 ## Options
 
-- `--account-id <text>`
+- `--app <text>`
+  - The application name. Required unless you are running the command from your deploy repo
+- `--to <text>`
+  - The environment you are loading data into
+- `--database <text>`
+  - The name of the database you are loading data into
+- `--to-vpc <text>`
+  - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper database copy
+
+[↩ Parent](#platform-helper-database)
+
+    Copy a database between environments.
+
+## Usage
+
+```
+platform-helper database copy --from <from_env> --to <to_env> --database <database> 
+                              --svc <service> [--app <application>] [--from-vpc <from_vpc>] 
+                              [--to-vpc <to_vpc>] [--template (default|migration|dmas-migration)] 
+                              [--auto-approve] [--no-maintenance-page] 
+```
+
+## Options
 
 - `--app <text>`
-
-- `--env <text>`
-
+  - The application name. Required unless you are running the command from your deploy repo
+- `--from <text>`
+  - The environment you are copying data from
+- `--to <text>`
+  - The environment you are copying data into
 - `--database <text>`
+  - The name of the database you are copying
+- `--from-vpc <text>`
+  - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
+- `--to-vpc <text>`
+  - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
+- `--auto-approve <boolean>` _Defaults to False._
 
-- `--vpc-name <text>`
+- `--svc <text>` _Defaults to ['web']._
+
+- `--template <choice>` _Defaults to default._
+  - The maintenance page you wish to put up.
+- `--no-maintenance-page <boolean>` _Defaults to False._
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -1067,12 +879,12 @@ platform-helper version get-platform-helper-for-project
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline (main|test|prod-main)] 
+platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
 ```
 
 ## Options
 
-- `--pipeline <choice>`
+- `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

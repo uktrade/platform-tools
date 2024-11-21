@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import mock_open
@@ -24,6 +25,8 @@ from dbt_platform_helper.utils.aws import (
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from tests.platform_helper.conftest import mock_aws_client
@@ -37,6 +40,9 @@ ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
 COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
 CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
 SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
+REFRESH_TOKEN_MESSAGE = (
+    "To refresh this SSO session run `aws sso login` with the corresponding profile"
+)
 
 
 def test_get_aws_session_or_abort_profile_not_configured(clear_session_cache, capsys):
@@ -91,20 +97,54 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
     assert result == [("/copilot/test-application/development/secrets/TEST_SECRET", "test value")]
 
 
+@pytest.mark.parametrize(
+    "aws_profile, side_effect, expected_error_message",
+    [
+        (
+            "existing_profile",
+            botocore.exceptions.NoCredentialsError(
+                error_msg="There are no credentials set for this session."
+            ),
+            f"There are no credentials set for this session. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.UnauthorizedSSOTokenError(
+                error_msg="The SSO Token used for this session is unauthorised."
+            ),
+            f"The SSO Token used for this session is unauthorised. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.TokenRetrievalError(
+                error_msg="Unable to retrieve the Token for this session.", provider="sso"
+            ),
+            f"Unable to retrieve the Token for this session. {REFRESH_TOKEN_MESSAGE}",
+        ),
+        (
+            "existing_profile",
+            botocore.exceptions.SSOTokenLoadError(
+                error_msg="The SSO session associated with this profile has expired, is not set or is otherwise invalid."
+            ),
+            f"The SSO session associated with this profile has expired, is not set or is otherwise invalid. {REFRESH_TOKEN_MESSAGE}",
+        ),
+    ],
+)
 @patch("dbt_platform_helper.utils.aws.get_account_details")
 @patch("boto3.session.Session")
 @patch("click.secho")
-def test_get_aws_session_or_abort_with_invalid_credentials(
-    mock_secho, mock_session, mock_get_account_details
+def test_get_aws_session_or_abort_errors(
+    mock_secho,
+    mock_session,
+    mock_get_account_details,
+    aws_profile,
+    side_effect,
+    expected_error_message,
 ):
-    aws_profile = "existing_profile"
-    expected_error_message = (
-        "The SSO session associated with this profile has expired or is otherwise invalid."
-        + "To refresh this SSO session run `aws sso login` with the corresponding profile"
-    )
-    mock_get_account_details.side_effect = botocore.exceptions.SSOTokenLoadError(
-        error_msg=expected_error_message
-    )
+    if isinstance(side_effect, botocore.exceptions.ProfileNotFound):
+        mock_session.side_effect = side_effect
+    else:
+        mock_get_account_details.side_effect = side_effect
 
     with pytest.raises(SystemExit) as exc_info:
         get_aws_session_or_abort(aws_profile=aws_profile)
@@ -407,6 +447,25 @@ def test_get_profile_name_from_account_id(fakefs):
     assert get_profile_name_from_account_id("222222222") == "production"
 
 
+def test_get_profile_name_from_account_id_when_not_using_sso(fs):
+    fs.create_file(
+        Path.home().joinpath(".aws/config"),
+        contents="""
+[profile development]
+region = eu-west-2
+output = json
+profile_account_id = 123456789
+
+[profile staging]
+region = eu-west-2
+output = json
+profile_account_id = 987654321
+""",
+    )
+    assert get_profile_name_from_account_id("123456789") == "development"
+    assert get_profile_name_from_account_id("987654321") == "staging"
+
+
 def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):
     with pytest.raises(NoProfileForAccountIdError) as error:
         get_profile_name_from_account_id("999999999")
@@ -564,6 +623,60 @@ def test_update_postgres_parameter_with_master_secret():
     }
 
 
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_redis_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
+
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.describe_cache_engine_versions.return_value = {
+        "CacheEngineVersions": [
+            {
+                "Engine": "redis",
+                "EngineVersion": "4.0.10",
+                "CacheParameterGroupFamily": "redis4.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 4.0.10",
+            },
+            {
+                "Engine": "redis",
+                "EngineVersion": "5.0.6",
+                "CacheParameterGroupFamily": "redis5.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 5.0.6",
+            },
+        ]
+    }
+
+    supported_redis_versions_response = get_supported_redis_versions()
+    assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
+
+
+@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+@patch("dbt_platform_helper.utils.aws.write_to_cache")
+def test_get_supported_opensearch_versions_when_cache_refresh_required(
+    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+):
+
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+    client.list_versions.return_value = {
+        "Versions": [
+            "OpenSearch_2.15",
+            "OpenSearch_2.13",
+            "OpenSearch_2.11",
+            "OpenSearch_2.9",
+            "Elasticsearch_7.10",
+            "Elasticsearch_7.9",
+        ]
+    }
+
+    supported_opensearch_versions_response = get_supported_opensearch_versions()
+    assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]
+
+
 @mock_aws
 def test_get_connection_string():
     db_identifier = f"my_app-my_env-my_postgres"
@@ -592,7 +705,10 @@ def test_get_connection_string():
     mock_connection_data.assert_called_once_with(
         session, f"/copilot/my_app/my_env/secrets/MY_POSTGRES_READ_ONLY_USER", master_secret_arn
     )
-    assert connection_string == "postgres://master_user:master_password@hostname:1234/main"
+    assert (
+        connection_string
+        == "postgres://master_user:master_password@hostname:1234/main"  # trufflehog:ignore
+    )
 
 
 class ObjectWithId:

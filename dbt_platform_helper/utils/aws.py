@@ -7,12 +7,18 @@ from typing import Tuple
 
 import boto3
 import botocore
+import botocore.exceptions
 import click
 import yaml
 from boto3 import Session
 
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.utils.files import cache_refresh_required
+from dbt_platform_helper.utils.files import read_supported_versions_from_cache
+from dbt_platform_helper.utils.files import write_to_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -20,62 +26,71 @@ AWS_SESSION_CACHE = {}
 
 
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
-    aws_profile = aws_profile if aws_profile else os.getenv("AWS_PROFILE")
+    REFRESH_TOKEN_MESSAGE = (
+        "To refresh this SSO session run `aws sso login` with the corresponding profile"
+    )
+    aws_profile = aws_profile or os.getenv("AWS_PROFILE")
     if aws_profile in AWS_SESSION_CACHE:
         return AWS_SESSION_CACHE[aws_profile]
 
-    # Check that the aws profile exists and is set.
-    click.secho(f"""Checking AWS connection for profile "{aws_profile}"...""", fg="cyan")
+    click.secho(f'Checking AWS connection for profile "{aws_profile}"...', fg="cyan")
 
     try:
         session = boto3.session.Session(profile_name=aws_profile)
-    except botocore.exceptions.ProfileNotFound:
-        click.secho(f"""AWS profile "{aws_profile}" is not configured.""", fg="red")
-        exit(1)
-    except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] == "ExpiredToken":
-            click.secho(
-                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}",
-                fg="red",
-            )
-            exit(1)
-
-    sts = session.client("sts")
-    try:
+        sts = session.client("sts")
         account_id, user_id = get_account_details(sts)
         click.secho("Credentials are valid.", fg="green")
-    except (
-        botocore.exceptions.UnauthorizedSSOTokenError,
-        botocore.exceptions.TokenRetrievalError,
-        botocore.exceptions.SSOTokenLoadError,
-    ):
-        click.secho(
-            "The SSO session associated with this profile has expired or is otherwise invalid."
-            "To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+
+    except botocore.exceptions.ProfileNotFound:
+        _handle_error(f'AWS profile "{aws_profile}" is not configured.')
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "ExpiredToken":
+            _handle_error(
+                f"Credentials are NOT valid.  \nPlease login with: aws sso login --profile {aws_profile}"
+            )
+    except botocore.exceptions.NoCredentialsError:
+        _handle_error("There are no credentials set for this session.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.UnauthorizedSSOTokenError:
+        _handle_error("The SSO Token used for this session is unauthorised.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.TokenRetrievalError:
+        _handle_error("Unable to retrieve the Token for this session.", REFRESH_TOKEN_MESSAGE)
+    except botocore.exceptions.SSOTokenLoadError:
+        _handle_error(
+            "The SSO session associated with this profile has expired, is not set or is otherwise invalid.",
+            REFRESH_TOKEN_MESSAGE,
         )
-        exit(1)
 
     alias_client = session.client("iam")
-    account_name = alias_client.list_account_aliases()["AccountAliases"]
+    account_name = alias_client.list_account_aliases().get("AccountAliases", [])
+
+    _log_account_info(account_name, account_id)
+
+    click.echo(
+        click.style("User: ", fg="yellow")
+        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True)
+    )
+
+    AWS_SESSION_CACHE[aws_profile] = session
+    return session
+
+
+def _handle_error(message: str, refresh_token_message: str = None) -> None:
+    full_message = message + (" " + refresh_token_message if refresh_token_message else "")
+    click.secho(full_message, fg="red")
+    exit(1)
+
+
+def _log_account_info(account_name: list, account_id: str) -> None:
     if account_name:
         click.echo(
             click.style("Logged in with AWS account: ", fg="yellow")
-            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True),
+            + click.style(f"{account_name[0]}/{account_id}", fg="white", bold=True)
         )
     else:
         click.echo(
             click.style("Logged in with AWS account id: ", fg="yellow")
-            + click.style(f"{account_id}", fg="white", bold=True),
+            + click.style(f"{account_id}", fg="white", bold=True)
         )
-    click.echo(
-        click.style("User: ", fg="yellow")
-        + click.style(f"{user_id.split(':')[-1]}\n", fg="white", bold=True),
-    )
-
-    AWS_SESSION_CACHE[aws_profile] = session
-
-    return session
 
 
 class NoProfileForAccountIdError(Exception):
@@ -87,7 +102,9 @@ def get_profile_name_from_account_id(account_id: str):
     aws_config = ConfigParser()
     aws_config.read(Path.home().joinpath(".aws/config"))
     for section in aws_config.sections():
-        found_account_id = aws_config[section].get("sso_account_id", None)
+        found_account_id = aws_config[section].get(
+            "sso_account_id", aws_config[section].get("profile_account_id", None)
+        )
         if account_id == found_account_id:
             return section.removeprefix("profile ")
 
@@ -339,6 +356,59 @@ def get_postgres_connection_data_updated_with_master_secret(session, parameter_n
     return parameter_data
 
 
+def get_supported_redis_versions():
+
+    if cache_refresh_required("redis"):
+
+        supported_versions = []
+
+        session = get_aws_session_or_abort()
+        elasticache_client = session.client("elasticache")
+
+        supported_versions_response = elasticache_client.describe_cache_engine_versions(
+            Engine="redis"
+        )
+
+        supported_versions = [
+            version["EngineVersion"]
+            for version in supported_versions_response["CacheEngineVersions"]
+        ]
+
+        write_to_cache("redis", supported_versions)
+
+        return supported_versions
+
+    else:
+        return read_supported_versions_from_cache("redis")
+
+
+def get_supported_opensearch_versions():
+
+    if cache_refresh_required("opensearch"):
+
+        supported_versions = []
+
+        session = get_aws_session_or_abort()
+        opensearch_client = session.client("opensearch")
+
+        response = opensearch_client.list_versions()
+        all_versions = response["Versions"]
+
+        opensearch_versions = [
+            version for version in all_versions if not version.startswith("Elasticsearch_")
+        ]
+        supported_versions = [
+            version.removeprefix("OpenSearch_") for version in opensearch_versions
+        ]
+
+        write_to_cache("opensearch", supported_versions)
+
+        return supported_versions
+
+    else:
+        return read_supported_versions_from_cache("opensearch")
+
+
 def get_connection_string(
     session: Session,
     app: str,
@@ -362,12 +432,12 @@ def get_connection_string(
 
 
 class Vpc:
-    def __init__(self, subnets, security_groups):
+    def __init__(self, subnets: list[str], security_groups: list[str]):
         self.subnets = subnets
         self.security_groups = security_groups
 
 
-def get_vpc_info_by_name(session, app, env, vpc_name):
+def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) -> Vpc:
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.describe_vpcs(Filters=[{"Name": "tag:Name", "Values": [vpc_name]}])
 
@@ -408,3 +478,77 @@ def get_vpc_info_by_name(session, app, env, vpc_name):
         raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
     return Vpc(subnets, sec_groups)
+
+
+def start_build_extraction(codebuild_client, build_options):
+    response = codebuild_client.start_build(**build_options)
+    return response["build"]["arn"]
+
+
+def check_codebase_exists(session: Session, application, codebase: str):
+    try:
+        ssm_client = session.client("ssm")
+        ssm_client.get_parameter(
+            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+        )["Parameter"]["Value"]
+    except (
+        KeyError,
+        ValueError,
+        ssm_client.exceptions.ParameterNotFound,
+    ):
+        raise CopilotCodebaseNotFoundError
+
+
+def check_image_exists(session, application, codebase, commit):
+    ecr_client = session.client("ecr")
+    try:
+        ecr_client.describe_images(
+            repositoryName=f"{application.name}/{codebase}",
+            imageIds=[{"imageTag": f"commit-{commit}"}],
+        )
+    except (
+        ecr_client.exceptions.RepositoryNotFoundException,
+        ecr_client.exceptions.ImageNotFoundException,
+    ):
+        raise ImageNotFoundError
+
+
+def get_build_url_from_arn(build_arn: str) -> str:
+    _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
+    project_name = project_name.removeprefix("build/")
+    return (
+        f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
+        f"{project_name}/build/{project_name}%3A{build_id}"
+    )
+
+
+def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo_fn):
+    paginator = ecr_client.get_paginator("describe_images")
+    describe_images_response_iterator = paginator.paginate(
+        repositoryName=ecr_repository_name,
+        filter={"tagStatus": "TAGGED"},
+    )
+    images = []
+    for page in describe_images_response_iterator:
+        images += page["imageDetails"]
+
+    sorted_images = sorted(
+        images,
+        key=lambda i: i["imagePushedAt"],
+        reverse=True,
+    )
+
+    MAX_RESULTS = 20
+
+    for image in sorted_images[:MAX_RESULTS]:
+        try:
+            commit_tag = next(t for t in image["imageTags"] if t.startswith("commit-"))
+            if not commit_tag:
+                continue
+
+            commit_hash = commit_tag.replace("commit-", "")
+            echo_fn(
+                f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
+            )
+        except StopIteration:
+            continue

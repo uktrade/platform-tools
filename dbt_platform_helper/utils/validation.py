@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 import yaml
-from botocore.exceptions import ClientError
 from schema import Optional
 from schema import Or
 from schema import Regex
@@ -19,7 +18,8 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
+from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -40,33 +40,6 @@ AVAILABILITY_UNCERTAIN_TEMPLATE = (
     "Warning: Could not determine the availability of bucket name '{}'."
 )
 BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
-
-
-def warn_on_s3_bucket_name_availability(name: str):
-    """
-    We try to find the bucket name in AWS.
-
-    The validation logic is:
-    True: if the response is a 200 (it exists and you have access - this bucket has probably already been deployed)
-    True: if the response is a 404 (it could not be found)
-    False: if the response is 40x (the bucket exists but you have no permission)
-    """
-    session = get_aws_session_or_abort()
-    client = session.client("s3")
-    try:
-        client.head_bucket(Bucket=name)
-        return
-    except ClientError as ex:
-        if "Error" not in ex.response or not "Code" in ex.response["Error"]:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-        if ex.response["Error"]["Code"] == "404":
-            return
-        if int(ex.response["Error"]["Code"]) > 499:
-            click.secho(AVAILABILITY_UNCERTAIN_TEMPLATE.format(name), fg="yellow")
-            return
-
-    click.secho(BUCKET_NAME_IN_USE_TEMPLATE.format(name), fg="yellow")
 
 
 def validate_s3_bucket_name(name: str):
@@ -127,7 +100,18 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
-    _validate_s3_bucket_uniqueness({"extensions": addons})
+    _validate_extension_supported_versions(
+        config={"extensions": addons},
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_redis_versions,
+    )
+    _validate_extension_supported_versions(
+        config={"extensions": addons},
+        extension_type="opensearch",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_opensearch_versions,
+    )
 
     return errors
 
@@ -183,7 +167,7 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = Or("6.2", "7.0", "7.1")
+REDIS_ENGINE_VERSIONS = str
 
 REDIS_DEFINITION = {
     "type": "redis",
@@ -246,27 +230,6 @@ POSTGRES_DEFINITION = {
         }
     },
     Optional("database_copy"): [DATABASE_COPY],
-    Optional("objects"): [
-        {
-            "key": str,
-            Optional("body"): str,
-        }
-    ],
-}
-
-AURORA_DEFINITION = {
-    "type": "aurora-postgres",
-    "version": NUMBER,
-    Optional("deletion_policy"): DB_DELETION_POLICY,
-    Optional("environments"): {
-        ENV_NAME: {
-            Optional("min_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("max_capacity"): float_between_with_halfstep(0.5, 128),
-            Optional("snapshot_id"): str,
-            Optional("deletion_policy"): DB_DELETION_POLICY,
-            Optional("deletion_protection"): DELETION_PROTECTION,
-        }
-    },
     Optional("objects"): [
         {
             "key": str,
@@ -352,7 +315,7 @@ MONITORING_DEFINITION = {
 OPENSEARCH_PLANS = Or(
     "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
 )
-OPENSEARCH_ENGINE_VERSIONS = Or("2.11", "2.9", "2.7", "2.5", "2.3", "1.3", "1.2", "1.1", "1.0")
+OPENSEARCH_ENGINE_VERSIONS = str
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 OPENSEARCH_MAX_VOLUME_SIZE = {
     "tiny": 100,
@@ -389,6 +352,32 @@ OPENSEARCH_DEFINITION = {
     },
 }
 
+CACHE_POLICY_DEFINITION = {
+    "min_ttl": int,
+    "max_ttl": int,
+    "default_ttl": int,
+    "cookies_config": Or("none", "whitelist", "allExcept", "all"),
+    "header": Or("none", "whitelist"),
+    "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
+    Optional("cookie_list"): list,
+    Optional("headers_list"): list,
+    Optional("cache_policy_query_strings"): list,
+}
+
+PATHS_DEFINITION = {
+    Optional("default"): {
+        "cache": str,
+        "request": str,
+    },
+    Optional("additional"): list[
+        {
+            "path": str,
+            "cache": str,
+            "request": str,
+        }
+    ],
+}
+
 ALB_DEFINITION = {
     "type": "alb",
     Optional("environments"): {
@@ -403,6 +392,7 @@ ALB_DEFINITION = {
                 Optional("cdn_geo_restriction_type"): str,
                 Optional("cdn_logging_bucket"): str,
                 Optional("cdn_logging_bucket_prefix"): str,
+                Optional("cdn_timeout_seconds"): int,
                 Optional("default_waf"): str,
                 Optional("domain_prefix"): str,
                 Optional("enable_logging"): bool,
@@ -415,6 +405,9 @@ ALB_DEFINITION = {
                 Optional("viewer_certificate_minimum_protocol_version"): str,
                 Optional("viewer_certificate_ssl_support_method"): str,
                 Optional("viewer_protocol_policy"): str,
+                Optional("cache_policy"): dict({str: CACHE_POLICY_DEFINITION}),
+                Optional("origin_request_policy"): dict({str: {}}),
+                Optional("paths"): dict({str: PATHS_DEFINITION}),
             },
             None,
         )
@@ -518,7 +511,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("extensions"): {
             str: Or(
                 REDIS_DEFINITION,
-                AURORA_DEFINITION,
                 POSTGRES_DEFINITION,
                 S3_DEFINITION,
                 S3_POLICY_DEFINITION,
@@ -533,31 +525,66 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 )
 
 
-def _validate_s3_bucket_uniqueness(enriched_config):
-    extensions = enriched_config.get("extensions", {})
-    bucket_extensions = [
-        s3_ext
-        for s3_ext in extensions.values()
-        if "type" in s3_ext and s3_ext["type"] in ("s3", "s3-policy")
-    ]
-    environments = [
-        env for ext in bucket_extensions for env in ext.get("environments", {}).values()
-    ]
-    bucket_names = [env.get("bucket_name") for env in environments]
-
-    for name in bucket_names:
-        warn_on_s3_bucket_name_availability(name)
-
-
-def validate_platform_config(config, disable_aws_validation=False):
+def validate_platform_config(config):
     PLATFORM_CONFIG_SCHEMA.validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
-    if not disable_aws_validation:
-        _validate_s3_bucket_uniqueness(enriched_config)
+
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="redis",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_redis_versions,
+    )
+    _validate_extension_supported_versions(
+        config=config,
+        extension_type="opensearch",
+        version_key="engine",
+        get_supported_versions_fn=get_supported_opensearch_versions,
+    )
+
+
+def _validate_extension_supported_versions(
+    config, extension_type, version_key, get_supported_versions_fn
+):
+    extensions = config.get("extensions", {})
+    if not extensions:
+        return
+
+    extensions_for_type = [
+        extension
+        for extension in config.get("extensions", {}).values()
+        if extension.get("type") == extension_type
+    ]
+
+    supported_extension_versions = get_supported_versions_fn()
+    extensions_with_invalid_version = []
+
+    for extension in extensions_for_type:
+
+        environments = extension.get("environments", {})
+
+        if not isinstance(environments, dict):
+            click.secho(
+                "Error: Opensearch extension definition is invalid type, expected dictionary",
+                fg="red",
+            )
+            continue
+        for environment, env_config in environments.items():
+            extension_version = env_config.get(version_key)
+            if extension_version not in supported_extension_versions:
+                extensions_with_invalid_version.append(
+                    {"environment": environment, "version": extension_version}
+                )
+
+    for version_failure in extensions_with_invalid_version:
+        click.secho(
+            f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
+            fg="red",
+        )
 
 
 def validate_database_copy_section(config):
@@ -699,9 +726,7 @@ rules:
     return parsed_results
 
 
-def load_and_validate_platform_config(
-    path=PLATFORM_CONFIG_FILE, disable_aws_validation=False, disable_file_check=False
-):
+def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_file_check=False):
     if not disable_file_check:
         config_file_check(path)
     try:
@@ -713,7 +738,7 @@ def load_and_validate_platform_config(
                 + os.linesep
                 + os.linesep.join(duplicate_keys)
             )
-        validate_platform_config(conf, disable_aws_validation)
+        validate_platform_config(conf)
         return conf
     except ParserError:
         abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
@@ -762,7 +787,6 @@ def config_file_check(path=PLATFORM_CONFIG_FILE):
 
 S3_SCHEMA = Schema(S3_DEFINITION)
 S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
-AURORA_SCHEMA = Schema(AURORA_DEFINITION)
 POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
 REDIS_SCHEMA = Schema(REDIS_DEFINITION)
 
@@ -816,7 +840,6 @@ def no_param_schema(schema_type):
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
-    "aurora-postgres": AURORA_SCHEMA,
     "postgres": POSTGRES_SCHEMA,
     "redis": REDIS_SCHEMA,
     "opensearch": OPENSEARCH_SCHEMA,

@@ -3,7 +3,6 @@ from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.config import aws
@@ -12,8 +11,7 @@ from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import Versions
 
 
-@pytest.mark.xdist_group(name="fileaccess")
-def test_running_in_non_copilot_directory():
+def test_running_in_non_copilot_directory(fakefs):
     result = CliRunner().invoke(validate)
     assert result.output == "Could not find a deployment repository, no checks to run.\n"
 

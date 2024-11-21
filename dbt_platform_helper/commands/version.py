@@ -1,7 +1,6 @@
 import click
 
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.platform_config import get_environment_pipeline_names
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 
 
@@ -19,7 +18,7 @@ class VersionCommand:
     @click.option(
         "--pipeline",
         required=False,
-        type=click.Choice(get_environment_pipeline_names()),
+        type=str,
         help="Take into account platform-tools version overrides in the specified pipeline",
     )
     def get_platform_helper_for_project(pipeline):

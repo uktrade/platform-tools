@@ -11,14 +11,6 @@ repos:
         name: Replace line endings
       - id: detect-private-key
         name: Detect private keys
-  - repo: local
-    hooks:
-      - id: check-cloudformation
-        name: Check generated CloudFormation templates
-        entry: poetry run pytest -k test_check_cloudformation_with_no_args_summarises_all_successes
-        language: system
-        pass_filenames: false
-        always_run: true
   - repo: https://github.com/myint/autoflake.git
     rev: v2.2.0
     hooks:
@@ -57,3 +49,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: bash -c 'trufflehog filesystem . --no-verification --fail --exclude-paths=.trufflehogignore'
+        language: system
+        stages: ["commit", "push"]

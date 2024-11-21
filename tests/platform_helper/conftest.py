@@ -39,7 +39,6 @@ class NoSuchEntityException(ClientError):
 @pytest.fixture
 def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
-    fs.add_real_directory(BASE_DIR / "dbt_platform_helper/custom_resources", lazy_read=True)
     fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/addon-plans.yml")
@@ -314,8 +313,6 @@ def add_addon_config_parameter(param_value=None):
             param_value
             or {
                 "custom-name-postgres": {"type": "postgres"},
-                "custom-name-aurora-postgres": {"type": "aurora-postgres"},
-                "custom-name-rds-postgres": {"type": "aurora-postgres"},
                 "custom-name-opensearch": {"type": "opensearch"},
                 "custom-name-redis": {"type": "redis"},
             }
@@ -446,17 +443,6 @@ extensions:
         engine: '7.1'
         plan: tiny
         apply_immediately: true
-        
-  test-app-aurora:
-    type: aurora-postgres
-    version: 19.5
-    environments:
-      dev:
-        snapshot_id: abc123
-        deletion_protection: true
-      staging:
-        deletion_protection: true
-        deletion_policy: Retain
 
   test-app-postgres:
     type: postgres
@@ -700,4 +686,24 @@ def create_invalid_platform_config_file(fakefs):
     fakefs.create_file(
         Path(PLATFORM_CONFIG_FILE),
         contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_get_supported_opensearch_versions(monkeypatch):
+    def mock_return_value(opensearch_client=None):
+        return ["1.0", "1.1", "1.2"]
+
+    monkeypatch.setattr(
+        "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", mock_return_value
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_get_supported_redis_versions(monkeypatch):
+    def mock_return_value(opensearch_client=None):
+        return ["6.2", "7.0", "7.1"]
+
+    monkeypatch.setattr(
+        "dbt_platform_helper.utils.validation.get_supported_redis_versions", mock_return_value
     )

@@ -61,17 +61,6 @@ my-rds-db:
     default:
       plan: small-ha
 
-##### Aurora serverless v2 example:
-
-my-aurora-db:
-  type: aurora-postgres
-  version: 14.4
-
-  environments:
-    default:
-      min_capacity: 0.5 # AllowedValues: from 0.5 through 128
-      max_capacity: 8 # AllowedValues: from 0.5 through 128
-
 ##### Opensearch example:
 
 my-opensearch:

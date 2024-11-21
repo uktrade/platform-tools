@@ -1,7 +1,5 @@
 # Platform Tools
 
-![](https://codebuild.eu-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiS2t1L3UvQmVTbXZsOTVIOWxGanpwTTh4b3BNcUR4c0dNN2NoSUpGcVkzN0JEOFpvc2kwL2pGVC91TXNVcjFNK0d5eExia0R2SS9lZUhuWTZQOTlieVY0PSIsIml2UGFyYW1ldGVyU3BlYyI6Im5tS0pUVEwvT204WXdxT2wiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
-
 ## Using the dbt-platform-helper package
 
 See [the package documentation](https://github.com/uktrade/platform-tools/blob/main/dbt_platform_helper/README.md) for detail on what the package is and how to use it.
@@ -22,11 +20,27 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
    git clone https://github.com/uktrade/platform-tools.git && cd platform-tools
    ```
 
-2. Install the required dependencies:
+2. Install dependencies:
 
-   ```
-   pip install poetry && poetry install && poetry run pre-commit install
-   ```
+    ```shell
+    pip install poetry && poetry install
+    ```
+   
+3. Install Trufflehog for the pre-commit hook:
+
+    ```shell
+    # Installation on Mac
+    
+    brew install trufflehog
+    ```
+
+   Alternative installation methods [here](https://github.com/trufflesecurity/trufflehog)
+
+4. Install pre-commit hook:
+
+    ```shell
+    poetry run pre-commit install
+    ```
 
 ### Testing
 
@@ -49,6 +63,8 @@ To allow pdb to work correctly, disable multiple processes using the `--numproce
 
 `poetry run pytest --numprocesses 0`
 
+We use [Codecov](https://app.codecov.io/github/uktrade/platform-tools) to monitor the comprehensiveness and performance of our unit tests.
+
 #### Manual testing
 
 You may want to test any CLI changes locally.
@@ -64,6 +80,10 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-helper` installation back to what it was; e.g. `pip install dbt-platform-helper==0.1.39`.
+
+#### End to end testing
+
+Because this codebase is only fully exercised in conjunction with several others, we have [platform-end-to-end-tests](https://github.com/uktrade/platform-end-to-end-tests), which orchestrates the testing of them working together.
 
 ### Publishing
 
@@ -115,7 +135,7 @@ For an optional manual check, install the package locally and test everything wo
 
 #### Merging to main
 
-- Merging to `main` will trigger the `pull-request-regression-tests` pipeline in the _platform-tools_ AWS account to run regression tests
+- Merging to `main` will trigger the `pull-request-end-to-end-tests` pipeline in the _platform-tools_ AWS account to run regression tests
 - We use the `release-please` GitHub action to create and update a _release PR_ when changes are merged to `main`
   - The _release PR_ will automatically update the _pyproject.toml_ version number and generate release notes based on the commits merged since the last release
   - Merging the _release PR_ will create a draft GitHub release for the next version with release notes
@@ -124,7 +144,7 @@ For an optional manual check, install the package locally and test everything wo
 
 Publishing a GitHub release should automatically:
 
-- Run the full `pull-request-regression-tests` pipeline
+- Run the full `pull-request-end-to-end-tests` pipeline
 - Trigger a CodeBuild project called `platform-tools-build` in the _platform-tools_ AWS account to run. This runs the _buildspec-pypi.yml_ file which contains the build steps to publish the new `platform-helper` package version to PyPI
 - Trigger a rebuild of the DBT Platform Documentation, so it includes the latest release documentation (currently WIP)
 - Push a notification to the development community via the #developers channel in Slack

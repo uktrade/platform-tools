@@ -1,5 +1,97 @@
 # Changelog
 
+## [12.1.0](https://github.com/uktrade/platform-tools/compare/12.0.2...12.1.0) (2024-11-21)
+
+
+### Features
+
+* DBTP-1380 Get Opensearch/Redis versions from AWS API - Platform-tools changes/Caching of AWS API calls ([#624](https://github.com/uktrade/platform-tools/issues/624)) ([72d0dd7](https://github.com/uktrade/platform-tools/commit/72d0dd70396a4632e5cb5b1f6c80b2df772a89ad))
+* DBTP-1434 - CDN cache policy ([#642](https://github.com/uktrade/platform-tools/issues/642)) ([8cc2c0c](https://github.com/uktrade/platform-tools/commit/8cc2c0caf137889115c9d84c1c9895dae2a808c9))
+
+
+### Reverts
+
+* DBTP-1520 refactor conduit command ([#647](https://github.com/uktrade/platform-tools/issues/647)) ([7b56c5e](https://github.com/uktrade/platform-tools/commit/7b56c5e1a4324fbfb2585877dd38c4857c1544cc))
+
+## [12.0.2](https://github.com/uktrade/platform-tools/compare/12.0.1...12.0.2) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1534 - Removed autocompletion for the version get-platform-helper-for-project ([#631](https://github.com/uktrade/platform-tools/issues/631)) ([6da392b](https://github.com/uktrade/platform-tools/commit/6da392b2d5d3d00e5277cba69e69f837d3a3bcc8))
+
+## [12.0.1](https://github.com/uktrade/platform-tools/compare/12.0.0...12.0.1) (2024-11-13)
+
+
+### Bug Fixes
+
+* DBTP-1548 - Maintenance page listener rules can be based on both CIDR range or IP in EGRESS_IP ssm parameter ([#625](https://github.com/uktrade/platform-tools/issues/625)) ([6712e9b](https://github.com/uktrade/platform-tools/commit/6712e9b1c12aca0bdc68f09e85b6212b7a4e1ee8))
+
+## [12.0.0](https://github.com/uktrade/platform-tools/compare/11.4.0...12.0.0) (2024-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621))
+
+#### Upgrade path
+
+We have moved the last application off the fully AWS Copilot version of the DBT Platform Tooling. So whilst this is technically a breaking change, no action should be required on your part to upgrade from the previous major version.
+
+### Features
+
+* DBTP-1002 Remove support for 100% AWS Copilot version of DBT Platform ([#621](https://github.com/uktrade/platform-tools/issues/621)) ([c7a223c](https://github.com/uktrade/platform-tools/commit/c7a223c44467807eab4f68de1ee11fbc4f9b0a21))
+
+## [11.4.0](https://github.com/uktrade/platform-tools/compare/11.3.0...11.4.0) (2024-11-08)
+
+
+### Features
+
+* DBTP-1109 Fall back on profile_account_id when trying to match account id to profile name. ([#626](https://github.com/uktrade/platform-tools/issues/626)) ([0694775](https://github.com/uktrade/platform-tools/commit/069477584930961798bf5a42ebf6c5aec60dde21))
+
+
+### Documentation
+
+* DBTP-1511 Link to Codecov in unit tests section of README ([#627](https://github.com/uktrade/platform-tools/issues/627)) ([3179945](https://github.com/uktrade/platform-tools/commit/3179945980e0fafaf94f5141abbda80cafc871bf))
+
+## [11.3.0](https://github.com/uktrade/platform-tools/compare/11.2.0...11.3.0) (2024-11-05)
+
+
+### Features
+
+* DBTP-1431 Add validation for CDN timeout ([#609](https://github.com/uktrade/platform-tools/issues/609)) ([66a21c6](https://github.com/uktrade/platform-tools/commit/66a21c622937f7a2fc05caa75714a90ad1d82be0))
+
+## [11.2.0](https://github.com/uktrade/platform-tools/compare/11.1.0...11.2.0) (2024-11-04)
+
+
+### Features
+
+* DBTP-1071 Generate terraform config for environment pipeline ([#611](https://github.com/uktrade/platform-tools/issues/611)) ([237fb35](https://github.com/uktrade/platform-tools/commit/237fb35fe06df7fd13e93419d282dc067187d952))
+
+
+### Documentation
+
+* Call out the offline command fix in the changelog ([#613](https://github.com/uktrade/platform-tools/issues/613)) ([e2a6396](https://github.com/uktrade/platform-tools/commit/e2a63961260d3b60a1ae9aa99a1bd06927e98ae9))
+
+## [11.1.0](https://github.com/uktrade/platform-tools/compare/11.0.1...11.1.0) (2024-10-30)
+
+
+### Features
+
+* DBTP-1159 Add validation for duplicate entries in platform-config.yml ([#604](https://github.com/uktrade/platform-tools/issues/604)) ([d00e143](https://github.com/uktrade/platform-tools/commit/d00e143ecaa9e86645563d996ed79779cae52597))
+* DBTP-1215 Improve error message when AWS profile not set ([#607](https://github.com/uktrade/platform-tools/issues/607)) ([beb0e7f](https://github.com/uktrade/platform-tools/commit/beb0e7f12013f035a1ffe2796a22b2a1bc70ed5f))
+* Delete data dump from S3 after data load has been successful ([#600](https://github.com/uktrade/platform-tools/issues/600)) ([410cd56](https://github.com/uktrade/platform-tools/commit/410cd5673eccce5855d03b4f0cbb4d6c1377085a))
+
+
+### Bug Fixes
+
+* Fix issue with offline command resulting in 'CreateRule operation: Priority '100' is currently in use' error
+
+
+### Documentation
+
+* Add a note about regression/integration testing to the README.md ([#612](https://github.com/uktrade/platform-tools/issues/612)) ([d219356](https://github.com/uktrade/platform-tools/commit/d219356e41efb3b6eab3950a921aaf6e5b3b7d9c))
+
 ## [11.0.1](https://github.com/uktrade/platform-tools/compare/11.0.0...11.0.1) (2024-10-22)
 
 
