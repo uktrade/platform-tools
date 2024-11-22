@@ -10,13 +10,16 @@ from dbt_platform_helper.providers.cloudformation import update_conduit_stack_re
 from dbt_platform_helper.providers.cloudformation import (
     wait_for_cloudformation_to_reach_status,
 )
-from dbt_platform_helper.providers.copilot import addon_client_is_running
+
+# TODO - Some bits being imported twice.
+# from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
 from dbt_platform_helper.providers.ecs import addon_client_is_running
 from dbt_platform_helper.providers.ecs import get_cluster_arn
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
+from dbt_platform_helper.providers.ecs import check_if_ecs_exec_is_availble
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
 from dbt_platform_helper.utils.application import Application
@@ -33,6 +36,7 @@ class Conduit:
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
         get_addon_type_fn=get_addon_type,
+        check_if_ecs_exec_is_availble_fn=check_if_ecs_exec_is_availble,
         get_cluster_arn_fn=get_cluster_arn,
         get_parameter_name_fn=get_parameter_name,
         get_or_create_task_name_fn=get_or_create_task_name,
@@ -49,6 +53,7 @@ class Conduit:
         self.create_addon_client_task_fn = create_addon_client_task_fn
         self.create_postgres_admin_task = create_postgres_admin_task_fn
         self.get_addon_type_fn = get_addon_type_fn
+        self.check_if_ecs_exec_is_availble_fn = check_if_ecs_exec_is_availble
         self.get_cluster_arn_fn = get_cluster_arn_fn
         self.get_parameter_name_fn = get_parameter_name_fn
         self.get_or_create_task_name_fn = get_or_create_task_name_fn
@@ -82,6 +87,9 @@ class Conduit:
             env, addon_name, access
         )
 
+        # TODO - we probably want some logs here that makes it exactly clear what is happening. - do we want the line below?
+        self.echo_fn(f"Checking if an addon client is already running for {addon_type}, and creating a new task if not")
+        self.echo_fn(f"TEMP REMOVEME: Checking if addon client is running for {cluster_arn}, {task_name}")
         if not self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name):
             self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
@@ -110,6 +118,14 @@ class Conduit:
                 parameter_name,
                 access,
             )
+
+        # TODO - do we want this?, I think it can be a bit unclear what is happening without it.
+        else:
+            self.echo_fn("Addon client IS infact already running")
+
+        task_arn = self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name)
+        self.echo_fn(f"Checking if ECS exec is availble for Conduit task...")
+        self.check_if_ecs_exec_is_availble_fn(clients["ecs"], cluster_arn, task_arn)
 
         self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(
