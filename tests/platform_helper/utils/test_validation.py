@@ -109,7 +109,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
                 "my-s3-external-access-bucket-invalid-arn": r"role_arn must contain a valid ARN for an IAM role",
                 "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
-                "my-s3-cross-environment-service-access-bucket-invalid-environment": r"environment must exist in your platform-config.yml",
+                "my-s3-cross-environment-service-access-bucket-invalid-environment": r"Environment name invalid-character-in-environment is invalid",
             },
         ),
         (

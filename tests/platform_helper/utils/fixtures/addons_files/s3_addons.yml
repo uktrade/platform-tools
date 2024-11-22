@@ -80,7 +80,7 @@ my-s3-cross-environment-service-access-bucket:
       cross_environment_service_access:
         demodjango-hotfix:
           application: test-app
-          environment: invalid-environment
+          environment: prod
           account: test-account
           write: True
           read: True

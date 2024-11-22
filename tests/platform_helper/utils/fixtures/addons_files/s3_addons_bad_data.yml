@@ -186,7 +186,7 @@ my-s3-cross-environment-service-access-bucket-invalid-environment:
       cross_environment_service_access:
         demodjango-hotfix:
           application: test-app
-          environment: invalid-environment
+          environment: hyphen-not-allowed-in-environment
           account: test-account
           write: True
           read: True
