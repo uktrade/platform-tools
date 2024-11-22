@@ -73,3 +73,5 @@ def check_if_ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List
         ][0]
         # TODO - error if max attempts is reached
         time.sleep(1)
+
+    return execute_command_agent_status
