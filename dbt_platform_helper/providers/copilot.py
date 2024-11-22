@@ -113,13 +113,19 @@ def create_postgres_admin_task(
 
 
 def connect_to_addon_client_task(
-    ecs_client, subprocess, application_name, env, cluster_arn, task_name
+    ecs_client,
+    subprocess,
+    application_name,
+    env,
+    cluster_arn,
+    task_name,
+    addon_client_is_running_fn=addon_client_is_running,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        if addon_client_is_running(ecs_client, cluster_arn, task_name):
+        if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
             # TODO user ecs.describe_task to check if exec agent is running before call subprocess
             # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/describe_tasks.html
             try:

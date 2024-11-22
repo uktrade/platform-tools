@@ -39,7 +39,7 @@ def get_or_create_task_name(
 
 
 # TODO Rename and extract ECS family as parameter / make more general
-def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
+def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str, check_exec: bool = False):
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
@@ -47,6 +47,12 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
     )
 
     if not tasks["taskArns"]:
-        return False
+        return False  # []
 
-    return True
+    # if check_exec:
+    #     task_details = ecs_client.describe_tasks(
+    #         cluster=cluster_arn,
+    #         tasks=tasks["taskArns"],
+    #     )
+
+    return True  # tasks["taskArns"]
