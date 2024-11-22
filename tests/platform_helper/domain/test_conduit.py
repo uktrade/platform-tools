@@ -103,7 +103,9 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
     conduit.start(env, addon_name, access)
 
-    conduit.addon_client_is_running_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+    conduit.addon_client_is_running_fn.assert_has_calls(
+        [call(ecs_client, cluster_name, task_name), call(ecs_client, cluster_name, task_name)]
+    )
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
     )
@@ -149,6 +151,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
             call("Creating conduit task"),
             call("Updating conduit task"),
             call("Waiting for conduit task update to complete..."),
+            call("Checking if exec is available for conduit task..."),
             call("Connecting to conduit task"),
         ]
     )

@@ -435,10 +435,16 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
     addon_client_is_running = Mock(return_value=True)
 
     connect_to_addon_client_task(
-        ecs_client, mock_subprocess, mock_application.name, env, "test-arn", task_name
+        ecs_client,
+        mock_subprocess,
+        mock_application.name,
+        env,
+        "test-arn",
+        task_name,
+        addon_client_is_running,
     )
 
-    addon_client_is_running.assert_called_once_with(ecs_client, "test-arn", task_name, True)
+    addon_client_is_running.assert_called_once_with(ecs_client, "test-arn", task_name)
     mock_subprocess.call.assert_called_once_with(
         f"copilot task exec --app test-application --env {env} "
         f"--name {task_name} "
@@ -492,7 +498,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
             addon_client_is_running_fn=addon_client_is_running,
         )
 
-    addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name, True)
+    addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name)
     assert addon_client_is_running.call_count == 15
     mock_subprocess.call.assert_not_called()
 
