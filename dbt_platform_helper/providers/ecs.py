@@ -1,6 +1,7 @@
 import random
 import string
 import time
+from typing import List
 
 from dbt_platform_helper.exceptions import NoClusterError
 
@@ -40,7 +41,7 @@ def get_or_create_task_name(
 
 
 # TODO Rename and extract ECS family as parameter / make more general
-def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str, check_exec: bool = False):
+def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
 
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,
@@ -54,7 +55,7 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str, check_
     return tasks["taskArns"]
 
 
-def check_if_ecs_exec_is_available(ecs_client, cluster_arn, task_arns):
+def check_if_ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List[str]):
 
     current_attemps = 0
     execute_command_agent_status = ""
