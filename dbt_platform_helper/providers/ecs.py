@@ -51,7 +51,6 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str, check_
     if not tasks["taskArns"]:
         return []
 
-    print(tasks["taskArns"])
     return tasks["taskArns"]
 
 
