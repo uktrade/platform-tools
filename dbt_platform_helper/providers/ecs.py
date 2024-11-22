@@ -55,20 +55,21 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str, check_
     return tasks["taskArns"]
 
 
-def check_if_ecs_exec_is_availble(ecs_client, cluster_arn, task_arns):
+def check_if_ecs_exec_is_available(ecs_client, cluster_arn, task_arns):
 
     current_attemps = 0
     execute_command_agent_status = ""
-    # TODO - error if max attempts is reached
     while execute_command_agent_status != "RUNNING" and current_attemps <= 25:
 
         current_attemps = current_attemps + 1
 
-        task_details = ecs_client.describe_tasks(
-            cluster=cluster_arn,
-            tasks=task_arns
-        )
+        task_details = ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
 
-        managed_agents = task_details['tasks'][0]['containers'][0]['managedAgents']
-        execute_command_agent_status = [agent['lastStatus'] for agent in managed_agents if agent['name'] == 'ExecuteCommandAgent'][0]
+        managed_agents = task_details["tasks"][0]["containers"][0]["managedAgents"]
+        execute_command_agent_status = [
+            agent["lastStatus"]
+            for agent in managed_agents
+            if agent["name"] == "ExecuteCommandAgent"
+        ][0]
+        # TODO - error if max attempts is reached
         time.sleep(1)

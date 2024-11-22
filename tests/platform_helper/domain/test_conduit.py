@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 
@@ -29,14 +30,20 @@ class ConduitMocks:
         sessions = {"000000000": session}
         dummy_application = Application(app_name)
         dummy_application.environments = {env: Environment(env, "000000000", sessions)}
-        self.application = dummy_application
-
+        self.add_stack_delete_policy_to_task_role_fn = kwargs.get(
+            "add_stack_delete_policy_to_task_role_fn", Mock()
+        )
         self.addon_client_is_running_fn = kwargs.get(
-            "addon_client_is_running_fn", Mock(return_value=False)
+            "addon_client_is_running_fn", Mock(return_value=[])
+        )
+        self.application = dummy_application
+        self.check_if_ecs_exec_is_available_fn = kwargs.get(
+            "check_if_ecs_exec_is_available_fn", Mock()
         )
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
         self.create_postgres_admin_task_fn = kwargs.get("create_postgres_admin_task_fn", Mock())
+        self.echo_fn = kwargs.get("echo_fn", Mock())
         self.get_addon_type_fn = kwargs.get("get_addon_type_fn", Mock(return_value=addon_type))
         self.get_cluster_arn_fn = kwargs.get(
             "get_cluster_arn_fn",
@@ -45,9 +52,10 @@ class ConduitMocks:
         self.get_or_create_task_name_fn = kwargs.get(
             "get_or_create_task_name_fn", Mock(return_value="task_name")
         )
-        self.add_stack_delete_policy_to_task_role_fn = kwargs.get(
-            "add_stack_delete_policy_to_task_role_fn", Mock()
+        self.get_parameter_name_fn = kwargs.get(
+            "get_parameter_name", Mock(return_value="parameter_name")
         )
+        self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
         self.update_conduit_stack_resources_fn = kwargs.get(
             "update_conduit_stack_resources_fn", Mock(return_value=f"task-{task_name}")
         )
@@ -55,28 +63,23 @@ class ConduitMocks:
             "wait_for_cloudformation_to_reach_status_fn", Mock()
         )
 
-        self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
-        self.echo_fn = kwargs.get("echo_fn", Mock())
-        self.get_parameter_name_fn = kwargs.get(
-            "get_parameter_name", Mock(return_value="parameter_name")
-        )
-
     def params(self):
         return {
-            "application": self.application,
-            "subprocess_fn": self.subprocess,
-            "echo_fn": self.echo_fn,
+            "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
             "addon_client_is_running_fn": self.addon_client_is_running_fn,
+            "application": self.application,
+            "check_if_ecs_exec_is_available_fn": self.check_if_ecs_exec_is_available_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
             "create_postgres_admin_task_fn": self.create_postgres_admin_task_fn,
+            "echo_fn": self.echo_fn,
             "get_addon_type_fn": self.get_addon_type_fn,
             "get_cluster_arn_fn": self.get_cluster_arn_fn,
             "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
-            "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
+            "get_parameter_name_fn": self.get_parameter_name_fn,
+            "subprocess_fn": self.subprocess,
             "update_conduit_stack_resources_fn": self.update_conduit_stack_resources_fn,
             "wait_for_cloudformation_to_reach_status_fn": self.wait_for_cloudformation_to_reach_status_fn,
-            "get_parameter_name_fn": self.get_parameter_name_fn,
         }
 
 
@@ -153,7 +156,11 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
 def test_conduit_client_already_running():
     conduit_mocks = ConduitMocks(
-        app_name, addon_type, addon_client_is_running_fn=Mock(return_value=True)
+        app_name,
+        addon_type,
+        addon_client_is_running_fn=MagicMock(
+            return_value=["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
+        ),
     )
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
@@ -174,7 +181,14 @@ def test_conduit_client_already_running():
     conduit.update_conduit_stack_resources_fn.assert_not_called()
     conduit.create_addon_client_task_fn.assert_not_called()
 
-    conduit_mocks.echo_fn.assert_called_once_with("Connecting to conduit task")
+    conduit_mocks.echo_fn.assert_has_calls(
+        [
+            call("Checking if a conduit task is already running for postgres"),
+            call("Conduit task already running"),
+            call("Checking if exec is available for conduit task..."),
+            call("Connecting to conduit task"),
+        ]
+    )
 
 
 def test_conduit_domain_when_no_cluster_exists():
