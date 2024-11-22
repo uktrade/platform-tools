@@ -177,3 +177,17 @@ my-s3-external-access-bucket-invalid-email:
           write: True
           read: True
           cyber_sign_off_by: somebody@dodgy-domain.com
+
+my-s3-cross-environment-service-access-bucket-invalid-environment:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: invalid-environment
+          account: test-account
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk

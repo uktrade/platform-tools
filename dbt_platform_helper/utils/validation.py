@@ -280,9 +280,18 @@ EXTERNAL_ROLE_ACCESS = {
     "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
 }
 
-EXTERNAL_ROLE_ACCESS_NAME = Regex(
+CROSS_ENVIRONMENT_SERVICE_ACCESS = {
+    "application": str,
+    "environment": ENV_NAME,
+    "account": str,
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
+}
+
+KEY = Regex(
     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
-    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
+    error="Key {} is invalid: keys must only contain lowercase alphanumeric characters separated by hypen or underscore",
 )
 
 DATA_IMPORT = {
@@ -307,7 +316,7 @@ S3_BASE = {
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
             Optional("data_migration"): DATA_MIGRATION,
-            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+            Optional("external_role_access"): {KEY: EXTERNAL_ROLE_ACCESS},
         },
     },
 }

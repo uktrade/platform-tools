@@ -71,3 +71,17 @@ my-s3-bucket-with-external-access:
           write: True
           read: True
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: invalid-environment
+          account: test-account
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@digital.trade.gov.uk
