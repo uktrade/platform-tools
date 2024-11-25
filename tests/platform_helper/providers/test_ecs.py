@@ -74,7 +74,7 @@ def test_check_if_ecs_exec_is_availble_success(
     check_if_ecs_exec_is_available(
         mocked_ecs_client,
         mocked_cluster_arn,
-        ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
+        ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
     )
 
 
