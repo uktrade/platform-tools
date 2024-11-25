@@ -30,9 +30,9 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
 def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
     with pytest.raises(NoClusterError):
         get_cluster_arn(
-            mock_application.environments["staging"].session.client("ecs"),
+            mock_application.environments["development"].session.client("ecs"),
             mock_application.name,
-            "staging",
+            "does-not-exist",
         )
 
 
@@ -66,6 +66,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
     vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
     subnet = ec2.create_subnet(VpcId=vpc.id, CidrBlock="10.0.0.0/18")
 
+    # create unrelated task
     mocked_task_definition_arn = ecs_client.register_task_definition(
         family=f"other-task",
         requiresCompatibilities=["FARGATE"],
