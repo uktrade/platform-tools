@@ -430,6 +430,15 @@ environments:
     versions:
         terraform-platform-modules: 1.2.3
   staging:
+  hotfix:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "non-prod-dns-acc"
+        id: "6677889900"
+    vpc: hotfix-vpc
   prod:
     accounts:
       deploy:
