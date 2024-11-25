@@ -3,6 +3,7 @@ import pytest
 from dbt_platform_helper.exceptions import AddonNotFoundError
 from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
@@ -50,6 +51,11 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             SecretNotFoundError,
             {"secret_name": "test-secret"},
             """No secret called "test-secret".""",
+        ),
+        (
+            ECSAgentNotRunning,
+            {},
+            """ECS exec agent never reached "RUNNING" status""",
         ),
     ],
 )

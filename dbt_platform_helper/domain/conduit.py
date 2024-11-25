@@ -3,7 +3,6 @@ from collections.abc import Callable
 
 import click
 
-from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
@@ -21,7 +20,6 @@ from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class Conduit:
@@ -42,7 +40,6 @@ class Conduit:
         add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=update_conduit_stack_resources,
         wait_for_cloudformation_to_reach_status_fn=wait_for_cloudformation_to_reach_status,
-        abort_fn=abort_with_error,
     ):
 
         self.application = application
@@ -60,7 +57,6 @@ class Conduit:
         self.add_stack_delete_policy_to_task_role_fn = add_stack_delete_policy_to_task_role_fn
         self.update_conduit_stack_resources_fn = update_conduit_stack_resources_fn
         self.wait_for_cloudformation_to_reach_status_fn = wait_for_cloudformation_to_reach_status_fn
-        self.abort_fn = abort_fn
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
@@ -106,10 +102,7 @@ class Conduit:
 
         self.echo_fn(f"Checking if exec is available for conduit task...")
 
-        try:
-            self.ecs_exec_is_available_fn(clients["ecs"], cluster_arn, task_arn)
-        except ECSAgentNotRunning:
-            self.abort_fn('ECS exec agent never reached "RUNNING" status')
+        self.ecs_exec_is_available_fn(clients["ecs"], cluster_arn, task_arn)
 
         self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(

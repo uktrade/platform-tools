@@ -100,4 +100,5 @@ class SecretNotFoundError(AWSException):
 
 
 class ECSAgentNotRunning(AWSException):
-    pass
+    def __init__(self):
+        super().__init__("""ECS exec agent never reached "RUNNING" status""")
