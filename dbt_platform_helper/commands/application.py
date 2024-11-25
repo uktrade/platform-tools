@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # application commands are deprecated, do not spend time refactoring them
+# Service teams are trained to use them as a replacement for cf app(s)
 
 import time
 from datetime import datetime
