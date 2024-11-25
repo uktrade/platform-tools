@@ -11,8 +11,6 @@ from dbt_platform_helper.providers.cloudformation import (
     wait_for_cloudformation_to_reach_status,
 )
 
-# TODO - Some bits being imported twice.
-# from dbt_platform_helper.providers.copilot import addon_client_is_running
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
