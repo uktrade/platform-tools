@@ -9,6 +9,7 @@ from dbt_platform_helper.providers.ecs import get_cluster_arn
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 
 env = "development"
 
@@ -60,7 +61,7 @@ def test_addon_client_is_running(
     "addon_type",
     ["postgres"],  # , "redis", "opensearch"
 )
-def test_addon_client_and_exec_is_running(
+def test_check_if_ecs_exec_is_availble_success(
     mock_cluster_client_task, mocked_cluster, addon_type, mock_application
 ):
     """Test that, given cluster ARN, addon type and with a running agent,
@@ -70,13 +71,10 @@ def test_addon_client_and_exec_is_running(
     mocked_ecs_client = mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
-    assert (
-        check_if_ecs_exec_is_available(
-            mocked_ecs_client,
-            mocked_cluster_arn,
-            ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
-        )
-        is "RUNNING"
+    check_if_ecs_exec_is_available(
+        mocked_ecs_client,
+        mocked_cluster_arn,
+        ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
     )
 
 
@@ -94,14 +92,12 @@ def test_addon_client_and_exec_is_not_running(
     mocked_ecs_client = mock_cluster_client_task(addon_type, "PENDING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
-    assert (
+    with pytest.raises(ECSAgentNotRunning):
         check_if_ecs_exec_is_available(
             mocked_ecs_client,
             mocked_cluster_arn,
             ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
         )
-        is "PENDING"
-    )
 
 
 @pytest.mark.parametrize(

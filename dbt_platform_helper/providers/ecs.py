@@ -4,6 +4,7 @@ import time
 from typing import List
 
 from dbt_platform_helper.exceptions import NoClusterError
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 
 
 # TODO Refactor this to support passing a list of tags to check against, allowing for a more generic implementation
@@ -57,8 +58,9 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
 
 def check_if_ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List[str]):
 
-    current_attemps = 0
+    current_attemps = 1
     execute_command_agent_status = ""
+
     while execute_command_agent_status != "RUNNING" and current_attemps <= 25:
 
         current_attemps = current_attemps + 1
@@ -71,7 +73,8 @@ def check_if_ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List
             for agent in managed_agents
             if agent["name"] == "ExecuteCommandAgent"
         ][0]
-        # TODO - error if max attempts is reached
+
         time.sleep(1)
 
-    return execute_command_agent_status
+    if execute_command_agent_status != "RUNNING":
+        raise ECSAgentNotRunning

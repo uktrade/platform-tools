@@ -75,3 +75,7 @@ class ApplicationEnvironmentNotFoundError(Exception):
 
 class SecretNotFoundError(AWSException):
     pass
+
+
+class ECSAgentNotRunning(AWSException):
+    pass
