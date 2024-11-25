@@ -1,7 +1,6 @@
 import json
 import time
 
-import click
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
@@ -126,20 +125,14 @@ def connect_to_addon_client_task(
     while tries < 15 and not running:
         tries += 1
         if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
-            # TODO user ecs.describe_task to check if exec agent is running before call subprocess
-            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/describe_tasks.html
-            try:
-                subprocess.call(
-                    "copilot task exec "
-                    f"--app {application_name} --env {env} "
-                    f"--name {task_name} "
-                    f"--command bash",
-                    shell=True,
-                )
-                running = True
-            except ecs_client.exceptions.InvalidParameterException:
-                # Unable to connect, execute command agent probably isn’t running yet
-                click.echo("Unable to connect, execute command agent probably isn’t running yet")
+            subprocess.call(
+                "copilot task exec "
+                f"--app {application_name} --env {env} "
+                f"--name {task_name} "
+                f"--command bash",
+                shell=True,
+            )
+            running = True
 
         time.sleep(1)
 
