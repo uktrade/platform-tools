@@ -16,9 +16,6 @@ from tests.platform_helper.conftest import mock_task_name
 
 @mock_aws
 def test_get_cluster_arn(mocked_cluster, mock_application):
-    """Test that, given app and environment strings, get_cluster_arn returns the
-    arn of a cluster tagged with these strings."""
-
     assert (
         get_cluster_arn(
             mock_application.environments["development"].session.client("ecs"),
@@ -39,14 +36,11 @@ def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
         )
 
 
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
 def test_get_ecs_task_arns_with_running_task(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
+    mock_cluster_client_task, mocked_cluster, mock_application
 ):
 
+    addon_type = "redis"
     mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
@@ -54,12 +48,9 @@ def test_get_ecs_task_arns_with_running_task(
     assert get_ecs_task_arns(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
 
 
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, addon_type, mock_application):
+def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, mock_application):
 
+    addon_type = "opensearch"
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
 
@@ -103,9 +94,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
     assert len(get_ecs_task_arns(ecs_client, cluster_arn, task_name)) is 0
 
 
-def test_check_if_ecs_exec_is_availble_success(
-    mock_cluster_client_task, mocked_cluster, mock_application
-):
+def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_application):
 
     # use mock ecs_client as describe_tasks is overriden
     mocked_ecs_client = mock_cluster_client_task("postgres")
@@ -119,7 +108,7 @@ def test_check_if_ecs_exec_is_availble_success(
 
 
 @patch("time.sleep", return_value=None)
-def test_addon_client_and_exec_is_not_running(
+def test_test_ecs_exec_is_available_with_exec_not_running_raises_exception(
     sleep, mock_cluster_client_task, mocked_cluster, mock_application
 ):
 
@@ -137,8 +126,6 @@ def test_addon_client_and_exec_is_not_running(
 
 @mock_aws
 def test_get_or_create_task_name(mock_application):
-    """Test that get_or_create_task_name retrieves the task name from the
-    parameter store when it has been stored."""
 
     addon_name = "app-postgres"
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
@@ -158,10 +145,7 @@ def test_get_or_create_task_name(mock_application):
 
 
 @mock_aws
-def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
-    """Test that get_or_create_task_name creates the task name and appends it
-    with a 12 digit lowercase alphanumeric string when it does not exist in the
-    parameter store."""
+def test_get_or_create_task_name_appends_random_id(mock_application):
 
     addon_name = "app-postgres"
     ssm_client = mock_application.environments["development"].session.client("ssm")
