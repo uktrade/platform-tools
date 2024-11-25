@@ -58,12 +58,12 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
 
 def ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List[str]):
 
-    current_attemps = 1
+    current_attemps = 0
     execute_command_agent_status = ""
 
-    while execute_command_agent_status != "RUNNING" and current_attemps <= 25:
+    while execute_command_agent_status != "RUNNING" and current_attemps < 25:
 
-        current_attemps = current_attemps + 1
+        current_attemps += 1
 
         task_details = ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
 
