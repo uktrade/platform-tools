@@ -111,6 +111,13 @@ def test_validate_addons_success(addons_file):
                 "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
                 "my-s3-cross-environment-service-access-bucket-invalid-environment": r"Environment name hyphen-not-allowed-in-environment is invalid",
                 "my-s3-cross-environment-service-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
+                "my-s3-cross-environment-service-access-bucket-missing-application": r"Missing key: 'application'",
+                "my-s3-cross-environment-service-access-bucket-missing-environment": r"Missing key: 'environment'",
+                "my-s3-cross-environment-service-access-bucket-missing-account": r"Missing key: 'account'",
+                "my-s3-cross-environment-service-access-bucket-missing-service": r"Missing key: 'service'",
+                "my-s3-cross-environment-service-access-bucket-invalid-write": r"cross_environment_service_access.*'WRITE' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-invalid-read": r"cross_environment_service_access.*'READ' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off": r"Missing key: 'cyber_sign_off_by'",
             },
         ),
         (

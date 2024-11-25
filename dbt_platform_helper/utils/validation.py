@@ -268,7 +268,7 @@ def iam_role_arn_regex(key):
 
 def dbt_email_address_regex(key):
     return Regex(
-        r"^[\w\-\.]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
         error=f"{key} must contain a valid DBT email address",
     )
 
@@ -292,7 +292,7 @@ CROSS_ENVIRONMENT_SERVICE_ACCESS = {
 
 LOWER_ALPHANUMERIC = Regex(
     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
-    error="{} is invalid: must only contain lowercase alphanumeric characters separated by hypen or underscore",
+    error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
 
 DATA_IMPORT = {

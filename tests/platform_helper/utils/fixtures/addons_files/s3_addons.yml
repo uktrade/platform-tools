@@ -85,4 +85,4 @@ my-s3-cross-environment-service-access-bucket:
           service: web
           write: True
           read: True
-          cyber_sign_off_by: somebody@digital.trade.gov.uk
+          cyber_sign_off_by: so.me-bo_dy@digital.trade.gov.uk

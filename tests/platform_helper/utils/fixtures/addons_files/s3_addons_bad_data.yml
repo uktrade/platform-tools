@@ -207,3 +207,103 @@ my-s3-cross-environment-service-access-bucket-invalid-email:
           write: True
           read: True
           cyber_sign_off_by: noone-signed-this-off
+
+my-s3-cross-environment-service-access-bucket-missing-application:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          environment: anotherenvironment
+          account: test-account
+          service: web
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-missing-environment:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          account: test-account
+          service: web
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-missing-account:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: anotherenvironment
+          service: web
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-missing-service:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: anotherenvironment
+          account: test-account
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-invalid-write:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: anotherenvironment
+          account: test-account
+          service: web
+          write: WRITE
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-invalid-read:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: anotherenvironment
+          account: test-account
+          service: web
+          write: True
+          read: READ
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      cross_environment_service_access:
+        demodjango-hotfix:
+          application: test-app
+          environment: anotherenvironment
+          account: test-account
+          service: web
+          write: True
+          read: True
