@@ -579,16 +579,17 @@ extensions:
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+    expected_error = f'duplication of key "{duplicate_key}"'
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert f'duplication of key "{duplicate_key}"' in linting_failures[0]
+    assert expected_error in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:
         load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
 
     captured = capsys.readouterr()
 
-    assert f'duplication of key "{duplicate_key}"' in captured.err
+    assert expected_error in captured.err
     assert excinfo.value.code == 1
 
 
@@ -763,7 +764,7 @@ def test_config_file_check_warns_if_deprecated_files_exist(
     [
         None,
         [{"from": "dev", "to": "test"}],
-        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test", "cross_account": "true"}],
+        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test", "cross_account": True}],
     ],
 )
 def test_validate_database_copy_section_success_cases(database_copy_section):
@@ -957,7 +958,32 @@ def test_validate_database_copy_fails_if_different_account_with_no_cross_account
 
     console_message = capfd.readouterr().err
 
-    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be specified."
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be set to true."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_different_account_with_cross_account_false(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev", "cross_account": False}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be set to true."
     assert msg in console_message
 
 

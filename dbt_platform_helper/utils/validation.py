@@ -637,9 +637,11 @@ def validate_database_copy_section(config):
                     f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                 )
 
-            if from_account != to_account and "cross_account" not in section:
+            if from_account != to_account and (
+                "cross_account" not in section or section["cross_account"] is not True
+            ):
                 errors.append(
-                    f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'cross_account' parameter must be specified."
+                    f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'cross_account' parameter must be set to true."
                 )
 
     if errors:
