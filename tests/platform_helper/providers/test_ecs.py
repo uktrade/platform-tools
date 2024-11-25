@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import boto3
 import pytest
 from moto import mock_aws
@@ -82,8 +84,9 @@ def test_check_if_ecs_exec_is_availble_success(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
+@patch("time.sleep", return_value=None)
 def test_addon_client_and_exec_is_not_running(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
+    sleep, mock_cluster_client_task, mocked_cluster, addon_type, mock_application
 ):
     """Test that, given cluster ARN, addon type and with a running agent,
     addon_client_is_running returns True."""
