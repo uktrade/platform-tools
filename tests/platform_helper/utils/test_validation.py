@@ -947,7 +947,10 @@ def test_validate_extensions_supported_versions_successful_with_supported_versio
         "application": "test-app",
         "environments": {"dev": {}, "test": {}, "prod": {}},
         "extensions": {
-            "connors-redis": {"type": "redis", "environments": {"*": {"engine": "7.1"}}}
+            "connors-redis": {
+                "type": "redis",
+                "environments": {"*": {"engine": "7.1", "plan": "tiny"}, "prod": {"plan": "tiny"}},
+            }
         },
     }
 
