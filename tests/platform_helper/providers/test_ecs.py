@@ -67,13 +67,7 @@ def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, addon_type, mock
 
 
 @mock_aws
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(
-    addon_type, mock_application, mocked_cluster
-):
+def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_application, mocked_cluster):
     ecs_client = mock_application.environments["development"].session.client("ecs")
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     task_name = "no-running-task"
