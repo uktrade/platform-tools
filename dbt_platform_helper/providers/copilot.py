@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.providers.ecs import addon_client_is_running
+from dbt_platform_helper.providers.ecs import get_ecs_task_arns
 from dbt_platform_helper.providers.secrets import get_connection_secret_arn
 from dbt_platform_helper.providers.secrets import (
     get_postgres_connection_data_updated_with_master_secret,
@@ -118,7 +118,7 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    addon_client_is_running_fn=addon_client_is_running,
+    addon_client_is_running_fn=get_ecs_task_arns,
 ):
     running = False
     tries = 0

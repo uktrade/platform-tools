@@ -33,9 +33,7 @@ class ConduitMocks:
         self.add_stack_delete_policy_to_task_role_fn = kwargs.get(
             "add_stack_delete_policy_to_task_role_fn", Mock()
         )
-        self.addon_client_is_running_fn = kwargs.get(
-            "addon_client_is_running_fn", Mock(return_value=[])
-        )
+        self.get_ecs_task_arns_fn = kwargs.get("get_ecs_task_arns_fn", Mock(return_value=[]))
         self.application = dummy_application
         self.ecs_exec_is_available_fn = kwargs.get("ecs_exec_is_available_fn", Mock())
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
@@ -64,7 +62,7 @@ class ConduitMocks:
     def params(self):
         return {
             "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
-            "addon_client_is_running_fn": self.addon_client_is_running_fn,
+            "get_ecs_task_arns_fn": self.get_ecs_task_arns_fn,
             "application": self.application,
             "ecs_exec_is_available_fn": self.ecs_exec_is_available_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
@@ -101,7 +99,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
     conduit.start(env, addon_name, access)
 
-    conduit.addon_client_is_running_fn.assert_has_calls(
+    conduit.get_ecs_task_arns_fn.assert_has_calls(
         [call(ecs_client, cluster_name, task_name), call(ecs_client, cluster_name, task_name)]
     )
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
@@ -159,7 +157,7 @@ def test_conduit_with_task_already_running():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        addon_client_is_running_fn=MagicMock(
+        get_ecs_task_arns_fn=MagicMock(
             return_value=["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
         ),
     )
@@ -169,7 +167,7 @@ def test_conduit_with_task_already_running():
 
     conduit.start(env, addon_name, "read")
 
-    conduit.addon_client_is_running_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+    conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
     )
@@ -210,7 +208,7 @@ def test_conduit_domain_when_no_connection_secret_exists():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        addon_client_is_running_fn=Mock(return_value=False),
+        get_ecs_task_arns_fn=Mock(return_value=False),
         create_addon_client_task_fn=Mock(side_effect=SecretNotFoundError()),
     )
 
@@ -240,9 +238,7 @@ def test_conduit_domain_when_client_task_fails_to_start():
 
     with pytest.raises(CreateTaskTimeoutError):
         conduit.start(env, addon_name)
-        conduit.addon_client_is_running_fn.assert_called_once_with(
-            ecs_client, cluster_name, task_name
-        )
+        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
         conduit.connect_to_addon_client_task_fn.assert_called_once_with(
             ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
         )
@@ -270,9 +266,7 @@ def test_conduit_domain_when_addon_type_is_invalid():
 
     with pytest.raises(InvalidAddonTypeError):
         conduit.start(env, addon_name)
-        conduit.addon_client_is_running_fn.assert_called_once_with(
-            ecs_client, cluster_name, task_name
-        )
+        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
 
 
 def test_conduit_domain_when_addon_does_not_exist():
@@ -286,9 +280,7 @@ def test_conduit_domain_when_addon_does_not_exist():
 
     with pytest.raises(AddonNotFoundError):
         conduit.start(env, addon_name)
-        conduit.addon_client_is_running_fn.assert_called_once_with(
-            ecs_client, cluster_name, task_name
-        )
+        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
 
 
 def test_conduit_domain_when_no_addon_config_parameter_exists():
@@ -302,6 +294,4 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
 
     with pytest.raises(ParameterNotFoundError):
         conduit.start(env, addon_name)
-        conduit.addon_client_is_running_fn.assert_called_once_with(
-            ecs_client, cluster_name, task_name
-        )
+        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)

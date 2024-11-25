@@ -41,8 +41,7 @@ def get_or_create_task_name(
         return f"conduit-{application_name}-{env}-{addon_name}-{random_id}"
 
 
-# TODO Rename and extract ECS family as parameter / make more general
-def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
+def get_ecs_task_arns(ecs_client, cluster_arn: str, task_name: str):
 
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,

@@ -6,9 +6,9 @@ from moto import mock_aws
 
 from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
-from dbt_platform_helper.providers.ecs import addon_client_is_running
 from dbt_platform_helper.providers.ecs import ecs_exec_is_available
 from dbt_platform_helper.providers.ecs import get_cluster_arn
+from dbt_platform_helper.providers.ecs import get_ecs_task_arns
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
@@ -30,10 +30,7 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
 
 
 @mock_aws
-def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
-    """Test that, given app and environment strings, get_cluster_arn raises an
-    exception when no cluster tagged with these strings exists."""
-
+def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
     with pytest.raises(NoClusterError):
         get_cluster_arn(
             mock_application.environments["staging"].session.client("ecs"),
@@ -46,79 +43,27 @@ def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_addon_client_is_running(
+def test_get_ecs_task_arns_with_running_task(
     mock_cluster_client_task, mocked_cluster, addon_type, mock_application
 ):
-    """Test that, given cluster ARN, addon type and with a running agent,
-    addon_client_is_running returns True."""
 
     mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
 
-    assert addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres"],  # , "redis", "opensearch"
-)
-def test_check_if_ecs_exec_is_availble_success(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
-):
-    """Test that, given cluster ARN, addon type and with a running agent,
-    addon_client_is_running returns True."""
-
-    # use mock ecs_client as describe_tasks is overriden
-    mocked_ecs_client = mock_cluster_client_task(addon_type)
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-
-    ecs_exec_is_available(
-        mocked_ecs_client,
-        mocked_cluster_arn,
-        ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
-    )
+    assert get_ecs_task_arns(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
 
 
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("time.sleep", return_value=None)
-def test_addon_client_and_exec_is_not_running(
-    sleep, mock_cluster_client_task, mocked_cluster, addon_type, mock_application
-):
-    """Test that, given cluster ARN, addon type and with a running agent,
-    addon_client_is_running returns True."""
-
-    mocked_ecs_client = mock_cluster_client_task(addon_type, "PENDING")
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-
-    with pytest.raises(ECSAgentNotRunning):
-        ecs_exec_is_available(
-            mocked_ecs_client,
-            mocked_cluster_arn,
-            ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
-        )
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_addon_client_is_running_when_no_client_task_running(
-    mocked_cluster, addon_type, mock_application
-):
-    """Test that, given cluster ARN, addon type and without a running client
-    task, addon_client_is_running returns False."""
+def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, addon_type, mock_application):
 
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
 
-    assert (
-        len(addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type)))
-        is 0
-    )
+    assert len(get_ecs_task_arns(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))) is 0
 
 
 @mock_aws
@@ -126,18 +71,18 @@ def test_addon_client_is_running_when_no_client_task_running(
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_addon_client_is_running_when_no_client_agent_running(
+def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(
     addon_type, mock_application, mocked_cluster
 ):
     ecs_client = mock_application.environments["development"].session.client("ecs")
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    task_name = "some-task-name"
+    task_name = "no-running-task"
     ec2 = boto3.resource("ec2")
     vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
     subnet = ec2.create_subnet(VpcId=vpc.id, CidrBlock="10.0.0.0/18")
 
     mocked_task_definition_arn = ecs_client.register_task_definition(
-        family=f"copilot-foobar",
+        family=f"other-task",
         requiresCompatibilities=["FARGATE"],
         networkMode="awsvpc",
         containerDefinitions=[
@@ -161,7 +106,39 @@ def test_addon_client_is_running_when_no_client_agent_running(
         },
     )
 
-    assert len(addon_client_is_running(ecs_client, cluster_arn, task_name)) is 0
+    assert len(get_ecs_task_arns(ecs_client, cluster_arn, task_name)) is 0
+
+
+def test_check_if_ecs_exec_is_availble_success(
+    mock_cluster_client_task, mocked_cluster, mock_application
+):
+
+    # use mock ecs_client as describe_tasks is overriden
+    mocked_ecs_client = mock_cluster_client_task("postgres")
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    ecs_exec_is_available(
+        mocked_ecs_client,
+        mocked_cluster_arn,
+        ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
+    )
+
+
+@patch("time.sleep", return_value=None)
+def test_addon_client_and_exec_is_not_running(
+    sleep, mock_cluster_client_task, mocked_cluster, mock_application
+):
+
+    # use mock ecs_client as describe_tasks is overriden
+    mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+
+    with pytest.raises(ECSAgentNotRunning):
+        ecs_exec_is_available(
+            mocked_ecs_client,
+            mocked_cluster_arn,
+            ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
+        )
 
 
 @mock_aws

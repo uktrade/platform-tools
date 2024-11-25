@@ -14,9 +14,9 @@ from dbt_platform_helper.providers.cloudformation import (
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.ecs import addon_client_is_running
 from dbt_platform_helper.providers.ecs import ecs_exec_is_available
 from dbt_platform_helper.providers.ecs import get_cluster_arn
+from dbt_platform_helper.providers.ecs import get_ecs_task_arns
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
@@ -30,7 +30,7 @@ class Conduit:
         application: Application,
         echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
-        addon_client_is_running_fn=addon_client_is_running,
+        get_ecs_task_arns_fn=get_ecs_task_arns,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
@@ -48,7 +48,7 @@ class Conduit:
         self.application = application
         self.subprocess_fn = subprocess_fn
         self.echo_fn = echo_fn
-        self.addon_client_is_running_fn = addon_client_is_running_fn
+        self.get_ecs_task_arns_fn = get_ecs_task_arns_fn
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
         self.create_addon_client_task_fn = create_addon_client_task_fn
         self.create_postgres_admin_task = create_postgres_admin_task_fn
@@ -69,7 +69,7 @@ class Conduit:
         )
 
         self.echo_fn(f"Checking if a conduit task is already running for {addon_type}")
-        task_arn = self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name)
+        task_arn = self.get_ecs_task_arns_fn(clients["ecs"], cluster_arn, task_name)
         if not task_arn:
             self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
@@ -99,7 +99,7 @@ class Conduit:
                 access,
             )
 
-            task_arn = self.addon_client_is_running_fn(clients["ecs"], cluster_arn, task_name)
+            task_arn = self.get_ecs_task_arns_fn(clients["ecs"], cluster_arn, task_name)
 
         else:
             self.echo_fn("Conduit task already running")
