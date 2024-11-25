@@ -155,7 +155,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
     )
 
 
-def test_conduit_client_already_running():
+def test_conduit_with_task_already_running():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
@@ -200,7 +200,7 @@ def test_conduit_domain_when_no_cluster_exists():
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
 
-    with pytest.raises(NoClusterError) as exc:
+    with pytest.raises(NoClusterError):
         conduit.start(env, addon_name)
         conduit.get_addon_type_fn.assert_called_once_with(ssm_client, app_name, env, addon_name)
         conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
@@ -218,7 +218,7 @@ def test_conduit_domain_when_no_connection_secret_exists():
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
 
-    with pytest.raises(SecretNotFoundError) as exc:
+    with pytest.raises(SecretNotFoundError):
         conduit.start(env, addon_name)
         conduit.get_addon_type_fn.assert_called_once_with(ssm_client, app_name, env, addon_name)
         conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
@@ -238,7 +238,7 @@ def test_conduit_domain_when_client_task_fails_to_start():
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
 
-    with pytest.raises(CreateTaskTimeoutError) as exc:
+    with pytest.raises(CreateTaskTimeoutError):
         conduit.start(env, addon_name)
         conduit.addon_client_is_running_fn.assert_called_once_with(
             ecs_client, cluster_name, task_name
@@ -268,7 +268,7 @@ def test_conduit_domain_when_addon_type_is_invalid():
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
 
-    with pytest.raises(InvalidAddonTypeError) as exc:
+    with pytest.raises(InvalidAddonTypeError):
         conduit.start(env, addon_name)
         conduit.addon_client_is_running_fn.assert_called_once_with(
             ecs_client, cluster_name, task_name
@@ -284,7 +284,7 @@ def test_conduit_domain_when_addon_does_not_exist():
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
 
-    with pytest.raises(AddonNotFoundError) as exc:
+    with pytest.raises(AddonNotFoundError):
         conduit.start(env, addon_name)
         conduit.addon_client_is_running_fn.assert_called_once_with(
             ecs_client, cluster_name, task_name
@@ -300,7 +300,7 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
 
-    with pytest.raises(ParameterNotFoundError) as exc:
+    with pytest.raises(ParameterNotFoundError):
         conduit.start(env, addon_name)
         conduit.addon_client_is_running_fn.assert_called_once_with(
             ecs_client, cluster_name, task_name
