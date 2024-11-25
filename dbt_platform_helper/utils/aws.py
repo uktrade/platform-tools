@@ -496,7 +496,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         ValueError,
         ssm_client.exceptions.ParameterNotFound,
     ):
-        raise CopilotCodebaseNotFoundError
+        raise CopilotCodebaseNotFoundError(codebase)
 
 
 def check_image_exists(session, application, codebase, commit):
@@ -510,7 +510,7 @@ def check_image_exists(session, application, codebase, commit):
         ecr_client.exceptions.RepositoryNotFoundException,
         ecr_client.exceptions.ImageNotFoundException,
     ):
-        raise ImageNotFoundError
+        raise ImageNotFoundError(commit)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:

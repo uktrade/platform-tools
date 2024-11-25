@@ -147,22 +147,15 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    mocks.subprocess.return_value.stderr = mock_suprocess_fixture()
+    mocks.subprocess.return_value.stdout = mock_suprocess_fixture()
 
-    codebase.prepare()
-
-    mocks.echo_fn.assert_has_calls(
-        [
-            call(
-                "You are in the deploy repository; make sure you are in the application codebase repository.",
-            ),
-        ]
-    )
+    with pytest.raises(NotInCodeBaseRepositoryError):
+        codebase.prepare()
 
 
 def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError()
+    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError):
@@ -186,7 +179,7 @@ def test_codebase_build_commit_not_found():
         codebase.build("not-an-application", "application", "ab1c23d")
 
 
-def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
+def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
     mocks = CodebaseMocks()
     mocks.load_application_fn.side_effect = SystemExit(1)
 
@@ -283,7 +276,9 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 
 
 def test_codebase_deploy_exception_with_a_nonexistent_codebase():
-    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError()))
+    mocks = CodebaseMocks(
+        check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
+    )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -305,13 +300,15 @@ def test_codebase_deploy_exception_with_malformed_json():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(CopilotCodebaseNotFoundError):  # json.JSONDecodeError
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
-    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=ImageNotFoundError))
+    mocks = CodebaseMocks(
+        check_image_exists_fn=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
+    )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -326,7 +323,9 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
-    mocks = CodebaseMocks(check_image_exists_fn=Mock(side_effect=ImageNotFoundError))
+    mocks = CodebaseMocks(
+        check_image_exists_fn=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
+    )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -374,7 +373,7 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError()
+    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError) as exc:
@@ -423,7 +422,7 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError()
+    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError) as exc:

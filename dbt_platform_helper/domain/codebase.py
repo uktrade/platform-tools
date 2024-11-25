@@ -11,6 +11,7 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
@@ -134,7 +135,7 @@ class Codebase:
                 f"Your build has been triggered. Check your build progress in the AWS Console: {build_url}"
             )
 
-        raise ApplicationDeploymentNotTriggered()
+        raise ApplicationDeploymentNotTriggered(codebase)
 
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
@@ -142,9 +143,12 @@ class Codebase:
 
         application = self.load_application_fn(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundError()
+            raise ApplicationEnvironmentNotFoundError(env)
 
-        json.loads(self.check_codebase_exists_fn(session, application, codebase))
+        try:
+            json.loads(self.check_codebase_exists_fn(session, application, codebase))
+        except json.JSONDecodeError:
+            raise CopilotCodebaseNotFoundError(codebase)
 
         self.check_image_exists_fn(session, application, codebase, commit)
 
@@ -171,7 +175,7 @@ class Codebase:
                 f"{build_url}",
             )
 
-        raise ApplicationDeploymentNotTriggered()
+        raise ApplicationDeploymentNotTriggered(codebase)
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""

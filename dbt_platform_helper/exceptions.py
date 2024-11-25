@@ -1,3 +1,5 @@
+import os
+
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 
 
@@ -65,10 +67,14 @@ class AddonTypeMissingFromConfigError(AWSException):
 
 
 class CopilotCodebaseNotFoundError(Exception):
-    pass
+    def __init__(self, codebase: str):
+        super().__init__(
+            f"""The codebase "{codebase}" either does not exist or has not been deployed."""
+        )
 
 
 class NotInCodeBaseRepositoryError(Exception):
+    # TODO move message here
     pass
 
 
@@ -77,19 +83,29 @@ class NoCopilotCodebasesFoundError(Exception):
 
 
 class ImageNotFoundError(Exception):
-    pass
+    def __init__(self, commit: str):
+        super().__init__(
+            f"""The commit hash "{commit}" has not been built into an image, try the `platform-helper codebase build` command first."""
+        )
 
 
 class ApplicationDeploymentNotTriggered(Exception):
-    pass
+    def __init__(self, codebase: str):
+        super().__init__(f"""Your deployment for {codebase} was not triggered.""")
 
 
 class ApplicationNotFoundError(Exception):
-    pass
+    def __init__(self, application_name: str):
+        super().__init__(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        )
 
 
 class ApplicationEnvironmentNotFoundError(Exception):
-    pass
+    def __init__(self, environment: str):
+        super().__init__(
+            f"""The environment "{environment}" either does not exist or has not been deployed."""
+        )
 
 
 class SecretNotFoundError(AWSException):

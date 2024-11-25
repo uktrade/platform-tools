@@ -1,9 +1,16 @@
+import os
+
 import pytest
 
 from dbt_platform_helper.exceptions import AddonNotFoundError
 from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
+from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.exceptions import ApplicationNotFoundError
+from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
 from dbt_platform_helper.exceptions import ECSAgentNotRunning
+from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
@@ -24,6 +31,26 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             """The configuration for the addon test-addon, is missconfigured and missing the addon type.""",
         ),
         (
+            ApplicationDeploymentNotTriggered,
+            {"codebase": "test-codebase"},
+            """Your deployment for test-codebase was not triggered.""",
+        ),
+        (
+            ApplicationEnvironmentNotFoundError,
+            {"environment": "development"},
+            """The environment "development" either does not exist or has not been deployed.""",
+        ),
+        (
+            ApplicationNotFoundError,
+            {"application_name": "test-application"},
+            """The account "foo" does not contain the application "test-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+        ),
+        (
+            CopilotCodebaseNotFoundError,
+            {"codebase": "test-codebase-exists"},
+            """The codebase "test-codebase-exists" either does not exist or has not been deployed.""",
+        ),
+        (
             CreateTaskTimeoutError,
             {
                 "addon_name": "test-addon",
@@ -36,6 +63,11 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             InvalidAddonTypeError,
             {"addon_type": "test-addon-type"},
             """Addon type "test-addon-type" is not supported, we support: opensearch, postgres, redis.""",
+        ),
+        (
+            ImageNotFoundError,
+            {"commit": "test-commit-hash"},
+            """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
         ),
         (
             NoClusterError,
@@ -60,5 +92,7 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
     ],
 )
 def test_exception_message(exception, exception_params, expected_message):
+    os.environ["AWS_PROFILE"] = "foo"
+
     exception = exception(**exception_params)
     assert str(exception) == expected_message
