@@ -210,7 +210,7 @@ RETENTION_POLICY = Or(
     },
 )
 
-DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME}
+DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME, Optional("cross_account"): bool}
 
 POSTGRES_DEFINITION = {
     "type": "postgres",
