@@ -2,14 +2,14 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.providers.ecs import addon_client_is_running
-from dbt_platform_helper.providers.ecs import check_if_ecs_exec_is_available
+from dbt_platform_helper.providers.ecs import ecs_exec_is_available
 from dbt_platform_helper.providers.ecs import get_cluster_arn
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
-from dbt_platform_helper.exceptions import ECSAgentNotRunning
 
 
 @mock_aws
@@ -71,7 +71,7 @@ def test_check_if_ecs_exec_is_availble_success(
     mocked_ecs_client = mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
-    check_if_ecs_exec_is_available(
+    ecs_exec_is_available(
         mocked_ecs_client,
         mocked_cluster_arn,
         ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],
@@ -92,7 +92,7 @@ def test_addon_client_and_exec_is_not_running(
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
     with pytest.raises(ECSAgentNotRunning):
-        check_if_ecs_exec_is_available(
+        ecs_exec_is_available(
             mocked_ecs_client,
             mocked_cluster_arn,
             ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"],

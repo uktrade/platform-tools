@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 import click
 
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
@@ -10,18 +11,16 @@ from dbt_platform_helper.providers.cloudformation import update_conduit_stack_re
 from dbt_platform_helper.providers.cloudformation import (
     wait_for_cloudformation_to_reach_status,
 )
-
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
 from dbt_platform_helper.providers.ecs import addon_client_is_running
-from dbt_platform_helper.providers.ecs import check_if_ecs_exec_is_available
+from dbt_platform_helper.providers.ecs import ecs_exec_is_available
 from dbt_platform_helper.providers.ecs import get_cluster_arn
 from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -36,7 +35,7 @@ class Conduit:
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
         get_addon_type_fn=get_addon_type,
-        check_if_ecs_exec_is_available_fn=check_if_ecs_exec_is_available,
+        ecs_exec_is_available_fn=ecs_exec_is_available,
         get_cluster_arn_fn=get_cluster_arn,
         get_parameter_name_fn=get_parameter_name,
         get_or_create_task_name_fn=get_or_create_task_name,
@@ -54,7 +53,7 @@ class Conduit:
         self.create_addon_client_task_fn = create_addon_client_task_fn
         self.create_postgres_admin_task = create_postgres_admin_task_fn
         self.get_addon_type_fn = get_addon_type_fn
-        self.check_if_ecs_exec_is_available_fn = check_if_ecs_exec_is_available_fn
+        self.ecs_exec_is_available_fn = ecs_exec_is_available_fn
         self.get_cluster_arn_fn = get_cluster_arn_fn
         self.get_parameter_name_fn = get_parameter_name_fn
         self.get_or_create_task_name_fn = get_or_create_task_name_fn
@@ -108,7 +107,7 @@ class Conduit:
         self.echo_fn(f"Checking if exec is available for conduit task...")
 
         try:
-            self.check_if_ecs_exec_is_available_fn(clients["ecs"], cluster_arn, task_arn)
+            self.ecs_exec_is_available_fn(clients["ecs"], cluster_arn, task_arn)
         except ECSAgentNotRunning:
             self.abort_fn('ECS exec agent never reached "RUNNING" status')
 

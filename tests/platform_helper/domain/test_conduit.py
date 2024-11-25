@@ -37,9 +37,7 @@ class ConduitMocks:
             "addon_client_is_running_fn", Mock(return_value=[])
         )
         self.application = dummy_application
-        self.check_if_ecs_exec_is_available_fn = kwargs.get(
-            "check_if_ecs_exec_is_available_fn", Mock()
-        )
+        self.ecs_exec_is_available_fn = kwargs.get("ecs_exec_is_available_fn", Mock())
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
         self.create_postgres_admin_task_fn = kwargs.get("create_postgres_admin_task_fn", Mock())
@@ -68,7 +66,7 @@ class ConduitMocks:
             "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
             "addon_client_is_running_fn": self.addon_client_is_running_fn,
             "application": self.application,
-            "check_if_ecs_exec_is_available_fn": self.check_if_ecs_exec_is_available_fn,
+            "ecs_exec_is_available_fn": self.ecs_exec_is_available_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
             "create_postgres_admin_task_fn": self.create_postgres_admin_task_fn,
