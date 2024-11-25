@@ -1,6 +1,9 @@
 import random
 import string
+import time
+from typing import List
 
+from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
 
 
@@ -38,8 +41,8 @@ def get_or_create_task_name(
         return f"conduit-{application_name}-{env}-{addon_name}-{random_id}"
 
 
-# TODO Rename and extract ECS family as parameter / make more general
-def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
+def get_ecs_task_arns(ecs_client, cluster_arn: str, task_name: str):
+
     tasks = ecs_client.list_tasks(
         cluster=cluster_arn,
         desiredStatus="RUNNING",
@@ -47,6 +50,30 @@ def addon_client_is_running(ecs_client, cluster_arn: str, task_name: str):
     )
 
     if not tasks["taskArns"]:
-        return False
+        return []
 
-    return True
+    return tasks["taskArns"]
+
+
+def ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List[str]):
+
+    current_attemps = 0
+    execute_command_agent_status = ""
+
+    while execute_command_agent_status != "RUNNING" and current_attemps < 25:
+
+        current_attemps += 1
+
+        task_details = ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
+
+        managed_agents = task_details["tasks"][0]["containers"][0]["managedAgents"]
+        execute_command_agent_status = [
+            agent["lastStatus"]
+            for agent in managed_agents
+            if agent["name"] == "ExecuteCommandAgent"
+        ][0]
+
+        time.sleep(1)
+
+    if execute_command_agent_status != "RUNNING":
+        raise ECSAgentNotRunning
