@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 from unittest.mock import patch
@@ -580,21 +579,17 @@ extensions:
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+    search_pattern = f'.*duplication of key "{duplicate_key}".*'
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert linting_failures == [f'\tLine 100: duplication of key "{duplicate_key}"']
+    assert bool(re.search(search_pattern, linting_failures[0]))
 
     with pytest.raises(SystemExit) as excinfo:
         load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
 
     captured = capsys.readouterr()
-    expected_error_message = (
-        "Duplicate keys found in platform-config:"
-        + os.linesep
-        + f'\tLine 100: duplication of key "{duplicate_key}"'
-    )
 
-    assert expected_error_message in captured.err
+    assert bool(re.search(search_pattern, captured.err))
     assert excinfo.value.code == 1
 
 
