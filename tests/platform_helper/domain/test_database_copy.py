@@ -588,3 +588,22 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
     vpc_name = db_copy.enrich_vpc_name("test-env", None)
 
     assert vpc_name == "test-env-vpc"
+
+
+def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
+    # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "application": "test-app",
+                "environments": {"*": {"vpc": "test-env-vpc"}, "test-env": {}},
+            }
+        ),
+    )
+    mocks = DataCopyMocks()
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    vpc_name = db_copy.enrich_vpc_name("test-env", None)
+
+    assert vpc_name == "test-env-vpc"

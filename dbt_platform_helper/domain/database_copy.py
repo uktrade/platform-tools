@@ -15,6 +15,7 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
@@ -111,7 +112,8 @@ class DatabaseCopy:
                     "You must either be in a deploy repo, or provide the vpc name option."
                 )
             config = load_and_validate_platform_config()
-            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+            env_config = apply_environment_defaults(config)["environments"]
+            vpc_name = env_config.get(env, {}).get("vpc")
         return vpc_name
 
     def run_database_copy_task(
