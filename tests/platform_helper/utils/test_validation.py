@@ -579,17 +579,16 @@ extensions:
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
-    search_pattern = f'.*duplication of key "{duplicate_key}".*'
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert bool(re.search(search_pattern, linting_failures[0]))
+    assert f'duplication of key "{duplicate_key}"' in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:
         load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
 
     captured = capsys.readouterr()
 
-    assert bool(re.search(search_pattern, captured.err))
+    assert f'duplication of key "{duplicate_key}"' in captured.err
     assert excinfo.value.code == 1
 
 
@@ -764,13 +763,17 @@ def test_config_file_check_warns_if_deprecated_files_exist(
     [
         None,
         [{"from": "dev", "to": "test"}],
-        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test"}],
+        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test", "cross_account": "true"}],
     ],
 )
 def test_validate_database_copy_section_success_cases(database_copy_section):
     config = {
         "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "test": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
         "extensions": {
             "our-postgres": {
                 "type": "postgres",
@@ -931,6 +934,31 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
+
+
+def test_validate_database_copy_fails_if_different_account_with_no_cross_account_parameter(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev"}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be specified."
+    assert msg in console_message
 
 
 @patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])

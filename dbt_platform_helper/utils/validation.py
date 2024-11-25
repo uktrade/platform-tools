@@ -614,6 +614,9 @@ def validate_database_copy_section(config):
             from_env = section["from"]
             to_env = section["to"]
 
+            from_account = _get_env_deploy_account_info(config, from_env, "id")
+            to_account = _get_env_deploy_account_info(config, to_env, "id")
+
             if from_env == to_env:
                 errors.append(
                     f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
@@ -634,8 +637,19 @@ def validate_database_copy_section(config):
                     f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                 )
 
+            if from_account != to_account and "cross_account" not in section:
+                errors.append(
+                    f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'cross_account' parameter must be specified."
+                )
+
     if errors:
         abort_with_error("\n".join(errors))
+
+
+def _get_env_deploy_account_info(config, env, key):
+    return (
+        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
+    )
 
 
 def _validate_environment_pipelines(config):
@@ -645,13 +659,7 @@ def _validate_environment_pipelines(config):
         pipeline_account = pipeline.get("account", None)
         if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
-                env_account = (
-                    config.get("environments", {})
-                    .get(env, {})
-                    .get("accounts", {})
-                    .get("deploy", {})
-                    .get("name")
-                )
+                env_account = _get_env_deploy_account_info(config, env, "name")
                 if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:
