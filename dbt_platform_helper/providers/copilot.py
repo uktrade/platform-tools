@@ -137,7 +137,7 @@ def connect_to_addon_client_task(
         time.sleep(1)
 
     if not running:
-        raise CreateTaskTimeoutError
+        raise CreateTaskTimeoutError(task_name, application_name, env)
 
 
 def _normalise_secret_name(addon_name: str) -> str:

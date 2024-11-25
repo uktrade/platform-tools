@@ -192,7 +192,11 @@ def test_conduit_with_task_already_running():
 
 def test_conduit_domain_when_no_cluster_exists():
     conduit_mocks = ConduitMocks(
-        app_name, addon_type, get_cluster_arn_fn=Mock(side_effect=NoClusterError())
+        app_name,
+        addon_type,
+        get_cluster_arn_fn=Mock(
+            side_effect=NoClusterError(application_name=app_name, environment=env)
+        ),
     )
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
@@ -209,7 +213,9 @@ def test_conduit_domain_when_no_connection_secret_exists():
         app_name,
         addon_type,
         get_ecs_task_arns_fn=Mock(return_value=False),
-        create_addon_client_task_fn=Mock(side_effect=SecretNotFoundError()),
+        create_addon_client_task_fn=Mock(
+            side_effect=SecretNotFoundError(f"/copilot/{app_name}/{env}/secrets/{addon_name}")
+        ),
     )
 
     conduit = Conduit(**conduit_mocks.params())
@@ -230,7 +236,13 @@ def test_conduit_domain_when_client_task_fails_to_start():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        connect_to_addon_client_task_fn=Mock(side_effect=CreateTaskTimeoutError()),
+        connect_to_addon_client_task_fn=Mock(
+            side_effect=CreateTaskTimeoutError(
+                addon_name=addon_name,
+                application_name=app_name,
+                environment=env,
+            )
+        ),
     )
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
@@ -272,7 +284,7 @@ def test_conduit_domain_when_addon_type_is_invalid():
 def test_conduit_domain_when_addon_does_not_exist():
     addon_name = "addon_doesnt_exist"
     conduit_mocks = ConduitMocks(
-        app_name, addon_type, get_addon_type_fn=Mock(side_effect=AddonNotFoundError())
+        app_name, addon_type, get_addon_type_fn=Mock(side_effect=AddonNotFoundError(addon_name))
     )
 
     conduit = Conduit(**conduit_mocks.params())
@@ -286,7 +298,14 @@ def test_conduit_domain_when_addon_does_not_exist():
 def test_conduit_domain_when_no_addon_config_parameter_exists():
     addon_name = "parameter_doesnt_exist"
     conduit_mocks = ConduitMocks(
-        app_name, addon_type, get_addon_type_fn=Mock(side_effect=ParameterNotFoundError())
+        app_name,
+        addon_type,
+        get_addon_type_fn=Mock(
+            side_effect=ParameterNotFoundError(
+                application_name=app_name,
+                environment=env,
+            )
+        ),
     )
 
     conduit = Conduit(**conduit_mocks.params())

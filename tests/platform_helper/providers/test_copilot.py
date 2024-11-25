@@ -367,7 +367,9 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     ssm_client = mock_application.environments[env].session.client("ssm")
     secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
-    get_connection_secret_arn.side_effect = SecretNotFoundError
+    get_connection_secret_arn.side_effect = SecretNotFoundError(
+        "/copilot/test-application/development/secrets/named-postgres"
+    )
 
     with pytest.raises(SecretNotFoundError):
         create_addon_client_task(

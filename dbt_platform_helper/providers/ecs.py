@@ -28,7 +28,7 @@ def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
         if app_key_found and env_key_found and cluster_key_found:
             return cluster_arn
 
-    raise NoClusterError
+    raise NoClusterError(application_name, env)
 
 
 def get_or_create_task_name(

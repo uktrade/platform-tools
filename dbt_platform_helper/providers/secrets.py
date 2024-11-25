@@ -50,15 +50,15 @@ def get_addon_type(ssm_client, application_name: str, env: str, addon_name: str)
             )["Parameter"]["Value"]
         )
     except ssm_client.exceptions.ParameterNotFound:
-        raise ParameterNotFoundError
+        raise ParameterNotFoundError(application_name, env)
 
     if addon_name not in addon_config.keys():
-        raise AddonNotFoundError
+        raise AddonNotFoundError(addon_name)
 
     for name, config in addon_config.items():
         if name == addon_name:
             if not config.get("type"):
-                raise AddonTypeMissingFromConfigError()
+                raise AddonTypeMissingFromConfigError(addon_name)
             addon_type = config["type"]
 
     if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:

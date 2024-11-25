@@ -66,7 +66,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
 
-    with pytest.raises(SecretNotFoundError):
+    with pytest.raises(SecretNotFoundError) as ex:
         get_connection_secret_arn(ssm_client, secrets_client, "POSTGRES")
 
 
