@@ -10,8 +10,6 @@ from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
-env = "development"
-
 
 @mock_aws
 def test_get_cluster_arn(mocked_cluster, mock_application):
@@ -20,7 +18,9 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
 
     assert (
         get_cluster_arn(
-            mock_application.environments[env].session.client("ecs"), mock_application.name, env
+            mock_application.environments["development"].session.client("ecs"),
+            mock_application.name,
+            "development",
         )
         == mocked_cluster["cluster"]["clusterArn"]
     )
@@ -31,11 +31,11 @@ def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
     """Test that, given app and environment strings, get_cluster_arn raises an
     exception when no cluster tagged with these strings exists."""
 
-    env = "staging"
-
     with pytest.raises(NoClusterError):
         get_cluster_arn(
-            mock_application.environments[env].session.client("ecs"), mock_application.name, env
+            mock_application.environments["staging"].session.client("ecs"),
+            mock_application.name,
+            "staging",
         )
 
 
@@ -51,7 +51,7 @@ def test_addon_client_is_running(
 
     mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments[env].session.client("ecs")
+    ecs_client = mock_application.environments["development"].session.client("ecs")
 
     assert addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
 
@@ -90,7 +90,6 @@ def test_addon_client_and_exec_is_not_running(
     """Test that, given cluster ARN, addon type and with a running agent,
     addon_client_is_running returns True."""
 
-    # TODO UNKNOWN is not a real status here find it and use that, using UNKNOWN as we are just checking if the value is not RUNNING
     mocked_ecs_client = mock_cluster_client_task(addon_type, "PENDING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
 
@@ -115,7 +114,7 @@ def test_addon_client_is_running_when_no_client_task_running(
     task, addon_client_is_running returns False."""
 
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments[env].session.client("ecs")
+    ecs_client = mock_application.environments["development"].session.client("ecs")
 
     assert (
         len(addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type)))
@@ -131,7 +130,7 @@ def test_addon_client_is_running_when_no_client_task_running(
 def test_addon_client_is_running_when_no_client_agent_running(
     addon_type, mock_application, mocked_cluster
 ):
-    ecs_client = mock_application.environments[env].session.client("ecs")
+    ecs_client = mock_application.environments["development"].session.client("ecs")
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     task_name = "some-task-name"
     ec2 = boto3.resource("ec2")
@@ -173,7 +172,7 @@ def test_get_or_create_task_name(mock_application):
 
     addon_name = "app-postgres"
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
-    mock_application.environments[env].session.client("ssm")
+    mock_application.environments["development"].session.client("ssm")
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
         Name=parameter_name,
@@ -182,7 +181,7 @@ def test_get_or_create_task_name(mock_application):
     )
 
     task_name = get_or_create_task_name(
-        mock_ssm, mock_application.name, env, addon_name, parameter_name
+        mock_ssm, mock_application.name, "development", addon_name, parameter_name
     )
 
     assert task_name == mock_task_name(addon_name)
@@ -195,10 +194,10 @@ def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
     parameter store."""
 
     addon_name = "app-postgres"
-    ssm_client = mock_application.environments[env].session.client("ssm")
+    ssm_client = mock_application.environments["development"].session.client("ssm")
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
     task_name = get_or_create_task_name(
-        ssm_client, mock_application.name, env, addon_name, parameter_name
+        ssm_client, mock_application.name, "development", addon_name, parameter_name
     )
     random_id = task_name.rsplit("-", 1)[1]
 
