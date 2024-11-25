@@ -82,6 +82,7 @@ my-s3-cross-environment-service-access-bucket:
           application: test-app
           environment: prod
           account: test-account
+          service: web
           write: True
           read: True
           cyber_sign_off_by: somebody@digital.trade.gov.uk

@@ -188,6 +188,7 @@ my-s3-cross-environment-service-access-bucket-invalid-environment:
           application: test-app
           environment: hyphen-not-allowed-in-environment
           account: test-account
+          service: web
           write: True
           read: True
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
@@ -202,6 +203,7 @@ my-s3-cross-environment-service-access-bucket-invalid-email:
           application: test-app
           environment: anotherenvironment
           account: test-account
+          service: web
           write: True
           read: True
           cyber_sign_off_by: noone-signed-this-off

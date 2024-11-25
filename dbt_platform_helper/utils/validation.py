@@ -284,6 +284,7 @@ CROSS_ENVIRONMENT_SERVICE_ACCESS = {
     "application": str,
     "environment": ENV_NAME,
     "account": str,
+    "service": str,
     "read": bool,
     "write": bool,
     "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
