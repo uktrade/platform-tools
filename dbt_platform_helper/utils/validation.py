@@ -268,7 +268,7 @@ def iam_role_arn_regex(key):
 
 def dbt_email_address_regex(key):
     return Regex(
-        r"^[\w\-\.]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
         error=f"{key} must contain a valid DBT email address",
     )
 
