@@ -422,6 +422,7 @@ ALB_DEFINITION = {
                 Optional("forwarded_values_query_string"): bool,
                 Optional("origin_protocol_policy"): str,
                 Optional("origin_ssl_protocols"): list,
+                Optional("slack_alert_channel_alb_secret_rotation"): str,
                 Optional("viewer_certificate_minimum_protocol_version"): str,
                 Optional("viewer_certificate_ssl_support_method"): str,
                 Optional("viewer_protocol_policy"): str,
