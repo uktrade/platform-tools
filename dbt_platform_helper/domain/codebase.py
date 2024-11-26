@@ -144,7 +144,7 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundError()
 
-        json.loads(self.check_codebase_exists_fn(session, application, codebase))
+        self.check_codebase_exists_fn(session, application, codebase)
 
         self.check_image_exists_fn(session, application, codebase, commit)
 
