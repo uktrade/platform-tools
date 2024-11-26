@@ -455,18 +455,36 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
     )
 
 
-# Todo: Implement a test to cover the desired behaviour
-# @patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=True)
-# def test_connect_to_addon_client_task_waits_for_command_agent(addon_client_is_running, mock_application):
-#     task_name = mock_task_name("postgres") # Addon type for this test does not matter
-#     ecs_client = mock_application.environments[env].session.client("ecs")
+@mock_aws
+@patch("dbt_platform_helper.providers.ecs.ecs_exec_is_available", return_value=True)
+def test_connect_to_addon_client_task(
+    ecs_exec_is_available, mock_cluster_client_task, mocked_cluster, mock_application
+):
+    task_name = mock_task_name("postgres")
+    mock_cluster_client_task("postgres")
+    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+    ecs_client = mock_application.environments["development"].session.client("ecs")
+    mock_subprocess = Mock()
+
+    connect_to_addon_client_task(
+        ecs_client, mock_subprocess, mock_application.name, env, mocked_cluster_arn, task_name
+    )
+
+
+# @mock_aws TODO!
+# @patch("dbt_platform_helper.providers.ecs.ecs_exec_is_available", side_effect=ECSAgentNotRunning)
+# def test_connect_to_addon_client_task_waits_for_command_agent(ecs_exec_is_available, mock_cluster_client_task, mocked_cluster, mock_application):
+#     task_name = mock_task_name("postgres")
+#     mock_cluster_client_task("postgres")
+#     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+#     ecs_client = mock_application.environments["development"].session.client("ecs")
 #     mock_subprocess = Mock()
 #     # We want this to throw InvalidParameterException the first time, then behave as normal
-#
-#     connect_to_addon_client_task(
-#         ecs_client, mock_subprocess, mock_application.name, env, "test-arn", task_name
-#     )
-#
+
+#     with pytest.raises(ECSAgentNotRunning):
+#         connect_to_addon_client_task(
+#             ecs_client, mock_subprocess, mock_application.name, env, mocked_cluster_arn, task_name
+#         )
 #     # Assert "Unable to connect, execute command agent probably isn’t running yet" in output
 #     # If it doesn't bomb out with CreateTaskTimeoutError all is good
 
