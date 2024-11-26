@@ -1,11 +1,7 @@
 # Changelog
 
-## [13.0.0](https://github.com/uktrade/platform-tools/compare/12.2.0...13.0.0) (2024-11-26)
+## [12.2.1](https://github.com/uktrade/platform-tools/compare/12.2.0...12.2.1) (2024-11-26)
 
-
-### ⚠ BREAKING CHANGES
-
-* Don't install poetry in Dockerfile.debian ([#655](https://github.com/uktrade/platform-tools/issues/655))
 
 ### Miscellaneous Chores
 
