@@ -11,7 +11,6 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
@@ -145,10 +144,7 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundError(env)
 
-        try:
-            json.loads(self.check_codebase_exists_fn(session, application, codebase))
-        except json.JSONDecodeError:
-            raise CopilotCodebaseNotFoundError(codebase)
+        self.check_codebase_exists_fn(session, application, codebase)
 
         self.check_image_exists_fn(session, application, codebase, commit)
 

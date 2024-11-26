@@ -291,8 +291,10 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
-def test_codebase_deploy_exception_with_malformed_json():
-    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(return_value="{ mlaf = josn}"))
+def test_check_codebase_exists_returns_error_when_no_json():
+    mocks = CodebaseMocks(
+        check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
+    )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -300,7 +302,7 @@ def test_codebase_deploy_exception_with_malformed_json():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(CopilotCodebaseNotFoundError):  # json.JSONDecodeError
+    with pytest.raises(CopilotCodebaseNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 

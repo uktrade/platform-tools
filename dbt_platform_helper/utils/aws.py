@@ -488,13 +488,16 @@ def start_build_extraction(codebuild_client, build_options):
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
         ssm_client = session.client("ssm")
-        ssm_client.get_parameter(
-            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
-        )["Parameter"]["Value"]
+        json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+            )["Parameter"]["Value"]
+        )
     except (
         KeyError,
         ValueError,
         ssm_client.exceptions.ParameterNotFound,
+        json.JSONDecodeError,
     ):
         raise CopilotCodebaseNotFoundError(codebase)
 
