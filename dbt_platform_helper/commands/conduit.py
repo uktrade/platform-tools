@@ -1,7 +1,14 @@
 import click
 
 from dbt_platform_helper.domain.conduit import Conduit
+from dbt_platform_helper.exceptions import AddonNotFoundError
+from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.exceptions import CreateTaskTimeoutError
+from dbt_platform_helper.exceptions import InvalidAddonTypeError
+from dbt_platform_helper.exceptions import NoClusterError
+from dbt_platform_helper.exceptions import ParameterNotFoundError
+from dbt_platform_helper.exceptions import SecretNotFoundError
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.versioning import (
