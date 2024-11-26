@@ -621,49 +621,13 @@ class TestGenerate:
     def test_get_subnet_ids(self):
         session = boto3.session.Session()
         vpc = self.create_mocked_vpc(session, "default-development")
-        public_subnet = session.client("ec2").create_subnet(
-            CidrBlock="10.0.128.0/24",
-            VpcId=vpc["VpcId"],
-            TagSpecifications=[
-                {
-                    "ResourceType": "subnet",
-                    "Tags": [
-                        {"Key": "subnet_type", "Value": "public"},
-                    ],
-                },
-            ],
-        )["Subnet"]
-        private_subnet = session.client("ec2").create_subnet(
-            CidrBlock="10.0.1.0/24",
-            VpcId=vpc["VpcId"],
-            TagSpecifications=[
-                {
-                    "ResourceType": "subnet",
-                    "Tags": [
-                        {"Key": "subnet_type", "Value": "private"},
-                    ],
-                },
-            ],
-        )["Subnet"]
+        public_subnet = self.create_mocked_subnet(session, vpc, "public", "10.0.128.0/24")
+        private_subnet = self.create_mocked_subnet(session, vpc, "private", "10.0.1.0/24")
 
         public, private = get_subnet_ids(session, vpc["VpcId"])
 
         assert public == [public_subnet["SubnetId"]]
         assert private == [private_subnet["SubnetId"]]
-
-    def create_mocked_vpc(self, session, vpc_name):
-        vpc = session.client("ec2").create_vpc(
-            CidrBlock="10.0.0.0/16",
-            TagSpecifications=[
-                {
-                    "ResourceType": "vpc",
-                    "Tags": [
-                        {"Key": "Name", "Value": vpc_name},
-                    ],
-                },
-            ],
-        )["Vpc"]
-        return vpc
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
@@ -701,6 +665,34 @@ class TestGenerate:
             "No certificate found with domain name matching environment development."
             in captured.out
         )
+
+    def create_mocked_subnet(self, session, vpc, visibility, cidr_block):
+        return session.client("ec2").create_subnet(
+            CidrBlock=cidr_block,
+            VpcId=vpc["VpcId"],
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": visibility},
+                    ],
+                },
+            ],
+        )["Subnet"]
+
+    def create_mocked_vpc(self, session, vpc_name):
+        vpc = session.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": vpc_name},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        return vpc
 
 
 class TestFindHTTPSCertificate:
