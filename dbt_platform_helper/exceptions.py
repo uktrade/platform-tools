@@ -19,6 +19,13 @@ class ApplicationException(PlatformException):
     pass
 
 
+class CommitNotFoundError:
+    def __init__(self, commit: str):
+        super().__init__(
+            f"""The commit hash "{commit}" either does not exist or you need to run `git fetch`."""
+        )
+
+
 class IncompatibleMajorVersion(ValidationException):
     def __init__(self, app_version: str, check_version: str):
         super().__init__()
