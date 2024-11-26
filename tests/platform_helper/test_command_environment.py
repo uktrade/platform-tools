@@ -595,19 +595,8 @@ class TestGenerate:
     @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
     @mock_aws
     def test_get_vpc_id(self, vpc_name):
-
         session = boto3.session.Session()
-        vpc = session.client("ec2").create_vpc(
-            CidrBlock="10.0.0.0/16",
-            TagSpecifications=[
-                {
-                    "ResourceType": "vpc",
-                    "Tags": [
-                        {"Key": "Name", "Value": vpc_name},
-                    ],
-                },
-            ],
-        )["Vpc"]
+        vpc = self.create_mocked_vpc(session, vpc_name)
         expected_vpc_id = vpc["VpcId"]
 
         actual_vpc_id = get_vpc_id(session, "prod")
@@ -630,19 +619,8 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids(self):
-
         session = boto3.session.Session()
-        vpc = session.client("ec2").create_vpc(
-            CidrBlock="10.0.0.0/16",
-            TagSpecifications=[
-                {
-                    "ResourceType": "vpc",
-                    "Tags": [
-                        {"Key": "Name", "Value": "default-development"},
-                    ],
-                },
-            ],
-        )["Vpc"]
+        vpc = self.create_mocked_vpc(session, "default-development")
         public_subnet = session.client("ec2").create_subnet(
             CidrBlock="10.0.128.0/24",
             VpcId=vpc["VpcId"],
@@ -672,6 +650,20 @@ class TestGenerate:
 
         assert public == [public_subnet["SubnetId"]]
         assert private == [private_subnet["SubnetId"]]
+
+    def create_mocked_vpc(self, session, vpc_name):
+        vpc = session.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": vpc_name},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        return vpc
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
