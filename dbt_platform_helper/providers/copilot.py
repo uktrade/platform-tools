@@ -118,13 +118,13 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    addon_client_is_running_fn=get_ecs_task_arns,
+    get_ecs_task_arns_fn=get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
+        if get_ecs_task_arns_fn(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
                 f"--app {application_name} --env {env} "

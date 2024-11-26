@@ -72,8 +72,8 @@ def ecs_exec_is_available(ecs_client, cluster_arn: str, task_arns: List[str]):
             for agent in managed_agents
             if agent["name"] == "ExecuteCommandAgent"
         ][0]
-
-        time.sleep(1)
+        if execute_command_agent_status != "RUNNING":
+            time.sleep(1)
 
     if execute_command_agent_status != "RUNNING":
         raise ECSAgentNotRunning
