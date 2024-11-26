@@ -281,7 +281,7 @@ EXTERNAL_ROLE_ACCESS = {
 }
 
 EXTERNAL_ROLE_ACCESS_NAME = Regex(
-    r"^([a-z][a-zA-Z0-9_-]*|\*)$",
+    r"^([a-z][a-zA-Z0-9_-]*)$",
     error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
 )
 
