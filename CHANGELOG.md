@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.2.2](https://github.com/uktrade/platform-tools/compare/12.2.1...12.2.2) (2024-11-26)
+
+
+### Bug Fixes
+
+* Fixing json loads ([#664](https://github.com/uktrade/platform-tools/issues/664)) ([46eddff](https://github.com/uktrade/platform-tools/commit/46eddff14ba2460ebe4beee1378ac75b617a8821))
+
 ## [12.2.1](https://github.com/uktrade/platform-tools/compare/12.2.0...12.2.1) (2024-11-26)
 
 
