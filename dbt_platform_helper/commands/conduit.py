@@ -37,6 +37,7 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     try:
         Conduit(application).start(env, addon_name, access)
     except NoClusterError:
+        # TODO: Set exception message in the exceptions and just output the message in the command code, should be able to catch all errors in one block
         click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
         exit(1)
     except SecretNotFoundError as err:

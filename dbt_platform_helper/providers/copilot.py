@@ -1,12 +1,11 @@
 import json
 import time
 
-import click
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.providers.ecs import addon_client_is_running
+from dbt_platform_helper.providers.ecs import get_ecs_task_arns
 from dbt_platform_helper.providers.secrets import get_connection_secret_arn
 from dbt_platform_helper.providers.secrets import (
     get_postgres_connection_data_updated_with_master_secret,
@@ -60,7 +59,7 @@ def create_addon_client_task(
         # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
         # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
-            # TODO this should raise an exception and caught at the command layer
+            # TODO Raise an exception to be caught at the command layer
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
@@ -113,27 +112,27 @@ def create_postgres_admin_task(
 
 
 def connect_to_addon_client_task(
-    ecs_client, subprocess, application_name, env, cluster_arn, task_name
+    ecs_client,
+    subprocess,
+    application_name,
+    env,
+    cluster_arn,
+    task_name,
+    addon_client_is_running_fn=get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        if addon_client_is_running(ecs_client, cluster_arn, task_name):
-            # TODO user ecs.describe_task to check if exec agent is running before call subprocess
-            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/describe_tasks.html
-            try:
-                subprocess.call(
-                    "copilot task exec "
-                    f"--app {application_name} --env {env} "
-                    f"--name {task_name} "
-                    f"--command bash",
-                    shell=True,
-                )
-                running = True
-            except ecs_client.exceptions.InvalidParameterException:
-                # Unable to connect, execute command agent probably isn’t running yet
-                click.echo("Unable to connect, execute command agent probably isn’t running yet")
+        if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
+            subprocess.call(
+                "copilot task exec "
+                f"--app {application_name} --env {env} "
+                f"--name {task_name} "
+                f"--command bash",
+                shell=True,
+            )
+            running = True
 
         time.sleep(1)
 

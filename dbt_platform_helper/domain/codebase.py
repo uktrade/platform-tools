@@ -195,7 +195,6 @@ class Codebase:
 
         self.echo_fn("")
 
-    # TODO return empty list without exception
     def __get_codebases(self, application, ssm_client):
         parameters = ssm_client.get_parameters_by_path(
             Path=f"/copilot/applications/{application.name}/codebases",
@@ -205,6 +204,7 @@ class Codebase:
         codebases = [json.loads(p["Value"]) for p in parameters]
 
         if not codebases:
+            # TODO Is this really an error? Or just no codebases so we could return an empty list?
             raise NoCopilotCodebasesFoundError
         return codebases
 
