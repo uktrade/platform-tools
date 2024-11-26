@@ -231,7 +231,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
@@ -269,7 +268,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-
         mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
         load_application.return_value = mock_application
 
@@ -322,7 +320,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -358,7 +355,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -383,7 +379,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
@@ -620,14 +615,43 @@ class TestGenerate:
     @mock_aws
     def test_get_subnet_ids(self):
         session = boto3.session.Session()
-        vpc = self.create_mocked_vpc(session, "default-development")
-        public_subnet = self.create_mocked_subnet(session, vpc, "public", "10.0.128.0/24")
-        private_subnet = self.create_mocked_subnet(session, vpc, "private", "10.0.1.0/24")
+        vpc_id = self.create_mocked_vpc(session, "default-development")["VpcId"]
+        expected_public_subnet_id = self.create_mocked_subnet(
+            session, vpc_id, "public", "10.0.128.0/24"
+        )
+        expected_private_subnet_id = self.create_mocked_subnet(
+            session, vpc_id, "private", "10.0.1.0/24"
+        )
 
-        public, private = get_subnet_ids(session, vpc["VpcId"])
+        public_subnet_ids, private_subnet_ids = get_subnet_ids(session, vpc_id)
 
-        assert public == [public_subnet["SubnetId"]]
-        assert private == [private_subnet["SubnetId"]]
+        assert public_subnet_ids == [expected_public_subnet_id]
+        assert private_subnet_ids == [expected_private_subnet_id]
+
+    # Todo: test_get_subnet_ids_with_cloudformation_export_returning_different_subnets
+
+    @mock_aws
+    def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order(self):
+        expected_private_subnet_id = "subnet-ec792dd7"
+        expected_public_subnet_id = "vpc-1116baee"
+        mock_boto3_session = MagicMock()
+        mock_boto3_session.client("ec2").describe_subnets.return_value = [
+            {
+                "SubnetId": expected_private_subnet_id,
+                "Tags": [{"Key": "subnet_type", "Value": "private"}],
+            },
+            {
+                "SubnetId": expected_public_subnet_id,
+                "Tags": [{"Key": "subnet_type", "Value": "public"}],
+            },
+        ]
+
+        public_subnet_ids, private_subnet_ids = get_subnet_ids(
+            mock_boto3_session, "vpc-id-does-not-matter"
+        )
+
+        assert public_subnet_ids == [expected_public_subnet_id]
+        assert private_subnet_ids == [expected_private_subnet_id]
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
@@ -666,10 +690,10 @@ class TestGenerate:
             in captured.out
         )
 
-    def create_mocked_subnet(self, session, vpc, visibility, cidr_block):
+    def create_mocked_subnet(self, session, vpc_id, visibility, cidr_block):
         return session.client("ec2").create_subnet(
             CidrBlock=cidr_block,
-            VpcId=vpc["VpcId"],
+            VpcId=vpc_id,
             TagSpecifications=[
                 {
                     "ResourceType": "subnet",
@@ -678,7 +702,7 @@ class TestGenerate:
                     ],
                 },
             ],
-        )["Subnet"]
+        )["Subnet"]["SubnetId"]
 
     def create_mocked_vpc(self, session, vpc_name):
         vpc = session.client("ec2").create_vpc(
