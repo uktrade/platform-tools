@@ -487,7 +487,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
-    addon_client_is_running = Mock(return_value=False)
+    get_ecs_task_arns = Mock(return_value=False)
 
     with pytest.raises(CreateTaskTimeoutError):
         connect_to_addon_client_task(
@@ -497,11 +497,11 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
             env,
             "test-arn",
             task_name,
-            addon_client_is_running_fn=addon_client_is_running,
+            get_ecs_task_arns_fn=get_ecs_task_arns,
         )
 
-    addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name)
-    assert addon_client_is_running.call_count == 15
+    get_ecs_task_arns.assert_called_with(ecs_client, "test-arn", task_name)
+    assert get_ecs_task_arns.call_count == 15
     mock_subprocess.call.assert_not_called()
 
 

@@ -430,7 +430,9 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
 
 
 def test_codebase_list_raises_exception_when_no_codebases():
-    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(side_effect=NoCopilotCodebasesFoundError()))
+    mocks = CodebaseMocks(
+        check_codebase_exists_fn=Mock(side_effect=NoCopilotCodebasesFoundError("test-application"))
+    )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 

@@ -68,7 +68,7 @@ class Codebase:
             .removesuffix(".git")
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            raise NotInCodeBaseRepositoryError
+            raise NotInCodeBaseRepositoryError()
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)
@@ -209,7 +209,7 @@ class Codebase:
         codebases = [json.loads(p["Value"]) for p in parameters]
 
         if not codebases:
-            raise NoCopilotCodebasesFoundError
+            raise NoCopilotCodebasesFoundError(application.name)
         return codebases
 
     def __start_build_with_confirmation(

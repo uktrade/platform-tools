@@ -7,7 +7,15 @@ class ValidationException(Exception):
     pass
 
 
-class AWSException(Exception):
+class PlatformException(Exception):
+    pass
+
+
+class AWSException(PlatformException):
+    pass
+
+
+class ApplicationException(PlatformException):
     pass
 
 
@@ -66,42 +74,45 @@ class AddonTypeMissingFromConfigError(AWSException):
         )
 
 
-class CopilotCodebaseNotFoundError(Exception):
+class CopilotCodebaseNotFoundError(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(
             f"""The codebase "{codebase}" either does not exist or has not been deployed."""
         )
 
 
-class NotInCodeBaseRepositoryError(Exception):
-    # TODO move message here
-    pass
+class NotInCodeBaseRepositoryError(PlatformException):
+    def __init__(self):
+        super().__init__(
+            "You are in the deploy repository; make sure you are in the application codebase repository.",
+        )
 
 
-class NoCopilotCodebasesFoundError(Exception):
-    pass
+class NoCopilotCodebasesFoundError(PlatformException):
+    def __init__(self, application_name: str):
+        super().__init__(f"""No codebases found for application "{application_name}".""")
 
 
-class ImageNotFoundError(Exception):
+class ImageNotFoundError(PlatformException):
     def __init__(self, commit: str):
         super().__init__(
             f"""The commit hash "{commit}" has not been built into an image, try the `platform-helper codebase build` command first."""
         )
 
 
-class ApplicationDeploymentNotTriggered(Exception):
+class ApplicationDeploymentNotTriggered(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(f"""Your deployment for {codebase} was not triggered.""")
 
 
-class ApplicationNotFoundError(Exception):
+class ApplicationNotFoundError(ApplicationException):
     def __init__(self, application_name: str):
         super().__init__(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
         )
 
 
-class ApplicationEnvironmentNotFoundError(Exception):
+class ApplicationEnvironmentNotFoundError(ApplicationException):
     def __init__(self, environment: str):
         super().__init__(
             f"""The environment "{environment}" either does not exist or has not been deployed."""

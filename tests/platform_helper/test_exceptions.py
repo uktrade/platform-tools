@@ -13,6 +13,8 @@ from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import ImageNotFoundError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import NoClusterError
+from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
+from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.exceptions import SecretNotFoundError
 
@@ -70,9 +72,19 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
         ),
         (
+            NoCopilotCodebasesFoundError,
+            {"application_name": "test-application"},
+            """No codebases found for application "test-application".""",
+        ),
+        (
             NoClusterError,
             {"application_name": "test-application", "environment": "environment"},
             """No ECS cluster found for "test-application" in "environment" environment.""",
+        ),
+        (
+            NotInCodeBaseRepositoryError,
+            {},
+            """You are in the deploy repository; make sure you are in the application codebase repository.""",
         ),
         (
             ParameterNotFoundError,
