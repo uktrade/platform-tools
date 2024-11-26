@@ -153,3 +153,27 @@ my-s3-bucket-data-migration-worker-role-invalid-arn:
           source_bucket_arn: arn:aws:s3:::test-app
           source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
           worker_role_arn: 1234abc
+
+my-s3-external-access-bucket-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      external_role_access:
+        some-reason-for-access:
+          role_arn: 1234abc
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-s3-external-access-bucket-invalid-email:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      external_role_access:
+        some-reason-for-access:
+          role_arn: arn:aws:iam::123456789012:role/test-role
+          write: True
+          read: True
+          cyber_sign_off_by: somebody@dodgy-domain.com

@@ -7,7 +7,7 @@ from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
 
 
-# TODO Refactor this to support passing a list of tags to check against, allowing for a more generic implementation
+# Todo: Refactor to a class, review, then perhaps do the others
 def get_cluster_arn(ecs_client, application_name: str, env: str) -> str:
     for cluster_arn in ecs_client.list_clusters()["clusterArns"]:
         tags_response = ecs_client.list_tags_for_resource(resourceArn=cluster_arn)

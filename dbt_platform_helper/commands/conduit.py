@@ -31,4 +31,43 @@ def conduit(addon_name: str, app: str, env: str, access: str):
         Conduit(application).start(env, addon_name, access)
     except AWSException as err:
         click.secho(str(err), fg="red")
+    except NoClusterError:
+        # TODO: Set exception message in the exceptions and just output the message in the command code, should be able to catch all errors in one block
+        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
+        exit(1)
+    except SecretNotFoundError as err:
+        click.secho(
+            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except CreateTaskTimeoutError:
+        click.secho(
+            f"""Client ({addon_name}) ECS task has failed to start for "{app}" in "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except ParameterNotFoundError:
+        click.secho(
+            f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
+            fg="red",
+        )
+        exit(1)
+    except AddonNotFoundError:
+        click.secho(
+            f"""Addon "{addon_name}" does not exist.""",
+            fg="red",
+        )
+        exit(1)
+    except InvalidAddonTypeError as err:
+        click.secho(
+            f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
+            fg="red",
+        )
+        exit(1)
+    except AddonTypeMissingFromConfigError:
+        click.secho(
+            f"""The configuration for the addon {addon_name}, is missconfigured and missing the addon type.""",
+            fg="red",
+        )
         exit(1)
