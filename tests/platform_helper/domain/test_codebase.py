@@ -379,7 +379,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
 
     with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
-        # TODO review
+        # TODO This assert can probably go now we are catching the errors and outputting them at the command layer
         mocks.echo_fn.assert_has_calls(
             [
                 call(
