@@ -1,7 +1,10 @@
 import json
 
+import botocore
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
+
+from dbt_platform_helper.exceptions import CloudFormationException
 
 
 def add_stack_delete_policy_to_task_role(cloudformation_client, iam_client, task_name: str):
@@ -98,8 +101,21 @@ def update_conduit_stack_resources(
     return conduit_stack_name
 
 
-# TODO Catch errors and raise a more human friendly Exception is the CloudFormation stack goes into a "unhappy" state, e.g. ROLLBACK_IN_PROGRESS. Currently we get things like botocore.exceptions.WaiterError: Waiter StackUpdateComplete failed: Waiter encountered a terminal failure state: For expression "Stacks[].StackStatus" we matched expected path: "UPDATE_ROLLBACK_COMPLETE" at least once
 def wait_for_cloudformation_to_reach_status(cloudformation_client, stack_status, stack_name):
-
     waiter = cloudformation_client.get_waiter(stack_status)
-    waiter.wait(StackName=stack_name, WaiterConfig={"Delay": 5, "MaxAttempts": 20})
+
+    try:
+        waiter.wait(StackName=stack_name, WaiterConfig={"Delay": 5, "MaxAttempts": 20})
+    except botocore.exceptions.WaiterError as err:
+        current_status = err.last_response.get("Stacks", [{}])[0].get("StackStatus", "")
+
+        if current_status in [
+            "ROLLBACK_IN_PROGRESS",
+            "UPDATE_ROLLBACK_IN_PROGRESS",
+            "ROLLBACK_FAILED",
+        ]:
+            raise CloudFormationException(stack_name, current_status)
+        else:
+            raise CloudFormationException(
+                stack_name, f"Error while waiting for stack status: {str(err)}"
+            )

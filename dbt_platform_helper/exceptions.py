@@ -19,6 +19,15 @@ class ApplicationException(PlatformException):
     pass
 
 
+class CloudFormationException(AWSException):
+    def __init__(self, stack_name: str, current_status: str):
+        super().__init__(
+            f"The CloudFormation stack '{stack_name}' is not in a good state: {current_status}"
+        )
+        self.stack_name = stack_name
+        self.current_status = current_status
+
+
 class CommitNotFoundError:
     def __init__(self, commit: str):
         super().__init__(

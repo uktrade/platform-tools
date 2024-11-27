@@ -4,9 +4,11 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore.exceptions import WaiterError
 from cfn_tools import load_yaml
 from moto import mock_aws
 
+from dbt_platform_helper.exceptions import CloudFormationException
 from dbt_platform_helper.providers.cloudformation import (
     add_stack_delete_policy_to_task_role,
 )
@@ -138,17 +140,39 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
     assert policy_document == mock_policy
 
 
-def test_wait_for_cloudformation_to_reach_status():
-
+@mock_aws
+def test_wait_for_cloudformation_to_reach_status_unhappy_state():
     cloudformation_client = Mock()
-    mock_return = Mock()
-    mock_waiter = Mock(return_value=mock_return)
-    cloudformation_client.get_waiter = mock_waiter
+    waiter_mock = Mock()
+    cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
+
+    waiter_error = WaiterError(
+        "Waiter StackUpdatecomplete failed",
+        "Fail!!",
+        {"Stacks": [{"StackStatus": "ROLLBACK_IN_PROGRESS"}]},
+    )
+    waiter_mock.wait.side_effect = waiter_error
+
+    with pytest.raises(
+        CloudFormationException,
+        match="The CloudFormation stack 'stack-name' is not in a good state: ROLLBACK_IN_PROGRESS",
+    ):
+        wait_for_cloudformation_to_reach_status(
+            cloudformation_client, "stack_update_complete", "stack-name"
+        )
+
+
+@mock_aws
+def test_wait_for_cloudformation_to_reach_status_success():
+    cloudformation_client = Mock()
+    waiter_mock = Mock()
+    cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
+    waiter_mock.wait.return_value = None
 
     wait_for_cloudformation_to_reach_status(
-        cloudformation_client, "stack_update_complete", "task-stack-name"
+        cloudformation_client, "stack_update_complete", "stack-name"
     )
-    mock_waiter.assert_called()
-    mock_return.wait.assert_called_with(
-        StackName="task-stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
+
+    waiter_mock.wait.assert_called_with(
+        StackName="stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
     )
