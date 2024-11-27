@@ -13,10 +13,7 @@ from dbt_platform_helper.providers.cloudformation import (
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.ecs import ecs_exec_is_available
-from dbt_platform_helper.providers.ecs import get_cluster_arn
-from dbt_platform_helper.providers.ecs import get_ecs_task_arns
-from dbt_platform_helper.providers.ecs import get_or_create_task_name
+from dbt_platform_helper.providers.ecs import ECSManager
 from dbt_platform_helper.providers.secrets import get_addon_type
 from dbt_platform_helper.providers.secrets import get_parameter_name
 from dbt_platform_helper.utils.application import Application
@@ -28,15 +25,15 @@ class Conduit:
         application: Application,
         echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
-        get_ecs_task_arns_fn=get_ecs_task_arns,
+        get_ecs_task_arns_fn=ECSManager.get_ecs_task_arns,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
         get_addon_type_fn=get_addon_type,
-        ecs_exec_is_available_fn=ecs_exec_is_available,
-        get_cluster_arn_fn=get_cluster_arn,
+        ecs_exec_is_available_fn=ECSManager.ecs_exec_is_available,
+        get_cluster_arn_fn=ECSManager.get_cluster_arn,
         get_parameter_name_fn=get_parameter_name,
-        get_or_create_task_name_fn=get_or_create_task_name,
+        get_or_create_task_name_fn=ECSManager.get_or_create_task_name,
         add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=update_conduit_stack_resources,
         wait_for_cloudformation_to_reach_status_fn=wait_for_cloudformation_to_reach_status,
