@@ -11,7 +11,6 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
@@ -204,9 +203,7 @@ class Codebase:
         codebases = [json.loads(p["Value"]) for p in parameters]
 
         if not codebases:
-            raise NoCopilotCodebasesFoundError(application.name)
-            # TODO Is this really an error? Or just no codebases so we could return an empty list?
-            raise NoCopilotCodebasesFoundError
+            return []
         return codebases
 
     def __start_build_with_confirmation(

@@ -20,7 +20,6 @@ from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.exceptions import ApplicationNotFoundError
 from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.git import CommitNotFoundError
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
@@ -431,10 +430,8 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
         codebase.list("not-an-application", True)
 
 
-def test_codebase_list_raises_exception_when_no_codebases():
-    mocks = CodebaseMocks(
-        check_codebase_exists_fn=Mock(side_effect=NoCopilotCodebasesFoundError("test-application"))
-    )
+def test_codebase_list_returns_empty_when_no_codebases():
+    mocks = CodebaseMocks(check_codebase_exists_fn=Mock())
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -442,9 +439,10 @@ def test_codebase_list_raises_exception_when_no_codebases():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(NoCopilotCodebasesFoundError):
-        codebase = Codebase(**mocks.params())
-        codebase.list("test-application", True)
+    codebase = Codebase(**mocks.params())
+    codebase.list("test-application", True)
+
+    mocks.echo_fn.assert_has_calls([])
 
 
 def test_lists_codebases_with_multiple_pages_of_images():
