@@ -455,22 +455,6 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
     )
 
 
-@mock_aws
-@patch("dbt_platform_helper.providers.ecs.ecs_exec_is_available", return_value=True)
-def test_connect_to_addon_client_task(
-    ecs_exec_is_available, mock_cluster_client_task, mocked_cluster, mock_application
-):
-    task_name = mock_task_name("postgres")
-    mock_cluster_client_task("postgres")
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments["development"].session.client("ecs")
-    mock_subprocess = Mock()
-
-    connect_to_addon_client_task(
-        ecs_client, mock_subprocess, mock_application.name, env, mocked_cluster_arn, task_name
-    )
-
-
 # @mock_aws TODO!
 # @patch("dbt_platform_helper.providers.ecs.ecs_exec_is_available", side_effect=ECSAgentNotRunning)
 # def test_connect_to_addon_client_task_waits_for_command_agent(ecs_exec_is_available, mock_cluster_client_task, mocked_cluster, mock_application):
