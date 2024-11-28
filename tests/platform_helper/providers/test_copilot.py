@@ -455,24 +455,6 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
     )
 
 
-# @mock_aws TODO!
-# @patch("dbt_platform_helper.providers.ecs.ecs_exec_is_available", side_effect=ECSAgentNotRunning)
-# def test_connect_to_addon_client_task_waits_for_command_agent(ecs_exec_is_available, mock_cluster_client_task, mocked_cluster, mock_application):
-#     task_name = mock_task_name("postgres")
-#     mock_cluster_client_task("postgres")
-#     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-#     ecs_client = mock_application.environments["development"].session.client("ecs")
-#     mock_subprocess = Mock()
-#     # We want this to throw InvalidParameterException the first time, then behave as normal
-
-#     with pytest.raises(ECSAgentNotRunning):
-#         connect_to_addon_client_task(
-#             ecs_client, mock_subprocess, mock_application.name, env, mocked_cluster_arn, task_name
-#         )
-#     # Assert "Unable to connect, execute command agent probably isn’t running yet" in output
-#     # If it doesn't bomb out with CreateTaskTimeoutError all is good
-
-
 @pytest.mark.parametrize(
     "addon_type",
     ["postgres", "redis", "opensearch"],
@@ -489,7 +471,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
-    get_ecs_task_arns = Mock(return_value=False)
+    get_ecs_task_arns = Mock(return_value=[])
 
     with pytest.raises(CreateTaskTimeoutError):
         connect_to_addon_client_task(
