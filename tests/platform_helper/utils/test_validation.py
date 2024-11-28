@@ -976,17 +976,17 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
                         "type": "redis",
                         "environments": {
                             "*": {"plan": "tiny"},
-                            "prod": {"engine": "6.1", "plan": "tiny"},
+                            "prod": {"engine": "invalid", "plan": "tiny"},
                         },
                     }
                 },
             },
-            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: 6.1",
+            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
         ),
     ],
 )
 @patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extensions_different_scenarios(
+def test_validate_extension_supported_versions(
     mock_supported_versions, config, expected_response, capsys
 ):
 
