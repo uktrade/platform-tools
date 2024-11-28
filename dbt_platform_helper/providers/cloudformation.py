@@ -86,10 +86,13 @@ def update_conduit_stack_resources(
     )
 
     params = []
+    # TODO moto does not error if you comment this code, but it should error with
+    # botocore.exceptions.ClientError: An error occurred (ValidationError) when calling the UpdateStack operation:
+    # Parameters: [ExistingParameter] must have values
+    # Is this a moto bug? as this error should occur when calling update_stack
     if "Parameters" in template_yml:
         for param in template_yml["Parameters"]:
-            # TODO testing missed in codecov, update test to assert on method call below with params including ExistingParameter from cloudformation template.
-            params.append({"ParameterKey": param, "UsePreviousValue": False})
+            params.append({"ParameterKey": param, "UsePreviousValue": True})
 
     cloudformation_client.update_stack(
         StackName=conduit_stack_name,
