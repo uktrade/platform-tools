@@ -764,7 +764,15 @@ def test_config_file_check_warns_if_deprecated_files_exist(
     [
         None,
         [{"from": "dev", "to": "test"}],
-        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test", "cross_account": True}],
+        [
+            {"from": "test", "to": "dev"},
+            {
+                "from": "prod",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+            },
+        ],
     ],
 )
 def test_validate_database_copy_section_success_cases(database_copy_section):
@@ -937,7 +945,7 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
     )
 
 
-def test_validate_database_copy_fails_if_different_account_with_no_cross_account_parameter(capfd):
+def test_validate_database_copy_fails_if_cross_account_with_no_from_account(capfd):
     config = {
         "application": "test-app",
         "environments": {
@@ -958,11 +966,11 @@ def test_validate_database_copy_fails_if_different_account_with_no_cross_account
 
     console_message = capfd.readouterr().err
 
-    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be set to true."
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'from_account' parameter must be present."
     assert msg in console_message
 
 
-def test_validate_database_copy_fails_if_different_account_with_cross_account_false(capfd):
+def test_validate_database_copy_fails_if_cross_account_with_no_to_account(capfd):
     config = {
         "application": "test-app",
         "environments": {
@@ -973,7 +981,7 @@ def test_validate_database_copy_fails_if_different_account_with_cross_account_fa
             "our-postgres": {
                 "type": "postgres",
                 "version": 7,
-                "database_copy": [{"from": "prod", "to": "dev", "cross_account": False}],
+                "database_copy": [{"from": "prod", "to": "dev", "from_account": "9999999999"}],
             }
         },
     }
@@ -983,7 +991,39 @@ def test_validate_database_copy_fails_if_different_account_with_cross_account_fa
 
     console_message = capfd.readouterr().err
 
-    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'cross_account' parameter must be set to true."
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'to_account' parameter must be present."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [
+                    {
+                        "from": "prod",
+                        "to": "dev",
+                        "from_account": "000000000",
+                        "to_account": "1111111111",
+                    }
+                ],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Incorrect value for 'from_account' for environment 'prod'"
     assert msg in console_message
 
 

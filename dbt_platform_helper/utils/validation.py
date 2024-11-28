@@ -210,7 +210,12 @@ RETENTION_POLICY = Or(
     },
 )
 
-DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME, Optional("cross_account"): bool}
+DATABASE_COPY = {
+    "from": ENV_NAME,
+    "to": ENV_NAME,
+    Optional("from_account"): str,
+    Optional("to_account"): str,
+}
 
 POSTGRES_DEFINITION = {
     "type": "postgres",
@@ -637,12 +642,22 @@ def validate_database_copy_section(config):
                     f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                 )
 
-            if from_account != to_account and (
-                "cross_account" not in section or section["cross_account"] is not True
-            ):
-                errors.append(
-                    f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'cross_account' parameter must be set to true."
-                )
+            if from_account != to_account:
+                if "from_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
+                    )
+                elif section["from_account"] != from_account:
+                    errors.append(
+                        f"Incorrect value for 'from_account' for environment '{from_env}'"
+                    )
+
+                if "to_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
+                    )
+                elif section["to_account"] != to_account:
+                    errors.append(f"Incorrect value for 'to_account' for environment '{to_env}'")
 
     if errors:
         abort_with_error("\n".join(errors))
