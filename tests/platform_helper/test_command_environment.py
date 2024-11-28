@@ -631,8 +631,6 @@ class TestGenerate:
         assert public_subnet_ids == [expected_public_subnet_id]
         assert private_subnet_ids == [expected_private_subnet_id]
 
-    # Todo: test_get_subnet_ids_with_cloudformation_export_returning_different_subnets
-
     @mock_aws
     def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order(self):
         def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
@@ -662,7 +660,7 @@ class TestGenerate:
 
         mock_boto3_session = MagicMock()
 
-        # Cloudformation export returns a paginated response with the exports in the expected order plus some we are not interested in
+        # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
         mock_boto3_session.client("cloudformation").get_paginator(
             "list_exports"
         ).paginate.return_value = [

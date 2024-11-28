@@ -96,23 +96,6 @@ def get_subnet_ids(session, vpc_id, environment_name):
     return public_subnets, private_subnets
 
 
-def _get_subnet_ids_from_ec2(session, vpc_id):
-    subnets = session.client("ec2").describe_subnets(
-        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-    )["Subnets"]
-
-    if not subnets:
-        click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
-        raise click.Abort
-
-    public_tag = {"Key": "subnet_type", "Value": "public"}
-    public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
-    private_tag = {"Key": "subnet_type", "Value": "private"}
-    private_subnets = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
-
-    return public_subnets, private_subnets
-
-
 def _match_subnet_id_order_to_cloudformation_exports(
     session, environment_name, public_subnets, private_subnets
 ):
