@@ -635,16 +635,18 @@ class TestGenerate:
         expected_private_subnet_id = "subnet-ec792dd7"
         expected_public_subnet_id = "vpc-1116baee"
         mock_boto3_session = MagicMock()
-        mock_boto3_session.client("ec2").describe_subnets.return_value = [
-            {
-                "SubnetId": expected_private_subnet_id,
-                "Tags": [{"Key": "subnet_type", "Value": "private"}],
-            },
-            {
-                "SubnetId": expected_public_subnet_id,
-                "Tags": [{"Key": "subnet_type", "Value": "public"}],
-            },
-        ]
+        mock_boto3_session.client("ec2").describe_subnets.return_value = {
+            "Subnets": [
+                {
+                    "SubnetId": expected_private_subnet_id,
+                    "Tags": [{"Key": "subnet_type", "Value": "private"}],
+                },
+                {
+                    "SubnetId": expected_public_subnet_id,
+                    "Tags": [{"Key": "subnet_type", "Value": "public"}],
+                },
+            ]
+        }
 
         public_subnet_ids, private_subnet_ids = get_subnet_ids(
             mock_boto3_session, "vpc-id-does-not-matter"
