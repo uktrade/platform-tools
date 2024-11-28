@@ -429,6 +429,7 @@ class TestEnvironmentOnlineCommand:
 
 
 class TestGenerate:
+
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch("dbt_platform_helper.commands.environment.get_cert_arn", return_value="arn:aws:acm:test")
     @patch(
@@ -481,7 +482,7 @@ class TestGenerate:
         )
 
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
-        mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
+        mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123", "test")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
         mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
 
@@ -623,7 +624,9 @@ class TestGenerate:
             session, vpc_id, "private", "10.0.1.0/24"
         )
 
-        public_subnet_ids, private_subnet_ids = get_subnet_ids(session, vpc_id)
+        public_subnet_ids, private_subnet_ids = get_subnet_ids(
+            session, vpc_id, "environment-name-does-not-matter"
+        )
 
         assert public_subnet_ids == [expected_public_subnet_id]
         assert private_subnet_ids == [expected_private_subnet_id]
@@ -644,79 +647,88 @@ class TestGenerate:
                 "Tags": [{"Key": "subnet_type", "Value": visibility}],
             }
 
-        expected_private_subnet_id_1 = "subnet-1private"
-        expected_private_subnet_id_2 = "subnet-2private"
-        expected_private_subnet_id_3 = "subnet-2private"
+        def _non_subnet_exports(number):
+            return [
+                {
+                    "Name": f"application-environment-NotASubnet",
+                    "Value": "does-not-matter",
+                }
+            ] * number
+
         expected_public_subnet_id_1 = "subnet-1public"
         expected_public_subnet_id_2 = "subnet-2public"
-        expected_public_subnet_id_3 = "subnet-2public"
+        expected_private_subnet_id_1 = "subnet-1private"
+        expected_private_subnet_id_2 = "subnet-2private"
 
         mock_boto3_session = MagicMock()
 
-        # Cloudformation export returns them in the expected order plus some we are not interested in
-        mock_boto3_session.client("cloudformation").list_exports.return_value = [
-            _list_exports_subnet_object(
-                "environment",
-                [
-                    expected_private_subnet_id_1,
-                    expected_private_subnet_id_2,
-                    expected_private_subnet_id_3,
-                ],
-                "private",
-            ),
-            _list_exports_subnet_object(
-                "environment",
-                [
-                    expected_public_subnet_id_1,
-                    expected_public_subnet_id_2,
-                    expected_public_subnet_id_3,
-                ],
-                "public",
-            ),
-            _list_exports_subnet_object(
-                "other-environment",
-                [expected_public_subnet_id_3],
-                "public",
-            ),
-            _list_exports_subnet_object(
-                "other-environment",
-                [expected_private_subnet_id_3],
-                "private",
-            ),
+        # Cloudformation export returns a paginated response with the exports in the expected order plus some we are not interested in
+        mock_boto3_session.client("cloudformation").get_paginator(
+            "list_exports"
+        ).paginate.return_value = [
+            {"Exports": _non_subnet_exports(5)},
+            {
+                "Exports": [
+                    _list_exports_subnet_object(
+                        "environment",
+                        [
+                            expected_public_subnet_id_1,
+                            expected_public_subnet_id_2,
+                        ],
+                        "public",
+                    ),
+                    _list_exports_subnet_object(
+                        "environment",
+                        [
+                            expected_private_subnet_id_1,
+                            expected_private_subnet_id_2,
+                        ],
+                        "private",
+                    ),
+                    _list_exports_subnet_object(
+                        "otherenvironment",
+                        [expected_public_subnet_id_1],
+                        "public",
+                    ),
+                    _list_exports_subnet_object(
+                        "otherenvironment",
+                        [expected_private_subnet_id_2],
+                        "private",
+                    ),
+                ]
+            },
+            {"Exports": _non_subnet_exports(5)},
         ]
 
         # EC2 client should return them in an order that differs from the CloudFormation Export
         mock_boto3_session.client("ec2").describe_subnets.return_value = {
             "Subnets": [
-                _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
-                _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
-                _describe_subnets_subnet_object(expected_private_subnet_id_3, "private"),
-                _describe_subnets_subnet_object(expected_public_subnet_id_3, "public"),
                 _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
                 _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
             ]
         }
 
+        # Act (there's a lot of setup, worth signposting where this happens)
         public_subnet_ids, private_subnet_ids = get_subnet_ids(
-            mock_boto3_session, "vpc-id-does-not-matter"
+            mock_boto3_session, "vpc-id-does-not-matter", "environment"
         )
 
         assert public_subnet_ids == [
             expected_public_subnet_id_1,
             expected_public_subnet_id_2,
-            expected_public_subnet_id_3,
         ]
         assert private_subnet_ids == [
             expected_private_subnet_id_1,
             expected_private_subnet_id_2,
-            expected_private_subnet_id_3,
         ]
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
 
         with pytest.raises(click.Abort):
-            get_subnet_ids(boto3.session.Session(), "123")
+            get_subnet_ids(boto3.session.Session(), "123", "environment-name-does-not-matter")
 
         captured = capsys.readouterr()
 
