@@ -76,7 +76,10 @@ def test_update_conduit_stack_resources(
     )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
+    stack = boto3.client("cloudformation").describe_stacks(StackName=f"task-{task_name}")
     template_yml = load_yaml(template["TemplateBody"])
+
+    assert stack["Stacks"][0]["Parameters"][0]["ParameterValue"] == "does-not-matter"
     assert template_yml["Resources"]["LogGroup"]["DeletionPolicy"] == "Retain"
     assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
     assert (
