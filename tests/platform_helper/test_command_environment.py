@@ -591,7 +591,7 @@ class TestGenerate:
     @mock_aws
     def test_get_vpc_id(self, vpc_name):
         session = boto3.session.Session()
-        vpc = self.create_mocked_vpc(session, vpc_name)
+        vpc = self.create_moto_mocked_vpc(session, vpc_name)
         expected_vpc_id = vpc["VpcId"]
 
         actual_vpc_id = get_vpc_id(session, "prod")
@@ -615,11 +615,11 @@ class TestGenerate:
     @mock_aws
     def test_get_subnet_ids(self):
         session = boto3.session.Session()
-        vpc_id = self.create_mocked_vpc(session, "default-development")["VpcId"]
-        expected_public_subnet_id = self.create_mocked_subnet(
+        vpc_id = self.create_moto_mocked_vpc(session, "default-development")["VpcId"]
+        expected_public_subnet_id = self.create_moto_mocked_subnet(
             session, vpc_id, "public", "10.0.128.0/24"
         )
-        expected_private_subnet_id = self.create_mocked_subnet(
+        expected_private_subnet_id = self.create_moto_mocked_subnet(
             session, vpc_id, "private", "10.0.1.0/24"
         )
 
@@ -632,19 +632,68 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order(self):
-        expected_private_subnet_id = "subnet-ec792dd7"
-        expected_public_subnet_id = "vpc-1116baee"
+        def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
+            return {
+                "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
+                "Value": f"{','.join(subnet_ids)}",
+            }
+
+        def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
+            return {
+                "SubnetId": subnet_id,
+                "Tags": [{"Key": "subnet_type", "Value": visibility}],
+            }
+
+        expected_private_subnet_id_1 = "subnet-1private"
+        expected_private_subnet_id_2 = "subnet-2private"
+        expected_private_subnet_id_3 = "subnet-2private"
+        expected_public_subnet_id_1 = "subnet-1public"
+        expected_public_subnet_id_2 = "subnet-2public"
+        expected_public_subnet_id_3 = "subnet-2public"
+
         mock_boto3_session = MagicMock()
+
+        # Cloudformation export returns them in the expected order plus some we are not interested in
+        mock_boto3_session.client("cloudformation").list_exports.return_value = [
+            _list_exports_subnet_object(
+                "environment",
+                [
+                    expected_private_subnet_id_1,
+                    expected_private_subnet_id_2,
+                    expected_private_subnet_id_3,
+                ],
+                "private",
+            ),
+            _list_exports_subnet_object(
+                "environment",
+                [
+                    expected_public_subnet_id_1,
+                    expected_public_subnet_id_2,
+                    expected_public_subnet_id_3,
+                ],
+                "public",
+            ),
+            _list_exports_subnet_object(
+                "other-environment",
+                [expected_public_subnet_id_3],
+                "public",
+            ),
+            _list_exports_subnet_object(
+                "other-environment",
+                [expected_private_subnet_id_3],
+                "private",
+            ),
+        ]
+
+        # EC2 client should return them in an order that differs from the CloudFormation Export
         mock_boto3_session.client("ec2").describe_subnets.return_value = {
             "Subnets": [
-                {
-                    "SubnetId": expected_private_subnet_id,
-                    "Tags": [{"Key": "subnet_type", "Value": "private"}],
-                },
-                {
-                    "SubnetId": expected_public_subnet_id,
-                    "Tags": [{"Key": "subnet_type", "Value": "public"}],
-                },
+                _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_3, "private"),
+                _describe_subnets_subnet_object(expected_public_subnet_id_3, "public"),
+                _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
+                _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
             ]
         }
 
@@ -652,8 +701,16 @@ class TestGenerate:
             mock_boto3_session, "vpc-id-does-not-matter"
         )
 
-        assert public_subnet_ids == [expected_public_subnet_id]
-        assert private_subnet_ids == [expected_private_subnet_id]
+        assert public_subnet_ids == [
+            expected_public_subnet_id_1,
+            expected_public_subnet_id_2,
+            expected_public_subnet_id_3,
+        ]
+        assert private_subnet_ids == [
+            expected_private_subnet_id_1,
+            expected_private_subnet_id_2,
+            expected_private_subnet_id_3,
+        ]
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
@@ -692,7 +749,7 @@ class TestGenerate:
             in captured.out
         )
 
-    def create_mocked_subnet(self, session, vpc_id, visibility, cidr_block):
+    def create_moto_mocked_subnet(self, session, vpc_id, visibility, cidr_block):
         return session.client("ec2").create_subnet(
             CidrBlock=cidr_block,
             VpcId=vpc_id,
@@ -706,7 +763,7 @@ class TestGenerate:
             ],
         )["Subnet"]["SubnetId"]
 
-    def create_mocked_vpc(self, session, vpc_name):
+    def create_moto_mocked_vpc(self, session, vpc_name):
         vpc = session.client("ec2").create_vpc(
             CidrBlock="10.0.0.0/16",
             TagSpecifications=[
