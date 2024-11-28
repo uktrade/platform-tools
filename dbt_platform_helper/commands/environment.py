@@ -109,7 +109,7 @@ def _match_subnet_id_order_to_cloudformation_exports(
                 if export["Name"].endswith("-PrivateSubnets"):
                     private_subnet_exports = export["Value"].split(",")
 
-    # Make sure we return the subnet IDs in the same order as the CloudFormation export if they match
+    # If the elements match, regardless of order, use the list from the CloudFormation exports
     if set(public_subnets) == set(public_subnet_exports):
         public_subnets = public_subnet_exports
     if set(private_subnets) == set(private_subnet_exports):

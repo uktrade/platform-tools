@@ -633,6 +633,7 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order(self):
+        # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
         def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
             return {
                 "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
