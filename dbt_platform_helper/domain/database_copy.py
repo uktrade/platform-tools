@@ -1,4 +1,5 @@
 import re
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -196,9 +197,15 @@ class DatabaseCopy:
         action = "dump" if is_dump else "load"
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
-        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
+
         session = self.application.environments[env].session
-        response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
+        log_client = session.client("logs")
+
+        self.echo_fn(f"Waiting for log group {log_group_name} to exist", fg="yellow")
+        self.wait_for_log_group(log_client, log_group_name)
+
+        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
+        response = log_client.start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         stopped = False
         for data in response["responseStream"]:
@@ -220,3 +227,19 @@ class DatabaseCopy:
         envs = self.application.environments
         if env in envs:
             return envs.get(env).account_id
+
+    def wait_for_log_group(self, log_client, log_group_name):
+        current_attempts = 0
+        log_group_exists = False
+
+        while not log_group_exists and current_attempts < 25:
+            current_attempts += 1
+
+            log_group_response = log_client.describe_log_groups(logGroupNamePrefix=log_group_name)
+            log_groups = log_group_response.get("logGroups", [])
+
+            for group in log_groups:
+                if group["logGroupName"] == log_group_name:
+                    log_group_exists = True
+
+            time.sleep(1)

@@ -5,10 +5,11 @@ clean_up(){
   rm data_dump.sql
   echo "Removing dump file from S3"
   aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
+  exit_code=$?
   if [ ${exit_code} -ne 0 ]
   then
     echo "Aborting data load: Clean up failed"
-    exit $exit_code    
+    exit $exit_code
   fi
 }
 
