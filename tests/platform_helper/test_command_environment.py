@@ -231,7 +231,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
@@ -269,7 +268,6 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-
         mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
         load_application.return_value = mock_application
 
@@ -322,7 +320,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -358,7 +355,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -383,7 +379,6 @@ class TestEnvironmentOnlineCommand:
         load_application,
         mock_application,
     ):
-
         load_application.return_value = mock_application
         find_https_listener.side_effect = ListenerNotFoundError()
 
@@ -434,6 +429,7 @@ class TestEnvironmentOnlineCommand:
 
 
 class TestGenerate:
+
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch("dbt_platform_helper.commands.environment.get_cert_arn", return_value="arn:aws:acm:test")
     @patch(
@@ -486,7 +482,7 @@ class TestGenerate:
         )
 
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
-        mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123")
+        mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123", "test")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
         mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
 
@@ -595,19 +591,8 @@ class TestGenerate:
     @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
     @mock_aws
     def test_get_vpc_id(self, vpc_name):
-
         session = boto3.session.Session()
-        vpc = session.client("ec2").create_vpc(
-            CidrBlock="10.0.0.0/16",
-            TagSpecifications=[
-                {
-                    "ResourceType": "vpc",
-                    "Tags": [
-                        {"Key": "Name", "Value": vpc_name},
-                    ],
-                },
-            ],
-        )["Vpc"]
+        vpc = self.create_moto_mocked_vpc(session, vpc_name)
         expected_vpc_id = vpc["VpcId"]
 
         actual_vpc_id = get_vpc_id(session, "prod")
@@ -630,54 +615,119 @@ class TestGenerate:
 
     @mock_aws
     def test_get_subnet_ids(self):
-
         session = boto3.session.Session()
-        vpc = session.client("ec2").create_vpc(
-            CidrBlock="10.0.0.0/16",
-            TagSpecifications=[
-                {
-                    "ResourceType": "vpc",
-                    "Tags": [
-                        {"Key": "Name", "Value": "default-development"},
-                    ],
-                },
-            ],
-        )["Vpc"]
-        public_subnet = session.client("ec2").create_subnet(
-            CidrBlock="10.0.128.0/24",
-            VpcId=vpc["VpcId"],
-            TagSpecifications=[
-                {
-                    "ResourceType": "subnet",
-                    "Tags": [
-                        {"Key": "subnet_type", "Value": "public"},
-                    ],
-                },
-            ],
-        )["Subnet"]
-        private_subnet = session.client("ec2").create_subnet(
-            CidrBlock="10.0.1.0/24",
-            VpcId=vpc["VpcId"],
-            TagSpecifications=[
-                {
-                    "ResourceType": "subnet",
-                    "Tags": [
-                        {"Key": "subnet_type", "Value": "private"},
-                    ],
-                },
-            ],
-        )["Subnet"]
+        vpc_id = self.create_moto_mocked_vpc(session, "default-development")["VpcId"]
+        expected_public_subnet_id = self.create_moto_mocked_subnet(
+            session, vpc_id, "public", "10.0.128.0/24"
+        )
+        expected_private_subnet_id = self.create_moto_mocked_subnet(
+            session, vpc_id, "private", "10.0.1.0/24"
+        )
 
-        public, private = get_subnet_ids(session, vpc["VpcId"])
+        public_subnet_ids, private_subnet_ids = get_subnet_ids(
+            session, vpc_id, "environment-name-does-not-matter"
+        )
 
-        assert public == [public_subnet["SubnetId"]]
-        assert private == [private_subnet["SubnetId"]]
+        assert public_subnet_ids == [expected_public_subnet_id]
+        assert private_subnet_ids == [expected_private_subnet_id]
+
+    @mock_aws
+    def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order(self):
+        # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
+        def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
+            return {
+                "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
+                "Value": f"{','.join(subnet_ids)}",
+            }
+
+        def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
+            return {
+                "SubnetId": subnet_id,
+                "Tags": [{"Key": "subnet_type", "Value": visibility}],
+            }
+
+        def _non_subnet_exports(number):
+            return [
+                {
+                    "Name": f"application-environment-NotASubnet",
+                    "Value": "does-not-matter",
+                }
+            ] * number
+
+        expected_public_subnet_id_1 = "subnet-1public"
+        expected_public_subnet_id_2 = "subnet-2public"
+        expected_private_subnet_id_1 = "subnet-1private"
+        expected_private_subnet_id_2 = "subnet-2private"
+
+        mock_boto3_session = MagicMock()
+
+        # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
+        mock_boto3_session.client("cloudformation").get_paginator(
+            "list_exports"
+        ).paginate.return_value = [
+            {"Exports": _non_subnet_exports(5)},
+            {
+                "Exports": [
+                    _list_exports_subnet_object(
+                        "environment",
+                        [
+                            expected_public_subnet_id_1,
+                            expected_public_subnet_id_2,
+                        ],
+                        "public",
+                    ),
+                    _list_exports_subnet_object(
+                        "environment",
+                        [
+                            expected_private_subnet_id_1,
+                            expected_private_subnet_id_2,
+                        ],
+                        "private",
+                    ),
+                    _list_exports_subnet_object(
+                        "otherenvironment",
+                        [expected_public_subnet_id_1],
+                        "public",
+                    ),
+                    _list_exports_subnet_object(
+                        "otherenvironment",
+                        [expected_private_subnet_id_2],
+                        "private",
+                    ),
+                ]
+            },
+            {"Exports": _non_subnet_exports(5)},
+        ]
+
+        # EC2 client should return them in an order that differs from the CloudFormation Export
+        mock_boto3_session.client("ec2").describe_subnets.return_value = {
+            "Subnets": [
+                _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
+                _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
+                _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
+            ]
+        }
+
+        # Act (there's a lot of setup, worth signposting where this happens)
+        public_subnet_ids, private_subnet_ids = get_subnet_ids(
+            mock_boto3_session, "vpc-id-does-not-matter", "environment"
+        )
+
+        assert public_subnet_ids == [
+            expected_public_subnet_id_1,
+            expected_public_subnet_id_2,
+        ]
+        assert private_subnet_ids == [
+            expected_private_subnet_id_1,
+            expected_private_subnet_id_2,
+        ]
 
     @mock_aws
     def test_get_subnet_ids_failure(self, capsys):
 
         with pytest.raises(click.Abort):
-            get_subnet_ids(boto3.session.Session(), "123")
+            get_subnet_ids(boto3.session.Session(), "123", "environment-name-does-not-matter")
 
         captured = capsys.readouterr()
 
@@ -709,6 +759,34 @@ class TestGenerate:
             "No certificate found with domain name matching environment development."
             in captured.out
         )
+
+    def create_moto_mocked_subnet(self, session, vpc_id, visibility, cidr_block):
+        return session.client("ec2").create_subnet(
+            CidrBlock=cidr_block,
+            VpcId=vpc_id,
+            TagSpecifications=[
+                {
+                    "ResourceType": "subnet",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": visibility},
+                    ],
+                },
+            ],
+        )["Subnet"]["SubnetId"]
+
+    def create_moto_mocked_vpc(self, session, vpc_name):
+        vpc = session.client("ec2").create_vpc(
+            CidrBlock="10.0.0.0/16",
+            TagSpecifications=[
+                {
+                    "ResourceType": "vpc",
+                    "Tags": [
+                        {"Key": "Name", "Value": vpc_name},
+                    ],
+                },
+            ],
+        )["Vpc"]
+        return vpc
 
 
 class TestFindHTTPSCertificate:
