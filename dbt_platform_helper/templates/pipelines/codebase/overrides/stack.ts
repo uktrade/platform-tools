@@ -432,10 +432,14 @@ export class TransformedStack extends cdk.Stack {
     }
 
     private getEnvManagerRolePolicyDoc() {
+        const accounts = this.pipelinesFile.accounts ?? [this.account]
+
         return {
             Effect: 'Allow',
             Action: ['sts:AssumeRole'],
-            Resource: [`arn:aws:iam::${this.account}:role/${this.appName}-*-EnvManagerRole`],
+            Resource: accounts.map(
+                account => `arn:aws:iam::${account}:role/${this.appName}-*-EnvManagerRole`
+            ),
         };
     }
 
