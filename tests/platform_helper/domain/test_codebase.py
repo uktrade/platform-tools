@@ -296,8 +296,8 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
-def test_codebase_deploy_exception_with_malformed_json():
-    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(return_value="{ mlaf = josn}"))
+def test_check_codebase_exists_returns_error_when_no_json():
+    mocks = CodebaseMocks(check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
 
@@ -305,7 +305,7 @@ def test_codebase_deploy_exception_with_malformed_json():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(CopilotCodebaseNotFoundError):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
@@ -379,7 +379,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
 
     with pytest.raises(ApplicationNotFoundError) as exc:
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
-        # TODO review
+        # TODO This assert can probably go now we are catching the errors and outputting them at the command layer
         mocks.echo_fn.assert_has_calls(
             [
                 call(

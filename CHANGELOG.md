@@ -1,5 +1,32 @@
 # Changelog
 
+## [12.2.2](https://github.com/uktrade/platform-tools/compare/12.2.1...12.2.2) (2024-11-26)
+
+
+### Bug Fixes
+
+* Fixing json loads ([#664](https://github.com/uktrade/platform-tools/issues/664)) ([46eddff](https://github.com/uktrade/platform-tools/commit/46eddff14ba2460ebe4beee1378ac75b617a8821))
+
+## [12.2.1](https://github.com/uktrade/platform-tools/compare/12.2.0...12.2.1) (2024-11-26)
+
+
+### Miscellaneous Chores
+
+* Don't install poetry in Dockerfile.debian ([#655](https://github.com/uktrade/platform-tools/issues/655)) ([9ad8c67](https://github.com/uktrade/platform-tools/commit/9ad8c67d8abc8ad61a4123bb90d361b3e26eacd3))
+
+## [12.2.0](https://github.com/uktrade/platform-tools/compare/12.1.0...12.2.0) (2024-11-26)
+
+
+### Features
+
+* DBTP-1395 Add validation for new slack alert channel Id that will be set in &lt;application&gt;-alb in platform-config file ([#635](https://github.com/uktrade/platform-tools/issues/635)) ([729c082](https://github.com/uktrade/platform-tools/commit/729c0821bdbc96f49c832a79bf2211475a737bf9))
+* DBTP-1568 - Add s3 support for external role access ([#652](https://github.com/uktrade/platform-tools/issues/652)) ([02bebd6](https://github.com/uktrade/platform-tools/commit/02bebd6d331fd8a10cb317460a91634c5745b462))
+
+
+### Bug Fixes
+
+* DBTP-1577 Fix conduit (ecs) exec race condition  ([#656](https://github.com/uktrade/platform-tools/issues/656)) ([22eafa0](https://github.com/uktrade/platform-tools/commit/22eafa0c8388b3132663d953bf97c85887c94999))
+
 ## [12.1.0](https://github.com/uktrade/platform-tools/compare/12.0.2...12.1.0) (2024-11-21)
 
 

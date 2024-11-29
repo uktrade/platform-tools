@@ -10,15 +10,11 @@ from moto import mock_aws
 from dbt_platform_helper.exceptions import AddonNotFoundError
 from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import NoClusterError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.ecs import addon_client_is_running
-from dbt_platform_helper.providers.ecs import get_cluster_arn
-from dbt_platform_helper.providers.ecs import get_or_create_task_name
 from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.providers.secrets import (
     _normalise_secret_name as normalise_secret_name,
@@ -47,32 +43,6 @@ def test_normalise_secret_name(test_string):
     expected result."""
 
     assert normalise_secret_name(test_string[0]) == test_string[1]
-
-
-@mock_aws
-def test_get_cluster_arn(mocked_cluster, mock_application):
-    """Test that, given app and environment strings, get_cluster_arn returns the
-    arn of a cluster tagged with these strings."""
-
-    assert (
-        get_cluster_arn(
-            mock_application.environments[env].session.client("ecs"), mock_application.name, env
-        )
-        == mocked_cluster["cluster"]["clusterArn"]
-    )
-
-
-@mock_aws
-def test_get_cluster_arn_when_there_is_no_cluster(mock_application):
-    """Test that, given app and environment strings, get_cluster_arn raises an
-    exception when no cluster tagged with these strings exists."""
-
-    env = "staging"
-
-    with pytest.raises(NoClusterError):
-        get_cluster_arn(
-            mock_application.environments[env].session.client("ecs"), mock_application.name, env
-        )
 
 
 @mock_aws
@@ -416,132 +386,6 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
         mock_subprocess.call.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_addon_client_is_running(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
-):
-    """Test that, given cluster ARN, addon type and with a running agent,
-    addon_client_is_running returns True."""
-
-    mocked_cluster_for_client = mock_cluster_client_task(addon_type)
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments[env].session.client("ecs")
-
-    with patch(
-        "dbt_platform_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
-    ):
-        assert addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
-
-
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_addon_client_is_running_when_no_client_task_running(
-    mock_cluster_client_task, mocked_cluster, addon_type, mock_application
-):
-    """Test that, given cluster ARN, addon type and without a running client
-    task, addon_client_is_running returns False."""
-
-    mocked_cluster_for_client = mock_cluster_client_task(addon_type, task_running=False)
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_client = mock_application.environments[env].session.client("ecs")
-
-    with patch(
-        "dbt_platform_helper.utils.application.boto3.client", return_value=mocked_cluster_for_client
-    ):
-        assert (
-            addon_client_is_running(ecs_client, mocked_cluster_arn, mock_task_name(addon_type))
-            is False
-        )
-
-
-@mock_aws
-@pytest.mark.parametrize(
-    "addon_type",
-    ["postgres", "redis", "opensearch"],
-)
-def test_addon_client_is_running_when_no_client_agent_running(
-    addon_type, mock_application, mocked_cluster
-):
-    ecs_client = mock_application.environments[env].session.client("ecs")
-    cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    task_name = "some-task-name"
-    ec2 = boto3.resource("ec2")
-    vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
-    subnet = ec2.create_subnet(VpcId=vpc.id, CidrBlock="10.0.0.0/18")
-
-    mocked_task_definition_arn = ecs_client.register_task_definition(
-        family=f"copilot-foobar",
-        requiresCompatibilities=["FARGATE"],
-        networkMode="awsvpc",
-        containerDefinitions=[
-            {
-                "name": "test_container",
-                "image": "test_image",
-                "cpu": 256,
-                "memory": 512,
-                "essential": True,
-            }
-        ],
-    )["taskDefinition"]["taskDefinitionArn"]
-    ecs_client.run_task(
-        taskDefinition=mocked_task_definition_arn,
-        launchType="FARGATE",
-        networkConfiguration={
-            "awsvpcConfiguration": {
-                "subnets": [subnet.id],
-                "securityGroups": ["something-sg"],
-            }
-        },
-    )
-
-    assert addon_client_is_running(ecs_client, cluster_arn, task_name) is False
-
-
-@mock_aws
-def test_get_or_create_task_name(mock_application):
-    """Test that get_or_create_task_name retrieves the task name from the
-    parameter store when it has been stored."""
-
-    addon_name = "app-postgres"
-    parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
-    mock_application.environments[env].session.client("ssm")
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name=parameter_name,
-        Type="String",
-        Value=mock_task_name(addon_name),
-    )
-
-    task_name = get_or_create_task_name(
-        mock_ssm, mock_application.name, env, addon_name, parameter_name
-    )
-
-    assert task_name == mock_task_name(addon_name)
-
-
-@mock_aws
-def test_get_or_create_task_name_when_name_does_not_exist(mock_application):
-    """Test that get_or_create_task_name creates the task name and appends it
-    with a 12 digit lowercase alphanumeric string when it does not exist in the
-    parameter store."""
-
-    addon_name = "app-postgres"
-    ssm_client = mock_application.environments[env].session.client("ssm")
-    parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
-    task_name = get_or_create_task_name(
-        ssm_client, mock_application.name, env, addon_name, parameter_name
-    )
-    random_id = task_name.rsplit("-", 1)[1]
-
-    assert task_name.rsplit("-", 1)[0] == mock_task_name("app-postgres").rsplit("-", 1)[0]
-    assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
-
-
 @mock_aws
 @pytest.mark.parametrize(
     "access",
@@ -575,8 +419,7 @@ def test_get_parameter_name(access, addon_type, addon_name, mock_application):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-@patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=True)
-def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_application):
+def test_connect_to_addon_client_task(addon_type, mock_application):
     """
     Test that, given app, env, ECS cluster ARN and addon type,
     connect_to_addon_client_task calls addon_client_is_running with cluster ARN
@@ -589,9 +432,16 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
+    addon_client_is_running = Mock(return_value=True)
 
     connect_to_addon_client_task(
-        ecs_client, mock_subprocess, mock_application.name, env, "test-arn", task_name
+        ecs_client,
+        mock_subprocess,
+        mock_application.name,
+        env,
+        "test-arn",
+        task_name,
+        addon_client_is_running,
     )
 
     addon_client_is_running.assert_called_once_with(ecs_client, "test-arn", task_name)
@@ -603,7 +453,7 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
     )
 
 
-# Todo: Implement this test
+# Todo: Implement a test to cover the desired behaviour
 # @patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=True)
 # def test_connect_to_addon_client_task_waits_for_command_agent(addon_client_is_running, mock_application):
 #     task_name = mock_task_name("postgres") # Addon type for this test does not matter
@@ -624,9 +474,8 @@ def test_connect_to_addon_client_task(addon_client_is_running, addon_type, mock_
     ["postgres", "redis", "opensearch"],
 )
 @patch("time.sleep", return_value=None)
-@patch("dbt_platform_helper.providers.copilot.addon_client_is_running", return_value=False)
 def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
-    addon_client_is_running, sleep, addon_type, mock_application
+    sleep, addon_type, mock_application
 ):
     """Test that, given app, env, ECS cluster ARN and addon type, when the
     client agent fails to start, connect_to_addon_client_task calls
@@ -636,10 +485,17 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
     mock_subprocess = Mock()
+    addon_client_is_running = Mock(return_value=False)
 
     with pytest.raises(CreateTaskTimeoutError):
         connect_to_addon_client_task(
-            ecs_client, mock_subprocess, mock_application, env, "test-arn", task_name
+            ecs_client,
+            mock_subprocess,
+            mock_application,
+            env,
+            "test-arn",
+            task_name,
+            addon_client_is_running_fn=addon_client_is_running,
         )
 
     addon_client_is_running.assert_called_with(ecs_client, "test-arn", task_name)

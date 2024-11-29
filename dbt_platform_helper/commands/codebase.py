@@ -30,7 +30,7 @@ def prepare():
     try:
         Codebase().prepare()
     except NotInCodeBaseRepositoryError:
-        # TODO print error attached to exception
+        # TODO: Set exception message in the exceptions and just output the message in the command code
         click.secho(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
             fg="red",
@@ -109,6 +109,7 @@ def deploy(app, env, codebase, commit):
     try:
         Codebase().deploy(app, env, codebase, commit)
     except ApplicationNotFoundError:
+        # TODO: Set exception message in the exceptions and just output the message in the command code
         click.secho(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
             fg="red",
@@ -120,9 +121,9 @@ def deploy(app, env, codebase, commit):
             fg="red",
         )
         raise click.Abort
-    # TODO: don't hide json decode error
     except (
         CopilotCodebaseNotFoundError,
+        # TODO: Catch this error earlier and throw a more meaningful error, maybe it's CopilotCodebaseNotFoundError?
         json.JSONDecodeError,
     ):
         click.secho(

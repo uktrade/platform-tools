@@ -271,6 +271,25 @@ def iam_role_arn_regex(key):
     )
 
 
+def dbt_email_address_regex(key):
+    return Regex(
+        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+        error=f"{key} must contain a valid DBT email address",
+    )
+
+
+EXTERNAL_ROLE_ACCESS = {
+    "role_arn": iam_role_arn_regex("role_arn"),
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
+}
+
+EXTERNAL_ROLE_ACCESS_NAME = Regex(
+    r"^([a-z][a-zA-Z0-9_-]*)$",
+    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
+)
+
 DATA_IMPORT = {
     Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
     "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
@@ -293,7 +312,8 @@ S3_BASE = {
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
             Optional("data_migration"): DATA_MIGRATION,
-        }
+            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+        },
     },
 }
 
@@ -407,6 +427,7 @@ ALB_DEFINITION = {
                 Optional("forwarded_values_query_string"): bool,
                 Optional("origin_protocol_policy"): str,
                 Optional("origin_ssl_protocols"): list,
+                Optional("slack_alert_channel_alb_secret_rotation"): str,
                 Optional("viewer_certificate_minimum_protocol_version"): str,
                 Optional("viewer_certificate_ssl_support_method"): str,
                 Optional("viewer_protocol_policy"): str,

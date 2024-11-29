@@ -102,7 +102,7 @@ def list(app, env):
     params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
     secrets = []
 
-    # TODO: refactor shared code with get_ssm_secret_names
+    # TODO: refactor shared code with get_ssm_secret_names - Check if this is still valid
     while True:
         response = client.get_parameters_by_path(**params)
 

@@ -106,6 +106,8 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-data-migration-source-bucket-invalid-arn": r"source_bucket_arn must contain a valid ARN for an S3 bucket",
                 "my-s3-bucket-data-migration-source-kms-key-invalid-arn": r"source_kms_key_arn must contain a valid ARN for a KMS key",
                 "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-arn": r"role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
             },
         ),
         (
@@ -223,6 +225,7 @@ def test_validate_addons_success(addons_file):
                 "my-alb-forwarded-values-query-string-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
                 "my-alb-origin-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-origin-ssl-protocols-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-slack-alert-channel-alb-secret-rotation-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",

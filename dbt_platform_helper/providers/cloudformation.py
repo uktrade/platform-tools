@@ -98,7 +98,7 @@ def update_conduit_stack_resources(
     return conduit_stack_name
 
 
-# TODO opportunity to add error handling if cloudformation stack goes into rollback e.g. botocore.exceptions.WaiterError: Waiter StackUpdateComplete failed: Waiter encountered a terminal failure state: For expression "Stacks[].StackStatus" we matched expected path: "UPDATE_ROLLBACK_COMPLETE" at least once
+# TODO Catch errors and raise a more human friendly Exception is the CloudFormation stack goes into a "unhappy" state, e.g. ROLLBACK_IN_PROGRESS. Currently we get things like botocore.exceptions.WaiterError: Waiter StackUpdateComplete failed: Waiter encountered a terminal failure state: For expression "Stacks[].StackStatus" we matched expected path: "UPDATE_ROLLBACK_COMPLETE" at least once
 def wait_for_cloudformation_to_reach_status(cloudformation_client, stack_status, stack_name):
 
     waiter = cloudformation_client.get_waiter(stack_status)
