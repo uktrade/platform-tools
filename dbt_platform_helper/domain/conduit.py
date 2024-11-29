@@ -3,13 +3,7 @@ from collections.abc import Callable
 
 import click
 
-from dbt_platform_helper.providers.cloudformation import (
-    add_stack_delete_policy_to_task_role,
-)
-from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
-from dbt_platform_helper.providers.cloudformation import (
-    wait_for_cloudformation_to_reach_status,
-)
+from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
@@ -34,9 +28,9 @@ class Conduit:
         get_cluster_arn_fn=ECSManager.get_cluster_arn,
         get_parameter_name_fn=get_parameter_name,
         get_or_create_task_name_fn=ECSManager.get_or_create_task_name,
-        add_stack_delete_policy_to_task_role_fn=add_stack_delete_policy_to_task_role,
-        update_conduit_stack_resources_fn=update_conduit_stack_resources,
-        wait_for_cloudformation_to_reach_status_fn=wait_for_cloudformation_to_reach_status,
+        add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
+        update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,
+        wait_for_cloudformation_to_reach_status_fn=CloudFormation.wait_for_cloudformation_to_reach_status,
     ):
 
         self.application = application
