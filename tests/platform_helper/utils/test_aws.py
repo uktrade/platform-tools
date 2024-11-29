@@ -12,6 +12,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.exceptions import ResourceNotFoundException
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import Vpc
@@ -31,6 +32,7 @@ from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
+from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -995,3 +997,20 @@ def test_get_vpc_info_by_name_failure_no_matching_security_groups():
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
+
+
+def test_wait_for_log_group_to_exist_success():
+    log_group_name = "/ecs/test-log-group"
+    mock_client = Mock()
+    mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
+
+    wait_for_log_group_to_exist(mock_client, log_group_name)
+
+
+def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
+    log_group_name = "/ecs/test-log-group"
+    mock_client = Mock()
+    mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
+
+    with pytest.raises(ResourceNotFoundException):
+        wait_for_log_group_to_exist(mock_client, "not_found", 1)

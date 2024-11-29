@@ -418,6 +418,10 @@ def test_tail_logs(is_dump):
         ]
     }
 
+    mocks.client.describe_log_groups.return_value = {
+        "logGroups": [{"logGroupName": f"/ecs/test-app-test-env-test-db-{action}"}]
+    }
+
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
     db_copy.tail_logs(is_dump, "test-env")
 
@@ -456,6 +460,10 @@ def test_tail_logs_exits_with_error_if_task_aborts(is_dump):
             {"sessionUpdate": {"sessionResults": [{"message": "A load of SQL shenanigans"}]}},
             {"sessionUpdate": {"sessionResults": [{"message": f"Aborting data {action}"}]}},
         ]
+    }
+
+    mocks.client.describe_log_groups.return_value = {
+        "logGroups": [{"logGroupName": f"/ecs/test-app-test-env-test-db-{action}"}]
     }
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
