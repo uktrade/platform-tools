@@ -197,12 +197,10 @@ class DatabaseCopy:
         action = "dump" if is_dump else "load"
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
-
+        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
         session = self.application.environments[env].session
         log_client = session.client("logs")
-
         wait_for_log_group_to_exist(log_client, log_group_name)
-        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
         response = log_client.start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         stopped = False
