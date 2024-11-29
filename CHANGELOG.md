@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.2.3](https://github.com/uktrade/platform-tools/compare/12.2.2...12.2.3) (2024-11-29)
+
+
+### Bug Fixes
+
+* DBTP-1524 Make subnet order from environment generate match CloudFormation exports ([#665](https://github.com/uktrade/platform-tools/issues/665)) ([f0f561b](https://github.com/uktrade/platform-tools/commit/f0f561beba2239f757fec62cd530483432bb953b))
+
 ## [12.2.2](https://github.com/uktrade/platform-tools/compare/12.2.1...12.2.2) (2024-11-26)
 
 
