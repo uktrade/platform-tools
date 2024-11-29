@@ -93,10 +93,7 @@ class CloudFormation:
         )
 
         params = []
-        # TODO moto does not error if you comment this code, but it should error with
-        # botocore.exceptions.ClientError: An error occurred (ValidationError) when calling the UpdateStack operation:
-        # Parameters: [ExistingParameter] must have values
-        # Is this a moto bug? as this error should occur when calling update_stack
+        # TODO moto bug https://uktrade.atlassian.net/browse/DBTP-1582
         if "Parameters" in template_yml:
             for param in template_yml["Parameters"]:
                 params.append({"ParameterKey": param, "UsePreviousValue": True})
