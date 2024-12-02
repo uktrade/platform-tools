@@ -283,10 +283,6 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
 
-@patch(
-    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
-    return_value="test-arn",
-)
 @patch("click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
