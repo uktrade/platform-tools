@@ -31,7 +31,6 @@ def test_normalise_secret_name(test_string, mock_application):
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
     secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
-    secrets_manager._normalise_secret_name.return_value = test_string[1]
 
     assert secrets_manager._normalise_secret_name(test_string[0]) == test_string[1]
 
