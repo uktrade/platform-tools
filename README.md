@@ -54,9 +54,7 @@ Any new code written for dbt-platform-helper should adhere to the below architec
 
 #### Commands
 
-This is the (essentially) the UI level of platform-helper
-
-Each service represents a grouping of similar commands:
+This is the (essentially) UI level of platform-helper
 
 e.g.
 
@@ -75,7 +73,7 @@ Commands is also where arguments for any given command are pulled in via click -
 
 #### Domains
 
-Domains is where the business logic for a given command lives.
+Domains are where the business logic for a given command lives.
 
 All domains must be classes.
 
