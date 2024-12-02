@@ -133,7 +133,7 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
 
 
 @mock_aws
-def test_wait_for_cloudformation_to_reach_status_unhappy_state():
+def test_wait_for_cloudformation_with_no_success_raises_exception():
     cloudformation_client = Mock()
     waiter_mock = Mock()
     cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
