@@ -6,7 +6,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
-from dbt_platform_helper.providers.ecs import ECSManager
+from dbt_platform_helper.providers.ecs import ECS
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -17,7 +17,7 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
     ssm_client = mock_application.environments["development"].session.client("ssm")
     application_name = mock_application.name
     env = "development"
-    ecs_manager = ECSManager(ecs_client, ssm_client, application_name, env)
+    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
     cluster_arn = ecs_manager.get_cluster_arn()
 
@@ -31,7 +31,7 @@ def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
     application_name = mock_application.name
     env = "does-not-exist"
 
-    ecs_manager = ECSManager(ecs_client, ssm_client, application_name, env)
+    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
     with pytest.raises(NoClusterError):
         ecs_manager.get_cluster_arn()
@@ -45,7 +45,7 @@ def test_get_ecs_task_arns_with_running_task(
     mock_cluster_client_task(addon_type)
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         ecs_client,
         mock_application.environments["development"].session.client("ssm"),
         mock_application.name,
@@ -59,7 +59,7 @@ def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, mock_application
     addon_type = "opensearch"
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     ecs_client = mock_application.environments["development"].session.client("ecs")
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         ecs_client,
         mock_application.environments["development"].session.client("ssm"),
         mock_application.name,
@@ -100,7 +100,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
             }
         },
     )
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         ecs_client,
         mock_application.environments["development"].session.client("ssm"),
         mock_application.name,
@@ -113,7 +113,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
 def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_application):
     mocked_ecs_client = mock_cluster_client_task("postgres")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         mocked_ecs_client,
         mock_application.environments["development"].session.client("ssm"),
         mock_application.name,
@@ -131,7 +131,7 @@ def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
 ):
     mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         mocked_ecs_client,
         mock_application.environments["development"].session.client("ssm"),
         mock_application.name,
@@ -154,7 +154,7 @@ def test_get_or_create_task_name(mock_application):
         Type="String",
         Value=mock_task_name(addon_name),
     )
-    ecs_manager = ECSManager(
+    ecs_manager = ECS(
         mock_application.environments["development"].session.client("ecs"),
         mock_ssm,
         mock_application.name,
@@ -169,7 +169,7 @@ def test_get_or_create_task_name_appends_random_id(mock_application):
     addon_name = "app-postgres"
     ssm_client = mock_application.environments["development"].session.client("ssm")
     parameter_name = mock_parameter_name(mock_application, "postgres", addon_name)
-    ecs_manager = ECSManager(ssm_client, ssm_client, mock_application.name, "development")
+    ecs_manager = ECS(ssm_client, ssm_client, mock_application.name, "development")
 
     task_name = ecs_manager.get_or_create_task_name(addon_name, parameter_name)
     random_id = task_name.rsplit("-", 1)[1]

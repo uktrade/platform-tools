@@ -7,8 +7,8 @@ from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.ecs import ECSManager
-from dbt_platform_helper.providers.secrets import SecretsManager
+from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 
 
@@ -18,15 +18,15 @@ class Conduit:
         application: Application,
         echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
-        get_ecs_task_arns_fn=ECSManager.get_ecs_task_arns,
+        get_ecs_task_arns_fn=ECS.get_ecs_task_arns,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
-        get_addon_type_fn=SecretsManager.get_addon_type,
-        ecs_exec_is_available_fn=ECSManager.ecs_exec_is_available,
-        get_cluster_arn_fn=ECSManager.get_cluster_arn,
-        get_parameter_name_fn=SecretsManager.get_parameter_name,
-        get_or_create_task_name_fn=ECSManager.get_or_create_task_name,
+        get_addon_type_fn=Secrets.get_addon_type,
+        ecs_exec_is_available_fn=ECS.ecs_exec_is_available,
+        get_cluster_arn_fn=ECS.get_cluster_arn,
+        get_parameter_name_fn=Secrets.get_parameter_name,
+        get_or_create_task_name_fn=ECS.get_or_create_task_name,
         add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,
         wait_for_cloudformation_to_reach_status_fn=CloudFormation.wait_for_cloudformation_to_reach_status,

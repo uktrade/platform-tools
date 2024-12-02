@@ -9,7 +9,7 @@ from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.exceptions import InvalidAddonTypeError
 from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.exceptions import SecretNotFoundError
-from dbt_platform_helper.providers.secrets import SecretsManager
+from dbt_platform_helper.providers.secrets import Secrets
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import mock_parameter_name
 
@@ -30,7 +30,7 @@ def test_normalise_secret_name(test_string, mock_application):
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     assert secrets_manager._normalise_secret_name(test_string[0]) == test_string[1]
 
@@ -50,7 +50,7 @@ def test_get_connection_secret_arn_from_secrets_manager(mock_application):
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
 
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     arn = secrets_manager.get_connection_secret_arn(secret_name)
 
@@ -75,7 +75,7 @@ def test_get_connection_secret_arn_from_parameter_store(mock_application):
         Type="SecureString",
     )
 
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     arn = secrets_manager.get_connection_secret_arn(secret_name)
 
@@ -93,7 +93,7 @@ def test_get_connection_secret_arn_when_secret_does_not_exist(mock_application):
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     with pytest.raises(SecretNotFoundError) as ex:
         secrets_manager.get_connection_secret_arn("POSTGRES")
@@ -117,7 +117,7 @@ def test_update_postgres_parameter_with_master_secret(mock_application):
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     updated_parameter_value = (
         secrets_manager.get_postgres_connection_data_updated_with_master_secret(
@@ -147,7 +147,7 @@ def test_get_addon_type(addon_name, expected_type, mock_application):
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     add_addon_config_parameter()
     addon_type = secrets_manager.get_addon_type(addon_name)
@@ -163,7 +163,7 @@ def test_get_addon_type_with_not_found_throws_exception(mock_application):
     add_addon_config_parameter({"different-name": {"type": "redis"}})
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     with pytest.raises(AddonNotFoundError):
         secrets_manager.get_addon_type("custom-name-postgres")
@@ -176,7 +176,7 @@ def test_get_addon_type_with_parameter_not_found_throws_exception(mock_applicati
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     mock_ssm = boto3.client("ssm")
     mock_ssm.put_parameter(
@@ -197,7 +197,7 @@ def test_get_addon_type_with_invalid_type_throws_exception(mock_application):
     add_addon_config_parameter(param_value={"invalid-extension": {"type": "invalid"}})
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     with pytest.raises(InvalidAddonTypeError):
         secrets_manager.get_addon_type("invalid-extension")
@@ -211,7 +211,7 @@ def test_get_addon_type_with_blank_type_throws_exception(mock_application):
     add_addon_config_parameter(param_value={"blank-extension": {}})
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     with pytest.raises(AddonTypeMissingFromConfigError):
         secrets_manager.get_addon_type("blank-extension")
@@ -225,7 +225,7 @@ def test_get_addon_type_with_unspecified_type_throws_exception(mock_application)
     add_addon_config_parameter(param_value={"addon-type-unspecified": {"type": None}})
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
 
     with pytest.raises(AddonTypeMissingFromConfigError):
         secrets_manager.get_addon_type("addon-type-unspecified")
@@ -256,6 +256,6 @@ def test_get_parameter_name(access, addon_type, addon_name, mock_application):
 
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_client = mock_application.environments[env].session.client("secretsmanager")
-    secrets_manager = SecretsManager(ssm_client, secrets_client, mock_application.name, env)
+    secrets_manager = Secrets(ssm_client, secrets_client, mock_application.name, env)
     parameter_name = secrets_manager.get_parameter_name(addon_type, addon_name, access)
     assert parameter_name == mock_parameter_name(mock_application, addon_type, addon_name, access)

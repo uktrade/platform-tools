@@ -20,7 +20,7 @@ env = "development"
 
 @mock_aws
 @patch(  # Nested function within provider function
-    "dbt_platform_helper.providers.secrets.SecretsManager.get_postgres_connection_data_updated_with_master_secret",
+    "dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret",
     return_value="connection string",
 )
 def test_create_postgres_admin_task(mock_update_parameter, mock_application):
@@ -83,7 +83,7 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
     ],
 )
 @patch(
-    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_redis_or_opensearch_addon_client_task(
@@ -140,7 +140,7 @@ def test_create_redis_or_opensearch_addon_client_task(
     ],
 )
 @patch(
-    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_postgres_addon_client_task(
@@ -230,7 +230,7 @@ def test_create_postgres_addon_client_task_admin(
 
 
 @patch(
-    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
@@ -331,7 +331,7 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     )
 
 
-@patch("dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn")
+@patch("dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn")
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call

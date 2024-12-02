@@ -9,7 +9,7 @@ from dbt_platform_helper.exceptions import ParameterNotFoundError
 from dbt_platform_helper.exceptions import SecretNotFoundError
 
 
-class SecretsManager:
+class Secrets:
     def __init__(self, ssm_client, secrets_manager_client, application_name, env):
         self.ssm_client = ssm_client
         self.secrets_manager_client = secrets_manager_client

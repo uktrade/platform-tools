@@ -7,7 +7,7 @@ from dbt_platform_helper.exceptions import ECSAgentNotRunning
 from dbt_platform_helper.exceptions import NoClusterError
 
 
-class ECSManager:
+class ECS:
     def __init__(self, ecs_client, ssm_client, application_name: str, env: str):
         self.ecs_client = ecs_client
         self.ssm_client = ssm_client
