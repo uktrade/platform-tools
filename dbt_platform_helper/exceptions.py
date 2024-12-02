@@ -24,8 +24,6 @@ class CloudFormationException(AWSException):
         super().__init__(
             f"The CloudFormation stack '{stack_name}' is not in a good state: {current_status}"
         )
-        self.stack_name = stack_name
-        self.current_status = current_status
 
 
 class CommitNotFoundError:
