@@ -11,6 +11,7 @@ from boto3 import Session
 
 from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
@@ -66,7 +67,7 @@ class Codebase:
             .removesuffix(".git")
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            raise NotInCodeBaseRepositoryError()
+            raise NotInCodeBaseRepositoryError
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)
@@ -133,7 +134,7 @@ class Codebase:
                 f"Your build has been triggered. Check your build progress in the AWS Console: {build_url}"
             )
 
-        raise ApplicationDeploymentNotTriggered(codebase)
+        raise ApplicationDeploymentNotTriggered()
 
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
@@ -141,7 +142,7 @@ class Codebase:
 
         application = self.load_application_fn(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundError(env)
+            raise ApplicationEnvironmentNotFoundError()
 
         self.check_codebase_exists_fn(session, application, codebase)
 
@@ -170,7 +171,7 @@ class Codebase:
                 f"{build_url}",
             )
 
-        raise ApplicationDeploymentNotTriggered(codebase)
+        raise ApplicationDeploymentNotTriggered()
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
@@ -203,7 +204,8 @@ class Codebase:
         codebases = [json.loads(p["Value"]) for p in parameters]
 
         if not codebases:
-            return []
+            # TODO Is this really an error? Or just no codebases so we could return an empty list?
+            raise NoCopilotCodebasesFoundError
         return codebases
 
     def __start_build_with_confirmation(

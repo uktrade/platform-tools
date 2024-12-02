@@ -80,7 +80,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
             WithDecryption=False,
         )
     except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundError(app)
+        raise ApplicationNotFoundError
 
     path = f"/copilot/applications/{application.name}/environments"
     secrets = get_ssm_secrets(app, None, current_session, path)
