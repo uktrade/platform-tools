@@ -27,7 +27,7 @@ env = "development"
 def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     addon_name = "dummy-postgres"
-    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/DUMMY_POSTGRESS_RDS_MASTER_ARN"
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
 
