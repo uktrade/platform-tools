@@ -8,7 +8,6 @@ from moto import mock_aws
 
 from dbt_platform_helper.exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
-from dbt_platform_helper.providers.copilot import _normalise_secret_name
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
@@ -27,7 +26,9 @@ env = "development"
 def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     addon_name = "dummy-postgres"
-    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/DUMMY_POSTGRESS_RDS_MASTER_ARN"
+    master_secret_name = (
+        f"/copilot/{mock_application.name}/{env}/secrets/DUMMY_POSTGRES_RDS_MASTER_ARN"
+    )
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
 
@@ -286,7 +287,6 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
 @patch("click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
-    get_connection_secret_arn,
     mock_application,
 ):
     """Test that if an unexpected ClientError is throw when trying to get the

@@ -30,7 +30,7 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
         (
             AddonTypeMissingFromConfigError,
             {"addon_name": "test-addon"},
-            """The configuration for the addon test-addon, is missconfigured and missing the addon type.""",
+            """The configuration for the addon test-addon, is misconfigured and missing the addon type.""",
         ),
         (
             ApplicationDeploymentNotTriggered,
