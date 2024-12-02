@@ -157,7 +157,7 @@ def test_wait_for_cloudformation_to_reach_status_unhappy_state():
 
 
 @mock_aws
-def test_wait_for_cloudformation_to_reach_status_success():
+def test_wait_for_cloudformation_with_update_complete():
     cloudformation_client = Mock()
     waiter_mock = Mock()
     cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
