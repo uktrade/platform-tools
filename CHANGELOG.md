@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.2.4](https://github.com/uktrade/platform-tools/compare/12.2.3...12.2.4) (2024-12-02)
+
+
+### Bug Fixes
+
+* DBTP-1572 - Fix _validate_exension_supported_versions incorrectly raising an error when no version is supplied ([#660](https://github.com/uktrade/platform-tools/issues/660)) ([2ce98bf](https://github.com/uktrade/platform-tools/commit/2ce98bfdcd22b880867306e3181f4815e46c6acb))
+
 ## [12.2.3](https://github.com/uktrade/platform-tools/compare/12.2.2...12.2.3) (2024-11-29)
 
 
