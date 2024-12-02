@@ -42,6 +42,59 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
     poetry run pre-commit install
     ```
 
+### Platform Helper Architecture
+
+This section is an overview of the dbt-platform-helper architecture following refactor work.
+
+dbt-platform-helper is split into the following layers:
+
+Commands (UI) -> Domains -> Providers
+
+Any new code written for dbt-platform-helper should adhere to the below architecture.
+
+#### Commands
+
+This is the (essentially) the UI level of platform-helper
+
+Each service represents a grouping of similar commands:
+
+e.g.
+
+`codebase` has the following commands (all to do with codebase):
+
+- `build`
+- `deploy`
+- `list`
+- `prepare`
+
+Each command has an associated `domain`. 
+
+There should be none (if any) business logic within the command as this is extracted to the domain layer.
+
+Commands is also where arguments for any given command are pulled in via click - and then passed to the domain.
+
+#### Domains
+
+Domains is where the business logic for a given command lives.
+
+All domains must be classes.
+
+Any logged information (`click.secho`) from the `provider` level should live within the `domain` level.
+
+Any common or repeatable code should not be defined within the `domain` and should instead be extracted to a suitable `provider`. See below section for an overview.
+
+#### Providers
+
+TODO
+
+Providers are groups of similar logic that are linked by the resource/tool/thing they use and not by what the result of there actions is.
+
+e.g. 
+
+I have a method that lists *thing* from the *thing-service* AWS using a boto3 client.
+
+This method does not re-use any code within the domain so it should go into the *thing-service* provider as they use refereusence similar resources.
+
 ### Testing
 
 #### Requirements
