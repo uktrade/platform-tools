@@ -86,7 +86,7 @@ class InvalidAddonTypeError(AWSException):
 class AddonTypeMissingFromConfigError(AWSException):
     def __init__(self, addon_name: str):
         super().__init__(
-            f"""The configuration for the addon {addon_name}, is missconfigured and missing the addon type."""
+            f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
         )
 
 
