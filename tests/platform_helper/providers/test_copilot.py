@@ -1,4 +1,3 @@
-import json
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -7,53 +6,28 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import AddonNotFoundError
-from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
-from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import ParameterNotFoundError
+from dbt_platform_helper.exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
+from dbt_platform_helper.providers.copilot import _normalise_secret_name
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.secrets import SecretNotFoundError
-from dbt_platform_helper.providers.secrets import (
-    _normalise_secret_name as normalise_secret_name,
-)
-from dbt_platform_helper.providers.secrets import get_addon_type
-from dbt_platform_helper.providers.secrets import get_parameter_name
 from tests.platform_helper.conftest import NoSuchEntityException
-from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import expected_connection_secret_name
-from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
 env = "development"
 
 
-@pytest.mark.parametrize(
-    "test_string",
-    [
-        ("app-rds-postgres", "APP_RDS_POSTGRES"),
-        ("APP-POSTGRES", "APP_POSTGRES"),
-        ("APP-OpenSearch", "APP_OPENSEARCH"),
-    ],
-)
-def test_normalise_secret_name(test_string):
-    """Test that given an addon name, normalise_secret_name produces the
-    expected result."""
-
-    assert normalise_secret_name(test_string[0]) == test_string[1]
-
-
 @mock_aws
 @patch(  # Nested function within provider function
-    "dbt_platform_helper.providers.copilot.get_postgres_connection_data_updated_with_master_secret",
+    "dbt_platform_helper.providers.secrets.SecretsManager.get_postgres_connection_data_updated_with_master_secret",
     return_value="connection string",
 )
 def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     addon_name = "dummy-postgres"
-    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
+    master_secret_name = f"/copilot/{mock_application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
     ssm_client = mock_application.environments[env].session.client("ssm")
     secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
 
@@ -107,7 +81,10 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
         ("opensearch", "custom-name-opensearch"),
     ],
 )
-@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
+@patch(
+    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    return_value="test-arn",
+)
 def test_create_redis_or_opensearch_addon_client_task(
     get_connection_secret_arn,
     access,
@@ -141,10 +118,6 @@ def test_create_redis_or_opensearch_addon_client_task(
         access,
     )
 
-    secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
-    get_connection_secret_arn.assert_called_once_with(
-        ssm_client, secretsmanager_client, secret_name
-    )
     mock_subprocess.call.assert_called()
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
@@ -165,7 +138,10 @@ def test_create_redis_or_opensearch_addon_client_task(
         "write",
     ],
 )
-@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
+@patch(
+    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    return_value="test-arn",
+)
 def test_create_postgres_addon_client_task(
     get_connection_secret_arn,
     access,
@@ -252,7 +228,10 @@ def test_create_postgres_addon_client_task_admin(
     )
 
 
-@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
+@patch(
+    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    return_value="test-arn",
+)
 def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     get_connection_secret_arn,
     mock_application,
@@ -304,7 +283,10 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
 
-@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn", return_value="test-arn")
+@patch(
+    "dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn",
+    return_value="test-arn",
+)
 @patch("click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
@@ -353,7 +335,7 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     )
 
 
-@patch("dbt_platform_helper.providers.copilot.get_connection_secret_arn")
+@patch("dbt_platform_helper.providers.secrets.SecretsManager.get_connection_secret_arn")
 def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
@@ -386,35 +368,6 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
         )
 
         mock_subprocess.call.assert_not_called()
-
-
-@mock_aws
-@pytest.mark.parametrize(
-    "access",
-    [
-        "read",
-        "write",
-        "admin",
-    ],
-)
-@pytest.mark.parametrize(
-    "addon_type, addon_name",
-    [
-        ("postgres", "custom-name-postgres"),
-        ("postgres", "custom-name-rds-postgres"),
-        ("redis", "custom-name-redis"),
-        ("opensearch", "custom-name-opensearch"),
-        ("s3", "custon-name-s3"),
-    ],
-)
-def test_get_parameter_name(access, addon_type, addon_name, mock_application):
-    """Test that get_parameter_name builds the correct parameter name given the
-    addon_name, addon_type and permission."""
-
-    parameter_name = get_parameter_name(
-        mock_application.name, "development", addon_type, addon_name, access
-    )
-    assert parameter_name == mock_parameter_name(mock_application, addon_type, addon_name, access)
 
 
 @pytest.mark.parametrize(
@@ -487,89 +440,3 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     get_ecs_task_arns.assert_called_with(ecs_client, "test-arn", task_name)
     assert get_ecs_task_arns.call_count == 15
     mock_subprocess.call.assert_not_called()
-
-
-@mock_aws
-@pytest.mark.parametrize(
-    "addon_name, expected_type",
-    [
-        ("custom-name-postgres", "postgres"),
-        ("custom-name-redis", "redis"),
-        ("custom-name-opensearch", "opensearch"),
-    ],
-)
-def test_get_addon_type(addon_name, expected_type, mock_application):
-    """Test that get_addon_type returns the expected addon type."""
-
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    add_addon_config_parameter()
-    addon_type = get_addon_type(ssm_client, mock_application.name, env, addon_name)
-
-    assert addon_type == expected_type
-
-
-@mock_aws
-def test_get_addon_type_with_not_found_throws_exception(mock_application):
-    """Test that get_addon_type raises the expected error when the addon is not
-    found in the config file."""
-
-    add_addon_config_parameter({"different-name": {"type": "redis"}})
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    with pytest.raises(AddonNotFoundError):
-        get_addon_type(ssm_client, mock_application.name, env, "custom-name-postgres")
-
-
-@mock_aws
-def test_get_addon_type_with_parameter_not_found_throws_exception(mock_application):
-    """Test that get_addon_type raises the expected error when the addon config
-    parameter is not found."""
-
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name=f"/copilot/applications/test-application/environments/development/invalid-parameter",
-        Type="String",
-        Value=json.dumps({"custom-name-postgres": {"type": "postgres"}}),
-    )
-
-    with pytest.raises(ParameterNotFoundError):
-        get_addon_type(ssm_client, mock_application.name, env, "custom-name-postgres")
-
-
-@mock_aws
-def test_get_addon_type_with_invalid_type_throws_exception(mock_application):
-    """Test that get_addon_type raises the expected error when the config
-    contains an invalid addon type."""
-
-    add_addon_config_parameter(param_value={"invalid-extension": {"type": "invalid"}})
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    with pytest.raises(InvalidAddonTypeError):
-        get_addon_type(ssm_client, mock_application.name, env, "invalid-extension")
-
-
-@mock_aws
-def test_get_addon_type_with_blank_type_throws_exception(mock_application):
-    """Test that get_addon_type raises the expected error when the config
-    contains an empty addon type."""
-
-    add_addon_config_parameter(param_value={"blank-extension": {}})
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    with pytest.raises(AddonTypeMissingFromConfigError):
-        get_addon_type(ssm_client, mock_application.name, env, "blank-extension")
-
-
-@mock_aws
-def test_get_addon_type_with_unspecified_type_throws_exception(mock_application):
-    """Test that get_addon_type raises the expected error when the config
-    contains an empty addon type."""
-
-    add_addon_config_parameter(param_value={"addon-type-unspecified": {"type": None}})
-    ssm_client = mock_application.environments[env].session.client("ssm")
-
-    with pytest.raises(AddonTypeMissingFromConfigError):
-        get_addon_type(ssm_client, mock_application.name, env, "addon-type-unspecified")

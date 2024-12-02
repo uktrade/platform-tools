@@ -8,8 +8,7 @@ from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
 from dbt_platform_helper.providers.ecs import ECSManager
-from dbt_platform_helper.providers.secrets import get_addon_type
-from dbt_platform_helper.providers.secrets import get_parameter_name
+from dbt_platform_helper.providers.secrets import SecretsManager
 from dbt_platform_helper.utils.application import Application
 
 
@@ -23,10 +22,10 @@ class Conduit:
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
-        get_addon_type_fn=get_addon_type,
+        get_addon_type_fn=SecretsManager.get_addon_type,
         ecs_exec_is_available_fn=ECSManager.ecs_exec_is_available,
         get_cluster_arn_fn=ECSManager.get_cluster_arn,
-        get_parameter_name_fn=get_parameter_name,
+        get_parameter_name_fn=SecretsManager.get_parameter_name,
         get_or_create_task_name_fn=ECSManager.get_or_create_task_name,
         add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
         update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,

@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.conduit import conduit
-from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.exceptions import SecretNotFoundError
 
 
 @pytest.mark.parametrize(

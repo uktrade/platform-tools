@@ -6,10 +6,7 @@ from botocore.exceptions import ClientError
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
 from dbt_platform_helper.providers.ecs import ECSManager
-from dbt_platform_helper.providers.secrets import get_connection_secret_arn
-from dbt_platform_helper.providers.secrets import (
-    get_postgres_connection_data_updated_with_master_secret,
-)
+from dbt_platform_helper.providers.secrets import SecretsManager
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -69,7 +66,7 @@ def create_addon_client_task(
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
+        f"--secrets CONNECTION_SECRET={SecretsManager.get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -95,7 +92,7 @@ def create_postgres_admin_task(
         "Parameter"
     ]["Value"]
     connection_string = json.dumps(
-        get_postgres_connection_data_updated_with_master_secret(
+        SecretsManager.get_postgres_connection_data_updated_with_master_secret(
             ssm_client, secrets_manager_client, read_only_secret_name, master_secret_arn
         )
     )
