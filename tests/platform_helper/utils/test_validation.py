@@ -736,45 +736,26 @@ def test_config_file_check_fails_for_unsupported_files_exist(
 
 
 @pytest.mark.parametrize(
-    "files, expected_messages",
-    [
-        (
-            [PLATFORM_HELPER_VERSION_FILE],
-            [
-                f"`{PLATFORM_HELPER_VERSION_FILE}` is no longer supported. "
-                f"Please move its contents into the `{PLATFORM_CONFIG_FILE}` file,"
-                f" under the key `default_versions: platform-helper:` and delete `{PLATFORM_HELPER_VERSION_FILE}`."
-            ],
-        ),
-    ],
-)
-def test_config_file_check_warns_if_deprecated_files_exist(
-    fakefs, capsys, files, expected_messages
-):
-    for file in files:
-        fakefs.create_file(file)
-
-    config_file_check()
-
-    console_message = capsys.readouterr().out
-
-    for expected_message in expected_messages:
-        assert expected_message in console_message
-
-
-@pytest.mark.parametrize(
     "database_copy_section",
     [
         None,
         [{"from": "dev", "to": "test"}],
+        [{"from": "test", "to": "dev"}],
         [
-            {"from": "test", "to": "dev"},
             {
                 "from": "prod",
                 "to": "test",
                 "from_account": "9999999999",
                 "to_account": "1122334455",
-            },
+            }
+        ],
+        [
+            {
+                "from": "dev",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "9999999999",
+            }
         ],
     ],
 )
@@ -800,6 +781,33 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
     validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
+
+
+@pytest.mark.parametrize(
+    "files, expected_messages",
+    [
+        (
+            [PLATFORM_HELPER_VERSION_FILE],
+            [
+                f"`{PLATFORM_HELPER_VERSION_FILE}` is no longer supported. "
+                f"Please move its contents into the `{PLATFORM_CONFIG_FILE}` file,"
+                f" under the key `default_versions: platform-helper:` and delete `{PLATFORM_HELPER_VERSION_FILE}`."
+            ],
+        ),
+    ],
+)
+def test_config_file_check_warns_if_deprecated_files_exist(
+    fakefs, capsys, files, expected_messages
+):
+    for file in files:
+        fakefs.create_file(file)
+
+    config_file_check()
+
+    console_message = capsys.readouterr().out
+
+    for expected_message in expected_messages:
+        assert expected_message in console_message
 
 
 @pytest.mark.parametrize(
@@ -1030,18 +1038,57 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
     assert msg in console_message
 
 
+@pytest.mark.parametrize(
+    "config, expected_response",
+    [
+        (
+            # No engine defined in either env
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {"*": {"plan": "tiny"}, "prod": {"plan": "largish"}},
+                    }
+                },
+            },
+            "",
+        ),
+        (
+            # Valid engine version defined in *
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {
+                            "*": {"engine": "7.1", "plan": "tiny"},
+                            "prod": {"plan": "tiny"},
+                        },
+                    }
+                },
+            },
+            "",
+        ),
+        (
+            # Invalid engine defined in prod environment
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {
+                            "*": {"plan": "tiny"},
+                            "prod": {"engine": "invalid", "plan": "tiny"},
+                        },
+                    }
+                },
+            },
+            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
+        ),
+    ],
+)
 @patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extensions_supported_versions_successful_with_supported_version(
-    mock_supported_versions, capsys
+def test_validate_extension_supported_versions(
+    mock_supported_versions, config, expected_response, capsys
 ):
-
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "connors-redis": {"type": "redis", "environments": {"*": {"engine": "7.1"}}}
-        },
-    }
 
     _validate_extension_supported_versions(
         config=config,
@@ -1050,38 +1097,7 @@ def test_validate_extensions_supported_versions_successful_with_supported_versio
         get_supported_versions_fn=mock_supported_versions,
     )
 
-    # Nothing should be logged if the version is valid.
     captured = capsys.readouterr()
-    assert captured.out == ""
-    assert captured.err == ""
 
-
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extensions_supported_versions_fails_with_unsupported_version(
-    mock_supported_versions, capsys
-):
-
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "connors-redis": {
-                "type": "redis",
-                "environments": {"*": {"engine": "some-engine-which-probably-doesnt-exist"}},
-            }
-        },
-    }
-
-    _validate_extension_supported_versions(
-        config=config,
-        extension_type="redis",
-        version_key="engine",
-        get_supported_versions_fn=mock_supported_versions,
-    )
-
-    captured = capsys.readouterr()
-    assert (
-        "redis version for environment * is not in the list of supported redis versions"
-        in captured.out
-    )
+    assert expected_response in captured.out
     assert captured.err == ""

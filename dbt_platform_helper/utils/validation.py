@@ -595,13 +595,16 @@ def _validate_extension_supported_versions(
 
         if not isinstance(environments, dict):
             click.secho(
-                "Error: Opensearch extension definition is invalid type, expected dictionary",
+                f"Error: {extension_type} extension definition is invalid type, expected dictionary",
                 fg="red",
             )
             continue
         for environment, env_config in environments.items():
+
+            # An extension version doesn't need to be specified for all environments, provided one is specified under "*".
+            # So check if the version is set before checking if it's supported
             extension_version = env_config.get(version_key)
-            if extension_version not in supported_extension_versions:
+            if extension_version and extension_version not in supported_extension_versions:
                 extensions_with_invalid_version.append(
                     {"environment": environment, "version": extension_version}
                 )
