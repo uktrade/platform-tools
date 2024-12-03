@@ -32,14 +32,12 @@ def conduit(addon_name: str, app: str, env: str, access: str):
 
     try:
         secrets_provider: Secrets = Secrets(
-            # Todo: Maybe just pass in the application and the environment?
             application.environments[env].session.client("ssm"),
             application.environments[env].session.client("secretsmanager"),
             application.name,
             env,
         )
         cloudformation_provider: CloudFormation = CloudFormation(
-            # Todo: Maybe just pass in the application and the environment?
             application.environments[env].session.client("cloudformation"),
             application.environments[env].session.client("iam"),
             application.environments[env].session.client("ssm"),
