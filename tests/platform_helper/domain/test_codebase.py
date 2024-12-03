@@ -56,7 +56,7 @@ class CodebaseMocks:
             ),
         )
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
-        self.subprocess = kwargs.get("subprocess", Mock())
+        self.run_subprocess = kwargs.get("run_subprocess", Mock())
         self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
 
     def params(self):
@@ -68,7 +68,7 @@ class CodebaseMocks:
             "input": self.input,
             "echo": self.echo,
             "confirm": self.confirm,
-            "subprocess": self.subprocess,
+            "run_subprocess": self.run_subprocess,
             "check_if_commit_exists": self.check_if_commit_exists,
         }
 
@@ -104,7 +104,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     os.chdir(tmp_path)
 
-    mocks.subprocess.return_value.stdout = "git@github.com:uktrade/test-app.git"
+    mocks.run_subprocess.return_value.stdout = "git@github.com:uktrade/test-app.git"
 
     codebase.prepare()
 
@@ -146,7 +146,7 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    mocks.subprocess.return_value.stdout = mock_suprocess_fixture()
+    mocks.run_subprocess.return_value.stdout = mock_run_suprocess_fixture()
 
     with pytest.raises(NotInCodeBaseRepositoryError):
         codebase.prepare()
@@ -182,7 +182,7 @@ def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = SystemExit(1)
 
-    mocks.subprocess.return_value = mock_suprocess_fixture()
+    mocks.run_subprocess.return_value = mock_run_suprocess_fixture()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
@@ -195,7 +195,7 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
-    mocks.subprocess.return_value.stdout = "demodjango"
+    mocks.run_subprocess.return_value.stdout = "demodjango"
 
     codebase.prepare()
 
@@ -342,7 +342,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
 def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
-    mocks.subprocess.return_value.stderr = ""
+    mocks.run_subprocess.return_value.stderr = ""
     mocks.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
@@ -630,7 +630,7 @@ def is_same_files(compare_directories):
     return True
 
 
-def mock_suprocess_fixture():
+def mock_run_suprocess_fixture():
     mock_stdout = MagicMock()
     mock_stdout.configure_mock(**{"stdout.decode.return_value": '{"A": 3}'})
     return mock_stdout
