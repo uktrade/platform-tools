@@ -42,7 +42,6 @@ class ConduitMocks:
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
         self.create_postgres_admin_task_fn = kwargs.get("create_postgres_admin_task_fn", Mock())
         self.echo_fn = kwargs.get("echo_fn", Mock())
-        # self.get_addon_type_fn = kwargs.get("get_addon_type_fn", Mock(return_value=addon_type))
         self.get_cluster_arn_fn = kwargs.get(
             "get_cluster_arn_fn",
             Mock(return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"),
@@ -50,9 +49,6 @@ class ConduitMocks:
         self.get_or_create_task_name_fn = kwargs.get(
             "get_or_create_task_name_fn", Mock(return_value="task_name")
         )
-        # self.get_parameter_name_fn = kwargs.get(
-        #     "get_parameter_name", Mock(return_value="parameter_name")
-        # )
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
         self.update_conduit_stack_resources_fn = kwargs.get(
             "update_conduit_stack_resources_fn", Mock(return_value=f"task-{task_name}")
@@ -72,10 +68,8 @@ class ConduitMocks:
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
             "create_postgres_admin_task_fn": self.create_postgres_admin_task_fn,
             "echo_fn": self.echo_fn,
-            # "get_addon_type_fn": self.get_addon_type_fn,
             "get_cluster_arn_fn": self.get_cluster_arn_fn,
             "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
-            # "get_parameter_name_fn": self.get_parameter_name_fn,
             "subprocess_fn": self.subprocess,
             "update_conduit_stack_resources_fn": self.update_conduit_stack_resources_fn,
             "wait_for_cloudformation_to_reach_status_fn": self.wait_for_cloudformation_to_reach_status_fn,
@@ -92,14 +86,9 @@ class ConduitMocks:
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access):
-    secrets_provider_mock = Mock()
-    secrets_provider_mock.get_parameter_name.return_value = "parameter_name"
-    secrets_provider_mock.get_addon_type.return_value = addon_type
-    conduit_mocks = ConduitMocks(app_name, addon_type, secrets_provider=secrets_provider_mock)
-
-    # TODO - update mocks as below for secrets provider
-    # conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
-    # conduit_mocks.secrets_provider.get_addon_type.return_value = "postgres"
+    conduit_mocks = ConduitMocks(app_name, addon_type)
+    conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
+    conduit_mocks.secrets_provider.get_addon_type.return_value = addon_type
 
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
@@ -286,15 +275,9 @@ def test_conduit_domain_when_addon_type_is_invalid():
     addon_name = "invalid_addon"
     addon_type = "invalid_addon_type"
 
-    # TODO - update mocks as below.
-    secrets_provider_mock = Mock()
-    secrets_provider_mock.get_addon_type.side_effect = InvalidAddonTypeError(addon_type)
-    conduit_mocks = ConduitMocks(
-        app_name,
-        addon_type,
-        secrets_provider=secrets_provider_mock,
-    )
+    conduit_mocks = ConduitMocks(app_name, addon_type)
 
+    conduit_mocks.secrets_provider.get_addon_type.side_effect = InvalidAddonTypeError(addon_type)
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
 
@@ -306,9 +289,8 @@ def test_conduit_domain_when_addon_type_is_invalid():
 # Todo: does this belong in the Secrets provider
 def test_start_with_addon_does_not_exist_raises_error():
     addon_name = "addon_doesnt_exist"
-    secrets_provider_mock = Mock()
-    secrets_provider_mock.get_addon_type.side_effect = AddonNotFoundError(addon_name)
-    conduit_mocks = ConduitMocks(app_name, addon_type, secrets_provider=secrets_provider_mock)
+    conduit_mocks = ConduitMocks(app_name, addon_type)
+    conduit_mocks.secrets_provider.get_addon_type.side_effect = AddonNotFoundError(addon_name)
 
     conduit = Conduit(**conduit_mocks.params())
 
@@ -318,15 +300,11 @@ def test_start_with_addon_does_not_exist_raises_error():
 
 def test_conduit_domain_when_no_addon_config_parameter_exists():
     addon_name = "parameter_doesnt_exist"
-    secrets_provider_mock = Mock()
-    secrets_provider_mock.get_addon_type.side_effect = ParameterNotFoundError(
+    conduit_mocks = ConduitMocks(app_name, addon_type)
+
+    conduit_mocks.secrets_provider.get_addon_type.side_effect = ParameterNotFoundError(
         application_name=app_name,
         environment=env,
-    )
-    conduit_mocks = ConduitMocks(
-        app_name,
-        addon_type,
-        secrets_provider=secrets_provider_mock,
     )
 
     conduit = Conduit(**conduit_mocks.params())
