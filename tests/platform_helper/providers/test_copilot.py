@@ -424,7 +424,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
             env,
             "test-arn",
             task_name,
-            get_ecs_task_arns_fn=get_ecs_task_arns,
+            get_ecs_task_arns=get_ecs_task_arns,
         )
 
     get_ecs_task_arns.assert_called_with(ecs_client, "test-arn", task_name)

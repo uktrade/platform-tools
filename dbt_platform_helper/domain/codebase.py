@@ -28,30 +28,30 @@ from dbt_platform_helper.utils.template import setup_templates
 class Codebase:
     def __init__(
         self,
-        input_fn: Callable[[str], str] = click.prompt,
-        echo_fn: Callable[[str], str] = click.secho,
-        confirm_fn: Callable[[str], bool] = click.confirm,
-        load_application_fn: Callable[[str], Application] = load_application,
-        get_aws_session_or_abort_fn: Callable[[str], Session] = get_aws_session_or_abort,
-        check_codebase_exists_fn: Callable[[str], str] = check_codebase_exists,
-        check_image_exists_fn: Callable[[str], str] = check_image_exists,
-        get_build_url_from_arn_fn: Callable[[str], str] = get_build_url_from_arn,
-        list_latest_images_fn: Callable[[str], str] = list_latest_images,
-        start_build_extraction_fn: Callable[[str], str] = start_build_extraction,
-        check_if_commit_exists_fn: Callable[[str], str] = check_if_commit_exists,
+        input: Callable[[str], str] = click.prompt,
+        echo: Callable[[str], str] = click.secho,
+        confirm: Callable[[str], bool] = click.confirm,
+        load_application: Callable[[str], Application] = load_application,
+        get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
+        check_codebase_exists: Callable[[str], str] = check_codebase_exists,
+        check_image_exists: Callable[[str], str] = check_image_exists,
+        get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
+        list_latest_images: Callable[[str], str] = list_latest_images,
+        start_build_extraction: Callable[[str], str] = start_build_extraction,
+        check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         subprocess: Callable[[str], str] = subprocess.run,
     ):
-        self.input_fn = input_fn
-        self.echo_fn = echo_fn
-        self.confirm_fn = confirm_fn
-        self.load_application_fn = load_application_fn
-        self.get_aws_session_or_abort_fn = get_aws_session_or_abort_fn
-        self.check_codebase_exists_fn = check_codebase_exists_fn
-        self.check_image_exists_fn = check_image_exists_fn
-        self.get_build_url_from_arn_fn = get_build_url_from_arn_fn
-        self.list_latest_images_fn = list_latest_images_fn
-        self.start_build_extraction_fn = start_build_extraction_fn
-        self.check_if_commit_exists_fn = check_if_commit_exists_fn
+        self.input = input
+        self.echo = echo
+        self.confirm = confirm
+        self.load_application = load_application
+        self.get_aws_session_or_abort = get_aws_session_or_abort
+        self.check_codebase_exists = check_codebase_exists
+        self.check_image_exists = check_image_exists
+        self.get_build_url_from_arn = get_build_url_from_arn
+        self.list_latest_images = list_latest_images
+        self.start_build_extraction = start_build_extraction
+        self.check_if_commit_exists = check_if_commit_exists
         self.subprocess = subprocess
 
     def prepare(self):
@@ -90,7 +90,7 @@ class Codebase:
         config_contents = templates.get_template(f".copilot/config.yml").render(
             repository=repository, builder_version=builder_version
         )
-        self.echo_fn(
+        self.echo(
             mkfile(
                 Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True
             )
@@ -99,27 +99,27 @@ class Codebase:
         image_build_run_file = Path(".copilot/image_build_run.sh")
         image_build_run_file.chmod(image_build_run_file.stat().st_mode | stat.S_IEXEC)
 
-        self.echo_fn(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
+        self.echo(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
 
         for phase in ["build", "install", "post_build", "pre_build"]:
             phase_contents = templates.get_template(f".copilot/phases/{phase}.sh").render()
 
-            self.echo_fn(
+            self.echo(
                 mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True)
             )
 
     def build(self, app: str, codebase: str, commit: str):
         """Trigger a CodePipeline pipeline based build."""
-        session = self.get_aws_session_or_abort_fn()
-        self.load_application_fn(app, default_session=session)
+        session = self.get_aws_session_or_abort()
+        self.load_application(app, default_session=session)
 
-        self.check_if_commit_exists_fn(commit)
+        self.check_if_commit_exists(commit)
 
         codebuild_client = session.client("codebuild")
         build_url = self.__start_build_with_confirmation(
-            self.confirm_fn,
+            self.confirm,
             codebuild_client,
-            self.get_build_url_from_arn_fn,
+            self.get_build_url_from_arn,
             f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
             {
                 "projectName": f"codebuild-{app}-{codebase}",
@@ -129,7 +129,7 @@ class Codebase:
         )
 
         if build_url:
-            return self.echo_fn(
+            return self.echo(
                 f"Your build has been triggered. Check your build progress in the AWS Console: {build_url}"
             )
 
@@ -137,21 +137,21 @@ class Codebase:
 
     def deploy(self, app, env, codebase, commit):
         """Trigger a CodePipeline pipeline based deployment."""
-        session = self.get_aws_session_or_abort_fn()
+        session = self.get_aws_session_or_abort()
 
-        application = self.load_application_fn(app, default_session=session)
+        application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundError(env)
 
-        self.check_codebase_exists_fn(session, application, codebase)
+        self.check_codebase_exists(session, application, codebase)
 
-        self.check_image_exists_fn(session, application, codebase, commit)
+        self.check_image_exists(session, application, codebase, commit)
 
         codebuild_client = session.client("codebuild")
         build_url = self.__start_build_with_confirmation(
-            self.confirm_fn,
+            self.confirm,
             codebuild_client,
-            self.get_build_url_from_arn_fn,
+            self.get_build_url_from_arn,
             f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
             {
                 "projectName": f"pipeline-{application.name}-{codebase}-BuildProject",
@@ -165,7 +165,7 @@ class Codebase:
         )
 
         if build_url:
-            return self.echo_fn(
+            return self.echo(
                 "Your deployment has been triggered. Check your build progress in the AWS Console: "
                 f"{build_url}",
             )
@@ -174,25 +174,25 @@ class Codebase:
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
-        session = self.get_aws_session_or_abort_fn()
-        application = self.load_application_fn(app, session)
+        session = self.get_aws_session_or_abort()
+        application = self.load_application(app, session)
         ssm_client = session.client("ssm")
         ecr_client = session.client("ecr")
         codebases = self.__get_codebases(application, ssm_client)
 
-        self.echo_fn("The following codebases are available:")
+        self.echo("The following codebases are available:")
 
         for codebase in codebases:
-            self.echo_fn(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
+            self.echo(f"- {codebase['name']} (https://github.com/{codebase['repository']})")
             if with_images:
-                self.list_latest_images_fn(
+                self.list_latest_images(
                     ecr_client,
                     f"{application.name}/{codebase['name']}",
                     codebase["repository"],
-                    self.echo_fn,
+                    self.echo,
                 )
 
-        self.echo_fn("")
+        self.echo("")
 
     def __get_codebases(self, application, ssm_client):
         parameters = ssm_client.get_parameters_by_path(
@@ -208,13 +208,13 @@ class Codebase:
 
     def __start_build_with_confirmation(
         self,
-        confirm_fn,
+        confirm,
         codebuild_client,
-        get_build_url_from_arn_fn,
+        get_build_url_from_arn,
         confirmation_message,
         build_options,
     ):
-        if confirm_fn(confirmation_message):
-            build_arn = self.start_build_extraction_fn(codebuild_client, build_options)
-            return get_build_url_from_arn_fn(build_arn)
+        if confirm(confirmation_message):
+            build_arn = self.start_build_extraction(codebuild_client, build_options)
+            return get_build_url_from_arn(build_arn)
         return None

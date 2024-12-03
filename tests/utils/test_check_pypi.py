@@ -94,13 +94,13 @@ def test_check_for_version_in_pypi_releases__version_found_on_the_third_attempt(
 
     call_no = {"calls": 0}
 
-    def releases_fn():
+    def releases():
         call_no["calls"] += 1
         if call_no["calls"] <= 2:
             return ["0.1.2", "0.1.21", "0.1.1"]
         return ["0.1.2", "0.1.21", "0.1.22", "0.1.1"]
 
-    exit_code = check_for_version_in_pypi_releases(opts, "0.1.22", releases_fn)
+    exit_code = check_for_version_in_pypi_releases(opts, "0.1.22", releases)
 
     captured_output = capsys.readouterr()
     lines = [line.strip() for line in captured_output.out.split("\n") if line]

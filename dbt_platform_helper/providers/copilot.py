@@ -127,14 +127,14 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    get_ecs_task_arns_fn=_temp_until_refactor_get_ecs_task_arns,
+    get_ecs_task_arns=_temp_until_refactor_get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
         # Todo: Use from ECS provider when we refactor this
-        if get_ecs_task_arns_fn(ecs_client, cluster_arn, task_name):
+        if get_ecs_task_arns(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
                 f"--app {application_name} --env {env} "

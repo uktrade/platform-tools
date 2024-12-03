@@ -27,39 +27,39 @@ class DatabaseCopy:
         app: str,
         database: str,
         auto_approve: bool = False,
-        load_application_fn: Callable[[str], Application] = load_application,
-        vpc_config_fn: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
-        db_connection_string_fn: Callable[
+        load_application: Callable[[str], Application] = load_application,
+        vpc_config: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
+        db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
         maintenance_page_provider: Callable[
             [str, str, list[str], str, str], None
         ] = MaintenancePageProvider(),
-        input_fn: Callable[[str], str] = click.prompt,
-        echo_fn: Callable[[str], str] = click.secho,
-        abort_fn: Callable[[str], None] = abort_with_error,
+        input: Callable[[str], str] = click.prompt,
+        echo: Callable[[str], str] = click.secho,
+        abort: Callable[[str], None] = abort_with_error,
     ):
         self.app = app
         self.database = database
         self.auto_approve = auto_approve
-        self.vpc_config_fn = vpc_config_fn
-        self.db_connection_string_fn = db_connection_string_fn
+        self.vpc_config = vpc_config
+        self.db_connection_string = db_connection_string
         self.maintenance_page_provider = maintenance_page_provider
-        self.input_fn = input_fn
-        self.echo_fn = echo_fn
-        self.abort_fn = abort_fn
+        self.input = input
+        self.echo = echo
+        self.abort = abort
 
         if not self.app:
             if not Path(PLATFORM_CONFIG_FILE).exists():
-                self.abort_fn("You must either be in a deploy repo, or provide the --app option.")
+                self.abort("You must either be in a deploy repo, or provide the --app option.")
 
             config = load_and_validate_platform_config()
             self.app = config["application"]
 
         try:
-            self.application = load_application_fn(self.app)
+            self.application = load_application(self.app)
         except ApplicationNotFoundError:
-            abort_fn(f"No such application '{app}'.")
+            abort(f"No such application '{app}'.")
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, to_env: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
@@ -67,40 +67,40 @@ class DatabaseCopy:
         environments = self.application.environments
         environment = environments.get(env)
         if not environment:
-            self.abort_fn(
+            self.abort(
                 f"No such environment '{env}'. Available environments are: {', '.join(environments.keys())}"
             )
 
         env_session = environment.session
 
         try:
-            vpc_config = self.vpc_config_fn(env_session, self.app, env, vpc_name)
+            vpc_config = self.vpc_config(env_session, self.app, env, vpc_name)
         except AWSException as ex:
-            self.abort_fn(str(ex))
+            self.abort(str(ex))
 
         database_identifier = f"{self.app}-{env}-{self.database}"
 
         try:
-            db_connection_string = self.db_connection_string_fn(
+            db_connection_string = self.db_connection_string(
                 env_session, self.app, env, database_identifier
             )
         except Exception as exc:
-            self.abort_fn(f"{exc} (Database: {database_identifier})")
+            self.abort(f"{exc} (Database: {database_identifier})")
 
         try:
             task_arn = self.run_database_copy_task(
                 env_session, env, vpc_config, is_dump, db_connection_string, to_env
             )
         except Exception as exc:
-            self.abort_fn(f"{exc} (Account id: {self.account_id(env)})")
+            self.abort(f"{exc} (Account id: {self.account_id(env)})")
 
         if is_dump:
             message = f"Dumping {self.database} from the {env} environment into S3"
         else:
             message = f"Loading data into {self.database} in the {env} environment from S3"
 
-        self.echo_fn(message, fg="white", bold=True)
-        self.echo_fn(
+        self.echo(message, fg="white", bold=True)
+        self.echo(
             f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
             fg="white",
         )
@@ -109,9 +109,7 @@ class DatabaseCopy:
     def enrich_vpc_name(self, env, vpc_name):
         if not vpc_name:
             if not Path(PLATFORM_CONFIG_FILE).exists():
-                self.abort_fn(
-                    "You must either be in a deploy repo, or provide the vpc name option."
-                )
+                self.abort("You must either be in a deploy repo, or provide the vpc name option.")
             config = load_and_validate_platform_config()
             env_config = apply_environment_defaults(config)["environments"]
             vpc_name = env_config.get(env, {}).get("vpc")
@@ -190,7 +188,7 @@ class DatabaseCopy:
         if self.auto_approve:
             return True
 
-        user_input = self.input_fn(
+        user_input = self.input(
             f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue? (y/n)"
         )
         return user_input.lower().strip() in ["y", "yes"]
@@ -199,7 +197,7 @@ class DatabaseCopy:
         action = "dump" if is_dump else "load"
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
-        self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
+        self.echo(f"Tailing {log_group_name} logs", fg="yellow")
         session = self.application.environments[env].session
         log_client = session.client("logs")
         wait_for_log_group_to_exist(log_client, log_group_name)
@@ -217,9 +215,9 @@ class DatabaseCopy:
                     match = re.match(r"(Stopping|Aborting) data (load|dump).*", message)
                     if match:
                         if match.group(1) == "Aborting":
-                            self.abort_fn("Task aborted abnormally. See logs above for details.")
+                            self.abort("Task aborted abnormally. See logs above for details.")
                         stopped = True
-                    self.echo_fn(message)
+                    self.echo(message)
 
     def account_id(self, env):
         envs = self.application.environments
