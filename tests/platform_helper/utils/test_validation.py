@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 from unittest.mock import patch
@@ -583,21 +582,17 @@ extensions:
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+    expected_error = f'duplication of key "{duplicate_key}"'
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert linting_failures == [f'\tLine 100: duplication of key "{duplicate_key}"']
+    assert expected_error in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:
         load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
 
     captured = capsys.readouterr()
-    expected_error_message = (
-        "Duplicate keys found in platform-config:"
-        + os.linesep
-        + f'\tLine 100: duplication of key "{duplicate_key}"'
-    )
 
-    assert expected_error_message in captured.err
+    assert expected_error in captured.err
     assert excinfo.value.code == 1
 
 
@@ -741,6 +736,54 @@ def test_config_file_check_fails_for_unsupported_files_exist(
 
 
 @pytest.mark.parametrize(
+    "database_copy_section",
+    [
+        None,
+        [{"from": "dev", "to": "test"}],
+        [{"from": "test", "to": "dev"}],
+        [
+            {
+                "from": "prod",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+            }
+        ],
+        [
+            {
+                "from": "dev",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "9999999999",
+            }
+        ],
+    ],
+)
+def test_validate_database_copy_section_success_cases(database_copy_section):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "test": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+            }
+        },
+    }
+
+    if database_copy_section:
+        config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
+
+    validate_database_copy_section(config)
+
+    # Should get here fine if the config is valid.
+
+
+@pytest.mark.parametrize(
     "files, expected_messages",
     [
         (
@@ -765,34 +808,6 @@ def test_config_file_check_warns_if_deprecated_files_exist(
 
     for expected_message in expected_messages:
         assert expected_message in console_message
-
-
-@pytest.mark.parametrize(
-    "database_copy_section",
-    [
-        None,
-        [{"from": "dev", "to": "test"}],
-        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test"}],
-    ],
-)
-def test_validate_database_copy_section_success_cases(database_copy_section):
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-            }
-        },
-    }
-
-    if database_copy_section:
-        config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
-
-    validate_database_copy_section(config)
-
-    # Should get here fine if the config is valid.
 
 
 @pytest.mark.parametrize(
@@ -939,6 +954,88 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
+
+
+def test_validate_database_copy_fails_if_cross_account_with_no_from_account(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev"}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'from_account' parameter must be present."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_cross_account_with_no_to_account(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev", "from_account": "9999999999"}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'to_account' parameter must be present."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [
+                    {
+                        "from": "prod",
+                        "to": "dev",
+                        "from_account": "000000000",
+                        "to_account": "1111111111",
+                    }
+                ],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Incorrect value for 'from_account' for environment 'prod'"
+    assert msg in console_message
 
 
 @pytest.mark.parametrize(

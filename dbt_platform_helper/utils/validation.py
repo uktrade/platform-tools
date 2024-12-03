@@ -210,7 +210,12 @@ RETENTION_POLICY = Or(
     },
 )
 
-DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME}
+DATABASE_COPY = {
+    "from": ENV_NAME,
+    "to": ENV_NAME,
+    Optional("from_account"): str,
+    Optional("to_account"): str,
+}
 
 POSTGRES_DEFINITION = {
     "type": "postgres",
@@ -638,6 +643,9 @@ def validate_database_copy_section(config):
             from_env = section["from"]
             to_env = section["to"]
 
+            from_account = _get_env_deploy_account_info(config, from_env, "id")
+            to_account = _get_env_deploy_account_info(config, to_env, "id")
+
             if from_env == to_env:
                 errors.append(
                     f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
@@ -658,8 +666,31 @@ def validate_database_copy_section(config):
                     f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                 )
 
+            if from_account != to_account:
+                if "from_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
+                    )
+                elif section["from_account"] != from_account:
+                    errors.append(
+                        f"Incorrect value for 'from_account' for environment '{from_env}'"
+                    )
+
+                if "to_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
+                    )
+                elif section["to_account"] != to_account:
+                    errors.append(f"Incorrect value for 'to_account' for environment '{to_env}'")
+
     if errors:
         abort_with_error("\n".join(errors))
+
+
+def _get_env_deploy_account_info(config, env, key):
+    return (
+        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
+    )
 
 
 def _validate_environment_pipelines(config):
@@ -669,13 +700,7 @@ def _validate_environment_pipelines(config):
         pipeline_account = pipeline.get("account", None)
         if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
-                env_account = (
-                    config.get("environments", {})
-                    .get(env, {})
-                    .get("accounts", {})
-                    .get("deploy", {})
-                    .get("name")
-                )
+                env_account = _get_env_deploy_account_info(config, env, "name")
                 if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:

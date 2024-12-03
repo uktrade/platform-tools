@@ -2,13 +2,14 @@
 
 clean_up(){
   echo "Cleaning up dump file"
-  rm data_dump.sql
+  rm "data_dump_${TO_ENVIRONMENT}.sql"
   echo "Removing dump file from S3"
-  aws s3 rm s3://${S3_BUCKET_NAME}/data_dump.sql
+  aws s3 rm s3://${S3_BUCKET_NAME}/"data_dump_${TO_ENVIRONMENT}.sql"
+  exit_code=$?
   if [ ${exit_code} -ne 0 ]
   then
     echo "Aborting data load: Clean up failed"
-    exit $exit_code    
+    exit $exit_code
   fi
 }
 
@@ -26,7 +27,7 @@ handle_errors(){
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
-  pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > data_dump.sql
+  pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > "data_dump_${TO_ENVIRONMENT}.sql"
   exit_code=$?
 
   if [ ${exit_code} -ne 0 ]
@@ -35,7 +36,7 @@ then
     exit $exit_code
   fi
 
-  aws s3 cp data_dump.sql s3://${S3_BUCKET_NAME}/
+  aws s3 cp "data_dump_${TO_ENVIRONMENT}.sql" s3://${S3_BUCKET_NAME}/
   exit_code=$?
 
   if [ ${exit_code} -ne 0 ]
@@ -49,7 +50,7 @@ else
   echo "Starting data load"
 
   echo "Copying data dump from S3"
-  aws s3 cp s3://${S3_BUCKET_NAME}/data_dump.sql data_dump.sql
+  aws s3 cp s3://${S3_BUCKET_NAME}/"data_dump_${TO_ENVIRONMENT}.sql" "data_dump_${TO_ENVIRONMENT}.sql"
   
   handle_errors $? "Copy failed"
 
@@ -81,7 +82,7 @@ else
   handle_errors $? "Clear down failed"
   
   echo "Restoring data from dump file"
-  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" data_dump.sql
+  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" "data_dump_${TO_ENVIRONMENT}.sql"
   
   handle_errors $? "Restore failed"
   for service in ${SERVICES}
