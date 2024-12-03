@@ -27,9 +27,6 @@ class Conduit:
         ecs_exec_is_available_fn=ECS.ecs_exec_is_available,
         get_cluster_arn_fn=ECS.get_cluster_arn,
         get_or_create_task_name_fn=ECS.get_or_create_task_name,
-        # add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
-        # update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,
-        # wait_for_cloudformation_to_reach_status_fn=CloudFormation.wait_for_cloudformation_to_reach_status,
     ):
 
         self.application = application
@@ -114,7 +111,6 @@ class Conduit:
         addon_type = self.secrets_provider.get_addon_type(addon_name)
         cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application.name, env)
         parameter_name = self.secrets_provider.get_parameter_name(addon_type, addon_name, access)
-        print(parameter_name)
         task_name = self.get_or_create_task_name_fn(
             ssm_client, self.application.name, env, addon_name, parameter_name
         )
@@ -134,8 +130,10 @@ class Conduit:
         parameter_name,
         access,
     ):
-        self.add_stack_delete_policy_to_task_role_fn(cloudformation_client, iam_client, task_name)
-        stack_name = self.update_conduit_stack_resources_fn(
+        self.cloudformation_provider.add_stack_delete_policy_to_task_role(
+            cloudformation_client, iam_client, task_name
+        )
+        stack_name = self.cloudformation_provider.update_conduit_stack_resources(
             cloudformation_client,
             iam_client,
             ssm_client,
@@ -148,6 +146,6 @@ class Conduit:
             access,
         )
         self.echo_fn("Waiting for conduit task update to complete...")
-        self.wait_for_cloudformation_to_reach_status_fn(
+        self.cloudformation_provider.wait_for_cloudformation_to_reach_status(
             cloudformation_client, "stack_update_complete", stack_name
         )

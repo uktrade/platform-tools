@@ -31,12 +31,10 @@ class ConduitMocks:
         sessions = {"000000000": session}
         dummy_application = Application(app_name)
         dummy_application.environments = {env: Environment(env, "000000000", sessions)}
-        self.add_stack_delete_policy_to_task_role_fn = kwargs.get(
-            "add_stack_delete_policy_to_task_role_fn", Mock()
-        )
         self.get_ecs_task_arns_fn = kwargs.get("get_ecs_task_arns_fn", Mock(return_value=[]))
         self.application = dummy_application
         self.secrets_provider = kwargs.get("secrets_provider", Mock())
+        self.cloudformation_provider = kwargs.get("cloudformation_provider", Mock())
         self.ecs_exec_is_available_fn = kwargs.get("ecs_exec_is_available_fn", Mock())
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
@@ -50,19 +48,13 @@ class ConduitMocks:
             "get_or_create_task_name_fn", Mock(return_value="task_name")
         )
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
-        self.update_conduit_stack_resources_fn = kwargs.get(
-            "update_conduit_stack_resources_fn", Mock(return_value=f"task-{task_name}")
-        )
-        self.wait_for_cloudformation_to_reach_status_fn = kwargs.get(
-            "wait_for_cloudformation_to_reach_status_fn", Mock()
-        )
 
     def params(self):
         return {
-            "add_stack_delete_policy_to_task_role_fn": self.add_stack_delete_policy_to_task_role_fn,
             "get_ecs_task_arns_fn": self.get_ecs_task_arns_fn,
             "application": self.application,
             "secrets_provider": self.secrets_provider,
+            "cloudformation_provider": self.cloudformation_provider,
             "ecs_exec_is_available_fn": self.ecs_exec_is_available_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
@@ -71,8 +63,6 @@ class ConduitMocks:
             "get_cluster_arn_fn": self.get_cluster_arn_fn,
             "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
             "subprocess_fn": self.subprocess,
-            "update_conduit_stack_resources_fn": self.update_conduit_stack_resources_fn,
-            "wait_for_cloudformation_to_reach_status_fn": self.wait_for_cloudformation_to_reach_status_fn,
         }
 
 
@@ -89,6 +79,9 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit_mocks = ConduitMocks(app_name, addon_type)
     conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
     conduit_mocks.secrets_provider.get_addon_type.return_value = addon_type
+    conduit_mocks.cloudformation_provider.update_conduit_stack_resources.return_value = (
+        f"task-{task_name}"
+    )
 
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
@@ -113,10 +106,10 @@ def test_conduit(app_name, addon_type, addon_name, access):
         ssm_client, app_name, env, addon_name, "parameter_name"
     )
 
-    conduit.add_stack_delete_policy_to_task_role_fn.assert_called_once_with(
+    conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_called_once_with(
         cloudformation_client, iam_client, task_name
     )
-    conduit.update_conduit_stack_resources_fn.assert_called_once_with(
+    conduit.cloudformation_provider.update_conduit_stack_resources.assert_called_once_with(
         cloudformation_client,
         iam_client,
         ssm_client,
@@ -128,7 +121,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
         "parameter_name",
         access,
     )
-    conduit.wait_for_cloudformation_to_reach_status_fn.assert_called_once_with(
+    conduit.cloudformation_provider.wait_for_cloudformation_to_reach_status.assert_called_once_with(
         cloudformation_client, "stack_update_complete", f"task-{task_name}"
     )
     conduit.create_addon_client_task_fn.assert_called_once_with(
@@ -183,8 +176,8 @@ def test_conduit_with_task_already_running():
     conduit.get_or_create_task_name_fn.assert_called_once_with(
         ssm_client, app_name, env, addon_name, "parameter_name"
     )
-    conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
-    conduit.update_conduit_stack_resources_fn.assert_not_called()
+    conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
+    conduit.cloudformation_provider.update_conduit_stack_resources.assert_not_called()
     conduit.create_addon_client_task_fn.assert_not_called()
 
     conduit_mocks.echo_fn.assert_has_calls(
@@ -267,8 +260,8 @@ def test_conduit_domain_when_client_task_fails_to_start():
             ssm_client, app_name, env, addon_name, "parameter_name"
         )
         conduit.create_addon_client_task_fn.assert_not_called()
-        conduit.add_stack_delete_policy_to_task_role_fn.assert_not_called()
-        conduit.update_conduit_stack_resources_fn.assert_not_called()
+        conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
+        conduit.cloudformation_provider.update_conduit_stack_resources.assert_not_called()
 
 
 def test_conduit_domain_when_addon_type_is_invalid():
