@@ -31,37 +31,39 @@ class ConduitMocks:
         sessions = {"000000000": session}
         dummy_application = Application(app_name)
         dummy_application.environments = {env: Environment(env, "000000000", sessions)}
-        self.get_ecs_task_arns_fn = kwargs.get("get_ecs_task_arns_fn", Mock(return_value=[]))
+        # self.get_ecs_task_arns_fn = kwargs.get("get_ecs_task_arns_fn", Mock(return_value=[]))
         self.application = dummy_application
         self.secrets_provider = kwargs.get("secrets_provider", Mock())
         self.cloudformation_provider = kwargs.get("cloudformation_provider", Mock())
-        self.ecs_exec_is_available_fn = kwargs.get("ecs_exec_is_available_fn", Mock())
+        self.ecs_provider = kwargs.get("ecs_provider", Mock())
+        # self.ecs_exec_is_available_fn = kwargs.get("ecs_exec_is_available_fn", Mock())
         self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
         self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
         self.create_postgres_admin_task_fn = kwargs.get("create_postgres_admin_task_fn", Mock())
         self.echo_fn = kwargs.get("echo_fn", Mock())
-        self.get_cluster_arn_fn = kwargs.get(
-            "get_cluster_arn_fn",
-            Mock(return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"),
-        )
-        self.get_or_create_task_name_fn = kwargs.get(
-            "get_or_create_task_name_fn", Mock(return_value="task_name")
-        )
+        # self.get_cluster_arn_fn = kwargs.get(
+        #     "get_cluster_arn_fn",
+        #     Mock(return_value="arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"),
+        # )
+        # self.get_or_create_task_name_fn = kwargs.get(
+        #     "get_or_create_task_name_fn", Mock(return_value="task_name")
+        # )
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
 
     def params(self):
         return {
-            "get_ecs_task_arns_fn": self.get_ecs_task_arns_fn,
+            # "get_ecs_task_arns_fn": self.get_ecs_task_arns_fn,
             "application": self.application,
             "secrets_provider": self.secrets_provider,
             "cloudformation_provider": self.cloudformation_provider,
-            "ecs_exec_is_available_fn": self.ecs_exec_is_available_fn,
+            "ecs_provider": self.ecs_provider,
+            # "ecs_exec_is_available_fn": self.ecs_exec_is_available_fn,
             "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
             "create_addon_client_task_fn": self.create_addon_client_task_fn,
             "create_postgres_admin_task_fn": self.create_postgres_admin_task_fn,
             "echo_fn": self.echo_fn,
-            "get_cluster_arn_fn": self.get_cluster_arn_fn,
-            "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
+            # "get_cluster_arn_fn": self.get_cluster_arn_fn,
+            # "get_or_create_task_name_fn": self.get_or_create_task_name_fn,
             "subprocess_fn": self.subprocess,
         }
 
@@ -92,18 +94,18 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
     conduit.start(env, addon_name, access)
 
-    conduit.get_ecs_task_arns_fn.assert_has_calls(
-        [call(ecs_client, cluster_name, task_name), call(ecs_client, cluster_name, task_name)]
+    conduit.ecs_provider.get_ecs_task_arns.assert_has_calls(
+        [call(cluster_name, task_name), call(cluster_name, task_name)]
     )
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
-    conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+    conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
 
     # TODO - will need fixing when the ECS object is instantiated, only expects two params now. addon_name, "parameter_name"
-    conduit.get_or_create_task_name_fn.assert_called_once_with(
-        ssm_client, app_name, env, addon_name, "parameter_name"
+    conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
+        addon_name, "parameter_name"
     )
 
     conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_called_once_with(
@@ -149,12 +151,10 @@ def test_conduit(app_name, addon_type, addon_name, access):
 
 
 def test_conduit_with_task_already_running():
-    conduit_mocks = ConduitMocks(
-        app_name,
-        addon_type,
-        get_ecs_task_arns_fn=MagicMock(
-            return_value=["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
-        ),
+    conduit_mocks = ConduitMocks(app_name, addon_type)
+
+    conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = MagicMock(
+        return_value=["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
     )
 
     conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
@@ -162,19 +162,19 @@ def test_conduit_with_task_already_running():
 
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
-    ssm_client = conduit.application.environments[env].session.client("ssm")
+    conduit.application.environments[env].session.client("ssm")
 
     conduit.start(env, addon_name, "read")
 
-    conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+    conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_name, task_name)
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
-    conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+    conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
     # Todo: Looks like we need to mock get_parameter_name()
-    conduit.get_or_create_task_name_fn.assert_called_once_with(
-        ssm_client, app_name, env, addon_name, "parameter_name"
+    conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
+        addon_name, "parameter_name"
     )
     conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
     conduit.cloudformation_provider.update_conduit_stack_resources.assert_not_called()
@@ -191,13 +191,13 @@ def test_conduit_with_task_already_running():
 
 
 def test_conduit_domain_when_no_cluster_exists():
-    conduit_mocks = ConduitMocks(
-        app_name,
-        addon_type,
-        get_cluster_arn_fn=Mock(
-            side_effect=NoClusterError(application_name=app_name, environment=env)
-        ),
+    conduit_mocks = ConduitMocks(app_name, addon_type)
+
+    conduit_mocks.ecs_provider.get_cluster_arn.side_effect = NoClusterError(
+        application_name=app_name,
+        environment=env,
     )
+
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
@@ -205,17 +205,22 @@ def test_conduit_domain_when_no_cluster_exists():
     with pytest.raises(NoClusterError):
         conduit.start(env, addon_name)
         conduit.secrets_provider.assert_called_once_with(ssm_client, app_name, env, addon_name)
-        conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+        conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
 
 
 def test_conduit_domain_when_no_connection_secret_exists():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        get_ecs_task_arns_fn=Mock(return_value=False),
         create_addon_client_task_fn=Mock(
             side_effect=SecretNotFoundError(f"/copilot/{app_name}/{env}/secrets/{addon_name}")
         ),
+    )
+
+    conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = CreateTaskTimeoutError(
+        addon_name=addon_name,
+        application_name=app_name,
+        environment=env,
     )
 
     conduit = Conduit(**conduit_mocks.params())
@@ -225,10 +230,9 @@ def test_conduit_domain_when_no_connection_secret_exists():
     with pytest.raises(SecretNotFoundError):
         conduit.start(env, addon_name)
         conduit.secrets_provider.assert_called_once_with(ssm_client, app_name, env, addon_name)
-        conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
-        conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
-        conduit.get_or_create_task_name_fn.assert_called_once_with(
-            ssm_client, app_name, env, addon_name, "parameter_name"
+        conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
+        conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
+            addon_name, "parameter_name"
         )
 
 
@@ -244,20 +248,21 @@ def test_conduit_domain_when_client_task_fails_to_start():
             )
         ),
     )
+
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
 
     with pytest.raises(CreateTaskTimeoutError):
         conduit.start(env, addon_name)
-        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+        conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_name, task_name)
         conduit.connect_to_addon_client_task_fn.assert_called_once_with(
             ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
         )
         conduit.secrets_provider.assert_called_once_with(ssm_client, app_name, env, addon_name)
-        conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
-        conduit.get_or_create_task_name_fn.assert_called_once_with(
-            ssm_client, app_name, env, addon_name, "parameter_name"
+        conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
+        conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
+            addon_name, "parameter_name"
         )
         conduit.create_addon_client_task_fn.assert_not_called()
         conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
@@ -272,11 +277,11 @@ def test_conduit_domain_when_addon_type_is_invalid():
 
     conduit_mocks.secrets_provider.get_addon_type.side_effect = InvalidAddonTypeError(addon_type)
     conduit = Conduit(**conduit_mocks.params())
-    ecs_client = conduit.application.environments[env].session.client("ecs")
+    conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(InvalidAddonTypeError):
         conduit.start(env, addon_name)
-        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+        conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_name, task_name)
 
 
 # Todo: does this belong in the Secrets provider
@@ -301,30 +306,31 @@ def test_conduit_domain_when_no_addon_config_parameter_exists():
     )
 
     conduit = Conduit(**conduit_mocks.params())
-    ecs_client = conduit.application.environments[env].session.client("ecs")
+    conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(ParameterNotFoundError):
         conduit.start(env, addon_name)
-        conduit.get_ecs_task_arns_fn.assert_called_once_with(ecs_client, cluster_name, task_name)
+        conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_name, task_name)
 
 
 def test_conduit_domain_ecs_exec_agent_does_not_start():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        get_ecs_task_arns_fn=Mock(
-            return_value=["arn:aws:ecs:eu-west-2:123456789012:task/MyTaskARN"]
-        ),
-        ecs_exec_is_available_fn=Mock(side_effect=ECSAgentNotRunning()),
     )
+
+    conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = [
+        "arn:aws:ecs:eu-west-2:123456789012:task/MyTaskARN"
+    ]
+    conduit_mocks.ecs_provider.ecs_exec_is_available.side_effect = ECSAgentNotRunning()
+
     conduit = Conduit(**conduit_mocks.params())
-    ecs_client = conduit.application.environments[env].session.client("ecs")
+    conduit.application.environments[env].session.client("ecs")
 
     with pytest.raises(ECSAgentNotRunning):
         conduit.start(env, addon_name)
 
-    conduit.ecs_exec_is_available_fn.assert_called_once_with(
-        ecs_client,
+    conduit.ecs_provider.ecs_exec_is_available.assert_called_once_with(
         "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1",
         ["arn:aws:ecs:eu-west-2:123456789012:task/MyTaskARN"],
     )

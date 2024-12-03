@@ -18,29 +18,23 @@ class Conduit:
         application: Application,
         secrets_provider: Secrets,
         cloudformation_provider: CloudFormation,
+        ecs_provider: ECS,
         echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
-        get_ecs_task_arns_fn=ECS.get_ecs_task_arns,
         connect_to_addon_client_task_fn=connect_to_addon_client_task,
         create_addon_client_task_fn=create_addon_client_task,
         create_postgres_admin_task_fn=create_postgres_admin_task,
-        ecs_exec_is_available_fn=ECS.ecs_exec_is_available,
-        get_cluster_arn_fn=ECS.get_cluster_arn,
-        get_or_create_task_name_fn=ECS.get_or_create_task_name,
     ):
 
         self.application = application
         self.secrets_provider = secrets_provider
         self.cloudformation_provider = cloudformation_provider
+        self.ecs_provider = ecs_provider
         self.subprocess_fn = subprocess_fn
         self.echo_fn = echo_fn
-        self.get_ecs_task_arns_fn = get_ecs_task_arns_fn
         self.connect_to_addon_client_task_fn = connect_to_addon_client_task_fn
         self.create_addon_client_task_fn = create_addon_client_task_fn
         self.create_postgres_admin_task = create_postgres_admin_task_fn
-        self.ecs_exec_is_available_fn = ecs_exec_is_available_fn
-        self.get_cluster_arn_fn = get_cluster_arn_fn
-        self.get_or_create_task_name_fn = get_or_create_task_name_fn
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
@@ -49,7 +43,7 @@ class Conduit:
         )
 
         self.echo_fn(f"Checking if a conduit task is already running for {addon_type}")
-        task_arn = self.get_ecs_task_arns_fn(clients["ecs"], cluster_arn, task_name)
+        task_arn = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
         if not task_arn:
             self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
@@ -79,14 +73,14 @@ class Conduit:
                 access,
             )
 
-            task_arn = self.get_ecs_task_arns_fn(clients["ecs"], cluster_arn, task_name)
+            task_arn = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
 
         else:
             self.echo_fn("Conduit task already running")
 
         self.echo_fn(f"Checking if exec is available for conduit task...")
 
-        self.ecs_exec_is_available_fn(clients["ecs"], cluster_arn, task_arn)
+        self.ecs_provider.ecs_exec_is_available(cluster_arn, task_arns=task_arn)
 
         self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(
@@ -105,15 +99,13 @@ class Conduit:
     def _get_addon_details(self, env, addon_name, access):
 
         # TODO - remove
-        ssm_client = self.application.environments[env].session.client("ssm")
+        self.application.environments[env].session.client("ssm")
         ecs_client = self.application.environments[env].session.client("ecs")
 
         addon_type = self.secrets_provider.get_addon_type(addon_name)
-        cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application.name, env)
+        cluster_arn = self.ecs_provider.get_cluster_arn(ecs_client)
         parameter_name = self.secrets_provider.get_parameter_name(addon_type, addon_name, access)
-        task_name = self.get_or_create_task_name_fn(
-            ssm_client, self.application.name, env, addon_name, parameter_name
-        )
+        task_name = self.ecs_provider.get_or_create_task_name(addon_name, parameter_name)
 
         return addon_type, cluster_arn, parameter_name, task_name
 

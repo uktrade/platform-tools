@@ -3,6 +3,7 @@ import click
 from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
+from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
@@ -44,7 +45,14 @@ def conduit(addon_name: str, app: str, env: str, access: str):
             application.environments[env].session.client("ssm"),
         )
 
-        Conduit(application, secrets_provider, cloudformation_provider).start(
+        ecs_provider: ECS = ECS(
+            application.environments[env].session.client("ecs"),
+            application.environments[env].session.client("ssm"),
+            application.name,
+            env,
+        )
+
+        Conduit(application, secrets_provider, cloudformation_provider, ecs_provider).start(
             env, addon_name, access
         )
     except AWSException as err:
