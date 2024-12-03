@@ -5,11 +5,7 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.providers.ecs import get_ecs_task_arns
-from dbt_platform_helper.providers.secrets import get_connection_secret_arn
-from dbt_platform_helper.providers.secrets import (
-    get_postgres_connection_data_updated_with_master_secret,
-)
+from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -59,7 +55,7 @@ def create_addon_client_task(
         # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
         # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
-            # TODO Raise an exception to be caught at the command layer
+            # TODO When we are refactoring this, raise an exception to be caught at the command layer
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
@@ -69,7 +65,7 @@ def create_addon_client_task(
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
+        f"--secrets CONNECTION_SECRET={_get_secrets_provider(application, env).get_connection_secret_arn(secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -95,8 +91,8 @@ def create_postgres_admin_task(
         "Parameter"
     ]["Value"]
     connection_string = json.dumps(
-        get_postgres_connection_data_updated_with_master_secret(
-            ssm_client, secrets_manager_client, read_only_secret_name, master_secret_arn
+        _get_secrets_provider(app, env).get_postgres_connection_data_updated_with_master_secret(
+            read_only_secret_name, master_secret_arn
         )
     )
 
@@ -111,6 +107,19 @@ def create_postgres_admin_task(
     )
 
 
+def _temp_until_refactor_get_ecs_task_arns(ecs_client, cluster_arn: str, task_name: str):
+    tasks = ecs_client.list_tasks(
+        cluster=cluster_arn,
+        desiredStatus="RUNNING",
+        family=f"copilot-{task_name}",
+    )
+
+    if not tasks["taskArns"]:
+        return []
+
+    return tasks["taskArns"]
+
+
 def connect_to_addon_client_task(
     ecs_client,
     subprocess,
@@ -118,13 +127,14 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    addon_client_is_running_fn=get_ecs_task_arns,
+    get_ecs_task_arns_fn=_temp_until_refactor_get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
+        # Todo: Use from ECS provider when we refactor this
+        if get_ecs_task_arns_fn(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
                 f"--app {application_name} --env {env} "
@@ -137,8 +147,18 @@ def connect_to_addon_client_task(
         time.sleep(1)
 
     if not running:
-        raise CreateTaskTimeoutError
+        raise CreateTaskTimeoutError(task_name, application_name, env)
 
 
 def _normalise_secret_name(addon_name: str) -> str:
     return addon_name.replace("-", "_").upper()
+
+
+def _get_secrets_provider(application: Application, env: str) -> Secrets:
+    # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
+    return Secrets(
+        application.environments[env].session.client("ssm"),
+        application.environments[env].session.client("secretsmanager"),
+        application.name,
+        env,
+    )

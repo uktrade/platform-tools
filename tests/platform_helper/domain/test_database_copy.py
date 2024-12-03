@@ -296,7 +296,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
 def test_database_copy_initialization_handles_app_name_errors():
     mocks = DataCopyMocks()
-    mocks.load_application_fn = Mock(side_effect=ApplicationNotFoundError())
+    mocks.load_application_fn = Mock(side_effect=ApplicationNotFoundError("bad-app"))
 
     with pytest.raises(SystemExit) as exc:
         DatabaseCopy("bad-app", "test-db", **mocks.params())
