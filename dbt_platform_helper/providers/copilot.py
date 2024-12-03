@@ -56,17 +56,25 @@ def create_addon_client_task(
         # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
         # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
-            # TODO Raise an exception to be caught at the command layer
+            # TODO When we are refactoring this, raise an exception to be caught at the command layer
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
+
+    # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
+    secrets_provider: Secrets = Secrets(
+        application.environments[env].session.client("ssm"),
+        application.environments[env].session.client("secretsmanager"),
+        application.name,
+        env,
+    )
 
     subprocess.call(
         f"copilot task run --app {application.name} --env {env} "
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={Secrets.get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
+        f"--secrets CONNECTION_SECRET={secrets_provider.get_connection_secret_arn(secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,

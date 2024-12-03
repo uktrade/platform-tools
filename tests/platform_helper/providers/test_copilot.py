@@ -173,9 +173,7 @@ def test_create_postgres_addon_client_task(
         access,
     )
     secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
-    get_connection_secret_arn.assert_called_once_with(
-        ssm_client, secretsmanager_client, secret_name
-    )
+    get_connection_secret_arn.assert_called_once_with(secret_name)
     mock_subprocess.call.assert_called()
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
@@ -269,9 +267,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
     secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
-    get_connection_secret_arn.assert_called_once_with(
-        ssm_client, secretsmanager_client, secret_name
-    )
+    get_connection_secret_arn.assert_called_once_with(secret_name)
 
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
