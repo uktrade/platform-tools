@@ -103,7 +103,7 @@ class Conduit:
         ecs_client = self.application.environments[env].session.client("ecs")
 
         addon_type = self.secrets_provider.get_addon_type(addon_name)
-        cluster_arn = self.ecs_provider.get_cluster_arn(ecs_client)
+        cluster_arn = self.ecs_provider.get_cluster_arn()
         parameter_name = self.secrets_provider.get_parameter_name(addon_type, addon_name, access)
         task_name = self.ecs_provider.get_or_create_task_name(addon_name, parameter_name)
 
