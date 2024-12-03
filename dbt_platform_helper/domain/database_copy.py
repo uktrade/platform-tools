@@ -61,7 +61,7 @@ class DatabaseCopy:
         except ApplicationNotFoundError:
             abort_fn(f"No such application '{app}'.")
 
-    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
+    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, to_env: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
         environments = self.application.environments
@@ -89,7 +89,7 @@ class DatabaseCopy:
 
         try:
             task_arn = self.run_database_copy_task(
-                env_session, env, vpc_config, is_dump, db_connection_string
+                env_session, env, vpc_config, is_dump, db_connection_string, to_env
             )
         except Exception as exc:
             self.abort_fn(f"{exc} (Account id: {self.account_id(env)})")
@@ -124,12 +124,14 @@ class DatabaseCopy:
         vpc_config: Vpc,
         is_dump: bool,
         db_connection_string: str,
+        to_env: str,
     ) -> str:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         env_vars = [
             {"name": "DATA_COPY_OPERATION", "value": action.upper()},
             {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+            {"name": "TO_ENVIRONMENT", "value": to_env},
         ]
         if not is_dump:
             env_vars.append({"name": "ECS_CLUSTER", "value": f"{self.app}-{env}"})
@@ -159,12 +161,12 @@ class DatabaseCopy:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def dump(self, env: str, vpc_name: str):
-        self._execute_operation(True, env, vpc_name)
+    def dump(self, env: str, vpc_name: str, to_env: str):
+        self._execute_operation(True, env, vpc_name, to_env)
 
     def load(self, env: str, vpc_name: str):
         if self.is_confirmed_ready_to_load(env):
-            self._execute_operation(False, env, vpc_name)
+            self._execute_operation(False, env, vpc_name, to_env=env)
 
     def copy(
         self,
@@ -179,7 +181,7 @@ class DatabaseCopy:
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
             self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
-        self.dump(from_env, from_vpc)
+        self.dump(from_env, from_vpc, to_env)
         self.load(to_env, to_vpc)
         if not no_maintenance_page:
             self.maintenance_page_provider.deactivate(self.app, to_env)

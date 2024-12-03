@@ -58,7 +58,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     actual_task_arn = db_copy.run_database_copy_task(
-        mock_session, "test-env", vpc, is_dump, db_connection_string
+        mock_session, "test-env", vpc, is_dump, db_connection_string, "test-env"
     )
 
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
@@ -67,6 +67,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     expected_env_vars = [
         {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
+        {"name": "TO_ENVIRONMENT", "value": "test-env"},
     ]
     if not is_dump:
         expected_env_vars.append(
@@ -116,7 +117,7 @@ def test_database_dump():
     db_copy.enrich_vpc_name = Mock()
     db_copy.enrich_vpc_name.return_value = "test-vpc-override"
 
-    db_copy.dump(env, vpc_name)
+    db_copy.dump(env, vpc_name, "test-env")
 
     mocks.load_application_fn.assert_called_once()
     mocks.vpc_config_fn.assert_called_once_with(
@@ -126,11 +127,7 @@ def test_database_dump():
         mocks.environment.session, app, env, "test-app-test-env-test-db"
     )
     mock_run_database_copy_task.assert_called_once_with(
-        mocks.environment.session,
-        env,
-        mocks.vpc,
-        True,
-        "test-db-connection-string",
+        mocks.environment.session, env, mocks.vpc, True, "test-db-connection-string", "test-env"
     )
     mocks.input_fn.assert_not_called()
     mocks.echo_fn.assert_has_calls(
@@ -173,11 +170,7 @@ def test_database_load_with_response_of_yes():
     )
 
     mock_run_database_copy_task.assert_called_once_with(
-        mocks.environment.session,
-        env,
-        mocks.vpc,
-        False,
-        "test-db-connection-string",
+        mocks.environment.session, env, mocks.vpc, False, "test-db-connection-string", "test-env"
     )
 
     mocks.input_fn.assert_called_once_with(
@@ -237,7 +230,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("test-env", "bad-vpc-name")
+            db_copy.dump("test-env", "bad-vpc-name", "test-env")
         else:
             db_copy.load("test-env", "bad-vpc-name")
 
@@ -254,7 +247,7 @@ def test_database_dump_handles_db_name_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("test-env", "vpc-name")
+            db_copy.dump("test-env", "vpc-name", "test-env")
         else:
             db_copy.load("test-env", "vpc-name")
 
@@ -272,7 +265,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("bad-env", "vpc-name")
+            db_copy.dump("bad-env", "vpc-name", "test-env")
         else:
             db_copy.load("bad-env", "vpc-name")
 
@@ -293,7 +286,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("test-env", "vpc-name")
+            db_copy.dump("test-env", "vpc-name", "test-env")
         else:
             db_copy.load("test-env", "vpc-name")
 
@@ -372,7 +365,7 @@ def test_copy_command(services, template):
     mocks.maintenance_page_provider.activate.assert_called_once_with(
         "test-app", "test-to-env", services, template, "test-vpc-override"
     )
-    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc")
+    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "test-to-env")
     db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override")
     mocks.maintenance_page_provider.deactivate.assert_called_once_with("test-app", "test-to-env")
 
@@ -526,7 +519,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
     db_copy.tail_logs = Mock()
 
     if is_dump:
-        db_copy.dump(env, None)
+        db_copy.dump(env, None, "test-env")
     else:
         db_copy.load(env, None)
 
@@ -552,7 +545,7 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump(env, None)
+            db_copy.dump(env, None, "test-env")
         else:
             db_copy.load(env, None)
 
