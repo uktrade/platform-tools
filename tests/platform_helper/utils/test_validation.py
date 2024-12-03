@@ -1094,7 +1094,7 @@ def test_validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=mock_supported_versions,
+        get_supported_versions=mock_supported_versions,
     )
 
     captured = capsys.readouterr()

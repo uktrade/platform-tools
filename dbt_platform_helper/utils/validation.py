@@ -104,13 +104,13 @@ def validate_addons(addons: dict):
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=get_supported_redis_versions,
+        get_supported_versions=get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions_fn=get_supported_opensearch_versions,
+        get_supported_versions=get_supported_opensearch_versions,
     )
 
     return errors
@@ -563,18 +563,18 @@ def validate_platform_config(config):
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=get_supported_redis_versions,
+        get_supported_versions=get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config=config,
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions_fn=get_supported_opensearch_versions,
+        get_supported_versions=get_supported_opensearch_versions,
     )
 
 
 def _validate_extension_supported_versions(
-    config, extension_type, version_key, get_supported_versions_fn
+    config, extension_type, version_key, get_supported_versions
 ):
     extensions = config.get("extensions", {})
     if not extensions:
@@ -586,7 +586,7 @@ def _validate_extension_supported_versions(
         if extension.get("type") == extension_type
     ]
 
-    supported_extension_versions = get_supported_versions_fn()
+    supported_extension_versions = get_supported_versions()
     extensions_with_invalid_version = []
 
     for extension in extensions_for_type:

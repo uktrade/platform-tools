@@ -764,7 +764,7 @@ def test_get_connection_string():
     )
 
     connection_string = get_connection_string(
-        session, "my_app", "my_env", db_identifier, connection_data_fn=mock_connection_data
+        session, "my_app", "my_env", db_identifier, connection_data=mock_connection_data
     )
 
     mock_connection_data.assert_called_once_with(

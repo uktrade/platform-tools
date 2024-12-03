@@ -34,10 +34,10 @@ class ConduitMocks:
         self.secrets_provider = kwargs.get("secrets_provider", Mock())
         self.cloudformation_provider = kwargs.get("cloudformation_provider", Mock())
         self.ecs_provider = kwargs.get("ecs_provider", Mock())
-        self.connect_to_addon_client_task_fn = kwargs.get("connect_to_addon_client_task_fn", Mock())
-        self.create_addon_client_task_fn = kwargs.get("create_addon_client_task_fn", Mock())
-        self.create_postgres_admin_task_fn = kwargs.get("create_postgres_admin_task_fn", Mock())
-        self.echo_fn = kwargs.get("echo_fn", Mock())
+        self.connect_to_addon_client_task = kwargs.get("connect_to_addon_client_task", Mock())
+        self.create_addon_client_task = kwargs.get("create_addon_client_task", Mock())
+        self.create_postgres_admin_task = kwargs.get("create_postgres_admin_task", Mock())
+        self.echo = kwargs.get("echo", Mock())
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
 
     def params(self):
@@ -46,11 +46,11 @@ class ConduitMocks:
             "secrets_provider": self.secrets_provider,
             "cloudformation_provider": self.cloudformation_provider,
             "ecs_provider": self.ecs_provider,
-            "connect_to_addon_client_task_fn": self.connect_to_addon_client_task_fn,
-            "create_addon_client_task_fn": self.create_addon_client_task_fn,
-            "create_postgres_admin_task_fn": self.create_postgres_admin_task_fn,
-            "echo_fn": self.echo_fn,
-            "subprocess_fn": self.subprocess,
+            "connect_to_addon_client_task": self.connect_to_addon_client_task,
+            "create_addon_client_task": self.create_addon_client_task,
+            "create_postgres_admin_task": self.create_postgres_admin_task,
+            "echo": self.echo,
+            "subprocess": self.subprocess,
         }
 
 
@@ -86,8 +86,8 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.ecs_provider.get_ecs_task_arns.assert_has_calls(
         [call(cluster_arn, task_name), call(cluster_arn, task_name)]
     )
-    conduit.connect_to_addon_client_task_fn.assert_called_once_with(
-        ecs_client, conduit.subprocess_fn, app_name, env, cluster_arn, task_name
+    conduit.connect_to_addon_client_task.assert_called_once_with(
+        ecs_client, conduit.subprocess, app_name, env, cluster_arn, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.ecs_provider.get_cluster_arn.assert_called_once()
@@ -109,11 +109,11 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.cloudformation_provider.wait_for_cloudformation_to_reach_status.assert_called_once_with(
         "stack_update_complete", f"task-{task_name}"
     )
-    conduit.create_addon_client_task_fn.assert_called_once_with(
+    conduit.create_addon_client_task.assert_called_once_with(
         iam_client,
         ssm_client,
         secretsmanager_client,
-        conduit.subprocess_fn,
+        conduit.subprocess,
         conduit.application,
         env,
         addon_type,
@@ -121,7 +121,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
         task_name,
         access,
     )
-    conduit_mocks.echo_fn.assert_has_calls(
+    conduit_mocks.echo.assert_has_calls(
         [
             call("Creating conduit task"),
             call("Updating conduit task"),
@@ -148,8 +148,8 @@ def test_conduit_with_task_already_running():
     conduit.start(env, addon_name, "read")
 
     conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_arn, task_name)
-    conduit.connect_to_addon_client_task_fn.assert_called_once_with(
-        ecs_client, conduit.subprocess_fn, app_name, env, cluster_arn, task_name
+    conduit.connect_to_addon_client_task.assert_called_once_with(
+        ecs_client, conduit.subprocess, app_name, env, cluster_arn, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.ecs_provider.get_cluster_arn.assert_called_once()
@@ -158,9 +158,9 @@ def test_conduit_with_task_already_running():
     )
     conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
     conduit.cloudformation_provider.update_conduit_stack_resources.assert_not_called()
-    conduit.create_addon_client_task_fn.assert_not_called()
+    conduit.create_addon_client_task.assert_not_called()
 
-    conduit_mocks.echo_fn.assert_has_calls(
+    conduit_mocks.echo.assert_has_calls(
         [
             call("Checking if a conduit task is already running for postgres"),
             call("Conduit task already running"),
@@ -191,7 +191,7 @@ def test_conduit_domain_when_no_connection_secret_exists():
     )
     conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = []
     conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
-    conduit_mocks.create_addon_client_task_fn.side_effect = SecretNotFoundError(
+    conduit_mocks.create_addon_client_task.side_effect = SecretNotFoundError(
         f"/copilot/{app_name}/{env}/secrets/{addon_name}"
     )
     conduit = Conduit(**conduit_mocks.params())
@@ -211,7 +211,7 @@ def test_conduit_domain_when_client_task_fails_to_start():
         app_name,
         addon_type,
     )
-    conduit_mocks.connect_to_addon_client_task_fn.side_effect = (
+    conduit_mocks.connect_to_addon_client_task.side_effect = (
         CreateTaskTimeoutError(
             addon_name=addon_name,
             application_name=app_name,
@@ -224,15 +224,15 @@ def test_conduit_domain_when_client_task_fails_to_start():
     with pytest.raises(CreateTaskTimeoutError):
         conduit.start(env, addon_name)
         conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_arn, task_name)
-        conduit.connect_to_addon_client_task_fn.assert_called_once_with(
-            conduit.subprocess_fn, app_name, env, cluster_arn, task_name
+        conduit.connect_to_addon_client_task.assert_called_once_with(
+            conduit.subprocess, app_name, env, cluster_arn, task_name
         )
         conduit.secrets_provider.get_addon_type.assert_called_once_with(app_name, env, addon_name)
         conduit.ecs_provider.get_cluster_arn.assert_called_once()
         conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
             addon_name, "parameter_name"
         )
-        conduit.create_addon_client_task_fn.assert_not_called()
+        conduit.create_addon_client_task.assert_not_called()
         conduit.cloudformation_provider.add_stack_delete_policy_to_task_role.assert_not_called()
         conduit.cloudformation_provider.update_conduit_stack_resources.assert_not_called()
 

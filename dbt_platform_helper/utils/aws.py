@@ -417,7 +417,7 @@ def get_connection_string(
     app: str,
     env: str,
     db_identifier: str,
-    connection_data_fn=get_postgres_connection_data_updated_with_master_secret,
+    connection_data=get_postgres_connection_data_updated_with_master_secret,
 ) -> str:
     addon_name = db_identifier.split(f"{app}-{env}-", 1)[1]
     normalised_addon_name = addon_name.replace("-", "_").upper()
@@ -429,7 +429,7 @@ def get_connection_string(
         Name=master_secret_name, WithDecryption=True
     )["Parameter"]["Value"]
 
-    conn = connection_data_fn(session, connection_string_parameter, master_secret_arn)
+    conn = connection_data(session, connection_string_parameter, master_secret_arn)
 
     return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
 
@@ -528,7 +528,7 @@ def get_build_url_from_arn(build_arn: str) -> str:
     )
 
 
-def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo_fn):
+def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo):
     paginator = ecr_client.get_paginator("describe_images")
     describe_images_response_iterator = paginator.paginate(
         repositoryName=ecr_repository_name,
@@ -553,7 +553,7 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, ech
                 continue
 
             commit_hash = commit_tag.replace("commit-", "")
-            echo_fn(
+            echo(
                 f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
             )
         except StopIteration:

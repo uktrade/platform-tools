@@ -38,13 +38,13 @@ def mock_aws_client(get_aws_session_or_abort):
 
 class CodebaseMocks:
     def __init__(self, **kwargs):
-        self.load_application_fn = kwargs.get("load_application_fn", Mock())
-        self.get_aws_session_or_abort_fn = kwargs.get("get_aws_session_or_abort_fn", Mock())
-        self.input_fn = kwargs.get("input_fn", Mock(return_value="yes"))
-        self.echo_fn = kwargs.get("echo_fn", Mock())
-        self.confirm_fn = kwargs.get("confirm_fn", Mock(return_value=True))
-        self.check_codebase_exists_fn = kwargs.get(
-            "check_codebase_exists_fn",
+        self.load_application = kwargs.get("load_application", Mock())
+        self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
+        self.input = kwargs.get("input", Mock(return_value="yes"))
+        self.echo = kwargs.get("echo", Mock())
+        self.confirm = kwargs.get("confirm", Mock(return_value=True))
+        self.check_codebase_exists = kwargs.get(
+            "check_codebase_exists",
             Mock(
                 return_value="""
                                              {
@@ -55,21 +55,21 @@ class CodebaseMocks:
                                         """
             ),
         )
-        self.check_image_exists_fn = kwargs.get("check_image_exists_fn", Mock(return_value=""))
-        self.subprocess = kwargs.get("subprocess", Mock())
-        self.check_if_commit_exists_fn = kwargs.get("check_if_commit_exists_fn", Mock())
+        self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
+        self.run_subprocess = kwargs.get("run_subprocess", Mock())
+        self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
 
     def params(self):
         return {
-            "load_application_fn": self.load_application_fn,
-            "get_aws_session_or_abort_fn": self.get_aws_session_or_abort_fn,
-            "check_codebase_exists_fn": self.check_codebase_exists_fn,
-            "check_image_exists_fn": self.check_image_exists_fn,
-            "input_fn": self.input_fn,
-            "echo_fn": self.echo_fn,
-            "confirm_fn": self.confirm_fn,
-            "subprocess": self.subprocess,
-            "check_if_commit_exists_fn": self.check_if_commit_exists_fn,
+            "load_application": self.load_application,
+            "get_aws_session_or_abort": self.get_aws_session_or_abort,
+            "check_codebase_exists": self.check_codebase_exists,
+            "check_image_exists": self.check_image_exists,
+            "input": self.input,
+            "echo": self.echo,
+            "confirm": self.confirm,
+            "run_subprocess": self.run_subprocess,
+            "check_if_commit_exists": self.check_if_commit_exists,
         }
 
 
@@ -104,7 +104,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     os.chdir(tmp_path)
 
-    mocks.subprocess.return_value.stdout = "git@github.com:uktrade/test-app.git"
+    mocks.run_subprocess.return_value.stdout = "git@github.com:uktrade/test-app.git"
 
     codebase.prepare()
 
@@ -113,7 +113,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     compare_directories = filecmp.dircmp(str(expected_files_dir), str(copilot_dir))
 
-    mocks.echo_fn.assert_has_calls(
+    mocks.echo.assert_has_calls(
         [
             call(
                 "File .copilot/image_build_run.sh created",
@@ -141,12 +141,12 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
 def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_directory(tmp_path):
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = SystemExit(1)
+    mocks.load_application.side_effect = SystemExit(1)
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
 
-    mocks.subprocess.return_value.stdout = mock_suprocess_fixture()
+    mocks.run_subprocess.return_value.stdout = mock_run_suprocess_fixture()
 
     with pytest.raises(NotInCodeBaseRepositoryError):
         codebase.prepare()
@@ -154,12 +154,12 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
 
 def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
+    mocks.load_application.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError):
         codebase.build("not-an-application", "application", "ab1c23d")
-        mocks.echo_fn.assert_has_calls(
+        mocks.echo.assert_has_calls(
             [
                 call(
                     """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
@@ -170,7 +170,7 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
 
 
 def test_codebase_build_commit_not_found():
-    mocks = CodebaseMocks(check_if_commit_exists_fn=Mock(side_effect=CommitNotFoundError()))
+    mocks = CodebaseMocks(check_if_commit_exists=Mock(side_effect=CommitNotFoundError()))
 
     codebase = Codebase(**mocks.params())
 
@@ -180,9 +180,9 @@ def test_codebase_build_commit_not_found():
 
 def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = SystemExit(1)
+    mocks.load_application.side_effect = SystemExit(1)
 
-    mocks.subprocess.return_value = mock_suprocess_fixture()
+    mocks.run_subprocess.return_value = mock_run_suprocess_fixture()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
     Path(tmp_path / "copilot").mkdir()
@@ -195,7 +195,7 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
-    mocks.subprocess.return_value.stdout = "demodjango"
+    mocks.run_subprocess.return_value.stdout = "demodjango"
 
     codebase.prepare()
 
@@ -206,9 +206,9 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
 
 
 def test_codebase_build_does_not_trigger_deployment_without_confirmation():
-    mocks = CodebaseMocks(confirm_fn=Mock(return_value=False))
+    mocks = CodebaseMocks(confirm=Mock(return_value=False))
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
@@ -220,17 +220,17 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
 
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
     mocks = CodebaseMocks()
-    mocks.confirm_fn.return_value = True
+    mocks.confirm.return_value = True
     mock_application.environments = {
         "development": Environment(
             name="development",
             account_id="1234",
-            sessions={"111111111111": mocks.get_aws_session_or_abort_fn},
+            sessions={"111111111111": mocks.get_aws_session_or_abort},
         )
     }
-    mocks.load_application_fn.return_value = mock_application
+    mocks.load_application.return_value = mock_application
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -254,7 +254,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         ],
     )
 
-    mocks.confirm_fn.assert_has_calls(
+    mocks.confirm.assert_has_calls(
         [
             call(
                 'You are about to deploy "test-application" for "application" with commit '
@@ -263,7 +263,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         ]
     )
 
-    mocks.echo_fn.assert_has_calls(
+    mocks.echo.assert_has_calls(
         [
             call(
                 "Your deployment has been triggered. Check your build progress in the AWS Console: "
@@ -276,10 +276,10 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 
 def test_codebase_deploy_exception_with_a_nonexistent_codebase():
     mocks = CodebaseMocks(
-        check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
+        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
     )
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -292,10 +292,10 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
 
 def test_check_codebase_exists_returns_error_when_no_json():
     mocks = CodebaseMocks(
-        check_codebase_exists_fn=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
+        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundError("application"))
     )
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -308,10 +308,10 @@ def test_check_codebase_exists_returns_error_when_no_json():
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     mocks = CodebaseMocks(
-        check_image_exists_fn=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
+        check_image_exists=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
     )
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -325,10 +325,10 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
     mocks = CodebaseMocks(
-        check_image_exists_fn=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
+        check_image_exists=Mock(side_effect=ImageNotFoundError("nonexistent-commit-hash"))
     )
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -342,9 +342,9 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
 def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
-    mocks.subprocess.return_value.stderr = ""
-    mocks.confirm_fn.return_value = False
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    mocks.run_subprocess.return_value.stderr = ""
+    mocks.confirm.return_value = False
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -360,7 +360,7 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-        mocks.confirm_fn.assert_has_calls(
+        mocks.confirm.assert_has_calls(
             [
                 call(
                     'You are about to deploy "test-application" for "application" with commit '
@@ -369,12 +369,12 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
             ]
         )
 
-        mocks.echo_fn.assert_has_calls([call("Your deployment was not triggered.")])
+        mocks.echo.assert_has_calls([call("Your deployment was not triggered.")])
 
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
+    mocks.load_application.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError) as exc:
@@ -384,12 +384,12 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
 def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_application):
     mocks = CodebaseMocks()
     mock_application.environments = {}
-    mocks.load_application_fn.return_value = mock_application
+    mocks.load_application.return_value = mock_application
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationEnvironmentNotFoundError) as exc:
         codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
-        mocks.echo_fn.assert_has_calls(
+        mocks.echo.assert_has_calls(
             [
                 call(
                     """The environment "not-an-environment" either does not exist or has not been deployed.""",
@@ -400,9 +400,9 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
 
 
 def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
-    mocks = CodebaseMocks(confirm_fn=Mock(return_value=False))
+    mocks = CodebaseMocks(confirm=Mock(return_value=False))
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
@@ -414,7 +414,7 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application_fn.side_effect = ApplicationNotFoundError("not-an-application")
+    mocks.load_application.side_effect = ApplicationNotFoundError("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundError) as exc:
@@ -422,9 +422,9 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
 
 
 def test_codebase_list_returns_empty_when_no_codebases():
-    mocks = CodebaseMocks(check_codebase_exists_fn=Mock())
+    mocks = CodebaseMocks(check_codebase_exists=Mock())
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
@@ -433,13 +433,13 @@ def test_codebase_list_returns_empty_when_no_codebases():
     codebase = Codebase(**mocks.params())
     codebase.list("test-application", True)
 
-    mocks.echo_fn.assert_has_calls([])
+    mocks.echo.assert_has_calls([])
 
 
 def test_lists_codebases_with_multiple_pages_of_images():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameters_by_path.return_value = {
         "Parameters": [
             {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
@@ -474,7 +474,7 @@ def test_lists_codebases_with_multiple_pages_of_images():
     ]
     codebase.list("test-application", True)
 
-    mocks.echo_fn.assert_has_calls(
+    mocks.echo.assert_has_calls(
         [
             call("- application (https://github.com/uktrade/example)"),
             call(
@@ -497,7 +497,7 @@ def test_lists_codebases_with_multiple_pages_of_images():
 def test_lists_codebases_with_disordered_images_in_chronological_order():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameters_by_path.return_value = {
         "Parameters": [
             {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
@@ -531,7 +531,7 @@ def test_lists_codebases_with_disordered_images_in_chronological_order():
     ]
     codebase.list("test-application", True)
 
-    mocks.echo_fn.assert_has_calls(
+    mocks.echo.assert_has_calls(
         [
             call("The following codebases are available:"),
             call("- application (https://github.com/uktrade/example)"),
@@ -554,7 +554,7 @@ def test_lists_codebases_with_disordered_images_in_chronological_order():
 def test_lists_codebases_with_images_successfully():
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
-    client = mock_aws_client(mocks.get_aws_session_or_abort_fn)
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameters_by_path.return_value = {
         "Parameters": [
             {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
@@ -585,7 +585,7 @@ def test_lists_codebases_with_images_successfully():
 
     codebase.list("test-application", True)
 
-    mocks.echo_fn.assert_has_calls(
+    mocks.echo.assert_has_calls(
         [
             call("The following codebases are available:"),
             call("- application (https://github.com/uktrade/example)"),
@@ -630,7 +630,7 @@ def is_same_files(compare_directories):
     return True
 
 
-def mock_suprocess_fixture():
+def mock_run_suprocess_fixture():
     mock_stdout = MagicMock()
     mock_stdout.configure_mock(**{"stdout.decode.return_value": '{"A": 3}'})
     return mock_stdout
