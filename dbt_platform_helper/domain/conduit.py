@@ -61,9 +61,6 @@ class Conduit:
 
             self.echo_fn("Updating conduit task")
             self._update_stack_resources(
-                clients["cloudformation"],
-                clients["iam"],
-                clients["ssm"],
                 self.application.name,
                 env,
                 addon_type,
@@ -106,9 +103,6 @@ class Conduit:
 
     def _update_stack_resources(
         self,
-        cloudformation_client,
-        iam_client,
-        ssm_client,
         app_name,
         env,
         addon_type,
