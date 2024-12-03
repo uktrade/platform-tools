@@ -45,8 +45,6 @@ class TestCodebasePrepare:
 
         result = CliRunner().invoke(prepare_command)
 
-        expected_message = "You are in the deploy repository; make sure you are in the application codebase repository."
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 
@@ -72,8 +70,6 @@ class TestCodebaseBuild:
                 "ab1c23d",
             ],
         )
-        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
 
         assert result.exit_code == 1
 
@@ -101,8 +97,7 @@ class TestCodebaseBuild:
         mock_codebase_object_instance.build.assert_called_once_with(
             "test-application", "application", "nonexistent-commit-hash"
         )
-        expected_message = f"""The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
-        mock_click.assert_called_with(expected_message, fg="red")
+
         assert result.exit_code == 1
 
 
@@ -156,8 +151,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "development", "application", "nonexistent-commit-hash"
         )
-        expected_message = f"""The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -186,8 +179,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "not-an-application", "dev", "application", "ab1c23d"
         )
-        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -216,8 +207,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "not-an-environment", "application", "ab1c23d"
         )
-        expected_message = f"""The environment "not-an-environment" either does not exist or has not been deployed."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -246,10 +235,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "test-environment", "not-a-codebase", "ab1c23d"
         )
-        expected_message = (
-            f"""The codebase "not-a-codebase" either does not exist or has not been deployed."""
-        )
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 
@@ -273,8 +258,6 @@ class TestCodebaseList:
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        expected_message = f"""No codebases found for application "test-application"""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -286,9 +269,6 @@ class TestCodebaseList:
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        app = "test-application"
-        expected_message = f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

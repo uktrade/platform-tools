@@ -5,11 +5,8 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.providers.ecs import get_ecs_task_arns
-from dbt_platform_helper.providers.secrets import get_connection_secret_arn
-from dbt_platform_helper.providers.secrets import (
-    get_postgres_connection_data_updated_with_master_secret,
-)
+from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -69,7 +66,7 @@ def create_addon_client_task(
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
+        f"--secrets CONNECTION_SECRET={Secrets.get_connection_secret_arn(ssm_client,secrets_manager_client, secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -95,7 +92,7 @@ def create_postgres_admin_task(
         "Parameter"
     ]["Value"]
     connection_string = json.dumps(
-        get_postgres_connection_data_updated_with_master_secret(
+        Secrets.get_postgres_connection_data_updated_with_master_secret(
             ssm_client, secrets_manager_client, read_only_secret_name, master_secret_arn
         )
     )
@@ -118,13 +115,13 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    addon_client_is_running_fn=get_ecs_task_arns,
+    get_ecs_task_arns_fn=ECS.get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        if addon_client_is_running_fn(ecs_client, cluster_arn, task_name):
+        if get_ecs_task_arns_fn(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
                 f"--app {application_name} --env {env} "
@@ -137,7 +134,7 @@ def connect_to_addon_client_task(
         time.sleep(1)
 
     if not running:
-        raise CreateTaskTimeoutError
+        raise CreateTaskTimeoutError(task_name, application_name, env)
 
 
 def _normalise_secret_name(addon_name: str) -> str:
