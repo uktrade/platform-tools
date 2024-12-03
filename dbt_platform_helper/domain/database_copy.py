@@ -15,6 +15,8 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
+from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
@@ -59,7 +61,7 @@ class DatabaseCopy:
         except ApplicationNotFoundError:
             abort_fn(f"No such application '{app}'.")
 
-    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str):
+    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, to_env: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
         environments = self.application.environments
@@ -87,7 +89,7 @@ class DatabaseCopy:
 
         try:
             task_arn = self.run_database_copy_task(
-                env_session, env, vpc_config, is_dump, db_connection_string
+                env_session, env, vpc_config, is_dump, db_connection_string, to_env
             )
         except Exception as exc:
             self.abort_fn(f"{exc} (Account id: {self.account_id(env)})")
@@ -111,7 +113,8 @@ class DatabaseCopy:
                     "You must either be in a deploy repo, or provide the vpc name option."
                 )
             config = load_and_validate_platform_config()
-            vpc_name = config.get("environments", {}).get(env, {}).get("vpc")
+            env_config = apply_environment_defaults(config)["environments"]
+            vpc_name = env_config.get(env, {}).get("vpc")
         return vpc_name
 
     def run_database_copy_task(
@@ -121,12 +124,14 @@ class DatabaseCopy:
         vpc_config: Vpc,
         is_dump: bool,
         db_connection_string: str,
+        to_env: str,
     ) -> str:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         env_vars = [
             {"name": "DATA_COPY_OPERATION", "value": action.upper()},
             {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
+            {"name": "TO_ENVIRONMENT", "value": to_env},
         ]
         if not is_dump:
             env_vars.append({"name": "ECS_CLUSTER", "value": f"{self.app}-{env}"})
@@ -156,12 +161,12 @@ class DatabaseCopy:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def dump(self, env: str, vpc_name: str):
-        self._execute_operation(True, env, vpc_name)
+    def dump(self, env: str, vpc_name: str, to_env: str):
+        self._execute_operation(True, env, vpc_name, to_env)
 
     def load(self, env: str, vpc_name: str):
         if self.is_confirmed_ready_to_load(env):
-            self._execute_operation(False, env, vpc_name)
+            self._execute_operation(False, env, vpc_name, to_env=env)
 
     def copy(
         self,
@@ -176,7 +181,7 @@ class DatabaseCopy:
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
             self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
-        self.dump(from_env, from_vpc)
+        self.dump(from_env, from_vpc, to_env)
         self.load(to_env, to_vpc)
         if not no_maintenance_page:
             self.maintenance_page_provider.deactivate(self.app, to_env)
@@ -196,7 +201,9 @@ class DatabaseCopy:
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
         self.echo_fn(f"Tailing {log_group_name} logs", fg="yellow")
         session = self.application.environments[env].session
-        response = session.client("logs").start_live_tail(logGroupIdentifiers=[log_group_arn])
+        log_client = session.client("logs")
+        wait_for_log_group_to_exist(log_client, log_group_name)
+        response = log_client.start_live_tail(logGroupIdentifiers=[log_group_arn])
 
         stopped = False
         for data in response["responseStream"]:

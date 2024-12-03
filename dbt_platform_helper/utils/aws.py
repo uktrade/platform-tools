@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import urllib.parse
 from configparser import ConfigParser
 from pathlib import Path
@@ -15,6 +16,7 @@ from boto3 import Session
 from dbt_platform_helper.exceptions import AWSException
 from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.exceptions import ImageNotFoundError
+from dbt_platform_helper.exceptions import ResourceNotFoundException
 from dbt_platform_helper.exceptions import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required
 from dbt_platform_helper.utils.files import read_supported_versions_from_cache
@@ -555,3 +557,23 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, ech
             )
         except StopIteration:
             continue
+
+
+def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
+    current_attempts = 0
+    log_group_exists = False
+
+    while not log_group_exists and current_attempts < attempts:
+        current_attempts += 1
+
+        log_group_response = log_client.describe_log_groups(logGroupNamePrefix=log_group_name)
+        log_groups = log_group_response.get("logGroups", [])
+
+        for group in log_groups:
+            if group["logGroupName"] == log_group_name:
+                log_group_exists = True
+
+        time.sleep(1)
+
+    if not log_group_exists:
+        raise ResourceNotFoundException

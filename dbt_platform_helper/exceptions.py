@@ -79,3 +79,7 @@ class SecretNotFoundError(AWSException):
 
 class ECSAgentNotRunning(AWSException):
     pass
+
+
+class ResourceNotFoundException(AWSException):
+    pass
