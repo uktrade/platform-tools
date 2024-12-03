@@ -43,8 +43,8 @@ class Conduit:
         )
 
         self.echo_fn(f"Checking if a conduit task is already running for {addon_type}")
-        task_arn = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
-        if not task_arn:
+        task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
+        if not task_arns:
             self.echo_fn("Creating conduit task")
             self.create_addon_client_task_fn(
                 clients["iam"],
@@ -73,14 +73,14 @@ class Conduit:
                 access,
             )
 
-            task_arn = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
+            task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
 
         else:
             self.echo_fn("Conduit task already running")
 
         self.echo_fn(f"Checking if exec is available for conduit task...")
 
-        self.ecs_provider.ecs_exec_is_available(cluster_arn, task_arns=task_arn)
+        self.ecs_provider.ecs_exec_is_available(cluster_arn, task_arns)
 
         self.echo_fn("Connecting to conduit task")
         self.connect_to_addon_client_task_fn(
@@ -100,7 +100,7 @@ class Conduit:
 
         # TODO - remove
         self.application.environments[env].session.client("ssm")
-        ecs_client = self.application.environments[env].session.client("ecs")
+        self.application.environments[env].session.client("ecs")
 
         addon_type = self.secrets_provider.get_addon_type(addon_name)
         cluster_arn = self.ecs_provider.get_cluster_arn()

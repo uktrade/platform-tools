@@ -91,7 +91,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_arn, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
-    conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
+    conduit.ecs_provider.get_cluster_arn.assert_called_once_with()
 
     # TODO - will need fixing when the ECS object is instantiated, only expects two params now. addon_name, "parameter_name"
     conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
@@ -163,7 +163,7 @@ def test_conduit_with_task_already_running():
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_arn, task_name
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
-    conduit.ecs_provider.get_cluster_arn.assert_called_once_with(ecs_client)
+    conduit.ecs_provider.get_cluster_arn.assert_called_once_with()
     # Todo: Looks like we need to mock get_parameter_name()
     conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
         addon_name, "parameter_name"
@@ -202,23 +202,17 @@ def test_conduit_domain_when_no_connection_secret_exists():
     conduit_mocks = ConduitMocks(
         app_name,
         addon_type,
-        create_addon_client_task_fn=Mock(
-            side_effect=SecretNotFoundError(f"/copilot/{app_name}/{env}/secrets/{addon_name}")
-        ),
     )
-
-    conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = CreateTaskTimeoutError(
-        addon_name=addon_name,
-        application_name=app_name,
-        environment=env,
-    )
-
+    conduit_mocks.ecs_provider.get_ecs_task_arns.return_value = []
     conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
-    conduit_mocks.ecs_provider.create_addon_client_task.side_effect = SecretNotFoundError(f"/copilot/{app_name}/{env}/secrets/{addon_name}")
+    conduit_mocks.create_addon_client_task_fn.side_effect = SecretNotFoundError(
+        f"/copilot/{app_name}/{env}/secrets/{addon_name}"
+    )
     conduit = Conduit(**conduit_mocks.params())
 
     with pytest.raises(SecretNotFoundError):
         conduit.start(env, addon_name)
+
         conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
         conduit.ecs_provider.get_cluster_arn.assert_called_once_with()
         conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
