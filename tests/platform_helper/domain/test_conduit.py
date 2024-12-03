@@ -93,7 +93,6 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.ecs_provider.get_cluster_arn.assert_called_once_with()
 
-    # TODO - will need fixing when the ECS object is instantiated, only expects two params now. addon_name, "parameter_name"
     conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
         addon_name, "parameter_name"
     )
@@ -164,7 +163,6 @@ def test_conduit_with_task_already_running():
     )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.ecs_provider.get_cluster_arn.assert_called_once_with()
-    # Todo: Looks like we need to mock get_parameter_name()
     conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
         addon_name, "parameter_name"
     )
@@ -266,7 +264,6 @@ def test_conduit_domain_when_addon_type_is_invalid():
         conduit.ecs_provider.get_ecs_task_arns.assert_called_once_with(cluster_arn, task_name)
 
 
-# Todo: does this belong in the Secrets provider
 def test_start_with_addon_does_not_exist_raises_error():
     addon_name = "addon_doesnt_exist"
     conduit_mocks = ConduitMocks(app_name, addon_type)

@@ -93,7 +93,7 @@ class CloudFormation:
         )
 
         params = []
-        # TODO moto bug https://uktrade.atlassian.net/browse/DBTP-1582
+        # TODO Currently not covered by tests - see https://uktrade.atlassian.net/browse/DBTP-1582
         if "Parameters" in template_yml:
             for param in template_yml["Parameters"]:
                 params.append({"ParameterKey": param, "UsePreviousValue": True})

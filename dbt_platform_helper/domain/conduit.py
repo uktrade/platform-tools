@@ -39,7 +39,7 @@ class Conduit:
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
         addon_type, cluster_arn, parameter_name, task_name = self._get_addon_details(
-            env, addon_name, access
+            addon_name, access
         )
 
         self.echo_fn(f"Checking if a conduit task is already running for {addon_type}")
@@ -96,12 +96,7 @@ class Conduit:
             "secrets_manager": self.application.environments[env].session.client("secretsmanager"),
         }
 
-    def _get_addon_details(self, env, addon_name, access):
-
-        # TODO - remove
-        self.application.environments[env].session.client("ssm")
-        self.application.environments[env].session.client("ecs")
-
+    def _get_addon_details(self, addon_name, access):
         addon_type = self.secrets_provider.get_addon_type(addon_name)
         cluster_arn = self.ecs_provider.get_cluster_arn()
         parameter_name = self.secrets_provider.get_parameter_name(addon_type, addon_name, access)
