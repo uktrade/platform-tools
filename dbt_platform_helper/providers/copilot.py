@@ -5,7 +5,6 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -108,6 +107,19 @@ def create_postgres_admin_task(
     )
 
 
+def _temp_until_refactor_get_ecs_task_arns(ecs_client, cluster_arn: str, task_name: str):
+    tasks = ecs_client.list_tasks(
+        cluster=cluster_arn,
+        desiredStatus="RUNNING",
+        family=f"copilot-{task_name}",
+    )
+
+    if not tasks["taskArns"]:
+        return []
+
+    return tasks["taskArns"]
+
+
 def connect_to_addon_client_task(
     ecs_client,
     subprocess,
@@ -115,12 +127,13 @@ def connect_to_addon_client_task(
     env,
     cluster_arn,
     task_name,
-    get_ecs_task_arns_fn=ECS.get_ecs_task_arns,
+    get_ecs_task_arns_fn=_temp_until_refactor_get_ecs_task_arns,
 ):
     running = False
     tries = 0
     while tries < 15 and not running:
         tries += 1
+        # Todo: Use from ECS provider when we refactor this
         if get_ecs_task_arns_fn(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
@@ -141,12 +154,11 @@ def _normalise_secret_name(addon_name: str) -> str:
     return addon_name.replace("-", "_").upper()
 
 
-def _get_secrets_provider(application, env):
+def _get_secrets_provider(application: Application, env: str) -> Secrets:
     # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
-    secrets_provider: Secrets = Secrets(
+    return Secrets(
         application.environments[env].session.client("ssm"),
         application.environments[env].session.client("secretsmanager"),
         application.name,
         env,
     )
-    return secrets_provider
