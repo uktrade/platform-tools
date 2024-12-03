@@ -107,12 +107,15 @@ class Conduit:
         }
 
     def _get_addon_details(self, env, addon_name, access):
+
+        # TODO - remove
         ssm_client = self.application.environments[env].session.client("ssm")
         ecs_client = self.application.environments[env].session.client("ecs")
 
         addon_type = self.secrets_provider.get_addon_type(addon_name)
         cluster_arn = self.get_cluster_arn_fn(ecs_client, self.application.name, env)
         parameter_name = self.secrets_provider.get_parameter_name(addon_type, addon_name, access)
+        print(parameter_name)
         task_name = self.get_or_create_task_name_fn(
             ssm_client, self.application.name, env, addon_name, parameter_name
         )

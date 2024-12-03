@@ -92,7 +92,15 @@ class ConduitMocks:
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access):
-    conduit_mocks = ConduitMocks(app_name, addon_type)
+    secrets_provider_mock = Mock()
+    secrets_provider_mock.get_parameter_name.return_value = "parameter_name"
+    secrets_provider_mock.get_addon_type.return_value = addon_type
+    conduit_mocks = ConduitMocks(app_name, addon_type, secrets_provider=secrets_provider_mock)
+
+    # TODO - update mocks as below for secrets provider
+    # conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
+    # conduit_mocks.secrets_provider.get_addon_type.return_value = "postgres"
+
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
@@ -108,10 +116,10 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.connect_to_addon_client_task_fn.assert_called_once_with(
         ecs_client, conduit.subprocess_fn, app_name, env, cluster_name, task_name
     )
-    conduit.secrets_provider.get_addon_type.assert_called_once_with(
-        ssm_client, app_name, env, addon_name
-    )
+    conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.get_cluster_arn_fn.assert_called_once_with(ecs_client, app_name, env)
+
+    # TODO - will need fixing when the ECS object is instantiated, only expects two params now. addon_name, "parameter_name"
     conduit.get_or_create_task_name_fn.assert_called_once_with(
         ssm_client, app_name, env, addon_name, "parameter_name"
     )
@@ -166,6 +174,10 @@ def test_conduit_with_task_already_running():
             return_value=["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
         ),
     )
+
+    conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
+    conduit_mocks.secrets_provider.get_addon_type.return_value = "postgres"
+
     conduit = Conduit(**conduit_mocks.params())
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
@@ -273,6 +285,8 @@ def test_conduit_domain_when_client_task_fails_to_start():
 def test_conduit_domain_when_addon_type_is_invalid():
     addon_name = "invalid_addon"
     addon_type = "invalid_addon_type"
+
+    # TODO - update mocks as below.
     secrets_provider_mock = Mock()
     secrets_provider_mock.get_addon_type.side_effect = InvalidAddonTypeError(addon_type)
     conduit_mocks = ConduitMocks(
