@@ -117,13 +117,8 @@ class Conduit:
         parameter_name,
         access,
     ):
-        self.cloudformation_provider.add_stack_delete_policy_to_task_role(
-            cloudformation_client, iam_client, task_name
-        )
+        self.cloudformation_provider.add_stack_delete_policy_to_task_role(task_name)
         stack_name = self.cloudformation_provider.update_conduit_stack_resources(
-            cloudformation_client,
-            iam_client,
-            ssm_client,
             app_name,
             env,
             addon_type,
@@ -134,5 +129,5 @@ class Conduit:
         )
         self.echo_fn("Waiting for conduit task update to complete...")
         self.cloudformation_provider.wait_for_cloudformation_to_reach_status(
-            cloudformation_client, "stack_update_complete", stack_name
+            "stack_update_complete", stack_name
         )
