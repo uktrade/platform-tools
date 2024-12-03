@@ -2,6 +2,7 @@ import click
 
 from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
@@ -36,7 +37,16 @@ def conduit(addon_name: str, app: str, env: str, access: str):
             application.name,
             env,
         )
-        Conduit(application, secrets_provider).start(env, addon_name, access)
+        cloudformation_provider: CloudFormation = CloudFormation(
+            # Todo: Maybe just pass in the application and the environment?
+            application.environments[env].session.client("cloudformation"),
+            application.environments[env].session.client("iam"),
+            application.environments[env].session.client("ssm"),
+        )
+
+        Conduit(application, secrets_provider, cloudformation_provider).start(
+            env, addon_name, access
+        )
     except AWSException as err:
         click.secho(str(err), fg="red")
         raise click.Abort

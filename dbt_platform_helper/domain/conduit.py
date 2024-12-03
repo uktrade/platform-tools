@@ -17,6 +17,7 @@ class Conduit:
         self,
         application: Application,
         secrets_provider: Secrets,
+        cloudformation_provider: CloudFormation,
         echo_fn: Callable[[str], str] = click.secho,
         subprocess_fn: subprocess = subprocess,
         get_ecs_task_arns_fn=ECS.get_ecs_task_arns,
@@ -26,13 +27,14 @@ class Conduit:
         ecs_exec_is_available_fn=ECS.ecs_exec_is_available,
         get_cluster_arn_fn=ECS.get_cluster_arn,
         get_or_create_task_name_fn=ECS.get_or_create_task_name,
-        add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
-        update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,
-        wait_for_cloudformation_to_reach_status_fn=CloudFormation.wait_for_cloudformation_to_reach_status,
+        # add_stack_delete_policy_to_task_role_fn=CloudFormation.add_stack_delete_policy_to_task_role,
+        # update_conduit_stack_resources_fn=CloudFormation.update_conduit_stack_resources,
+        # wait_for_cloudformation_to_reach_status_fn=CloudFormation.wait_for_cloudformation_to_reach_status,
     ):
 
         self.application = application
         self.secrets_provider = secrets_provider
+        self.cloudformation_provider = cloudformation_provider
         self.subprocess_fn = subprocess_fn
         self.echo_fn = echo_fn
         self.get_ecs_task_arns_fn = get_ecs_task_arns_fn
@@ -42,9 +44,6 @@ class Conduit:
         self.ecs_exec_is_available_fn = ecs_exec_is_available_fn
         self.get_cluster_arn_fn = get_cluster_arn_fn
         self.get_or_create_task_name_fn = get_or_create_task_name_fn
-        self.add_stack_delete_policy_to_task_role_fn = add_stack_delete_policy_to_task_role_fn
-        self.update_conduit_stack_resources_fn = update_conduit_stack_resources_fn
-        self.wait_for_cloudformation_to_reach_status_fn = wait_for_cloudformation_to_reach_status_fn
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
