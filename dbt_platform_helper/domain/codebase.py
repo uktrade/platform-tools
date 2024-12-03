@@ -39,7 +39,7 @@ class Codebase:
         list_latest_images: Callable[[str], str] = list_latest_images,
         start_build_extraction: Callable[[str], str] = start_build_extraction,
         check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
-        subprocess: Callable[[str], str] = subprocess.run,
+        run_subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.input = input
         self.echo = echo
@@ -52,7 +52,7 @@ class Codebase:
         self.list_latest_images = list_latest_images
         self.start_build_extraction = start_build_extraction
         self.check_if_commit_exists = check_if_commit_exists
-        self.subprocess = subprocess
+        self.run_subprocess = run_subprocess
 
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
@@ -60,7 +60,9 @@ class Codebase:
         templates = setup_templates()
 
         repository = (
-            self.subprocess(["git", "remote", "get-url", "origin"], capture_output=True, text=True)
+            self.run_subprocess(
+                ["git", "remote", "get-url", "origin"], capture_output=True, text=True
+            )
             .stdout.split("/")[-1]
             .strip()
             .removesuffix(".git")
