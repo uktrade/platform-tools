@@ -50,8 +50,6 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
     )
 
     mock_update_parameter.assert_called_once_with(
-        ssm_client,
-        secrets_manager_client,
         "POSTGRES_SECRET_NAME_READ_ONLY_USER",
         "master-secret-arn",
     )

@@ -61,20 +61,12 @@ def create_addon_client_task(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
 
-    # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
-    secrets_provider: Secrets = Secrets(
-        application.environments[env].session.client("ssm"),
-        application.environments[env].session.client("secretsmanager"),
-        application.name,
-        env,
-    )
-
     subprocess.call(
         f"copilot task run --app {application.name} --env {env} "
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
-        f"--secrets CONNECTION_SECRET={secrets_provider.get_connection_secret_arn(secret_name)} "
+        f"--secrets CONNECTION_SECRET={_get_secrets_provider(application, env).get_connection_secret_arn(secret_name)} "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -100,8 +92,8 @@ def create_postgres_admin_task(
         "Parameter"
     ]["Value"]
     connection_string = json.dumps(
-        Secrets.get_postgres_connection_data_updated_with_master_secret(
-            ssm_client, secrets_manager_client, read_only_secret_name, master_secret_arn
+        _get_secrets_provider(app, env).get_postgres_connection_data_updated_with_master_secret(
+            read_only_secret_name, master_secret_arn
         )
     )
 
@@ -147,3 +139,14 @@ def connect_to_addon_client_task(
 
 def _normalise_secret_name(addon_name: str) -> str:
     return addon_name.replace("-", "_").upper()
+
+
+def _get_secrets_provider(application, env):
+    # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
+    secrets_provider: Secrets = Secrets(
+        application.environments[env].session.client("ssm"),
+        application.environments[env].session.client("secretsmanager"),
+        application.name,
+        env,
+    )
+    return secrets_provider

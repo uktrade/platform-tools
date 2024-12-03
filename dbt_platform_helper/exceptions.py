@@ -134,7 +134,6 @@ class ApplicationEnvironmentNotFoundError(ApplicationException):
 
 
 class SecretNotFoundError(AWSException):
-    # application_name: str, environment: str,
     def __init__(self, secret_name: str):
         super().__init__(f"""No secret called "{secret_name}".""")
 
