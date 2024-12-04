@@ -46,7 +46,6 @@ class Conduit:
             self.create_addon_client_task(
                 clients["iam"],
                 clients["ssm"],
-                clients["secrets_manager"],
                 self.subprocess,
                 self.application,
                 env,
@@ -86,7 +85,6 @@ class Conduit:
             "ecs": self.application.environments[env].session.client("ecs"),
             "iam": self.application.environments[env].session.client("iam"),
             "ssm": self.application.environments[env].session.client("ssm"),
-            "secrets_manager": self.application.environments[env].session.client("secretsmanager"),
         }
 
     def _get_addon_details(self, addon_name, access):
