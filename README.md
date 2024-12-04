@@ -69,7 +69,7 @@ Each command has an associated Domain.
 
 There should be no business logic within the command as this is implelemented in the Domain layer.
 
-CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the Domain code along with any dependencies.
+CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the Domain along with any dependencies.
 
 #### Domains
 
