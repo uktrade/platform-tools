@@ -48,17 +48,17 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 Commands (UI) -> Domains -> Providers
 
-Code written for `platform-helper` should adhere to the following architecture, Shown below.
+Code written for `platform-helper` should adhere to the following architecture, shown below.
 
 ![platform-helper architecture](doc/platform-helper-architecture.png)
 
 #### Commands
 
-This is the (essentially) UI level of platform-helper
+This is the (essentially) UI level of `platform-helper`
 
 We try to follow a noun/domain verb/action pattern, `platform-helper thing action`.
 
-E.g. `codebase` has the following commands (all to do with codebase):
+E.g. `codebase` has the following commands (all to do with the codebase Domain):
 
 - `build`
 - `deploy`
@@ -67,7 +67,7 @@ E.g. `codebase` has the following commands (all to do with codebase):
 
 Each command has an associated `domain`. 
 
-There should be no business logic within the command as this is extracted to the domain layer.
+There should be no business logic within the command as this is implelemented in the Domain layer.
 
 CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the domain code along with any dependencies.
 
@@ -79,7 +79,7 @@ Each domain is a class.
 
 Any logged information (`click.secho`) from the `provider` level should live within the `domain` level.
 
-Any common or repeatable code should not be defined within the `domain` and should instead be extracted to a suitable `provider`.
+Any common/reusable elements should be implemented in a Provider.
 
 #### Providers
 
@@ -90,6 +90,10 @@ E.g. I have a method that lists *thing* from the *thing-service* AWS using a bot
 This method does not re-use any code within the domain so it should go into the *thing-service* provider as the method can be re-used for similar resources.
 
 ### Testing
+
+#### Testing approach
+
+See the following [Confluence](https://uktrade.atlassian.net/wiki/spaces/DBTP/pages/4325376119/Testing+approach) page the `platform-tools` testing approach
 
 #### Requirements
 
