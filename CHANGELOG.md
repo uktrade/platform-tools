@@ -8,7 +8,7 @@
 * DBTP-1299 - Cross account database copy ([#657](https://github.com/uktrade/platform-tools/issues/657)) ([7d35599](https://github.com/uktrade/platform-tools/commit/7d35599533b55f15fb08801c50ce538a8a32b847))
 
 
-### Reverts
+### Refactor
 
 * Improving provider structure and exception handling" ([#670](https://github.com/uktrade/platform-tools/issues/670)) ([331e8b8](https://github.com/uktrade/platform-tools/commit/331e8b89d60fec4e29a9ea4473ffa44cba8e92c7))
 
