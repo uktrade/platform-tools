@@ -73,7 +73,7 @@ CLI arguments for a command are pulled in via [click](https://click.palletsproje
 
 #### Domains
 
-Domains are where the business logic for a given command lives.
+Domains are where the business logic for a given Command lives.
 
 Each Domain is a class.
 
