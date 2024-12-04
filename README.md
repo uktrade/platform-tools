@@ -83,7 +83,7 @@ Any common/reusable elements should be implemented in a Provider.
 
 #### Providers
 
-Providers are groups of similar logic that are linked by the resource/tool/thing they use rather than the result of their what actions is.
+Providers are groups of similar logic that are linked by the resource/tool/thing they use rather than the result of what their actions is.
 
 E.g. I have a method that lists *thing* from the *thing-service* AWS using a boto3 client.
 
