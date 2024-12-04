@@ -13,7 +13,6 @@ from dbt_platform_helper.utils.messages import abort_with_error
 def create_addon_client_task(
     iam_client,
     ssm_client,
-    secrets_manager_client,
     subprocess,
     application: Application,
     env: str,
@@ -32,7 +31,6 @@ def create_addon_client_task(
         elif access == "admin":
             create_postgres_admin_task(
                 ssm_client,
-                secrets_manager_client,
                 subprocess,
                 application,
                 addon_name,
@@ -74,7 +72,6 @@ def create_addon_client_task(
 
 def create_postgres_admin_task(
     ssm_client,
-    secrets_manager_client,
     subprocess,
     app: Application,
     addon_name: str,

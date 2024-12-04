@@ -36,7 +36,6 @@ class ConduitMocks:
         self.ecs_provider = kwargs.get("ecs_provider", Mock())
         self.connect_to_addon_client_task = kwargs.get("connect_to_addon_client_task", Mock())
         self.create_addon_client_task = kwargs.get("create_addon_client_task", Mock())
-        self.create_postgres_admin_task = kwargs.get("create_postgres_admin_task", Mock())
         self.echo = kwargs.get("echo", Mock())
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
 
@@ -48,7 +47,6 @@ class ConduitMocks:
             "ecs_provider": self.ecs_provider,
             "connect_to_addon_client_task": self.connect_to_addon_client_task,
             "create_addon_client_task": self.create_addon_client_task,
-            "create_postgres_admin_task": self.create_postgres_admin_task,
             "echo": self.echo,
             "subprocess": self.subprocess,
         }
