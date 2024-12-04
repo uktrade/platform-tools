@@ -77,7 +77,6 @@ def test_conduit(app_name, addon_type, addon_name, access):
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
     iam_client = conduit.application.environments[env].session.client("iam")
-    secretsmanager_client = conduit.application.environments[env].session.client("secretsmanager")
 
     conduit.start(env, addon_name, access)
 
@@ -110,7 +109,6 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.create_addon_client_task.assert_called_once_with(
         iam_client,
         ssm_client,
-        secretsmanager_client,
         conduit.subprocess,
         conduit.application,
         env,
