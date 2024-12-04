@@ -65,29 +65,29 @@ E.g. `codebase` has the following commands (all to do with the codebase Domain):
 - `list`
 - `prepare`
 
-Each command has an associated `domain`. 
+Each command has an associated Domain. 
 
 There should be no business logic within the command as this is implelemented in the Domain layer.
 
-CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the domain code along with any dependencies.
+CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the Domain code along with any dependencies.
 
 #### Domains
 
 Domains are where the business logic for a given command lives.
 
-Each domain is a class.
+Each Domain is a class.
 
-Any logged information (`click.secho`) from the `provider` level should live within the `domain` level.
+Any logged information (`click.secho`) from the Provider level should live within the Domain level.
 
 Any common/reusable elements should be implemented in a Provider.
 
 #### Providers
 
-Providers are groups of similar logic that are linked by the resource/tool/thing they use and not by what the result of there actions is.
+Providers are groups of similar logic that are linked by the resource/tool/thing they use rather than the result of their what actions is.
 
 E.g. I have a method that lists *thing* from the *thing-service* AWS using a boto3 client.
 
-This method does not re-use any code within the domain so it should go into the *thing-service* provider as the method can be re-used for similar resources.
+This method is not specific to the Domain so it should go into the *thing-service* Provider.
 
 ### Testing
 
