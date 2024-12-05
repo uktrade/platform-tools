@@ -10,9 +10,9 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.legacy_exceptions import IncompatibleMajorVersion
-from dbt_platform_helper.legacy_exceptions import IncompatibleMinorVersion
-from dbt_platform_helper.legacy_exceptions import ValidationException
+from dbt_platform_helper.providers.validation import IncompatibleMajorVersion
+from dbt_platform_helper.providers.validation import IncompatibleMinorVersion
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
 from dbt_platform_helper.utils.versioning import (

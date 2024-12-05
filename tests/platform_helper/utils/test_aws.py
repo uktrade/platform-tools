@@ -11,9 +11,9 @@ import pytest
 from moto import mock_aws
 
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.legacy_exceptions import ValidationException
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import ResourceNotFoundException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import check_codebase_exists

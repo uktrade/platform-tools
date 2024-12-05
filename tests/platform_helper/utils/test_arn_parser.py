@@ -1,7 +1,7 @@
 import pytest
 from parameterized import parameterized
 
-from dbt_platform_helper.legacy_exceptions import ValidationException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.arn_parser import ARN
 
 

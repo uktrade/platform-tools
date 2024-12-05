@@ -3,27 +3,6 @@ from dbt_platform_helper.platform_exception import PlatformException
 # These exceptions will be moved during further refactoring work
 
 
-# Todo: Move as part of the validation provider refactor
-class ValidationException(Exception):
-    pass
-
-
-# Todo: Move as part of the validation provider refactor
-class IncompatibleMajorVersion(ValidationException):
-    def __init__(self, app_version: str, check_version: str):
-        super().__init__()
-        self.app_version = app_version
-        self.check_version = check_version
-
-
-# Todo: Move as part of the validation provider refactor
-class IncompatibleMinorVersion(ValidationException):
-    def __init__(self, app_version: str, check_version: str):
-        super().__init__()
-        self.app_version = app_version
-        self.check_version = check_version
-
-
 # Todo: Move when ???
 class CopilotCodebaseNotFoundError(PlatformException):
     def __init__(self, codebase: str):
