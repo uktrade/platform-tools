@@ -2,33 +2,33 @@ import os
 
 import pytest
 
-from dbt_platform_helper.exceptions import AddonNotFoundError
-from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
-from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.exceptions import ECSAgentNotRunning
-from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import NoClusterError
-from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
-from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
-from dbt_platform_helper.exceptions import ParameterNotFoundError
-from dbt_platform_helper.exceptions import SecretNotFoundError
+from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
+from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
+from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
+from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
+from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.secrets import AddonNotFoundException
+from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigException
+from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
+from dbt_platform_helper.providers.secrets import ParameterNotFoundException
+from dbt_platform_helper.providers.secrets import SecretNotFoundException
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
 
 
 @pytest.mark.parametrize(
     "exception, exception_params, expected_message",
     [
         (
-            AddonNotFoundError,
+            AddonNotFoundException,
             {"addon_name": "test-addon"},
             """Addon "test-addon" does not exist.""",
         ),
         (
-            AddonTypeMissingFromConfigError,
+            AddonTypeMissingFromConfigException,
             {"addon_name": "test-addon"},
             """The configuration for the addon test-addon, is misconfigured and missing the addon type.""",
         ),
@@ -38,22 +38,22 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             """Your deployment for test-codebase was not triggered.""",
         ),
         (
-            ApplicationEnvironmentNotFoundError,
+            ApplicationEnvironmentNotFoundException,
             {"environment": "development"},
             """The environment "development" either does not exist or has not been deployed.""",
         ),
         (
-            ApplicationNotFoundError,
+            ApplicationNotFoundException,
             {"application_name": "test-application"},
             """The account "foo" does not contain the application "test-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
         ),
         (
-            CopilotCodebaseNotFoundError,
+            CopilotCodebaseNotFoundException,
             {"codebase": "test-codebase-exists"},
             """The codebase "test-codebase-exists" either does not exist or has not been deployed.""",
         ),
         (
-            CreateTaskTimeoutError,
+            CreateTaskTimeoutException,
             {
                 "addon_name": "test-addon",
                 "application_name": "test-application",
@@ -62,42 +62,42 @@ from dbt_platform_helper.exceptions import SecretNotFoundError
             """Client (test-addon) ECS task has failed to start for "test-application" in "environment" environment.""",
         ),
         (
-            InvalidAddonTypeError,
+            InvalidAddonTypeException,
             {"addon_type": "test-addon-type"},
             """Addon type "test-addon-type" is not supported, we support: opensearch, postgres, redis.""",
         ),
         (
-            ImageNotFoundError,
+            ImageNotFoundException,
             {"commit": "test-commit-hash"},
             """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
         ),
         (
-            NoCopilotCodebasesFoundError,
-            {"application_name": "test-application"},
-            """No codebases found for application "test-application".""",
+            LogGroupNotFoundException,
+            {"log_group_name": "test-log-group"},
+            """No log group called "test-log-group".""",
         ),
         (
-            NoClusterError,
+            NoClusterException,
             {"application_name": "test-application", "environment": "environment"},
             """No ECS cluster found for "test-application" in "environment" environment.""",
         ),
         (
-            NotInCodeBaseRepositoryError,
+            NotInCodeBaseRepositoryException,
             {},
             """You are in the deploy repository; make sure you are in the application codebase repository.""",
         ),
         (
-            ParameterNotFoundError,
+            ParameterNotFoundException,
             {"application_name": "test-application", "environment": "environment"},
             """No parameter called "/copilot/applications/test-application/environments/environment/addons". Try deploying the "test-application" "environment" environment.""",
         ),
         (
-            SecretNotFoundError,
+            SecretNotFoundException,
             {"secret_name": "test-secret"},
             """No secret called "test-secret".""",
         ),
         (
-            ECSAgentNotRunning,
+            ECSAgentNotRunningException,
             {},
             """ECS exec agent never reached "RUNNING" status""",
         ),

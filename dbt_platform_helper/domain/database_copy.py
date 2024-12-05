@@ -8,9 +8,9 @@ from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
@@ -58,7 +58,7 @@ class DatabaseCopy:
 
         try:
             self.application = load_application(self.app)
-        except ApplicationNotFoundError:
+        except ApplicationNotFoundException:
             abort(f"No such application '{app}'.")
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, to_env: str):

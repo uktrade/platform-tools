@@ -6,9 +6,9 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -294,7 +294,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
 def test_database_copy_initialization_handles_app_name_errors():
     mocks = DataCopyMocks()
-    mocks.load_application = Mock(side_effect=ApplicationNotFoundError("bad-app"))
+    mocks.load_application = Mock(side_effect=ApplicationNotFoundException("bad-app"))
 
     with pytest.raises(SystemExit) as exc:
         DatabaseCopy("bad-app", "test-db", **mocks.params())

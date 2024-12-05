@@ -9,10 +9,9 @@ import requests
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.exceptions import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationException
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
@@ -68,7 +67,7 @@ class Codebase:
             .removesuffix(".git")
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            raise NotInCodeBaseRepositoryError()
+            raise NotInCodeBaseRepositoryException()
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)
@@ -143,7 +142,7 @@ class Codebase:
 
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundError(env)
+            raise ApplicationEnvironmentNotFoundException(env)
 
         self.check_codebase_exists(session, application, codebase)
 
@@ -220,3 +219,22 @@ class Codebase:
             build_arn = self.start_build_extraction(codebuild_client, build_options)
             return get_build_url_from_arn(build_arn)
         return None
+
+
+class ApplicationDeploymentNotTriggered(PlatformException):
+    def __init__(self, codebase: str):
+        super().__init__(f"""Your deployment for {codebase} was not triggered.""")
+
+
+class ApplicationEnvironmentNotFoundException(ApplicationException):
+    def __init__(self, environment: str):
+        super().__init__(
+            f"""The environment "{environment}" either does not exist or has not been deployed."""
+        )
+
+
+class NotInCodeBaseRepositoryException(PlatformException):
+    def __init__(self):
+        super().__init__(
+            "You are in the deploy repository; make sure you are in the application codebase repository.",
+        )

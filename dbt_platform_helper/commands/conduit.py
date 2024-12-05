@@ -1,7 +1,7 @@
 import click
 
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
@@ -53,6 +53,6 @@ def conduit(addon_name: str, app: str, env: str, access: str):
         Conduit(application, secrets_provider, cloudformation_provider, ecs_provider).start(
             env, addon_name, access
         )
-    except AWSException as err:
+    except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
