@@ -1,4 +1,3 @@
-from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.platform_exception import PlatformException
 
 # These exceptions will be moved during further refactoring work
@@ -40,14 +39,6 @@ class CreateTaskTimeoutError(AWSException):
 class AddonNotFoundError(AWSException):
     def __init__(self, addon_name: str):
         super().__init__(f"""Addon "{addon_name}" does not exist.""")
-
-
-class InvalidAddonTypeError(AWSException):
-    def __init__(self, addon_type):
-        self.addon_type = addon_type
-        super().__init__(
-            f"""Addon type "{self.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}."""
-        )
 
 
 # Todo: Move when refactoring utils/aws.py to provider(s)

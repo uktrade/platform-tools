@@ -4,7 +4,6 @@ import urllib
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import AWSException
-from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
 
 
 class Secrets:
@@ -99,4 +98,12 @@ class AddonTypeMissingFromConfigError(AWSException):
     def __init__(self, addon_name: str):
         super().__init__(
             f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
+        )
+
+
+class InvalidAddonTypeError(AWSException):
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
+        super().__init__(
+            f"""Addon type "{self.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}."""
         )

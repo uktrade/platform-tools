@@ -5,8 +5,8 @@ import pytest
 from moto import mock_aws
 
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
-from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
 from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigError
+from dbt_platform_helper.providers.secrets import InvalidAddonTypeError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
 from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.providers.secrets import Secrets
