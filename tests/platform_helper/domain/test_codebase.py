@@ -13,10 +13,10 @@ import boto3
 import pytest
 import requests
 
+from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.legacy_exceptions import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.legacy_exceptions import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.legacy_exceptions import ImageNotFoundError

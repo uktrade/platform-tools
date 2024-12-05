@@ -10,7 +10,7 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.legacy_exceptions import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.legacy_exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.legacy_exceptions import ApplicationException
 from dbt_platform_helper.legacy_exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import load_application
@@ -220,3 +220,10 @@ class Codebase:
             build_arn = self.start_build_extraction(codebuild_client, build_options)
             return get_build_url_from_arn(build_arn)
         return None
+
+
+class ApplicationEnvironmentNotFoundError(ApplicationException):
+    def __init__(self, environment: str):
+        super().__init__(
+            f"""The environment "{environment}" either does not exist or has not been deployed."""
+        )

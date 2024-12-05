@@ -2,10 +2,10 @@ import os
 
 import pytest
 
+from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.legacy_exceptions import ApplicationDeploymentNotTriggered
-from dbt_platform_helper.legacy_exceptions import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.legacy_exceptions import CreateTaskTimeoutError

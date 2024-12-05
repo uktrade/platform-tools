@@ -101,13 +101,6 @@ class ApplicationNotFoundError(ApplicationException):
         )
 
 
-class ApplicationEnvironmentNotFoundError(ApplicationException):
-    def __init__(self, environment: str):
-        super().__init__(
-            f"""The environment "{environment}" either does not exist or has not been deployed."""
-        )
-
-
 # Todo: Move when refactoring utils/aws.py to provider(s)
 class ResourceNotFoundException(AWSException):
     pass
