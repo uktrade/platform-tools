@@ -2,7 +2,6 @@ import json
 import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import AWSException
 
 
@@ -107,3 +106,8 @@ class InvalidAddonTypeError(AWSException):
         super().__init__(
             f"""Addon type "{self.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}."""
         )
+
+
+class AddonNotFoundError(AWSException):
+    def __init__(self, addon_name: str):
+        super().__init__(f"""Addon "{addon_name}" does not exist.""")

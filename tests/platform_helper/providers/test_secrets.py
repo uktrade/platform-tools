@@ -4,7 +4,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
+from dbt_platform_helper.providers.secrets import AddonNotFoundError
 from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigError
 from dbt_platform_helper.providers.secrets import InvalidAddonTypeError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError

@@ -36,11 +36,6 @@ class CreateTaskTimeoutError(AWSException):
         )
 
 
-class AddonNotFoundError(AWSException):
-    def __init__(self, addon_name: str):
-        super().__init__(f"""Addon "{addon_name}" does not exist.""")
-
-
 # Todo: Move when refactoring utils/aws.py to provider(s)
 class CopilotCodebaseNotFoundError(PlatformException):
     def __init__(self, codebase: str):
