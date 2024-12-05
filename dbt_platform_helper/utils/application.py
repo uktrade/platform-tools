@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from pathlib import Path
 from typing import Dict
@@ -8,7 +9,7 @@ import yaml
 from boto3 import Session
 from yaml.parser import ParserError
 
-from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_ssm_secrets
@@ -135,3 +136,14 @@ def get_application_name():
         abort_with_error("Cannot get application name. No copilot/.workspace file found")
 
     return app_name
+
+
+class ApplicationException(PlatformException):
+    pass
+
+
+class ApplicationNotFoundError(ApplicationException):
+    def __init__(self, application_name: str):
+        super().__init__(
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        )

@@ -1,5 +1,3 @@
-import os
-
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.platform_exception import PlatformException
 
@@ -7,10 +5,6 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class AWSException(PlatformException):
-    pass
-
-
-class ApplicationException(PlatformException):
     pass
 
 
@@ -86,18 +80,6 @@ class ImageNotFoundError(PlatformException):
     def __init__(self, commit: str):
         super().__init__(
             f"""The commit hash "{commit}" has not been built into an image, try the `platform-helper codebase build` command first."""
-        )
-
-
-class ApplicationDeploymentNotTriggered(PlatformException):
-    def __init__(self, codebase: str):
-        super().__init__(f"""Your deployment for {codebase} was not triggered.""")
-
-
-class ApplicationNotFoundError(ApplicationException):
-    def __init__(self, application_name: str):
-        super().__init__(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
         )
 
 
