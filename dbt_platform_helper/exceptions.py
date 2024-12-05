@@ -19,20 +19,6 @@ class ApplicationException(PlatformException):
     pass
 
 
-class CloudFormationException(AWSException):
-    def __init__(self, stack_name: str, current_status: str):
-        super().__init__(
-            f"The CloudFormation stack '{stack_name}' is not in a good state: {current_status}"
-        )
-
-
-class CommitNotFoundError:
-    def __init__(self, commit: str):
-        super().__init__(
-            f"""The commit hash "{commit}" either does not exist or you need to run `git fetch`."""
-        )
-
-
 class IncompatibleMajorVersion(ValidationException):
     def __init__(self, app_version: str, check_version: str):
         super().__init__()

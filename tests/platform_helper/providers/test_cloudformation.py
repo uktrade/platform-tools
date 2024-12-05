@@ -8,8 +8,8 @@ from botocore.exceptions import WaiterError
 from cfn_tools import load_yaml
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import CloudFormationException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
+from dbt_platform_helper.providers.cloudformation import CloudFormationException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
