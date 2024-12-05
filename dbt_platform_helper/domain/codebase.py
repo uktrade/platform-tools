@@ -221,16 +221,16 @@ class Codebase:
         return None
 
 
+class ApplicationDeploymentNotTriggered(PlatformException):
+    def __init__(self, codebase: str):
+        super().__init__(f"""Your deployment for {codebase} was not triggered.""")
+
+
 class ApplicationEnvironmentNotFoundError(ApplicationException):
     def __init__(self, environment: str):
         super().__init__(
             f"""The environment "{environment}" either does not exist or has not been deployed."""
         )
-
-
-class ApplicationDeploymentNotTriggered(PlatformException):
-    def __init__(self, codebase: str):
-        super().__init__(f"""Your deployment for {codebase} was not triggered.""")
 
 
 class NotInCodeBaseRepositoryError(PlatformException):

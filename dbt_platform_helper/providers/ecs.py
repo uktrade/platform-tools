@@ -86,13 +86,13 @@ class ECS:
             raise ECSAgentNotRunning
 
 
+class ECSAgentNotRunning(AWSException):
+    def __init__(self):
+        super().__init__("""ECS exec agent never reached "RUNNING" status""")
+
+
 class NoClusterError(AWSException):
     def __init__(self, application_name: str, environment: str):
         super().__init__(
             f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""
         )
-
-
-class ECSAgentNotRunning(AWSException):
-    def __init__(self):
-        super().__init__("""ECS exec agent never reached "RUNNING" status""")

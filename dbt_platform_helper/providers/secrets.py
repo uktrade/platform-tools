@@ -81,16 +81,9 @@ class Secrets:
         return addon_name.replace("-", "_").upper()
 
 
-class ParameterNotFoundError(AWSException):
-    def __init__(self, application_name: str, environment: str):
-        super().__init__(
-            f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
-        )
-
-
-class SecretNotFoundError(AWSException):
-    def __init__(self, secret_name: str):
-        super().__init__(f"""No secret called "{secret_name}".""")
+class AddonNotFoundError(AWSException):
+    def __init__(self, addon_name: str):
+        super().__init__(f"""Addon "{addon_name}" does not exist.""")
 
 
 class AddonTypeMissingFromConfigError(AWSException):
@@ -108,6 +101,13 @@ class InvalidAddonTypeError(AWSException):
         )
 
 
-class AddonNotFoundError(AWSException):
-    def __init__(self, addon_name: str):
-        super().__init__(f"""Addon "{addon_name}" does not exist.""")
+class ParameterNotFoundError(AWSException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
+        )
+
+
+class SecretNotFoundError(AWSException):
+    def __init__(self, secret_name: str):
+        super().__init__(f"""No secret called "{secret_name}".""")
