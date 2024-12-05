@@ -13,8 +13,8 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.providers.aws import ImageNotFoundError
 from dbt_platform_helper.providers.aws import ResourceNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
@@ -488,8 +488,10 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+# Todo: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
+        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
         ssm_client = session.client("ssm")
         json.loads(
             ssm_client.get_parameter(

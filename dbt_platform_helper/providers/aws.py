@@ -21,3 +21,11 @@ class ImageNotFoundError(AWSException):
 
 class ResourceNotFoundException(AWSException):
     pass
+
+
+# Todo: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py
+class CopilotCodebaseNotFoundError(PlatformException):
+    def __init__(self, codebase: str):
+        super().__init__(
+            f"""The codebase "{codebase}" either does not exist or has not been deployed."""
+        )

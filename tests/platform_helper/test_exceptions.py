@@ -5,7 +5,7 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
-from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutError
 from dbt_platform_helper.providers.aws import ImageNotFoundError
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
