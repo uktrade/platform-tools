@@ -64,18 +64,13 @@ class CopilotCodebaseNotFoundError(PlatformException):
         )
 
 
-class NotInCodeBaseRepositoryError(PlatformException):
-    def __init__(self):
-        super().__init__(
-            "You are in the deploy repository; make sure you are in the application codebase repository.",
-        )
-
-
+# Todo: No longer in use, but referenced in th tests. Investigate.
 class NoCopilotCodebasesFoundError(PlatformException):
     def __init__(self, application_name: str):
         super().__init__(f"""No codebases found for application "{application_name}".""")
 
 
+# Todo: Move when refactoring utils/aws.py to provider(s)
 class ImageNotFoundError(PlatformException):
     def __init__(self, commit: str):
         super().__init__(

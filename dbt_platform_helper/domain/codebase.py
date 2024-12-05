@@ -9,7 +9,6 @@ import requests
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.legacy_exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationException
@@ -232,3 +231,10 @@ class ApplicationEnvironmentNotFoundError(ApplicationException):
 class ApplicationDeploymentNotTriggered(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(f"""Your deployment for {codebase} was not triggered.""")
+
+
+class NotInCodeBaseRepositoryError(PlatformException):
+    def __init__(self):
+        super().__init__(
+            "You are in the deploy repository; make sure you are in the application codebase repository.",
+        )
