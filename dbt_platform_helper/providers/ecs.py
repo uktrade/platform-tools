@@ -3,7 +3,7 @@ import string
 import time
 from typing import List
 
-from dbt_platform_helper.legacy_exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 
 
 class ECS:

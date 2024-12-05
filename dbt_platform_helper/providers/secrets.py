@@ -2,7 +2,7 @@ import json
 import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-from dbt_platform_helper.legacy_exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 
 
 class Secrets:
