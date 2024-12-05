@@ -6,7 +6,7 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import SecretNotFoundError
+from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task

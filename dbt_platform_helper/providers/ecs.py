@@ -3,8 +3,8 @@ import string
 import time
 from typing import List
 
-from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.exceptions import ECSAgentNotRunning
+from dbt_platform_helper.legacy_exceptions import AWSException
+from dbt_platform_helper.legacy_exceptions import ECSAgentNotRunning
 
 
 class ECS:

@@ -3,6 +3,8 @@ import os
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.platform_exception import PlatformException
 
+# These exceptions will be moved during further refactoring work
+
 
 class AWSException(PlatformException):
     pass
@@ -38,13 +40,6 @@ class CreateTaskTimeoutError(AWSException):
     def __init__(self, addon_name: str, application_name: str, environment: str):
         super().__init__(
             f"""Client ({addon_name}) ECS task has failed to start for "{application_name}" in "{environment}" environment."""
-        )
-
-
-class ParameterNotFoundError(AWSException):
-    def __init__(self, application_name: str, environment: str):
-        super().__init__(
-            f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
         )
 
 

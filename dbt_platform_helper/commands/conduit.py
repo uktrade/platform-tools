@@ -1,7 +1,7 @@
 import click
 
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.legacy_exceptions import AWSException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets

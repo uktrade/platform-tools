@@ -7,7 +7,7 @@ from unittest.mock import patch
 import boto3
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
+from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import get_application_name

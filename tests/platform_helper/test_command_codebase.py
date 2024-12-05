@@ -8,12 +8,12 @@ from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
-from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
-from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
+from dbt_platform_helper.legacy_exceptions import ApplicationEnvironmentNotFoundError
+from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
+from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
+from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
+from dbt_platform_helper.legacy_exceptions import NoCopilotCodebasesFoundError
+from dbt_platform_helper.legacy_exceptions import NotInCodeBaseRepositoryError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
 

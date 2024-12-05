@@ -2,11 +2,11 @@ import json
 import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-from dbt_platform_helper.exceptions import AddonNotFoundError
-from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
-from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import ParameterNotFoundError
-from dbt_platform_helper.exceptions import SecretNotFoundError
+from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
+from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
+from dbt_platform_helper.legacy_exceptions import AWSException
+from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
+from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 
 
 class Secrets:
@@ -83,3 +83,10 @@ class Secrets:
 
     def _normalise_secret_name(self, addon_name: str) -> str:
         return addon_name.replace("-", "_").upper()
+
+
+class ParameterNotFoundError(AWSException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
+        )

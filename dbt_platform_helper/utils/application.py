@@ -8,7 +8,7 @@ import yaml
 from boto3 import Session
 from yaml.parser import ParserError
 
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
+from dbt_platform_helper.legacy_exceptions import ApplicationNotFoundError
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_ssm_secrets

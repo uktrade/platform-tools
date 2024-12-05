@@ -4,7 +4,7 @@ import botocore
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.legacy_exceptions import AWSException
 
 
 class CloudFormation:

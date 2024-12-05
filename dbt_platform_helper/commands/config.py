@@ -8,8 +8,8 @@ import botocore
 import click
 from prettytable import PrettyTable
 
-from dbt_platform_helper.exceptions import IncompatibleMajorVersion
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.legacy_exceptions import IncompatibleMajorVersion
+from dbt_platform_helper.legacy_exceptions import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.validation import config_file_check
