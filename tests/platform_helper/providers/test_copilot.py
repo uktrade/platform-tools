@@ -6,11 +6,11 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_task_name

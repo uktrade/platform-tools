@@ -108,11 +108,6 @@ class ApplicationEnvironmentNotFoundError(ApplicationException):
         )
 
 
-class SecretNotFoundError(AWSException):
-    def __init__(self, secret_name: str):
-        super().__init__(f"""No secret called "{secret_name}".""")
-
-
 class ECSAgentNotRunning(AWSException):
     def __init__(self):
         super().__init__("""ECS exec agent never reached "RUNNING" status""")

@@ -8,9 +8,9 @@ from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import CreateTaskTimeoutError
 from dbt_platform_helper.legacy_exceptions import ECSAgentNotRunning
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
-from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.ecs import NoClusterError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 

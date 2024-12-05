@@ -7,8 +7,8 @@ from moto import mock_aws
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
-from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.providers.secrets import Secrets
 from tests.platform_helper.conftest import add_addon_config_parameter
 from tests.platform_helper.conftest import mock_parameter_name

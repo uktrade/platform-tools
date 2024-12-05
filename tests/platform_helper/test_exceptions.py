@@ -14,9 +14,9 @@ from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
 from dbt_platform_helper.legacy_exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.legacy_exceptions import NotInCodeBaseRepositoryError
-from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 from dbt_platform_helper.providers.ecs import NoClusterError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundError
 
 
 @pytest.mark.parametrize(

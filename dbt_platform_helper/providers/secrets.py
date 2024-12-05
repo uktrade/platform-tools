@@ -6,7 +6,6 @@ from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.legacy_exceptions import AWSException
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
-from dbt_platform_helper.legacy_exceptions import SecretNotFoundError
 
 
 class Secrets:
@@ -90,3 +89,8 @@ class ParameterNotFoundError(AWSException):
         super().__init__(
             f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
         )
+
+
+class SecretNotFoundError(AWSException):
+    def __init__(self, secret_name: str):
+        super().__init__(f"""No secret called "{secret_name}".""")
