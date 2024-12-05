@@ -18,10 +18,8 @@ from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.cache import CacheProvider
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.files import cache_refresh_required
-from dbt_platform_helper.utils.files import read_supported_versions_from_cache
-from dbt_platform_helper.utils.files import write_to_cache
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -362,7 +360,9 @@ def get_postgres_connection_data_updated_with_master_secret(session, parameter_n
 
 def get_supported_redis_versions():
 
-    if cache_refresh_required("redis"):
+    cache_provider = CacheProvider()
+
+    if cache_provider.cache_refresh_required("redis"):
 
         supported_versions = []
 
@@ -378,17 +378,19 @@ def get_supported_redis_versions():
             for version in supported_versions_response["CacheEngineVersions"]
         ]
 
-        write_to_cache("redis", supported_versions)
+        cache_provider.write_to_cache("redis", supported_versions)
 
         return supported_versions
 
     else:
-        return read_supported_versions_from_cache("redis")
+        return cache_provider.read_supported_versions_from_cache("redis")
 
 
 def get_supported_opensearch_versions():
 
-    if cache_refresh_required("opensearch"):
+    cache_provider = CacheProvider()
+
+    if CacheProvider.cache_refresh_required("opensearch"):
 
         supported_versions = []
 
@@ -405,12 +407,12 @@ def get_supported_opensearch_versions():
             version.removeprefix("OpenSearch_") for version in opensearch_versions
         ]
 
-        write_to_cache("opensearch", supported_versions)
+        cache_provider.write_to_cache("opensearch", supported_versions)
 
         return supported_versions
 
     else:
-        return read_supported_versions_from_cache("opensearch")
+        return cache_provider.read_supported_versions_from_cache("opensearch")
 
 
 def get_connection_string(
