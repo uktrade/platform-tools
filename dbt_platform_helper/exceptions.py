@@ -1,10 +1,7 @@
 import os
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-
-
-class PlatformException(Exception):
-    pass
+from dbt_platform_helper.platform_exception import PlatformException
 
 
 class AWSException(PlatformException):

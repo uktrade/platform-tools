@@ -1,0 +1,2 @@
+class PlatformException(Exception):
+    pass
