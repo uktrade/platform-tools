@@ -3,10 +3,6 @@ import os
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 
 
-class ValidationException(Exception):
-    pass
-
-
 class PlatformException(Exception):
     pass
 
@@ -19,6 +15,12 @@ class ApplicationException(PlatformException):
     pass
 
 
+# Todo: Move as part of the validation provider refactor
+class ValidationException(Exception):
+    pass
+
+
+# Todo: Move as part of the validation provider refactor
 class IncompatibleMajorVersion(ValidationException):
     def __init__(self, app_version: str, check_version: str):
         super().__init__()
@@ -26,6 +28,7 @@ class IncompatibleMajorVersion(ValidationException):
         self.check_version = check_version
 
 
+# Todo: Move as part of the validation provider refactor
 class IncompatibleMinorVersion(ValidationException):
     def __init__(self, app_version: str, check_version: str):
         super().__init__()
@@ -33,13 +36,7 @@ class IncompatibleMinorVersion(ValidationException):
         self.check_version = check_version
 
 
-class NoClusterError(AWSException):
-    def __init__(self, application_name: str, environment: str):
-        super().__init__(
-            f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""
-        )
-
-
+# Todo: Move as part of the copilot provider refactor
 class CreateTaskTimeoutError(AWSException):
     def __init__(self, addon_name: str, application_name: str, environment: str):
         super().__init__(
