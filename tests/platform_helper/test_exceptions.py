@@ -7,7 +7,6 @@ from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundEr
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
-from dbt_platform_helper.legacy_exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutError
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import NoClusterError
@@ -70,11 +69,6 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundError
             ImageNotFoundError,
             {"commit": "test-commit-hash"},
             """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
-        ),
-        (
-            NoCopilotCodebasesFoundError,
-            {"application_name": "test-application"},
-            """No codebases found for application "test-application".""",
         ),
         (
             NoClusterError,

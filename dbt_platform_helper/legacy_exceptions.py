@@ -3,12 +3,6 @@ from dbt_platform_helper.platform_exception import PlatformException
 # These exceptions will be moved during further refactoring work
 
 
-# Todo: No longer in use, but referenced in the tests. Investigate.
-class NoCopilotCodebasesFoundError(PlatformException):
-    def __init__(self, application_name: str):
-        super().__init__(f"""No codebases found for application "{application_name}".""")
-
-
 # Todo: Move as part of the validation provider refactor
 class ValidationException(Exception):
     pass
