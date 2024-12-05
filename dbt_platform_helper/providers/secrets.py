@@ -2,7 +2,7 @@ import json
 import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.platform_exception import PlatformException
 
 
 class Secrets:
@@ -41,6 +41,7 @@ class Secrets:
 
         raise SecretNotFoundException(secret_name)
 
+    # Todo: This probably does not belong in the secrets provider. When it moves, take the Todoed exceptions from below
     def get_addon_type(self, addon_name: str) -> str:
         addon_type = None
         try:
@@ -81,19 +82,27 @@ class Secrets:
         return addon_name.replace("-", "_").upper()
 
 
-class AddonNotFoundException(AWSException):
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonException(PlatformException):
+    pass
+
+
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonNotFoundException(AddonException):
     def __init__(self, addon_name: str):
         super().__init__(f"""Addon "{addon_name}" does not exist.""")
 
 
-class AddonTypeMissingFromConfigException(AWSException):
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonTypeMissingFromConfigException(AddonException):
     def __init__(self, addon_name: str):
         super().__init__(
             f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
         )
 
 
-class InvalidAddonTypeException(AWSException):
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class InvalidAddonTypeException(AddonException):
     def __init__(self, addon_type):
         self.addon_type = addon_type
         super().__init__(
@@ -101,13 +110,17 @@ class InvalidAddonTypeException(AWSException):
         )
 
 
-class ParameterNotFoundException(AWSException):
+class SecretException(PlatformException):
+    pass
+
+
+class ParameterNotFoundException(SecretException):
     def __init__(self, application_name: str, environment: str):
         super().__init__(
             f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
         )
 
 
-class SecretNotFoundException(AWSException):
+class SecretNotFoundException(SecretException):
     def __init__(self, secret_name: str):
         super().__init__(f"""No secret called "{secret_name}".""")
