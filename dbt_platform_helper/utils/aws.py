@@ -13,6 +13,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
@@ -95,7 +96,7 @@ def _log_account_info(account_name: list, account_id: str) -> None:
         )
 
 
-class NoProfileForAccountIdException(Exception):
+class NoProfileForAccountIdException(PlatformException):
     def __init__(self, account_id):
         super().__init__(f"No profile found for account {account_id}")
 
