@@ -14,8 +14,8 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
 from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import ImageNotFoundError
 from dbt_platform_helper.providers.aws import ResourceNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required

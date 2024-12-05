@@ -11,7 +11,7 @@ from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
+from dbt_platform_helper.providers.aws import ImageNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
 from dbt_platform_helper.utils.git import CommitNotFoundError
 
