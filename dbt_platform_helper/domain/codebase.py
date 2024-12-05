@@ -67,7 +67,7 @@ class Codebase:
             .removesuffix(".git")
         )
         if repository.endswith("-deploy") or Path("./copilot").exists():
-            raise NotInCodeBaseRepositoryError()
+            raise NotInCodeBaseRepositoryException()
 
         builder_configuration_url = "https://raw.githubusercontent.com/uktrade/ci-image-builder/main/image_builder/configuration/builder_configuration.yml"
         builder_configuration_response = requests.get(builder_configuration_url)
@@ -142,7 +142,7 @@ class Codebase:
 
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundError(env)
+            raise ApplicationEnvironmentNotFoundException(env)
 
         self.check_codebase_exists(session, application, codebase)
 
@@ -226,14 +226,14 @@ class ApplicationDeploymentNotTriggered(PlatformException):
         super().__init__(f"""Your deployment for {codebase} was not triggered.""")
 
 
-class ApplicationEnvironmentNotFoundError(ApplicationException):
+class ApplicationEnvironmentNotFoundException(ApplicationException):
     def __init__(self, environment: str):
         super().__init__(
             f"""The environment "{environment}" either does not exist or has not been deployed."""
         )
 
 
-class NotInCodeBaseRepositoryError(PlatformException):
+class NotInCodeBaseRepositoryException(PlatformException):
     def __init__(self):
         super().__init__(
             "You are in the deploy repository; make sure you are in the application codebase repository.",

@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.conduit import conduit
-from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundException
 
 
 @pytest.mark.parametrize(
@@ -61,7 +61,7 @@ def test_start_conduit_with_exception_raised_exit_1(
 ):
 
     mock_conduit_instance = mock_conduit_object.return_value
-    mock_conduit_instance.start.side_effect = SecretNotFoundError(secret_name="test-secret")
+    mock_conduit_instance.start.side_effect = SecretNotFoundException(secret_name="test-secret")
     addon_name = "important-db"
     result = CliRunner().invoke(
         conduit,

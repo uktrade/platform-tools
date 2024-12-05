@@ -35,7 +35,7 @@ class ECS:
             if app_key_found and env_key_found and cluster_key_found:
                 return cluster_arn
 
-        raise NoClusterError(self.application_name, self.env)
+        raise NoClusterException(self.application_name, self.env)
 
     def get_or_create_task_name(self, addon_name: str, parameter_name: str) -> str:
         """Fetches the task name from SSM or creates a new one if not found."""
@@ -83,15 +83,15 @@ class ECS:
                 time.sleep(1)
 
         if execute_command_agent_status != "RUNNING":
-            raise ECSAgentNotRunning
+            raise ECSAgentNotRunningException
 
 
-class ECSAgentNotRunning(AWSException):
+class ECSAgentNotRunningException(AWSException):
     def __init__(self):
         super().__init__("""ECS exec agent never reached "RUNNING" status""")
 
 
-class NoClusterError(AWSException):
+class NoClusterException(AWSException):
     def __init__(self, application_name: str, environment: str):
         super().__init__(
             f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""

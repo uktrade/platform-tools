@@ -238,10 +238,10 @@ def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     try:
         certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
     except StopIteration:
-        raise CertificateNotFoundError()
+        raise CertificateNotFoundException()
 
     return certificate_arn
 
 
-class CertificateNotFoundError(Exception):
+class CertificateNotFoundException(Exception):
     pass

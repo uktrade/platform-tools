@@ -5,8 +5,8 @@ import pytest
 from moto import mock_aws
 
 from dbt_platform_helper.providers.ecs import ECS
-from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
-from dbt_platform_helper.providers.ecs import NoClusterError
+from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
+from dbt_platform_helper.providers.ecs import NoClusterException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -33,7 +33,7 @@ def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
 
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
-    with pytest.raises(NoClusterError):
+    with pytest.raises(NoClusterException):
         ecs_manager.get_cluster_arn()
 
 
@@ -137,7 +137,7 @@ def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
         mock_application.name,
         "development",
     )
-    with pytest.raises(ECSAgentNotRunning):
+    with pytest.raises(ECSAgentNotRunningException):
         ecs_manager.ecs_exec_is_available(
             mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
         )

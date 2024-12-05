@@ -6,11 +6,11 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.providers.aws import CreateTaskTimeoutError
+from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
-from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.providers.secrets import SecretNotFoundException
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_task_name
@@ -325,11 +325,11 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
 
-    get_connection_secret_arn.side_effect = SecretNotFoundError(
+    get_connection_secret_arn.side_effect = SecretNotFoundException(
         "/copilot/test-application/development/secrets/named-postgres"
     )
 
-    with pytest.raises(SecretNotFoundError):
+    with pytest.raises(SecretNotFoundException):
         create_addon_client_task(
             iam_client,
             ssm_client,
@@ -401,7 +401,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     mock_subprocess = Mock()
     get_ecs_task_arns = Mock(return_value=[])
 
-    with pytest.raises(CreateTaskTimeoutError):
+    with pytest.raises(CreateTaskTimeoutException):
         connect_to_addon_client_task(
             ecs_client,
             mock_subprocess,

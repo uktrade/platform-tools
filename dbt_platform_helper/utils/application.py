@@ -81,7 +81,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
             WithDecryption=False,
         )
     except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundError(app)
+        raise ApplicationNotFoundException(app)
 
     path = f"/copilot/applications/{application.name}/environments"
     secrets = get_ssm_secrets(app, None, current_session, path)
@@ -142,7 +142,7 @@ class ApplicationException(PlatformException):
     pass
 
 
-class ApplicationNotFoundError(ApplicationException):
+class ApplicationNotFoundException(ApplicationException):
     def __init__(self, application_name: str):
         super().__init__(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""

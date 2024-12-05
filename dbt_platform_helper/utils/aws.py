@@ -14,8 +14,8 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.providers.aws import AWSException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.providers.aws import ImageNotFoundError
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import ImageNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required
@@ -95,7 +95,7 @@ def _log_account_info(account_name: list, account_id: str) -> None:
         )
 
 
-class NoProfileForAccountIdError(Exception):
+class NoProfileForAccountIdException(Exception):
     def __init__(self, account_id):
         super().__init__(f"No profile found for account {account_id}")
 
@@ -110,7 +110,7 @@ def get_profile_name_from_account_id(account_id: str):
         if account_id == found_account_id:
             return section.removeprefix("profile ")
 
-    raise NoProfileForAccountIdError(account_id)
+    raise NoProfileForAccountIdException(account_id)
 
 
 def get_ssm_secret_names(app, env):
@@ -504,7 +504,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         ssm_client.exceptions.ParameterNotFound,
         json.JSONDecodeError,
     ):
-        raise CopilotCodebaseNotFoundError(codebase)
+        raise CopilotCodebaseNotFoundException(codebase)
 
 
 def check_image_exists(session, application, codebase, commit):
@@ -518,7 +518,7 @@ def check_image_exists(session, application, codebase, commit):
         ecr_client.exceptions.RepositoryNotFoundException,
         ecr_client.exceptions.ImageNotFoundException,
     ):
-        raise ImageNotFoundError(commit)
+        raise ImageNotFoundException(commit)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
