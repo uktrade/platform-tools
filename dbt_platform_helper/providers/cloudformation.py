@@ -4,7 +4,7 @@ import botocore
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
-from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.platform_exception import PlatformException
 
 
 class CloudFormation:
@@ -127,7 +127,7 @@ class CloudFormation:
                 )
 
 
-class CloudFormationException(AWSException):
+class CloudFormationException(PlatformException):
     def __init__(self, stack_name: str, current_status: str):
         super().__init__(
             f"The CloudFormation stack '{stack_name}' is not in a good state: {current_status}"

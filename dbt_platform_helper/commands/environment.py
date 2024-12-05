@@ -5,6 +5,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -243,5 +244,5 @@ def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     return certificate_arn
 
 
-class CertificateNotFoundException(Exception):
+class CertificateNotFoundException(PlatformException):
     pass
