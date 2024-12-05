@@ -3,8 +3,10 @@ from dbt_platform_helper.platform_exception import PlatformException
 # These exceptions will be moved during further refactoring work
 
 
-class AWSException(PlatformException):
-    pass
+# Todo: No longer in use, but referenced in th tests. Investigate.
+class NoCopilotCodebasesFoundError(PlatformException):
+    def __init__(self, application_name: str):
+        super().__init__(f"""No codebases found for application "{application_name}".""")
 
 
 # Todo: Move as part of the validation provider refactor
@@ -28,6 +30,11 @@ class IncompatibleMinorVersion(ValidationException):
         self.check_version = check_version
 
 
+# Todo: Move when refactoring utils/aws.py to provider(s)
+class AWSException(PlatformException):
+    pass
+
+
 # Todo: Move as part of the copilot provider refactor
 class CreateTaskTimeoutError(AWSException):
     def __init__(self, addon_name: str, application_name: str, environment: str):
@@ -42,12 +49,6 @@ class CopilotCodebaseNotFoundError(PlatformException):
         super().__init__(
             f"""The codebase "{codebase}" either does not exist or has not been deployed."""
         )
-
-
-# Todo: No longer in use, but referenced in th tests. Investigate.
-class NoCopilotCodebasesFoundError(PlatformException):
-    def __init__(self, application_name: str):
-        super().__init__(f"""No codebases found for application "{application_name}".""")
 
 
 # Todo: Move when refactoring utils/aws.py to provider(s)
