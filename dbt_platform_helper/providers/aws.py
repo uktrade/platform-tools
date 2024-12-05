@@ -19,8 +19,9 @@ class ImageNotFoundError(AWSException):
         )
 
 
-class ResourceNotFoundException(AWSException):
-    pass
+class LogGroupNotFoundException(AWSException):
+    def __init__(self, log_group_name: str):
+        super().__init__(f"""No log group called "{log_group_name}".""")
 
 
 # Todo: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py

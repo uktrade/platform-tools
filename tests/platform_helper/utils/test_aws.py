@@ -12,7 +12,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
-from dbt_platform_helper.providers.aws import ResourceNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
 from dbt_platform_helper.utils.aws import Vpc
@@ -1012,5 +1012,5 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
     mock_client = Mock()
     mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
 
-    with pytest.raises(ResourceNotFoundException):
+    with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
         wait_for_log_group_to_exist(mock_client, "not_found", 1)

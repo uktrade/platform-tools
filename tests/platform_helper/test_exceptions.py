@@ -8,6 +8,7 @@ from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutError
 from dbt_platform_helper.providers.aws import ImageNotFoundError
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import NoClusterError
 from dbt_platform_helper.providers.secrets import AddonNotFoundError
@@ -69,6 +70,11 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundError
             ImageNotFoundError,
             {"commit": "test-commit-hash"},
             """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
+        ),
+        (
+            LogGroupNotFoundException,
+            {"log_group_name": "test-log-group"},
+            """No log group called "test-log-group".""",
         ),
         (
             NoClusterError,

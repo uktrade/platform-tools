@@ -35,6 +35,7 @@ def dump(app, from_env, database, from_vpc):
     """Dump a database into an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
     data_copy.dump(from_env, from_vpc)
+    # Todo: Catch expected errors and output message
 
 
 @database.command(name="load")
@@ -59,6 +60,7 @@ def load(app, to_env, database, to_vpc, auto_approve):
     """Load a database from an S3 bucket."""
     data_copy = DatabaseCopy(app, database, auto_approve)
     data_copy.load(to_env, to_vpc)
+    # Todo: Catch expected errors and output message
 
 
 @database.command(name="copy")
@@ -110,3 +112,4 @@ def copy(
     """Copy a database between environments."""
     data_copy = DatabaseCopy(app, database, auto_approve)
     data_copy.copy(from_env, to_env, from_vpc, to_vpc, svc, template, no_maintenance_page)
+    # Todo: Catch expected errors and output message

@@ -16,7 +16,7 @@ from boto3 import Session
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundError
 from dbt_platform_helper.providers.aws import ImageNotFoundError
-from dbt_platform_helper.providers.aws import ResourceNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required
 from dbt_platform_helper.utils.files import read_supported_versions_from_cache
@@ -579,4 +579,4 @@ def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
         time.sleep(1)
 
     if not log_group_exists:
-        raise ResourceNotFoundException
+        raise LogGroupNotFoundException(log_group_name)
