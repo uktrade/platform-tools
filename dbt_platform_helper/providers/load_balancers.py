@@ -1,5 +1,7 @@
 import boto3
 
+from dbt_platform_helper.platform_exception import PlatformException
+
 
 def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
     lb_client = session.client("elbv2")
@@ -39,13 +41,17 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
-class LoadBalancerNotFoundException(Exception):
+class LoadBalancerException(PlatformException):
     pass
 
 
-class ListenerNotFoundException(Exception):
+class LoadBalancerNotFoundException(LoadBalancerException):
     pass
 
 
-class ListenerRuleNotFoundException(Exception):
+class ListenerNotFoundException(LoadBalancerException):
+    pass
+
+
+class ListenerRuleNotFoundException(LoadBalancerException):
     pass
