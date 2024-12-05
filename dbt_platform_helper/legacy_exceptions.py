@@ -50,13 +50,7 @@ class InvalidAddonTypeError(AWSException):
         )
 
 
-class AddonTypeMissingFromConfigError(AWSException):
-    def __init__(self, addon_name: str):
-        super().__init__(
-            f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
-        )
-
-
+# Todo: Move when refactoring utils/aws.py to provider(s)
 class CopilotCodebaseNotFoundError(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(

@@ -3,7 +3,6 @@ import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
-from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.legacy_exceptions import AWSException
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
 
@@ -94,3 +93,10 @@ class ParameterNotFoundError(AWSException):
 class SecretNotFoundError(AWSException):
     def __init__(self, secret_name: str):
         super().__init__(f"""No secret called "{secret_name}".""")
+
+
+class AddonTypeMissingFromConfigError(AWSException):
+    def __init__(self, addon_name: str):
+        super().__init__(
+            f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
+        )

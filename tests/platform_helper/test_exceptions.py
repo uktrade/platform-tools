@@ -6,7 +6,6 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundError
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryError
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
-from dbt_platform_helper.legacy_exceptions import AddonTypeMissingFromConfigError
 from dbt_platform_helper.legacy_exceptions import CopilotCodebaseNotFoundError
 from dbt_platform_helper.legacy_exceptions import CreateTaskTimeoutError
 from dbt_platform_helper.legacy_exceptions import ImageNotFoundError
@@ -14,6 +13,7 @@ from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
 from dbt_platform_helper.legacy_exceptions import NoCopilotCodebasesFoundError
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import NoClusterError
+from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
 from dbt_platform_helper.providers.secrets import SecretNotFoundError
 from dbt_platform_helper.utils.application import ApplicationNotFoundError
