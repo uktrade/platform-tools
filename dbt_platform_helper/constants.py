@@ -1,3 +1,4 @@
+# Todo: Move these constants to places where they fit with the context
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
 DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "5"
