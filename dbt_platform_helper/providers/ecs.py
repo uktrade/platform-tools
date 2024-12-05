@@ -4,7 +4,6 @@ import time
 from typing import List
 
 from dbt_platform_helper.legacy_exceptions import AWSException
-from dbt_platform_helper.legacy_exceptions import ECSAgentNotRunning
 
 
 class ECS:
@@ -92,3 +91,8 @@ class NoClusterError(AWSException):
         super().__init__(
             f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""
         )
+
+
+class ECSAgentNotRunning(AWSException):
+    def __init__(self):
+        super().__init__("""ECS exec agent never reached "RUNNING" status""")

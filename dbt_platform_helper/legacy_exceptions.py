@@ -108,10 +108,6 @@ class ApplicationEnvironmentNotFoundError(ApplicationException):
         )
 
 
-class ECSAgentNotRunning(AWSException):
-    def __init__(self):
-        super().__init__("""ECS exec agent never reached "RUNNING" status""")
-
-
+# Todo: Move when refactoring utils/aws.py to provider(s)
 class ResourceNotFoundException(AWSException):
     pass

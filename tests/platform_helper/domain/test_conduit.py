@@ -6,8 +6,8 @@ import pytest
 from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.legacy_exceptions import AddonNotFoundError
 from dbt_platform_helper.legacy_exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.legacy_exceptions import ECSAgentNotRunning
 from dbt_platform_helper.legacy_exceptions import InvalidAddonTypeError
+from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import NoClusterError
 from dbt_platform_helper.providers.secrets import ParameterNotFoundError
 from dbt_platform_helper.providers.secrets import SecretNotFoundError

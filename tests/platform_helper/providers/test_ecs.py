@@ -4,8 +4,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.legacy_exceptions import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.ecs import ECSAgentNotRunning
 from dbt_platform_helper.providers.ecs import NoClusterError
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
