@@ -67,19 +67,14 @@ def generate(terraform_platform_modules_version, deploy_branch):
     pipeline_config = load_and_validate_platform_config()
 
     has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
-    has_legacy_environment_pipelines = ENVIRONMENTS_KEY in pipeline_config
     has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
-    git_repo = git_remote()
     templates = setup_templates()
     app_name = get_application_name()
 
-    if (
-        not git_repo
-        and not has_codebase_pipelines
-        and not has_legacy_environment_pipelines
-        and not has_environment_pipelines
-    ):
+    has_any_pipelines = has_codebase_pipelines or has_environment_pipelines
+
+    if not has_any_pipelines:
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
 
@@ -87,9 +82,9 @@ def generate(terraform_platform_modules_version, deploy_branch):
         "default_versions", {}
     ).get("terraform-platform-modules", "")
 
-    # git_repo = git_remote()
-    # if not git_repo:
-    #     abort_with_error("The current directory is not a git repository")
+    git_repo = git_remote()
+    if not git_repo:
+        abort_with_error("The current directory is not a git repository")
 
     codestar_connection_arn = get_codestar_connection_arn(app_name)
     if codestar_connection_arn is None:
