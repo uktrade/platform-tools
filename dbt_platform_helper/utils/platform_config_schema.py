@@ -223,7 +223,7 @@ DATA_MIGRATION = {
     "import": DATA_IMPORT,
 }
 
-S3_POLICY_DEFINITION = dict(
+_valid_s3_base_definition = dict(
     {
         Optional("readonly"): bool,
         Optional("serve_static_content"): bool,
@@ -241,33 +241,13 @@ S3_POLICY_DEFINITION = dict(
         },
     }
 )
-S3_POLICY_DEFINITION.update({"type": "s3-policy"})
 
-_valid_s3_definition = dict(
-    {
-        Optional("readonly"): bool,
-        Optional("serve_static_content"): bool,
-        Optional("services"): Or("__all__", [str]),
-        Optional("environments"): {
-            _valid_environment_name: {
-                "bucket_name": validate_s3_bucket_name,
-                Optional("deletion_policy"): _valid_deletion_policy,
-                Optional("retention_policy"): _valid_retention_policy,
-                Optional("versioning"): bool,
-                Optional("lifecycle_rules"): [LIFECYCLE_RULE],
-                Optional("data_migration"): DATA_MIGRATION,
-                Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
-            },
-        },
-    }
-)
-# Todo: Why isn't this part of the above definition?
-_valid_s3_definition.update(
-    {
-        "type": "s3",
-        Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
-    }
-)
+_valid_s3_bucket_definition = _valid_s3_base_definition | {
+    "type": "s3",
+    Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
+}
+
+_valid_s3_bucket_policy_definition = _valid_s3_base_definition | {"type": "s3-policy"}
 
 MONITORING_DEFINITION = {
     "type": "monitoring",
@@ -480,8 +460,8 @@ PLATFORM_CONFIG_SCHEMA = Schema(
             str: Or(
                 _valid_redis_definition,
                 _valid_postgres_definition,
-                _valid_s3_definition,
-                S3_POLICY_DEFINITION,
+                _valid_s3_bucket_definition,
+                _valid_s3_bucket_policy_definition,
                 MONITORING_DEFINITION,
                 OPENSEARCH_DEFINITION,
                 ALB_DEFINITION,
@@ -533,8 +513,8 @@ def no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-S3_SCHEMA = Schema(_valid_s3_definition)
-S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
+S3_SCHEMA = Schema(_valid_s3_bucket_definition)
+S3_POLICY_SCHEMA = Schema(_valid_s3_bucket_policy_definition)
 POSTGRES_SCHEMA = Schema(_valid_postgres_definition)
 REDIS_SCHEMA = Schema(_valid_redis_definition)
 OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
