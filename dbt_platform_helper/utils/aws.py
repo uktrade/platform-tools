@@ -392,7 +392,7 @@ def get_supported_opensearch_versions():
 
     print(cache_provider.cache_refresh_required("opensearch"))
 
-    if CacheProvider.cache_refresh_required("opensearch"):
+    if cache_provider.cache_refresh_required("opensearch"):
 
         supported_versions = []
 
