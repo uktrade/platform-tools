@@ -7,50 +7,8 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-
-def validate_string(regex_pattern: str):
-    def validator(string):
-        if not re.match(regex_pattern, string):
-            raise SchemaError(
-                f"String '{string}' does not match the required pattern '{regex_pattern}'. For more details on valid string patterns see: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
-            )
-        return string
-
-    return validator
-
-
-def int_between(lower, upper):
-    def is_between(value):
-        if isinstance(value, int) and lower <= value <= upper:
-            return True
-        raise SchemaError(f"should be an integer between {lower} and {upper}")
-
-    return is_between
-
-
-range_validator = validate_string(r"^\d+-\d+$")
-seconds_validator = validate_string(r"^\d+s$")
-branch_wildcard_validator = validate_string(r"^((?!\*).)*(\*)?$")
-
-NUMBER = Or(int, float)
-DELETION_POLICY = Or("Delete", "Retain")
-DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
-DELETION_PROTECTION = bool
-
-
-S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
-AVAILABILITY_UNCERTAIN_TEMPLATE = (
-    "Warning: Could not determine the availability of bucket name '{}'."
-)
-BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
-
-ENV_NAME = Regex(
-    r"^([a-z][a-zA-Z0-9]*|\*)$",
-    error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
-    # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
-)
-
-REDIS_PLANS = Or(
+# Todo move to Redis provider?
+_REDIS_PLANS = Or(
     "micro",
     "micro-ha",
     "tiny",
@@ -65,15 +23,54 @@ REDIS_PLANS = Or(
     "x-large-ha",
 )
 
-REDIS_ENGINE_VERSIONS = str
+
+def _validate_string(regex_pattern: str):
+    def validator(string):
+        if not re.match(regex_pattern, string):
+            raise SchemaError(
+                f"String '{string}' does not match the required pattern '{regex_pattern}'. For more details on valid string patterns see: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            )
+        return string
+
+    return validator
+
+
+def _int_between(lower, upper):
+    def _is_between(value):
+        if isinstance(value, int) and lower <= value <= upper:
+            return True
+        raise SchemaError(f"should be an integer between {lower} and {upper}")
+
+    return _is_between
+
+
+_range_validator = _validate_string(r"^\d+-\d+$")
+_seconds_validator = _validate_string(r"^\d+s$")
+_branch_wildcard_validator = _validate_string(r"^((?!\*).)*(\*)?$")
+
+NUMBER = Or(int, float)
+DELETION_POLICY = Or("Delete", "Retain")
+DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
+DELETION_PROTECTION = bool
+
+
+S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
+
+BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
+
+ENV_NAME = Regex(
+    r"^([a-z][a-zA-Z0-9]*|\*)$",
+    error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
+    # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
+)
 
 REDIS_DEFINITION = {
     "type": "redis",
     Optional("environments"): {
         ENV_NAME: {
-            Optional("plan"): REDIS_PLANS,
-            Optional("engine"): REDIS_ENGINE_VERSIONS,
-            Optional("replicas"): int_between(0, 5),
+            Optional("plan"): _REDIS_PLANS,
+            Optional("engine"): (str),
+            Optional("replicas"): _int_between(0, 5),
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("apply_immediately"): bool,
             Optional("automatic_failover_enabled"): bool,
@@ -122,14 +119,14 @@ POSTGRES_DEFINITION = {
     Optional("environments"): {
         ENV_NAME: {
             Optional("plan"): POSTGRES_PLANS,
-            Optional("volume_size"): int_between(20, 10000),
-            Optional("iops"): int_between(1000, 9950),
+            Optional("volume_size"): _int_between(20, 10000),
+            Optional("iops"): _int_between(1000, 9950),
             Optional("snapshot_id"): str,
             Optional("deletion_policy"): DB_DELETION_POLICY,
             Optional("deletion_protection"): DELETION_PROTECTION,
             Optional("multi_az"): bool,
             Optional("storage_type"): POSTGRES_STORAGE_TYPES,
-            Optional("backup_retention_days"): int_between(1, 35),
+            Optional("backup_retention_days"): _int_between(1, 35),
         }
     },
     Optional("database_copy"): [DATABASE_COPY],
@@ -424,7 +421,7 @@ CODEBASE_PIPELINES_DEFINITION = [
             Or(
                 {
                     "name": str,
-                    "branch": branch_wildcard_validator,
+                    "branch": _branch_wildcard_validator,
                     "environments": [
                         {
                             "name": str,
@@ -458,6 +455,8 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
         "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},
     }
 }
+
+# Used outside this file by validate_platform_config()
 PLATFORM_CONFIG_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
@@ -532,6 +531,8 @@ OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
 MONITORING_SCHEMA = Schema(MONITORING_DEFINITION)
 ALB_SCHEMA = Schema(ALB_DEFINITION)
 PROMETHEUS_POLICY_SCHEMA = Schema(PROMETHEUS_POLICY_DEFINITION)
+
+# This is used outside this file by validate_addons()
 SCHEMA_MAP = {
     "s3": S3_SCHEMA,
     "s3-policy": S3_POLICY_SCHEMA,
