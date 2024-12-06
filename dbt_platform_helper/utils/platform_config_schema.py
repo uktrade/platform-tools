@@ -63,20 +63,27 @@ def _create_int_between_validator(lower, upper):
 
 
 _branch_wildcard_validator = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
-
 _valid_deletion_policy = Or("Delete", "Retain")
 _valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
 
-ENV_NAME = Regex(
+_valid_environment_name = Regex(
     r"^([a-z][a-zA-Z0-9]*|\*)$",
     error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
-REDIS_DEFINITION = {
+_valid_retention_policy = Or(
+    None,
+    {
+        "mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("days", "years", only_one=True): int,
+    },
+)
+
+_valid_redis_definition = {
     "type": "redis",
     Optional("environments"): {
-        ENV_NAME: {
+        _valid_environment_name: {
             Optional("plan"): _valid_redis_plans,
             Optional("engine"): str,
             Optional("replicas"): _create_int_between_validator(0, 5),
@@ -89,27 +96,19 @@ REDIS_DEFINITION = {
     },
 }
 
-RETENTION_POLICY = Or(
-    None,
-    {
-        "mode": Or("GOVERNANCE", "COMPLIANCE"),
-        Or("days", "years", only_one=True): int,
-    },
-)
-
-DATABASE_COPY = {
-    "from": ENV_NAME,
-    "to": ENV_NAME,
+_valida_database_copy_specification = {
+    "from": _valid_environment_name,
+    "to": _valid_environment_name,
     Optional("from_account"): str,
     Optional("to_account"): str,
 }
 
-POSTGRES_DEFINITION = {
+_valid_postgres_definition = {
     "type": "postgres",
     "version": (Or(int, float)),
     Optional("deletion_policy"): _valid_postgres_deletion_policy,
     Optional("environments"): {
-        ENV_NAME: {
+        _valid_environment_name: {
             Optional("plan"): _valid_postgres_plans,
             Optional("volume_size"): _create_int_between_validator(20, 10000),
             Optional("iops"): _create_int_between_validator(1000, 9950),
@@ -121,7 +120,7 @@ POSTGRES_DEFINITION = {
             Optional("backup_retention_days"): _create_int_between_validator(1, 35),
         }
     },
-    Optional("database_copy"): [DATABASE_COPY],
+    Optional("database_copy"): [_valida_database_copy_specification],
     Optional("objects"): [
         {
             "key": str,
@@ -224,28 +223,46 @@ DATA_MIGRATION = {
     "import": DATA_IMPORT,
 }
 
-S3_BASE = {
-    Optional("readonly"): bool,
-    Optional("serve_static_content"): bool,
-    Optional("services"): Or("__all__", [str]),
-    Optional("environments"): {
-        ENV_NAME: {
-            "bucket_name": validate_s3_bucket_name,
-            Optional("deletion_policy"): _valid_deletion_policy,
-            Optional("retention_policy"): RETENTION_POLICY,
-            Optional("versioning"): bool,
-            Optional("lifecycle_rules"): [LIFECYCLE_RULE],
-            Optional("data_migration"): DATA_MIGRATION,
-            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+S3_POLICY_DEFINITION = dict(
+    {
+        Optional("readonly"): bool,
+        Optional("serve_static_content"): bool,
+        Optional("services"): Or("__all__", [str]),
+        Optional("environments"): {
+            _valid_environment_name: {
+                "bucket_name": validate_s3_bucket_name,
+                Optional("deletion_policy"): _valid_deletion_policy,
+                Optional("retention_policy"): _valid_retention_policy,
+                Optional("versioning"): bool,
+                Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+                Optional("data_migration"): DATA_MIGRATION,
+                Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+            },
         },
-    },
-}
-
-S3_POLICY_DEFINITION = dict(S3_BASE)
+    }
+)
 S3_POLICY_DEFINITION.update({"type": "s3-policy"})
 
-S3_DEFINITION = dict(S3_BASE)
-S3_DEFINITION.update(
+_valid_s3_definition = dict(
+    {
+        Optional("readonly"): bool,
+        Optional("serve_static_content"): bool,
+        Optional("services"): Or("__all__", [str]),
+        Optional("environments"): {
+            _valid_environment_name: {
+                "bucket_name": validate_s3_bucket_name,
+                Optional("deletion_policy"): _valid_deletion_policy,
+                Optional("retention_policy"): _valid_retention_policy,
+                Optional("versioning"): bool,
+                Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+                Optional("data_migration"): DATA_MIGRATION,
+                Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+            },
+        },
+    }
+)
+# Todo: Why isn't this part of the above definition?
+_valid_s3_definition.update(
     {
         "type": "s3",
         Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
@@ -255,7 +272,7 @@ S3_DEFINITION.update(
 MONITORING_DEFINITION = {
     "type": "monitoring",
     Optional("environments"): {
-        ENV_NAME: {
+        _valid_environment_name: {
             Optional("enable_ops_center"): bool,
         }
     },
@@ -281,7 +298,7 @@ OPENSEARCH_MAX_VOLUME_SIZE = {
 OPENSEARCH_DEFINITION = {
     "type": "opensearch",
     Optional("environments"): {
-        ENV_NAME: {
+        _valid_environment_name: {
             Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
             Optional("deletion_policy"): _valid_deletion_policy,
             Optional("plan"): OPENSEARCH_PLANS,
@@ -330,7 +347,7 @@ PATHS_DEFINITION = {
 ALB_DEFINITION = {
     "type": "alb",
     Optional("environments"): {
-        ENV_NAME: Or(
+        _valid_environment_name: Or(
             {
                 Optional("additional_address_list"): list,
                 Optional("allowed_methods"): list,
@@ -368,7 +385,7 @@ PROMETHEUS_POLICY_DEFINITION = {
     "type": "prometheus-policy",
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
-        ENV_NAME: {
+        _valid_environment_name: {
             "role_arn": str,
         }
     },
@@ -461,9 +478,9 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
         Optional("extensions"): {
             str: Or(
-                REDIS_DEFINITION,
-                POSTGRES_DEFINITION,
-                S3_DEFINITION,
+                _valid_redis_definition,
+                _valid_postgres_definition,
+                _valid_s3_definition,
                 S3_POLICY_DEFINITION,
                 MONITORING_DEFINITION,
                 OPENSEARCH_DEFINITION,
@@ -516,10 +533,10 @@ def no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-S3_SCHEMA = Schema(S3_DEFINITION)
+S3_SCHEMA = Schema(_valid_s3_definition)
 S3_POLICY_SCHEMA = Schema(S3_POLICY_DEFINITION)
-POSTGRES_SCHEMA = Schema(POSTGRES_DEFINITION)
-REDIS_SCHEMA = Schema(REDIS_DEFINITION)
+POSTGRES_SCHEMA = Schema(_valid_postgres_definition)
+REDIS_SCHEMA = Schema(_valid_redis_definition)
 OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
 MONITORING_SCHEMA = Schema(MONITORING_DEFINITION)
 ALB_SCHEMA = Schema(ALB_DEFINITION)
