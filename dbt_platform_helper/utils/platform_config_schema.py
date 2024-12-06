@@ -80,7 +80,7 @@ _valid_retention_policy = Or(
     },
 )
 
-_valid_redis_definition = {
+_valid_redis = {
     "type": "redis",
     Optional("environments"): {
         _valid_environment_name: {
@@ -103,7 +103,7 @@ _valida_database_copy_specification = {
     Optional("to_account"): str,
 }
 
-_valid_postgres_definition = {
+_valid_postgres = {
     "type": "postgres",
     "version": (Or(int, float)),
     Optional("deletion_policy"): _valid_postgres_deletion_policy,
@@ -129,7 +129,7 @@ _valid_postgres_definition = {
     ],
 }
 
-LIFECYCLE_RULE = {
+_valid_s3_bucket_lifecycle_rule = {
     Optional("filter_prefix"): str,
     "expiration_days": int,
     "enabled": bool,
@@ -234,7 +234,7 @@ _valid_s3_base_definition = dict(
                 Optional("deletion_policy"): _valid_deletion_policy,
                 Optional("retention_policy"): _valid_retention_policy,
                 Optional("versioning"): bool,
-                Optional("lifecycle_rules"): [LIFECYCLE_RULE],
+                Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
                 Optional("data_migration"): DATA_MIGRATION,
                 Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
             },
@@ -242,14 +242,14 @@ _valid_s3_base_definition = dict(
     }
 )
 
-_valid_s3_bucket_definition = _valid_s3_base_definition | {
+_valid_s3_bucket = _valid_s3_base_definition | {
     "type": "s3",
     Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
 }
 
-_valid_s3_bucket_policy_definition = _valid_s3_base_definition | {"type": "s3-policy"}
+_valid_s3_bucket_policy = _valid_s3_base_definition | {"type": "s3-policy"}
 
-_valid_monitoring_defintion = {
+_valid_monitoring = {
     "type": "monitoring",
     Optional("environments"): {
         _valid_environment_name: {
@@ -275,7 +275,7 @@ OPENSEARCH_MAX_VOLUME_SIZE = {
     "x-large-ha": 1500,
 }
 
-_valid_opensearch_definition = {
+_valid_opensearch = {
     "type": "opensearch",
     Optional("environments"): {
         _valid_environment_name: {
@@ -324,7 +324,7 @@ PATHS_DEFINITION = {
     ],
 }
 
-_valid_alb_definition = {
+_valid_alb = {
     "type": "alb",
     Optional("environments"): {
         _valid_environment_name: Or(
@@ -361,7 +361,7 @@ _valid_alb_definition = {
     },
 }
 
-_valid_prometheus_policy_definition = {
+_valid_prometheus_policy = {
     "type": "prometheus-policy",
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
@@ -483,18 +483,18 @@ class ConditionalSchema(Schema):
         return data
 
 
-def _no_param_schema(schema_type):
+def _no_configuration_required_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-alb_schema = Schema(_valid_alb_definition)
-monitoring_schema = Schema(_valid_monitoring_defintion)
-opensearch_schema = ConditionalSchema(_valid_opensearch_definition)
-postgres_schema = Schema(_valid_postgres_definition)
-prometheus_policy_schema = Schema(_valid_prometheus_policy_definition)
-redis_schema = Schema(_valid_redis_definition)
-s3_bucket_policy_schema = Schema(_valid_s3_bucket_policy_definition)
-s3_bucket_schema = Schema(_valid_s3_bucket_definition)
+alb_schema = Schema(_valid_alb)
+monitoring_schema = Schema(_valid_monitoring)
+opensearch_schema = ConditionalSchema(_valid_opensearch)
+postgres_schema = Schema(_valid_postgres)
+prometheus_policy_schema = Schema(_valid_prometheus_policy)
+redis_schema = Schema(_valid_redis)
+s3_bucket_policy_schema = Schema(_valid_s3_bucket_policy)
+s3_bucket_schema = Schema(_valid_s3_bucket)
 
 # Used outside this file by validate_platform_config()
 PLATFORM_CONFIG_SCHEMA = Schema(
@@ -508,14 +508,14 @@ PLATFORM_CONFIG_SCHEMA = Schema(
         Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
         Optional("extensions"): {
             str: Or(
-                _valid_alb_definition,
-                _valid_monitoring_defintion,
-                _valid_opensearch_definition,
-                _valid_postgres_definition,
-                _valid_prometheus_policy_definition,
-                _valid_redis_definition,
-                _valid_s3_bucket_definition,
-                _valid_s3_bucket_policy_definition,
+                _valid_alb,
+                _valid_monitoring,
+                _valid_opensearch,
+                _valid_postgres,
+                _valid_prometheus_policy,
+                _valid_redis,
+                _valid_s3_bucket,
+                _valid_s3_bucket_policy,
             )
         },
         Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
@@ -532,9 +532,9 @@ EXTENSION_SCHEMAS = {
     "redis": redis_schema,
     "s3": s3_bucket_schema,
     "s3-policy": s3_bucket_policy_schema,
-    "subscription-filter": _no_param_schema("subscription-filter"),
+    "subscription-filter": _no_configuration_required_schema("subscription-filter"),
     # Todo: I think the next three are no longer relevant?
-    "appconfig-ipfilter": _no_param_schema("appconfig-ipfilter"),
-    "vpc": _no_param_schema("vpc"),
-    "xray": _no_param_schema("xray"),
+    "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
+    "vpc": _no_configuration_required_schema("vpc"),
+    "xray": _no_configuration_required_schema("xray"),
 }
