@@ -298,6 +298,7 @@ CROSS_ENVIRONMENT_SERVICE_ACCESS = {
 LOWER_ALPHANUMERIC = Regex(
     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
+)
 
 EXTERNAL_ROLE_ACCESS_NAME = Regex(
     r"^([a-z][a-zA-Z0-9_-]*)$",
