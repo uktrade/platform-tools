@@ -142,6 +142,7 @@ def test_validate_addons_success(addons_file):
                 "my-rds-data-migration-invalid-environments": r"Environment name \$ is invalid: names must only contain lowercase alphanumeric characters, or be the '\*' default environment",
                 "my-rds-data-migration-missing-key": r"Missing key: 'to'.*",
                 "my-rds-data-migration-invalid-key": r"Wrong key 'non-existent-key' in.*",
+                "my-rds-data-migration-schedule-should-be-a-string": r"'database_copy.*False should be instance of 'str'",
             },
         ),
         (
@@ -755,6 +756,17 @@ def test_config_file_check_fails_for_unsupported_files_exist(
                 "to": "test",
                 "from_account": "9999999999",
                 "to_account": "9999999999",
+            }
+        ],
+        [{"from": "test", "to": "dev", "pipeline": {}}],
+        [{"from": "test", "to": "dev", "pipeline": {"schedule": "0 0 * * WED"}}],
+        [
+            {
+                "from": "test",
+                "to": "dev",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+                "pipeline": {"schedule": "0 0 * * WED"},
             }
         ],
     ],

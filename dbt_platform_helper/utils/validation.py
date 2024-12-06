@@ -215,6 +215,7 @@ DATABASE_COPY = {
     "to": ENV_NAME,
     Optional("from_account"): str,
     Optional("to_account"): str,
+    Optional("pipeline"): {Optional("schedule"): str},
 }
 
 POSTGRES_DEFINITION = {
