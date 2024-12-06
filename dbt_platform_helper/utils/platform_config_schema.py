@@ -23,7 +23,7 @@ _valid_redis_plans = Or(
     "x-large-ha",
 )
 
-# Todo: Move to Postgres provider
+# Todo: Move to Postgres provider?
 _valid_postgres_plans = Or(
     "tiny",
     "small",
@@ -62,19 +62,10 @@ def _create_int_between_validator(lower, upper):
     return _is_between
 
 
-_range_validator = _create_string_regex_validator(r"^\d+-\d+$")
-_seconds_validator = _create_string_regex_validator(r"^\d+s$")
 _branch_wildcard_validator = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
 
-NUMBER = Or(int, float)
-DELETION_POLICY = Or("Delete", "Retain")
-DB_DELETION_POLICY = Or("Delete", "Retain", "Snapshot")
-DELETION_PROTECTION = bool
-
-
-S3_BUCKET_NAME_ERROR_TEMPLATE = "Bucket name '{}' is invalid:\n{}"
-
-BUCKET_NAME_IN_USE_TEMPLATE = "Warning: Bucket name '{}' is already in use. Check your AWS accounts to see if this is a problem."
+_valid_deletion_policy = Or("Delete", "Retain")
+_valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
 
 ENV_NAME = Regex(
     r"^([a-z][a-zA-Z0-9]*|\*)$",
@@ -87,9 +78,9 @@ REDIS_DEFINITION = {
     Optional("environments"): {
         ENV_NAME: {
             Optional("plan"): _valid_redis_plans,
-            Optional("engine"): (str),
+            Optional("engine"): str,
             Optional("replicas"): _create_int_between_validator(0, 5),
-            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("deletion_policy"): _valid_deletion_policy,
             Optional("apply_immediately"): bool,
             Optional("automatic_failover_enabled"): bool,
             Optional("instance"): str,
@@ -115,16 +106,16 @@ DATABASE_COPY = {
 
 POSTGRES_DEFINITION = {
     "type": "postgres",
-    "version": NUMBER,
-    Optional("deletion_policy"): DB_DELETION_POLICY,
+    "version": (Or(int, float)),
+    Optional("deletion_policy"): _valid_postgres_deletion_policy,
     Optional("environments"): {
         ENV_NAME: {
             Optional("plan"): _valid_postgres_plans,
             Optional("volume_size"): _create_int_between_validator(20, 10000),
             Optional("iops"): _create_int_between_validator(1000, 9950),
             Optional("snapshot_id"): str,
-            Optional("deletion_policy"): DB_DELETION_POLICY,
-            Optional("deletion_protection"): DELETION_PROTECTION,
+            Optional("deletion_policy"): _valid_postgres_deletion_policy,
+            Optional("deletion_protection"): bool,
             Optional("multi_az"): bool,
             Optional("storage_type"): _valid_postgres_storage_types,
             Optional("backup_retention_days"): _create_int_between_validator(1, 35),
@@ -203,8 +194,9 @@ def validate_s3_bucket_name(name: str):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
     if errors:
+        # Todo: Riase suitable PlatformException
         raise SchemaError(
-            S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))
+            "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
         )
 
     return True
@@ -239,7 +231,7 @@ S3_BASE = {
     Optional("environments"): {
         ENV_NAME: {
             "bucket_name": validate_s3_bucket_name,
-            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("deletion_policy"): _valid_deletion_policy,
             Optional("retention_policy"): RETENTION_POLICY,
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
@@ -291,7 +283,7 @@ OPENSEARCH_DEFINITION = {
     Optional("environments"): {
         ENV_NAME: {
             Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
-            Optional("deletion_policy"): DELETION_POLICY,
+            Optional("deletion_policy"): _valid_deletion_policy,
             Optional("plan"): OPENSEARCH_PLANS,
             Optional("volume_size"): int,
             Optional("ebs_throughput"): int,

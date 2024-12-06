@@ -9,9 +9,6 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.utils.platform_config_schema import (
-    S3_BUCKET_NAME_ERROR_TEMPLATE,
-)
-from dbt_platform_helper.utils.platform_config_schema import (
     _create_int_between_validator,
 )
 from dbt_platform_helper.utils.platform_config_schema import (
@@ -355,7 +352,7 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
     ],
 )
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
-    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
+    exp_error = f"Bucket name '{bucket_name}' is invalid:\n  {error_message}"
     with pytest.raises(SchemaError) as ex:
         validate_s3_bucket_name(bucket_name)
 
