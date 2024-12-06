@@ -4,16 +4,12 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore.exceptions import WaiterError
 from cfn_tools import load_yaml
 from moto import mock_aws
 
-from dbt_platform_helper.providers.cloudformation import (
-    add_stack_delete_policy_to_task_role,
-)
-from dbt_platform_helper.providers.cloudformation import update_conduit_stack_resources
-from dbt_platform_helper.providers.cloudformation import (
-    wait_for_cloudformation_to_reach_status,
-)
+from dbt_platform_helper.providers.cloudformation import CloudFormation
+from dbt_platform_helper.providers.cloudformation import CloudFormationException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -60,21 +56,17 @@ def test_update_conduit_stack_resources(
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
 
-    update_conduit_stack_resources(
-        cloudformation_client,
-        iam_client,
-        ssm_client,
-        mock_application.name,
-        env,
-        addon_type,
-        addon_name,
-        task_name,
-        parameter_name,
-        "read",
+    cloudformation = CloudFormation(cloudformation_client, iam_client, ssm_client)
+
+    cloudformation.update_conduit_stack_resources(
+        mock_application.name, env, addon_type, addon_name, task_name, parameter_name, "read"
     )
 
     template = boto3.client("cloudformation").get_template(StackName=f"task-{task_name}")
+    stack = boto3.client("cloudformation").describe_stacks(StackName=f"task-{task_name}")
     template_yml = load_yaml(template["TemplateBody"])
+
+    assert stack["Stacks"][0]["Parameters"][0]["ParameterValue"] == "does-not-matter"
     assert template_yml["Resources"]["LogGroup"]["DeletionPolicy"] == "Retain"
     assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
     assert (
@@ -97,7 +89,7 @@ def test_update_conduit_stack_resources(
 )
 @patch("time.sleep", return_value=None)
 def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, mock_application):
-    """Test that, given app, env and addon name
+    """Test that, given app, env and addon name,
     add_stack_delete_policy_to_task_role adds a policy to the IAM role in a
     CloudFormation stack."""
 
@@ -118,7 +110,9 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
         ],
     }
 
-    add_stack_delete_policy_to_task_role(cloudformation_client, iam_client, task_name)
+    cloudformation = CloudFormation(cloudformation_client, iam_client, None)
+
+    cloudformation.add_stack_delete_policy_to_task_role(task_name)
 
     stack_resources = boto3.client("cloudformation").list_stack_resources(StackName=stack_name)[
         "StackResourceSummaries"
@@ -138,17 +132,41 @@ def test_add_stack_delete_policy_to_task_role(sleep, mock_stack, addon_name, moc
     assert policy_document == mock_policy
 
 
-def test_wait_for_cloudformation_to_reach_status():
-
+@mock_aws
+def test_wait_for_cloudformation_with_no_success_raises_exception():
     cloudformation_client = Mock()
-    mock_return = Mock()
-    mock_waiter = Mock(return_value=mock_return)
-    cloudformation_client.get_waiter = mock_waiter
+    waiter_mock = Mock()
+    cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
 
-    wait_for_cloudformation_to_reach_status(
-        cloudformation_client, "stack_update_complete", "task-stack-name"
+    waiter_error = WaiterError(
+        "Waiter StackUpdatecomplete failed",
+        "Fail!!",
+        {"Stacks": [{"StackStatus": "ROLLBACK_IN_PROGRESS"}]},
     )
-    mock_waiter.assert_called()
-    mock_return.wait.assert_called_with(
-        StackName="task-stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
+    waiter_mock.wait.side_effect = waiter_error
+
+    cloudformation = CloudFormation(cloudformation_client, None, None)
+
+    with pytest.raises(
+        CloudFormationException,
+        match="The CloudFormation stack 'stack-name' is not in a good state: ROLLBACK_IN_PROGRESS",
+    ):
+        cloudformation.wait_for_cloudformation_to_reach_status(
+            "stack_update_complete", "stack-name"
+        )
+
+
+@mock_aws
+def test_wait_for_cloudformation_with_update_complete():
+    cloudformation_client = Mock()
+    waiter_mock = Mock()
+    cloudformation_client.get_waiter = Mock(return_value=waiter_mock)
+    waiter_mock.wait.return_value = None
+
+    cloudformation = CloudFormation(cloudformation_client, None, None)
+
+    cloudformation.wait_for_cloudformation_to_reach_status("stack_update_complete", "stack-name")
+
+    waiter_mock.wait.assert_called_with(
+        StackName="stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
     )

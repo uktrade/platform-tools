@@ -104,13 +104,13 @@ def validate_addons(addons: dict):
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=get_supported_redis_versions,
+        get_supported_versions=get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions_fn=get_supported_opensearch_versions,
+        get_supported_versions=get_supported_opensearch_versions,
     )
 
     return errors
@@ -210,7 +210,12 @@ RETENTION_POLICY = Or(
     },
 )
 
-DATABASE_COPY = {"from": ENV_NAME, "to": ENV_NAME}
+DATABASE_COPY = {
+    "from": ENV_NAME,
+    "to": ENV_NAME,
+    Optional("from_account"): str,
+    Optional("to_account"): str,
+}
 
 POSTGRES_DEFINITION = {
     "type": "postgres",
@@ -293,6 +298,10 @@ CROSS_ENVIRONMENT_SERVICE_ACCESS = {
 LOWER_ALPHANUMERIC = Regex(
     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
+
+EXTERNAL_ROLE_ACCESS_NAME = Regex(
+    r"^([a-z][a-zA-Z0-9_-]*)$",
+    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
 )
 
 DATA_IMPORT = {
@@ -321,6 +330,7 @@ S3_BASE = {
             Optional("cross_environment_service_access"): {
                 LOWER_ALPHANUMERIC: CROSS_ENVIRONMENT_SERVICE_ACCESS
             },
+            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
         },
     },
 }
@@ -435,6 +445,7 @@ ALB_DEFINITION = {
                 Optional("forwarded_values_query_string"): bool,
                 Optional("origin_protocol_policy"): str,
                 Optional("origin_ssl_protocols"): list,
+                Optional("slack_alert_channel_alb_secret_rotation"): str,
                 Optional("viewer_certificate_minimum_protocol_version"): str,
                 Optional("viewer_certificate_ssl_support_method"): str,
                 Optional("viewer_protocol_policy"): str,
@@ -570,18 +581,18 @@ def validate_platform_config(config):
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=get_supported_redis_versions,
+        get_supported_versions=get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config=config,
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions_fn=get_supported_opensearch_versions,
+        get_supported_versions=get_supported_opensearch_versions,
     )
 
 
 def _validate_extension_supported_versions(
-    config, extension_type, version_key, get_supported_versions_fn
+    config, extension_type, version_key, get_supported_versions
 ):
     extensions = config.get("extensions", {})
     if not extensions:
@@ -593,7 +604,7 @@ def _validate_extension_supported_versions(
         if extension.get("type") == extension_type
     ]
 
-    supported_extension_versions = get_supported_versions_fn()
+    supported_extension_versions = get_supported_versions()
     extensions_with_invalid_version = []
 
     for extension in extensions_for_type:
@@ -602,13 +613,16 @@ def _validate_extension_supported_versions(
 
         if not isinstance(environments, dict):
             click.secho(
-                "Error: Opensearch extension definition is invalid type, expected dictionary",
+                f"Error: {extension_type} extension definition is invalid type, expected dictionary",
                 fg="red",
             )
             continue
         for environment, env_config in environments.items():
+
+            # An extension version doesn't need to be specified for all environments, provided one is specified under "*".
+            # So check if the version is set before checking if it's supported
             extension_version = env_config.get(version_key)
-            if extension_version not in supported_extension_versions:
+            if extension_version and extension_version not in supported_extension_versions:
                 extensions_with_invalid_version.append(
                     {"environment": environment, "version": extension_version}
                 )
@@ -647,6 +661,9 @@ def validate_database_copy_section(config):
             from_env = section["from"]
             to_env = section["to"]
 
+            from_account = _get_env_deploy_account_info(config, from_env, "id")
+            to_account = _get_env_deploy_account_info(config, to_env, "id")
+
             if from_env == to_env:
                 errors.append(
                     f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
@@ -667,8 +684,31 @@ def validate_database_copy_section(config):
                     f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                 )
 
+            if from_account != to_account:
+                if "from_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
+                    )
+                elif section["from_account"] != from_account:
+                    errors.append(
+                        f"Incorrect value for 'from_account' for environment '{from_env}'"
+                    )
+
+                if "to_account" not in section:
+                    errors.append(
+                        f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
+                    )
+                elif section["to_account"] != to_account:
+                    errors.append(f"Incorrect value for 'to_account' for environment '{to_env}'")
+
     if errors:
         abort_with_error("\n".join(errors))
+
+
+def _get_env_deploy_account_info(config, env, key):
+    return (
+        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
+    )
 
 
 def _validate_environment_pipelines(config):
@@ -678,13 +718,7 @@ def _validate_environment_pipelines(config):
         pipeline_account = pipeline.get("account", None)
         if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
-                env_account = (
-                    config.get("environments", {})
-                    .get(env, {})
-                    .get("accounts", {})
-                    .get("deploy", {})
-                    .get("name")
-                )
+                env_account = _get_env_deploy_account_info(config, env, "name")
                 if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:

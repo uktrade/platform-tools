@@ -1,14 +1,10 @@
 import click
 
-from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.exceptions import AddonNotFoundError
-from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
-from dbt_platform_helper.exceptions import CreateTaskTimeoutError
-from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import NoClusterError
-from dbt_platform_helper.exceptions import ParameterNotFoundError
-from dbt_platform_helper.providers.secrets import SecretNotFoundError
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.cloudformation import CloudFormation
+from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.versioning import (
@@ -35,43 +31,28 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     application = load_application(app)
 
     try:
-        Conduit(application).start(env, addon_name, access)
-    except NoClusterError:
-        click.secho(f"""No ECS cluster found for "{app}" in "{env}" environment.""", fg="red")
-        exit(1)
-    except SecretNotFoundError as err:
-        click.secho(
-            f"""No secret called "{err}" for "{app}" in "{env}" environment.""",
-            fg="red",
+        secrets_provider: Secrets = Secrets(
+            application.environments[env].session.client("ssm"),
+            application.environments[env].session.client("secretsmanager"),
+            application.name,
+            env,
         )
-        exit(1)
-    except CreateTaskTimeoutError:
-        click.secho(
-            f"""Client ({addon_name}) ECS task has failed to start for "{app}" in "{env}" environment.""",
-            fg="red",
+        cloudformation_provider: CloudFormation = CloudFormation(
+            application.environments[env].session.client("cloudformation"),
+            application.environments[env].session.client("iam"),
+            application.environments[env].session.client("ssm"),
         )
-        exit(1)
-    except ParameterNotFoundError:
-        click.secho(
-            f"""No parameter called "/copilot/applications/{app}/environments/{env}/addons". Try deploying the "{app}" "{env}" environment.""",
-            fg="red",
+
+        ecs_provider: ECS = ECS(
+            application.environments[env].session.client("ecs"),
+            application.environments[env].session.client("ssm"),
+            application.name,
+            env,
         )
-        exit(1)
-    except AddonNotFoundError:
-        click.secho(
-            f"""Addon "{addon_name}" does not exist.""",
-            fg="red",
+
+        Conduit(application, secrets_provider, cloudformation_provider, ecs_provider).start(
+            env, addon_name, access
         )
-        exit(1)
-    except InvalidAddonTypeError as err:
-        click.secho(
-            f"""Addon type "{err.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}.""",
-            fg="red",
-        )
-        exit(1)
-    except AddonTypeMissingFromConfigError:
-        click.secho(
-            f"""The configuration for the addon {addon_name}, is missconfigured and missing the addon type.""",
-            fg="red",
-        )
-        exit(1)
+    except PlatformException as err:
+        click.secho(str(err), fg="red")
+        raise click.Abort

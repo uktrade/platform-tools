@@ -16,7 +16,6 @@ source:
   provider: GitHub
   # Additional properties that further specify the location of the artifacts.
   properties:
-    # Todo: Allow for overriding this, but without risking deploying a branch to higher environments
     branch: main
     repository: https://github.com/{{ git_repo }}
     connection_name: {{ app_name }}

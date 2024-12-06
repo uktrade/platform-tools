@@ -8,13 +8,12 @@ from dbt_platform_helper.commands.codebase import build
 from dbt_platform_helper.commands.codebase import deploy
 from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
-from dbt_platform_helper.exceptions import ApplicationEnvironmentNotFoundError
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import NoCopilotCodebasesFoundError
-from dbt_platform_helper.exceptions import NotInCodeBaseRepositoryError
-from dbt_platform_helper.utils.git import CommitNotFoundError
+from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
+from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
+from dbt_platform_helper.utils.git import CommitNotFoundException
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -40,13 +39,11 @@ class TestCodebasePrepare:
     @patch("click.secho")
     def test_aborts_when_not_in_a_codebase_repository(self, mock_click, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryError
+        mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(prepare_command)
 
-        expected_message = "You are in the deploy repository; make sure you are in the application codebase repository."
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 
@@ -58,7 +55,7 @@ class TestCodebaseBuild:
     ):
 
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.build.side_effect = ApplicationNotFoundError
+        mock_codebase_object_instance.build.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -72,8 +69,6 @@ class TestCodebaseBuild:
                 "ab1c23d",
             ],
         )
-        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
 
         assert result.exit_code == 1
 
@@ -83,7 +78,7 @@ class TestCodebaseBuild:
         self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.build.side_effect = CommitNotFoundError()
+        mock_codebase_object_instance.build.side_effect = CommitNotFoundException()
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -101,8 +96,7 @@ class TestCodebaseBuild:
         mock_codebase_object_instance.build.assert_called_once_with(
             "test-application", "application", "nonexistent-commit-hash"
         )
-        expected_message = f"""The commit hash "nonexistent-commit-hash" either does not exist or you need to run `git fetch`."""
-        mock_click.assert_called_with(expected_message, fg="red")
+
         assert result.exit_code == 1
 
 
@@ -138,7 +132,7 @@ class TestCodebaseDeploy:
         self, mock_click, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
-        mock_codebase_object_instance.deploy.side_effect = ImageNotFoundError
+        mock_codebase_object_instance.deploy.side_effect = ImageNotFoundException
         result = CliRunner().invoke(
             deploy,
             [
@@ -156,8 +150,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "development", "application", "nonexistent-commit-hash"
         )
-        expected_message = f"""The commit hash "nonexistent-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -166,7 +158,7 @@ class TestCodebaseDeploy:
         self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.deploy.side_effect = ApplicationNotFoundError
+        mock_codebase_object_instance.deploy.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -186,8 +178,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "not-an-application", "dev", "application", "ab1c23d"
         )
-        expected_message = f"""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -196,7 +186,7 @@ class TestCodebaseDeploy:
         self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.deploy.side_effect = ApplicationEnvironmentNotFoundError
+        mock_codebase_object_instance.deploy.side_effect = ApplicationEnvironmentNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -216,8 +206,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "not-an-environment", "application", "ab1c23d"
         )
-        expected_message = f"""The environment "not-an-environment" either does not exist or has not been deployed."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -226,7 +214,7 @@ class TestCodebaseDeploy:
         self, mock_click, mock_codebase_object
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.deploy.side_effect = CopilotCodebaseNotFoundError
+        mock_codebase_object_instance.deploy.side_effect = CopilotCodebaseNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(
@@ -246,10 +234,6 @@ class TestCodebaseDeploy:
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "test-environment", "not-a-codebase", "ab1c23d"
         )
-        expected_message = (
-            f"""The codebase "not-a-codebase" either does not exist or has not been deployed."""
-        )
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 
@@ -266,29 +250,13 @@ class TestCodebaseList:
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
-    def test_list_aborts_when_application_has_no_codebases(self, mock_click, mock_codebase_object):
-        mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.list.side_effect = NoCopilotCodebasesFoundError
-        os.environ["AWS_PROFILE"] = "foo"
-
-        result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
-
-        expected_message = f"""No codebases found for application "test-application"""
-        mock_click.assert_called_with(expected_message, fg="red")
-        assert result.exit_code == 1
-
-    @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
     def test_aborts_when_application_does_not_exist(self, mock_click, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.list.side_effect = ApplicationNotFoundError
+        mock_codebase_object_instance.list.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
 
-        app = "test-application"
-        expected_message = f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{app}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
-        mock_click.assert_called_with(expected_message, fg="red")
         assert result.exit_code == 1
 
 

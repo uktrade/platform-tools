@@ -1,4 +1,4 @@
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.providers.validation import ValidationException
 
 
 class ARN:
