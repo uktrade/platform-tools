@@ -18,7 +18,7 @@ def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_return
     cache_provider._CacheProvider__read_file_as_yaml = MagicMock(
         return_value=read_yaml_return_value
     )
-    cache_provider._CacheProvider__platform_helper_cache_exists = MagicMock(return_value=True)
+    cache_provider._CacheProvider__cache_exists = MagicMock(return_value=True)
 
     assert cache_provider.cache_refresh_required("redis")
 
@@ -37,5 +37,5 @@ def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_return
     cache_provider._CacheProvider__read_file_as_yaml = MagicMock(
         return_value=read_yaml_return_value
     )
-    cache_provider._CacheProvider__platform_helper_cache_exists = MagicMock(return_value=True)
+    cache_provider._CacheProvider__cache_exists = MagicMock(return_value=True)
     assert not cache_provider.cache_refresh_required("redis")
