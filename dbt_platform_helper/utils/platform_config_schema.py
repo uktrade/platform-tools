@@ -30,6 +30,11 @@ def _integer_between(lower, upper):
     return _is_between
 
 
+_lowercase_alphanumeric_string_with_hyphens_and_underscores = Regex(
+    r"^([a-z][a-zA-Z0-9_-]*|\*)$",
+    error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
+)
+
 _valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
 
 _valid_deletion_policy = Or("Delete", "Retain")
@@ -62,6 +67,17 @@ def _valid_dbt_email_address(key):
         r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
         error=f"{key} must contain a valid DBT email address",
     )
+
+
+_cross_environment_service_access_schema = {
+    "application": str,
+    "environment": _valid_environment_name,
+    "account": str,
+    "service": str,
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+}
 
 
 def _no_configuration_required_schema(schema_type):
@@ -267,6 +283,7 @@ _valid_postgres_database_copy = {
     "to": _valid_environment_name,
     Optional("from_account"): str,
     Optional("to_account"): str,
+    Optional("pipeline"): {Optional("schedule"): str},
 }
 
 _postgres_schema = {
@@ -422,7 +439,10 @@ _valid_s3_base_definition = dict(
                 Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
                 Optional("data_migration"): _valid_s3_data_migration,
                 Optional("external_role_access"): {
-                    _valid_s3_bucket_external_role_access_name: _valid_s3_bucket_external_role_access
+                    _lowercase_alphanumeric_string_with_hyphens_and_underscores: _valid_s3_bucket_external_role_access
+                },
+                Optional("cross_environment_service_access"): {
+                    _lowercase_alphanumeric_string_with_hyphens_and_underscores: _cross_environment_service_access_schema
                 },
             },
         },

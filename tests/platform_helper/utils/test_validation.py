@@ -107,6 +107,15 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
                 "my-s3-external-access-bucket-invalid-arn": r"role_arn must contain a valid ARN for an IAM role",
                 "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
+                "my-s3-cross-environment-service-access-bucket-invalid-environment": r"Environment name hyphen-not-allowed-in-environment is invalid",
+                "my-s3-cross-environment-service-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
+                "my-s3-cross-environment-service-access-bucket-missing-application": r"Missing key: 'application'",
+                "my-s3-cross-environment-service-access-bucket-missing-environment": r"Missing key: 'environment'",
+                "my-s3-cross-environment-service-access-bucket-missing-account": r"Missing key: 'account'",
+                "my-s3-cross-environment-service-access-bucket-missing-service": r"Missing key: 'service'",
+                "my-s3-cross-environment-service-access-bucket-invalid-write": r"cross_environment_service_access.*'WRITE' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-invalid-read": r"cross_environment_service_access.*'READ' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off": r"Missing key: 'cyber_sign_off_by'",
             },
         ),
         (
@@ -141,6 +150,7 @@ def test_validate_addons_success(addons_file):
                 "my-rds-data-migration-invalid-environments": r"Environment name \$ is invalid: names must only contain lowercase alphanumeric characters, or be the '\*' default environment",
                 "my-rds-data-migration-missing-key": r"Missing key: 'to'.*",
                 "my-rds-data-migration-invalid-key": r"Wrong key 'non-existent-key' in.*",
+                "my-rds-data-migration-schedule-should-be-a-string": r"'database_copy.*False should be instance of 'str'",
             },
         ),
         (
@@ -754,6 +764,17 @@ def test_config_file_check_fails_for_unsupported_files_exist(
                 "to": "test",
                 "from_account": "9999999999",
                 "to_account": "9999999999",
+            }
+        ],
+        [{"from": "test", "to": "dev", "pipeline": {}}],
+        [{"from": "test", "to": "dev", "pipeline": {"schedule": "0 0 * * WED"}}],
+        [
+            {
+                "from": "test",
+                "to": "dev",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+                "pipeline": {"schedule": "0 0 * * WED"},
             }
         ],
     ],

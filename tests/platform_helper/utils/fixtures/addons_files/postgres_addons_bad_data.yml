@@ -107,3 +107,14 @@ my-rds-data-migration-invalid-environments:
   database_copy:
     - from: $
       to: £
+
+my-rds-data-migration-schedule-should-be-a-string:
+  type: postgres
+  version: 14.4
+  environments:
+    prod: {}
+  database_copy:
+    - from: prod
+      to: dev
+      pipeline:
+        schedule: false

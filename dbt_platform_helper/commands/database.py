@@ -31,10 +31,15 @@ def database():
     type=str,
     help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
-def dump(app, from_env, database, from_vpc):
+@click.option(
+    "--filename",
+    type=str,
+    help="Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments",
+)
+def dump(app, from_env, database, from_vpc, filename):
     """Dump a database into an S3 bucket."""
     data_copy = DatabaseCopy(app, database)
-    data_copy.dump(from_env, from_vpc)
+    data_copy.dump(from_env, from_vpc, filename)
     # Todo: Catch expected errors and output message
 
 
@@ -56,10 +61,15 @@ def dump(app, from_env, database, from_vpc):
     help="The vpc the specified environment is running in. Required unless you are running the command from your deploy repo",
 )
 @click.option("--auto-approve/--no-auto-approve", default=False)
-def load(app, to_env, database, to_vpc, auto_approve):
+@click.option(
+    "--filename",
+    type=str,
+    help="Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments",
+)
+def load(app, to_env, database, to_vpc, auto_approve, filename):
     """Load a database from an S3 bucket."""
     data_copy = DatabaseCopy(app, database, auto_approve)
-    data_copy.load(to_env, to_vpc)
+    data_copy.load(to_env, to_vpc, filename)
     # Todo: Catch expected errors and output message
 
 

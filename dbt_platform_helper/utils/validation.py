@@ -20,41 +20,6 @@ from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.platform_config_schema import EXTENSION_SCHEMAS
 from dbt_platform_helper.utils.platform_config_schema import PLATFORM_CONFIG_SCHEMA
 
-# def validate_s3_bucket_name(name: str):
-#     errors = []
-#     if not (2 < len(name) < 64):
-#         errors.append("Length must be between 3 and 63 characters inclusive.")
-#
-#     if not re.match(r"^[a-z0-9].*[a-z0-9]$", name):
-#         errors.append("Names must start and end with 0-9 or a-z.")
-#
-#     if not re.match(r"^[a-z0-9.-]*$", name):
-#         errors.append("Names can only contain the characters 0-9, a-z, '.' and '-'.")
-#
-#     if ".." in name:
-#         errors.append("Names cannot contain two adjacent periods.")
-#
-#     try:
-#         ipaddress.ip_address(name)
-#         errors.append("Names cannot be IP addresses.")
-#     except ValueError:
-#         pass
-#
-#     for prefix in ("xn--", "sthree-"):
-#         if name.startswith(prefix):
-#             errors.append(f"Names cannot be prefixed '{prefix}'.")
-#
-#     for suffix in ("-s3alias", "--ol-s3"):
-#         if name.endswith(suffix):
-#             errors.append(f"Names cannot be suffixed '{suffix}'.")
-#
-#     if errors:
-#         raise SchemaError(
-#             S3_BUCKET_NAME_ERROR_TEMPLATE.format(name, "\n".join(f"  {e}" for e in errors))
-#         )
-#
-#     return True
-
 
 def validate_addons(addons: dict):
     """
