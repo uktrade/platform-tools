@@ -765,6 +765,7 @@ platform-helper database (dump|load|copy)
 ```
 platform-helper database dump --from <from_env> --database <database> 
                               [--app <application>] [--from-vpc <from_vpc>] 
+                              [--filename <filename>] 
 ```
 
 ## Options
@@ -777,6 +778,8 @@ platform-helper database dump --from <from_env> --database <database>
   - The name of the database you are dumping data from
 - `--from-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
+- `--filename <text>`
+  - Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -791,7 +794,7 @@ platform-helper database dump --from <from_env> --database <database>
 ```
 platform-helper database load --to <to_env> --database <database> 
                               [--app <application>] [--to-vpc <to_vpc>] 
-                              [--auto-approve] 
+                              [--filename <filename>] [--auto-approve] 
 ```
 
 ## Options
@@ -806,6 +809,8 @@ platform-helper database load --to <to_env> --database <database>
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--auto-approve <boolean>` _Defaults to False._
 
+- `--filename <text>`
+  - Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
