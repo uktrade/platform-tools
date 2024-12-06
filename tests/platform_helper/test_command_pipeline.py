@@ -186,6 +186,16 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aw
     assert "No pipelines defined: nothing to do." in result.output
 
 
+@patch("dbt_platform_helper.commands.pipeline.load_and_validate_platform_config")
+def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning(
+    mock_config,
+):
+    mock_config.return_value = {"environments": {}}
+    result = CliRunner().invoke(generate)
+
+    assert "No pipelines defined: nothing to do." in result.output
+
+
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")

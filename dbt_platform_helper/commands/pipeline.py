@@ -67,14 +67,9 @@ def generate(terraform_platform_modules_version, deploy_branch):
     pipeline_config = load_and_validate_platform_config()
 
     has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
-    has_legacy_environment_pipelines = ENVIRONMENTS_KEY in pipeline_config
     has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
-    if (
-        not has_codebase_pipelines
-        and not has_legacy_environment_pipelines
-        and not has_environment_pipelines
-    ):
+    if not (has_codebase_pipelines or has_environment_pipelines):
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
 
@@ -175,29 +170,6 @@ def _generate_codebase_pipeline(
     overrides_path = Path(__file__).parent.parent.joinpath("templates/pipelines/codebase/overrides")
     generate_override_files_from_template(
         base_path, overrides_path, pipelines_dir / codebase["name"] / "overrides", template_data
-    )
-
-
-def _generate_copilot_environments_pipeline(
-    app_name, codestar_connection_arn, git_repo, configuration, base_path, pipelines_dir, templates
-):
-    makedirs(pipelines_dir / "environments/overrides", exist_ok=True)
-
-    template_data = {
-        "app_name": app_name,
-        "git_repo": git_repo,
-        "codestar_connection_arn": codestar_connection_arn,
-        "pipeline_environments": configuration,
-    }
-
-    _create_file_from_template(
-        base_path, "environments/buildspec.yml", pipelines_dir, template_data, templates
-    )
-    _create_file_from_template(
-        base_path, "environments/manifest.yml", pipelines_dir, template_data, templates
-    )
-    _create_file_from_template(
-        base_path, "environments/overrides/cfn.patches.yml", pipelines_dir, template_data, templates
     )
 
 
