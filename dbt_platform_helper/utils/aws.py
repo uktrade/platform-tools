@@ -364,8 +364,6 @@ def get_supported_redis_versions():
 
     if cache_provider.cache_refresh_required("redis"):
 
-        supported_versions = []
-
         session = get_aws_session_or_abort()
         elasticache_client = session.client("elasticache")
 
@@ -391,8 +389,6 @@ def get_supported_opensearch_versions():
     cache_provider = CacheProvider()
 
     if cache_provider.cache_refresh_required("opensearch"):
-
-        supported_versions = []
 
         session = get_aws_session_or_abort()
         opensearch_client = session.client("opensearch")

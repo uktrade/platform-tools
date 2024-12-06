@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
-def test_cache_refresh_required_is_true_when_cached_datetime_greater_than_one_day():
+def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_returns_true():
 
     cache_provider = CacheProvider()
 
@@ -23,7 +23,7 @@ def test_cache_refresh_required_is_true_when_cached_datetime_greater_than_one_da
     assert cache_provider.cache_refresh_required("redis")
 
 
-def test_cache_refresh_required_is_false_when_cached_datetime_less_than_one_day():
+def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_returns_false():
 
     today = datetime.now()
     # Time range is still < 1 day so should not require refresh
