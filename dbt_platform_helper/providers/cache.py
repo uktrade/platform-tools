@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 class CacheProvider:
     def __init__(self):
         self._cache_file = ".platform-helper-config-cache.yml"
