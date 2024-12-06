@@ -7,40 +7,6 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-# Todo move to Redis provider?
-_valid_redis_plans = Or(
-    "micro",
-    "micro-ha",
-    "tiny",
-    "tiny-ha",
-    "small",
-    "small-ha",
-    "medium",
-    "medium-ha",
-    "large",
-    "large-ha",
-    "x-large",
-    "x-large-ha",
-)
-
-# Todo: Move to Postgres provider?
-_valid_postgres_plans = Or(
-    "tiny",
-    "small",
-    "small-ha",
-    "small-high-io",
-    "medium",
-    "medium-ha",
-    "medium-high-io",
-    "large",
-    "large-ha",
-    "large-high-io",
-    "x-large",
-    "x-large-ha",
-    "x-large-high-io",
-)
-_valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
-
 
 def _create_string_regex_validator(regex_pattern: str):
     def validator(string):
@@ -72,23 +38,178 @@ _valid_environment_name = Regex(
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
 )
 
-_valid_redis = {
-    "type": "redis",
+
+def _valid_kms_key_arn(key):
+    return Regex(
+        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+        error=f"{key} must contain a valid ARN for a KMS key",
+    )
+
+
+def _valid_iam_role_arn(key):
+    return Regex(
+        r"^arn:aws:iam::\d{12}:role/.*",
+        error=f"{key} must contain a valid ARN for an IAM role",
+    )
+
+
+def _valid_dbt_email_address(key):
+    return Regex(
+        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+        error=f"{key} must contain a valid DBT email address",
+    )
+
+
+# Application load balancer....
+_valid_alb_cache_policy = {
+    "min_ttl": int,
+    "max_ttl": int,
+    "default_ttl": int,
+    "cookies_config": Or("none", "whitelist", "allExcept", "all"),
+    "header": Or("none", "whitelist"),
+    "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
+    Optional("cookie_list"): list,
+    Optional("headers_list"): list,
+    Optional("cache_policy_query_strings"): list,
+}
+
+_valid_alb_paths_definition = {
+    Optional("default"): {
+        "cache": str,
+        "request": str,
+    },
+    Optional("additional"): list[
+        {
+            "path": str,
+            "cache": str,
+            "request": str,
+        }
+    ],
+}
+
+_valid_alb = {
+    "type": "alb",
+    Optional("environments"): {
+        _valid_environment_name: Or(
+            {
+                Optional("additional_address_list"): list,
+                Optional("allowed_methods"): list,
+                Optional("cached_methods"): list,
+                Optional("cdn_compress"): bool,
+                Optional("cdn_domains_list"): dict,
+                Optional("cdn_geo_locations"): list,
+                Optional("cdn_geo_restriction_type"): str,
+                Optional("cdn_logging_bucket"): str,
+                Optional("cdn_logging_bucket_prefix"): str,
+                Optional("cdn_timeout_seconds"): int,
+                Optional("default_waf"): str,
+                Optional("domain_prefix"): str,
+                Optional("enable_logging"): bool,
+                Optional("env_root"): str,
+                Optional("forwarded_values_forward"): str,
+                Optional("forwarded_values_headers"): list,
+                Optional("forwarded_values_query_string"): bool,
+                Optional("origin_protocol_policy"): str,
+                Optional("origin_ssl_protocols"): list,
+                Optional("slack_alert_channel_alb_secret_rotation"): str,
+                Optional("viewer_certificate_minimum_protocol_version"): str,
+                Optional("viewer_certificate_ssl_support_method"): str,
+                Optional("viewer_protocol_policy"): str,
+                Optional("cache_policy"): dict({str: _valid_alb_cache_policy}),
+                Optional("origin_request_policy"): dict({str: {}}),
+                Optional("paths"): dict({str: _valid_alb_paths_definition}),
+            },
+            None,
+        )
+    },
+}
+
+# Monitoring...
+_valid_monitoring = {
+    "type": "monitoring",
     Optional("environments"): {
         _valid_environment_name: {
-            Optional("plan"): _valid_redis_plans,
-            Optional("engine"): str,
-            Optional("replicas"): _create_int_between_validator(0, 5),
-            Optional("deletion_policy"): _valid_deletion_policy,
-            Optional("apply_immediately"): bool,
-            Optional("automatic_failover_enabled"): bool,
-            Optional("instance"): str,
-            Optional("multi_az_enabled"): bool,
+            Optional("enable_ops_center"): bool,
         }
     },
 }
 
-_valida_database_copy_specification = {
+# Opensearch...
+# Todo: Move to OpenSearch provider?
+_valid_opensearch_plans = Or(
+    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
+)
+# Todo: Move to OpenSearch provider?
+_valid_opensearch_min_volume_size = 10
+# Todo: Move to OpenSearch provider?
+_valid_opensearch_max_volume_size = {
+    "tiny": 100,
+    "small": 200,
+    "small-ha": 200,
+    "medium": 512,
+    "medium-ha": 512,
+    "large": 1000,
+    "large-ha": 1000,
+    "x-large": 1500,
+    "x-large-ha": 1500,
+}
+
+_valid_opensearch = {
+    "type": "opensearch",
+    Optional("environments"): {
+        _valid_environment_name: {
+            Optional("engine"): str,
+            Optional("deletion_policy"): _valid_deletion_policy,
+            Optional("plan"): _valid_opensearch_plans,
+            Optional("volume_size"): int,
+            Optional("ebs_throughput"): int,
+            Optional("ebs_volume_type"): str,
+            Optional("instance"): str,
+            Optional("instances"): int,
+            Optional("master"): bool,
+            Optional("es_app_log_retention_in_days"): int,
+            Optional("index_slow_log_retention_in_days"): int,
+            Optional("audit_log_retention_in_days"): int,
+            Optional("search_slow_log_retention_in_days"): int,
+            Optional("password_special_characters"): str,
+            Optional("urlencode_password"): bool,
+        }
+    },
+}
+
+# Prometheus...
+_valid_prometheus_policy = {
+    "type": "prometheus-policy",
+    Optional("services"): Or("__all__", [str]),
+    Optional("environments"): {
+        _valid_environment_name: {
+            "role_arn": str,
+        }
+    },
+}
+
+# Postgres...
+# Todo: Move to Postgres provider?
+_valid_postgres_plans = Or(
+    "tiny",
+    "small",
+    "small-ha",
+    "small-high-io",
+    "medium",
+    "medium-ha",
+    "medium-high-io",
+    "large",
+    "large-ha",
+    "large-high-io",
+    "x-large",
+    "x-large-ha",
+    "x-large-high-io",
+)
+
+# Todo: Move to Postgres provider?
+_valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
+
+_valid_postgres_database_copy = {
     "from": _valid_environment_name,
     "to": _valid_environment_name,
     Optional("from_account"): str,
@@ -112,7 +233,7 @@ _valid_postgres = {
             Optional("backup_retention_days"): _create_int_between_validator(1, 35),
         }
     },
-    Optional("database_copy"): [_valida_database_copy_specification],
+    Optional("database_copy"): [_valid_postgres_database_copy],
     Optional("objects"): [
         {
             "key": str,
@@ -121,28 +242,41 @@ _valid_postgres = {
     ],
 }
 
+# Redis...
+# Todo move to Redis provider?
+_valid_redis_plans = Or(
+    "micro",
+    "micro-ha",
+    "tiny",
+    "tiny-ha",
+    "small",
+    "small-ha",
+    "medium",
+    "medium-ha",
+    "large",
+    "large-ha",
+    "x-large",
+    "x-large-ha",
+)
 
-def _valid_kms_key_arn(key):
-    return Regex(
-        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
-        error=f"{key} must contain a valid ARN for a KMS key",
-    )
+_valid_redis = {
+    "type": "redis",
+    Optional("environments"): {
+        _valid_environment_name: {
+            Optional("plan"): _valid_redis_plans,
+            Optional("engine"): str,
+            Optional("replicas"): _create_int_between_validator(0, 5),
+            Optional("deletion_policy"): _valid_deletion_policy,
+            Optional("apply_immediately"): bool,
+            Optional("automatic_failover_enabled"): bool,
+            Optional("instance"): str,
+            Optional("multi_az_enabled"): bool,
+        }
+    },
+}
 
 
-def _valid_iam_role_arn(key):
-    return Regex(
-        r"^arn:aws:iam::\d{12}:role/.*",
-        error=f"{key} must contain a valid ARN for an IAM role",
-    )
-
-
-def _valid_dbt_email_address(key):
-    return Regex(
-        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
-        error=f"{key} must contain a valid DBT email address",
-    )
-
-
+# S3 Bucket...
 def _valid_s3_bucket_name(name: str):
     errors = []
     if not (2 < len(name) < 64):
@@ -248,128 +382,6 @@ _valid_s3_bucket = _valid_s3_base_definition | {
 
 _valid_s3_bucket_policy = _valid_s3_base_definition | {"type": "s3-policy"}
 
-_valid_monitoring = {
-    "type": "monitoring",
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("enable_ops_center"): bool,
-        }
-    },
-}
-
-OPENSEARCH_PLANS = Or(
-    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
-)
-OPENSEARCH_ENGINE_VERSIONS = str
-OPENSEARCH_MIN_VOLUME_SIZE = 10
-OPENSEARCH_MAX_VOLUME_SIZE = {
-    "tiny": 100,
-    "small": 200,
-    "small-ha": 200,
-    "medium": 512,
-    "medium-ha": 512,
-    "large": 1000,
-    "large-ha": 1000,
-    "x-large": 1500,
-    "x-large-ha": 1500,
-}
-
-_valid_opensearch = {
-    "type": "opensearch",
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("engine"): OPENSEARCH_ENGINE_VERSIONS,
-            Optional("deletion_policy"): _valid_deletion_policy,
-            Optional("plan"): OPENSEARCH_PLANS,
-            Optional("volume_size"): int,
-            Optional("ebs_throughput"): int,
-            Optional("ebs_volume_type"): str,
-            Optional("instance"): str,
-            Optional("instances"): int,
-            Optional("master"): bool,
-            Optional("es_app_log_retention_in_days"): int,
-            Optional("index_slow_log_retention_in_days"): int,
-            Optional("audit_log_retention_in_days"): int,
-            Optional("search_slow_log_retention_in_days"): int,
-            Optional("password_special_characters"): str,
-            Optional("urlencode_password"): bool,
-        }
-    },
-}
-
-CACHE_POLICY_DEFINITION = {
-    "min_ttl": int,
-    "max_ttl": int,
-    "default_ttl": int,
-    "cookies_config": Or("none", "whitelist", "allExcept", "all"),
-    "header": Or("none", "whitelist"),
-    "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
-    Optional("cookie_list"): list,
-    Optional("headers_list"): list,
-    Optional("cache_policy_query_strings"): list,
-}
-
-PATHS_DEFINITION = {
-    Optional("default"): {
-        "cache": str,
-        "request": str,
-    },
-    Optional("additional"): list[
-        {
-            "path": str,
-            "cache": str,
-            "request": str,
-        }
-    ],
-}
-
-_valid_alb = {
-    "type": "alb",
-    Optional("environments"): {
-        _valid_environment_name: Or(
-            {
-                Optional("additional_address_list"): list,
-                Optional("allowed_methods"): list,
-                Optional("cached_methods"): list,
-                Optional("cdn_compress"): bool,
-                Optional("cdn_domains_list"): dict,
-                Optional("cdn_geo_locations"): list,
-                Optional("cdn_geo_restriction_type"): str,
-                Optional("cdn_logging_bucket"): str,
-                Optional("cdn_logging_bucket_prefix"): str,
-                Optional("cdn_timeout_seconds"): int,
-                Optional("default_waf"): str,
-                Optional("domain_prefix"): str,
-                Optional("enable_logging"): bool,
-                Optional("env_root"): str,
-                Optional("forwarded_values_forward"): str,
-                Optional("forwarded_values_headers"): list,
-                Optional("forwarded_values_query_string"): bool,
-                Optional("origin_protocol_policy"): str,
-                Optional("origin_ssl_protocols"): list,
-                Optional("slack_alert_channel_alb_secret_rotation"): str,
-                Optional("viewer_certificate_minimum_protocol_version"): str,
-                Optional("viewer_certificate_ssl_support_method"): str,
-                Optional("viewer_protocol_policy"): str,
-                Optional("cache_policy"): dict({str: CACHE_POLICY_DEFINITION}),
-                Optional("origin_request_policy"): dict({str: {}}),
-                Optional("paths"): dict({str: PATHS_DEFINITION}),
-            },
-            None,
-        )
-    },
-}
-
-_valid_prometheus_policy = {
-    "type": "prometheus-policy",
-    Optional("services"): Or("__all__", [str]),
-    Optional("environments"): {
-        _valid_environment_name: {
-            "role_arn": str,
-        }
-    },
-}
-
 _DEFAULT_VERSIONS_DEFINITION = {
     Optional("terraform-platform-modules"): str,
     Optional("platform-helper"): str,
@@ -468,15 +480,18 @@ class ConditionalSchema(Schema):
                     if not plan:
                         raise SchemaError(f"Missing key: 'plan'")
 
-                    if volume_size < OPENSEARCH_MIN_VOLUME_SIZE:
+                    if volume_size < _valid_opensearch_min_volume_size:
                         raise SchemaError(
-                            f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {OPENSEARCH_MIN_VOLUME_SIZE}"
+                            f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {_valid_opensearch_min_volume_size}"
                         )
 
-                    for key in OPENSEARCH_MAX_VOLUME_SIZE:
-                        if plan == key and not volume_size <= OPENSEARCH_MAX_VOLUME_SIZE[key]:
+                    for key in _valid_opensearch_max_volume_size:
+                        if (
+                            plan == key
+                            and not volume_size <= _valid_opensearch_max_volume_size[key]
+                        ):
                             raise SchemaError(
-                                f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {OPENSEARCH_MIN_VOLUME_SIZE} and {OPENSEARCH_MAX_VOLUME_SIZE[key]} for plan {plan}"
+                                f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {_valid_opensearch_min_volume_size} and {_valid_opensearch_max_volume_size[key]} for plan {plan}"
                             )
 
         return data
