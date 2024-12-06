@@ -65,18 +65,16 @@ def generate(terraform_platform_modules_version, deploy_branch):
     - Generates the copilot manifest.yml for copilot/environments/<environment>
     """
     pipeline_config = load_and_validate_platform_config()
+    templates = setup_templates()
 
     has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
     has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
-    templates = setup_templates()
-    app_name = get_application_name()
-
-    has_any_pipelines = has_codebase_pipelines or has_environment_pipelines
-
-    if not has_any_pipelines:
+    if not (has_codebase_pipelines or has_environment_pipelines):
         click.secho("No pipelines defined: nothing to do.", err=True, fg="yellow")
         return
+
+    app_name = get_application_name()
 
     platform_config_terraform_modules_default_version = pipeline_config.get(
         "default_versions", {}
