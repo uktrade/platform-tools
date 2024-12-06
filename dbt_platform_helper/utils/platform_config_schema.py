@@ -62,7 +62,7 @@ def _create_int_between_validator(lower, upper):
     return _is_between
 
 
-_branch_wildcard_validator = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
+_valid_branch_name = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
 _valid_deletion_policy = Or("Delete", "Retain")
 _valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
 
@@ -70,14 +70,6 @@ _valid_environment_name = Regex(
     r"^([a-z][a-zA-Z0-9]*|\*)$",
     error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
-)
-
-_valid_retention_policy = Or(
-    None,
-    {
-        "mode": Or("GOVERNANCE", "COMPLIANCE"),
-        Or("days", "years", only_one=True): int,
-    },
 )
 
 _valid_redis = {
@@ -129,42 +121,29 @@ _valid_postgres = {
     ],
 }
 
-_valid_s3_bucket_lifecycle_rule = {
-    Optional("filter_prefix"): str,
-    "expiration_days": int,
-    "enabled": bool,
-}
 
-
-def kms_key_arn_regex(key):
+def _valid_kms_key_arn(key):
     return Regex(
         r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
         error=f"{key} must contain a valid ARN for a KMS key",
     )
 
 
-def s3_bucket_arn_regex(key):
-    return Regex(
-        r"^arn:aws:s3::.*",
-        error=f"{key} must contain a valid ARN for an S3 bucket",
-    )
-
-
-def iam_role_arn_regex(key):
+def _valid_iam_role_arn(key):
     return Regex(
         r"^arn:aws:iam::\d{12}:role/.*",
         error=f"{key} must contain a valid ARN for an IAM role",
     )
 
 
-def dbt_email_address_regex(key):
+def _valid_dbt_email_address(key):
     return Regex(
         r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
         error=f"{key} must contain a valid DBT email address",
     )
 
 
-def validate_s3_bucket_name(name: str):
+def _valid_s3_bucket_name(name: str):
     errors = []
     if not (2 < len(name) < 64):
         errors.append("Length must be between 3 and 63 characters inclusive.")
@@ -201,27 +180,45 @@ def validate_s3_bucket_name(name: str):
     return True
 
 
-EXTERNAL_ROLE_ACCESS = {
-    "role_arn": iam_role_arn_regex("role_arn"),
-    "read": bool,
-    "write": bool,
-    "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
+def _valid_s3_bucket_arn(key):
+    return Regex(
+        r"^arn:aws:s3::.*",
+        error=f"{key} must contain a valid ARN for an S3 bucket",
+    )
+
+
+_valid_s3_data_migration = {
+    "import": {
+        Optional("source_kms_key_arn"): _valid_kms_key_arn("source_kms_key_arn"),
+        "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
+        "worker_role_arn": _valid_iam_role_arn("worker_role_arn"),
+    },
+}
+_valid_s3_bucket_retention_policy = Or(
+    None,
+    {
+        "mode": Or("GOVERNANCE", "COMPLIANCE"),
+        Or("days", "years", only_one=True): int,
+    },
+)
+
+_valid_s3_bucket_lifecycle_rule = {
+    Optional("filter_prefix"): str,
+    "expiration_days": int,
+    "enabled": bool,
 }
 
-EXTERNAL_ROLE_ACCESS_NAME = Regex(
+_valid_s3_bucket_external_role_access = {
+    "role_arn": _valid_iam_role_arn("role_arn"),
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+}
+
+_valid_s3_bucket_external_role_access_name = Regex(
     r"^([a-z][a-zA-Z0-9_-]*)$",
     error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
 )
-
-DATA_IMPORT = {
-    Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
-    "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
-    "worker_role_arn": iam_role_arn_regex("worker_role_arn"),
-}
-
-DATA_MIGRATION = {
-    "import": DATA_IMPORT,
-}
 
 _valid_s3_base_definition = dict(
     {
@@ -230,13 +227,15 @@ _valid_s3_base_definition = dict(
         Optional("services"): Or("__all__", [str]),
         Optional("environments"): {
             _valid_environment_name: {
-                "bucket_name": validate_s3_bucket_name,
+                "bucket_name": _valid_s3_bucket_name,
                 Optional("deletion_policy"): _valid_deletion_policy,
-                Optional("retention_policy"): _valid_retention_policy,
+                Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                 Optional("versioning"): bool,
                 Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
-                Optional("data_migration"): DATA_MIGRATION,
-                Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+                Optional("data_migration"): _valid_s3_data_migration,
+                Optional("external_role_access"): {
+                    _valid_s3_bucket_external_role_access_name: _valid_s3_bucket_external_role_access
+                },
             },
         },
     }
@@ -411,7 +410,7 @@ CODEBASE_PIPELINES_DEFINITION = [
             Or(
                 {
                     "name": str,
-                    "branch": _branch_wildcard_validator,
+                    "branch": _valid_branch_name,
                     "environments": [
                         {
                             "name": str,
