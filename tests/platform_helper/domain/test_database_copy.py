@@ -363,8 +363,10 @@ def test_copy_command(services, template):
     mocks.maintenance_page_provider.activate.assert_called_once_with(
         "test-app", "test-to-env", services, template, "test-vpc-override"
     )
-    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "test-to-env")
-    db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override", "test-to-env")
+    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "data_dump_test-to-env")
+    db_copy.load.assert_called_once_with(
+        "test-to-env", "test-vpc-override", "data_dump_test-to-env"
+    )
     mocks.maintenance_page_provider.deactivate.assert_called_once_with("test-app", "test-to-env")
 
 
