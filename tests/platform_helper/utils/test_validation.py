@@ -8,12 +8,8 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.platform_config_schema import (
-    _create_int_between_validator,
-)
-from dbt_platform_helper.utils.platform_config_schema import (
-    _create_string_regex_validator,
-)
+from dbt_platform_helper.utils.platform_config_schema import _integer_between
+from dbt_platform_helper.utils.platform_config_schema import _string_matching_regex
 from dbt_platform_helper.utils.platform_config_schema import _valid_s3_bucket_name
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
@@ -45,7 +41,7 @@ def load_addons(addons_file):
     ],
 )
 def test_validate_string(regex_pattern, valid_strings, invalid_strings):
-    validator = _create_string_regex_validator(regex_pattern)
+    validator = _string_matching_regex(regex_pattern)
 
     for valid_string in valid_strings:
         assert validator(valid_string) == valid_string
@@ -299,13 +295,13 @@ def test_validate_addons_missing_type():
 
 @pytest.mark.parametrize("value", [5, 1, 9])
 def test_between_success(value):
-    assert _create_int_between_validator(1, 9)(value)
+    assert _integer_between(1, 9)(value)
 
 
 @pytest.mark.parametrize("value", [-1, 10])
 def test_between_raises_error(value):
     try:
-        _create_int_between_validator(1, 9)(value)
+        _integer_between(1, 9)(value)
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be an integer between 1 and 9"

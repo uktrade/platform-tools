@@ -8,7 +8,7 @@ from schema import Schema
 from schema import SchemaError
 
 
-def _create_string_regex_validator(regex_pattern: str):
+def _string_matching_regex(regex_pattern: str):
     def validator(string):
         if not re.match(regex_pattern, string):
             raise SchemaError(
@@ -19,7 +19,7 @@ def _create_string_regex_validator(regex_pattern: str):
     return validator
 
 
-def _create_int_between_validator(lower, upper):
+def _integer_between(lower, upper):
     def _is_between(value):
         if isinstance(value, int) and lower <= value <= upper:
             return True
@@ -28,8 +28,10 @@ def _create_int_between_validator(lower, upper):
     return _is_between
 
 
-_valid_branch_name = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
+_valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
+
 _valid_deletion_policy = Or("Delete", "Retain")
+
 _valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
 
 _valid_environment_name = Regex(
@@ -60,6 +62,10 @@ def _valid_dbt_email_address(key):
     )
 
 
+def _no_configuration_required_schema(schema_type):
+    return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
+
+
 # Application load balancer....
 _valid_alb_cache_policy = {
     "min_ttl": int,
@@ -87,7 +93,7 @@ _valid_alb_paths_definition = {
     ],
 }
 
-_valid_alb = {
+_alb_schema = {
     "type": "alb",
     Optional("environments"): {
         _valid_environment_name: Or(
@@ -125,7 +131,7 @@ _valid_alb = {
 }
 
 # Monitoring...
-_valid_monitoring = {
+_monitoring_schema = {
     "type": "monitoring",
     Optional("environments"): {
         _valid_environment_name: {
@@ -154,7 +160,7 @@ _valid_opensearch_max_volume_size = {
     "x-large-ha": 1500,
 }
 
-_valid_opensearch = {
+_opensearch_schema = {
     "type": "opensearch",
     Optional("environments"): {
         _valid_environment_name: {
@@ -178,7 +184,7 @@ _valid_opensearch = {
 }
 
 # Prometheus...
-_valid_prometheus_policy = {
+_prometheus_policy_schema = {
     "type": "prometheus-policy",
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
@@ -216,21 +222,21 @@ _valid_postgres_database_copy = {
     Optional("to_account"): str,
 }
 
-_valid_postgres = {
+_postgres_schema = {
     "type": "postgres",
     "version": (Or(int, float)),
     Optional("deletion_policy"): _valid_postgres_deletion_policy,
     Optional("environments"): {
         _valid_environment_name: {
             Optional("plan"): _valid_postgres_plans,
-            Optional("volume_size"): _create_int_between_validator(20, 10000),
-            Optional("iops"): _create_int_between_validator(1000, 9950),
+            Optional("volume_size"): _integer_between(20, 10000),
+            Optional("iops"): _integer_between(1000, 9950),
             Optional("snapshot_id"): str,
             Optional("deletion_policy"): _valid_postgres_deletion_policy,
             Optional("deletion_protection"): bool,
             Optional("multi_az"): bool,
             Optional("storage_type"): _valid_postgres_storage_types,
-            Optional("backup_retention_days"): _create_int_between_validator(1, 35),
+            Optional("backup_retention_days"): _integer_between(1, 35),
         }
     },
     Optional("database_copy"): [_valid_postgres_database_copy],
@@ -259,13 +265,13 @@ _valid_redis_plans = Or(
     "x-large-ha",
 )
 
-_valid_redis = {
+_redis_schema = {
     "type": "redis",
     Optional("environments"): {
         _valid_environment_name: {
             Optional("plan"): _valid_redis_plans,
             Optional("engine"): str,
-            Optional("replicas"): _create_int_between_validator(0, 5),
+            Optional("replicas"): _integer_between(0, 5),
             Optional("deletion_policy"): _valid_deletion_policy,
             Optional("apply_immediately"): bool,
             Optional("automatic_failover_enabled"): bool,
@@ -328,6 +334,7 @@ _valid_s3_data_migration = {
         "worker_role_arn": _valid_iam_role_arn("worker_role_arn"),
     },
 }
+
 _valid_s3_bucket_retention_policy = Or(
     None,
     {
@@ -375,43 +382,50 @@ _valid_s3_base_definition = dict(
     }
 )
 
-_valid_s3_bucket = _valid_s3_base_definition | {
+_s3_bucket_schema = _valid_s3_base_definition | {
     "type": "s3",
     Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
 }
 
-_valid_s3_bucket_policy = _valid_s3_base_definition | {"type": "s3-policy"}
+_s3_bucket_policy_schema = _valid_s3_base_definition | {"type": "s3-policy"}
 
-_DEFAULT_VERSIONS_DEFINITION = {
+_default_versions_schema = {
     Optional("terraform-platform-modules"): str,
     Optional("platform-helper"): str,
 }
-_ENVIRONMENTS_VERSIONS_OVERRIDES = {
+
+_valid_environment_specific_version_overrides = {
     Optional("terraform-platform-modules"): str,
 }
-_PIPELINE_VERSIONS_OVERRIDES = {
+
+_valid_pipeline_specific_version_overrides = {
     Optional("platform-helper"): str,
 }
 
-_ENVIRONMENTS_PARAMS = {
-    Optional("accounts"): {
-        "deploy": {
-            "name": str,
-            "id": str,
+_environments_schema = {
+    str: Or(
+        None,
+        {
+            Optional("accounts"): {
+                "deploy": {
+                    "name": str,
+                    "id": str,
+                },
+                "dns": {
+                    "name": str,
+                    "id": str,
+                },
+            },
+            # Todo: Is requires_approval relevant?
+            Optional("requires_approval"): bool,
+            Optional("versions"): _valid_environment_specific_version_overrides,
+            Optional("vpc"): str,
         },
-        "dns": {
-            "name": str,
-            "id": str,
-        },
-    },
-    Optional("requires_approval"): bool,
-    Optional("versions"): _ENVIRONMENTS_VERSIONS_OVERRIDES,
-    Optional("vpc"): str,
+    )
 }
 
-ENVIRONMENTS_DEFINITION = {str: Or(None, _ENVIRONMENTS_PARAMS)}
-
-CODEBASE_PIPELINES_DEFINITION = [
+# Codebase pipelines...
+_codebase_pipelines_schema = [
     {
         "name": str,
         "repository": str,
@@ -445,15 +459,35 @@ CODEBASE_PIPELINES_DEFINITION = [
     },
 ]
 
-ENVIRONMENT_PIPELINES_DEFINITION = {
+# Environment pipelines...
+_environment_pipelines_schema = {
     str: {
         Optional("account"): str,
         Optional("branch", default="main"): str,
         Optional("pipeline_to_trigger"): str,
-        Optional("versions"): _PIPELINE_VERSIONS_OVERRIDES,
+        Optional("versions"): _valid_pipeline_specific_version_overrides,
         "slack_channel": str,
         "trigger_on_push": bool,
-        "environments": {str: Or(None, _ENVIRONMENTS_PARAMS)},
+        "environments": {
+            str: Or(
+                None,
+                {
+                    Optional("accounts"): {
+                        "deploy": {
+                            "name": str,
+                            "id": str,
+                        },
+                        "dns": {
+                            "name": str,
+                            "id": str,
+                        },
+                    },
+                    Optional("requires_approval"): bool,
+                    Optional("versions"): _valid_environment_specific_version_overrides,
+                    Optional("vpc"): str,
+                },
+            )
+        },
     }
 }
 
@@ -497,49 +531,45 @@ class ConditionalSchema(Schema):
         return data
 
 
-def _no_configuration_required_schema(schema_type):
-    return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
-
-
 # Used outside this file by validate_platform_config()
 PLATFORM_CONFIG_SCHEMA = Schema(
     {
         # The following line is for the AWS Copilot version, will be removed under DBTP-1002
         "application": str,
         Optional("legacy_project", default=False): bool,
-        Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
+        Optional("default_versions"): _default_versions_schema,
         Optional("accounts"): list[str],
-        Optional("environments"): ENVIRONMENTS_DEFINITION,
-        Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
+        Optional("environments"): _environments_schema,
+        Optional("codebase_pipelines"): _codebase_pipelines_schema,
+        Optional("environment_pipelines"): _environment_pipelines_schema,
         Optional("extensions"): {
             str: Or(
-                _valid_alb,
-                _valid_monitoring,
-                _valid_opensearch,
-                _valid_postgres,
-                _valid_prometheus_policy,
-                _valid_redis,
-                _valid_s3_bucket,
-                _valid_s3_bucket_policy,
+                _alb_schema,
+                _monitoring_schema,
+                _opensearch_schema,
+                _postgres_schema,
+                _prometheus_policy_schema,
+                _redis_schema,
+                _s3_bucket_schema,
+                _s3_bucket_policy_schema,
             )
         },
-        Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
     }
 )
 
 # This is used outside this file by validate_addons()
 EXTENSION_SCHEMAS = {
-    "alb": Schema(_valid_alb),
-    "monitoring": Schema(_valid_monitoring),
-    "opensearch": ConditionalSchema(_valid_opensearch),
-    "postgres": Schema(_valid_postgres),
-    "prometheus-policy": Schema(_valid_prometheus_policy),
-    "redis": Schema(_valid_redis),
-    "s3": Schema(_valid_s3_bucket),
-    "s3-policy": Schema(_valid_s3_bucket_policy),
-    "subscription-filter": _no_configuration_required_schema("subscription-filter"),
-    # Todo: I think the next three are no longer relevant?
+    "alb": Schema(_alb_schema),
     "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
+    "opensearch": ConditionalSchema(_opensearch_schema),
+    "postgres": Schema(_postgres_schema),
+    "prometheus-policy": Schema(_prometheus_policy_schema),
+    "redis": Schema(_redis_schema),
+    "s3": Schema(_s3_bucket_schema),
+    "s3-policy": Schema(_s3_bucket_policy_schema),
+    "subscription-filter": _no_configuration_required_schema("subscription-filter"),
+    # Todo: We think the next three are no longer relevant?
+    "monitoring": Schema(_monitoring_schema),
     "vpc": _no_configuration_required_schema("vpc"),
     "xray": _no_configuration_required_schema("xray"),
 }
