@@ -50,10 +50,7 @@ class CacheProvider:
             3. The date-retrieved value of the cached data is > than a time interval. In this case 1 day.
         """
 
-        path_exists = os.path.exists(PLATFORM_HELPER_CACHE_FILE)
-        print(path_exists)
-
-        if not path_exists:
+        if not self.__platform_helper_cache_exists():
             return True
 
         platform_helper_config = self.__read_file_as_yaml(PLATFORM_HELPER_CACHE_FILE)
@@ -76,3 +73,6 @@ class CacheProvider:
     def __read_file_as_yaml(self, file_name):
 
         return yaml.safe_load(Path(file_name).read_text())
+
+    def __platform_helper_cache_exists(self):
+        return os.path.exists(PLATFORM_HELPER_CACHE_FILE)

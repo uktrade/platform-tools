@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from datetime import timedelta
 from unittest.mock import MagicMock
@@ -19,7 +18,7 @@ def test_cache_refresh_required_is_true_when_cached_datetime_greater_than_one_da
     cache_provider._CacheProvider__read_file_as_yaml = MagicMock(
         return_value=read_yaml_return_value
     )
-    os.path.exists = MagicMock(return_value=True)
+    cache_provider._CacheProvider__platform_helper_cache_exists = MagicMock(return_value=True)
 
     assert cache_provider.cache_refresh_required("redis")
 
@@ -38,6 +37,5 @@ def test_cache_refresh_required_is_false_when_cached_datetime_less_than_one_day(
     cache_provider._CacheProvider__read_file_as_yaml = MagicMock(
         return_value=read_yaml_return_value
     )
-    os.path.exists = MagicMock(return_value=True)
-
+    cache_provider._CacheProvider__platform_helper_cache_exists = MagicMock(return_value=True)
     assert not cache_provider.cache_refresh_required("redis")
