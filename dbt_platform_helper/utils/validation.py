@@ -300,11 +300,6 @@ LOWER_ALPHANUMERIC = Regex(
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
 
-EXTERNAL_ROLE_ACCESS_NAME = Regex(
-    r"^([a-z][a-zA-Z0-9_-]*)$",
-    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
-)
-
 DATA_IMPORT = {
     Optional("source_kms_key_arn"): kms_key_arn_regex("source_kms_key_arn"),
     "source_bucket_arn": s3_bucket_arn_regex("source_bucket_arn"),
@@ -331,7 +326,6 @@ S3_BASE = {
             Optional("cross_environment_service_access"): {
                 LOWER_ALPHANUMERIC: CROSS_ENVIRONMENT_SERVICE_ACCESS
             },
-            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
         },
     },
 }
