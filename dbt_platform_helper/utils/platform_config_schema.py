@@ -487,15 +487,6 @@ def _no_configuration_required_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-alb_schema = Schema(_valid_alb)
-monitoring_schema = Schema(_valid_monitoring)
-opensearch_schema = ConditionalSchema(_valid_opensearch)
-postgres_schema = Schema(_valid_postgres)
-prometheus_policy_schema = Schema(_valid_prometheus_policy)
-redis_schema = Schema(_valid_redis)
-s3_bucket_policy_schema = Schema(_valid_s3_bucket_policy)
-s3_bucket_schema = Schema(_valid_s3_bucket)
-
 # Used outside this file by validate_platform_config()
 PLATFORM_CONFIG_SCHEMA = Schema(
     {
@@ -524,14 +515,14 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 
 # This is used outside this file by validate_addons()
 EXTENSION_SCHEMAS = {
-    "alb": alb_schema,
-    "monitoring": monitoring_schema,
-    "opensearch": opensearch_schema,
-    "postgres": postgres_schema,
-    "prometheus-policy": prometheus_policy_schema,
-    "redis": redis_schema,
-    "s3": s3_bucket_schema,
-    "s3-policy": s3_bucket_policy_schema,
+    "alb": Schema(_valid_alb),
+    "monitoring": Schema(_valid_monitoring),
+    "opensearch": ConditionalSchema(_valid_opensearch),
+    "postgres": Schema(_valid_postgres),
+    "prometheus-policy": Schema(_valid_prometheus_policy),
+    "redis": Schema(_valid_redis),
+    "s3": Schema(_valid_s3_bucket),
+    "s3-policy": Schema(_valid_s3_bucket_policy),
     "subscription-filter": _no_configuration_required_schema("subscription-filter"),
     # Todo: I think the next three are no longer relevant?
     "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
