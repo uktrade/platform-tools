@@ -8,7 +8,7 @@ from schema import Schema
 from schema import SchemaError
 
 # Todo move to Redis provider?
-_REDIS_PLANS = Or(
+_valid_redis_plans = Or(
     "micro",
     "micro-ha",
     "tiny",
@@ -23,8 +23,26 @@ _REDIS_PLANS = Or(
     "x-large-ha",
 )
 
+# Todo: Move to Postgres provider
+_valid_postgres_plans = Or(
+    "tiny",
+    "small",
+    "small-ha",
+    "small-high-io",
+    "medium",
+    "medium-ha",
+    "medium-high-io",
+    "large",
+    "large-ha",
+    "large-high-io",
+    "x-large",
+    "x-large-ha",
+    "x-large-high-io",
+)
+_valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
 
-def _validate_string(regex_pattern: str):
+
+def _create_string_regex_validator(regex_pattern: str):
     def validator(string):
         if not re.match(regex_pattern, string):
             raise SchemaError(
@@ -35,7 +53,7 @@ def _validate_string(regex_pattern: str):
     return validator
 
 
-def _int_between(lower, upper):
+def _create_int_between_validator(lower, upper):
     def _is_between(value):
         if isinstance(value, int) and lower <= value <= upper:
             return True
@@ -44,9 +62,9 @@ def _int_between(lower, upper):
     return _is_between
 
 
-_range_validator = _validate_string(r"^\d+-\d+$")
-_seconds_validator = _validate_string(r"^\d+s$")
-_branch_wildcard_validator = _validate_string(r"^((?!\*).)*(\*)?$")
+_range_validator = _create_string_regex_validator(r"^\d+-\d+$")
+_seconds_validator = _create_string_regex_validator(r"^\d+s$")
+_branch_wildcard_validator = _create_string_regex_validator(r"^((?!\*).)*(\*)?$")
 
 NUMBER = Or(int, float)
 DELETION_POLICY = Or("Delete", "Retain")
@@ -68,9 +86,9 @@ REDIS_DEFINITION = {
     "type": "redis",
     Optional("environments"): {
         ENV_NAME: {
-            Optional("plan"): _REDIS_PLANS,
+            Optional("plan"): _valid_redis_plans,
             Optional("engine"): (str),
-            Optional("replicas"): _int_between(0, 5),
+            Optional("replicas"): _create_int_between_validator(0, 5),
             Optional("deletion_policy"): DELETION_POLICY,
             Optional("apply_immediately"): bool,
             Optional("automatic_failover_enabled"): bool,
@@ -79,23 +97,6 @@ REDIS_DEFINITION = {
         }
     },
 }
-
-POSTGRES_PLANS = Or(
-    "tiny",
-    "small",
-    "small-ha",
-    "small-high-io",
-    "medium",
-    "medium-ha",
-    "medium-high-io",
-    "large",
-    "large-ha",
-    "large-high-io",
-    "x-large",
-    "x-large-ha",
-    "x-large-high-io",
-)
-POSTGRES_STORAGE_TYPES = Or("gp2", "gp3", "io1", "io2")
 
 RETENTION_POLICY = Or(
     None,
@@ -118,15 +119,15 @@ POSTGRES_DEFINITION = {
     Optional("deletion_policy"): DB_DELETION_POLICY,
     Optional("environments"): {
         ENV_NAME: {
-            Optional("plan"): POSTGRES_PLANS,
-            Optional("volume_size"): _int_between(20, 10000),
-            Optional("iops"): _int_between(1000, 9950),
+            Optional("plan"): _valid_postgres_plans,
+            Optional("volume_size"): _create_int_between_validator(20, 10000),
+            Optional("iops"): _create_int_between_validator(1000, 9950),
             Optional("snapshot_id"): str,
             Optional("deletion_policy"): DB_DELETION_POLICY,
             Optional("deletion_protection"): DELETION_PROTECTION,
             Optional("multi_az"): bool,
-            Optional("storage_type"): POSTGRES_STORAGE_TYPES,
-            Optional("backup_retention_days"): _int_between(1, 35),
+            Optional("storage_type"): _valid_postgres_storage_types,
+            Optional("backup_retention_days"): _create_int_between_validator(1, 35),
         }
     },
     Optional("database_copy"): [DATABASE_COPY],
