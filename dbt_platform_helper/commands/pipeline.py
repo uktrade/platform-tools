@@ -175,29 +175,6 @@ def _generate_codebase_pipeline(
     )
 
 
-def _generate_copilot_environments_pipeline(
-    app_name, codestar_connection_arn, git_repo, configuration, base_path, pipelines_dir, templates
-):
-    makedirs(pipelines_dir / "environments/overrides", exist_ok=True)
-
-    template_data = {
-        "app_name": app_name,
-        "git_repo": git_repo,
-        "codestar_connection_arn": codestar_connection_arn,
-        "pipeline_environments": configuration,
-    }
-
-    _create_file_from_template(
-        base_path, "environments/buildspec.yml", pipelines_dir, template_data, templates
-    )
-    _create_file_from_template(
-        base_path, "environments/manifest.yml", pipelines_dir, template_data, templates
-    )
-    _create_file_from_template(
-        base_path, "environments/overrides/cfn.patches.yml", pipelines_dir, template_data, templates
-    )
-
-
 def _create_file_from_template(
     base_path, file_name, pipelines_dir, template_data, templates, template_name=None
 ):
