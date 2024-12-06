@@ -9,10 +9,6 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_CACHE_FILE
 
 class CacheProvider:
 
-    def __init__(self):
-
-        print("stuff")
-
     def read_supported_versions_from_cache(self, resource_name):
 
         platform_helper_config = self.__read_file_as_yaml(PLATFORM_HELPER_CACHE_FILE)
