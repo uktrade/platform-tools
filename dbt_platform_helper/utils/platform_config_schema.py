@@ -525,7 +525,6 @@ PLATFORM_CONFIG_SCHEMA = Schema(
 # This is used outside this file by validate_addons()
 EXTENSION_SCHEMAS = {
     "alb": alb_schema,
-    "appconfig-ipfilter": _no_param_schema("appconfig-ipfilter"),
     "monitoring": monitoring_schema,
     "opensearch": opensearch_schema,
     "postgres": postgres_schema,
@@ -534,6 +533,8 @@ EXTENSION_SCHEMAS = {
     "s3": s3_bucket_schema,
     "s3-policy": s3_bucket_policy_schema,
     "subscription-filter": _no_param_schema("subscription-filter"),
+    # Todo: I think the next three are no longer relevant?
+    "appconfig-ipfilter": _no_param_schema("appconfig-ipfilter"),
     "vpc": _no_param_schema("vpc"),
     "xray": _no_param_schema("xray"),
 }
