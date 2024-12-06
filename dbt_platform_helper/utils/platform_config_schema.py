@@ -193,7 +193,7 @@ def validate_s3_bucket_name(name: str):
             errors.append(f"Names cannot be suffixed '{suffix}'.")
 
     if errors:
-        # Todo: Riase suitable PlatformException
+        # Todo: Raise suitable PlatformException
         raise SchemaError(
             "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
         )
@@ -249,7 +249,7 @@ _valid_s3_bucket_definition = _valid_s3_base_definition | {
 
 _valid_s3_bucket_policy_definition = _valid_s3_base_definition | {"type": "s3-policy"}
 
-MONITORING_DEFINITION = {
+_valid_monitoring_defintion = {
     "type": "monitoring",
     Optional("environments"): {
         _valid_environment_name: {
@@ -275,7 +275,7 @@ OPENSEARCH_MAX_VOLUME_SIZE = {
     "x-large-ha": 1500,
 }
 
-OPENSEARCH_DEFINITION = {
+_valid_opensearch_definition = {
     "type": "opensearch",
     Optional("environments"): {
         _valid_environment_name: {
@@ -324,7 +324,7 @@ PATHS_DEFINITION = {
     ],
 }
 
-ALB_DEFINITION = {
+_valid_alb_definition = {
     "type": "alb",
     Optional("environments"): {
         _valid_environment_name: Or(
@@ -361,7 +361,7 @@ ALB_DEFINITION = {
     },
 }
 
-PROMETHEUS_POLICY_DEFINITION = {
+_valid_prometheus_policy_definition = {
     "type": "prometheus-policy",
     Optional("services"): Or("__all__", [str]),
     Optional("environments"): {
@@ -446,32 +446,6 @@ ENVIRONMENT_PIPELINES_DEFINITION = {
     }
 }
 
-# Used outside this file by validate_platform_config()
-PLATFORM_CONFIG_SCHEMA = Schema(
-    {
-        # The following line is for the AWS Copilot version, will be removed under DBTP-1002
-        "application": str,
-        Optional("legacy_project", default=False): bool,
-        Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
-        Optional("accounts"): list[str],
-        Optional("environments"): ENVIRONMENTS_DEFINITION,
-        Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
-        Optional("extensions"): {
-            str: Or(
-                _valid_redis_definition,
-                _valid_postgres_definition,
-                _valid_s3_bucket_definition,
-                _valid_s3_bucket_policy_definition,
-                MONITORING_DEFINITION,
-                OPENSEARCH_DEFINITION,
-                ALB_DEFINITION,
-                PROMETHEUS_POLICY_DEFINITION,
-            )
-        },
-        Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
-    }
-)
-
 
 class ConditionalSchema(Schema):
     def validate(self, data, _is_conditional_schema=True):
@@ -509,31 +483,57 @@ class ConditionalSchema(Schema):
         return data
 
 
-def no_param_schema(schema_type):
+def _no_param_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-S3_SCHEMA = Schema(_valid_s3_bucket_definition)
-S3_POLICY_SCHEMA = Schema(_valid_s3_bucket_policy_definition)
-POSTGRES_SCHEMA = Schema(_valid_postgres_definition)
-REDIS_SCHEMA = Schema(_valid_redis_definition)
-OPENSEARCH_SCHEMA = ConditionalSchema(OPENSEARCH_DEFINITION)
-MONITORING_SCHEMA = Schema(MONITORING_DEFINITION)
-ALB_SCHEMA = Schema(ALB_DEFINITION)
-PROMETHEUS_POLICY_SCHEMA = Schema(PROMETHEUS_POLICY_DEFINITION)
+alb_schema = Schema(_valid_alb_definition)
+monitoring_schema = Schema(_valid_monitoring_defintion)
+opensearch_schema = ConditionalSchema(_valid_opensearch_definition)
+postgres_schema = Schema(_valid_postgres_definition)
+prometheus_policy_schema = Schema(_valid_prometheus_policy_definition)
+redis_schema = Schema(_valid_redis_definition)
+s3_bucket_policy_schema = Schema(_valid_s3_bucket_policy_definition)
+s3_bucket_schema = Schema(_valid_s3_bucket_definition)
+
+# Used outside this file by validate_platform_config()
+PLATFORM_CONFIG_SCHEMA = Schema(
+    {
+        # The following line is for the AWS Copilot version, will be removed under DBTP-1002
+        "application": str,
+        Optional("legacy_project", default=False): bool,
+        Optional("default_versions"): _DEFAULT_VERSIONS_DEFINITION,
+        Optional("accounts"): list[str],
+        Optional("environments"): ENVIRONMENTS_DEFINITION,
+        Optional("codebase_pipelines"): CODEBASE_PIPELINES_DEFINITION,
+        Optional("extensions"): {
+            str: Or(
+                _valid_alb_definition,
+                _valid_monitoring_defintion,
+                _valid_opensearch_definition,
+                _valid_postgres_definition,
+                _valid_prometheus_policy_definition,
+                _valid_redis_definition,
+                _valid_s3_bucket_definition,
+                _valid_s3_bucket_policy_definition,
+            )
+        },
+        Optional("environment_pipelines"): ENVIRONMENT_PIPELINES_DEFINITION,
+    }
+)
 
 # This is used outside this file by validate_addons()
-SCHEMA_MAP = {
-    "s3": S3_SCHEMA,
-    "s3-policy": S3_POLICY_SCHEMA,
-    "postgres": POSTGRES_SCHEMA,
-    "redis": REDIS_SCHEMA,
-    "opensearch": OPENSEARCH_SCHEMA,
-    "monitoring": MONITORING_SCHEMA,
-    "appconfig-ipfilter": no_param_schema("appconfig-ipfilter"),
-    "subscription-filter": no_param_schema("subscription-filter"),
-    "vpc": no_param_schema("vpc"),
-    "xray": no_param_schema("xray"),
-    "alb": ALB_SCHEMA,
-    "prometheus-policy": PROMETHEUS_POLICY_SCHEMA,
+EXTENSION_SCHEMAS = {
+    "alb": alb_schema,
+    "appconfig-ipfilter": _no_param_schema("appconfig-ipfilter"),
+    "monitoring": monitoring_schema,
+    "opensearch": opensearch_schema,
+    "postgres": postgres_schema,
+    "prometheus-policy": prometheus_policy_schema,
+    "redis": redis_schema,
+    "s3": s3_bucket_schema,
+    "s3-policy": s3_bucket_policy_schema,
+    "subscription-filter": _no_param_schema("subscription-filter"),
+    "vpc": _no_param_schema("vpc"),
+    "xray": _no_param_schema("xray"),
 }

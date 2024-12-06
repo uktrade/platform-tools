@@ -17,8 +17,8 @@ from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.platform_config_schema import EXTENSION_SCHEMAS
 from dbt_platform_helper.utils.platform_config_schema import PLATFORM_CONFIG_SCHEMA
-from dbt_platform_helper.utils.platform_config_schema import SCHEMA_MAP
 
 # def validate_s3_bucket_name(name: str):
 #     errors = []
@@ -68,7 +68,7 @@ def validate_addons(addons: dict):
             if not addon_type:
                 errors[addon_name] = f"Missing addon type in addon '{addon_name}'"
                 continue
-            schema = SCHEMA_MAP.get(addon_type, None)
+            schema = EXTENSION_SCHEMAS.get(addon_type, None)
             if not schema:
                 errors[addon_name] = (
                     f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
