@@ -30,7 +30,7 @@ def _integer_between(lower, upper):
     return _is_between
 
 
-_lowercase_alphanumeric_string_with_hyphens_and_underscores = Regex(
+_valid_schema_key = Regex(
     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
@@ -439,10 +439,10 @@ _valid_s3_base_definition = dict(
                 Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
                 Optional("data_migration"): _valid_s3_data_migration,
                 Optional("external_role_access"): {
-                    _lowercase_alphanumeric_string_with_hyphens_and_underscores: _valid_s3_bucket_external_role_access
+                    _valid_schema_key: _valid_s3_bucket_external_role_access
                 },
                 Optional("cross_environment_service_access"): {
-                    _lowercase_alphanumeric_string_with_hyphens_and_underscores: _cross_environment_service_access_schema
+                    _valid_schema_key: _cross_environment_service_access_schema
                 },
             },
         },
