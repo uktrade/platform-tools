@@ -85,70 +85,6 @@ def _no_configuration_required_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-# Application load balancer....
-_valid_alb_cache_policy = {
-    "min_ttl": int,
-    "max_ttl": int,
-    "default_ttl": int,
-    "cookies_config": Or("none", "whitelist", "allExcept", "all"),
-    "header": Or("none", "whitelist"),
-    "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
-    Optional("cookie_list"): list,
-    Optional("headers_list"): list,
-    Optional("cache_policy_query_strings"): list,
-}
-
-_valid_alb_paths_definition = {
-    Optional("default"): {
-        "cache": str,
-        "request": str,
-    },
-    Optional("additional"): list[
-        {
-            "path": str,
-            "cache": str,
-            "request": str,
-        }
-    ],
-}
-
-_alb_schema = {
-    "type": "alb",
-    Optional("environments"): {
-        _valid_environment_name: Or(
-            {
-                Optional("additional_address_list"): list,
-                Optional("allowed_methods"): list,
-                Optional("cached_methods"): list,
-                Optional("cdn_compress"): bool,
-                Optional("cdn_domains_list"): dict,
-                Optional("cdn_geo_locations"): list,
-                Optional("cdn_geo_restriction_type"): str,
-                Optional("cdn_logging_bucket"): str,
-                Optional("cdn_logging_bucket_prefix"): str,
-                Optional("cdn_timeout_seconds"): int,
-                Optional("default_waf"): str,
-                Optional("domain_prefix"): str,
-                Optional("enable_logging"): bool,
-                Optional("env_root"): str,
-                Optional("forwarded_values_forward"): str,
-                Optional("forwarded_values_headers"): list,
-                Optional("forwarded_values_query_string"): bool,
-                Optional("origin_protocol_policy"): str,
-                Optional("origin_ssl_protocols"): list,
-                Optional("slack_alert_channel_alb_secret_rotation"): str,
-                Optional("viewer_certificate_minimum_protocol_version"): str,
-                Optional("viewer_certificate_ssl_support_method"): str,
-                Optional("viewer_protocol_policy"): str,
-                Optional("cache_policy"): dict({str: _valid_alb_cache_policy}),
-                Optional("origin_request_policy"): dict({str: {}}),
-                Optional("paths"): dict({str: _valid_alb_paths_definition}),
-            },
-            None,
-        )
-    },
-}
-
 # Monitoring...
 _monitoring_schema = {
     "type": "monitoring",
@@ -560,45 +496,120 @@ _environment_pipelines_schema = {
 }
 
 
+class PlatformConfigSchema:
+    @staticmethod
+    def get_schema():
+        return Schema(
+            {
+                # The following line is for the AWS Copilot version, will be removed under DBTP-1002
+                "application": str,
+                Optional("legacy_project", default=False): bool,
+                Optional("default_versions"): _default_versions_schema,
+                Optional("accounts"): list[str],
+                Optional("environments"): _environments_schema,
+                Optional("codebase_pipelines"): _codebase_pipelines_schema,
+                Optional("environment_pipelines"): _environment_pipelines_schema,
+                Optional("extensions"): {
+                    str: Or(
+                        PlatformConfigSchema.__alb_schema(),
+                        _monitoring_schema,
+                        _opensearch_schema,
+                        _postgres_schema,
+                        _prometheus_policy_schema,
+                        _redis_schema,
+                        _s3_bucket_schema,
+                        _s3_bucket_policy_schema,
+                    )
+                },
+            }
+        )
+
+    @staticmethod
+    def get_extension_schemas():
+        return {
+            "alb": Schema(PlatformConfigSchema.__alb_schema()),
+            "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
+            "opensearch": ConditionalOpensSearchSchema(_opensearch_schema),
+            "postgres": Schema(_postgres_schema),
+            "prometheus-policy": Schema(_prometheus_policy_schema),
+            "redis": Schema(_redis_schema),
+            "s3": Schema(_s3_bucket_schema),
+            "s3-policy": Schema(_s3_bucket_policy_schema),
+            "subscription-filter": _no_configuration_required_schema("subscription-filter"),
+            # Todo: We think the next three are no longer relevant?
+            "monitoring": Schema(_monitoring_schema),
+            "vpc": _no_configuration_required_schema("vpc"),
+            "xray": _no_configuration_required_schema("xray"),
+        }
+
+    @staticmethod
+    def __alb_schema():
+        _valid_alb_cache_policy = {
+            "min_ttl": int,
+            "max_ttl": int,
+            "default_ttl": int,
+            "cookies_config": Or("none", "whitelist", "allExcept", "all"),
+            "header": Or("none", "whitelist"),
+            "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
+            Optional("cookie_list"): list,
+            Optional("headers_list"): list,
+            Optional("cache_policy_query_strings"): list,
+        }
+
+        _valid_alb_paths_definition = {
+            Optional("default"): {
+                "cache": str,
+                "request": str,
+            },
+            Optional("additional"): list[
+                {
+                    "path": str,
+                    "cache": str,
+                    "request": str,
+                }
+            ],
+        }
+
+        return {
+            "type": "alb",
+            Optional("environments"): {
+                _valid_environment_name: Or(
+                    {
+                        Optional("additional_address_list"): list,
+                        Optional("allowed_methods"): list,
+                        Optional("cached_methods"): list,
+                        Optional("cdn_compress"): bool,
+                        Optional("cdn_domains_list"): dict,
+                        Optional("cdn_geo_locations"): list,
+                        Optional("cdn_geo_restriction_type"): str,
+                        Optional("cdn_logging_bucket"): str,
+                        Optional("cdn_logging_bucket_prefix"): str,
+                        Optional("cdn_timeout_seconds"): int,
+                        Optional("default_waf"): str,
+                        Optional("domain_prefix"): str,
+                        Optional("enable_logging"): bool,
+                        Optional("env_root"): str,
+                        Optional("forwarded_values_forward"): str,
+                        Optional("forwarded_values_headers"): list,
+                        Optional("forwarded_values_query_string"): bool,
+                        Optional("origin_protocol_policy"): str,
+                        Optional("origin_ssl_protocols"): list,
+                        Optional("slack_alert_channel_alb_secret_rotation"): str,
+                        Optional("viewer_certificate_minimum_protocol_version"): str,
+                        Optional("viewer_certificate_ssl_support_method"): str,
+                        Optional("viewer_protocol_policy"): str,
+                        Optional("cache_policy"): dict({str: _valid_alb_cache_policy}),
+                        Optional("origin_request_policy"): dict({str: {}}),
+                        Optional("paths"): dict({str: _valid_alb_paths_definition}),
+                    },
+                    None,
+                )
+            },
+        }
+
+
 # Used outside this file by validate_platform_config()
-PLATFORM_CONFIG_SCHEMA = Schema(
-    {
-        # The following line is for the AWS Copilot version, will be removed under DBTP-1002
-        "application": str,
-        Optional("legacy_project", default=False): bool,
-        Optional("default_versions"): _default_versions_schema,
-        Optional("accounts"): list[str],
-        Optional("environments"): _environments_schema,
-        Optional("codebase_pipelines"): _codebase_pipelines_schema,
-        Optional("environment_pipelines"): _environment_pipelines_schema,
-        Optional("extensions"): {
-            str: Or(
-                _alb_schema,
-                _monitoring_schema,
-                _opensearch_schema,
-                _postgres_schema,
-                _prometheus_policy_schema,
-                _redis_schema,
-                _s3_bucket_schema,
-                _s3_bucket_policy_schema,
-            )
-        },
-    }
-)
+PLATFORM_CONFIG_SCHEMA = PlatformConfigSchema.get_schema()
 
 # This is used outside this file by validate_addons()
-EXTENSION_SCHEMAS = {
-    "alb": Schema(_alb_schema),
-    "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
-    "opensearch": ConditionalOpensSearchSchema(_opensearch_schema),
-    "postgres": Schema(_postgres_schema),
-    "prometheus-policy": Schema(_prometheus_policy_schema),
-    "redis": Schema(_redis_schema),
-    "s3": Schema(_s3_bucket_schema),
-    "s3-policy": Schema(_s3_bucket_policy_schema),
-    "subscription-filter": _no_configuration_required_schema("subscription-filter"),
-    # Todo: We think the next three are no longer relevant?
-    "monitoring": Schema(_monitoring_schema),
-    "vpc": _no_configuration_required_schema("vpc"),
-    "xray": _no_configuration_required_schema("xray"),
-}
+EXTENSION_SCHEMAS = PlatformConfigSchema.get_extension_schemas()
