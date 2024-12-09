@@ -1,5 +1,6 @@
 import ipaddress
 import re
+from typing import Callable
 
 from schema import Optional
 from schema import Or
@@ -70,129 +71,12 @@ def _valid_dbt_email_address(key):
     )
 
 
-_cross_environment_service_access_schema = {
-    "application": str,
-    "environment": _valid_environment_name,
-    "account": str,
-    "service": str,
-    "read": bool,
-    "write": bool,
-    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
-}
-
-
 def _no_configuration_required_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-# Monitoring...
-_monitoring_schema = {
-    "type": "monitoring",
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("enable_ops_center"): bool,
-        }
-    },
-}
+# Todo ####################################
 
-
-# Opensearch...
-class ConditionalOpensSearchSchema(Schema):
-    def validate(self, data, _is_conditional_schema=True):
-        data = super(ConditionalOpensSearchSchema, self).validate(
-            data, _is_conditional_schema=False
-        )
-        if _is_conditional_schema:
-            default_plan = None
-            default_volume_size = None
-
-            default_environment_config = data["environments"].get(
-                "*", data["environments"].get("default", None)
-            )
-            if default_environment_config:
-                default_plan = default_environment_config.get("plan", None)
-                default_volume_size = default_environment_config.get("volume_size", None)
-
-            for env in data["environments"]:
-                volume_size = data["environments"][env].get("volume_size", default_volume_size)
-                plan = data["environments"][env].get("plan", default_plan)
-
-                if volume_size:
-                    if not plan:
-                        # Todo: Raise suitable PlatformException?
-                        raise SchemaError(f"Missing key: 'plan'")
-
-                    if volume_size < _valid_opensearch_min_volume_size:
-                        # Todo: Raise suitable PlatformException?
-                        raise SchemaError(
-                            f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {_valid_opensearch_min_volume_size}"
-                        )
-
-                    for key in _valid_opensearch_max_volume_size:
-                        if (
-                            plan == key
-                            and not volume_size <= _valid_opensearch_max_volume_size[key]
-                        ):
-                            # Todo: Raise suitable PlatformException?
-                            raise SchemaError(
-                                f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {_valid_opensearch_min_volume_size} and {_valid_opensearch_max_volume_size[key]} for plan {plan}"
-                            )
-
-        return data
-
-
-# Todo: Move to OpenSearch provider?
-_valid_opensearch_plans = Or(
-    "tiny", "small", "small-ha", "medium", "medium-ha", "large", "large-ha", "x-large", "x-large-ha"
-)
-# Todo: Move to OpenSearch provider?
-_valid_opensearch_min_volume_size = 10
-# Todo: Move to OpenSearch provider?
-_valid_opensearch_max_volume_size = {
-    "tiny": 100,
-    "small": 200,
-    "small-ha": 200,
-    "medium": 512,
-    "medium-ha": 512,
-    "large": 1000,
-    "large-ha": 1000,
-    "x-large": 1500,
-    "x-large-ha": 1500,
-}
-
-_opensearch_schema = {
-    "type": "opensearch",
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("engine"): str,
-            Optional("deletion_policy"): _valid_deletion_policy,
-            Optional("plan"): _valid_opensearch_plans,
-            Optional("volume_size"): int,
-            Optional("ebs_throughput"): int,
-            Optional("ebs_volume_type"): str,
-            Optional("instance"): str,
-            Optional("instances"): int,
-            Optional("master"): bool,
-            Optional("es_app_log_retention_in_days"): int,
-            Optional("index_slow_log_retention_in_days"): int,
-            Optional("audit_log_retention_in_days"): int,
-            Optional("search_slow_log_retention_in_days"): int,
-            Optional("password_special_characters"): str,
-            Optional("urlencode_password"): bool,
-        }
-    },
-}
-
-# Prometheus...
-_prometheus_policy_schema = {
-    "type": "prometheus-policy",
-    Optional("services"): Or("__all__", [str]),
-    Optional("environments"): {
-        _valid_environment_name: {
-            "role_arn": str,
-        }
-    },
-}
 
 # Postgres...
 # Todo: Move to Postgres provider?
@@ -284,6 +168,17 @@ _redis_schema = {
 
 
 # S3 Bucket...
+_cross_environment_service_access_schema = {
+    "application": str,
+    "environment": _valid_environment_name,
+    "account": str,
+    "service": str,
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+}
+
+
 def _valid_s3_bucket_name(name: str):
     errors = []
     if not (2 < len(name) < 64):
@@ -498,7 +393,7 @@ _environment_pipelines_schema = {
 
 class PlatformConfigSchema:
     @staticmethod
-    def schema():
+    def schema() -> Schema:
         return Schema(
             {
                 # The following line is for the AWS Copilot version, will be removed under DBTP-1002
@@ -512,10 +407,10 @@ class PlatformConfigSchema:
                 Optional("extensions"): {
                     str: Or(
                         PlatformConfigSchema.__alb_schema(),
-                        _monitoring_schema,
-                        _opensearch_schema,
+                        PlatformConfigSchema.__monitoring_schema(),
+                        PlatformConfigSchema.__opensearch_schema(),
                         _postgres_schema,
-                        _prometheus_policy_schema,
+                        PlatformConfigSchema.__prometheus_policy_schema(),
                         _redis_schema,
                         _s3_bucket_schema,
                         _s3_bucket_policy_schema,
@@ -525,25 +420,25 @@ class PlatformConfigSchema:
         )
 
     @staticmethod
-    def extension_schemas():
+    def extension_schemas() -> dict:
         return {
             "alb": Schema(PlatformConfigSchema.__alb_schema()),
             "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
-            "opensearch": ConditionalOpensSearchSchema(_opensearch_schema),
+            "opensearch": ConditionalOpensSearchSchema(PlatformConfigSchema.__opensearch_schema()),
             "postgres": Schema(_postgres_schema),
-            "prometheus-policy": Schema(_prometheus_policy_schema),
+            "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
             "redis": Schema(_redis_schema),
             "s3": Schema(_s3_bucket_schema),
             "s3-policy": Schema(_s3_bucket_policy_schema),
             "subscription-filter": _no_configuration_required_schema("subscription-filter"),
             # Todo: We think the next three are no longer relevant?
-            "monitoring": Schema(_monitoring_schema),
+            "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
             "vpc": _no_configuration_required_schema("vpc"),
             "xray": _no_configuration_required_schema("xray"),
         }
 
     @staticmethod
-    def __alb_schema():
+    def __alb_schema() -> dict:
         _valid_alb_cache_policy = {
             "min_ttl": int,
             "max_ttl": int,
@@ -606,3 +501,199 @@ class PlatformConfigSchema:
                 )
             },
         }
+
+    @staticmethod
+    def __monitoring_schema() -> dict:
+        return {
+            "type": "monitoring",
+            Optional("environments"): {
+                _valid_environment_name: {
+                    Optional("enable_ops_center"): bool,
+                }
+            },
+        }
+
+    @staticmethod
+    def __opensearch_schema() -> dict:
+        # Todo: Move to OpenSearch provider?
+        _valid_opensearch_plans = Or(
+            "tiny",
+            "small",
+            "small-ha",
+            "medium",
+            "medium-ha",
+            "large",
+            "large-ha",
+            "x-large",
+            "x-large-ha",
+        )
+
+        return {
+            "type": "opensearch",
+            Optional("environments"): {
+                _valid_environment_name: {
+                    Optional("engine"): str,
+                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
+                    Optional("plan"): _valid_opensearch_plans,
+                    Optional("volume_size"): int,
+                    Optional("ebs_throughput"): int,
+                    Optional("ebs_volume_type"): str,
+                    Optional("instance"): str,
+                    Optional("instances"): int,
+                    Optional("master"): bool,
+                    Optional("es_app_log_retention_in_days"): int,
+                    Optional("index_slow_log_retention_in_days"): int,
+                    Optional("audit_log_retention_in_days"): int,
+                    Optional("search_slow_log_retention_in_days"): int,
+                    Optional("password_special_characters"): str,
+                    Optional("urlencode_password"): bool,
+                }
+            },
+        }
+
+    @staticmethod
+    def __prometheus_policy_schema() -> dict:
+        return {
+            "type": "prometheus-policy",
+            Optional("services"): Or("__all__", [str]),
+            Optional("environments"): {
+                _valid_environment_name: {
+                    "role_arn": str,
+                }
+            },
+        }
+
+    @staticmethod
+    def __string_matching_regex(regex_pattern: str) -> Callable:
+        def validate(string):
+            if not re.match(regex_pattern, string):
+                # Todo: Raise suitable PlatformException?
+                raise SchemaError(
+                    f"String '{string}' does not match the required pattern '{regex_pattern}'."
+                )
+            return string
+
+        return validate
+
+    @staticmethod
+    def __is_integer_between(lower_limit, upper_limit) -> Callable:
+        def validate(value):
+            if isinstance(value, int) and lower_limit <= value <= upper_limit:
+                return True
+            # Todo: Raise suitable PlatformException?
+            raise SchemaError(f"should be an integer between {lower_limit} and {upper_limit}")
+
+        return validate
+
+    @staticmethod
+    def __valid_schema_key() -> Regex:
+        return Regex(
+            r"^([a-z][a-zA-Z0-9_-]*|\*)$",
+            error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
+        )
+
+    @staticmethod
+    def __valid_branch_name() -> Callable:
+        # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
+        return PlatformConfigSchema.__string_matching_regex(r"^((?!\*).)*(\*)?$")
+
+    @staticmethod
+    def __valid_deletion_policy() -> Or:
+        return Or("Delete", "Retain")
+
+    @staticmethod
+    def __valid_postgres_deletion_policy() -> Or:
+        return Or("Delete", "Retain", "Snapshot")
+
+    @staticmethod
+    def __valid_environment_name() -> Regex:
+        return Regex(
+            r"^([a-z][a-zA-Z0-9]*|\*)$",
+            error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
+            # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
+        )
+
+    @staticmethod
+    def __valid_kms_key_arn(key) -> Regex:
+        return Regex(
+            r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+            error=f"{key} must contain a valid ARN for a KMS key",
+        )
+
+    @staticmethod
+    def __valid_iam_role_arn(key) -> Regex:
+        return Regex(
+            r"^arn:aws:iam::\d{12}:role/.*",
+            error=f"{key} must contain a valid ARN for an IAM role",
+        )
+
+    @staticmethod
+    def __valid_dbt_email_address(key) -> Regex:
+        return Regex(
+            r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+            error=f"{key} must contain a valid DBT email address",
+        )
+
+    @staticmethod
+    def __no_configuration_required_schema(schema_type) -> Schema:
+        return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
+
+
+class ConditionalOpensSearchSchema(Schema):
+    # Todo: Move to OpenSearch provider?
+    _valid_opensearch_min_volume_size: int = 10
+
+    # Todo: Move to OpenSearch provider?
+    _valid_opensearch_max_volume_size: dict = {
+        "tiny": 100,
+        "small": 200,
+        "small-ha": 200,
+        "medium": 512,
+        "medium-ha": 512,
+        "large": 1000,
+        "large-ha": 1000,
+        "x-large": 1500,
+        "x-large-ha": 1500,
+    }
+
+    def validate(self, data, _is_conditional_schema=True) -> Schema:
+        data = super(ConditionalOpensSearchSchema, self).validate(
+            data, _is_conditional_schema=False
+        )
+        if _is_conditional_schema:
+            default_plan = None
+            default_volume_size = None
+
+            default_environment_config = data["environments"].get(
+                "*", data["environments"].get("default", None)
+            )
+            if default_environment_config:
+                default_plan = default_environment_config.get("plan", None)
+                default_volume_size = default_environment_config.get("volume_size", None)
+
+            for env in data["environments"]:
+                volume_size = data["environments"][env].get("volume_size", default_volume_size)
+                plan = data["environments"][env].get("plan", default_plan)
+
+                if volume_size:
+                    if not plan:
+                        # Todo: Raise suitable PlatformException?
+                        raise SchemaError(f"Missing key: 'plan'")
+
+                    if volume_size < self._valid_opensearch_min_volume_size:
+                        # Todo: Raise suitable PlatformException?
+                        raise SchemaError(
+                            f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {self._valid_opensearch_min_volume_size}"
+                        )
+
+                    for key in self._valid_opensearch_max_volume_size:
+                        if (
+                            plan == key
+                            and not volume_size <= self._valid_opensearch_max_volume_size[key]
+                        ):
+                            # Todo: Raise suitable PlatformException?
+                            raise SchemaError(
+                                f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {self._valid_opensearch_min_volume_size} and {self._valid_opensearch_max_volume_size[key]} for plan {plan}"
+                            )
+
+        return data
