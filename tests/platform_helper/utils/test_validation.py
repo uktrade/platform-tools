@@ -34,6 +34,7 @@ def load_addons(addons_file):
         (r"^\d+-\d+$", ["1-10"], ["20-21-23"]),
         (r"^\d+s$", ["10s"], ["10seconds"]),
         (
+            # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
             r"^((?!\*).)*(\*)?$",
             ["test/valid/branch", "test/valid/branch*", "test/valid/branch-other"],
             ["test*invalid/branch", "test*invalid/branch*"],

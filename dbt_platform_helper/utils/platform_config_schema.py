@@ -35,6 +35,7 @@ _valid_schema_key = Regex(
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
 
+# Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
 _valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
 
 _valid_deletion_policy = Or("Delete", "Retain")
@@ -530,7 +531,7 @@ _codebase_pipelines_schema = [
 _environment_pipelines_schema = {
     str: {
         Optional("account"): str,
-        Optional("branch", default="main"): str,
+        Optional("branch", default="main"): _valid_branch_name,
         Optional("pipeline_to_trigger"): str,
         Optional("versions"): _valid_pipeline_specific_version_overrides,
         "slack_channel": str,
