@@ -52,9 +52,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
 
         assert (
             err.value.args[0]
-            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For "
-            "more details on valid string patterns see: "
-            "https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'."
         )
 
 
