@@ -4,7 +4,7 @@ import botocore
 from cfn_tools import dump_yaml
 from cfn_tools import load_yaml
 
-from dbt_platform_helper.exceptions import CloudFormationException
+from dbt_platform_helper.platform_exception import PlatformException
 
 
 class CloudFormation:
@@ -125,3 +125,10 @@ class CloudFormation:
                 raise CloudFormationException(
                     stack_name, f"Error while waiting for stack status: {str(err)}"
                 )
+
+
+class CloudFormationException(PlatformException):
+    def __init__(self, stack_name: str, current_status: str):
+        super().__init__(
+            f"The CloudFormation stack '{stack_name}' is not in a good state: {current_status}"
+        )

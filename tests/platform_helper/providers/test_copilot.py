@@ -6,11 +6,11 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import SecretNotFoundError
-from dbt_platform_helper.providers.copilot import CreateTaskTimeoutError
+from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
+from dbt_platform_helper.providers.secrets import SecretNotFoundException
 from tests.platform_helper.conftest import NoSuchEntityException
 from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_task_name
@@ -30,7 +30,6 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
         f"/copilot/{mock_application.name}/{env}/secrets/DUMMY_POSTGRES_RDS_MASTER_ARN"
     )
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secrets_manager_client = mock_application.environments[env].session.client("secretsmanager")
 
     boto3.client("ssm").put_parameter(
         Name=master_secret_name, Value="master-secret-arn", Type="String"
@@ -39,7 +38,6 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     create_postgres_admin_task(
         ssm_client,
-        secrets_manager_client,
         mock_subprocess,
         mock_application,
         addon_name,
@@ -102,12 +100,10 @@ def test_create_redis_or_opensearch_addon_client_task(
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
     create_addon_client_task(
         iam_client,
         ssm_client,
-        secretsmanager_client,
         mock_subprocess,
         mock_application,
         env,
@@ -156,12 +152,10 @@ def test_create_postgres_addon_client_task(
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
     create_addon_client_task(
         iam_client,
         ssm_client,
-        secretsmanager_client,
         mock_subprocess,
         mock_application,
         env,
@@ -197,11 +191,9 @@ def test_create_postgres_addon_client_task_admin(
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
     create_addon_client_task(
         iam_client,
         ssm_client,
-        secretsmanager_client,
         mock_subprocess,
         mock_application,
         env,
@@ -214,7 +206,6 @@ def test_create_postgres_addon_client_task_admin(
 
     mock_create_postgres_admin_task.assert_called_once_with(
         ssm_client,
-        secretsmanager_client,
         mock_subprocess,
         mock_application,
         addon_name,
@@ -249,12 +240,10 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     task_name = mock_task_name(addon_name)
 
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
     create_addon_client_task(
         mock_application.environments[env].session.client("iam"),
         ssm_client,
-        secretsmanager_client,
         mock_subprocess,
         mock_application,
         env,
@@ -301,13 +290,11 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     task_name = mock_task_name(addon_name)
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
     with pytest.raises(SystemExit) as exc_info:
         create_addon_client_task(
             iam_client,
             ssm_client,
-            secretsmanager_client,
             mock_subprocess,
             mock_application,
             env,
@@ -337,17 +324,15 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     mock_subprocess = Mock()
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
-    secretsmanager_client = mock_application.environments[env].session.client("secretsmanager")
 
-    get_connection_secret_arn.side_effect = SecretNotFoundError(
+    get_connection_secret_arn.side_effect = SecretNotFoundException(
         "/copilot/test-application/development/secrets/named-postgres"
     )
 
-    with pytest.raises(SecretNotFoundError):
+    with pytest.raises(SecretNotFoundException):
         create_addon_client_task(
             iam_client,
             ssm_client,
-            secretsmanager_client,
             mock_subprocess,
             mock_application,
             env,
@@ -416,7 +401,7 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
     mock_subprocess = Mock()
     get_ecs_task_arns = Mock(return_value=[])
 
-    with pytest.raises(CreateTaskTimeoutError):
+    with pytest.raises(CreateTaskTimeoutException):
         connect_to_addon_client_task(
             ecs_client,
             mock_subprocess,

@@ -8,9 +8,9 @@ from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
@@ -58,10 +58,10 @@ class DatabaseCopy:
 
         try:
             self.application = load_application(self.app)
-        except ApplicationNotFoundError:
+        except ApplicationNotFoundException:
             abort(f"No such application '{app}'.")
 
-    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, to_env: str):
+    def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
         environments = self.application.environments
@@ -89,7 +89,7 @@ class DatabaseCopy:
 
         try:
             task_arn = self.run_database_copy_task(
-                env_session, env, vpc_config, is_dump, db_connection_string, to_env
+                env_session, env, vpc_config, is_dump, db_connection_string, filename
             )
         except Exception as exc:
             self.abort(f"{exc} (Account id: {self.account_id(env)})")
@@ -122,14 +122,15 @@ class DatabaseCopy:
         vpc_config: Vpc,
         is_dump: bool,
         db_connection_string: str,
-        to_env: str,
+        filename: str,
     ) -> str:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
+        dump_file_name = filename if filename else "data_dump"
         env_vars = [
             {"name": "DATA_COPY_OPERATION", "value": action.upper()},
             {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
-            {"name": "TO_ENVIRONMENT", "value": to_env},
+            {"name": "DUMP_FILE_NAME", "value": dump_file_name},
         ]
         if not is_dump:
             env_vars.append({"name": "ECS_CLUSTER", "value": f"{self.app}-{env}"})
@@ -159,12 +160,12 @@ class DatabaseCopy:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def dump(self, env: str, vpc_name: str, to_env: str):
-        self._execute_operation(True, env, vpc_name, to_env)
+    def dump(self, env: str, vpc_name: str, filename: str = None):
+        self._execute_operation(True, env, vpc_name, filename)
 
-    def load(self, env: str, vpc_name: str):
+    def load(self, env: str, vpc_name: str, filename: str = None):
         if self.is_confirmed_ready_to_load(env):
-            self._execute_operation(False, env, vpc_name, to_env=env)
+            self._execute_operation(False, env, vpc_name, filename)
 
     def copy(
         self,
@@ -179,8 +180,8 @@ class DatabaseCopy:
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
             self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
-        self.dump(from_env, from_vpc, to_env)
-        self.load(to_env, to_vpc)
+        self.dump(from_env, from_vpc, f"data_dump_{to_env}")
+        self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
             self.maintenance_page_provider.deactivate(self.app, to_env)
 

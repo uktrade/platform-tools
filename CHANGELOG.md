@@ -1,5 +1,23 @@
 # Changelog
 
+## [12.4.0](https://github.com/uktrade/platform-tools/compare/12.3.0...12.4.0) (2024-12-06)
+
+
+### Features
+
+* DBTP-1568 - Add s3 support for cross environment service access ([#654](https://github.com/uktrade/platform-tools/issues/654)) ([7e1d75f](https://github.com/uktrade/platform-tools/commit/7e1d75f95cacb68e01f0f62448359166509c20b0))
+
+
+### Bug Fixes
+
+* DBTP-1498 - Add option for database dump filename ([#681](https://github.com/uktrade/platform-tools/issues/681)) ([d06ddcc](https://github.com/uktrade/platform-tools/commit/d06ddcc0253a76950f54b881af84be14b0981b66))
+* DBTP-1498 - Add validation for database copy pipeline ([#683](https://github.com/uktrade/platform-tools/issues/683)) ([cda1e7b](https://github.com/uktrade/platform-tools/commit/cda1e7bc9daa1732e9032c7d6566716e3151b961))
+
+
+### Documentation
+
+* Document new dbt-platform-helper architecture ([#669](https://github.com/uktrade/platform-tools/issues/669)) ([ae4862d](https://github.com/uktrade/platform-tools/commit/ae4862da9e3e3d39c82c99222fa21450191f260a))
+
 ## [12.3.0](https://github.com/uktrade/platform-tools/compare/12.2.4...12.3.0) (2024-12-03)
 
 

@@ -16,3 +16,13 @@ my-rds-db:
     dev:
       deletion_policy: "Delete"
       deletion_protection: false
+  database_copy:
+    - from: prod
+      to: hotfix
+      pipeline: { }
+    - from: prod
+      from_account: "9999999999"
+      to: staging
+      to_account: "1122334455"
+      pipeline:
+        schedule: "0 0 * * WED"

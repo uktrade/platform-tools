@@ -6,7 +6,6 @@ import click
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
-from dbt_platform_helper.providers.copilot import create_postgres_admin_task
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
@@ -23,7 +22,6 @@ class Conduit:
         subprocess: subprocess = subprocess,
         connect_to_addon_client_task=connect_to_addon_client_task,
         create_addon_client_task=create_addon_client_task,
-        create_postgres_admin_task=create_postgres_admin_task,
     ):
 
         self.application = application
@@ -34,7 +32,6 @@ class Conduit:
         self.echo = echo
         self.connect_to_addon_client_task = connect_to_addon_client_task
         self.create_addon_client_task = create_addon_client_task
-        self.create_postgres_admin_task = create_postgres_admin_task
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
@@ -49,7 +46,6 @@ class Conduit:
             self.create_addon_client_task(
                 clients["iam"],
                 clients["ssm"],
-                clients["secrets_manager"],
                 self.subprocess,
                 self.application,
                 env,
@@ -89,8 +85,6 @@ class Conduit:
             "ecs": self.application.environments[env].session.client("ecs"),
             "iam": self.application.environments[env].session.client("iam"),
             "ssm": self.application.environments[env].session.client("ssm"),
-            "cloudformation": self.application.environments[env].session.client("cloudformation"),
-            "secrets_manager": self.application.environments[env].session.client("secretsmanager"),
         }
 
     def _get_addon_details(self, addon_name, access):
