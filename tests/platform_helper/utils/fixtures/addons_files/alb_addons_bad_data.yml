@@ -71,7 +71,7 @@ my-alb-default-waf-should-be-a-string:
   type: alb
   environments:
     dev:
-      default_waf: [] # Should be a string
+      default_waf: [ ] # Should be a string
 
 
 my-alb-enable-logging-should-be-a-bool:
@@ -114,6 +114,13 @@ my-alb-origin-ssl-protocols-should-be-a-list:
   environments:
     dev:
       origin_ssl_protocols: False # Should be a list
+      
+
+my-alb-slack-alert-channel-alb-secret-rotation-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      slack_alert_channel_alb_secret_rotation: 12345 # Should be a string
 
 
 my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string:
@@ -134,4 +141,109 @@ my-alb-view-protocol-policy-should-be-a-string:
   type: alb
   environments:
     dev:
-      viewer_protocol_policy: [] # Should be a string
+      viewer_protocol_policy: [ ] # Should be a string
+
+my-alb-cache-policy-min-ttl-should-be-a-int:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          min_ttl: "four hundred"
+
+my-alb-cache-policy-max-ttl-should-be-a-int:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          max_ttl: "three hundred"
+
+my-alb-cache-policy-default-ttl-should-be-a-int:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          default_ttl: "two hundred"
+
+my-alb-cache-policy-cookies-config-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          cookies_config: 44321
+
+my-alb-cache-policy-cookies-list-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          cookie_list: 123
+
+my-alb-cache-policy-header-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          header: 999
+
+my-alb-cache-policy-headers-list-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          headers_list: true
+
+my-alb-cache-policy-query-string-behavior-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          query_string_behavior: [ ]
+
+my-alb-cache-policy-cache-policy-query-strings-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      cache_policy:
+        "test-policy":
+          cache_policy_query_strings: 765
+
+my-alb-origin-request-policy-should-be-a-dict:
+  type: alb
+  environments:
+    dev:
+      origin_request_policy:
+        "test-origin-request": [ ]
+
+my-alb-paths-default-cache-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      paths:
+        dev.application.uktrade.digital:
+          default:
+            cache: 12345
+
+my-alb-paths-default-request-should-be-a-string:
+  type: alb
+  environments:
+    dev:
+      paths:
+        dev.application.uktrade.digital:
+          default:
+            request: { }
+
+my-alb-paths-additional-should-be-a-list:
+  type: alb
+  environments:
+    dev:
+      paths:
+        dev.application.uktrade.digital:
+          additional: false

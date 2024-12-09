@@ -9,9 +9,9 @@ from typing import Union
 import boto3
 import click
 
-from dbt_platform_helper.providers.load_balancers import ListenerNotFoundError
-from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundError
-from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundError
+from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
+from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
+from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
@@ -75,13 +75,13 @@ class MaintenancePageProvider:
             else:
                 raise click.Abort
 
-        except LoadBalancerNotFoundError:
+        except LoadBalancerNotFoundException:
             click.secho(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
-        except ListenerNotFoundError:
+        except ListenerNotFoundException:
             click.secho(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
@@ -110,13 +110,13 @@ class MaintenancePageProvider:
                 f"Maintenance page removed from environment {env} in application {app}", fg="green"
             )
 
-        except LoadBalancerNotFoundError:
+        except LoadBalancerNotFoundException:
             click.secho(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
-        except ListenerNotFoundError:
+        except ListenerNotFoundException:
             click.secho(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
@@ -180,7 +180,7 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
 
         if name == "MaintenancePage" and not deleted:
-            raise ListenerRuleNotFoundError()
+            raise ListenerRuleNotFoundException()
 
 
 def get_rules_tag_descriptions(rules: list, lb_client):
@@ -261,7 +261,7 @@ def add_maintenance_page(
         )
 
         click.secho(
-            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/activities/holding-and-maintenance-pages/",
+            f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             fg="green",
         )
 

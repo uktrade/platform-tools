@@ -102,7 +102,6 @@ def list(app, env):
     params = dict(Path=path, Recursive=False, WithDecryption=True, MaxResults=10)
     secrets = []
 
-    # TODO: refactor shared code with get_ssm_secret_names
     while True:
         response = client.get_parameters_by_path(**params)
 
@@ -114,6 +113,7 @@ def list(app, env):
         else:
             break
 
+    # Todo: When we refactor this, the above could probably just use dbt_platform_helper.utils.aws.get_ssm_secret_names so we would end up with print("\n".join(get_ssm_secret_names(app, env)))
     print("\n".join(sorted(secrets)))
 
 

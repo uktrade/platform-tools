@@ -42,7 +42,58 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
     poetry run pre-commit install
     ```
 
+### Platform Helper architecture
+
+`platform-helper` is split into the following layers:
+
+Commands (UI) -> Domains -> Providers
+
+Code written for `platform-helper` should adhere to the following architecture, shown below.
+
+![platform-helper architecture](doc/platform-helper-architecture.png)
+
+#### Commands
+
+This is the (essentially) UI level of `platform-helper`
+
+We try to follow a noun/domain verb/action pattern, `platform-helper thing action`.
+
+E.g. `codebase` has the following commands (all to do with the codebase Domain):
+
+- `build`
+- `deploy`
+- `list`
+- `prepare`
+
+Each command has an associated Domain. 
+
+There should be no business logic within the command as this is implelemented in the Domain layer.
+
+CLI arguments for a command are pulled in via [click](https://click.palletsprojects.com/en/stable/) and passed to the Domain along with any dependencies.
+
+#### Domains
+
+Domains are where the business logic for a given Command lives.
+
+Each Domain is a class.
+
+Any logged information (`click.secho`) from the Provider level should live within the Domain level.
+
+Any common/reusable elements should be implemented in a Provider.
+
+#### Providers
+
+Providers are groups of similar logic that are linked by the resource/tool/thing they use rather than the result of what their actions is.
+
+E.g. I have a method that lists *thing* from the *thing-service* AWS using a boto3 client.
+
+This method is not specific to the Domain so it should go into the *thing-service* Provider.
+
 ### Testing
+
+#### Testing approach
+
+See the following [Confluence](https://uktrade.atlassian.net/wiki/spaces/DBTP/pages/4325376119/Testing+approach) page the `platform-tools` testing approach
 
 #### Requirements
 
@@ -78,7 +129,9 @@ You can run the mutation tests locally, but:
 
 You may want to test any CLI changes locally.
 
-Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so.
+##### Option 1 - Build and install `platform-helper` from your local source code
+
+Run `poetry build` to build your package resulting in a package file (e.g. `dbt_platform_tools-0.1.40.tar.gz`) in a `dist` folder. You may need to bump up the package version before doing so. To bump the version go to `pyproject.toml/version`
 
 Copy the package file(s) to the directory where you would like to test your changes, and make sure you are in a virtual environment. Run `platform-helper --version` to check the installed package version (e.g. `0.1.39`).
 
@@ -89,6 +142,19 @@ Run `pip install <file>` and confirm the installation has worked by running `pla
 
 > [!IMPORTANT]
 > When testing is complete, do not forget to revert the `dbt-platform-helper` installation back to what it was; e.g. `pip install dbt-platform-helper==0.1.39`.
+
+##### Option 2 - Run the python files directly.
+
+This assumes that the virtual python environment where you are running them from already has the dependencies installed and the directory is at the same level as your platform-tools directory.
+
+Example usage:
+
+```
+# From <application>-deploy
+
+../platform-tools/platform_helper.py <command> <options>
+```
+
 
 #### End to end testing
 

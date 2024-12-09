@@ -5,6 +5,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -71,7 +72,7 @@ def get_vpc_id(session, env_name, vpc_name=None):
     return vpcs[0]["VpcId"]
 
 
-def get_subnet_ids(session, vpc_id):
+def get_subnet_ids(session, vpc_id, environment_name):
     subnets = session.client("ec2").describe_subnets(
         Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
     )["Subnets"]
@@ -81,11 +82,41 @@ def get_subnet_ids(session, vpc_id):
         raise click.Abort
 
     public_tag = {"Key": "subnet_type", "Value": "public"}
-    public = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+    public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
     private_tag = {"Key": "subnet_type", "Value": "private"}
-    private = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
+    private_subnets = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
 
-    return public, private
+    # This call and the method declaration can be removed when we stop using AWS Copilot to deploy the services
+    public_subnets, private_subnets = _match_subnet_id_order_to_cloudformation_exports(
+        session,
+        environment_name,
+        public_subnets,
+        private_subnets,
+    )
+
+    return public_subnets, private_subnets
+
+
+def _match_subnet_id_order_to_cloudformation_exports(
+    session, environment_name, public_subnets, private_subnets
+):
+    public_subnet_exports = []
+    private_subnet_exports = []
+    for page in session.client("cloudformation").get_paginator("list_exports").paginate():
+        for export in page["Exports"]:
+            if f"-{environment_name}-" in export["Name"]:
+                if export["Name"].endswith("-PublicSubnets"):
+                    public_subnet_exports = export["Value"].split(",")
+                if export["Name"].endswith("-PrivateSubnets"):
+                    private_subnet_exports = export["Value"].split(",")
+
+    # If the elements match, regardless of order, use the list from the CloudFormation exports
+    if set(public_subnets) == set(public_subnet_exports):
+        public_subnets = public_subnet_exports
+    if set(private_subnets) == set(private_subnet_exports):
+        private_subnets = private_subnet_exports
+
+    return public_subnets, private_subnets
 
 
 def get_cert_arn(session, application, env_name):
@@ -142,22 +173,26 @@ def generate_terraform(name, terraform_platform_modules_version):
     )
 
 
-def _generate_copilot_environment_manifests(name, application, env_config, session):
+def _generate_copilot_environment_manifests(environment_name, application, env_config, session):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
-    vpc_id = get_vpc_id(session, name, vpc_name)
-    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id)
-    cert_arn = get_cert_arn(session, application, name)
+    vpc_id = get_vpc_id(session, environment_name, vpc_name)
+    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
+    cert_arn = get_cert_arn(session, application, environment_name)
     contents = env_template.render(
         {
-            "name": name,
+            "name": environment_name,
             "vpc_id": vpc_id,
             "pub_subnet_ids": pub_subnet_ids,
             "priv_subnet_ids": priv_subnet_ids,
             "certificate_arn": cert_arn,
         }
     )
-    click.echo(mkfile(".", f"copilot/environments/{name}/manifest.yml", contents, overwrite=True))
+    click.echo(
+        mkfile(
+            ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
+        )
+    )
 
 
 def _generate_terraform_environment_manifests(
@@ -204,10 +239,10 @@ def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     try:
         certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
     except StopIteration:
-        raise CertificateNotFoundError()
+        raise CertificateNotFoundException()
 
     return certificate_arn
 
 
-class CertificateNotFoundError(Exception):
+class CertificateNotFoundException(PlatformException):
     pass

@@ -10,9 +10,9 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.exceptions import IncompatibleMajorVersion
-from dbt_platform_helper.exceptions import IncompatibleMinorVersion
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
+from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
 from dbt_platform_helper.utils.versioning import (
@@ -88,10 +88,10 @@ def test_get_github_version_from_tags(request_get):
 @pytest.mark.parametrize(
     "version_check",
     [
-        ((1, 40, 0), (1, 30, 0), IncompatibleMinorVersion),
-        ((1, 40, 0), (2, 1, 0), IncompatibleMajorVersion),
-        ((0, 2, 40), (0, 1, 30), IncompatibleMajorVersion),
-        ((0, 1, 40), (0, 1, 30), IncompatibleMajorVersion),
+        ((1, 40, 0), (1, 30, 0), IncompatibleMinorVersionException),
+        ((1, 40, 0), (2, 1, 0), IncompatibleMajorVersionException),
+        ((0, 2, 40), (0, 1, 30), IncompatibleMajorVersionException),
+        ((0, 1, 40), (0, 1, 30), IncompatibleMajorVersionException),
     ],
 )
 def test_validate_version_compatability(
@@ -110,10 +110,10 @@ def test_validate_version_compatability(
 @pytest.mark.parametrize(
     "template_check",
     [
-        ("addon_newer_major_version.yml", IncompatibleMajorVersion, ""),
-        ("addon_newer_minor_version.yml", IncompatibleMinorVersion, ""),
-        ("addon_older_major_version.yml", IncompatibleMajorVersion, ""),
-        ("addon_older_minor_version.yml", IncompatibleMinorVersion, ""),
+        ("addon_newer_major_version.yml", IncompatibleMajorVersionException, ""),
+        ("addon_newer_minor_version.yml", IncompatibleMinorVersionException, ""),
+        ("addon_older_major_version.yml", IncompatibleMajorVersionException, ""),
+        ("addon_older_minor_version.yml", IncompatibleMinorVersionException, ""),
         ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
     ],
 )
@@ -133,9 +133,9 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 @pytest.mark.parametrize(
     "expected_exception",
     [
-        IncompatibleMajorVersion,
-        IncompatibleMinorVersion,
-        IncompatibleMinorVersion,
+        IncompatibleMajorVersionException,
+        IncompatibleMinorVersionException,
+        IncompatibleMinorVersionException,
     ],
 )
 @patch("click.secho")
@@ -155,14 +155,14 @@ def test_check_platform_helper_version_needs_update(
 
     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
-    if expected_exception == IncompatibleMajorVersion:
+    if expected_exception == IncompatibleMajorVersionException:
         secho.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
             "--upgrade dbt-platform-helper`.",
             fg="red",
         )
 
-    if expected_exception == IncompatibleMinorVersion:
+    if expected_exception == IncompatibleMinorVersionException:
         secho.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
             "--upgrade dbt-platform-helper`.",

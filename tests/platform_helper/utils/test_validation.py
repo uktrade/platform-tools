@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 from unittest.mock import patch
@@ -9,18 +8,17 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.providers.platform_config_schema import _is_integer_between
+from dbt_platform_helper.providers.platform_config_schema import _string_matching_regex
+from dbt_platform_helper.providers.platform_config_schema import _valid_s3_bucket_name
+from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
-from dbt_platform_helper.utils.validation import int_between
 from dbt_platform_helper.utils.validation import lint_yaml_for_duplicate_keys
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
-from dbt_platform_helper.utils.validation import validate_s3_bucket_name
-from dbt_platform_helper.utils.validation import validate_string
-from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -36,6 +34,7 @@ def load_addons(addons_file):
         (r"^\d+-\d+$", ["1-10"], ["20-21-23"]),
         (r"^\d+s$", ["10s"], ["10seconds"]),
         (
+            # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
             r"^((?!\*).)*(\*)?$",
             ["test/valid/branch", "test/valid/branch*", "test/valid/branch-other"],
             ["test*invalid/branch", "test*invalid/branch*"],
@@ -43,7 +42,7 @@ def load_addons(addons_file):
     ],
 )
 def test_validate_string(regex_pattern, valid_strings, invalid_strings):
-    validator = validate_string(regex_pattern)
+    validator = _string_matching_regex(regex_pattern)
 
     for valid_string in valid_strings:
         assert validator(valid_string) == valid_string
@@ -54,9 +53,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
 
         assert (
             err.value.args[0]
-            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For "
-            "more details on valid string patterns see: "
-            "https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'."
         )
 
 
@@ -107,6 +104,17 @@ def test_validate_addons_success(addons_file):
                 "my-s3-bucket-data-migration-source-bucket-invalid-arn": r"source_bucket_arn must contain a valid ARN for an S3 bucket",
                 "my-s3-bucket-data-migration-source-kms-key-invalid-arn": r"source_kms_key_arn must contain a valid ARN for a KMS key",
                 "my-s3-bucket-data-migration-worker-role-invalid-arn": r"worker_role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-arn": r"role_arn must contain a valid ARN for an IAM role",
+                "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
+                "my-s3-cross-environment-service-access-bucket-invalid-environment": r"Environment name hyphen-not-allowed-in-environment is invalid",
+                "my-s3-cross-environment-service-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
+                "my-s3-cross-environment-service-access-bucket-missing-application": r"Missing key: 'application'",
+                "my-s3-cross-environment-service-access-bucket-missing-environment": r"Missing key: 'environment'",
+                "my-s3-cross-environment-service-access-bucket-missing-account": r"Missing key: 'account'",
+                "my-s3-cross-environment-service-access-bucket-missing-service": r"Missing key: 'service'",
+                "my-s3-cross-environment-service-access-bucket-invalid-write": r"cross_environment_service_access.*'WRITE' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-invalid-read": r"cross_environment_service_access.*'READ' should be instance of 'bool'",
+                "my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off": r"Missing key: 'cyber_sign_off_by'",
             },
         ),
         (
@@ -141,6 +149,7 @@ def test_validate_addons_success(addons_file):
                 "my-rds-data-migration-invalid-environments": r"Environment name \$ is invalid: names must only contain lowercase alphanumeric characters, or be the '\*' default environment",
                 "my-rds-data-migration-missing-key": r"Missing key: 'to'.*",
                 "my-rds-data-migration-invalid-key": r"Wrong key 'non-existent-key' in.*",
+                "my-rds-data-migration-schedule-should-be-a-string": r"'database_copy.*False should be instance of 'str'",
             },
         ),
         (
@@ -224,9 +233,23 @@ def test_validate_addons_success(addons_file):
                 "my-alb-forwarded-values-query-string-should-be-a-bool": r"environments.*dev.*should be instance of 'bool'",
                 "my-alb-origin-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-origin-ssl-protocols-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-slack-alert-channel-alb-secret-rotation-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-minimum-protocol-version-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-viewer-certificate-ssl-support-method-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-view-protocol-policy-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-cache-policy-min-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-max-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-default-ttl-should-be-a-int": r"environments.*dev.*should be instance of 'int'",
+                "my-alb-cache-policy-cookies-config-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-cookies-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cache-policy-header-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-headers-list-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-cache-policy-query-string-behavior-should-be-a-string": r"environments.*dev.*did not validate",
+                "my-alb-cache-policy-cache-policy-query-strings-should-be-a-list": r"environments.*dev.*should be instance of 'list'",
+                "my-alb-origin-request-policy-should-be-a-dict": r"environments.*dev.*should be instance of 'dict'",
+                "my-alb-paths-default-cache-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-paths-default-request-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
+                "my-alb-paths-additional-should-be-a-list": r"environments.*dev.*raised TypeError",
             },
         ),
     ],
@@ -281,13 +304,13 @@ def test_validate_addons_missing_type():
 
 @pytest.mark.parametrize("value", [5, 1, 9])
 def test_between_success(value):
-    assert int_between(1, 9)(value)
+    assert _is_integer_between(1, 9)(value)
 
 
 @pytest.mark.parametrize("value", [-1, 10])
 def test_between_raises_error(value):
     try:
-        int_between(1, 9)(value)
+        _is_integer_between(1, 9)(value)
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be an integer between 1 and 9"
@@ -311,7 +334,7 @@ def test_between_with_step_raises_error(value):
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
 def test_validate_s3_bucket_name_success_cases(bucket_name):
-    assert validate_s3_bucket_name(bucket_name)
+    assert _valid_s3_bucket_name(bucket_name)
 
 
 @pytest.mark.parametrize(
@@ -334,9 +357,9 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
     ],
 )
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
-    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
+    exp_error = f"Bucket name '{bucket_name}' is invalid:\n  {error_message}"
     with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+        _valid_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
 
@@ -344,7 +367,7 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
 def test_validate_s3_bucket_name_multiple_failures():
     bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
     with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+        _valid_s3_bucket_name(bucket_name)
 
     exp_errors = [
         "Length must be between 3 and 63 characters inclusive.",
@@ -567,21 +590,17 @@ extensions:
 """
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
+    expected_error = f'duplication of key "{duplicate_key}"'
 
     linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert linting_failures == [f'\tLine 100: duplication of key "{duplicate_key}"']
+    assert expected_error in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:
         load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
 
     captured = capsys.readouterr()
-    expected_error_message = (
-        "Duplicate keys found in platform-config:"
-        + os.linesep
-        + f'\tLine 100: duplication of key "{duplicate_key}"'
-    )
 
-    assert expected_error_message in captured.err
+    assert expected_error in captured.err
     assert excinfo.value.code == 1
 
 
@@ -725,6 +744,65 @@ def test_config_file_check_fails_for_unsupported_files_exist(
 
 
 @pytest.mark.parametrize(
+    "database_copy_section",
+    [
+        None,
+        [{"from": "dev", "to": "test"}],
+        [{"from": "test", "to": "dev"}],
+        [
+            {
+                "from": "prod",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+            }
+        ],
+        [
+            {
+                "from": "dev",
+                "to": "test",
+                "from_account": "9999999999",
+                "to_account": "9999999999",
+            }
+        ],
+        [{"from": "test", "to": "dev", "pipeline": {}}],
+        [{"from": "test", "to": "dev", "pipeline": {"schedule": "0 0 * * WED"}}],
+        [
+            {
+                "from": "test",
+                "to": "dev",
+                "from_account": "9999999999",
+                "to_account": "1122334455",
+                "pipeline": {"schedule": "0 0 * * WED"},
+            }
+        ],
+    ],
+)
+def test_validate_database_copy_section_success_cases(database_copy_section):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "test": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+            }
+        },
+    }
+
+    if database_copy_section:
+        config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
+
+    validate_database_copy_section(config)
+
+    # Should get here fine if the config is valid.
+
+
+@pytest.mark.parametrize(
     "files, expected_messages",
     [
         (
@@ -749,34 +827,6 @@ def test_config_file_check_warns_if_deprecated_files_exist(
 
     for expected_message in expected_messages:
         assert expected_message in console_message
-
-
-@pytest.mark.parametrize(
-    "database_copy_section",
-    [
-        None,
-        [{"from": "dev", "to": "test"}],
-        [{"from": "test", "to": "dev"}, {"from": "prod", "to": "test"}],
-    ],
-)
-def test_validate_database_copy_section_success_cases(database_copy_section):
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-            }
-        },
-    }
-
-    if database_copy_section:
-        config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
-
-    validate_database_copy_section(config)
-
-    # Should get here fine if the config is valid.
 
 
 @pytest.mark.parametrize(
@@ -925,58 +975,148 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
     )
 
 
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extensions_supported_versions_successful_with_supported_version(
-    mock_supported_versions, capsys
-):
-
+def test_validate_database_copy_fails_if_cross_account_with_no_from_account(capfd):
     config = {
         "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "connors-redis": {"type": "redis", "environments": {"*": {"engine": "7.1"}}}
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
         },
-    }
-
-    _validate_extension_supported_versions(
-        config=config,
-        extension_type="redis",
-        version_key="engine",
-        get_supported_versions_fn=mock_supported_versions,
-    )
-
-    # Nothing should be logged if the version is valid.
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert captured.err == ""
-
-
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extensions_supported_versions_fails_with_unsupported_version(
-    mock_supported_versions, capsys
-):
-
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
         "extensions": {
-            "connors-redis": {
-                "type": "redis",
-                "environments": {"*": {"engine": "some-engine-which-probably-doesnt-exist"}},
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev"}],
             }
         },
     }
 
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'from_account' parameter must be present."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_cross_account_with_no_to_account(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [{"from": "prod", "to": "dev", "from_account": "9999999999"}],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'to_account' parameter must be present."
+    assert msg in console_message
+
+
+def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids(capfd):
+    config = {
+        "application": "test-app",
+        "environments": {
+            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
+            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
+        },
+        "extensions": {
+            "our-postgres": {
+                "type": "postgres",
+                "version": 7,
+                "database_copy": [
+                    {
+                        "from": "prod",
+                        "to": "dev",
+                        "from_account": "000000000",
+                        "to_account": "1111111111",
+                    }
+                ],
+            }
+        },
+    }
+
+    with pytest.raises(SystemExit):
+        validate_database_copy_section(config)
+
+    console_message = capfd.readouterr().err
+
+    msg = f"Incorrect value for 'from_account' for environment 'prod'"
+    assert msg in console_message
+
+
+@pytest.mark.parametrize(
+    "config, expected_response",
+    [
+        (
+            # No engine defined in either env
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {"*": {"plan": "tiny"}, "prod": {"plan": "largish"}},
+                    }
+                },
+            },
+            "",
+        ),
+        (
+            # Valid engine version defined in *
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {
+                            "*": {"engine": "7.1", "plan": "tiny"},
+                            "prod": {"plan": "tiny"},
+                        },
+                    }
+                },
+            },
+            "",
+        ),
+        (
+            # Invalid engine defined in prod environment
+            {
+                "extensions": {
+                    "connors-redis": {
+                        "type": "redis",
+                        "environments": {
+                            "*": {"plan": "tiny"},
+                            "prod": {"engine": "invalid", "plan": "tiny"},
+                        },
+                    }
+                },
+            },
+            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
+        ),
+    ],
+)
+@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
+def test_validate_extension_supported_versions(
+    mock_supported_versions, config, expected_response, capsys
+):
+
     _validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions_fn=mock_supported_versions,
+        get_supported_versions=mock_supported_versions,
     )
 
     captured = capsys.readouterr()
-    assert (
-        "redis version for environment * is not in the list of supported redis versions"
-        in captured.out
-    )
+
+    assert expected_response in captured.out
     assert captured.err == ""

@@ -13,9 +13,9 @@ import requests
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.exceptions import IncompatibleMajorVersion
-from dbt_platform_helper.exceptions import IncompatibleMinorVersion
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
+from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
 VersionTuple = Optional[Tuple[int, int, int]]
@@ -198,13 +198,13 @@ def validate_version_compatibility(
     if (app_major == 0 and check_major == 0) and (
         app_minor != check_minor or app_patch != check_patch
     ):
-        raise IncompatibleMajorVersion(app_version_as_string, check_version_as_string)
+        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
 
     if app_major != check_major:
-        raise IncompatibleMajorVersion(app_version_as_string, check_version_as_string)
+        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
 
     if app_minor != check_minor:
-        raise IncompatibleMinorVersion(app_version_as_string, check_version_as_string)
+        raise IncompatibleMinorVersionException(app_version_as_string, check_version_as_string)
 
 
 def check_version_on_file_compatibility(
@@ -248,9 +248,9 @@ def check_platform_helper_version_needs_update():
     )
     try:
         validate_version_compatibility(local_version, latest_release)
-    except IncompatibleMajorVersion:
+    except IncompatibleMajorVersionException:
         click.secho(message, fg="red")
-    except IncompatibleMinorVersion:
+    except IncompatibleMinorVersionException:
         click.secho(message, fg="yellow")
 
 

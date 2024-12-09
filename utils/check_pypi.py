@@ -18,13 +18,13 @@ def opts():
     return parser.parse_args()
 
 
-def check_for_version_in_pypi_releases(options, version, get_releases_fn):
+def check_for_version_in_pypi_releases(options, version, get_releases):
     print("Version:", version)
     if options.version:
         return OK
     for i in range(options.max_attempts):
         print(f"Attempt {i + 1} of {options.max_attempts}: ", end="")
-        releases = get_releases_fn()
+        releases = get_releases()
         if version in releases:
             print(f"Version {version} has been found in PyPI.")
             return OK

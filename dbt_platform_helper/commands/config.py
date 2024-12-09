@@ -8,8 +8,8 @@ import botocore
 import click
 from prettytable import PrettyTable
 
-from dbt_platform_helper.exceptions import IncompatibleMajorVersion
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.validation import config_file_check
@@ -110,7 +110,7 @@ def deployment():
                 str(template_file.resolve())
             )
             versioning.validate_template_version(local_version, str(template_file.resolve()))
-        except IncompatibleMajorVersion:
+        except IncompatibleMajorVersionException:
             local_compatible_symbol = no
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
@@ -134,7 +134,7 @@ def deployment():
                 str(template_file.resolve())
             )
             versioning.validate_template_version(latest_release, str(template_file.resolve()))
-        except IncompatibleMajorVersion:
+        except IncompatibleMajorVersionException:
             latest_compatible_symbol = no
             compatible = False
         except ValidationException:

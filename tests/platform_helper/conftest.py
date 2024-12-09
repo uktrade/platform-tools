@@ -59,7 +59,6 @@ def fakefs(fs):
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/addon-plans.yml")
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/default-extensions.yml")
-    fs.add_real_file(BASE_DIR / "dbt_platform_helper/addons-template-map.yml")
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
@@ -281,6 +280,12 @@ def validate_version():
 @pytest.fixture(scope="function")
 def mock_stack():
     def _create_stack(addon_name):
+        params = [
+            {
+                "ParameterKey": "ExistingParameter",
+                "ParameterValue": "does-not-matter",
+            }
+        ]
         with mock_aws():
             with open(FIXTURES_DIR / "test_cloudformation_template.yml") as f:
                 template = yaml.safe_load(f)
@@ -288,6 +293,7 @@ def mock_stack():
             cf.create_stack(
                 StackName=f"task-{mock_task_name(addon_name)}",
                 TemplateBody=yaml.dump(template),
+                Parameters=params,
             )
 
     return _create_stack
@@ -439,6 +445,15 @@ environments:
     versions:
         terraform-platform-modules: 1.2.3
   staging:
+  hotfix:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "non-prod-dns-acc"
+        id: "6677889900"
+    vpc: hotfix-vpc
   prod:
     accounts:
       deploy:
@@ -475,7 +490,7 @@ extensions:
         deletion_policy: Retain
     database_copy:
         - from: prod
-          to: staging
+          to: hotfix
 
   test-app-opensearch:
     type: opensearch

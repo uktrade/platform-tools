@@ -10,10 +10,13 @@ import botocore
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
+from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import Vpc
+from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -29,6 +32,7 @@ from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
+from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
@@ -421,6 +425,67 @@ def test_get_public_repository_arn(mock_get_aws_session_or_abort, repository_uri
     assert result == expected_arn
 
 
+@mock_aws
+def test_check_codebase_exists(mock_application):
+    mock_application.environments["development"].session.client("ssm")
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name="/copilot/applications/test-application/codebases/application",
+        Type="String",
+        Value="""
+                                             {
+                                                "name": "test-app", 
+                                                "repository": "uktrade/test-app",
+                                                "services": "1234"
+                                             }
+                                        """,
+    )
+
+    check_codebase_exists(
+        mock_application.environments["development"].session, mock_application, "application"
+    )
+
+
+@mock_aws
+def test_check_codebase_does_not_exist(mock_application):
+    mock_application.environments["development"].session.client("ssm")
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name="/copilot/applications/test-application/codebases/application",
+        Type="String",
+        Value="""
+                                             {
+                                                "name": "test-app", 
+                                                "repository": "uktrade/test-app",
+                                                "services": "1234"
+                                             }
+                                        """,
+    )
+
+    with pytest.raises(CopilotCodebaseNotFoundException):
+        check_codebase_exists(
+            mock_application.environments["development"].session,
+            mock_application,
+            "not-found-application",
+        )
+
+
+@mock_aws
+def test_check_codebase_errors_when_json_is_malformed(mock_application):
+    mock_application.environments["development"].session.client("ssm")
+    mock_ssm = boto3.client("ssm")
+    mock_ssm.put_parameter(
+        Name="/copilot/applications/test-application/codebases/application",
+        Type="String",
+        Value="not valid JSON",
+    )
+
+    with pytest.raises(CopilotCodebaseNotFoundException):
+        check_codebase_exists(
+            mock_application.environments["development"].session, mock_application, "application"
+        )
+
+
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_get_account_id(mock_get_aws_session_or_abort):
     mock_get_caller_identity(mock_get_aws_session_or_abort)
@@ -467,7 +532,7 @@ profile_account_id = 987654321
 
 
 def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):
-    with pytest.raises(NoProfileForAccountIdError) as error:
+    with pytest.raises(NoProfileForAccountIdException) as error:
         get_profile_name_from_account_id("999999999")
 
     assert str(error.value) == "No profile found for account 999999999"
@@ -699,7 +764,7 @@ def test_get_connection_string():
     )
 
     connection_string = get_connection_string(
-        session, "my_app", "my_env", db_identifier, connection_data_fn=mock_connection_data
+        session, "my_app", "my_env", db_identifier, connection_data=mock_connection_data
     )
 
     mock_connection_data.assert_called_once_with(
@@ -932,3 +997,20 @@ def test_get_vpc_info_by_name_failure_no_matching_security_groups():
         get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
 
     assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
+
+
+def test_wait_for_log_group_to_exist_success():
+    log_group_name = "/ecs/test-log-group"
+    mock_client = Mock()
+    mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
+
+    wait_for_log_group_to_exist(mock_client, log_group_name)
+
+
+def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
+    log_group_name = "/ecs/test-log-group"
+    mock_client = Mock()
+    mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
+
+    with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
+        wait_for_log_group_to_exist(mock_client, "not_found", 1)
