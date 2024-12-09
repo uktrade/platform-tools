@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import urllib.parse
 from configparser import ConfigParser
 from pathlib import Path
@@ -12,10 +13,12 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required
 from dbt_platform_helper.utils.files import read_supported_versions_from_cache
 from dbt_platform_helper.utils.files import write_to_cache
@@ -93,7 +96,7 @@ def _log_account_info(account_name: list, account_id: str) -> None:
         )
 
 
-class NoProfileForAccountIdError(Exception):
+class NoProfileForAccountIdException(PlatformException):
     def __init__(self, account_id):
         super().__init__(f"No profile found for account {account_id}")
 
@@ -108,7 +111,7 @@ def get_profile_name_from_account_id(account_id: str):
         if account_id == found_account_id:
             return section.removeprefix("profile ")
 
-    raise NoProfileForAccountIdError(account_id)
+    raise NoProfileForAccountIdException(account_id)
 
 
 def get_ssm_secret_names(app, env):
@@ -340,6 +343,7 @@ def get_load_balancer_configuration(
 
 
 def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
+    # Todo: This is pretty much the same as dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret
     ssm_client = session.client("ssm")
     secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
@@ -414,7 +418,7 @@ def get_connection_string(
     app: str,
     env: str,
     db_identifier: str,
-    connection_data_fn=get_postgres_connection_data_updated_with_master_secret,
+    connection_data=get_postgres_connection_data_updated_with_master_secret,
 ) -> str:
     addon_name = db_identifier.split(f"{app}-{env}-", 1)[1]
     normalised_addon_name = addon_name.replace("-", "_").upper()
@@ -426,7 +430,7 @@ def get_connection_string(
         Name=master_secret_name, WithDecryption=True
     )["Parameter"]["Value"]
 
-    conn = connection_data_fn(session, connection_string_parameter, master_secret_arn)
+    conn = connection_data(session, connection_string_parameter, master_secret_arn)
 
     return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
 
@@ -485,18 +489,23 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+# Todo: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
+        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
         ssm_client = session.client("ssm")
-        ssm_client.get_parameter(
-            Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
-        )["Parameter"]["Value"]
+        json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+            )["Parameter"]["Value"]
+        )
     except (
         KeyError,
         ValueError,
         ssm_client.exceptions.ParameterNotFound,
+        json.JSONDecodeError,
     ):
-        raise CopilotCodebaseNotFoundError
+        raise CopilotCodebaseNotFoundException(codebase)
 
 
 def check_image_exists(session, application, codebase, commit):
@@ -510,7 +519,7 @@ def check_image_exists(session, application, codebase, commit):
         ecr_client.exceptions.RepositoryNotFoundException,
         ecr_client.exceptions.ImageNotFoundException,
     ):
-        raise ImageNotFoundError
+        raise ImageNotFoundException(commit)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
@@ -522,7 +531,7 @@ def get_build_url_from_arn(build_arn: str) -> str:
     )
 
 
-def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo_fn):
+def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo):
     paginator = ecr_client.get_paginator("describe_images")
     describe_images_response_iterator = paginator.paginate(
         repositoryName=ecr_repository_name,
@@ -547,8 +556,28 @@ def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, ech
                 continue
 
             commit_hash = commit_tag.replace("commit-", "")
-            echo_fn(
+            echo(
                 f"  - https://github.com/{codebase_repository}/commit/{commit_hash} - published: {image['imagePushedAt']}"
             )
         except StopIteration:
             continue
+
+
+def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
+    current_attempts = 0
+    log_group_exists = False
+
+    while not log_group_exists and current_attempts < attempts:
+        current_attempts += 1
+
+        log_group_response = log_client.describe_log_groups(logGroupNamePrefix=log_group_name)
+        log_groups = log_group_response.get("logGroups", [])
+
+        for group in log_groups:
+            if group["logGroupName"] == log_group_name:
+                log_group_exists = True
+
+        time.sleep(1)
+
+    if not log_group_exists:
+        raise LogGroupNotFoundException(log_group_name)

@@ -52,7 +52,7 @@ class TestRemoveMaintenancePage:
             "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
         }
 
-        with pytest.raises(ListenerRuleNotFoundError):
+        with pytest.raises(ListenerRuleNotFoundException):
             remove_maintenance_page(boto_mock, "listener_arn")
 
     @patch("dbt_platform_helper.domain.maintenance_page.delete_listener_rule")

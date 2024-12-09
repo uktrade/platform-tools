@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import pytest
 
-from dbt_platform_helper.providers.load_balancers import ListenerNotFoundError
-from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundError
+from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
+from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.providers.load_balancers import find_load_balancer
 
@@ -14,7 +14,7 @@ class TestFindHTTPSListener:
     def test_when_no_https_listener_present(self, find_load_balancer):
         boto_mock = MagicMock()
         boto_mock.client().describe_listeners.return_value = {"Listeners": []}
-        with pytest.raises(ListenerNotFoundError):
+        with pytest.raises(ListenerNotFoundException):
             find_https_listener(boto_mock, "test-application", "development")
 
     @patch("dbt_platform_helper.providers.load_balancers.find_load_balancer", return_value="lb_arn")
@@ -34,7 +34,7 @@ class TestFindLoadBalancer:
 
         boto_mock = MagicMock()
         boto_mock.client().describe_load_balancers.return_value = {"LoadBalancers": []}
-        with pytest.raises(LoadBalancerNotFoundError):
+        with pytest.raises(LoadBalancerNotFoundException):
             find_load_balancer(boto_mock, "test-application", "development")
 
     def test_when_a_load_balancer_exists(self):

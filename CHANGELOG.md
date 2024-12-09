@@ -1,5 +1,76 @@
 # Changelog
 
+## [12.4.0](https://github.com/uktrade/platform-tools/compare/12.3.0...12.4.0) (2024-12-06)
+
+
+### Features
+
+* DBTP-1568 - Add s3 support for cross environment service access ([#654](https://github.com/uktrade/platform-tools/issues/654)) ([7e1d75f](https://github.com/uktrade/platform-tools/commit/7e1d75f95cacb68e01f0f62448359166509c20b0))
+
+
+### Bug Fixes
+
+* DBTP-1498 - Add option for database dump filename ([#681](https://github.com/uktrade/platform-tools/issues/681)) ([d06ddcc](https://github.com/uktrade/platform-tools/commit/d06ddcc0253a76950f54b881af84be14b0981b66))
+* DBTP-1498 - Add validation for database copy pipeline ([#683](https://github.com/uktrade/platform-tools/issues/683)) ([cda1e7b](https://github.com/uktrade/platform-tools/commit/cda1e7bc9daa1732e9032c7d6566716e3151b961))
+
+
+### Documentation
+
+* Document new dbt-platform-helper architecture ([#669](https://github.com/uktrade/platform-tools/issues/669)) ([ae4862d](https://github.com/uktrade/platform-tools/commit/ae4862da9e3e3d39c82c99222fa21450191f260a))
+
+## [12.3.0](https://github.com/uktrade/platform-tools/compare/12.2.4...12.3.0) (2024-12-03)
+
+
+### Features
+
+* DBTP-1299 - Cross account database copy ([#657](https://github.com/uktrade/platform-tools/issues/657)) ([7d35599](https://github.com/uktrade/platform-tools/commit/7d35599533b55f15fb08801c50ce538a8a32b847))
+
+
+### Reverts
+
+* Improving provider structure and exception handling" ([#670](https://github.com/uktrade/platform-tools/issues/670)) ([331e8b8](https://github.com/uktrade/platform-tools/commit/331e8b89d60fec4e29a9ea4473ffa44cba8e92c7))
+
+## [12.2.4](https://github.com/uktrade/platform-tools/compare/12.2.3...12.2.4) (2024-12-02)
+
+
+### Bug Fixes
+
+* DBTP-1572 - Fix _validate_exension_supported_versions incorrectly raising an error when no version is supplied ([#660](https://github.com/uktrade/platform-tools/issues/660)) ([2ce98bf](https://github.com/uktrade/platform-tools/commit/2ce98bfdcd22b880867306e3181f4815e46c6acb))
+
+## [12.2.3](https://github.com/uktrade/platform-tools/compare/12.2.2...12.2.3) (2024-11-29)
+
+
+### Bug Fixes
+
+* DBTP-1524 Make subnet order from environment generate match CloudFormation exports ([#665](https://github.com/uktrade/platform-tools/issues/665)) ([f0f561b](https://github.com/uktrade/platform-tools/commit/f0f561beba2239f757fec62cd530483432bb953b))
+
+## [12.2.2](https://github.com/uktrade/platform-tools/compare/12.2.1...12.2.2) (2024-11-26)
+
+
+### Bug Fixes
+
+* Fixing json loads ([#664](https://github.com/uktrade/platform-tools/issues/664)) ([46eddff](https://github.com/uktrade/platform-tools/commit/46eddff14ba2460ebe4beee1378ac75b617a8821))
+
+## [12.2.1](https://github.com/uktrade/platform-tools/compare/12.2.0...12.2.1) (2024-11-26)
+
+
+### Miscellaneous Chores
+
+* Don't install poetry in Dockerfile.debian ([#655](https://github.com/uktrade/platform-tools/issues/655)) ([9ad8c67](https://github.com/uktrade/platform-tools/commit/9ad8c67d8abc8ad61a4123bb90d361b3e26eacd3))
+
+## [12.2.0](https://github.com/uktrade/platform-tools/compare/12.1.0...12.2.0) (2024-11-26)
+
+
+### Features
+
+* DBTP-1395 Add validation for new slack alert channel Id that will be set in &lt;application&gt;-alb in platform-config file ([#635](https://github.com/uktrade/platform-tools/issues/635)) ([729c082](https://github.com/uktrade/platform-tools/commit/729c0821bdbc96f49c832a79bf2211475a737bf9))
+* DBTP-1568 - Add s3 support for external role access ([#652](https://github.com/uktrade/platform-tools/issues/652)) ([02bebd6](https://github.com/uktrade/platform-tools/commit/02bebd6d331fd8a10cb317460a91634c5745b462))
+
+
+### Bug Fixes
+
+* DBTP-1577 Fix conduit (ecs) exec race condition  ([#656](https://github.com/uktrade/platform-tools/issues/656)) ([22eafa0](https://github.com/uktrade/platform-tools/commit/22eafa0c8388b3132663d953bf97c85887c94999))
+
 ## [12.1.0](https://github.com/uktrade/platform-tools/compare/12.0.2...12.1.0) (2024-11-21)
 
 
