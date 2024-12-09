@@ -4,7 +4,7 @@ import time
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
-from dbt_platform_helper.exceptions import CreateTaskTimeoutError
+from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -144,7 +144,7 @@ def connect_to_addon_client_task(
         time.sleep(1)
 
     if not running:
-        raise CreateTaskTimeoutError(task_name, application_name, env)
+        raise CreateTaskTimeoutException(task_name, application_name, env)
 
 
 def _normalise_secret_name(addon_name: str) -> str:

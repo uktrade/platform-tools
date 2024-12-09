@@ -6,9 +6,9 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
-from dbt_platform_helper.exceptions import ApplicationNotFoundError
-from dbt_platform_helper.exceptions import AWSException
+from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.aws import Vpc
 
 
@@ -58,7 +58,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     actual_task_arn = db_copy.run_database_copy_task(
-        mock_session, "test-env", vpc, is_dump, db_connection_string, "test-env"
+        mock_session, "test-env", vpc, is_dump, db_connection_string, "test-dump-file"
     )
 
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
@@ -67,7 +67,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     expected_env_vars = [
         {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
-        {"name": "TO_ENVIRONMENT", "value": "test-env"},
+        {"name": "DUMP_FILE_NAME", "value": "test-dump-file"},
     ]
     if not is_dump:
         expected_env_vars.append(
@@ -117,7 +117,7 @@ def test_database_dump():
     db_copy.enrich_vpc_name = Mock()
     db_copy.enrich_vpc_name.return_value = "test-vpc-override"
 
-    db_copy.dump(env, vpc_name, "test-env")
+    db_copy.dump(env, vpc_name)
 
     mocks.load_application.assert_called_once()
     mocks.vpc_config.assert_called_once_with(
@@ -127,7 +127,7 @@ def test_database_dump():
         mocks.environment.session, app, env, "test-app-test-env-test-db"
     )
     mock_run_database_copy_task.assert_called_once_with(
-        mocks.environment.session, env, mocks.vpc, True, "test-db-connection-string", "test-env"
+        mocks.environment.session, env, mocks.vpc, True, "test-db-connection-string", None
     )
     mocks.input.assert_not_called()
     mocks.echo.assert_has_calls(
@@ -170,7 +170,7 @@ def test_database_load_with_response_of_yes():
     )
 
     mock_run_database_copy_task.assert_called_once_with(
-        mocks.environment.session, env, mocks.vpc, False, "test-db-connection-string", "test-env"
+        mocks.environment.session, env, mocks.vpc, False, "test-db-connection-string", None
     )
 
     mocks.input.assert_called_once_with(
@@ -247,7 +247,7 @@ def test_database_dump_handles_db_name_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("test-env", "vpc-name", "test-env")
+            db_copy.dump("test-env", "vpc-name")
         else:
             db_copy.load("test-env", "vpc-name")
 
@@ -263,7 +263,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("bad-env", "vpc-name", "test-env")
+            db_copy.dump("bad-env", "vpc-name")
         else:
             db_copy.load("bad-env", "vpc-name")
 
@@ -284,7 +284,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
     with pytest.raises(SystemExit) as exc:
         if is_dump:
-            db_copy.dump("test-env", "vpc-name", "test-env")
+            db_copy.dump("test-env", "vpc-name")
         else:
             db_copy.load("test-env", "vpc-name")
 
@@ -294,7 +294,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
 
 def test_database_copy_initialization_handles_app_name_errors():
     mocks = DataCopyMocks()
-    mocks.load_application = Mock(side_effect=ApplicationNotFoundError("bad-app"))
+    mocks.load_application = Mock(side_effect=ApplicationNotFoundException("bad-app"))
 
     with pytest.raises(SystemExit) as exc:
         DatabaseCopy("bad-app", "test-db", **mocks.params())
@@ -363,8 +363,10 @@ def test_copy_command(services, template):
     mocks.maintenance_page_provider.activate.assert_called_once_with(
         "test-app", "test-to-env", services, template, "test-vpc-override"
     )
-    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "test-to-env")
-    db_copy.load.assert_called_once_with("test-to-env", "test-vpc-override")
+    db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "data_dump_test-to-env")
+    db_copy.load.assert_called_once_with(
+        "test-to-env", "test-vpc-override", "data_dump_test-to-env"
+    )
     mocks.maintenance_page_provider.deactivate.assert_called_once_with("test-app", "test-to-env")
 
 

@@ -11,7 +11,7 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
-from dbt_platform_helper.commands.environment import CertificateNotFoundError
+from dbt_platform_helper.commands.environment import CertificateNotFoundException
 from dbt_platform_helper.commands.environment import find_https_certificate
 from dbt_platform_helper.commands.environment import generate
 from dbt_platform_helper.commands.environment import generate_terraform
@@ -21,8 +21,8 @@ from dbt_platform_helper.commands.environment import get_vpc_id
 from dbt_platform_helper.commands.environment import offline
 from dbt_platform_helper.commands.environment import online
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.load_balancers import ListenerNotFoundError
-from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundError
+from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
+from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.utils.application import Service
 from tests.platform_helper.conftest import BASE_DIR
 
@@ -200,7 +200,7 @@ class TestEnvironmentOfflineCommand:
         load_application,
         mock_application,
     ):
-        find_https_listener.side_effect = LoadBalancerNotFoundError()
+        find_https_listener.side_effect = LoadBalancerNotFoundException()
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -232,7 +232,7 @@ class TestEnvironmentOfflineCommand:
         mock_application,
     ):
         load_application.return_value = mock_application
-        find_https_listener.side_effect = ListenerNotFoundError()
+        find_https_listener.side_effect = ListenerNotFoundException()
 
         result = CliRunner().invoke(
             offline, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -380,7 +380,7 @@ class TestEnvironmentOnlineCommand:
         mock_application,
     ):
         load_application.return_value = mock_application
-        find_https_listener.side_effect = ListenerNotFoundError()
+        find_https_listener.side_effect = ListenerNotFoundException()
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -411,7 +411,7 @@ class TestEnvironmentOnlineCommand:
         from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
-        find_https_listener.side_effect = LoadBalancerNotFoundError()
+        find_https_listener.side_effect = LoadBalancerNotFoundException()
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -798,7 +798,7 @@ class TestFindHTTPSCertificate:
         boto_mock = MagicMock()
         boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
 
-        with pytest.raises(CertificateNotFoundError):
+        with pytest.raises(CertificateNotFoundException):
             find_https_certificate(boto_mock, "test-application", "development")
 
     @patch(

@@ -215,6 +215,7 @@ DATABASE_COPY = {
     "to": ENV_NAME,
     Optional("from_account"): str,
     Optional("to_account"): str,
+    Optional("pipeline"): {Optional("schedule"): str},
 }
 
 POSTGRES_DEFINITION = {
@@ -285,9 +286,19 @@ EXTERNAL_ROLE_ACCESS = {
     "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
 }
 
-EXTERNAL_ROLE_ACCESS_NAME = Regex(
-    r"^([a-z][a-zA-Z0-9_-]*)$",
-    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
+CROSS_ENVIRONMENT_SERVICE_ACCESS = {
+    "application": str,
+    "environment": ENV_NAME,
+    "account": str,
+    "service": str,
+    "read": bool,
+    "write": bool,
+    "cyber_sign_off_by": dbt_email_address_regex("cyber_sign_off_by"),
+}
+
+LOWER_ALPHANUMERIC = Regex(
+    r"^([a-z][a-zA-Z0-9_-]*|\*)$",
+    error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
 
 DATA_IMPORT = {
@@ -312,7 +323,10 @@ S3_BASE = {
             Optional("versioning"): bool,
             Optional("lifecycle_rules"): [LIFECYCLE_RULE],
             Optional("data_migration"): DATA_MIGRATION,
-            Optional("external_role_access"): {EXTERNAL_ROLE_ACCESS_NAME: EXTERNAL_ROLE_ACCESS},
+            Optional("external_role_access"): {LOWER_ALPHANUMERIC: EXTERNAL_ROLE_ACCESS},
+            Optional("cross_environment_service_access"): {
+                LOWER_ALPHANUMERIC: CROSS_ENVIRONMENT_SERVICE_ACCESS
+            },
         },
     },
 }

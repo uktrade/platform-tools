@@ -2,7 +2,7 @@ import re
 import subprocess
 
 
-class CommitNotFoundError(Exception):
+class CommitNotFoundException(Exception):
     pass
 
 
@@ -26,4 +26,4 @@ def check_if_commit_exists(commit):
     )
 
     if branches_containing_commit.stderr:
-        raise CommitNotFoundError()
+        raise CommitNotFoundException()

@@ -13,11 +13,12 @@ import click
 import yaml
 from boto3 import Session
 
-from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import ImageNotFoundError
-from dbt_platform_helper.exceptions import ResourceNotFoundException
-from dbt_platform_helper.exceptions import ValidationException
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.files import cache_refresh_required
 from dbt_platform_helper.utils.files import read_supported_versions_from_cache
 from dbt_platform_helper.utils.files import write_to_cache
@@ -95,7 +96,7 @@ def _log_account_info(account_name: list, account_id: str) -> None:
         )
 
 
-class NoProfileForAccountIdError(Exception):
+class NoProfileForAccountIdException(PlatformException):
     def __init__(self, account_id):
         super().__init__(f"No profile found for account {account_id}")
 
@@ -110,7 +111,7 @@ def get_profile_name_from_account_id(account_id: str):
         if account_id == found_account_id:
             return section.removeprefix("profile ")
 
-    raise NoProfileForAccountIdError(account_id)
+    raise NoProfileForAccountIdException(account_id)
 
 
 def get_ssm_secret_names(app, env):
@@ -488,8 +489,10 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+# Todo: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
+        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
         ssm_client = session.client("ssm")
         json.loads(
             ssm_client.get_parameter(
@@ -502,7 +505,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         ssm_client.exceptions.ParameterNotFound,
         json.JSONDecodeError,
     ):
-        raise CopilotCodebaseNotFoundError(codebase)
+        raise CopilotCodebaseNotFoundException(codebase)
 
 
 def check_image_exists(session, application, codebase, commit):
@@ -516,7 +519,7 @@ def check_image_exists(session, application, codebase, commit):
         ecr_client.exceptions.RepositoryNotFoundException,
         ecr_client.exceptions.ImageNotFoundException,
     ):
-        raise ImageNotFoundError(commit)
+        raise ImageNotFoundException(commit)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
@@ -577,4 +580,4 @@ def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
         time.sleep(1)
 
     if not log_group_exists:
-        raise ResourceNotFoundException
+        raise LogGroupNotFoundException(log_group_name)

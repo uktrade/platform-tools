@@ -2,11 +2,7 @@ import json
 import urllib
 
 from dbt_platform_helper.constants import CONDUIT_ADDON_TYPES
-from dbt_platform_helper.exceptions import AddonNotFoundError
-from dbt_platform_helper.exceptions import AddonTypeMissingFromConfigError
-from dbt_platform_helper.exceptions import InvalidAddonTypeError
-from dbt_platform_helper.exceptions import ParameterNotFoundError
-from dbt_platform_helper.exceptions import SecretNotFoundError
+from dbt_platform_helper.platform_exception import PlatformException
 
 
 class Secrets:
@@ -43,8 +39,9 @@ class Secrets:
         except self.secrets_manager_client.exceptions.ResourceNotFoundException:
             pass
 
-        raise SecretNotFoundError(secret_name)
+        raise SecretNotFoundException(secret_name)
 
+    # Todo: This probably does not belong in the secrets provider. When it moves, take the Todoed exceptions from below
     def get_addon_type(self, addon_name: str) -> str:
         addon_type = None
         try:
@@ -54,19 +51,19 @@ class Secrets:
                 )["Parameter"]["Value"]
             )
         except self.ssm_client.exceptions.ParameterNotFound:
-            raise ParameterNotFoundError(self.application_name, self.env)
+            raise ParameterNotFoundException(self.application_name, self.env)
 
         if addon_name not in addon_config.keys():
-            raise AddonNotFoundError(addon_name)
+            raise AddonNotFoundException(addon_name)
 
         for name, config in addon_config.items():
             if name == addon_name:
                 if not config.get("type"):
-                    raise AddonTypeMissingFromConfigError(addon_name)
+                    raise AddonTypeMissingFromConfigException(addon_name)
                 addon_type = config["type"]
 
         if not addon_type or addon_type not in CONDUIT_ADDON_TYPES:
-            raise InvalidAddonTypeError(addon_type)
+            raise InvalidAddonTypeException(addon_type)
 
         if "postgres" in addon_type:
             addon_type = "postgres"
@@ -83,3 +80,47 @@ class Secrets:
 
     def _normalise_secret_name(self, addon_name: str) -> str:
         return addon_name.replace("-", "_").upper()
+
+
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonException(PlatformException):
+    pass
+
+
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonNotFoundException(AddonException):
+    def __init__(self, addon_name: str):
+        super().__init__(f"""Addon "{addon_name}" does not exist.""")
+
+
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class AddonTypeMissingFromConfigException(AddonException):
+    def __init__(self, addon_name: str):
+        super().__init__(
+            f"""The configuration for the addon {addon_name}, is misconfigured and missing the addon type."""
+        )
+
+
+# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+class InvalidAddonTypeException(AddonException):
+    def __init__(self, addon_type):
+        self.addon_type = addon_type
+        super().__init__(
+            f"""Addon type "{self.addon_type}" is not supported, we support: {", ".join(CONDUIT_ADDON_TYPES)}."""
+        )
+
+
+class SecretException(PlatformException):
+    pass
+
+
+class ParameterNotFoundException(SecretException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""No parameter called "/copilot/applications/{application_name}/environments/{environment}/addons". Try deploying the "{application_name}" "{environment}" environment."""
+        )
+
+
+class SecretNotFoundException(SecretException):
+    def __init__(self, secret_name: str):
+        super().__init__(f"""No secret called "{secret_name}".""")

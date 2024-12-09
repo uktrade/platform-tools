@@ -10,11 +10,11 @@ import botocore
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.exceptions import AWSException
-from dbt_platform_helper.exceptions import CopilotCodebaseNotFoundError
-from dbt_platform_helper.exceptions import ResourceNotFoundException
-from dbt_platform_helper.exceptions import ValidationException
-from dbt_platform_helper.utils.aws import NoProfileForAccountIdError
+from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
+from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
@@ -462,7 +462,7 @@ def test_check_codebase_does_not_exist(mock_application):
                                         """,
     )
 
-    with pytest.raises(CopilotCodebaseNotFoundError):
+    with pytest.raises(CopilotCodebaseNotFoundException):
         check_codebase_exists(
             mock_application.environments["development"].session,
             mock_application,
@@ -480,7 +480,7 @@ def test_check_codebase_errors_when_json_is_malformed(mock_application):
         Value="not valid JSON",
     )
 
-    with pytest.raises(CopilotCodebaseNotFoundError):
+    with pytest.raises(CopilotCodebaseNotFoundException):
         check_codebase_exists(
             mock_application.environments["development"].session, mock_application, "application"
         )
@@ -532,7 +532,7 @@ profile_account_id = 987654321
 
 
 def test_get_profile_name_from_account_id_with_no_matching_account(fakefs):
-    with pytest.raises(NoProfileForAccountIdError) as error:
+    with pytest.raises(NoProfileForAccountIdException) as error:
         get_profile_name_from_account_id("999999999")
 
     assert str(error.value) == "No profile found for account 999999999"
@@ -1012,5 +1012,5 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
     mock_client = Mock()
     mock_client.describe_log_groups.return_value = {"logGroups": [{"logGroupName": log_group_name}]}
 
-    with pytest.raises(ResourceNotFoundException):
+    with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
         wait_for_log_group_to_exist(mock_client, "not_found", 1)
