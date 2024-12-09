@@ -8,17 +8,16 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-
-def _string_matching_regex(regex_pattern: str):
-    def validate(string):
-        if not re.match(regex_pattern, string):
-            # Todo: Raise suitable PlatformException?
-            raise SchemaError(
-                f"String '{string}' does not match the required pattern '{regex_pattern}'."
-            )
-        return string
-
-    return validate
+# def _string_matching_regex(regex_pattern: str):
+#     def validate(string):
+#         if not re.match(regex_pattern, string):
+#             # Todo: Raise suitable PlatformException?
+#             raise SchemaError(
+#                 f"String '{string}' does not match the required pattern '{regex_pattern}'."
+#             )
+#         return string
+#
+#     return validate
 
 
 def _is_integer_between(lower_limit, upper_limit):
@@ -36,18 +35,18 @@ _valid_schema_key = Regex(
     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
 )
 
-# Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
-_valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
+# # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
+# _valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
 
-_valid_deletion_policy = Or("Delete", "Retain")
+# _valid_deletion_policy = Or("Delete", "Retain")
 
-_valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
+# _valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
 
-_valid_environment_name = Regex(
-    r"^([a-z][a-zA-Z0-9]*|\*)$",
-    error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
-    # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
-)
+# _valid_environment_name = Regex(
+#     r"^([a-z][a-zA-Z0-9]*|\*)$",
+#     error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
+#     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
+# )
 
 
 def _valid_kms_key_arn(key):
@@ -75,98 +74,6 @@ def _no_configuration_required_schema(schema_type):
     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
-# Todo ####################################
-
-
-# Postgres...
-# Todo: Move to Postgres provider?
-_valid_postgres_plans = Or(
-    "tiny",
-    "small",
-    "small-ha",
-    "small-high-io",
-    "medium",
-    "medium-ha",
-    "medium-high-io",
-    "large",
-    "large-ha",
-    "large-high-io",
-    "x-large",
-    "x-large-ha",
-    "x-large-high-io",
-)
-
-# Todo: Move to Postgres provider?
-_valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
-
-_valid_postgres_database_copy = {
-    "from": _valid_environment_name,
-    "to": _valid_environment_name,
-    Optional("from_account"): str,
-    Optional("to_account"): str,
-    Optional("pipeline"): {Optional("schedule"): str},
-}
-
-_postgres_schema = {
-    "type": "postgres",
-    "version": (Or(int, float)),
-    Optional("deletion_policy"): _valid_postgres_deletion_policy,
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("plan"): _valid_postgres_plans,
-            Optional("volume_size"): _is_integer_between(20, 10000),
-            Optional("iops"): _is_integer_between(1000, 9950),
-            Optional("snapshot_id"): str,
-            Optional("deletion_policy"): _valid_postgres_deletion_policy,
-            Optional("deletion_protection"): bool,
-            Optional("multi_az"): bool,
-            Optional("storage_type"): _valid_postgres_storage_types,
-            Optional("backup_retention_days"): _is_integer_between(1, 35),
-        }
-    },
-    Optional("database_copy"): [_valid_postgres_database_copy],
-    Optional("objects"): [
-        {
-            "key": str,
-            Optional("body"): str,
-        }
-    ],
-}
-
-# Redis...
-# Todo move to Redis provider?
-_valid_redis_plans = Or(
-    "micro",
-    "micro-ha",
-    "tiny",
-    "tiny-ha",
-    "small",
-    "small-ha",
-    "medium",
-    "medium-ha",
-    "large",
-    "large-ha",
-    "x-large",
-    "x-large-ha",
-)
-
-_redis_schema = {
-    "type": "redis",
-    Optional("environments"): {
-        _valid_environment_name: {
-            Optional("plan"): _valid_redis_plans,
-            Optional("engine"): str,
-            Optional("replicas"): _is_integer_between(0, 5),
-            Optional("deletion_policy"): _valid_deletion_policy,
-            Optional("apply_immediately"): bool,
-            Optional("automatic_failover_enabled"): bool,
-            Optional("instance"): str,
-            Optional("multi_az_enabled"): bool,
-        }
-    },
-}
-
-
 class PlatformConfigSchema:
     @staticmethod
     def schema() -> Schema:
@@ -187,9 +94,9 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__alb_schema(),
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
-                        _postgres_schema,
+                        PlatformConfigSchema.__postgres_schema(),
                         PlatformConfigSchema.__prometheus_policy_schema(),
-                        _redis_schema,
+                        PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
                         PlatformConfigSchema.__s3_bucket_policy_schema(),
                     )
@@ -203,9 +110,9 @@ class PlatformConfigSchema:
             "alb": Schema(PlatformConfigSchema.__alb_schema()),
             "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
             "opensearch": ConditionalOpensSearchSchema(PlatformConfigSchema.__opensearch_schema()),
-            "postgres": Schema(_postgres_schema),
+            "postgres": Schema(PlatformConfigSchema.__postgres_schema()),
             "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
-            "redis": Schema(_redis_schema),
+            "redis": Schema(PlatformConfigSchema.__redis_schema()),
             "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
             "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
             "subscription-filter": _no_configuration_required_schema("subscription-filter"),
@@ -246,7 +153,7 @@ class PlatformConfigSchema:
         return {
             "type": "alb",
             Optional("environments"): {
-                _valid_environment_name: Or(
+                PlatformConfigSchema.__valid_environment_name(): Or(
                     {
                         Optional("additional_address_list"): list,
                         Optional("allowed_methods"): list,
@@ -293,7 +200,7 @@ class PlatformConfigSchema:
                     Or(
                         {
                             "name": str,
-                            "branch": _valid_branch_name,
+                            "branch": PlatformConfigSchema.__valid_branch_name(),
                             "environments": [
                                 {
                                     "name": str,
@@ -360,7 +267,7 @@ class PlatformConfigSchema:
         return {
             str: {
                 Optional("account"): str,
-                Optional("branch", default="main"): _valid_branch_name,
+                Optional("branch", default="main"): PlatformConfigSchema.__valid_branch_name(),
                 Optional("pipeline_to_trigger"): str,
                 Optional("versions"): _valid_environment_pipeline_specific_version_overrides,
                 "slack_channel": str,
@@ -395,7 +302,7 @@ class PlatformConfigSchema:
         return {
             "type": "monitoring",
             Optional("environments"): {
-                _valid_environment_name: {
+                PlatformConfigSchema.__valid_environment_name(): {
                     Optional("enable_ops_center"): bool,
                 }
             },
@@ -419,7 +326,7 @@ class PlatformConfigSchema:
         return {
             "type": "opensearch",
             Optional("environments"): {
-                _valid_environment_name: {
+                PlatformConfigSchema.__valid_environment_name(): {
                     Optional("engine"): str,
                     Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                     Optional("plan"): _valid_opensearch_plans,
@@ -440,13 +347,105 @@ class PlatformConfigSchema:
         }
 
     @staticmethod
+    def __postgres_schema() -> dict:
+        # Todo: Move to Postgres provider?
+        _valid_postgres_plans = Or(
+            "tiny",
+            "small",
+            "small-ha",
+            "small-high-io",
+            "medium",
+            "medium-ha",
+            "medium-high-io",
+            "large",
+            "large-ha",
+            "large-high-io",
+            "x-large",
+            "x-large-ha",
+            "x-large-high-io",
+        )
+
+        # Todo: Move to Postgres provider?
+        _valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
+
+        _valid_postgres_database_copy = {
+            "from": PlatformConfigSchema.__valid_environment_name(),
+            "to": PlatformConfigSchema.__valid_environment_name(),
+            Optional("from_account"): str,
+            Optional("to_account"): str,
+            Optional("pipeline"): {Optional("schedule"): str},
+        }
+
+        return {
+            "type": "postgres",
+            "version": (Or(int, float)),
+            Optional("deletion_policy"): PlatformConfigSchema.__valid_postgres_deletion_policy(),
+            Optional("environments"): {
+                PlatformConfigSchema.__valid_environment_name(): {
+                    Optional("plan"): _valid_postgres_plans,
+                    Optional("volume_size"): _is_integer_between(20, 10000),
+                    Optional("iops"): _is_integer_between(1000, 9950),
+                    Optional("snapshot_id"): str,
+                    Optional(
+                        "deletion_policy"
+                    ): PlatformConfigSchema.__valid_postgres_deletion_policy(),
+                    Optional("deletion_protection"): bool,
+                    Optional("multi_az"): bool,
+                    Optional("storage_type"): _valid_postgres_storage_types,
+                    Optional("backup_retention_days"): _is_integer_between(1, 35),
+                }
+            },
+            Optional("database_copy"): [_valid_postgres_database_copy],
+            Optional("objects"): [
+                {
+                    "key": str,
+                    Optional("body"): str,
+                }
+            ],
+        }
+
+    @staticmethod
     def __prometheus_policy_schema() -> dict:
         return {
             "type": "prometheus-policy",
             Optional("services"): Or("__all__", [str]),
             Optional("environments"): {
-                _valid_environment_name: {
+                PlatformConfigSchema.__valid_environment_name(): {
                     "role_arn": str,
+                }
+            },
+        }
+
+    @staticmethod
+    def __redis_schema() -> dict:
+        # Todo move to Redis provider?
+        _valid_redis_plans = Or(
+            "micro",
+            "micro-ha",
+            "tiny",
+            "tiny-ha",
+            "small",
+            "small-ha",
+            "medium",
+            "medium-ha",
+            "large",
+            "large-ha",
+            "x-large",
+            "x-large-ha",
+        )
+
+        return {
+            "type": "redis",
+            Optional("environments"): {
+                PlatformConfigSchema.__valid_environment_name(): {
+                    Optional("plan"): _valid_redis_plans,
+                    Optional("engine"): str,
+                    Optional("replicas"): _is_integer_between(0, 5),
+                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
+                    Optional("apply_immediately"): bool,
+                    Optional("automatic_failover_enabled"): bool,
+                    Optional("instance"): str,
+                    Optional("multi_az_enabled"): bool,
                 }
             },
         }
@@ -537,9 +536,9 @@ class PlatformConfigSchema:
                 Optional("serve_static_content"): bool,
                 Optional("services"): Or("__all__", [str]),
                 Optional("environments"): {
-                    _valid_environment_name: {
+                    PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
-                        Optional("deletion_policy"): _valid_deletion_policy,
+                        Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                         Optional("versioning"): bool,
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
@@ -550,7 +549,7 @@ class PlatformConfigSchema:
                         Optional("cross_environment_service_access"): {
                             _valid_schema_key: {
                                 "application": str,
-                                "environment": _valid_environment_name,
+                                "environment": PlatformConfigSchema.__valid_environment_name(),
                                 "account": str,
                                 "service": str,
                                 "read": bool,
@@ -577,7 +576,8 @@ class PlatformConfigSchema:
         return PlatformConfigSchema.__valid_s3_base_definition() | {"type": "s3-policy"}
 
     @staticmethod
-    def __string_matching_regex(regex_pattern: str) -> Callable:
+    def string_matching_regex(regex_pattern: str) -> Callable:
+        # Todo public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
         def validate(string):
             if not re.match(regex_pattern, string):
                 # Todo: Raise suitable PlatformException?
@@ -608,7 +608,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __valid_branch_name() -> Callable:
         # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
-        return PlatformConfigSchema.__string_matching_regex(r"^((?!\*).)*(\*)?$")
+        return PlatformConfigSchema.string_matching_regex(r"^((?!\*).)*(\*)?$")
 
     @staticmethod
     def __valid_deletion_policy() -> Or:

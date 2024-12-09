@@ -10,7 +10,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.platform_config_schema import _is_integer_between
-from dbt_platform_helper.providers.platform_config_schema import _string_matching_regex
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
@@ -42,7 +41,7 @@ def load_addons(addons_file):
     ],
 )
 def test_validate_string(regex_pattern, valid_strings, invalid_strings):
-    validator = _string_matching_regex(regex_pattern)
+    validator = PlatformConfigSchema.string_matching_regex(regex_pattern)
 
     for valid_string in valid_strings:
         assert validator(valid_string) == valid_string
