@@ -30,10 +30,10 @@ def _is_integer_between(lower_limit, upper_limit):
     return validate
 
 
-_valid_schema_key = Regex(
-    r"^([a-z][a-zA-Z0-9_-]*|\*)$",
-    error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
-)
+# _valid_schema_key = Regex(
+#     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
+#     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
+# )
 
 # # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
 # _valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
@@ -49,29 +49,29 @@ _valid_schema_key = Regex(
 # )
 
 
-def _valid_kms_key_arn(key):
-    return Regex(
-        r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
-        error=f"{key} must contain a valid ARN for a KMS key",
-    )
+# def _valid_kms_key_arn(key):
+#     return Regex(
+#         r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
+#         error=f"{key} must contain a valid ARN for a KMS key",
+#     )
+#
+#
+# def _valid_iam_role_arn(key):
+#     return Regex(
+#         r"^arn:aws:iam::\d{12}:role/.*",
+#         error=f"{key} must contain a valid ARN for an IAM role",
+#     )
+#
+#
+# def _valid_dbt_email_address(key):
+#     return Regex(
+#         r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
+#         error=f"{key} must contain a valid DBT email address",
+#     )
 
 
-def _valid_iam_role_arn(key):
-    return Regex(
-        r"^arn:aws:iam::\d{12}:role/.*",
-        error=f"{key} must contain a valid ARN for an IAM role",
-    )
-
-
-def _valid_dbt_email_address(key):
-    return Regex(
-        r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
-        error=f"{key} must contain a valid DBT email address",
-    )
-
-
-def _no_configuration_required_schema(schema_type):
-    return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
+# def _no_configuration_required_schema(schema_type):
+#     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
 
 
 class PlatformConfigSchema:
@@ -108,18 +108,22 @@ class PlatformConfigSchema:
     def extension_schemas() -> dict:
         return {
             "alb": Schema(PlatformConfigSchema.__alb_schema()),
-            "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
+            "appconfig-ipfilter": PlatformConfigSchema.__no_configuration_required_schema(
+                "appconfig-ipfilter"
+            ),
             "opensearch": ConditionalOpensSearchSchema(PlatformConfigSchema.__opensearch_schema()),
             "postgres": Schema(PlatformConfigSchema.__postgres_schema()),
             "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
             "redis": Schema(PlatformConfigSchema.__redis_schema()),
             "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
             "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
-            "subscription-filter": _no_configuration_required_schema("subscription-filter"),
+            "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
+                "subscription-filter"
+            ),
             # Todo: The next three are no longer relevant. Remove them.
             "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
-            "vpc": _no_configuration_required_schema("vpc"),
-            "xray": _no_configuration_required_schema("xray"),
+            "vpc": PlatformConfigSchema.__no_configuration_required_schema("vpc"),
+            "xray": PlatformConfigSchema.__no_configuration_required_schema("xray"),
         }
 
     @staticmethod
@@ -498,9 +502,11 @@ class PlatformConfigSchema:
 
         _valid_s3_data_migration = {
             "import": {
-                Optional("source_kms_key_arn"): _valid_kms_key_arn("source_kms_key_arn"),
+                Optional("source_kms_key_arn"): PlatformConfigSchema.__valid_kms_key_arn(
+                    "source_kms_key_arn"
+                ),
                 "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
-                "worker_role_arn": _valid_iam_role_arn("worker_role_arn"),
+                "worker_role_arn": PlatformConfigSchema.__valid_iam_role_arn("worker_role_arn"),
             },
         }
 
@@ -519,10 +525,12 @@ class PlatformConfigSchema:
         }
 
         _valid_s3_bucket_external_role_access = {
-            "role_arn": _valid_iam_role_arn("role_arn"),
+            "role_arn": PlatformConfigSchema.__valid_iam_role_arn("role_arn"),
             "read": bool,
             "write": bool,
-            "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+            "cyber_sign_off_by": PlatformConfigSchema.__valid_dbt_email_address(
+                "cyber_sign_off_by"
+            ),
         }
 
         _valid_s3_bucket_external_role_access_name = Regex(
@@ -544,17 +552,19 @@ class PlatformConfigSchema:
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
                         Optional("data_migration"): _valid_s3_data_migration,
                         Optional("external_role_access"): {
-                            _valid_schema_key: _valid_s3_bucket_external_role_access
+                            PlatformConfigSchema.__valid_schema_key(): _valid_s3_bucket_external_role_access
                         },
                         Optional("cross_environment_service_access"): {
-                            _valid_schema_key: {
+                            PlatformConfigSchema.__valid_schema_key(): {
                                 "application": str,
                                 "environment": PlatformConfigSchema.__valid_environment_name(),
                                 "account": str,
                                 "service": str,
                                 "read": bool,
                                 "write": bool,
-                                "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+                                "cyber_sign_off_by": PlatformConfigSchema.__valid_dbt_email_address(
+                                    "cyber_sign_off_by"
+                                ),
                             }
                         },
                     },
