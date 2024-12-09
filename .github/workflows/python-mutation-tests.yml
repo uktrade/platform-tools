@@ -1,0 +1,76 @@
+name: Python mutation tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * *'
+  # Todo; remove the push, they take to long
+  push:
+    branches:
+      - add-mutation-testing
+
+jobs:
+  cosmic-ray:
+    name: Python mutation tests - Cosmic Ray
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Display Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run mutation tests
+        # Todo: Drop the --force, it just here for easy local copy and paste
+        run: |
+          poetry run cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite --force
+          echo "Initialised"
+          poetry run cosmic-ray --verbosity INFO exec cosmic-ray.toml cosmic-ray.sqlite
+
+      - name: Report results
+        # Todo: Only show failures https://github.com/sixty-north/cosmic-ray/issues/561
+        run: poetry run cr-report cosmic-ray.sqlite --show-diff
+
+  mutmut:
+    name: Python mutation tests - mutmut
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Display Python version
+        run: python --version
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Run mutation tests
+        run: |
+          poetry run mutmut run

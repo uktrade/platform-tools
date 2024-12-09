@@ -17,7 +17,23 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
-BASE_DIR = Path(__file__).parent.parent.parent
+
+def is_mutmut_test_run():
+    return "/mutants/" in __file__
+
+
+skip_if_mutmut_test_run = pytest.mark.skipif(
+    is_mutmut_test_run(),
+    reason="Temporarily skipped because won't play during mutmut run",
+)
+
+
+if is_mutmut_test_run():
+    BASE_DIR = Path(__file__).parent.parent.parent.parent
+else:
+    BASE_DIR = Path(__file__).parent.parent.parent
+
+print(f"BASE_DIR: {BASE_DIR}")
 TEST_APP_DIR = BASE_DIR / "tests" / "platform_helper" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "fixtures"
 EXPECTED_FILES_DIR = BASE_DIR / "tests" / "platform_helper" / "expected_files"

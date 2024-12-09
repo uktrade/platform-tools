@@ -26,6 +26,11 @@ __py_cache__/
 
 .pytest_cache/
 
+# Mutation testing
+cosmic-ray.sqlite
+cosmic-ray-worker*
+mutants
+
 staticfiles/
 node_modules/
 
