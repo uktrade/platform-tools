@@ -35,6 +35,14 @@ SERVICE_TYPES = [
     "Worker Service",
 ]
 
+ADDON_TEMPLATE_MAP = {
+    "s3": ["addons/svc/s3-policy.yml"],
+    "s3-policy": ["addons/svc/s3-policy.yml"],
+    "appconfig-ipfilter": ["addons/svc/appconfig-ipfilter.yml"],
+    "subscription-filter": ["addons/svc/subscription-filter.yml"],
+    "prometheus-policy": ["addons/svc/prometheus-policy.yml"],
+}
+
 
 def list_copilot_local_environments():
     return [
@@ -248,9 +256,6 @@ def make_addons():
 
     application_name = get_application_name()
 
-    with open(PACKAGE_DIR / "addons-template-map.yml") as fd:
-        addon_template_map = yaml.safe_load(fd)
-
     click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
 
     env_path = Path(f"copilot/environments/")
@@ -270,11 +275,6 @@ def make_addons():
         print(f">>>>>>>>> {addon_name}")
         addon_type = addon_config.pop("type")
         environments = addon_config.pop("environments")
-        if addon_template_map[addon_type].get("requires_addons_parameters", False):
-            pass
-        if addon_type in ["postgres"]:
-            pass
-
         environment_addon_config = {
             "addon_type": addon_type,
             "environments": environments,
@@ -309,7 +309,6 @@ def make_addons():
         _generate_service_addons(
             addon_config,
             addon_name,
-            addon_template_map,
             addon_type,
             output_dir,
             service_addon_config,
@@ -339,7 +338,6 @@ def _generate_env_overrides(output_dir):
 def _generate_service_addons(
     addon_config,
     addon_name,
-    addon_template_map,
     addon_type,
     output_dir,
     service_addon_config,
@@ -347,8 +345,8 @@ def _generate_service_addons(
     log_destination_arns,
 ):
     # generate svc addons
-    for addon in addon_template_map[addon_type].get("svc", []):
-        template = templates.get_template(addon["template"])
+    for addon_template in ADDON_TEMPLATE_MAP.get(addon_type, []):
+        template = templates.get_template(addon_template)
 
         for svc in addon_config.get("services", []):
             service_path = Path(f"copilot/{svc}/addons/")
@@ -360,10 +358,10 @@ def _generate_service_addons(
                 }
             )
 
-            filename = addon.get("filename", f"{addon_name}.yml")
-
             (output_dir / service_path).mkdir(parents=True, exist_ok=True)
-            click.echo(mkfile(output_dir, service_path / filename, contents, overwrite=True))
+            click.echo(
+                mkfile(output_dir, service_path / f"{addon_name}.yml", contents, overwrite=True)
+            )
 
 
 def _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path):
