@@ -8,18 +8,17 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.validation import S3_BUCKET_NAME_ERROR_TEMPLATE
+from dbt_platform_helper.utils.platform_config_schema import _is_integer_between
+from dbt_platform_helper.utils.platform_config_schema import _string_matching_regex
+from dbt_platform_helper.utils.platform_config_schema import _valid_s3_bucket_name
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
-from dbt_platform_helper.utils.validation import int_between
 from dbt_platform_helper.utils.validation import lint_yaml_for_duplicate_keys
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
-from dbt_platform_helper.utils.validation import validate_s3_bucket_name
-from dbt_platform_helper.utils.validation import validate_string
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -35,6 +34,7 @@ def load_addons(addons_file):
         (r"^\d+-\d+$", ["1-10"], ["20-21-23"]),
         (r"^\d+s$", ["10s"], ["10seconds"]),
         (
+            # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
             r"^((?!\*).)*(\*)?$",
             ["test/valid/branch", "test/valid/branch*", "test/valid/branch-other"],
             ["test*invalid/branch", "test*invalid/branch*"],
@@ -42,7 +42,7 @@ def load_addons(addons_file):
     ],
 )
 def test_validate_string(regex_pattern, valid_strings, invalid_strings):
-    validator = validate_string(regex_pattern)
+    validator = _string_matching_regex(regex_pattern)
 
     for valid_string in valid_strings:
         assert validator(valid_string) == valid_string
@@ -53,9 +53,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
 
         assert (
             err.value.args[0]
-            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'. For "
-            "more details on valid string patterns see: "
-            "https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/"
+            == f"String '{invalid_string}' does not match the required pattern '{regex_pattern}'."
         )
 
 
@@ -306,13 +304,13 @@ def test_validate_addons_missing_type():
 
 @pytest.mark.parametrize("value", [5, 1, 9])
 def test_between_success(value):
-    assert int_between(1, 9)(value)
+    assert _is_integer_between(1, 9)(value)
 
 
 @pytest.mark.parametrize("value", [-1, 10])
 def test_between_raises_error(value):
     try:
-        int_between(1, 9)(value)
+        _is_integer_between(1, 9)(value)
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be an integer between 1 and 9"
@@ -336,7 +334,7 @@ def test_between_with_step_raises_error(value):
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
 def test_validate_s3_bucket_name_success_cases(bucket_name):
-    assert validate_s3_bucket_name(bucket_name)
+    assert _valid_s3_bucket_name(bucket_name)
 
 
 @pytest.mark.parametrize(
@@ -359,9 +357,9 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
     ],
 )
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
-    exp_error = S3_BUCKET_NAME_ERROR_TEMPLATE.format(bucket_name, f"  {error_message}")
+    exp_error = f"Bucket name '{bucket_name}' is invalid:\n  {error_message}"
     with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+        _valid_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
 
@@ -369,7 +367,7 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
 def test_validate_s3_bucket_name_multiple_failures():
     bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
     with pytest.raises(SchemaError) as ex:
-        validate_s3_bucket_name(bucket_name)
+        _valid_s3_bucket_name(bucket_name)
 
     exp_errors = [
         "Length must be between 3 and 63 characters inclusive.",
