@@ -8,71 +8,6 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-# def _string_matching_regex(regex_pattern: str):
-#     def validate(string):
-#         if not re.match(regex_pattern, string):
-#             # Todo: Raise suitable PlatformException?
-#             raise SchemaError(
-#                 f"String '{string}' does not match the required pattern '{regex_pattern}'."
-#             )
-#         return string
-#
-#     return validate
-
-
-def _is_integer_between(lower_limit, upper_limit):
-    def validate(value):
-        if isinstance(value, int) and lower_limit <= value <= upper_limit:
-            return True
-        # Todo: Raise suitable PlatformException?
-        raise SchemaError(f"should be an integer between {lower_limit} and {upper_limit}")
-
-    return validate
-
-
-# _valid_schema_key = Regex(
-#     r"^([a-z][a-zA-Z0-9_-]*|\*)$",
-#     error="{} is invalid: must only contain lowercase alphanumeric characters separated by hyphen or underscore",
-# )
-
-# # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
-# _valid_branch_name = _string_matching_regex(r"^((?!\*).)*(\*)?$")
-
-# _valid_deletion_policy = Or("Delete", "Retain")
-
-# _valid_postgres_deletion_policy = Or("Delete", "Retain", "Snapshot")
-
-# _valid_environment_name = Regex(
-#     r"^([a-z][a-zA-Z0-9]*|\*)$",
-#     error="Environment name {} is invalid: names must only contain lowercase alphanumeric characters, or be the '*' default environment",
-#     # For values the "error" parameter works and outputs the custom text. For keys the custom text doesn't get reported in the exception for some reason.
-# )
-
-
-# def _valid_kms_key_arn(key):
-#     return Regex(
-#         r"^arn:aws:kms:.*:\d{12}:(key|alias).*",
-#         error=f"{key} must contain a valid ARN for a KMS key",
-#     )
-#
-#
-# def _valid_iam_role_arn(key):
-#     return Regex(
-#         r"^arn:aws:iam::\d{12}:role/.*",
-#         error=f"{key} must contain a valid ARN for an IAM role",
-#     )
-#
-#
-# def _valid_dbt_email_address(key):
-#     return Regex(
-#         r"^[\w.-]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$",
-#         error=f"{key} must contain a valid DBT email address",
-#     )
-
-
-# def _no_configuration_required_schema(schema_type):
-#     return Schema({"type": schema_type, Optional("services"): Or("__all__", [str])})
-
 
 class PlatformConfigSchema:
     @staticmethod
@@ -387,8 +322,8 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_postgres_plans,
-                    Optional("volume_size"): _is_integer_between(20, 10000),
-                    Optional("iops"): _is_integer_between(1000, 9950),
+                    Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
+                    Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
                     Optional("snapshot_id"): str,
                     Optional(
                         "deletion_policy"
@@ -396,7 +331,9 @@ class PlatformConfigSchema:
                     Optional("deletion_protection"): bool,
                     Optional("multi_az"): bool,
                     Optional("storage_type"): _valid_postgres_storage_types,
-                    Optional("backup_retention_days"): _is_integer_between(1, 35),
+                    Optional("backup_retention_days"): PlatformConfigSchema.is_integer_between(
+                        1, 35
+                    ),
                 }
             },
             Optional("database_copy"): [_valid_postgres_database_copy],
@@ -444,7 +381,7 @@ class PlatformConfigSchema:
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_redis_plans,
                     Optional("engine"): str,
-                    Optional("replicas"): _is_integer_between(0, 5),
+                    Optional("replicas"): PlatformConfigSchema.is_integer_between(0, 5),
                     Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                     Optional("apply_immediately"): bool,
                     Optional("automatic_failover_enabled"): bool,
@@ -599,7 +536,8 @@ class PlatformConfigSchema:
         return validate
 
     @staticmethod
-    def __is_integer_between(lower_limit, upper_limit) -> Callable:
+    def is_integer_between(lower_limit, upper_limit) -> Callable:
+        # Todo public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
         def validate(value):
             if isinstance(value, int) and lower_limit <= value <= upper_limit:
                 return True
