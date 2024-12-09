@@ -9,7 +9,7 @@ from schema import SchemaError
 
 
 def _string_matching_regex(regex_pattern: str):
-    def validator(string):
+    def validate(string):
         if not re.match(regex_pattern, string):
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
@@ -17,17 +17,17 @@ def _string_matching_regex(regex_pattern: str):
             )
         return string
 
-    return validator
+    return validate
 
 
-def _integer_between(lower, upper):
-    def _is_between(value):
-        if isinstance(value, int) and lower <= value <= upper:
+def _is_integer_between(lower_limit, upper_limit):
+    def validate(value):
+        if isinstance(value, int) and lower_limit <= value <= upper_limit:
             return True
         # Todo: Raise suitable PlatformException?
-        raise SchemaError(f"should be an integer between {lower} and {upper}")
+        raise SchemaError(f"should be an integer between {lower_limit} and {upper_limit}")
 
-    return _is_between
+    return validate
 
 
 _valid_schema_key = Regex(
@@ -293,14 +293,14 @@ _postgres_schema = {
     Optional("environments"): {
         _valid_environment_name: {
             Optional("plan"): _valid_postgres_plans,
-            Optional("volume_size"): _integer_between(20, 10000),
-            Optional("iops"): _integer_between(1000, 9950),
+            Optional("volume_size"): _is_integer_between(20, 10000),
+            Optional("iops"): _is_integer_between(1000, 9950),
             Optional("snapshot_id"): str,
             Optional("deletion_policy"): _valid_postgres_deletion_policy,
             Optional("deletion_protection"): bool,
             Optional("multi_az"): bool,
             Optional("storage_type"): _valid_postgres_storage_types,
-            Optional("backup_retention_days"): _integer_between(1, 35),
+            Optional("backup_retention_days"): _is_integer_between(1, 35),
         }
     },
     Optional("database_copy"): [_valid_postgres_database_copy],
@@ -335,7 +335,7 @@ _redis_schema = {
         _valid_environment_name: {
             Optional("plan"): _valid_redis_plans,
             Optional("engine"): str,
-            Optional("replicas"): _integer_between(0, 5),
+            Optional("replicas"): _is_integer_between(0, 5),
             Optional("deletion_policy"): _valid_deletion_policy,
             Optional("apply_immediately"): bool,
             Optional("automatic_failover_enabled"): bool,
