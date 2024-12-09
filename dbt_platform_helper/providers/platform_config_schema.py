@@ -358,38 +358,6 @@ _codebase_pipelines_schema = [
     },
 ]
 
-# Environment pipelines...
-_environment_pipelines_schema = {
-    str: {
-        Optional("account"): str,
-        Optional("branch", default="main"): _valid_branch_name,
-        Optional("pipeline_to_trigger"): str,
-        Optional("versions"): _valid_pipeline_specific_version_overrides,
-        "slack_channel": str,
-        "trigger_on_push": bool,
-        "environments": {
-            str: Or(
-                None,
-                {
-                    Optional("accounts"): {
-                        "deploy": {
-                            "name": str,
-                            "id": str,
-                        },
-                        "dns": {
-                            "name": str,
-                            "id": str,
-                        },
-                    },
-                    Optional("requires_approval"): bool,
-                    Optional("versions"): _valid_environment_specific_version_overrides,
-                    Optional("vpc"): str,
-                },
-            )
-        },
-    }
-}
-
 
 class PlatformConfigSchema:
     @staticmethod
@@ -403,7 +371,9 @@ class PlatformConfigSchema:
                 Optional("accounts"): list[str],
                 Optional("environments"): _environments_schema,
                 Optional("codebase_pipelines"): _codebase_pipelines_schema,
-                Optional("environment_pipelines"): _environment_pipelines_schema,
+                Optional(
+                    "environment_pipelines"
+                ): PlatformConfigSchema.__environment_pipelines_schema(),
                 Optional("extensions"): {
                     str: Or(
                         PlatformConfigSchema.__alb_schema(),
@@ -500,6 +470,39 @@ class PlatformConfigSchema:
                     None,
                 )
             },
+        }
+
+    @staticmethod
+    def __environment_pipelines_schema() -> dict:
+        return {
+            str: {
+                Optional("account"): str,
+                Optional("branch", default="main"): _valid_branch_name,
+                Optional("pipeline_to_trigger"): str,
+                Optional("versions"): _valid_pipeline_specific_version_overrides,
+                "slack_channel": str,
+                "trigger_on_push": bool,
+                "environments": {
+                    str: Or(
+                        None,
+                        {
+                            Optional("accounts"): {
+                                "deploy": {
+                                    "name": str,
+                                    "id": str,
+                                },
+                                "dns": {
+                                    "name": str,
+                                    "id": str,
+                                },
+                            },
+                            Optional("requires_approval"): bool,
+                            Optional("versions"): _valid_environment_specific_version_overrides,
+                            Optional("vpc"): str,
+                        },
+                    )
+                },
+            }
         }
 
     @staticmethod
