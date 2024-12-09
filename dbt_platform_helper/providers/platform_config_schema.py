@@ -498,7 +498,7 @@ _environment_pipelines_schema = {
 
 class PlatformConfigSchema:
     @staticmethod
-    def get_schema():
+    def schema():
         return Schema(
             {
                 # The following line is for the AWS Copilot version, will be removed under DBTP-1002
@@ -525,7 +525,7 @@ class PlatformConfigSchema:
         )
 
     @staticmethod
-    def get_extension_schemas():
+    def extension_schemas():
         return {
             "alb": Schema(PlatformConfigSchema.__alb_schema()),
             "appconfig-ipfilter": _no_configuration_required_schema("appconfig-ipfilter"),
@@ -606,10 +606,3 @@ class PlatformConfigSchema:
                 )
             },
         }
-
-
-# Used outside this file by validate_platform_config()
-PLATFORM_CONFIG_SCHEMA = PlatformConfigSchema.get_schema()
-
-# This is used outside this file by validate_addons()
-EXTENSION_SCHEMAS = PlatformConfigSchema.get_extension_schemas()
