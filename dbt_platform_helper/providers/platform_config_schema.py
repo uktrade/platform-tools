@@ -301,63 +301,6 @@ _valid_pipeline_specific_version_overrides = {
     Optional("platform-helper"): str,
 }
 
-_environments_schema = {
-    str: Or(
-        None,
-        {
-            Optional("accounts"): {
-                "deploy": {
-                    "name": str,
-                    "id": str,
-                },
-                "dns": {
-                    "name": str,
-                    "id": str,
-                },
-            },
-            # Todo: Is requires_approval relevant?
-            Optional("requires_approval"): bool,
-            Optional("versions"): _valid_environment_specific_version_overrides,
-            Optional("vpc"): str,
-        },
-    )
-}
-
-# Codebase pipelines...
-_codebase_pipelines_schema = [
-    {
-        "name": str,
-        "repository": str,
-        Optional("additional_ecr_repository"): str,
-        Optional("deploy_repository_branch"): str,
-        "services": list[str],
-        "pipelines": [
-            Or(
-                {
-                    "name": str,
-                    "branch": _valid_branch_name,
-                    "environments": [
-                        {
-                            "name": str,
-                            Optional("requires_approval"): bool,
-                        }
-                    ],
-                },
-                {
-                    "name": str,
-                    "tag": bool,
-                    "environments": [
-                        {
-                            "name": str,
-                            Optional("requires_approval"): bool,
-                        }
-                    ],
-                },
-            ),
-        ],
-    },
-]
-
 
 class PlatformConfigSchema:
     @staticmethod
@@ -369,8 +312,8 @@ class PlatformConfigSchema:
                 Optional("legacy_project", default=False): bool,
                 Optional("default_versions"): _default_versions_schema,
                 Optional("accounts"): list[str],
-                Optional("environments"): _environments_schema,
-                Optional("codebase_pipelines"): _codebase_pipelines_schema,
+                Optional("environments"): PlatformConfigSchema.__environments_schema(),
+                Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
                     "environment_pipelines"
                 ): PlatformConfigSchema.__environment_pipelines_schema(),
@@ -470,6 +413,66 @@ class PlatformConfigSchema:
                     None,
                 )
             },
+        }
+
+    @staticmethod
+    def __codebase_pipelines_schema() -> list[dict]:
+        return [
+            {
+                "name": str,
+                "repository": str,
+                Optional("additional_ecr_repository"): str,
+                Optional("deploy_repository_branch"): str,
+                "services": list[str],
+                "pipelines": [
+                    Or(
+                        {
+                            "name": str,
+                            "branch": _valid_branch_name,
+                            "environments": [
+                                {
+                                    "name": str,
+                                    Optional("requires_approval"): bool,
+                                }
+                            ],
+                        },
+                        {
+                            "name": str,
+                            "tag": bool,
+                            "environments": [
+                                {
+                                    "name": str,
+                                    Optional("requires_approval"): bool,
+                                }
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ]
+
+    @staticmethod
+    def __environments_schema() -> dict:
+        return {
+            str: Or(
+                None,
+                {
+                    Optional("accounts"): {
+                        "deploy": {
+                            "name": str,
+                            "id": str,
+                        },
+                        "dns": {
+                            "name": str,
+                            "id": str,
+                        },
+                    },
+                    # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
+                    Optional("requires_approval"): bool,
+                    Optional("versions"): _valid_environment_specific_version_overrides,
+                    Optional("vpc"): str,
+                },
+            )
         }
 
     @staticmethod
