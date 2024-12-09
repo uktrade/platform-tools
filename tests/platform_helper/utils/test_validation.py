@@ -8,9 +8,9 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.platform_config_schema import _is_integer_between
 from dbt_platform_helper.providers.platform_config_schema import _string_matching_regex
-from dbt_platform_helper.providers.platform_config_schema import _valid_s3_bucket_name
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
@@ -334,7 +334,7 @@ def test_between_with_step_raises_error(value):
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
 def test_validate_s3_bucket_name_success_cases(bucket_name):
-    assert _valid_s3_bucket_name(bucket_name)
+    assert PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
 
 @pytest.mark.parametrize(
@@ -359,7 +359,7 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
     exp_error = f"Bucket name '{bucket_name}' is invalid:\n  {error_message}"
     with pytest.raises(SchemaError) as ex:
-        _valid_s3_bucket_name(bucket_name)
+        PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
 
@@ -367,7 +367,7 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
 def test_validate_s3_bucket_name_multiple_failures():
     bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
     with pytest.raises(SchemaError) as ex:
-        _valid_s3_bucket_name(bucket_name)
+        PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
     exp_errors = [
         "Length must be between 3 and 63 characters inclusive.",

@@ -167,141 +167,6 @@ _redis_schema = {
 }
 
 
-# S3 Bucket...
-_cross_environment_service_access_schema = {
-    "application": str,
-    "environment": _valid_environment_name,
-    "account": str,
-    "service": str,
-    "read": bool,
-    "write": bool,
-    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
-}
-
-
-def _valid_s3_bucket_name(name: str):
-    errors = []
-    if not (2 < len(name) < 64):
-        errors.append("Length must be between 3 and 63 characters inclusive.")
-
-    if not re.match(r"^[a-z0-9].*[a-z0-9]$", name):
-        errors.append("Names must start and end with 0-9 or a-z.")
-
-    if not re.match(r"^[a-z0-9.-]*$", name):
-        errors.append("Names can only contain the characters 0-9, a-z, '.' and '-'.")
-
-    if ".." in name:
-        errors.append("Names cannot contain two adjacent periods.")
-
-    try:
-        ipaddress.ip_address(name)
-        errors.append("Names cannot be IP addresses.")
-    except ValueError:
-        pass
-
-    for prefix in ("xn--", "sthree-"):
-        if name.startswith(prefix):
-            errors.append(f"Names cannot be prefixed '{prefix}'.")
-
-    for suffix in ("-s3alias", "--ol-s3"):
-        if name.endswith(suffix):
-            errors.append(f"Names cannot be suffixed '{suffix}'.")
-
-    if errors:
-        # Todo: Raise suitable PlatformException?
-        raise SchemaError(
-            "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
-        )
-
-    return True
-
-
-def _valid_s3_bucket_arn(key):
-    return Regex(
-        r"^arn:aws:s3::.*",
-        error=f"{key} must contain a valid ARN for an S3 bucket",
-    )
-
-
-_valid_s3_data_migration = {
-    "import": {
-        Optional("source_kms_key_arn"): _valid_kms_key_arn("source_kms_key_arn"),
-        "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
-        "worker_role_arn": _valid_iam_role_arn("worker_role_arn"),
-    },
-}
-
-_valid_s3_bucket_retention_policy = Or(
-    None,
-    {
-        "mode": Or("GOVERNANCE", "COMPLIANCE"),
-        Or("days", "years", only_one=True): int,
-    },
-)
-
-_valid_s3_bucket_lifecycle_rule = {
-    Optional("filter_prefix"): str,
-    "expiration_days": int,
-    "enabled": bool,
-}
-
-_valid_s3_bucket_external_role_access = {
-    "role_arn": _valid_iam_role_arn("role_arn"),
-    "read": bool,
-    "write": bool,
-    "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
-}
-
-_valid_s3_bucket_external_role_access_name = Regex(
-    r"^([a-z][a-zA-Z0-9_-]*)$",
-    error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
-)
-
-_valid_s3_base_definition = dict(
-    {
-        Optional("readonly"): bool,
-        Optional("serve_static_content"): bool,
-        Optional("services"): Or("__all__", [str]),
-        Optional("environments"): {
-            _valid_environment_name: {
-                "bucket_name": _valid_s3_bucket_name,
-                Optional("deletion_policy"): _valid_deletion_policy,
-                Optional("retention_policy"): _valid_s3_bucket_retention_policy,
-                Optional("versioning"): bool,
-                Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
-                Optional("data_migration"): _valid_s3_data_migration,
-                Optional("external_role_access"): {
-                    _valid_schema_key: _valid_s3_bucket_external_role_access
-                },
-                Optional("cross_environment_service_access"): {
-                    _valid_schema_key: _cross_environment_service_access_schema
-                },
-            },
-        },
-    }
-)
-
-_s3_bucket_schema = _valid_s3_base_definition | {
-    "type": "s3",
-    Optional("objects"): [{"key": str, Optional("body"): str, Optional("content_type"): str}],
-}
-
-_s3_bucket_policy_schema = _valid_s3_base_definition | {"type": "s3-policy"}
-
-_default_versions_schema = {
-    Optional("terraform-platform-modules"): str,
-    Optional("platform-helper"): str,
-}
-
-_valid_environment_specific_version_overrides = {
-    Optional("terraform-platform-modules"): str,
-}
-
-_valid_pipeline_specific_version_overrides = {
-    Optional("platform-helper"): str,
-}
-
-
 class PlatformConfigSchema:
     @staticmethod
     def schema() -> Schema:
@@ -310,7 +175,7 @@ class PlatformConfigSchema:
                 # The following line is for the AWS Copilot version, will be removed under DBTP-1002
                 "application": str,
                 Optional("legacy_project", default=False): bool,
-                Optional("default_versions"): _default_versions_schema,
+                Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("accounts"): list[str],
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
@@ -325,8 +190,8 @@ class PlatformConfigSchema:
                         _postgres_schema,
                         PlatformConfigSchema.__prometheus_policy_schema(),
                         _redis_schema,
-                        _s3_bucket_schema,
-                        _s3_bucket_policy_schema,
+                        PlatformConfigSchema.__s3_bucket_schema(),
+                        PlatformConfigSchema.__s3_bucket_policy_schema(),
                     )
                 },
             }
@@ -341,10 +206,10 @@ class PlatformConfigSchema:
             "postgres": Schema(_postgres_schema),
             "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
             "redis": Schema(_redis_schema),
-            "s3": Schema(_s3_bucket_schema),
-            "s3-policy": Schema(_s3_bucket_policy_schema),
+            "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
+            "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
             "subscription-filter": _no_configuration_required_schema("subscription-filter"),
-            # Todo: We think the next three are no longer relevant?
+            # Todo: The next three are no longer relevant. Remove them.
             "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
             "vpc": _no_configuration_required_schema("vpc"),
             "xray": _no_configuration_required_schema("xray"),
@@ -452,7 +317,18 @@ class PlatformConfigSchema:
         ]
 
     @staticmethod
+    def __default_versions_schema() -> dict:
+        return {
+            Optional("terraform-platform-modules"): str,
+            Optional("platform-helper"): str,
+        }
+
+    @staticmethod
     def __environments_schema() -> dict:
+        _valid_environment_specific_version_overrides = {
+            Optional("terraform-platform-modules"): str,
+        }
+
         return {
             str: Or(
                 None,
@@ -477,12 +353,16 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __environment_pipelines_schema() -> dict:
+        _valid_environment_pipeline_specific_version_overrides = {
+            Optional("platform-helper"): str,
+        }
+
         return {
             str: {
                 Optional("account"): str,
                 Optional("branch", default="main"): _valid_branch_name,
                 Optional("pipeline_to_trigger"): str,
-                Optional("versions"): _valid_pipeline_specific_version_overrides,
+                Optional("versions"): _valid_environment_pipeline_specific_version_overrides,
                 "slack_channel": str,
                 "trigger_on_push": bool,
                 "environments": {
@@ -500,7 +380,9 @@ class PlatformConfigSchema:
                                 },
                             },
                             Optional("requires_approval"): bool,
-                            Optional("versions"): _valid_environment_specific_version_overrides,
+                            Optional(
+                                "versions"
+                            ): _valid_environment_pipeline_specific_version_overrides,
                             Optional("vpc"): str,
                         },
                     )
@@ -568,6 +450,131 @@ class PlatformConfigSchema:
                 }
             },
         }
+
+    @staticmethod
+    def valid_s3_bucket_name(name: str):
+        # Todo: This is a public method becasue that's what the test expect. Perhaps it belongs in an S3 provider?
+        errors = []
+        if not (2 < len(name) < 64):
+            errors.append("Length must be between 3 and 63 characters inclusive.")
+
+        if not re.match(r"^[a-z0-9].*[a-z0-9]$", name):
+            errors.append("Names must start and end with 0-9 or a-z.")
+
+        if not re.match(r"^[a-z0-9.-]*$", name):
+            errors.append("Names can only contain the characters 0-9, a-z, '.' and '-'.")
+
+        if ".." in name:
+            errors.append("Names cannot contain two adjacent periods.")
+
+        try:
+            ipaddress.ip_address(name)
+            errors.append("Names cannot be IP addresses.")
+        except ValueError:
+            pass
+
+        for prefix in ("xn--", "sthree-"):
+            if name.startswith(prefix):
+                errors.append(f"Names cannot be prefixed '{prefix}'.")
+
+        for suffix in ("-s3alias", "--ol-s3"):
+            if name.endswith(suffix):
+                errors.append(f"Names cannot be suffixed '{suffix}'.")
+
+        if errors:
+            # Todo: Raise suitable PlatformException?
+            raise SchemaError(
+                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+            )
+
+        return True
+
+    @staticmethod
+    def __valid_s3_base_definition() -> dict:
+        def _valid_s3_bucket_arn(key):
+            return Regex(
+                r"^arn:aws:s3::.*",
+                error=f"{key} must contain a valid ARN for an S3 bucket",
+            )
+
+        _valid_s3_data_migration = {
+            "import": {
+                Optional("source_kms_key_arn"): _valid_kms_key_arn("source_kms_key_arn"),
+                "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
+                "worker_role_arn": _valid_iam_role_arn("worker_role_arn"),
+            },
+        }
+
+        _valid_s3_bucket_retention_policy = Or(
+            None,
+            {
+                "mode": Or("GOVERNANCE", "COMPLIANCE"),
+                Or("days", "years", only_one=True): int,
+            },
+        )
+
+        _valid_s3_bucket_lifecycle_rule = {
+            Optional("filter_prefix"): str,
+            "expiration_days": int,
+            "enabled": bool,
+        }
+
+        _valid_s3_bucket_external_role_access = {
+            "role_arn": _valid_iam_role_arn("role_arn"),
+            "read": bool,
+            "write": bool,
+            "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+        }
+
+        _valid_s3_bucket_external_role_access_name = Regex(
+            r"^([a-z][a-zA-Z0-9_-]*)$",
+            error="External role access block name {} is invalid: names must only contain lowercase alphanumeric characters separated by hypen or underscore",
+        )
+
+        return dict(
+            {
+                Optional("readonly"): bool,
+                Optional("serve_static_content"): bool,
+                Optional("services"): Or("__all__", [str]),
+                Optional("environments"): {
+                    _valid_environment_name: {
+                        "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
+                        Optional("deletion_policy"): _valid_deletion_policy,
+                        Optional("retention_policy"): _valid_s3_bucket_retention_policy,
+                        Optional("versioning"): bool,
+                        Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
+                        Optional("data_migration"): _valid_s3_data_migration,
+                        Optional("external_role_access"): {
+                            _valid_schema_key: _valid_s3_bucket_external_role_access
+                        },
+                        Optional("cross_environment_service_access"): {
+                            _valid_schema_key: {
+                                "application": str,
+                                "environment": _valid_environment_name,
+                                "account": str,
+                                "service": str,
+                                "read": bool,
+                                "write": bool,
+                                "cyber_sign_off_by": _valid_dbt_email_address("cyber_sign_off_by"),
+                            }
+                        },
+                    },
+                },
+            }
+        )
+
+    @staticmethod
+    def __s3_bucket_schema() -> dict:
+        return PlatformConfigSchema.__valid_s3_base_definition() | {
+            "type": "s3",
+            Optional("objects"): [
+                {"key": str, Optional("body"): str, Optional("content_type"): str}
+            ],
+        }
+
+    @staticmethod
+    def __s3_bucket_policy_schema() -> dict:
+        return PlatformConfigSchema.__valid_s3_base_definition() | {"type": "s3-policy"}
 
     @staticmethod
     def __string_matching_regex(regex_pattern: str) -> Callable:
