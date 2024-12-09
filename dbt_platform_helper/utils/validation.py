@@ -13,12 +13,12 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.platform_config_schema import EXTENSION_SCHEMAS
+from dbt_platform_helper.providers.platform_config_schema import PLATFORM_CONFIG_SCHEMA
 from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.platform_config_schema import EXTENSION_SCHEMAS
-from dbt_platform_helper.utils.platform_config_schema import PLATFORM_CONFIG_SCHEMA
 
 
 def validate_addons(addons: dict):
