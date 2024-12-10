@@ -73,3 +73,21 @@ def test_update_cache_with_existing_cache_file_expected_file():
         cache_provider.update_cache("opensearch", ["6.1", "6.2"])
 
     cache_provider._CacheProvider__write_cache.assert_called_once_with(expected_contents)
+
+
+def test_read_supported_versions_from_cache_returns_correct_product():
+
+    cache_provider = CacheProvider()
+
+    read_yaml_return_value = {
+        "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]},
+        "opensearch": {"date-retrieved": "09-02-02 10:35:48", "versions": ["6.1", "6.2"]},
+    }
+    # TODO - read_file_as_yaml mocking will fall away as a result of this functionality being delegated to YamlFiles refactor
+    cache_provider._CacheProvider__read_file_as_yaml = MagicMock(
+        return_value=read_yaml_return_value
+    )
+
+    supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
+
+    assert supported_versions == ["6.1", "6.2"]
