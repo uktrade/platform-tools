@@ -376,7 +376,7 @@ def get_supported_redis_versions():
             for version in supported_versions_response["CacheEngineVersions"]
         ]
 
-        cache_provider.write_to_cache("redis", supported_versions)
+        cache_provider.update_cache("redis", supported_versions)
 
         return supported_versions
 
@@ -403,7 +403,7 @@ def get_supported_opensearch_versions():
             version.removeprefix("OpenSearch_") for version in opensearch_versions
         ]
 
-        cache_provider.write_to_cache("opensearch", supported_versions)
+        cache_provider.update_cache("opensearch", supported_versions)
 
         return supported_versions
 
