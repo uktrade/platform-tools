@@ -121,6 +121,8 @@ def test_validate_addons_success(addons_file):
             "s3_policy_addons_bad_data.yml",
             {
                 "my-s3-bucket-policy-readonly-should-be-bool": r"readonly.*should be instance of 'bool'",
+                "my-s3-bucket-policy-serve-static-content-should-be-bool": r"serve_static_content.*should be instance of 'bool'",
+                "my-s3-bucket-policy-serve-static-param-name-should-be-string": r"serve_static_param_name.*should be instance of 'str'",
                 "my-s3-bucket-policy-services-should-be-list": r"services.*should be instance of 'list'",
                 "my-s3-bucket-policy-service-should-be-string": r"services.*should be instance of 'str'",
                 "my-s3-bucket-policy-bad-name-suffix": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
