@@ -1,5 +1,20 @@
 # Changelog
 
+## [12.4.1](https://github.com/uktrade/platform-tools/compare/12.4.0...12.4.1) (2024-12-11)
+
+
+### Bug Fixes
+
+* DBTP-1290 - fix red herring "Not a Git repository" error ([#682](https://github.com/uktrade/platform-tools/issues/682)) ([bbc7dcd](https://github.com/uktrade/platform-tools/commit/bbc7dcdfa1a47a92ed86126526d509ad8d5897eb))
+* DBTP-1509 Correct link to maintenance pages instructions ([#686](https://github.com/uktrade/platform-tools/issues/686)) ([58aca89](https://github.com/uktrade/platform-tools/commit/58aca89a46207d4494a3981e0b678d0a43fef960))
+* DBTP-1605 adding new key for parameter ([#690](https://github.com/uktrade/platform-tools/issues/690)) ([93a0a94](https://github.com/uktrade/platform-tools/commit/93a0a9476a09e7a1d15154df0233f28240634ec5))
+* DBTP-1605 checking new param ([#689](https://github.com/uktrade/platform-tools/issues/689)) ([b7ef4a4](https://github.com/uktrade/platform-tools/commit/b7ef4a4a080e6857a777ac80df749665aa5ff30a))
+
+
+### Documentation
+
+* Correct entry in changelog ([#674](https://github.com/uktrade/platform-tools/issues/674)) ([cb0832d](https://github.com/uktrade/platform-tools/commit/cb0832de64efc556f3c812a3f4291f8e45fccb70))
+
 ## [12.4.0](https://github.com/uktrade/platform-tools/compare/12.3.0...12.4.0) (2024-12-06)
 
 
