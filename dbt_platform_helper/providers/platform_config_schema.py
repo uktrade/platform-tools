@@ -379,7 +379,7 @@ def _valid_s3_bucket_name(name: str):
     if errors:
         # Todo: Raise suitable PlatformException?
         raise SchemaError(
-            "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+            f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
         )
 
     return True
@@ -430,6 +430,7 @@ _valid_s3_base_definition = dict(
     {
         Optional("readonly"): bool,
         Optional("serve_static_content"): bool,
+        Optional("serve_static_param_name"): bool,
         Optional("services"): Or("__all__", [str]),
         Optional("environments"): {
             _valid_environment_name: {
