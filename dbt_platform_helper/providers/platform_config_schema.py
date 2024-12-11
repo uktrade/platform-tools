@@ -430,6 +430,7 @@ _valid_s3_base_definition = dict(
     {
         Optional("readonly"): bool,
         Optional("serve_static_content"): bool,
+        Optional("serve_static_param_name"): bool,
         Optional("services"): Or("__all__", [str]),
         Optional("environments"): {
             _valid_environment_name: {
