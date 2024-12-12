@@ -40,7 +40,7 @@ def environment():
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     try:
-        Environment().offline(app, env, svc, template, vpc)
+        Environment(env).offline(app, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -52,7 +52,7 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
     try:
-        Environment().online(app, env)
+        Environment(env).online(app)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
