@@ -3,8 +3,9 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.iac_generator import IaCGenerator
+from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
+from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
@@ -69,7 +70,7 @@ def generate(name, vpc_name):
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
 
-    IaCGenerator.generate_copilot_environment_manifests(conf, name)
+    CopilotEnvironment.generate(conf, name)
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -82,4 +83,4 @@ def generate(name, vpc_name):
 )
 def generate_terraform(name, terraform_platform_modules_version):
     conf = load_and_validate_platform_config()
-    IaCGenerator.generate_terraform(conf, name, terraform_platform_modules_version)
+    TerraformEnvironment.generate(conf, name, terraform_platform_modules_version)

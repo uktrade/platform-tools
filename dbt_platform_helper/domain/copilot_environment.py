@@ -1,7 +1,6 @@
 import boto3
 import click
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -111,40 +110,6 @@ def _generate_copilot_environment_manifests(environment_name, application, env_c
     )
 
 
-def _generate_terraform_environment_manifests(
-    application, env, env_config, cli_terraform_platform_modules_version
-):
-    env_template = setup_templates().get_template("environments/main.tf")
-
-    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
-        env_config, cli_terraform_platform_modules_version
-    )
-
-    contents = env_template.render(
-        {
-            "application": application,
-            "environment": env,
-            "config": env_config,
-            "terraform_platform_modules_version": terraform_platform_modules_version,
-        }
-    )
-
-    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
-
-
-def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
-    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
-    env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
-        "terraform-platform-modules"
-    )
-    version_preference_order = [
-        cli_terraform_platform_modules_version,
-        env_conf_terraform_platform_modules_version,
-        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
-    ]
-    return [version for version in version_preference_order if version][0]
-
-
 def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")
@@ -164,16 +129,9 @@ class CertificateNotFoundException(PlatformException):
     pass
 
 
-class IaCGenerator:
+class CopilotEnvironment:
     @staticmethod
-    def generate_terraform(conf, name, terraform_platform_modules_version):
-        env_config = apply_environment_defaults(conf)["environments"][name]
-        _generate_terraform_environment_manifests(
-            conf["application"], name, env_config, terraform_platform_modules_version
-        )
-
-    @staticmethod
-    def generate_copilot_environment_manifests(conf, name):
+    def generate(conf, name):
         env_config = apply_environment_defaults(conf)["environments"][name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
         click.secho(f"Using {profile_for_environment} for this AWS session")
