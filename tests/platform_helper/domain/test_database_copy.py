@@ -482,7 +482,9 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
     fs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "test-app"}))
     mocks = DataCopyMocks()
 
-    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+    # TODO - remove, see other comments on patches
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        db_copy = DatabaseCopy(None, "test-db", **mocks.params())
 
     assert db_copy.app == "test-app"
 
@@ -515,19 +517,24 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
-    db_copy = DatabaseCopy(None, database, **mocks.params())
+    # TODO - DatabaseCopy runs a platform config load in the constructor. This fails because it tries to create an ecache client.
+    # Stop gap fix, this patch should be removed. Once a config_provider is created that will be passed into database copy via dependancy injection so we can simply mock that instead.
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        db_copy = DatabaseCopy(None, database, **mocks.params())
 
     db_copy.run_database_copy_task = mock_run_database_copy_task
     db_copy.tail_logs = Mock()
 
-    if is_dump:
-        db_copy.dump(env, None, "test-env")
-    else:
-        db_copy.load(env, None)
+    # TODO: Same applies to this block as the above comments...
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        if is_dump:
+            db_copy.dump(env, None, "test-env")
+        else:
+            db_copy.load(env, None)
 
-    mocks.vpc_config.assert_called_once_with(
-        mocks.environment.session, "test-app", env, "test-env-vpc"
-    )
+        mocks.vpc_config.assert_called_once_with(
+            mocks.environment.session, "test-app", env, "test-env-vpc"
+        )
 
 
 @pytest.mark.parametrize("is_dump", [True, False])
@@ -548,11 +555,13 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
     db_copy.run_database_copy_task = mock_run_database_copy_task
     db_copy.tail_logs = Mock()
 
-    with pytest.raises(SystemExit) as exc:
-        if is_dump:
-            db_copy.dump(env, None, "test-env")
-        else:
-            db_copy.load(env, None)
+    # TODO - same applies here as above
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        with pytest.raises(SystemExit) as exc:
+            if is_dump:
+                db_copy.dump(env, None, "test-env")
+            else:
+                db_copy.load(env, None)
 
     assert exc.value.code == 1
     mocks.abort.assert_called_once_with(
@@ -589,9 +598,12 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
         ),
     )
     mocks = DataCopyMocks()
-    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
-    vpc_name = db_copy.enrich_vpc_name("test-env", None)
+    # TODO - remove, see other comments on patches
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+        vpc_name = db_copy.enrich_vpc_name("test-env", None)
 
     assert vpc_name == "test-env-vpc"
 
@@ -608,8 +620,11 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
         ),
     )
     mocks = DataCopyMocks()
-    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
-    vpc_name = db_copy.enrich_vpc_name("test-env", None)
+    # TODO - remove, see other comments on patches
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+        vpc_name = db_copy.enrich_vpc_name("test-env", None)
 
     assert vpc_name == "test-env-vpc"
