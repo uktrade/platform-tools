@@ -4,7 +4,7 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.environment import Environment
+from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -40,7 +40,7 @@ def environment():
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     try:
-        Environment(env).offline(app, svc, template, vpc)
+        MaintenancePageProvider().activate(app, env, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -52,7 +52,7 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
     try:
-        Environment(env).online(app)
+        MaintenancePageProvider().deactivate(app, env)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
