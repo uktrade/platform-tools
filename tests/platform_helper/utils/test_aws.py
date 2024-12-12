@@ -688,12 +688,15 @@ def test_update_postgres_parameter_with_master_secret():
     }
 
 
-@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+# TODO - patching used here as a stop gap until this method is moved into its own provider, to be replaced with dependancy injection.
+@patch("dbt_platform_helper.utils.aws.CacheProvider")
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.utils.aws.write_to_cache")
 def test_get_supported_redis_versions_when_cache_refresh_required(
-    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+    mock_get_aws_session_or_abort, mock_cache_provider
 ):
+
+    mock_cache_provider_instance = mock_cache_provider.return_value
+    mock_cache_provider_instance.cache_refresh_required.return_value = True
 
     client = mock_aws_client(mock_get_aws_session_or_abort)
     client.describe_cache_engine_versions.return_value = {
@@ -719,12 +722,15 @@ def test_get_supported_redis_versions_when_cache_refresh_required(
     assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
 
 
-@patch("dbt_platform_helper.utils.aws.cache_refresh_required", return_value=True)
+# TODO - patching used here as a stop gap until this method is moved into its own provider, to be replaced with dependancy injection.
+@patch("dbt_platform_helper.utils.aws.CacheProvider")
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.utils.aws.write_to_cache")
 def test_get_supported_opensearch_versions_when_cache_refresh_required(
-    mock_cache_refresh, mock_get_aws_session_or_abort, mock_write_to_cache
+    mock_get_aws_session_or_abort, mock_cache_provider
 ):
+
+    mock_cache_provider_instance = mock_cache_provider.return_value
+    mock_cache_provider_instance.cache_refresh_required.return_value = True
 
     client = mock_aws_client(mock_get_aws_session_or_abort)
     client.list_versions.return_value = {
