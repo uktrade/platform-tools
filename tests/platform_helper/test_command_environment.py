@@ -11,16 +11,16 @@ import yaml
 from click.testing import CliRunner
 from moto import mock_aws
 
-from dbt_platform_helper.commands.environment import CertificateNotFoundException
-from dbt_platform_helper.commands.environment import find_https_certificate
 from dbt_platform_helper.commands.environment import generate
 from dbt_platform_helper.commands.environment import generate_terraform
-from dbt_platform_helper.commands.environment import get_cert_arn
-from dbt_platform_helper.commands.environment import get_subnet_ids
-from dbt_platform_helper.commands.environment import get_vpc_id
 from dbt_platform_helper.commands.environment import offline
 from dbt_platform_helper.commands.environment import online
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.iac_generator import CertificateNotFoundException
+from dbt_platform_helper.domain.iac_generator import find_https_certificate
+from dbt_platform_helper.domain.iac_generator import get_cert_arn
+from dbt_platform_helper.domain.iac_generator import get_subnet_ids
+from dbt_platform_helper.domain.iac_generator import get_vpc_id
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.utils.application import Service
@@ -431,13 +431,13 @@ class TestEnvironmentOnlineCommand:
 class TestGenerate:
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch("dbt_platform_helper.commands.environment.get_cert_arn", return_value="arn:aws:acm:test")
+    @patch("dbt_platform_helper.domain.iac_generator.get_cert_arn", return_value="arn:aws:acm:test")
     @patch(
-        "dbt_platform_helper.commands.environment.get_subnet_ids",
+        "dbt_platform_helper.domain.iac_generator.get_subnet_ids",
         return_value=(["def456"], ["ghi789"]),
     )
-    @patch("dbt_platform_helper.commands.environment.get_vpc_id", return_value="vpc-abc123")
-    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.domain.iac_generator.get_vpc_id", return_value="vpc-abc123")
+    @patch("dbt_platform_helper.domain.iac_generator.get_aws_session_or_abort")
     @pytest.mark.parametrize(
         "environment_config, expected_vpc",
         [
@@ -490,7 +490,7 @@ class TestGenerate:
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.domain.iac_generator.get_aws_session_or_abort")
     @pytest.mark.parametrize(
         "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
@@ -543,6 +543,8 @@ class TestGenerate:
 
         result = CliRunner().invoke(generate_terraform, args)
 
+        print(f"RESULT:{result}")
+
         assert "File terraform/environments/test/main.tf created" in result.output
         main_tf = Path("terraform/environments/test/main.tf")
         assert main_tf.exists()
@@ -556,7 +558,7 @@ class TestGenerate:
         moved_block = "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         assert moved_block in content
 
-    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.domain.iac_generator.get_aws_session_or_abort")
     def test_fail_early_if_platform_config_invalid(self, mock_session_1, fakefs):
 
         fakefs.add_real_directory(
@@ -735,7 +737,7 @@ class TestGenerate:
 
     @mock_aws
     @patch(
-        "dbt_platform_helper.commands.environment.find_https_certificate",
+        "dbt_platform_helper.domain.iac_generator.find_https_certificate",
         return_value="CertificateArn",
     )
     def test_get_cert_arn(self, find_https_certificate):
@@ -791,7 +793,7 @@ class TestGenerate:
 
 class TestFindHTTPSCertificate:
     @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
+        "dbt_platform_helper.domain.iac_generator.find_https_listener",
         return_value="https_listener_arn",
     )
     def test_when_no_certificate_present(self, mock_find_https_listener):
@@ -802,7 +804,7 @@ class TestFindHTTPSCertificate:
             find_https_certificate(boto_mock, "test-application", "development")
 
     @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
+        "dbt_platform_helper.domain.iac_generator.find_https_listener",
         return_value="https_listener_arn",
     )
     def test_when_single_https_certificate_present(self, mock_find_https_listener):
@@ -815,7 +817,7 @@ class TestFindHTTPSCertificate:
         assert "certificate_arn" == certificate_arn
 
     @patch(
-        "dbt_platform_helper.commands.environment.find_https_listener",
+        "dbt_platform_helper.domain.iac_generator.find_https_listener",
         return_value="https_listener_arn",
     )
     def test_when_multiple_https_certificate_present(self, mock_find_https_listener):

@@ -1,17 +1,12 @@
-import boto3
 import click
 from schema import SchemaError
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.iac_generator import IaCGenerator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.load_balancers import find_https_listener
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import apply_environment_defaults
-from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -58,85 +53,6 @@ def online(app, env):
         raise click.Abort
 
 
-def get_vpc_id(session, env_name, vpc_name=None):
-    if not vpc_name:
-        vpc_name = f"{session.profile_name}-{env_name}"
-
-    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
-    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        filters[0]["Values"] = [session.profile_name]
-        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        click.secho(
-            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
-        )
-        raise click.Abort
-
-    return vpcs[0]["VpcId"]
-
-
-def get_subnet_ids(session, vpc_id, environment_name):
-    subnets = session.client("ec2").describe_subnets(
-        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-    )["Subnets"]
-
-    if not subnets:
-        click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
-        raise click.Abort
-
-    public_tag = {"Key": "subnet_type", "Value": "public"}
-    public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
-    private_tag = {"Key": "subnet_type", "Value": "private"}
-    private_subnets = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
-
-    # This call and the method declaration can be removed when we stop using AWS Copilot to deploy the services
-    public_subnets, private_subnets = _match_subnet_id_order_to_cloudformation_exports(
-        session,
-        environment_name,
-        public_subnets,
-        private_subnets,
-    )
-
-    return public_subnets, private_subnets
-
-
-def _match_subnet_id_order_to_cloudformation_exports(
-    session, environment_name, public_subnets, private_subnets
-):
-    public_subnet_exports = []
-    private_subnet_exports = []
-    for page in session.client("cloudformation").get_paginator("list_exports").paginate():
-        for export in page["Exports"]:
-            if f"-{environment_name}-" in export["Name"]:
-                if export["Name"].endswith("-PublicSubnets"):
-                    public_subnet_exports = export["Value"].split(",")
-                if export["Name"].endswith("-PrivateSubnets"):
-                    private_subnet_exports = export["Value"].split(",")
-
-    # If the elements match, regardless of order, use the list from the CloudFormation exports
-    if set(public_subnets) == set(public_subnet_exports):
-        public_subnets = public_subnet_exports
-    if set(private_subnets) == set(private_subnet_exports):
-        private_subnets = private_subnet_exports
-
-    return public_subnets, private_subnets
-
-
-def get_cert_arn(session, application, env_name):
-    try:
-        arn = find_https_certificate(session, application, env_name)
-    except:
-        click.secho(
-            f"No certificate found with domain name matching environment {env_name}.", fg="red"
-        )
-        raise click.Abort
-
-    return arn
-
-
 @environment.command()
 @click.option("--vpc-name", hidden=True)
 @click.option("--name", "-n", required=True)
@@ -147,19 +63,13 @@ def generate(name, vpc_name):
             fg="red",
         )
         raise click.Abort
-
     try:
         conf = load_and_validate_platform_config()
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
 
-    env_config = apply_environment_defaults(conf)["environments"][name]
-    profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
-    click.secho(f"Using {profile_for_environment} for this AWS session")
-    session = get_aws_session_or_abort(profile_for_environment)
-
-    _generate_copilot_environment_manifests(name, conf["application"], env_config, session)
+    IaCGenerator.generate_copilot_environment_manifests(conf, name)
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -172,83 +82,4 @@ def generate(name, vpc_name):
 )
 def generate_terraform(name, terraform_platform_modules_version):
     conf = load_and_validate_platform_config()
-
-    env_config = apply_environment_defaults(conf)["environments"][name]
-    _generate_terraform_environment_manifests(
-        conf["application"], name, env_config, terraform_platform_modules_version
-    )
-
-
-def _generate_copilot_environment_manifests(environment_name, application, env_config, session):
-    env_template = setup_templates().get_template("env/manifest.yml")
-    vpc_name = env_config.get("vpc", None)
-    vpc_id = get_vpc_id(session, environment_name, vpc_name)
-    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
-    cert_arn = get_cert_arn(session, application, environment_name)
-    contents = env_template.render(
-        {
-            "name": environment_name,
-            "vpc_id": vpc_id,
-            "pub_subnet_ids": pub_subnet_ids,
-            "priv_subnet_ids": priv_subnet_ids,
-            "certificate_arn": cert_arn,
-        }
-    )
-    click.echo(
-        mkfile(
-            ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
-        )
-    )
-
-
-def _generate_terraform_environment_manifests(
-    application, env, env_config, cli_terraform_platform_modules_version
-):
-    env_template = setup_templates().get_template("environments/main.tf")
-
-    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
-        env_config, cli_terraform_platform_modules_version
-    )
-
-    contents = env_template.render(
-        {
-            "application": application,
-            "environment": env,
-            "config": env_config,
-            "terraform_platform_modules_version": terraform_platform_modules_version,
-        }
-    )
-
-    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
-
-
-def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
-    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
-    env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
-        "terraform-platform-modules"
-    )
-    version_preference_order = [
-        cli_terraform_platform_modules_version,
-        env_conf_terraform_platform_modules_version,
-        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
-    ]
-    return [version for version in version_preference_order if version][0]
-
-
-def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
-    listener_arn = find_https_listener(session, app, env)
-    cert_client = session.client("elbv2")
-    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
-        "Certificates"
-    ]
-
-    try:
-        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
-    except StopIteration:
-        raise CertificateNotFoundException()
-
-    return certificate_arn
-
-
-class CertificateNotFoundException(PlatformException):
-    pass
+    IaCGenerator.generate_terraform(conf, name, terraform_platform_modules_version)
