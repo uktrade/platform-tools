@@ -592,7 +592,9 @@ extensions:
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
     expected_error = f'duplication of key "{duplicate_key}"'
 
-    linting_failures = ConfigProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+    config_provider = ConfigProvider()
+
+    linting_failures = config_provider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert expected_error in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:

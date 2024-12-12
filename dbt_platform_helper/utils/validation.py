@@ -279,7 +279,9 @@ def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_file_ch
         config_file_check(path)
     try:
         conf = yaml.safe_load(Path(path).read_text())
-        duplicate_keys = ConfigProvider.lint_yaml_for_duplicate_keys(path)
+        config_provider = ConfigProvider()
+
+        duplicate_keys = config_provider.lint_yaml_for_duplicate_keys(path)
         if duplicate_keys:
             abort_with_error(
                 "Duplicate keys found in platform-config:"
