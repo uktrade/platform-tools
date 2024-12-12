@@ -48,7 +48,9 @@ def validate_addons(addons: dict):
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=get_supported_redis_versions,
+        get_supported_versions=RedisProvider(
+            boto3.client("elasticache")
+        ).get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config={"extensions": addons},

@@ -1,8 +1,13 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from dbt_platform_helper.providers.redis import RedisProvider
 
 
+# TODO - we don't want to use the fixtures from conftest since one applies get_supported_redis_versions
+# However we will remove that autoused fixture once the validation stuff is moved to ConfigProvider, so this line needs to go too.
+@pytest.mark.skip_redis_fixture
 def test_get_supported_redis_versions_when_cache_refresh_required():
 
     elasticache_client = MagicMock()

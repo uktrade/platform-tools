@@ -9,8 +9,6 @@ class RedisProvider:
 
         cache_provider = self.__get_cache_provider()
 
-        print(cache_provider.cache_refresh_required("redis"))
-
         if cache_provider.cache_refresh_required("redis"):
 
             supported_versions_response = self.elasticache_client.describe_cache_engine_versions(

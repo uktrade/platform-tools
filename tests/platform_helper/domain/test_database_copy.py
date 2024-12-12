@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -17,6 +18,7 @@ class DataCopyMocks:
         self.application = Application(app)
         self.environment = Mock()
         self.environment.account_id = acc
+        # TODO - inject a mock config_provider object here.
         self.application.environments = {env: self.environment, "test-env-2": Mock()}
         self.load_application = Mock(return_value=self.application)
         self.client = Mock()
@@ -538,7 +540,10 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
 
     mock_run_database_copy_task = Mock(return_value="arn://task-arn")
 
-    db_copy = DatabaseCopy("test-app", database, **mocks.params())
+    # TODO - DatabaseCopy runs a platform config load in the constructor. This fails because it tries to create an ecache client.
+    # Stop gap fix, this patch should be removed. Once a config_provider is created that will be passed into database copy via dependancy injection so we can simply mock that instead.
+    with patch("dbt_platform_helper.utils.validation.boto3.client"):
+        db_copy = DatabaseCopy("test-app", database, **mocks.params())
 
     db_copy.run_database_copy_task = mock_run_database_copy_task
     db_copy.tail_logs = Mock()
