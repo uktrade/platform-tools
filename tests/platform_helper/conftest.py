@@ -714,11 +714,11 @@ def mock_get_supported_opensearch_versions(monkeypatch):
     )
 
 
-@pytest.fixture(autouse=True)
-def mock_get_supported_redis_versions(monkeypatch):
-    def mock_return_value(opensearch_client=None):
-        return ["6.2", "7.0", "7.1"]
+# @pytest.fixture(autouse=True)
+# def mock_get_supported_redis_versions(monkeypatch):
+#     def mock_return_value(opensearch_client=None):
+#         return ["6.2", "7.0", "7.1"]
 
-    monkeypatch.setattr(
-        "dbt_platform_helper.utils.validation.get_supported_redis_versions", mock_return_value
-    )
+#     monkeypatch.setattr(
+#         "dbt_platform_helper.utils.validation.get_supported_redis_versions", mock_return_value
+#     )

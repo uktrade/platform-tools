@@ -29,7 +29,6 @@ from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
-from dbt_platform_helper.utils.aws import get_supported_redis_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
@@ -686,40 +685,6 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
-
-
-# TODO - patching used here as a stop gap until this method is moved into its own provider, to be replaced with dependancy injection.
-@patch("dbt_platform_helper.utils.aws.CacheProvider")
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-def test_get_supported_redis_versions_when_cache_refresh_required(
-    mock_get_aws_session_or_abort, mock_cache_provider
-):
-
-    mock_cache_provider_instance = mock_cache_provider.return_value
-    mock_cache_provider_instance.cache_refresh_required.return_value = True
-
-    client = mock_aws_client(mock_get_aws_session_or_abort)
-    client.describe_cache_engine_versions.return_value = {
-        "CacheEngineVersions": [
-            {
-                "Engine": "redis",
-                "EngineVersion": "4.0.10",
-                "CacheParameterGroupFamily": "redis4.0",
-                "CacheEngineDescription": "Redis",
-                "CacheEngineVersionDescription": "redis version 4.0.10",
-            },
-            {
-                "Engine": "redis",
-                "EngineVersion": "5.0.6",
-                "CacheParameterGroupFamily": "redis5.0",
-                "CacheEngineDescription": "Redis",
-                "CacheEngineVersionDescription": "redis version 5.0.6",
-            },
-        ]
-    }
-
-    supported_redis_versions_response = get_supported_redis_versions()
-    assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
 
 
 # TODO - patching used here as a stop gap until this method is moved into its own provider, to be replaced with dependancy injection.
