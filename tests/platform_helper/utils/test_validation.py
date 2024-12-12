@@ -8,11 +8,11 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
-from dbt_platform_helper.utils.validation import lint_yaml_for_duplicate_keys
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
@@ -592,7 +592,7 @@ extensions:
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
     expected_error = f'duplication of key "{duplicate_key}"'
 
-    linting_failures = lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+    linting_failures = ConfigProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert expected_error in linting_failures[0]
 
     with pytest.raises(SystemExit) as excinfo:
