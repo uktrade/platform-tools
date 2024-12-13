@@ -1,12 +1,15 @@
+from datetime import date
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
 import pytest
+import yaml
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
+from dbt_platform_helper.providers.copilot import CopilotProvider
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.copilot import create_postgres_admin_task
@@ -16,6 +19,79 @@ from tests.platform_helper.conftest import expected_connection_secret_name
 from tests.platform_helper.conftest import mock_task_name
 
 env = "development"
+
+
+def test_copilot_provider_generate_s3_cross_account_service_addons():
+    s3_extension_config = {
+        "test-s3-bucket-x-account": {
+            "type": "s3",
+            "services": "test-srv",
+            "environments": {
+                "hotfix": {
+                    "bucket_name": "x-acc-bucket",
+                    "cross_environment_service_access": {
+                        "test_access": {
+                            "application": "app2",
+                            "environment": "staging",
+                            "account": "123456789010",
+                            "service": "test_srv",
+                            "read": True,
+                            "write": True,
+                            "cyber_sign_off_by": "user@example.com",
+                        }
+                    },
+                }
+            },
+        }
+    }
+
+    environments = {
+        "dev": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
+        "staging": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
+        "hotfix": {"accounts": {"deploy": {"name": "prod-acc", "id": "987654321010"}}},
+    }
+
+    provider = CopilotProvider("test-app")
+    template_string = provider.generate_s3_cross_account_service_addons(
+        environments, s3_extension_config
+    )
+
+    act = yaml.safe_load(template_string)
+
+    assert act["Parameters"]["App"]["Type"] == "String"
+    assert act["Parameters"]["Env"]["Type"] == "String"
+    assert act["Parameters"]["Name"]["Type"] == "String"
+
+    assert (
+        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Description"]
+        == "The IAM::ManagedPolicy to attach to the task role"
+    )
+    assert (
+        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Value"]["Ref"]
+        == "testSrvXAccBucketTestAccessXEnvAccessPolicy"
+    )
+
+    policy = act["Resources"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]
+    assert (
+        policy["Metadata"]["aws:copilot:description"]
+        == "An IAM ManagedPolicy for your service to access the bucket"
+    )
+    assert policy["Type"] == "AWS::IAM::ManagedPolicy"
+
+    policy_doc = policy["Properties"]["PolicyDocument"]
+    assert policy_doc["Version"] == date(2012, 10, 17)
+    statements = policy_doc["Statement"]
+    kms_statement = statements[0]
+    assert kms_statement["Sid"] == "KMSDecryptAndGenerate"
+    assert kms_statement["Effect"] == "Allow"
+    assert kms_statement["Action"] == ["kms:Decrypt", "kms:GenerateDataKey"]
+    assert kms_statement["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+    # assert kms_statement["Condition"] == {
+    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["env1", "env2"]}
+    # }
+
+    # s3_obj_statement = statements[1]
+    # s3_list_statement = statements[2]
 
 
 @mock_aws

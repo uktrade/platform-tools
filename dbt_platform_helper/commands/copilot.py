@@ -9,12 +9,14 @@ import click
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.copilot import CopilotProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import config_file_check
@@ -34,14 +36,6 @@ SERVICE_TYPES = [
     "Static Site",
     "Worker Service",
 ]
-
-ADDON_TEMPLATE_MAP = {
-    "s3": ["addons/svc/s3-policy.yml"],
-    "s3-policy": ["addons/svc/s3-policy.yml"],
-    "appconfig-ipfilter": ["addons/svc/appconfig-ipfilter.yml"],
-    "subscription-filter": ["addons/svc/subscription-filter.yml"],
-    "prometheus-policy": ["addons/svc/prometheus-policy.yml"],
-}
 
 
 def list_copilot_local_environments():
@@ -245,13 +239,17 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 
 
 @copilot.command()
-def make_addons():
+def make_addons(copilot_provider: CopilotProvider = None):
     """Generate addons CloudFormation for each environment."""
+
+    if not copilot_provider:
+        copilot_provider = CopilotProvider()
+
     output_dir = Path(".").absolute()
     config_file_check()
 
     templates = setup_templates()
-    config = _get_config()
+    extensions = _get_extensions()
     session = get_aws_session_or_abort()
 
     application_name = get_application_name()
@@ -262,7 +260,7 @@ def make_addons():
     env_addons_path = env_path / "addons"
     env_overrides_path = env_path / "overrides"
 
-    _cleanup_old_files(config, output_dir, env_addons_path, env_overrides_path)
+    _cleanup_old_files(extensions, output_dir, env_addons_path, env_overrides_path)
     _generate_env_overrides(output_dir)
 
     svc_names = list_copilot_local_services()
@@ -271,33 +269,33 @@ def make_addons():
         _generate_svc_overrides(base_path, templates, svc_name)
 
     services = []
-    for addon_name, addon_config in config.items():
-        print(f">>>>>>>>> {addon_name}")
-        addon_type = addon_config.pop("type")
-        environments = addon_config.pop("environments")
+    for ext_name, extension in extensions.items():
+        print(f">>>>>>>>> {ext_name}")
+        addon_type = extension.pop("type")
+        environments = extension.pop("environments")
         environment_addon_config = {
             "addon_type": addon_type,
             "environments": environments,
-            "name": addon_config.get("name", None) or addon_name,
-            "prefix": camel_case(addon_name),
-            "secret_name": addon_name.upper().replace("-", "_"),
-            **addon_config,
+            "name": extension.get("name", None) or ext_name,
+            "prefix": camel_case(ext_name),
+            "secret_name": ext_name.upper().replace("-", "_"),
+            **extension,
         }
 
         services.append(environment_addon_config)
 
         service_addon_config = {
             "application_name": application_name,
-            "name": addon_config.get("name", None) or addon_name,
-            "prefix": camel_case(addon_name),
+            "name": extension.get("name", None) or ext_name,
+            "prefix": camel_case(ext_name),
             "environments": environments,
-            **addon_config,
+            **extension,
         }
 
         log_destination_arns = get_log_destination_arn()
 
         if addon_type in ["s3", "s3-policy"]:
-            if config[addon_name].get("serve_static_content"):
+            if extensions[ext_name].get("serve_static_content"):
                 continue
 
             s3_kms_arns = _get_s3_kms_alias_arns(session, application_name, environments)
@@ -307,8 +305,8 @@ def make_addons():
                 )
 
         _generate_service_addons(
-            addon_config,
-            addon_name,
+            extension,
+            ext_name,
             addon_type,
             output_dir,
             service_addon_config,
@@ -316,10 +314,12 @@ def make_addons():
             log_destination_arns,
         )
 
+        copilot_provider.write_s3_cross_account_service_addons_template()
+
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
 
-def _get_config():
+def _get_extensions():
     config = _validate_and_normalise_extensions_config(PACKAGE_DIR / "default-extensions.yml")
     project_config = _validate_and_normalise_extensions_config(PLATFORM_CONFIG_FILE, "extensions")
     config.update(project_config)

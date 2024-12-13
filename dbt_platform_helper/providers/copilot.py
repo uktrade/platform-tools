@@ -1,6 +1,7 @@
 import json
 import time
 
+import jinja2
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
@@ -8,6 +9,46 @@ from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
+from dbt_platform_helper.utils.template import camel_case
+from dbt_platform_helper.utils.template import setup_templates
+
+
+class CopilotProvider:
+    def __init__(self, app: str, templates: jinja2.Environment = None):
+        self.app = app
+        self.templates = templates if templates else setup_templates()
+
+    def generate_s3_cross_account_service_addons(self, environments, extensions):
+        resource_blocks = []
+        for ext_name, ext_data in extensions.items():
+            for env_name, env_data in ext_data.get("environments", {}).items():
+                if "cross_environment_service_access" in env_data:
+                    bucket = env_data.get("bucket_name")
+                    x_env_data = env_data["cross_environment_service_access"]
+                    for access_name, access_data in x_env_data.items():
+                        service = access_data.get("service")
+                        resource_blocks.append(
+                            {
+                                "bucket_name": bucket,
+                                "appPrefix": camel_case(f"{service}-{bucket}-{access_name}"),
+                                "bucket_env": env_name,
+                                "bucket_account": environments.get(env_name, {})
+                                .get("accounts", {})
+                                .get("deploy", {})
+                                .get("id"),
+                                "read": access_data.get("read", False),
+                                "write": access_data.get("write", False),
+                            }
+                        )
+
+        template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
+        contents = template.render({"resources": resource_blocks})
+
+        return contents
+
+    def write_s3_cross_account_service_addons_template(self):
+        pass
 
 
 def create_addon_client_task(
