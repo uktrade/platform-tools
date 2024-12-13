@@ -18,7 +18,6 @@ from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
-from dbt_platform_helper.providers.cache import CacheProvider
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -356,33 +355,6 @@ def get_postgres_connection_data_updated_with_master_secret(session, parameter_n
     parameter_data["password"] = urllib.parse.quote(secret_value["password"])
 
     return parameter_data
-
-
-def get_supported_opensearch_versions():
-
-    cache_provider = CacheProvider()
-
-    if cache_provider.cache_refresh_required("opensearch"):
-
-        session = get_aws_session_or_abort()
-        opensearch_client = session.client("opensearch")
-
-        response = opensearch_client.list_versions()
-        all_versions = response["Versions"]
-
-        opensearch_versions = [
-            version for version in all_versions if not version.startswith("Elasticsearch_")
-        ]
-        supported_versions = [
-            version.removeprefix("OpenSearch_") for version in opensearch_versions
-        ]
-
-        cache_provider.update_cache("opensearch", supported_versions)
-
-        return supported_versions
-
-    else:
-        return cache_provider.read_supported_versions_from_cache("opensearch")
 
 
 def get_connection_string(

@@ -28,7 +28,6 @@ from dbt_platform_helper.utils.aws import (
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
-from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
@@ -685,32 +684,6 @@ def test_update_postgres_parameter_with_master_secret():
         "host": "test.com",
         "port": 5432,
     }
-
-
-# TODO - patching used here as a stop gap until this method is moved into its own provider, to be replaced with dependancy injection.
-@patch("dbt_platform_helper.utils.aws.CacheProvider")
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-def test_get_supported_opensearch_versions_when_cache_refresh_required(
-    mock_get_aws_session_or_abort, mock_cache_provider
-):
-
-    mock_cache_provider_instance = mock_cache_provider.return_value
-    mock_cache_provider_instance.cache_refresh_required.return_value = True
-
-    client = mock_aws_client(mock_get_aws_session_or_abort)
-    client.list_versions.return_value = {
-        "Versions": [
-            "OpenSearch_2.15",
-            "OpenSearch_2.13",
-            "OpenSearch_2.11",
-            "OpenSearch_2.9",
-            "Elasticsearch_7.10",
-            "Elasticsearch_7.9",
-        ]
-    }
-
-    supported_opensearch_versions_response = get_supported_opensearch_versions()
-    assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]
 
 
 @mock_aws
