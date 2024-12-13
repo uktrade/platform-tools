@@ -88,12 +88,14 @@ def get_vpc_id(session, env_name, vpc_name=None):
     return vpcs[0]["VpcId"]
 
 
-def _generate_copilot_environment_manifests(environment_name, application, env_config, session):
+def _generate_copilot_environment_manifests(
+    environment_name, application_name, env_config, session
+):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
     vpc_id = get_vpc_id(session, environment_name, vpc_name)
     pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
-    cert_arn = get_cert_arn(session, application, environment_name)
+    cert_arn = get_cert_arn(session, application_name, environment_name)
     contents = env_template.render(
         {
             "name": environment_name,
@@ -131,10 +133,12 @@ class CertificateNotFoundException(PlatformException):
 
 class CopilotEnvironment:
     @staticmethod
-    def generate(conf, name):
-        env_config = apply_environment_defaults(conf)["environments"][name]
+    def generate(platform_config, environment_name):
+        env_config = apply_environment_defaults(platform_config)["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
         click.secho(f"Using {profile_for_environment} for this AWS session")
         session = get_aws_session_or_abort(profile_for_environment)
 
-        _generate_copilot_environment_manifests(name, conf["application"], env_config, session)
+        _generate_copilot_environment_manifests(
+            environment_name, platform_config["application"], env_config, session
+        )
