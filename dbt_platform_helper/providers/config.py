@@ -1,3 +1,4 @@
+import click
 import yaml
 from yamllint import config
 from yamllint import linter
@@ -24,3 +25,45 @@ class ConfigProvider:
         ]
 
         return parsed_results
+
+    def validate_extension_supported_versions(
+        config, extension_type, version_key, get_supported_versions
+    ):
+        extensions = config.get("extensions", {})
+        if not extensions:
+            return
+
+        extensions_for_type = [
+            extension
+            for extension in config.get("extensions", {}).values()
+            if extension.get("type") == extension_type
+        ]
+
+        supported_extension_versions = get_supported_versions()
+        extensions_with_invalid_version = []
+
+        for extension in extensions_for_type:
+
+            environments = extension.get("environments", {})
+
+            if not isinstance(environments, dict):
+                click.secho(
+                    f"Error: {extension_type} extension definition is invalid type, expected dictionary",
+                    fg="red",
+                )
+                continue
+            for environment, env_config in environments.items():
+
+                # An extension version doesn't need to be specified for all environments, provided one is specified under "*".
+                # So check if the version is set before checking if it's supported
+                extension_version = env_config.get(version_key)
+                if extension_version and extension_version not in supported_extension_versions:
+                    extensions_with_invalid_version.append(
+                        {"environment": environment, "version": extension_version}
+                    )
+
+        for version_failure in extensions_with_invalid_version:
+            click.secho(
+                f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
+                fg="red",
+            )

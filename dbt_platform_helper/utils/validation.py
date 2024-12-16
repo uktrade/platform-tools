@@ -41,13 +41,13 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
-    _validate_extension_supported_versions(
+    ConfigProvider.validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
         get_supported_versions=get_supported_redis_versions,
     )
-    _validate_extension_supported_versions(
+    ConfigProvider.validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="opensearch",
         version_key="engine",
@@ -77,61 +77,18 @@ def validate_platform_config(config):
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
 
-    _validate_extension_supported_versions(
+    ConfigProvider.validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
         get_supported_versions=get_supported_redis_versions,
     )
-    _validate_extension_supported_versions(
+    ConfigProvider.validate_extension_supported_versions(
         config=config,
         extension_type="opensearch",
         version_key="engine",
         get_supported_versions=get_supported_opensearch_versions,
     )
-
-
-def _validate_extension_supported_versions(
-    config, extension_type, version_key, get_supported_versions
-):
-    extensions = config.get("extensions", {})
-    if not extensions:
-        return
-
-    extensions_for_type = [
-        extension
-        for extension in config.get("extensions", {}).values()
-        if extension.get("type") == extension_type
-    ]
-
-    supported_extension_versions = get_supported_versions()
-    extensions_with_invalid_version = []
-
-    for extension in extensions_for_type:
-
-        environments = extension.get("environments", {})
-
-        if not isinstance(environments, dict):
-            click.secho(
-                f"Error: {extension_type} extension definition is invalid type, expected dictionary",
-                fg="red",
-            )
-            continue
-        for environment, env_config in environments.items():
-
-            # An extension version doesn't need to be specified for all environments, provided one is specified under "*".
-            # So check if the version is set before checking if it's supported
-            extension_version = env_config.get(version_key)
-            if extension_version and extension_version not in supported_extension_versions:
-                extensions_with_invalid_version.append(
-                    {"environment": environment, "version": extension_version}
-                )
-
-    for version_failure in extensions_with_invalid_version:
-        click.secho(
-            f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
-            fg="red",
-        )
 
 
 def validate_database_copy_section(config):
