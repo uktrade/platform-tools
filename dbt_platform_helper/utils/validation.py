@@ -7,8 +7,6 @@ import yaml
 from schema import SchemaError
 from yaml.parser import ParserError
 
-from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -74,7 +72,7 @@ def validate_platform_config(config):
     enriched_config = apply_environment_defaults(config)
     ConfigProvider.validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
-    _validate_codebase_pipelines(enriched_config)
+    ConfigProvider.validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
 
     ConfigProvider.validate_extension_supported_versions(
@@ -160,23 +158,6 @@ def validate_database_copy_section(config):
 
     if errors:
         abort_with_error("\n".join(errors))
-
-
-def _validate_codebase_pipelines(config):
-    if CODEBASE_PIPELINES_KEY in config:
-        for codebase in config[CODEBASE_PIPELINES_KEY]:
-            codebase_environments = []
-
-            for pipeline in codebase["pipelines"]:
-                codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
-
-            unique_codebase_environments = sorted(list(set(codebase_environments)))
-
-            if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                abort_with_error(
-                    f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                    "listed in a single pipeline per codebase"
-                )
 
 
 def _validate_environment_pipelines_triggers(config):

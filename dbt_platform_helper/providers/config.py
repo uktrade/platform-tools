@@ -3,6 +3,9 @@ import yaml
 from yamllint import config
 from yamllint import linter
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import ENVIRONMENTS_KEY
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -98,3 +101,19 @@ class ConfigProvider:
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
             abort_with_error(message)
+
+    def validate_codebase_pipelines(config):
+        if CODEBASE_PIPELINES_KEY in config:
+            for codebase in config[CODEBASE_PIPELINES_KEY]:
+                codebase_environments = []
+
+                for pipeline in codebase["pipelines"]:
+                    codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
+
+                unique_codebase_environments = sorted(list(set(codebase_environments)))
+
+                if sorted(codebase_environments) != sorted(unique_codebase_environments):
+                    abort_with_error(
+                        f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
+                        "listed in a single pipeline per codebase"
+                    )
