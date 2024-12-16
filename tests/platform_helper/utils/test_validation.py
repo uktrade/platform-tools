@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
@@ -254,13 +255,7 @@ def test_validate_addons_success(addons_file):
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["6.2"])
-@patch(
-    "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", return_value=["1.3"]
-)
 def test_validate_addons_failure(
-    mock_get_redis_versions,
-    mock_get_opensearch_versions,
     addons_file,
     exp_error,
 ):
@@ -1104,16 +1099,16 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extension_supported_versions(
-    mock_supported_versions, config, expected_response, capsys
-):
+def test_validate_extension_supported_versions(config, expected_response, capsys):
+
+    mock_redis_provider = MagicMock()
+    mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
     _validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=mock_supported_versions,
+        get_supported_versions=mock_redis_provider.get_supported_redis_versions,
     )
 
     captured = capsys.readouterr()
