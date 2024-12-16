@@ -28,20 +28,23 @@ class CopilotProvider:
                     x_env_data = env_data["cross_environment_service_access"]
                     for access_name, access_data in x_env_data.items():
                         service = access_data.get("service")
-                        resource_blocks.append(
-                            {
-                                "bucket_name": bucket,
-                                "appPrefix": camel_case(f"{service}-{bucket}-{access_name}"),
-                                "bucket_env": env_name,
-                                "access_env": access_data.get("environment"),
-                                "bucket_account": environments.get(env_name, {})
-                                .get("accounts", {})
-                                .get("deploy", {})
-                                .get("id"),
-                                "read": access_data.get("read", False),
-                                "write": access_data.get("write", False),
-                            }
-                        )
+                        read = access_data.get("read", False)
+                        write = access_data.get("write", False)
+                        if read or write:
+                            resource_blocks.append(
+                                {
+                                    "bucket_name": bucket,
+                                    "appPrefix": camel_case(f"{service}-{bucket}-{access_name}"),
+                                    "bucket_env": env_name,
+                                    "access_env": access_data.get("environment"),
+                                    "bucket_account": environments.get(env_name, {})
+                                    .get("accounts", {})
+                                    .get("deploy", {})
+                                    .get("id"),
+                                    "read": read,
+                                    "write": write,
+                                }
+                            )
 
         template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
         contents = template.render({"resources": resource_blocks})

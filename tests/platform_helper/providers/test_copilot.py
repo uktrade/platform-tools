@@ -21,8 +21,17 @@ from tests.platform_helper.conftest import mock_task_name
 env = "development"
 
 
-def test_copilot_provider_generate_s3_cross_account_service_addons():
-    s3_extension_config = {
+def environments():
+    return {
+        "dev": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
+        "staging": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
+        "hotfix": {"accounts": {"deploy": {"name": "prod-acc", "id": "987654321010"}}},
+        "prod": {"accounts": {"deploy": {"name": "prod-acc", "id": "987654321010"}}},
+    }
+
+
+def s3_xenv_extensions():
+    return {
         "test-s3-bucket-x-account": {
             "type": "s3",
             "services": "test-srv",
@@ -45,15 +54,11 @@ def test_copilot_provider_generate_s3_cross_account_service_addons():
         }
     }
 
-    environments = {
-        "dev": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
-        "staging": {"accounts": {"deploy": {"name": "dev-acc", "id": "123456789010"}}},
-        "hotfix": {"accounts": {"deploy": {"name": "prod-acc", "id": "987654321010"}}},
-    }
 
+def test_copilot_provider_generate_s3_cross_account_service_addons():
     provider = CopilotProvider("test-app")
     template_string = provider.generate_s3_cross_account_service_addons(
-        environments, s3_extension_config
+        environments(), s3_xenv_extensions()
     )
 
     act = yaml.safe_load(template_string)
@@ -107,6 +112,170 @@ def test_copilot_provider_generate_s3_cross_account_service_addons():
     assert s3_list_statement["Condition"] == {
         "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
     }
+
+
+def s3_xenv_multiple_extensions():
+    return {
+        "test-s3-1": {
+            "type": "s3",
+            "services": "test-srv",
+            "environments": {
+                "hotfix": {
+                    "bucket_name": "x-acc-bucket-1",
+                    "cross_environment_service_access": {
+                        "test_access_1": {
+                            "application": "app1",
+                            "environment": "staging",
+                            "account": "123456789010",
+                            "service": "other_srv_1",
+                            "read": True,
+                            "write": True,
+                            "cyber_sign_off_by": "user1@example.com",
+                        },
+                        "test_access_2": {
+                            "application": "app2",
+                            "environment": "dev",
+                            "account": "123456789010",
+                            "service": "other_srv_2",
+                            "read": True,
+                            "write": False,
+                            "cyber_sign_off_by": "user2@example.com",
+                        },
+                    },
+                },
+            },
+        },
+        "test-s3-2": {
+            "type": "s3",
+            "services": "test-srv",
+            "environments": {
+                "dev": {
+                    "bucket_name": "x-acc-bucket-2",
+                    "cross_environment_service_access": {
+                        "test_access_3": {
+                            "application": "app2",
+                            "environment": "hotfix",
+                            "account": "987654321010",
+                            "service": "other_srv_3",
+                            "read": False,
+                            "write": True,
+                            "cyber_sign_off_by": "user@example.com",
+                        }
+                    },
+                },
+                "prod": {
+                    "bucket_name": "x-acc-bucket-3",
+                    "cross_environment_service_access": {
+                        "test_access_4": {
+                            "application": "app2",
+                            "environment": "staging",
+                            "account": "123456789010",
+                            "service": "other_srv_4",
+                            "read": True,
+                            "write": True,
+                            "cyber_sign_off_by": "user@example.com",
+                        }
+                    },
+                },
+                "hotfix": {
+                    "bucket_name": "x-acc-bucket-4",
+                    "cross_environment_service_access": {
+                        "test_access_5": {
+                            "application": "app2",
+                            "environment": "staging",
+                            "account": "123456789010",
+                            "service": "other_srv_5",
+                            "read": False,
+                            "write": False,
+                            "cyber_sign_off_by": "user@example.com",
+                        }
+                    },
+                },
+            },
+        },
+    }
+
+
+def test_copilot_provider_generate_multiple_s3_cross_account_service_addons():
+    provider = CopilotProvider("test-app")
+    template_string = provider.generate_s3_cross_account_service_addons(
+        environments(), s3_xenv_multiple_extensions()
+    )
+
+    act = yaml.safe_load(template_string)
+
+    assert act["Parameters"]["App"]["Type"] == "String"
+    assert act["Parameters"]["Env"]["Type"] == "String"
+    assert act["Parameters"]["Name"]["Type"] == "String"
+
+    assert len(act["Outputs"]) == 4
+    assert (
+        act["Outputs"]["otherSrv1XAccBucket1TestAccess1XEnvAccessPolicy"]["Value"]["Ref"]
+        == "otherSrv1XAccBucket1TestAccess1XEnvAccessPolicy"
+    )
+    assert (
+        act["Outputs"]["otherSrv2XAccBucket1TestAccess2XEnvAccessPolicy"]["Value"]["Ref"]
+        == "otherSrv2XAccBucket1TestAccess2XEnvAccessPolicy"
+    )
+    assert (
+        act["Outputs"]["otherSrv3XAccBucket2TestAccess3XEnvAccessPolicy"]["Value"]["Ref"]
+        == "otherSrv3XAccBucket2TestAccess3XEnvAccessPolicy"
+    )
+    assert (
+        act["Outputs"]["otherSrv4XAccBucket3TestAccess4XEnvAccessPolicy"]["Value"]["Ref"]
+        == "otherSrv4XAccBucket3TestAccess4XEnvAccessPolicy"
+    )
+
+    assert len(act["Resources"]) == 4
+    kms_statement1 = act["Resources"]["otherSrv1XAccBucket1TestAccess1XEnvAccessPolicy"][
+        "Properties"
+    ]["PolicyDocument"]["Statement"][0]
+    assert kms_statement1["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
+        "staging"
+    ]
+    assert kms_statement1["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+
+    kms_statement2 = act["Resources"]["otherSrv2XAccBucket1TestAccess2XEnvAccessPolicy"][
+        "Properties"
+    ]["PolicyDocument"]["Statement"][0]
+    assert kms_statement2["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
+        "dev"
+    ]
+    assert kms_statement2["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+
+    kms_statement3 = act["Resources"]["otherSrv3XAccBucket2TestAccess3XEnvAccessPolicy"][
+        "Properties"
+    ]["PolicyDocument"]["Statement"][0]
+    assert kms_statement3["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
+        "hotfix"
+    ]
+    assert kms_statement3["Resource"] == "arn:aws:kms:eu-west-2:123456789010:key/*"
+
+    kms_statement4 = act["Resources"]["otherSrv4XAccBucket3TestAccess4XEnvAccessPolicy"][
+        "Properties"
+    ]["PolicyDocument"]["Statement"][0]
+    assert kms_statement4["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
+        "staging"
+    ]
+    assert kms_statement4["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+
+    # s3_obj_statement = statements[1]
+    # assert s3_obj_statement["Sid"] == "S3ObjectActions"
+    # assert s3_obj_statement["Effect"] == "Allow"
+    # assert s3_obj_statement["Action"] == ["s3:Get*", "s3:Put*"]
+    # assert s3_obj_statement["Resource"] == "arn:aws:s3:::x-acc-bucket/*"
+    # assert s3_obj_statement["Condition"] == {
+    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    # }
+    #
+    # s3_list_statement = statements[2]
+    # assert s3_list_statement["Sid"] == "S3ListAction"
+    # assert s3_list_statement["Effect"] == "Allow"
+    # assert s3_list_statement["Action"] == ["s3:ListBucket"]
+    # assert s3_list_statement["Resource"] == "arn:aws:s3:::x-acc-bucket"
+    # assert s3_list_statement["Condition"] == {
+    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    # }
 
 
 @mock_aws
