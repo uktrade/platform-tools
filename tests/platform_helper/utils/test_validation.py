@@ -437,7 +437,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
         ("non-prod-acc", ["dev", "prod"], ["prod"]),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
     mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
 ):
@@ -489,7 +489,7 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     )
 
 
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_catches_database_copy_errors(
     mock_abort_with_error, platform_env_config
 ):

@@ -72,7 +72,7 @@ def float_between_with_halfstep(lower, upper):
 def validate_platform_config(config):
     PlatformConfigSchema.schema().validate(config)
     enriched_config = apply_environment_defaults(config)
-    _validate_environment_pipelines(enriched_config)
+    ConfigProvider.validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
     _validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
@@ -160,27 +160,6 @@ def validate_database_copy_section(config):
 
     if errors:
         abort_with_error("\n".join(errors))
-
-
-def _validate_environment_pipelines(config):
-    bad_pipelines = {}
-    for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
-        bad_envs = []
-        pipeline_account = pipeline.get("account", None)
-        if pipeline_account:
-            for env in pipeline.get("environments", {}).keys():
-                env_account = ConfigProvider.get_env_deploy_account_info(config, env, "name")
-                if not env_account == pipeline_account:
-                    bad_envs.append(env)
-        if bad_envs:
-            bad_pipelines[pipeline_name] = {"account": pipeline_account, "bad_envs": bad_envs}
-    if bad_pipelines:
-        message = "The following pipelines are misconfigured:"
-        for pipeline, detail in bad_pipelines.items():
-            envs = detail["bad_envs"]
-            acc = detail["account"]
-            message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-        abort_with_error(message)
 
 
 def _validate_codebase_pipelines(config):
