@@ -9,7 +9,7 @@ from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
 
-#TODO - move helper functions into suitable provider classes
+# TODO - move helper functions into suitable provider classes
 def get_subnet_ids(session, vpc_id, environment_name):
     subnets = session.client("ec2").describe_subnets(
         Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
