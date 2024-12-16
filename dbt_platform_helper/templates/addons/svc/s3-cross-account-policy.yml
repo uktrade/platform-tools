@@ -38,7 +38,7 @@ Resources:
             Condition:
               StringEquals:
                 aws:PrincipalTag/copilot-environment:
-                  - "ant"
+                  - "{{ resource.access_env }}"
     {% endfor %}
 Outputs:
   {% for resource in resources %}

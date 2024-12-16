@@ -86,9 +86,9 @@ def test_copilot_provider_generate_s3_cross_account_service_addons():
     assert kms_statement["Effect"] == "Allow"
     assert kms_statement["Action"] == ["kms:Decrypt", "kms:GenerateDataKey"]
     assert kms_statement["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
-    # assert kms_statement["Condition"] == {
-    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["env1", "env2"]}
-    # }
+    assert kms_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
 
     # s3_obj_statement = statements[1]
     # s3_list_statement = statements[2]

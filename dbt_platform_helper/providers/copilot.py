@@ -33,6 +33,7 @@ class CopilotProvider:
                                 "bucket_name": bucket,
                                 "appPrefix": camel_case(f"{service}-{bucket}-{access_name}"),
                                 "bucket_env": env_name,
+                                "access_env": access_data.get("environment"),
                                 "bucket_account": environments.get(env_name, {})
                                 .get("accounts", {})
                                 .get("deploy", {})
