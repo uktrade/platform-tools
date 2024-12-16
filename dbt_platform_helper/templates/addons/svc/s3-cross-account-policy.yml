@@ -39,6 +39,25 @@ Resources:
               StringEquals:
                 aws:PrincipalTag/copilot-environment:
                   - "{{ resource.access_env }}"
+          - Sid: 'S3ObjectActions'
+            Effect: Allow
+            Action:
+              - s3:Get*
+              - s3:Put*
+            Resource: 'arn:aws:s3:::{{ resource.bucket_name }}/*'
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/copilot-environment:
+                  - "{{ resource.access_env }}"
+          - Sid: 'S3ListAction'
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: 'arn:aws:s3:::{{ resource.bucket_name }}'
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/copilot-environment:
+                  - "{{ resource.access_env }}"
     {% endfor %}
 Outputs:
   {% for resource in resources %}

@@ -90,8 +90,23 @@ def test_copilot_provider_generate_s3_cross_account_service_addons():
         "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
     }
 
-    # s3_obj_statement = statements[1]
-    # s3_list_statement = statements[2]
+    s3_obj_statement = statements[1]
+    assert s3_obj_statement["Sid"] == "S3ObjectActions"
+    assert s3_obj_statement["Effect"] == "Allow"
+    assert s3_obj_statement["Action"] == ["s3:Get*", "s3:Put*"]
+    assert s3_obj_statement["Resource"] == "arn:aws:s3:::x-acc-bucket/*"
+    assert s3_obj_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
+
+    s3_list_statement = statements[2]
+    assert s3_list_statement["Sid"] == "S3ListAction"
+    assert s3_list_statement["Effect"] == "Allow"
+    assert s3_list_statement["Action"] == ["s3:ListBucket"]
+    assert s3_list_statement["Resource"] == "arn:aws:s3:::x-acc-bucket"
+    assert s3_list_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
 
 
 @mock_aws
