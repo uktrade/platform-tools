@@ -380,7 +380,7 @@ def test_validate_s3_bucket_name_multiple_failures():
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     mock_abort_with_error, valid_platform_config, pipeline_to_trigger
 ):
@@ -397,7 +397,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     )
 
 
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trigger_is_invalid(
     mock_abort_with_error, valid_platform_config
 ):
@@ -416,7 +416,7 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
     )
 
 
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_itself(
     mock_abort_with_error, valid_platform_config
 ):

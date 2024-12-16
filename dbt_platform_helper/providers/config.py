@@ -117,3 +117,27 @@ class ConfigProvider:
                         f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
                         "listed in a single pipeline per codebase"
                     )
+
+    def validate_environment_pipelines_triggers(config):
+        errors = []
+        pipelines_with_triggers = {
+            pipeline_name: pipeline
+            for pipeline_name, pipeline in config.get("environment_pipelines", {}).items()
+            if "pipeline_to_trigger" in pipeline
+        }
+
+        for pipeline_name, pipeline in pipelines_with_triggers.items():
+            pipeline_to_trigger = pipeline["pipeline_to_trigger"]
+            if pipeline_to_trigger not in config.get("environment_pipelines", {}):
+                message = f"  '{pipeline_name}' - '{pipeline_to_trigger}' is not a valid target pipeline to trigger"
+
+                errors.append(message)
+                continue
+
+            if pipeline_to_trigger == pipeline_name:
+                message = f"  '{pipeline_name}' - pipelines cannot trigger themselves"
+                errors.append(message)
+
+        if errors:
+            error_message = "The following pipelines are misconfigured: \n"
+            abort_with_error(error_message + "\n  ".join(errors))
