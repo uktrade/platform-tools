@@ -67,3 +67,12 @@ class ConfigProvider:
                 f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
                 fg="red",
             )
+
+    def get_env_deploy_account_info(config, env, key):
+        return (
+            config.get("environments", {})
+            .get(env, {})
+            .get("accounts", {})
+            .get("deploy", {})
+            .get(key)
+        )

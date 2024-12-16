@@ -118,8 +118,8 @@ def validate_database_copy_section(config):
             from_env = section["from"]
             to_env = section["to"]
 
-            from_account = _get_env_deploy_account_info(config, from_env, "id")
-            to_account = _get_env_deploy_account_info(config, to_env, "id")
+            from_account = ConfigProvider.get_env_deploy_account_info(config, from_env, "id")
+            to_account = ConfigProvider.get_env_deploy_account_info(config, to_env, "id")
 
             if from_env == to_env:
                 errors.append(
@@ -162,12 +162,6 @@ def validate_database_copy_section(config):
         abort_with_error("\n".join(errors))
 
 
-def _get_env_deploy_account_info(config, env, key):
-    return (
-        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
-    )
-
-
 def _validate_environment_pipelines(config):
     bad_pipelines = {}
     for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
@@ -175,7 +169,7 @@ def _validate_environment_pipelines(config):
         pipeline_account = pipeline.get("account", None)
         if pipeline_account:
             for env in pipeline.get("environments", {}).keys():
-                env_account = _get_env_deploy_account_info(config, env, "name")
+                env_account = ConfigProvider.get_env_deploy_account_info(config, env, "name")
                 if not env_account == pipeline_account:
                     bad_envs.append(env)
         if bad_envs:
