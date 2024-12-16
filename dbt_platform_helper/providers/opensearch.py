@@ -29,7 +29,7 @@ class OpensearchProvider:
         else:
             return cache_provider.read_supported_versions_from_cache("opensearch")
 
-    # TODO - cache provider instantiated here rather than via dependancy injection since it will likely only be used in the get_supported_redis_versions method.
+    # TODO - cache provider instantiated here rather than via dependancy injection since it will likely only be used in the get_supported_opensearch_versions method.
     # If another method is added which needs a CacheProvider, it should be injected into the constructor instead.
     @staticmethod
     def __get_cache_provider():
