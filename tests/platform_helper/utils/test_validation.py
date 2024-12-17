@@ -9,7 +9,7 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
@@ -1044,7 +1044,7 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
     mock_redis_provider = MagicMock()
     mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
-    ConfigProvider.validate_extension_supported_versions(
+    PlatformConfigValidator.validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",

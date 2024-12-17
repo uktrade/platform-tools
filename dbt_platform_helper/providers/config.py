@@ -9,28 +9,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
-class ConfigProvider:
-    def __init__(self, config=None):
-        self.config = config if config else {}
-
-    def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
-        if lint_config is None:
-            lint_config = {"rules": {"key-duplicates": "enable"}}
-
-        yaml_config = config.YamlLintConfig(yaml.dump(lint_config))
-
-        with open(file_path, "r") as yaml_file:
-            file_contents = yaml_file.read()
-            results = linter.run(file_contents, yaml_config)
-
-        parsed_results = [
-            "\t"
-            + f"Line {result.line}: {result.message}".replace(" in mapping (key-duplicates)", "")
-            for result in results
-        ]
-
-        return parsed_results
-
+class PlatformConfigValidator:
     def validate_extension_supported_versions(
         config, extension_type, version_key, get_supported_versions
     ):
@@ -73,15 +52,6 @@ class ConfigProvider:
                 fg="red",
             )
 
-    def get_env_deploy_account_info(config, env, key):
-        return (
-            config.get("environments", {})
-            .get(env, {})
-            .get("accounts", {})
-            .get("deploy", {})
-            .get(key)
-        )
-
     def validate_environment_pipelines(config):
         bad_pipelines = {}
         for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
@@ -89,7 +59,13 @@ class ConfigProvider:
             pipeline_account = pipeline.get("account", None)
             if pipeline_account:
                 for env in pipeline.get("environments", {}).keys():
-                    env_account = ConfigProvider.get_env_deploy_account_info(config, env, "name")
+                    env_account = (
+                        config.get("environments", {})
+                        .get(env, {})
+                        .get("accounts", {})
+                        .get("deploy", {})
+                        .get("name")
+                    )
                     if not env_account == pipeline_account:
                         bad_envs.append(env)
             if bad_envs:
@@ -141,3 +117,35 @@ class ConfigProvider:
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
             abort_with_error(error_message + "\n  ".join(errors))
+
+
+class ConfigProvider:
+    def __init__(self, config=None):
+        self.config = config if config else {}
+
+    def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
+        if lint_config is None:
+            lint_config = {"rules": {"key-duplicates": "enable"}}
+
+        yaml_config = config.YamlLintConfig(yaml.dump(lint_config))
+
+        with open(file_path, "r") as yaml_file:
+            file_contents = yaml_file.read()
+            results = linter.run(file_contents, yaml_config)
+
+        parsed_results = [
+            "\t"
+            + f"Line {result.line}: {result.message}".replace(" in mapping (key-duplicates)", "")
+            for result in results
+        ]
+
+        return parsed_results
+
+    def get_env_deploy_account_info(config, env, key):
+        return (
+            config.get("environments", {})
+            .get(env, {})
+            .get("accounts", {})
+            .get("deploy", {})
+            .get(key)
+        )

@@ -10,6 +10,7 @@ from yaml.parser import ParserError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.redis import RedisProvider
@@ -39,7 +40,7 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
-    ConfigProvider.validate_extension_supported_versions(
+    PlatformConfigValidator.validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
@@ -47,7 +48,7 @@ def validate_addons(addons: dict):
             boto3.client("elasticache")
         ).get_supported_redis_versions,
     )
-    ConfigProvider.validate_extension_supported_versions(
+    PlatformConfigValidator.validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="opensearch",
         version_key="engine",
@@ -61,13 +62,15 @@ def validate_addons(addons: dict):
 
 def validate_platform_config(config):
     PlatformConfigSchema.schema().validate(config)
+
+    # TODO= logically this isn't validation but loading + parsing, to move.
     enriched_config = apply_environment_defaults(config)
-    ConfigProvider.validate_environment_pipelines(enriched_config)
-    ConfigProvider.validate_environment_pipelines_triggers(enriched_config)
-    ConfigProvider.validate_codebase_pipelines(enriched_config)
+    PlatformConfigValidator.validate_environment_pipelines(enriched_config)
+    PlatformConfigValidator.validate_environment_pipelines_triggers(enriched_config)
+    PlatformConfigValidator.validate_codebase_pipelines(enriched_config)
     validate_database_copy_section(enriched_config)
 
-    ConfigProvider.validate_extension_supported_versions(
+    PlatformConfigValidator.validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
@@ -75,7 +78,7 @@ def validate_platform_config(config):
             boto3.client("elasticache")
         ).get_supported_redis_versions,
     )
-    ConfigProvider.validate_extension_supported_versions(
+    PlatformConfigValidator.validate_extension_supported_versions(
         config=config,
         extension_type="opensearch",
         version_key="engine",
