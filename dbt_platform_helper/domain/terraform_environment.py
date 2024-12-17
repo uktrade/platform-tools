@@ -21,28 +21,30 @@ class TerraformEnvironment:
     def __init__(self, echo):
         self.echo = echo
 
-    def generate(self, conf, name, terraform_platform_modules_version):
-        env_config = apply_environment_defaults(conf)["environments"][name]
-        self._generate_terraform_environment_manifests(
-            conf["application"], name, env_config, terraform_platform_modules_version
-        )
-
-    def _generate_terraform_environment_manifests(
-        self, application, env, env_config, cli_terraform_platform_modules_version
-    ):
+    def generate(self, config, environment_name, terraform_platform_modules_version):
+        env_config = self._get_environment_configuration(config, environment_name)
         env_template = setup_templates().get_template("environments/main.tf")
-
-        terraform_platform_modules_version = _determine_terraform_platform_modules_version(
-            env_config, cli_terraform_platform_modules_version
+        version = _determine_terraform_platform_modules_version(
+            env_config, terraform_platform_modules_version
         )
 
         contents = env_template.render(
             {
-                "application": application,
-                "environment": env,
+                "application": config["application"],
+                "environment": environment_name,
                 "config": env_config,
-                "terraform_platform_modules_version": terraform_platform_modules_version,
+                "terraform_platform_modules_version": version,
             }
         )
 
-        self.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
+        self.echo(
+            mkfile(
+                ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
+            )
+        )
+
+    @staticmethod
+    # TODO This should be in the config provider
+    def _get_environment_configuration(config, environment_name):
+        full_config = apply_environment_defaults(config)
+        return full_config["environments"][environment_name]
