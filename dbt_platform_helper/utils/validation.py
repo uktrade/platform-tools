@@ -8,7 +8,6 @@ from schema import SchemaError
 from yaml.parser import ParserError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
@@ -112,38 +111,10 @@ def load_and_validate_platform_config(path=PLATFORM_CONFIG_FILE, disable_file_ch
 
 def config_file_check(path=PLATFORM_CONFIG_FILE):
     platform_config_exists = Path(path).exists()
-    errors = []
-    warnings = []
 
-    messages = {
-        "storage.yml": {"instruction": " under the key 'extensions'", "type": errors},
-        "extensions.yml": {"instruction": " under the key 'extensions'", "type": errors},
-        "pipelines.yml": {
-            "instruction": ", change the key 'codebases' to 'codebase_pipelines'",
-            "type": errors,
-        },
-        PLATFORM_HELPER_VERSION_FILE: {
-            "instruction": ", under the key `default_versions: platform-helper:`",
-            "type": warnings,
-        },
-    }
-
-    for file in messages.keys():
-        if Path(file).exists():
-            message = (
-                f"`{file}` is no longer supported. Please move its contents into the "
-                f"`{PLATFORM_CONFIG_FILE}` file{messages[file]['instruction']} and delete `{file}`."
-            )
-            messages[file]["type"].append(message)
-
-    if not errors and not warnings and not platform_config_exists:
-        errors.append(
+    if not platform_config_exists:
+        click.secho(
             f"`{PLATFORM_CONFIG_FILE}` is missing. "
             "Please check it exists and you are in the root directory of your deployment project."
         )
-
-    if warnings:
-        click.secho("\n".join(warnings), bg="yellow", fg="black")
-    if errors:
-        click.secho("\n".join(errors), bg="red", fg="white")
         exit(1)

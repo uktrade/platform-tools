@@ -8,10 +8,8 @@ import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
-from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_platform_config
@@ -627,57 +625,6 @@ def test_load_and_validate_platform_config_skips_file_check_when_disable_file_ch
 
 
 @pytest.mark.parametrize(
-    "files, expected_messages",
-    [
-        (
-            [],
-            [
-                f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-            ],
-        ),
-        (
-            ["storage.yml"],
-            [
-                f"`storage.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `storage.yml`."
-            ],
-        ),
-        (
-            ["extensions.yml"],
-            [
-                f"`extensions.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `extensions.yml`."
-            ],
-        ),
-        (
-            ["pipelines.yml"],
-            [
-                f"`pipelines.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`."
-            ],
-        ),
-        (
-            ["storage.yml", "pipelines.yml"],
-            [
-                f"`storage.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file under the key 'extensions' and delete `storage.yml`.",
-                f"`pipelines.yml` is no longer supported. Please move its contents into the `{PLATFORM_CONFIG_FILE}` file, change the key 'codebases' to 'codebase_pipelines' and delete `pipelines.yml`.",
-            ],
-        ),
-    ],
-)
-def test_config_file_check_fails_for_unsupported_files_exist(
-    fakefs, capsys, files, expected_messages
-):
-    for file in files:
-        fakefs.create_file(file)
-
-    with pytest.raises(SystemExit):
-        config_file_check()
-
-    console_message = capsys.readouterr().out
-
-    for expected_message in expected_messages:
-        assert expected_message in console_message
-
-
-@pytest.mark.parametrize(
     "database_copy_section",
     [
         None,
@@ -734,33 +681,6 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
     PlatformConfigValidator.validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
-
-
-@pytest.mark.parametrize(
-    "files, expected_messages",
-    [
-        (
-            [PLATFORM_HELPER_VERSION_FILE],
-            [
-                f"`{PLATFORM_HELPER_VERSION_FILE}` is no longer supported. "
-                f"Please move its contents into the `{PLATFORM_CONFIG_FILE}` file,"
-                f" under the key `default_versions: platform-helper:` and delete `{PLATFORM_HELPER_VERSION_FILE}`."
-            ],
-        ),
-    ],
-)
-def test_config_file_check_warns_if_deprecated_files_exist(
-    fakefs, capsys, files, expected_messages
-):
-    for file in files:
-        fakefs.create_file(file)
-
-    config_file_check()
-
-    console_message = capsys.readouterr().out
-
-    for expected_message in expected_messages:
-        assert expected_message in console_message
 
 
 @pytest.mark.parametrize(
