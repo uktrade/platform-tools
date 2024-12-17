@@ -42,8 +42,8 @@ Resources:
           - Sid: 'S3ObjectActions'
             Effect: Allow
             Action:
-              - s3:Get*
-              - s3:Put*
+              {% if resource.read %}- s3:Get*{% endif %}
+              {% if resource.write %}- s3:Put*{% endif %}
             Resource: 'arn:aws:s3:::{{ resource.bucket_name }}/*'
             Condition:
               StringEquals:

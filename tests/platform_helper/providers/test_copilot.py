@@ -56,6 +56,7 @@ def s3_xenv_extensions():
 
 
 def test_copilot_provider_generate_s3_cross_account_service_addons():
+    """Tests the happy path test for the simple case."""
     provider = CopilotProvider("test-app")
     template_string = provider.generate_s3_cross_account_service_addons(
         environments(), s3_xenv_extensions()
@@ -197,6 +198,7 @@ def s3_xenv_multiple_extensions():
 
 
 def test_copilot_provider_generate_multiple_s3_cross_account_service_addons():
+    """More comprehensive tests that check multiple corner cases."""
     provider = CopilotProvider("test-app")
     template_string = provider.generate_s3_cross_account_service_addons(
         environments(), s3_xenv_multiple_extensions()
@@ -227,55 +229,44 @@ def test_copilot_provider_generate_multiple_s3_cross_account_service_addons():
     )
 
     assert len(act["Resources"]) == 4
-    kms_statement1 = act["Resources"]["otherSrv1XAccBucket1TestAccess1XEnvAccessPolicy"][
-        "Properties"
-    ]["PolicyDocument"]["Statement"][0]
-    assert kms_statement1["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
-        "staging"
+
+    principal_tag = "aws:PrincipalTag/copilot-environment"
+
+    policy_doc1 = act["Resources"]["otherSrv1XAccBucket1TestAccess1XEnvAccessPolicy"]["Properties"][
+        "PolicyDocument"
     ]
+    kms_statement1 = policy_doc1["Statement"][0]
+    assert kms_statement1["Condition"]["StringEquals"][principal_tag] == ["staging"]
     assert kms_statement1["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+    obj_act_statement1 = policy_doc1["Statement"][1]
+    assert obj_act_statement1["Action"] == ["s3:Get*", "s3:Put*"]
 
-    kms_statement2 = act["Resources"]["otherSrv2XAccBucket1TestAccess2XEnvAccessPolicy"][
-        "Properties"
-    ]["PolicyDocument"]["Statement"][0]
-    assert kms_statement2["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
-        "dev"
+    policy_doc2 = act["Resources"]["otherSrv2XAccBucket1TestAccess2XEnvAccessPolicy"]["Properties"][
+        "PolicyDocument"
     ]
+    kms_statement2 = policy_doc2["Statement"][0]
+    assert kms_statement2["Condition"]["StringEquals"][principal_tag] == ["dev"]
     assert kms_statement2["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+    obj_act_statement2 = policy_doc2["Statement"][1]
+    assert obj_act_statement2["Action"] == ["s3:Get*"]
 
-    kms_statement3 = act["Resources"]["otherSrv3XAccBucket2TestAccess3XEnvAccessPolicy"][
-        "Properties"
-    ]["PolicyDocument"]["Statement"][0]
-    assert kms_statement3["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
-        "hotfix"
+    policy_doc3 = act["Resources"]["otherSrv3XAccBucket2TestAccess3XEnvAccessPolicy"]["Properties"][
+        "PolicyDocument"
     ]
+    kms_statement3 = policy_doc3["Statement"][0]
+    assert kms_statement3["Condition"]["StringEquals"][principal_tag] == ["hotfix"]
     assert kms_statement3["Resource"] == "arn:aws:kms:eu-west-2:123456789010:key/*"
+    obj_act_statement3 = policy_doc3["Statement"][1]
+    assert obj_act_statement3["Action"] == ["s3:Put*"]
 
-    kms_statement4 = act["Resources"]["otherSrv4XAccBucket3TestAccess4XEnvAccessPolicy"][
-        "Properties"
-    ]["PolicyDocument"]["Statement"][0]
-    assert kms_statement4["Condition"]["StringEquals"]["aws:PrincipalTag/copilot-environment"] == [
-        "staging"
+    policy_doc4 = act["Resources"]["otherSrv4XAccBucket3TestAccess4XEnvAccessPolicy"]["Properties"][
+        "PolicyDocument"
     ]
+    kms_statement4 = policy_doc4["Statement"][0]
+    assert kms_statement4["Condition"]["StringEquals"][principal_tag] == ["staging"]
     assert kms_statement4["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
-
-    # s3_obj_statement = statements[1]
-    # assert s3_obj_statement["Sid"] == "S3ObjectActions"
-    # assert s3_obj_statement["Effect"] == "Allow"
-    # assert s3_obj_statement["Action"] == ["s3:Get*", "s3:Put*"]
-    # assert s3_obj_statement["Resource"] == "arn:aws:s3:::x-acc-bucket/*"
-    # assert s3_obj_statement["Condition"] == {
-    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
-    # }
-    #
-    # s3_list_statement = statements[2]
-    # assert s3_list_statement["Sid"] == "S3ListAction"
-    # assert s3_list_statement["Effect"] == "Allow"
-    # assert s3_list_statement["Action"] == ["s3:ListBucket"]
-    # assert s3_list_statement["Resource"] == "arn:aws:s3:::x-acc-bucket"
-    # assert s3_list_statement["Condition"] == {
-    #     "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
-    # }
+    obj_act_statement4 = policy_doc4["Statement"][1]
+    assert obj_act_statement4["Action"] == ["s3:Get*", "s3:Put*"]
 
 
 @mock_aws
