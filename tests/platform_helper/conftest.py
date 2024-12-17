@@ -14,6 +14,7 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
@@ -705,14 +706,16 @@ def create_invalid_platform_config_file(fakefs):
     )
 
 
+# TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
-def mock_get_supported_opensearch_versions(monkeypatch):
-    def mock_return_value():
+def mock_get_supported_opensearch_versions(request, monkeypatch):
+    if "skip_opensearch_fixture" in request.keywords:
+        return
+
+    def mock_return_value(self):
         return ["1.0", "1.1", "1.2"]
 
-    monkeypatch.setattr(
-        "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", mock_return_value
-    )
+    monkeypatch.setattr(OpensearchProvider, "get_supported_opensearch_versions", mock_return_value)
 
 
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
