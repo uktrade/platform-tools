@@ -83,4 +83,4 @@ def generate(name, vpc_name):
 )
 def generate_terraform(name, terraform_platform_modules_version):
     conf = load_and_validate_platform_config()
-    TerraformEnvironment.generate(conf, name, terraform_platform_modules_version)
+    TerraformEnvironment(click.secho).generate(conf, name, terraform_platform_modules_version)
