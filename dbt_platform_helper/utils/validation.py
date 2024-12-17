@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 
 import boto3
@@ -58,18 +57,6 @@ def validate_addons(addons: dict):
     )
 
     return errors
-
-
-def float_between_with_halfstep(lower, upper):
-    def is_between(value):
-        is_number = isinstance(value, int) or isinstance(value, float)
-        is_half_step = re.match(r"^\d+(\.[05])?$", str(value))
-
-        if is_number and is_half_step and lower <= value <= upper:
-            return True
-        raise SchemaError(f"should be a number between {lower} and {upper} in increments of 0.5")
-
-    return is_between
 
 
 def validate_platform_config(config):

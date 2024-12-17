@@ -12,7 +12,6 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import config_file_check
-from dbt_platform_helper.utils.validation import float_between_with_halfstep
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.validation import validate_database_copy_section
@@ -308,22 +307,6 @@ def test_between_raises_error(value):
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be an integer between 1 and 9"
-
-
-@pytest.mark.parametrize("value", [50.5, 33, 0.5, 128, 128.0])
-def test_between_with_step_success(value):
-    assert float_between_with_halfstep(0.5, 128)(value)
-
-
-@pytest.mark.parametrize("value", [-1, 128.5, 20.3, 67.9])
-def test_between_with_step_raises_error(value):
-    try:
-        float_between_with_halfstep(0.5, 128)(value)
-        assert (
-            False
-        ), f"testing that {value} is between 0.5 and 128 in half steps failed to raise an error."
-    except SchemaError as ex:
-        assert ex.code == "should be a number between 0.5 and 128 in increments of 0.5"
 
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
