@@ -6,7 +6,7 @@ class OpensearchProvider:
     def __init__(self, opensearch_client):
         self.opensearch_client = opensearch_client
 
-    def get_supported_opensearch_versions(self):
+    def get_supported_opensearch_versions(self) -> list[str]:
 
         cache_provider = self.__get_cache_provider()
 
