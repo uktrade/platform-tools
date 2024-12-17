@@ -685,7 +685,7 @@ def test_update_postgres_parameter_with_master_secret():
         "port": 5432,
     }
 
-
+    
 @mock_aws
 def test_get_connection_string():
     db_identifier = f"my_app-my_env-my_postgres"
