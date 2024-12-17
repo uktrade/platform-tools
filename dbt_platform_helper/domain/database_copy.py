@@ -9,6 +9,7 @@ from boto3 import Session
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
@@ -18,7 +19,6 @@ from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 
 class DatabaseCopy:
@@ -49,11 +49,13 @@ class DatabaseCopy:
         self.echo = echo
         self.abort = abort
 
+        config_provider = ConfigProvider()
+
         if not self.app:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort("You must either be in a deploy repo, or provide the --app option.")
 
-            config = load_and_validate_platform_config()
+            config = config_provider.load_and_validate_platform_config()
             self.app = config["application"]
 
         try:
@@ -107,10 +109,11 @@ class DatabaseCopy:
         self.tail_logs(is_dump, env)
 
     def enrich_vpc_name(self, env, vpc_name):
+        config_provider = ConfigProvider()
         if not vpc_name:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort("You must either be in a deploy repo, or provide the vpc name option.")
-            config = load_and_validate_platform_config()
+            config = config_provider.load_and_validate_platform_config()
             env_config = apply_environment_defaults(config)["environments"]
             vpc_name = env_config.get(env, {}).get("vpc")
         return vpc_name

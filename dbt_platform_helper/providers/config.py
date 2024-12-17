@@ -1,11 +1,21 @@
+import os
+from pathlib import Path
+
+import boto3
 import click
 import yaml
+from schema import SchemaError
+from yaml.parser import ParserError
 from yamllint import config
 from yamllint import linter
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -147,8 +157,8 @@ class PlatformConfigValidator:
                 from_env = section["from"]
                 to_env = section["to"]
 
-                from_account = ConfigProvider.get_env_deploy_account_info(config, from_env, "id")
-                to_account = ConfigProvider.get_env_deploy_account_info(config, to_env, "id")
+                from_account = get_env_deploy_account_info(config, from_env, "id")
+                to_account = get_env_deploy_account_info(config, to_env, "id")
 
                 if from_env == to_env:
                     errors.append(
@@ -193,6 +203,12 @@ class PlatformConfigValidator:
             abort_with_error("\n".join(errors))
 
 
+def get_env_deploy_account_info(config, env, key):
+    return (
+        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
+    )
+
+
 class ConfigProvider:
     def __init__(self, config=None):
         self.config = config if config else {}
@@ -215,11 +231,61 @@ class ConfigProvider:
 
         return parsed_results
 
-    def get_env_deploy_account_info(config, env, key):
-        return (
-            config.get("environments", {})
-            .get(env, {})
-            .get("accounts", {})
-            .get("deploy", {})
-            .get(key)
+    def validate_platform_config(self):
+        PlatformConfigSchema.schema().validate(self.config)
+
+        # TODO= logically this isn't validation but loading + parsing, to move.
+        enriched_config = apply_environment_defaults(self.config)
+        PlatformConfigValidator.validate_environment_pipelines(enriched_config)
+        PlatformConfigValidator.validate_environment_pipelines_triggers(enriched_config)
+        PlatformConfigValidator.validate_codebase_pipelines(enriched_config)
+        PlatformConfigValidator.validate_database_copy_section(enriched_config)
+
+        PlatformConfigValidator.validate_extension_supported_versions(
+            config=self.config,
+            extension_type="redis",
+            version_key="engine",
+            get_supported_versions=RedisProvider(
+                boto3.client("elasticache")
+            ).get_supported_redis_versions,
         )
+        PlatformConfigValidator.validate_extension_supported_versions(
+            config=self.config,
+            extension_type="opensearch",
+            version_key="engine",
+            get_supported_versions=OpensearchProvider(
+                boto3.client("opensearch")
+            ).get_supported_opensearch_versions,
+        )
+
+    def load_and_validate_platform_config(
+        self, path=PLATFORM_CONFIG_FILE, disable_file_check=False
+    ):
+        if not disable_file_check:
+            self.config_file_check(path)
+        try:
+            self.config = yaml.safe_load(Path(path).read_text())
+
+            duplicate_keys = self.lint_yaml_for_duplicate_keys(path)
+            if duplicate_keys:
+                abort_with_error(
+                    "Duplicate keys found in platform-config:"
+                    + os.linesep
+                    + os.linesep.join(duplicate_keys)
+                )
+            self.validate_platform_config()
+            return self.config
+        except ParserError:
+            abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
+        except SchemaError as e:
+            abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
+
+    def config_file_check(self, path=PLATFORM_CONFIG_FILE):
+        platform_config_exists = Path(path).exists()
+
+        if not platform_config_exists:
+            click.secho(
+                f"`{PLATFORM_CONFIG_FILE}` is missing. "
+                "Please check it exists and you are in the root directory of your deployment project."
+            )
+            exit(1)

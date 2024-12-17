@@ -8,11 +8,11 @@ import botocore
 import click
 from prettytable import PrettyTable
 
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 
 yes = "\033[92m✔\033[0m"
@@ -98,7 +98,9 @@ def deployment():
 
     recommendations = {}
 
-    config_file_check()
+    config_provider = ConfigProvider()
+
+    config_provider.config_file_check()
 
     for template_file in addons_templates:
         generated_with_version = maybe
