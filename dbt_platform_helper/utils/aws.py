@@ -358,32 +358,6 @@ def get_postgres_connection_data_updated_with_master_secret(session, parameter_n
     return parameter_data
 
 
-def get_supported_redis_versions():
-
-    cache_provider = CacheProvider()
-
-    if cache_provider.cache_refresh_required("redis"):
-
-        session = get_aws_session_or_abort()
-        elasticache_client = session.client("elasticache")
-
-        supported_versions_response = elasticache_client.describe_cache_engine_versions(
-            Engine="redis"
-        )
-
-        supported_versions = [
-            version["EngineVersion"]
-            for version in supported_versions_response["CacheEngineVersions"]
-        ]
-
-        cache_provider.update_cache("redis", supported_versions)
-
-        return supported_versions
-
-    else:
-        return cache_provider.read_supported_versions_from_cache("redis")
-
-
 def get_supported_opensearch_versions():
 
     cache_provider = CacheProvider()

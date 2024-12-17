@@ -60,9 +60,6 @@ def generate(terraform_platform_modules_version, deploy_branch):
 
     This command does the following in relation to the codebase pipelines:
     - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
-
-    (Deprecated) This command does the following for non terraform projects (legacy AWS Copilot):
-    - Generates the copilot manifest.yml for copilot/environments/<environment>
     """
     pipeline_config = load_and_validate_platform_config()
 

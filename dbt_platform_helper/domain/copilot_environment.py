@@ -1,0 +1,145 @@
+import boto3
+import click
+
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.files import apply_environment_defaults
+from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.template import setup_templates
+
+
+# TODO - move helper functions into suitable provider classes
+def get_subnet_ids(session, vpc_id, environment_name):
+    subnets = session.client("ec2").describe_subnets(
+        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+    )["Subnets"]
+
+    if not subnets:
+        click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
+        raise click.Abort
+
+    public_tag = {"Key": "subnet_type", "Value": "public"}
+    public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+    private_tag = {"Key": "subnet_type", "Value": "private"}
+    private_subnets = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
+
+    # This call and the method declaration can be removed when we stop using AWS Copilot to deploy the services
+    public_subnets, private_subnets = _match_subnet_id_order_to_cloudformation_exports(
+        session,
+        environment_name,
+        public_subnets,
+        private_subnets,
+    )
+
+    return public_subnets, private_subnets
+
+
+def _match_subnet_id_order_to_cloudformation_exports(
+    session, environment_name, public_subnets, private_subnets
+):
+    public_subnet_exports = []
+    private_subnet_exports = []
+    for page in session.client("cloudformation").get_paginator("list_exports").paginate():
+        for export in page["Exports"]:
+            if f"-{environment_name}-" in export["Name"]:
+                if export["Name"].endswith("-PublicSubnets"):
+                    public_subnet_exports = export["Value"].split(",")
+                if export["Name"].endswith("-PrivateSubnets"):
+                    private_subnet_exports = export["Value"].split(",")
+
+    # If the elements match, regardless of order, use the list from the CloudFormation exports
+    if set(public_subnets) == set(public_subnet_exports):
+        public_subnets = public_subnet_exports
+    if set(private_subnets) == set(private_subnet_exports):
+        private_subnets = private_subnet_exports
+
+    return public_subnets, private_subnets
+
+
+def get_cert_arn(session, application, env_name):
+    try:
+        arn = find_https_certificate(session, application, env_name)
+    except:
+        click.secho(
+            f"No certificate found with domain name matching environment {env_name}.", fg="red"
+        )
+        raise click.Abort
+
+    return arn
+
+
+def get_vpc_id(session, env_name, vpc_name=None):
+    if not vpc_name:
+        vpc_name = f"{session.profile_name}-{env_name}"
+
+    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
+    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        filters[0]["Values"] = [session.profile_name]
+        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        click.secho(
+            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
+        )
+        raise click.Abort
+
+    return vpcs[0]["VpcId"]
+
+
+def _generate_copilot_environment_manifests(
+    environment_name, application_name, env_config, session
+):
+    env_template = setup_templates().get_template("env/manifest.yml")
+    vpc_name = env_config.get("vpc", None)
+    vpc_id = get_vpc_id(session, environment_name, vpc_name)
+    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
+    cert_arn = get_cert_arn(session, application_name, environment_name)
+    contents = env_template.render(
+        {
+            "name": environment_name,
+            "vpc_id": vpc_id,
+            "pub_subnet_ids": pub_subnet_ids,
+            "priv_subnet_ids": priv_subnet_ids,
+            "certificate_arn": cert_arn,
+        }
+    )
+    click.echo(
+        mkfile(
+            ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
+        )
+    )
+
+
+def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
+    listener_arn = find_https_listener(session, app, env)
+    cert_client = session.client("elbv2")
+    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
+        "Certificates"
+    ]
+
+    try:
+        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
+    except StopIteration:
+        raise CertificateNotFoundException()
+
+    return certificate_arn
+
+
+class CertificateNotFoundException(PlatformException):
+    pass
+
+
+class CopilotEnvironment:
+    @staticmethod
+    def generate(platform_config, environment_name):
+        env_config = apply_environment_defaults(platform_config)["environments"][environment_name]
+        profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
+        click.secho(f"Using {profile_for_environment} for this AWS session")
+        session = get_aws_session_or_abort(profile_for_environment)
+
+        _generate_copilot_environment_manifests(
+            environment_name, platform_config["application"], env_config, session
+        )
