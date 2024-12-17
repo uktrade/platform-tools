@@ -47,4 +47,3 @@ def validate_addons(addons: dict):
     )
 
     return errors
-
