@@ -4,7 +4,7 @@ from dbt_platform_helper.providers.cache import CacheProvider
 class OpensearchProvider:
 
     def __init__(self, opensearch_client):
-        self.openserarch_client = opensearch_client
+        self.opensearch_client = opensearch_client
 
     def get_supported_opensearch_versions(self):
 
@@ -12,7 +12,7 @@ class OpensearchProvider:
 
         if cache_provider.cache_refresh_required("opensearch"):
 
-            response = self.openserarch_client.list_versions()
+            response = self.opensearch_client.list_versions()
             all_versions = response["Versions"]
 
             opensearch_versions = [
