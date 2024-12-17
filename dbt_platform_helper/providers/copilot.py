@@ -1,7 +1,6 @@
 import json
 import time
 
-import jinja2
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
@@ -15,11 +14,7 @@ from dbt_platform_helper.utils.template import setup_templates
 
 
 class CopilotProvider:
-    def __init__(self, app: str, templates: jinja2.Environment = None):
-        self.app = app
-        self.templates = templates if templates else setup_templates()
-
-    def generate_s3_cross_account_service_addons(self, environments, extensions):
+    def generate_cross_account_s3_policies(self, environments: dict, extensions, templates=None):
         resource_blocks = []
         for ext_name, ext_data in extensions.items():
             for env_name, env_data in ext_data.get("environments", {}).items():
@@ -46,13 +41,13 @@ class CopilotProvider:
                                 }
                             )
 
-        template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
-        contents = template.render({"resources": resource_blocks})
+        if not resource_blocks:
+            return None
 
-        return contents
-
-    def write_s3_cross_account_service_addons_template(self):
-        pass
+        if not templates:
+            templates = setup_templates()
+        template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
+        return template.render({"resources": resource_blocks})
 
 
 def create_addon_client_task(

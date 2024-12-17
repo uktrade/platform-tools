@@ -55,66 +55,6 @@ def s3_xenv_extensions():
     }
 
 
-def test_copilot_provider_generate_s3_cross_account_service_addons():
-    """Tests the happy path test for the simple case."""
-    provider = CopilotProvider("test-app")
-    template_string = provider.generate_s3_cross_account_service_addons(
-        environments(), s3_xenv_extensions()
-    )
-
-    act = yaml.safe_load(template_string)
-
-    assert act["Parameters"]["App"]["Type"] == "String"
-    assert act["Parameters"]["Env"]["Type"] == "String"
-    assert act["Parameters"]["Name"]["Type"] == "String"
-
-    assert (
-        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Description"]
-        == "The IAM::ManagedPolicy to attach to the task role"
-    )
-    assert (
-        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Value"]["Ref"]
-        == "testSrvXAccBucketTestAccessXEnvAccessPolicy"
-    )
-
-    policy = act["Resources"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]
-    assert (
-        policy["Metadata"]["aws:copilot:description"]
-        == "An IAM ManagedPolicy for your service to access the bucket"
-    )
-    assert policy["Type"] == "AWS::IAM::ManagedPolicy"
-
-    policy_doc = policy["Properties"]["PolicyDocument"]
-    assert policy_doc["Version"] == date(2012, 10, 17)
-    statements = policy_doc["Statement"]
-    kms_statement = statements[0]
-    assert kms_statement["Sid"] == "KMSDecryptAndGenerate"
-    assert kms_statement["Effect"] == "Allow"
-    assert kms_statement["Action"] == ["kms:Decrypt", "kms:GenerateDataKey"]
-    assert kms_statement["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
-    assert kms_statement["Condition"] == {
-        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
-    }
-
-    s3_obj_statement = statements[1]
-    assert s3_obj_statement["Sid"] == "S3ObjectActions"
-    assert s3_obj_statement["Effect"] == "Allow"
-    assert s3_obj_statement["Action"] == ["s3:Get*", "s3:Put*"]
-    assert s3_obj_statement["Resource"] == "arn:aws:s3:::x-acc-bucket/*"
-    assert s3_obj_statement["Condition"] == {
-        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
-    }
-
-    s3_list_statement = statements[2]
-    assert s3_list_statement["Sid"] == "S3ListAction"
-    assert s3_list_statement["Effect"] == "Allow"
-    assert s3_list_statement["Action"] == ["s3:ListBucket"]
-    assert s3_list_statement["Resource"] == "arn:aws:s3:::x-acc-bucket"
-    assert s3_list_statement["Condition"] == {
-        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
-    }
-
-
 def s3_xenv_multiple_extensions():
     return {
         "test-s3-1": {
@@ -197,10 +137,81 @@ def s3_xenv_multiple_extensions():
     }
 
 
-def test_copilot_provider_generate_multiple_s3_cross_account_service_addons():
+def test_generate_cross_account_s3_policies():
+    """
+    Tests the happy path test for the simple case.
+
+    Also tests passed in templates
+    """
+    provider = CopilotProvider()
+    template_string = provider.generate_cross_account_s3_policies(
+        environments(), s3_xenv_extensions()
+    )
+
+    act = yaml.safe_load(template_string)
+
+    assert act["Parameters"]["App"]["Type"] == "String"
+    assert act["Parameters"]["Env"]["Type"] == "String"
+    assert act["Parameters"]["Name"]["Type"] == "String"
+
+    assert (
+        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Description"]
+        == "The IAM::ManagedPolicy to attach to the task role"
+    )
+    assert (
+        act["Outputs"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]["Value"]["Ref"]
+        == "testSrvXAccBucketTestAccessXEnvAccessPolicy"
+    )
+
+    policy = act["Resources"]["testSrvXAccBucketTestAccessXEnvAccessPolicy"]
+    assert (
+        policy["Metadata"]["aws:copilot:description"]
+        == "An IAM ManagedPolicy for your service to access the bucket"
+    )
+    assert policy["Type"] == "AWS::IAM::ManagedPolicy"
+
+    policy_doc = policy["Properties"]["PolicyDocument"]
+    assert policy_doc["Version"] == date(2012, 10, 17)
+    statements = policy_doc["Statement"]
+    kms_statement = statements[0]
+    assert kms_statement["Sid"] == "KMSDecryptAndGenerate"
+    assert kms_statement["Effect"] == "Allow"
+    assert kms_statement["Action"] == ["kms:Decrypt", "kms:GenerateDataKey"]
+    assert kms_statement["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
+    assert kms_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
+
+    s3_obj_statement = statements[1]
+    assert s3_obj_statement["Sid"] == "S3ObjectActions"
+    assert s3_obj_statement["Effect"] == "Allow"
+    assert s3_obj_statement["Action"] == ["s3:Get*", "s3:Put*"]
+    assert s3_obj_statement["Resource"] == "arn:aws:s3:::x-acc-bucket/*"
+    assert s3_obj_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
+
+    s3_list_statement = statements[2]
+    assert s3_list_statement["Sid"] == "S3ListAction"
+    assert s3_list_statement["Effect"] == "Allow"
+    assert s3_list_statement["Action"] == ["s3:ListBucket"]
+    assert s3_list_statement["Resource"] == "arn:aws:s3:::x-acc-bucket"
+    assert s3_list_statement["Condition"] == {
+        "StringEquals": {"aws:PrincipalTag/copilot-environment": ["staging"]}
+    }
+
+
+def test_generate_cross_account_s3_policies_no_addons():
+    provider = CopilotProvider()
+    template_string = provider.generate_cross_account_s3_policies(environments(), {})
+
+    assert template_string is None
+
+
+def test_generate_cross_account_s3_policies_multiple_addons():
     """More comprehensive tests that check multiple corner cases."""
-    provider = CopilotProvider("test-app")
-    template_string = provider.generate_s3_cross_account_service_addons(
+    provider = CopilotProvider()
+    template_string = provider.generate_cross_account_s3_policies(
         environments(), s3_xenv_multiple_extensions()
     )
 
