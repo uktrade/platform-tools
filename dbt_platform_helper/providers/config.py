@@ -118,6 +118,80 @@ class PlatformConfigValidator:
             error_message = "The following pipelines are misconfigured: \n"
             abort_with_error(error_message + "\n  ".join(errors))
 
+    def validate_database_copy_section(config):
+        extensions = config.get("extensions", {})
+        if not extensions:
+            return
+
+        postgres_extensions = {
+            key: ext for key, ext in extensions.items() if ext.get("type", None) == "postgres"
+        }
+
+        if not postgres_extensions:
+            return
+
+        errors = []
+
+        for extension_name, extension in postgres_extensions.items():
+            database_copy_sections = extension.get("database_copy", [])
+
+            if not database_copy_sections:
+                return
+
+            all_environments = [
+                env for env in config.get("environments", {}).keys() if not env == "*"
+            ]
+            all_envs_string = ", ".join(all_environments)
+
+            for section in database_copy_sections:
+                from_env = section["from"]
+                to_env = section["to"]
+
+                from_account = ConfigProvider.get_env_deploy_account_info(config, from_env, "id")
+                to_account = ConfigProvider.get_env_deploy_account_info(config, to_env, "id")
+
+                if from_env == to_env:
+                    errors.append(
+                        f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
+                    )
+
+                if "prod" in to_env:
+                    errors.append(
+                        f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{to_env}' in extension '{extension_name}'."
+                    )
+
+                if from_env not in all_environments:
+                    errors.append(
+                        f"database_copy 'from' parameter must be a valid environment ({all_envs_string}) but was '{from_env}' in extension '{extension_name}'."
+                    )
+
+                if to_env not in all_environments:
+                    errors.append(
+                        f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
+                    )
+
+                if from_account != to_account:
+                    if "from_account" not in section:
+                        errors.append(
+                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
+                        )
+                    elif section["from_account"] != from_account:
+                        errors.append(
+                            f"Incorrect value for 'from_account' for environment '{from_env}'"
+                        )
+
+                    if "to_account" not in section:
+                        errors.append(
+                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
+                        )
+                    elif section["to_account"] != to_account:
+                        errors.append(
+                            f"Incorrect value for 'to_account' for environment '{to_env}'"
+                        )
+
+        if errors:
+            abort_with_error("\n".join(errors))
+
 
 class ConfigProvider:
     def __init__(self, config=None):

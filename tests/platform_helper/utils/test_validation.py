@@ -14,7 +14,6 @@ from dbt_platform_helper.providers.platform_config_schema import PlatformConfigS
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
-from dbt_platform_helper.utils.validation import validate_database_copy_section
 from dbt_platform_helper.utils.validation import validate_platform_config
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
@@ -439,7 +438,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
     )
 
 
-@patch("dbt_platform_helper.utils.validation.abort_with_error")
+@patch("dbt_platform_helper.providers.config.abort_with_error")
 def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     mock_abort_with_error,
 ):
@@ -732,7 +731,7 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
     if database_copy_section:
         config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
 
-    validate_database_copy_section(config)
+    PlatformConfigValidator.validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
 
@@ -791,7 +790,7 @@ def test_validate_database_copy_section_failure_cases(
     config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -814,7 +813,7 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -842,7 +841,7 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capf
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -868,7 +867,7 @@ def test_validate_database_copy_multi_postgres_success():
         },
     }
 
-    validate_database_copy_section(config)
+    PlatformConfigValidator.validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
 
@@ -892,7 +891,7 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -927,7 +926,7 @@ def test_validate_database_copy_fails_if_cross_account_with_no_from_account(capf
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -952,7 +951,7 @@ def test_validate_database_copy_fails_if_cross_account_with_no_to_account(capfd)
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -984,7 +983,7 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
     }
 
     with pytest.raises(SystemExit):
-        validate_database_copy_section(config)
+        PlatformConfigValidator.validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
