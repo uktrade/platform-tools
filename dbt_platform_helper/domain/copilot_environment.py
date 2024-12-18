@@ -154,7 +154,7 @@ class CopilotTemplating:
     def __init__(self, mkfile_fn=mkfile):
         self.mkfile_fn = mkfile_fn
 
-    def generate_cross_account_s3_policies(self, environments: dict, extensions, templates=None):
+    def generate_cross_account_s3_policies(self, environments: dict, extensions):
         resource_blocks = defaultdict(list)
 
         for ext_name, ext_data in extensions.items():
@@ -183,16 +183,18 @@ class CopilotTemplating:
                             )
 
         if not resource_blocks:
+            click.echo("\n>>> No cross-environment S3 policies to create.\n")
             return
 
-        if not templates:
-            templates = setup_templates()
+        templates = setup_templates()
 
         for service in sorted(resource_blocks.keys()):
             resources = resource_blocks[service]
+            click.echo(f"\n>>> Creating S3 cross account policies for {service}.\n")
             template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
             file_content = template.render({"resources": resources})
             output_dir = Path(".").absolute()
             file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
 
             self.mkfile_fn(output_dir, file_path, file_content, True)
+            click.echo(f"File {file_path} created")

@@ -106,6 +106,10 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
@@ -354,6 +358,10 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -430,6 +438,10 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -442,6 +454,10 @@ class TestMakeAddonsCommand:
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
         new=Mock(return_value=False),
     )
     @mock_aws
@@ -509,6 +525,10 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
@@ -559,6 +579,10 @@ class TestMakeAddonsCommand:
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
         new=Mock(return_value=False),
     )
     @mock_aws
@@ -644,6 +668,10 @@ class TestMakeAddonsCommand:
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
         new=Mock(return_value=False),
     )
     def test_exit_if_no_local_copilot_environments(self, fakefs):
@@ -895,3 +923,12 @@ def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
     fakefs.create_file("copilot/environments/development/manifest.yml")
     fakefs.create_file("copilot/environments/production/manifest.yml")
+
+
+@patch("dbt_platform_helper.commands.copilot._make_addons")
+def test_exception_handling(mock_make_addons):
+    mock_make_addons.side_effect = Exception("Could not connect to AWS")
+    result = CliRunner().invoke(copilot, ["make-addons"])
+
+    assert result.exit_code == 1
+    assert "Could not connect to AWS" in result.output

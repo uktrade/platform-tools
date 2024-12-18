@@ -18,6 +18,7 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
@@ -249,7 +250,19 @@ def copilot_provider():
 def make_addons():
     """Generate addons CloudFormation for each environment."""
 
-    output_dir = Path(".").absolute()
+    try:
+        _make_addons()
+    except Exception as exc:
+        abort_with_error(exc)
+
+
+def _make_addons():
+    try:
+        platform_config = load_and_validate_platform_config()
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
     config_file_check()
 
     templates = setup_templates()
@@ -260,6 +273,7 @@ def make_addons():
 
     click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
 
+    output_dir = Path(".").absolute()
     env_path = Path(f"copilot/environments/")
     env_addons_path = env_path / "addons"
     env_overrides_path = env_path / "overrides"
@@ -319,13 +333,7 @@ def make_addons():
             log_destination_arns,
         )
 
-    try:
-        conf = load_and_validate_platform_config()
-    except SchemaError as ex:
-        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
-        raise click.Abort
-
-    environments = apply_environment_defaults(conf)["environments"]
+    environments = apply_environment_defaults(platform_config)["environments"]
 
     provider = copilot_provider()
     provider.generate_cross_account_s3_policies(environments, extensions)

@@ -19,8 +19,7 @@ Parameters:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
 
-Resources:
-  {% for resource in resources %}
+Resources: {% for resource in resources %}
   {{ resource.app_prefix }}XEnvAccessPolicy:
     Metadata:
       'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
@@ -60,8 +59,7 @@ Resources:
                 aws:PrincipalTag/copilot-environment:
                   - "{{ resource.access_env }}"
     {% endfor %}
-Outputs:
-  {% for resource in resources %}
+Outputs:{% for resource in resources %}
   {{ resource.app_prefix }}XEnvAccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
     Value:
