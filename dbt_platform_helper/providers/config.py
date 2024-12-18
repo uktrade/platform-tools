@@ -15,9 +15,10 @@ from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigProvider:
-    def __init__(self, config_validator, config=None):
+    def __init__(self, config_validator, config=None, echo=click.secho):
         self.config = config or {}
         self.validator = config_validator
+        self.echo = echo
 
     def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
         if lint_config is None:
@@ -70,7 +71,7 @@ class ConfigProvider:
         platform_config_exists = Path(path).exists()
 
         if not platform_config_exists:
-            click.secho(
+            self.echo(
                 f"`{PLATFORM_CONFIG_FILE}` is missing. "
                 "Please check it exists and you are in the root directory of your deployment project."
             )
