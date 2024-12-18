@@ -20,7 +20,7 @@ Parameters:
 
 Resources:
   {% for resource in resources %}
-  {{ resource.appPrefix }}XEnvAccessPolicy:
+  {{ resource.app_prefix }}XEnvAccessPolicy:
     Metadata:
       'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
     Type: AWS::IAM::ManagedPolicy
@@ -61,8 +61,8 @@ Resources:
     {% endfor %}
 Outputs:
   {% for resource in resources %}
-  {{ resource.appPrefix }}XEnvAccessPolicy:
+  {{ resource.app_prefix }}XEnvAccessPolicy:
     Description: "The IAM::ManagedPolicy to attach to the task role"
     Value:
-      Ref: {{ resource.appPrefix }}XEnvAccessPolicy
+      Ref: {{ resource.app_prefix }}XEnvAccessPolicy
  {% endfor %}

@@ -1,7 +1,12 @@
+from collections import defaultdict
+
+from pathlib import Path
+
 import json
 import time
 
 from botocore.exceptions import ClientError
+from dbt_platform_helper.utils.files import mkfile
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
@@ -14,8 +19,11 @@ from dbt_platform_helper.utils.template import setup_templates
 
 
 class CopilotProvider:
+    def __init__(self, mkfile_fn=mkfile):
+        self.mkfile_fn = mkfile_fn
     def generate_cross_account_s3_policies(self, environments: dict, extensions, templates=None):
-        resource_blocks = []
+        resource_blocks = defaultdict(list)
+
         for ext_name, ext_data in extensions.items():
             for env_name, env_data in ext_data.get("environments", {}).items():
                 if "cross_environment_service_access" in env_data:
@@ -26,10 +34,10 @@ class CopilotProvider:
                         read = access_data.get("read", False)
                         write = access_data.get("write", False)
                         if read or write:
-                            resource_blocks.append(
+                            resource_blocks[service].append(
                                 {
                                     "bucket_name": bucket,
-                                    "appPrefix": camel_case(f"{service}-{bucket}-{access_name}"),
+                                    "app_prefix": camel_case(f"{service}-{bucket}-{access_name}"),
                                     "bucket_env": env_name,
                                     "access_env": access_data.get("environment"),
                                     "bucket_account": environments.get(env_name, {})
@@ -42,12 +50,19 @@ class CopilotProvider:
                             )
 
         if not resource_blocks:
-            return None
+            return
 
         if not templates:
             templates = setup_templates()
-        template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
-        return template.render({"resources": resource_blocks})
+
+        for service in sorted(resource_blocks.keys()):
+            resources = resource_blocks[service]
+            template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
+            file_content = template.render({"resources": resources})
+            output_dir = Path(".").absolute()
+            file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
+
+            self.mkfile_fn(output_dir, file_path, file_content, True)
 
 
 def create_addon_client_task(
