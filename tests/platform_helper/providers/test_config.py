@@ -335,7 +335,6 @@ def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
 
 
 def test_apply_defaults():
-    config_provider = ConfigProvider(Mock())
 
     config = {
         "application": "my-app",
@@ -347,7 +346,8 @@ def test_apply_defaults():
         },
     }
 
-    result = config_provider.apply_environment_defaults(config)
+    config_provider = ConfigProvider(Mock(), config=config)
+    result = config_provider.apply_environment_defaults()
 
     assert result == {
         "application": "my-app",
@@ -436,7 +436,6 @@ def test_apply_defaults_for_versions(
         "application": "my-app",
         "environments": {"*": {}, "one": {}},
     }
-    config_provider = ConfigProvider(Mock())
 
     if default_versions:
         config["default_versions"] = default_versions
@@ -444,8 +443,9 @@ def test_apply_defaults_for_versions(
         config["environments"]["*"]["versions"] = env_default_versions
     if env_versions:
         config["environments"]["one"]["versions"] = env_versions
+    config_provider = ConfigProvider(Mock(), config=config)
 
-    result = config_provider.apply_environment_defaults(config)
+    result = config_provider.apply_environment_defaults()
 
     assert result["environments"]["one"].get("versions") == expected_result
 
@@ -461,9 +461,9 @@ def test_apply_defaults_with_no_defaults():
             },
         },
     }
-    config_provider = ConfigProvider(Mock())
+    config_provider = ConfigProvider(Mock(), config=config)
 
-    result = config_provider.apply_environment_defaults(config)
+    result = config_provider.apply_environment_defaults()
 
     assert result == {
         "application": "my-app",
