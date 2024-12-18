@@ -65,3 +65,4 @@ extensions:
   my-s3-bucket-static:
     type: s3
     serve_static_content: true
+    serve_static_param_name: "DATA_SCIENCE_STATIC_S3_ENPOINT"

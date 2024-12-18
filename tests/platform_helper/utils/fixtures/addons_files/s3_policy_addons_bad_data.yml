@@ -2,6 +2,14 @@ my-s3-bucket-policy-readonly-should-be-bool:
   type: s3-policy
   readonly: 27 # Should be bool
 
+my-s3-bucket-policy-serve-static-content-should-be-bool:
+  type: s3-policy
+  serve_static_content: 27 # Should be bool
+
+my-s3-bucket-policy-serve-static-param-name-should-be-string:
+  type: s3-policy
+  serve_static_param_name: 27 # Should be string
+
 my-s3-bucket-policy-services-should-be-list:
   type: s3-policy
   services: 33 # Should be a list

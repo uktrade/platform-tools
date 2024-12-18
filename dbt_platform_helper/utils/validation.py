@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 
+import boto3
 import click
 import yaml
 from schema import SchemaError
@@ -13,10 +14,9 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.platform_config_schema import EXTENSION_SCHEMAS
-from dbt_platform_helper.providers.platform_config_schema import PLATFORM_CONFIG_SCHEMA
-from dbt_platform_helper.utils.aws import get_supported_opensearch_versions
-from dbt_platform_helper.utils.aws import get_supported_redis_versions
+from dbt_platform_helper.providers.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.redis import RedisProvider
 from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -33,7 +33,7 @@ def validate_addons(addons: dict):
             if not addon_type:
                 errors[addon_name] = f"Missing addon type in addon '{addon_name}'"
                 continue
-            schema = EXTENSION_SCHEMAS.get(addon_type, None)
+            schema = PlatformConfigSchema.extension_schemas().get(addon_type, None)
             if not schema:
                 errors[addon_name] = (
                     f"Unsupported addon type '{addon_type}' in addon '{addon_name}'"
@@ -47,13 +47,17 @@ def validate_addons(addons: dict):
         config={"extensions": addons},
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=get_supported_redis_versions,
+        get_supported_versions=RedisProvider(
+            boto3.client("elasticache")
+        ).get_supported_redis_versions,
     )
     _validate_extension_supported_versions(
         config={"extensions": addons},
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions=get_supported_opensearch_versions,
+        get_supported_versions=OpensearchProvider(
+            boto3.client("opensearch")
+        ).get_supported_opensearch_versions,
     )
 
     return errors
@@ -72,7 +76,7 @@ def float_between_with_halfstep(lower, upper):
 
 
 def validate_platform_config(config):
-    PLATFORM_CONFIG_SCHEMA.validate(config)
+    PlatformConfigSchema.schema().validate(config)
     enriched_config = apply_environment_defaults(config)
     _validate_environment_pipelines(enriched_config)
     _validate_environment_pipelines_triggers(enriched_config)
@@ -83,13 +87,17 @@ def validate_platform_config(config):
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=get_supported_redis_versions,
-    )
+        get_supported_versions=RedisProvider(
+            boto3.client("elasticache")
+        ).get_supported_redis_versions,
+    ),
     _validate_extension_supported_versions(
         config=config,
         extension_type="opensearch",
         version_key="engine",
-        get_supported_versions=get_supported_opensearch_versions,
+        get_supported_versions=OpensearchProvider(
+            boto3.client("opensearch")
+        ).get_supported_opensearch_versions,
     )
 
 

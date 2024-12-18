@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
@@ -8,9 +9,7 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.platform_config_schema import _is_integer_between
-from dbt_platform_helper.providers.platform_config_schema import _string_matching_regex
-from dbt_platform_helper.providers.platform_config_schema import _valid_s3_bucket_name
+from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import _validate_extension_supported_versions
 from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import float_between_with_halfstep
@@ -42,7 +41,7 @@ def load_addons(addons_file):
     ],
 )
 def test_validate_string(regex_pattern, valid_strings, invalid_strings):
-    validator = _string_matching_regex(regex_pattern)
+    validator = PlatformConfigSchema.string_matching_regex(regex_pattern)
 
     for valid_string in valid_strings:
         assert validator(valid_string) == valid_string
@@ -121,6 +120,8 @@ def test_validate_addons_success(addons_file):
             "s3_policy_addons_bad_data.yml",
             {
                 "my-s3-bucket-policy-readonly-should-be-bool": r"readonly.*should be instance of 'bool'",
+                "my-s3-bucket-policy-serve-static-content-should-be-bool": r"serve_static_content.*should be instance of 'bool'",
+                "my-s3-bucket-policy-serve-static-param-name-should-be-string": r"serve_static_param_name.*should be instance of 'str'",
                 "my-s3-bucket-policy-services-should-be-list": r"services.*should be instance of 'list'",
                 "my-s3-bucket-policy-service-should-be-string": r"services.*should be instance of 'str'",
                 "my-s3-bucket-policy-bad-name-suffix": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
@@ -254,13 +255,7 @@ def test_validate_addons_success(addons_file):
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["6.2"])
-@patch(
-    "dbt_platform_helper.utils.validation.get_supported_opensearch_versions", return_value=["1.3"]
-)
 def test_validate_addons_failure(
-    mock_get_redis_versions,
-    mock_get_opensearch_versions,
     addons_file,
     exp_error,
 ):
@@ -304,13 +299,13 @@ def test_validate_addons_missing_type():
 
 @pytest.mark.parametrize("value", [5, 1, 9])
 def test_between_success(value):
-    assert _is_integer_between(1, 9)(value)
+    assert PlatformConfigSchema.is_integer_between(1, 9)(value)
 
 
 @pytest.mark.parametrize("value", [-1, 10])
 def test_between_raises_error(value):
     try:
-        _is_integer_between(1, 9)(value)
+        PlatformConfigSchema.is_integer_between(1, 9)(value)
         assert False, f"testing that {value} is between 1 and 9 failed to raise an error."
     except SchemaError as ex:
         assert ex.code == "should be an integer between 1 and 9"
@@ -334,7 +329,7 @@ def test_between_with_step_raises_error(value):
 
 @pytest.mark.parametrize("bucket_name", ["abc", "a" * 63, "abc-123.xyz", "123", "257.2.2.2"])
 def test_validate_s3_bucket_name_success_cases(bucket_name):
-    assert _valid_s3_bucket_name(bucket_name)
+    assert PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
 
 @pytest.mark.parametrize(
@@ -359,7 +354,7 @@ def test_validate_s3_bucket_name_success_cases(bucket_name):
 def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
     exp_error = f"Bucket name '{bucket_name}' is invalid:\n  {error_message}"
     with pytest.raises(SchemaError) as ex:
-        _valid_s3_bucket_name(bucket_name)
+        PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
     assert exp_error in str(ex.value)
 
@@ -367,7 +362,7 @@ def test_validate_s3_bucket_name_failure_cases(bucket_name, error_message):
 def test_validate_s3_bucket_name_multiple_failures():
     bucket_name = "xn--one-two..THREE" + "z" * 50 + "--ol-s3"
     with pytest.raises(SchemaError) as ex:
-        _valid_s3_bucket_name(bucket_name)
+        PlatformConfigSchema.valid_s3_bucket_name(bucket_name)
 
     exp_errors = [
         "Length must be between 3 and 63 characters inclusive.",
@@ -1104,16 +1099,16 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
         ),
     ],
 )
-@patch("dbt_platform_helper.utils.validation.get_supported_redis_versions", return_value=["7.1"])
-def test_validate_extension_supported_versions(
-    mock_supported_versions, config, expected_response, capsys
-):
+def test_validate_extension_supported_versions(config, expected_response, capsys):
+
+    mock_redis_provider = MagicMock()
+    mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
     _validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=mock_supported_versions,
+        get_supported_versions=mock_redis_provider.get_supported_redis_versions,
     )
 
     captured = capsys.readouterr()
