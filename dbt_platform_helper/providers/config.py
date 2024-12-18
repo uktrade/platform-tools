@@ -20,8 +20,23 @@ from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class PlatformConfigValidator:
-    def validate_extension_supported_versions(
-        config, extension_type, version_key, get_supported_versions
+
+    def __init__(self, validations=[]):
+        self.validations = validations or [
+            self.validate_supported_redis_versions,
+            self.validate_supported_opensearch_versions,
+            self.validate_environment_pipelines,
+            self.validate_codebase_pipelines,
+            self.validate_environment_pipelines_triggers,
+            self.validate_database_copy_section,
+        ]
+
+    def run_validations(self, config):
+        for validation in self.validations:
+            validation(config)
+
+    def _validate_extension_supported_versions(
+        self, config, extension_type, version_key, get_supported_versions
     ):
         extensions = config.get("extensions", {})
         if not extensions:
@@ -62,7 +77,27 @@ class PlatformConfigValidator:
                 fg="red",
             )
 
-    def validate_environment_pipelines(config):
+    def validate_supported_redis_versions(self, config):
+        return self._validate_extension_supported_versions(
+            config=config,
+            extension_type="redis",
+            version_key="engine",
+            get_supported_versions=RedisProvider(
+                boto3.client("elasticache")
+            ).get_supported_redis_versions,
+        )
+
+    def validate_supported_opensearch_versions(self, config):
+        return self._validate_extension_supported_versions(
+            config=config,
+            extension_type="opensearch",
+            version_key="engine",
+            get_supported_versions=OpensearchProvider(
+                boto3.client("opensearch")
+            ).get_supported_opensearch_versions,
+        )
+
+    def validate_environment_pipelines(self, config):
         bad_pipelines = {}
         for pipeline_name, pipeline in config.get("environment_pipelines", {}).items():
             bad_envs = []
@@ -88,7 +123,7 @@ class PlatformConfigValidator:
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
             abort_with_error(message)
 
-    def validate_codebase_pipelines(config):
+    def validate_codebase_pipelines(self, config):
         if CODEBASE_PIPELINES_KEY in config:
             for codebase in config[CODEBASE_PIPELINES_KEY]:
                 codebase_environments = []
@@ -104,7 +139,7 @@ class PlatformConfigValidator:
                         "listed in a single pipeline per codebase"
                     )
 
-    def validate_environment_pipelines_triggers(config):
+    def validate_environment_pipelines_triggers(self, config):
         errors = []
         pipelines_with_triggers = {
             pipeline_name: pipeline
@@ -128,7 +163,7 @@ class PlatformConfigValidator:
             error_message = "The following pipelines are misconfigured: \n"
             abort_with_error(error_message + "\n  ".join(errors))
 
-    def validate_database_copy_section(config):
+    def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
         if not extensions:
             return
@@ -236,27 +271,7 @@ class ConfigProvider:
 
         # TODO= logically this isn't validation but loading + parsing, to move.
         enriched_config = apply_environment_defaults(self.config)
-        PlatformConfigValidator.validate_environment_pipelines(enriched_config)
-        PlatformConfigValidator.validate_environment_pipelines_triggers(enriched_config)
-        PlatformConfigValidator.validate_codebase_pipelines(enriched_config)
-        PlatformConfigValidator.validate_database_copy_section(enriched_config)
-
-        PlatformConfigValidator.validate_extension_supported_versions(
-            config=self.config,
-            extension_type="redis",
-            version_key="engine",
-            get_supported_versions=RedisProvider(
-                boto3.client("elasticache")
-            ).get_supported_redis_versions,
-        )
-        PlatformConfigValidator.validate_extension_supported_versions(
-            config=self.config,
-            extension_type="opensearch",
-            version_key="engine",
-            get_supported_versions=OpensearchProvider(
-                boto3.client("opensearch")
-            ).get_supported_opensearch_versions,
-        )
+        PlatformConfigValidator().run_validations(enriched_config)
 
     def load_and_validate_platform_config(
         self, path=PLATFORM_CONFIG_FILE, disable_file_check=False
