@@ -1,17 +1,15 @@
-from collections import defaultdict
-
-from pathlib import Path
-
 import json
 import time
+from collections import defaultdict
+from pathlib import Path
 
 from botocore.exceptions import ClientError
-from dbt_platform_helper.utils.files import mkfile
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
@@ -21,6 +19,7 @@ from dbt_platform_helper.utils.template import setup_templates
 class CopilotProvider:
     def __init__(self, mkfile_fn=mkfile):
         self.mkfile_fn = mkfile_fn
+
     def generate_cross_account_s3_policies(self, environments: dict, extensions, templates=None):
         resource_blocks = defaultdict(list)
 

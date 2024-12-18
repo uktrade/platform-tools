@@ -7,6 +7,7 @@ from pathlib import PosixPath
 
 import click
 import yaml
+from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.copilot import CopilotProvider
@@ -14,12 +15,14 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
+from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import config_file_check
+from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -238,12 +241,13 @@ def _get_s3_kms_alias_arns(session, application_name, config):
     return arns
 
 
-@copilot.command()
-def make_addons(copilot_provider: CopilotProvider = None):
-    """Generate addons CloudFormation for each environment."""
+def copilot_provider():
+    return CopilotProvider()
 
-    if not copilot_provider:
-        copilot_provider = CopilotProvider()
+
+@copilot.command()
+def make_addons():
+    """Generate addons CloudFormation for each environment."""
 
     output_dir = Path(".").absolute()
     config_file_check()
@@ -269,7 +273,8 @@ def make_addons(copilot_provider: CopilotProvider = None):
         _generate_svc_overrides(base_path, templates, svc_name)
 
     services = []
-    for ext_name, extension in extensions.items():
+    for ext_name, ext_data in extensions.items():
+        extension = {**ext_data}
         print(f">>>>>>>>> {ext_name}")
         addon_type = extension.pop("type")
         environments = extension.pop("environments")
@@ -314,7 +319,16 @@ def make_addons(copilot_provider: CopilotProvider = None):
             log_destination_arns,
         )
 
-        copilot_provider.write_s3_cross_account_service_addons_template()
+    try:
+        conf = load_and_validate_platform_config()
+    except SchemaError as ex:
+        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+        raise click.Abort
+
+    environments = apply_environment_defaults(conf)["environments"]
+
+    provider = copilot_provider()
+    provider.generate_cross_account_s3_policies(environments, extensions)
 
     click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
