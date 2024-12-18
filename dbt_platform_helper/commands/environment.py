@@ -8,6 +8,7 @@ from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -65,7 +66,7 @@ def generate(name, vpc_name):
         )
         raise click.Abort
     try:
-        config_provider = ConfigProvider()
+        config_provider = ConfigProvider(PlatformConfigValidator())
         conf = config_provider.load_and_validate_platform_config()
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
@@ -83,6 +84,6 @@ def generate(name, vpc_name):
     help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
-    config_provider = ConfigProvider()
+    config_provider = ConfigProvider(PlatformConfigValidator())
     conf = config_provider.load_and_validate_platform_config()
     TerraformEnvironment.generate(conf, name, terraform_platform_modules_version)

@@ -10,6 +10,7 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -248,7 +249,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
-    config_provider = ConfigProvider()
+    config_provider = ConfigProvider(PlatformConfigValidator())
     config_provider.config_file_check()
 
     templates = setup_templates()

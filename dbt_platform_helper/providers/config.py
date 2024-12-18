@@ -245,8 +245,12 @@ def get_env_deploy_account_info(config, env, key):
 
 
 class ConfigProvider:
-    def __init__(self, config=None):
-        self.config = config if config else {}
+    def __init__(self, config_validator, config=None):
+        self.config = config or {}
+        self.validator = config_validator
+
+    def get_config(self, path=PLATFORM_CONFIG_FILE):
+        return self.load_and_validate_platform_config(self, path, False)
 
     def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
         if lint_config is None:
@@ -271,7 +275,7 @@ class ConfigProvider:
 
         # TODO= logically this isn't validation but loading + parsing, to move.
         enriched_config = apply_environment_defaults(self.config)
-        PlatformConfigValidator().run_validations(enriched_config)
+        self.validator.run_validations(enriched_config)
 
     def load_and_validate_platform_config(
         self, path=PLATFORM_CONFIG_FILE, disable_file_check=False
