@@ -5,8 +5,8 @@ import pytest
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config import PlatformConfigValidator
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -39,7 +39,7 @@ extensions:
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
     expected_error = f'duplication of key "{duplicate_key}"'
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     linting_failures = config_provider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
     assert expected_error in linting_failures[0]
@@ -54,7 +54,7 @@ extensions:
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     mock_abort_with_error, valid_platform_config, pipeline_to_trigger
 ):
@@ -62,7 +62,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
         "pipeline_to_trigger"
     ] = pipeline_to_trigger
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
 
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
@@ -73,7 +73,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
     )
 
 
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trigger_is_invalid(
     mock_abort_with_error, valid_platform_config
 ):
@@ -82,7 +82,7 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
         "pipeline_to_trigger"
     ] = "non-existent-pipeline"
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
 
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
@@ -94,12 +94,12 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
     )
 
 
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_itself(
     mock_abort_with_error, valid_platform_config
 ):
     valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
 
@@ -115,7 +115,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
         ("non-prod-acc", ["dev", "prod"], ["prod"]),
     ],
 )
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
     mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
 ):
@@ -128,7 +128,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), platform_env_config)
+    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
 
     config_provider.validate_platform_config()
 
@@ -141,7 +141,7 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
     )
 
 
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     mock_abort_with_error,
 ):
@@ -159,7 +159,7 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
         },
     }
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), config)
+    config_provider = ConfigProvider(ConfigValidator(), config)
 
     config_provider.validate_platform_config()
 
@@ -171,7 +171,7 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     )
 
 
-@patch("dbt_platform_helper.providers.config.abort_with_error")
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
 def test_validate_platform_config_catches_database_copy_errors(
     mock_abort_with_error, platform_env_config
 ):
@@ -190,7 +190,7 @@ def test_validate_platform_config_catches_database_copy_errors(
         },
     }
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), platform_env_config)
+    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
 
     config_provider.validate_platform_config()
 
@@ -221,7 +221,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     }
 
     # Should not error if config is sound.
-    config_provider = ConfigProvider(PlatformConfigValidator(), platform_env_config)
+    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
 
     config_provider.validate_platform_config()
 
@@ -238,7 +238,7 @@ def test_load_and_validate_config_valid_file(yaml_file):
     """Test that, given the path to a valid yaml file, load_and_validate_config
     returns the loaded yaml unmodified."""
 
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     path = FIXTURES_DIR / yaml_file
     validated = config_provider.load_and_validate_platform_config(path=path)
@@ -255,7 +255,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -276,7 +276,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -297,7 +297,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(PlatformConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -311,14 +311,14 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
-        ConfigProvider(PlatformConfigValidator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
 
 def test_validation_runs_against_platform_config_yml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents='{"application": "my_app"}')
-    config = ConfigProvider(PlatformConfigValidator()).load_and_validate_platform_config(
+    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config(
         path=PLATFORM_CONFIG_FILE
     )
 
@@ -327,7 +327,7 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
     config_provider.load_and_validate_platform_config()
 
     assert "Warning" not in capfd.readouterr().out
@@ -337,7 +337,7 @@ def test_load_and_validate_platform_config_skips_file_check_when_disable_file_ch
     capfd, fakefs
 ):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     with patch.object(ConfigProvider, "config_file_check") as mock_config_file_check:
         config_provider.load_and_validate_platform_config(disable_file_check=True)

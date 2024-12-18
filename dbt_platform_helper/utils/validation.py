@@ -1,6 +1,6 @@
 from schema import SchemaError
 
-from dbt_platform_helper.providers.config import PlatformConfigValidator
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 
 
@@ -26,7 +26,7 @@ def validate_addons(addons: dict):
         except SchemaError as ex:
             errors[addon_name] = f"Error in {addon_name}: {ex.code}"
 
-    PlatformConfigValidator().validate_supported_redis_versions({"extensions": addons})
-    PlatformConfigValidator().validate_supported_opensearch_versions({"extensions": addons})
+    ConfigValidator().validate_supported_redis_versions({"extensions": addons})
+    ConfigValidator().validate_supported_opensearch_versions({"extensions": addons})
 
     return errors

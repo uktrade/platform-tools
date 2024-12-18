@@ -8,8 +8,8 @@ import botocore
 import click
 from prettytable import PrettyTable
 
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils import versioning
@@ -99,7 +99,7 @@ def deployment():
 
     recommendations = {}
 
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     config_provider.config_file_check()
 

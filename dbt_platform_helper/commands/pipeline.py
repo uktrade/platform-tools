@@ -6,8 +6,8 @@ from shutil import rmtree
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -62,7 +62,7 @@ def generate(terraform_platform_modules_version, deploy_branch):
     This command does the following in relation to the codebase pipelines:
     - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
     """
-    config_provider = ConfigProvider(PlatformConfigValidator())
+    config_provider = ConfigProvider(ConfigValidator())
     pipeline_config = config_provider.load_and_validate_platform_config()
 
     has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config

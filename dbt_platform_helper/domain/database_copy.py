@@ -7,10 +7,10 @@ import click
 from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config import PlatformConfigValidator
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
@@ -39,7 +39,7 @@ class DatabaseCopy:
         input: Callable[[str], str] = click.prompt,
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
-        config_provider: ConfigProvider = ConfigProvider(PlatformConfigValidator()),
+        config_provider: ConfigProvider = ConfigProvider(ConfigValidator()),
     ):
         self.app = app
         self.database = database

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbt_platform_helper.providers.config import PlatformConfigValidator
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 
 
 @pytest.mark.parametrize(
@@ -59,7 +59,7 @@ def test_validate_database_copy_section_success_cases(database_copy_section):
     if database_copy_section:
         config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
 
-    PlatformConfigValidator().validate_database_copy_section(config)
+    ConfigValidator().validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
 
@@ -91,7 +91,7 @@ def test_validate_database_copy_section_failure_cases(
     config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -114,7 +114,7 @@ def test_validate_database_copy_fails_if_from_and_to_are_the_same(capfd):
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -142,7 +142,7 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(capf
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -168,7 +168,7 @@ def test_validate_database_copy_multi_postgres_success():
         },
     }
 
-    PlatformConfigValidator().validate_database_copy_section(config)
+    ConfigValidator().validate_database_copy_section(config)
 
     # Should get here fine if the config is valid.
 
@@ -192,7 +192,7 @@ def test_validate_database_copy_multi_postgres_failures(capfd):
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -227,7 +227,7 @@ def test_validate_database_copy_fails_if_cross_account_with_no_from_account(capf
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -252,7 +252,7 @@ def test_validate_database_copy_fails_if_cross_account_with_no_to_account(capfd)
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -284,7 +284,7 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
     }
 
     with pytest.raises(SystemExit):
-        PlatformConfigValidator().validate_database_copy_section(config)
+        ConfigValidator().validate_database_copy_section(config)
 
     console_message = capfd.readouterr().err
 
@@ -344,7 +344,7 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
     mock_redis_provider = MagicMock()
     mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
-    PlatformConfigValidator()._validate_extension_supported_versions(
+    ConfigValidator()._validate_extension_supported_versions(
         config=config,
         extension_type="redis",
         version_key="engine",
