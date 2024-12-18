@@ -1,7 +1,6 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -41,9 +40,14 @@ def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platfo
 
 
 class TerraformEnvironment:
-    @staticmethod
-    def generate(conf, name, terraform_platform_modules_version):
-        env_config = apply_environment_defaults(conf)["environments"][name]
+    def __init__(self, config_provider):
+        self.config_provider = config_provider
+
+    def generate(self, name, terraform_platform_modules_version):
+        conf = self.config_provider.load_and_validate_platform_config()
+        enriched_config = self.config_provider.apply_environment_defaults(conf)
+
+        env_config = enriched_config["environments"][name]
         _generate_terraform_environment_manifests(
             conf["application"], name, env_config, terraform_platform_modules_version
         )

@@ -67,12 +67,10 @@ def generate(name, vpc_name):
         raise click.Abort
     try:
         config_provider = ConfigProvider(ConfigValidator())
-        conf = config_provider.load_and_validate_platform_config()
+        CopilotEnvironment(config_provider).generate(name)
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
-
-    CopilotEnvironment.generate(conf, name)
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -85,5 +83,4 @@ def generate(name, vpc_name):
 )
 def generate_terraform(name, terraform_platform_modules_version):
     config_provider = ConfigProvider(ConfigValidator())
-    conf = config_provider.load_and_validate_platform_config()
-    TerraformEnvironment.generate(conf, name, terraform_platform_modules_version)
+    TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
