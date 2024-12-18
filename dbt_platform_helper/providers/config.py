@@ -20,15 +20,14 @@ class ConfigProvider:
         self.validator = config_validator
         self.echo = echo
 
+    # TODO - this is to do with Yaml validation
     def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
         if lint_config is None:
             lint_config = {"rules": {"key-duplicates": "enable"}}
 
-        yaml_config = YamlLintConfig(yaml.dump(lint_config))
-
         with open(file_path, "r") as yaml_file:
             file_contents = yaml_file.read()
-            results = linter.run(file_contents, yaml_config)
+            results = linter.run(file_contents, YamlLintConfig(yaml.dump(lint_config)))
 
         parsed_results = [
             "\t"
@@ -68,14 +67,11 @@ class ConfigProvider:
             abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
 
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
-        platform_config_exists = Path(path).exists()
-
-        if not platform_config_exists:
-            self.echo(
+        if not Path(path).exists():
+            abort_with_error(
                 f"`{PLATFORM_CONFIG_FILE}` is missing. "
                 "Please check it exists and you are in the root directory of your deployment project."
             )
-            exit(1)
 
     def apply_environment_defaults(self, config):
         if "environments" not in config:
