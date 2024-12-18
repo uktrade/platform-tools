@@ -10,7 +10,7 @@ import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.copilot import CopilotProvider
+from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -242,7 +242,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 
 
 def copilot_provider():
-    return CopilotProvider()
+    return CopilotTemplating()
 
 
 @copilot.command()
