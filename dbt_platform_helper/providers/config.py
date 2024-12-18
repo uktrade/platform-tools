@@ -44,11 +44,8 @@ class ConfigProvider:
         enriched_config = self.apply_environment_defaults(self.config)
         self.validator.run_validations(enriched_config)
 
-    def load_and_validate_platform_config(
-        self, path=PLATFORM_CONFIG_FILE, disable_file_check=False
-    ):
-        if not disable_file_check:
-            self.config_file_check(path)
+    def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
+        self.config_file_check(path)
         try:
             self.config = yaml.safe_load(Path(path).read_text())
 

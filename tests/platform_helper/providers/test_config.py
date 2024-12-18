@@ -334,18 +334,6 @@ def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
     assert "Warning" not in capfd.readouterr().out
 
 
-def test_load_and_validate_platform_config_skips_file_check_when_disable_file_check_parameter_passed(
-    capfd, fakefs
-):
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my_app"}))
-    config_provider = ConfigProvider(ConfigValidator())
-
-    with patch.object(ConfigProvider, "config_file_check") as mock_config_file_check:
-        config_provider.load_and_validate_platform_config(disable_file_check=True)
-
-        assert not mock_config_file_check.called
-
-
 def test_apply_defaults():
     config_provider = ConfigProvider(Mock())
 
