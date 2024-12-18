@@ -6,8 +6,8 @@ import click
 import yaml
 from schema import SchemaError
 from yaml.parser import ParserError
-from yamllint import config
 from yamllint import linter
+from yamllint.config import YamlLintConfig
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
@@ -19,14 +19,11 @@ class ConfigProvider:
         self.config = config or {}
         self.validator = config_validator
 
-    def get_config(self, path=PLATFORM_CONFIG_FILE):
-        return self.load_and_validate_platform_config(self, path, False)
-
     def lint_yaml_for_duplicate_keys(self, file_path: str, lint_config=None):
         if lint_config is None:
             lint_config = {"rules": {"key-duplicates": "enable"}}
 
-        yaml_config = config.YamlLintConfig(yaml.dump(lint_config))
+        yaml_config = YamlLintConfig(yaml.dump(lint_config))
 
         with open(file_path, "r") as yaml_file:
             file_contents = yaml_file.read()
