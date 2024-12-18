@@ -5,6 +5,16 @@ import jinja2
 from dbt_platform_helper.jinja2_tags import ExtraHeaderTag
 from dbt_platform_helper.jinja2_tags import VersionTag
 
+S3_CROSS_ACCOUNT_POLICY = "addons/svc/s3-cross-account-policy.yml"
+
+ADDON_TEMPLATE_MAP = {
+    "s3": ["addons/svc/s3-policy.yml"],
+    "s3-policy": ["addons/svc/s3-policy.yml"],
+    "appconfig-ipfilter": ["addons/svc/appconfig-ipfilter.yml"],
+    "subscription-filter": ["addons/svc/subscription-filter.yml"],
+    "prometheus-policy": ["addons/svc/prometheus-policy.yml"],
+}
+
 
 def camel_case(s):
     s = re.sub(r"(_|-)+", " ", s).title().replace(" ", "")

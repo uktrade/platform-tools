@@ -14,6 +14,7 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_aws
 
+from dbt_platform_helper.commands.copilot import _get_extensions
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -105,6 +106,10 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
@@ -249,9 +254,13 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
+    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
+        mock_load_and_validate,
+        mock_copilot_provider,
         mock_get_session,
         fakefs,
         addon_file,
@@ -349,6 +358,10 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -425,6 +438,10 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -437,6 +454,10 @@ class TestMakeAddonsCommand:
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
         new=Mock(return_value=False),
     )
     @mock_aws
@@ -504,6 +525,10 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
@@ -554,6 +579,10 @@ class TestMakeAddonsCommand:
 
     @patch(
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
         new=Mock(return_value=False),
     )
     @mock_aws
@@ -641,6 +670,10 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @patch(
+        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
+        new=Mock(return_value=False),
+    )
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -672,8 +705,16 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
+    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
     def test_addon_instructions_with_postgres_addon_types(
-        self, fakefs, addon_config, addon_type, secret_name
+        self,
+        mock_load_and_validate,
+        mock_copilot_provider,
+        fakefs,
+        addon_config,
+        addon_type,
+        secret_name,
     ):
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(addon_config, fakefs)
@@ -706,8 +747,10 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
+    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
-        self, mock_get_aws_session_or_abort, fakefs
+        self, mock_load_and_validate, mock_copilot_provider, mock_get_aws_session_or_abort, fakefs
     ):
         services = ["web", "web-celery"]
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"extensions": {}}))
@@ -730,6 +773,114 @@ class TestMakeAddonsCommand:
                 assert path.exists()
 
         assert result.exit_code == 0
+
+    @freeze_time("2023-08-22 16:00:00")
+    @patch(
+        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        new=Mock(return_value=False),
+    )
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @patch(
+        "dbt_platform_helper.commands.copilot.get_log_destination_arn",
+        new=Mock(
+            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        ),
+    )
+    @patch(
+        "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
+        new=Mock(return_value="foo"),
+    )
+    @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
+    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
+    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
+    @mock_aws
+    def test_s3_cross_account_policies_called(
+        self,
+        mock_load_and_validate,
+        mock_copilot_provider,
+        mock_application,
+        mock_get_session,
+        mock_get_session2,
+        fakefs,
+    ):
+        dev_session = MagicMock(name="dev-session-mock")
+        dev_session.profile_name = "foo"
+        prod_session = MagicMock(name="prod-session-mock")
+        prod_session.profile_name = "bar"
+        client = MagicMock(name="client-mock")
+        dev_session.client.return_value = client
+        prod_session.client.return_value = client
+        mock_get_session.side_effect = [dev_session, prod_session]
+        mock_get_session2.side_effect = [dev_session, prod_session]
+
+        mock_provider = Mock(name="Provider")
+        mock_copilot_provider.return_value = mock_provider
+        mock_provider.generate_cross_account_s3_policies.return_value = "TestData"
+        mock_load_and_validate.return_value = {
+            "environments": {"development": {}, "production": {}}
+        }
+
+        dev = Environment(
+            name="development",
+            account_id="000000000000",
+            sessions={"000000000000": dev_session},
+        )
+        prod = Environment(
+            name="production",
+            account_id="111111111111",
+            sessions={"111111111111": prod_session},
+        )
+        mock_application.return_value.environments = {
+            "development": dev,
+            "production": prod,
+        }
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/environments/development",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "name": "development",
+                                "accountID": "000000000000",
+                            }
+                        ),
+                    }
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/components/web",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "app": "test-app",
+                                "name": "web",
+                                "type": "Load Balanced Web Service",
+                            }
+                        ),
+                    }
+                ]
+            },
+        ]
+
+        client.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
+        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+        create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
+
+        CliRunner().invoke(copilot, ["make-addons"])
+
+        mock_load_and_validate.assert_called()
+        exp = _get_extensions()
+        exp["s3"]["environments"]["development"]["kms_key_arn"] = "arn-for-kms-alias"
+        exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
+        mock_provider.generate_cross_account_s3_policies.assert_called_with(
+            {"development": {"versions": {}}, "production": {"versions": {}}}, exp
+        )
 
 
 @pytest.mark.parametrize(
@@ -772,3 +923,12 @@ def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
     fakefs.create_file("copilot/environments/development/manifest.yml")
     fakefs.create_file("copilot/environments/production/manifest.yml")
+
+
+@patch("dbt_platform_helper.commands.copilot._make_addons")
+def test_exception_handling(mock_make_addons):
+    mock_make_addons.side_effect = Exception("Could not connect to AWS")
+    result = CliRunner().invoke(copilot, ["make-addons"])
+
+    assert result.exit_code == 1
+    assert "Could not connect to AWS" in result.output
