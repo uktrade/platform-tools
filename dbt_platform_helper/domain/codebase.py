@@ -163,9 +163,9 @@ class Codebase:
             self.confirm,
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the {pipeline_name} deployment pipeline. Do you want to continue?',
+            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
             {
-                "name": "demodjango-test-manual-release-pipeline",  # todo add in pipeline_name variable here
+                "name": pipeline_name,
                 "variables": [
                     {"name": "ENVIRONMENT", "value": env},
                     {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
