@@ -9,6 +9,8 @@ import click
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -17,7 +19,6 @@ from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.validation import config_file_check
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -248,7 +249,8 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
-    config_file_check()
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config_file_check()
 
     templates = setup_templates()
     config = _get_config()

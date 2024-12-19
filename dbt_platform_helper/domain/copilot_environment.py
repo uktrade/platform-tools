@@ -4,7 +4,6 @@ import click
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -133,13 +132,18 @@ class CertificateNotFoundException(PlatformException):
 
 
 class CopilotEnvironment:
-    @staticmethod
-    def generate(platform_config, environment_name):
-        env_config = apply_environment_defaults(platform_config)["environments"][environment_name]
+    def __init__(self, config_provider):
+        self.config_provider = config_provider
+
+    def generate(self, environment_name):
+        self.config_provider.load_and_validate_platform_config()
+        enriched_config = self.config_provider.apply_environment_defaults()
+
+        env_config = enriched_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
         click.secho(f"Using {profile_for_environment} for this AWS session")
         session = get_aws_session_or_abort(profile_for_environment)
 
         _generate_copilot_environment_manifests(
-            environment_name, platform_config["application"], env_config, session
+            environment_name, enriched_config["application"], env_config, session
         )

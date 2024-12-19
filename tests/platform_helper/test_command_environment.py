@@ -470,7 +470,6 @@ class TestGenerate:
         )
 
         result = CliRunner().invoke(generate, ["--name", "test"])
-
         actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
         expected = yaml.safe_load(
             Path("copilot/fixtures/test_environment_manifest.yml").read_text()
