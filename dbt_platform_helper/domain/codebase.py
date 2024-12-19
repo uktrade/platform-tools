@@ -158,7 +158,7 @@ class Codebase:
 
         pipeline_name = f"{app}-{codebase}-manual-release-pipeline"
         codepipeline_client = session.client("codepipeline")
-        
+
         build_url = self.__start_pipeline_execution_with_confirmation(
             self.confirm,
             codepipeline_client,
