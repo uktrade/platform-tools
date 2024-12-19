@@ -9,7 +9,6 @@ import click
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
@@ -249,8 +248,7 @@ def _get_s3_kms_alias_arns(session, application_name, config):
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     output_dir = Path(".").absolute()
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config_file_check()
+    ConfigProvider.config_file_check()
 
     templates = setup_templates()
     config = _get_config()
