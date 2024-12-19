@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from dbt_platform_helper.providers.yaml_file_provider import DuplicateKeysException
-from dbt_platform_helper.providers.yaml_file_provider import FileNotFoundException
-from dbt_platform_helper.providers.yaml_file_provider import InvalidYamlException
-from dbt_platform_helper.providers.yaml_file_provider import YamlFileProvider
+from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
+from dbt_platform_helper.providers.yaml_file import FileNotFoundException
+from dbt_platform_helper.providers.yaml_file import InvalidYamlException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 def test_returns_valid_yaml(fs):

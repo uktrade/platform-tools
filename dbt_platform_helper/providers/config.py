@@ -6,8 +6,8 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
-from dbt_platform_helper.providers.yaml_file_provider import YamlFileProvider
-from dbt_platform_helper.providers.yaml_file_provider import YamlFileProviderException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+from dbt_platform_helper.providers.yaml_file import YamlFileProviderException
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
