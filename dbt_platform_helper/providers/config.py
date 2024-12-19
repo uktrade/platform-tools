@@ -59,14 +59,14 @@ class ConfigProvider:
             self.validate_platform_config()
             return self.config
         except ParserError:
-            abort_with_error(f"{PLATFORM_CONFIG_FILE} is not valid YAML")
+            abort_with_error(f"{path} is not valid YAML")
         except SchemaError as e:
-            abort_with_error(f"Schema error in {PLATFORM_CONFIG_FILE}. {e}")
+            abort_with_error(f"Schema error in {path}. {e}")
 
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
             abort_with_error(
-                f"`{PLATFORM_CONFIG_FILE}` is missing. "
+                f"`{path}` is missing. "
                 "Please check it exists and you are in the root directory of your deployment project."
             )
 
