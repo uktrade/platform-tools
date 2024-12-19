@@ -9,6 +9,7 @@ from dbt_platform_helper.providers.redis import RedisProvider
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
+# TODO = this shouldnt live here.. should it hehe
 def get_env_deploy_account_info(config, env, key):
     return (
         config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
