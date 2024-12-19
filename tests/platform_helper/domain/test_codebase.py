@@ -337,14 +337,8 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
 def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     mocks = CodebaseMocks()
-    mocks.run_subprocess.return_value.stderr = ""
     mocks.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-    client.exceptions.ParameterNotFound = ssm_exceptions.ParameterNotFound
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
@@ -389,19 +383,6 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
                 ),
             ]
         )
-
-
-def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
-    mocks = CodebaseMocks(confirm=Mock(return_value=False))
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
-    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
-        codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
