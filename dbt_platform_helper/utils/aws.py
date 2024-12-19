@@ -431,7 +431,8 @@ def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) ->
 def start_build_extraction(codebuild_client, build_options):
     response = codebuild_client.start_build(**build_options)
     return response["build"]["arn"]
-    
+
+
 def start_pipeline_extraction(codepipeline_client, build_options):
     response = codepipeline_client.start_pipeline_execution(**build_options)
     return response["pipelineExecutionId"]
@@ -477,12 +478,11 @@ def get_build_url_from_arn(build_arn: str) -> str:
         f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
         f"{project_name}/build/{project_name}%3A{build_id}"
     )
-    
+
+
 def get_build_url_from_pipeline_execution_id(execution_id: str, pipeline_name: str) -> str:
-    
-    return (
-        f"https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}"
-    )
+
+    return f"https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}"
 
 
 def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo):

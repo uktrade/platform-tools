@@ -959,7 +959,7 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
 
     with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
         wait_for_log_group_to_exist(mock_client, "not_found", 1)
-        
+
 
 @pytest.mark.parametrize(
     "execution_id, pipeline_name, expected_url",
@@ -984,4 +984,3 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
 def test_get_build_url_from_pipeline_execution_id(execution_id, pipeline_name, expected_url):
     result = get_build_url_from_pipeline_execution_id(execution_id, pipeline_name)
     assert result == expected_url
-
