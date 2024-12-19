@@ -345,9 +345,6 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
     client.exceptions.ParameterNotFound = ssm_exceptions.ParameterNotFound
-    client.start_pipeline_execution.return_value = {
-        "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
-    }
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
