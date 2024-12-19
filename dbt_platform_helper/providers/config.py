@@ -15,8 +15,8 @@ from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigProvider:
-    def __init__(self, config_validator, config=None, echo=click.secho):
-        self.config = config or {}
+    def __init__(self, config_validator, echo=click.secho):
+        self.config = {}
         self.validator = config_validator
         self.echo = echo
 

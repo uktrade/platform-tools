@@ -63,7 +63,8 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
         "pipeline_to_trigger"
     ] = pipeline_to_trigger
 
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = valid_platform_config
 
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
@@ -83,7 +84,8 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
         "pipeline_to_trigger"
     ] = "non-existent-pipeline"
 
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = valid_platform_config
 
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
@@ -100,7 +102,8 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
     mock_abort_with_error, valid_platform_config
 ):
     valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = valid_platform_config
     config_provider.validate_platform_config()
     message = mock_abort_with_error.call_args.args[0]
 
@@ -129,8 +132,8 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
-
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = platform_env_config
     config_provider.validate_platform_config()
 
     message = mock_abort_with_error.call_args.args[0]
@@ -160,8 +163,8 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
         },
     }
 
-    config_provider = ConfigProvider(ConfigValidator(), config)
-
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = config
     config_provider.validate_platform_config()
 
     message = mock_abort_with_error.call_args.args[0]
@@ -191,7 +194,8 @@ def test_validate_platform_config_catches_database_copy_errors(
         },
     }
 
-    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = platform_env_config
 
     config_provider.validate_platform_config()
 
@@ -222,7 +226,8 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     }
 
     # Should not error if config is sound.
-    config_provider = ConfigProvider(ConfigValidator(), platform_env_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = platform_env_config
 
     config_provider.validate_platform_config()
 
@@ -256,7 +261,8 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = valid_platform_config
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -277,7 +283,8 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = valid_platform_config
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -298,7 +305,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(ConfigValidator(), valid_platform_config)
+    config_provider = ConfigProvider(ConfigValidator())
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -346,7 +353,8 @@ def test_apply_defaults():
         },
     }
 
-    config_provider = ConfigProvider(Mock(), config=config)
+    config_provider = ConfigProvider(Mock())
+    config_provider.config = config
     result = config_provider.apply_environment_defaults()
 
     assert result == {
@@ -443,7 +451,8 @@ def test_apply_defaults_for_versions(
         config["environments"]["*"]["versions"] = env_default_versions
     if env_versions:
         config["environments"]["one"]["versions"] = env_versions
-    config_provider = ConfigProvider(Mock(), config=config)
+    config_provider = ConfigProvider(Mock())
+    config_provider.config = config
 
     result = config_provider.apply_environment_defaults()
 
@@ -461,7 +470,8 @@ def test_apply_defaults_with_no_defaults():
             },
         },
     }
-    config_provider = ConfigProvider(Mock(), config=config)
+    config_provider = ConfigProvider(Mock())
+    config_provider.config = config
 
     result = config_provider.apply_environment_defaults()
 
