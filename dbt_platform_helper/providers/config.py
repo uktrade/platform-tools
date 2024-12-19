@@ -38,10 +38,11 @@ class ConfigProvider:
 
         return self.config
 
-    def config_file_check(self, path=PLATFORM_CONFIG_FILE):
+    @staticmethod
+    def config_file_check(path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
             abort_with_error(
-                f"`{PLATFORM_CONFIG_FILE}` is missing. "
+                f"`{path}` is missing. "
                 "Please check it exists and you are in the root directory of your deployment project."
             )
 
