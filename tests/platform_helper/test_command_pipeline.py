@@ -177,7 +177,7 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
     assert_codebase_pipeline_config_was_generated()
 
 
-@patch("dbt_platform_helper.commands.pipeline.load_and_validate_platform_config")
+@patch("dbt_platform_helper.commands.pipeline.ConfigProvider")
 def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aws_session_or_abort):
     get_aws_session_or_abort.returns({"application": "my-app"})
 
@@ -186,11 +186,11 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aw
     assert "No pipelines defined: nothing to do." in result.output
 
 
-@patch("dbt_platform_helper.commands.pipeline.load_and_validate_platform_config")
+@patch("dbt_platform_helper.commands.pipeline.ConfigProvider")
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning(
     mock_config,
 ):
-    mock_config.return_value = {"environments": {}}
+    mock_config.load_and_validate_platform_config.return_value = {"environments": {}}
     result = CliRunner().invoke(generate)
 
     assert "No pipelines defined: nothing to do." in result.output

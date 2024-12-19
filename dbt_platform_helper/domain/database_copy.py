@@ -7,8 +7,10 @@ import click
 from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
@@ -16,9 +18,7 @@ from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
-from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 
 
 class DatabaseCopy:
@@ -38,6 +38,7 @@ class DatabaseCopy:
         input: Callable[[str], str] = click.prompt,
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
+        config_provider: ConfigProvider = ConfigProvider(ConfigValidator()),
     ):
         self.app = app
         self.database = database
@@ -48,12 +49,13 @@ class DatabaseCopy:
         self.input = input
         self.echo = echo
         self.abort = abort
+        self.config_provider = config_provider
 
         if not self.app:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort("You must either be in a deploy repo, or provide the --app option.")
 
-            config = load_and_validate_platform_config()
+            config = self.config_provider.load_and_validate_platform_config()
             self.app = config["application"]
 
         try:
@@ -110,8 +112,8 @@ class DatabaseCopy:
         if not vpc_name:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort("You must either be in a deploy repo, or provide the vpc name option.")
-            config = load_and_validate_platform_config()
-            env_config = apply_environment_defaults(config)["environments"]
+            self.config_provider.load_and_validate_platform_config()
+            env_config = self.config_provider.apply_environment_defaults()["environments"]
             vpc_name = env_config.get(env, {}).get("vpc")
         return vpc_name
 

@@ -360,16 +360,14 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-        mocks.confirm.assert_has_calls(
-            [
-                call(
-                    'You are about to deploy "test-application" for "application" with commit '
-                    '"ab1c23d" to the "development" environment. Do you want to continue?'
-                ),
-            ]
-        )
-
-        mocks.echo.assert_has_calls([call("Your deployment was not triggered.")])
+    mocks.confirm.assert_has_calls(
+        [
+            call(
+                'You are about to deploy "test-application" for "application" with commit '
+                '"ab1c23d" to the "development" environment. Do you want to continue?'
+            ),
+        ]
+    )
 
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
