@@ -335,7 +335,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
-def test_codebase_deploy_does_not_trigger_build_without_confirmation():
+def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
     mocks.confirm.return_value = False
@@ -345,26 +345,26 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
     client.exceptions.ParameterNotFound = ssm_exceptions.ParameterNotFound
-    client.start_build.return_value = {
-        "build": {
-            "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
-        },
+    client.start_pipeline_execution.return_value = {
+        "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-        mocks.confirm.assert_has_calls(
-            [
-                call(
-                    'You are about to deploy "test-application" for "application" with commit '
-                    '"ab1c23d" to the "development" environment. Do you want to continue?'
-                ),
-            ]
-        )
+    assert str(exc.value) == "Your deployment for application was not triggered."
+    assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
 
-        mocks.echo.assert_has_calls([call("Your deployment was not triggered.")])
+    mocks.confirm.assert_has_calls(
+        [
+            call(
+                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release-pipeline" deployment pipeline. Do you want to continue?'
+            ),
+        ]
+    )
+
+    client.start_pipeline_execution.assert_not_called()
 
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
