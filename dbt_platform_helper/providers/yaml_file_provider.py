@@ -25,11 +25,13 @@ class FileNotFoundException(YamlFileProviderException):
 class YamlFileProvider:
     def load(path):
         if not Path(path).exists():
-            raise FileNotFoundException
+            raise FileNotFoundException(
+                f"`{path}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            )
         try:
             yaml_content = yaml.safe_load(Path(path).read_text())
         except ParserError:
-            raise InvalidYamlException
+            raise InvalidYamlException(f"{path} is not valid YAML.")
 
         if not yaml_content:
             return {}
