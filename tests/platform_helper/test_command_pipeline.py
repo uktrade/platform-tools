@@ -188,9 +188,9 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aw
 
 @patch("dbt_platform_helper.commands.pipeline.ConfigProvider")
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning(
-    mock_config,
+    mock_config_provider,
 ):
-    mock_config.load_and_validate_platform_config.return_value = {"environments": {}}
+    mock_config_provider.load_and_validate_platform_config.return_value = {"environments": {}}
     result = CliRunner().invoke(generate)
 
     assert "No pipelines defined: nothing to do." in result.output
@@ -268,7 +268,7 @@ def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
 
     assert result.exit_code == 1
     message = result.output
-    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in message
+    assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in message
 
 
 def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):
