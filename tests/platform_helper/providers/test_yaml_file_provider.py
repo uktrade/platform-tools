@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from dbt_platform_helper.providers.yaml_file_provider import DuplicateKeysException
+from dbt_platform_helper.providers.yaml_file_provider import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file_provider import InvalidYamlException
 from dbt_platform_helper.providers.yaml_file_provider import YamlFileProvider
 
@@ -32,4 +33,10 @@ def test_raises_exception_if_duplicate_keys_in_yaml(fs):
     test_path = "./test_duplicate_keys_path"
     fs.create_file(Path(test_path), contents="key1: name\nkey2: name\nkey1: name")
     with pytest.raises(DuplicateKeysException):
+        YamlFileProvider.load(test_path)
+
+
+def test_raises_exception_if_path_doesnt_exist(fs):
+    test_path = "./test_duplicate_keys_path"
+    with pytest.raises(FileNotFoundException):
         YamlFileProvider.load(test_path)

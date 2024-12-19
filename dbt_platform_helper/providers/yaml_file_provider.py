@@ -18,8 +18,14 @@ class DuplicateKeysException(YamlFileProviderException):
     pass
 
 
+class FileNotFoundException(YamlFileProviderException):
+    pass
+
+
 class YamlFileProvider:
     def load(path):
+        if not Path(path).exists():
+            raise FileNotFoundException
         try:
             yaml_content = yaml.safe_load(Path(path).read_text())
         except ParserError:
