@@ -14,10 +14,12 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws import AWSException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import ImageNotFoundException
-from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import AWSException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"

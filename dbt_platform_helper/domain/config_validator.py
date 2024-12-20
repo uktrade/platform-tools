@@ -4,12 +4,10 @@ import click
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.aws import InvalidAWSClient
+from dbt_platform_helper.providers.aws import get_client_provider
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.aws.redis import RedisProvider
 from dbt_platform_helper.providers.cache import CacheProvider
-from dbt_platform_helper.providers.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
-from dbt_platform_helper.providers.redis import RedisProvider
-from dbt_platform_helper.providers.redis import RedisProviderV2
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -20,17 +18,11 @@ def get_env_deploy_account_info(config, env, key):
     )
 
 
-def get_client_provider(client: str):
-    if client == "elasticache":
-        return RedisProviderV2()
-    elif client == "opensearch":
-        return OpensearchProviderV2()
-    else:
-        raise InvalidAWSClient(client)
-
-
-def get_supported_versions(client: str, cache_provider=CacheProvider()):
-    client_provider = get_client_provider(client)
+# TODO where does this live?
+def get_supported_versions(
+    client: str, cache_provider=CacheProvider(), get_client_provider_fn=get_client_provider
+):
+    client_provider = get_client_provider_fn(client)
     if cache_provider.cache_refresh_required(client_provider.get_reference()):
         supported_versions = client_provider.get_supported_versions()
         cache_provider.update_cache(client_provider.get_reference(), supported_versions)

@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 
 import pytest
 
 from dbt_platform_helper.domain.config_validator import ConfigValidator
-from dbt_platform_helper.domain.config_validator import get_client_provider
-from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
-from dbt_platform_helper.providers.redis import RedisProviderV2
+from dbt_platform_helper.domain.config_validator import get_supported_versions
+from dbt_platform_helper.providers.aws import get_client_provider
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProviderV2
+from dbt_platform_helper.providers.aws.redis import RedisProviderV2
 
 
 @pytest.mark.parametrize(
@@ -360,6 +362,7 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
     assert captured.err == ""
 
 
+# TODO move. This shouldn't be tested here
 @pytest.mark.parametrize(
     "client, valid, client_type",
     [
@@ -375,3 +378,32 @@ def test_get_client_provider(client, valid, client_type):
     else:
         with pytest.raises(Exception, match=f"The client {client} was not found."):
             response_provider = get_client_provider(client)
+
+
+# TODO add test for invalid client exception from get_client_provider_fn
+# TODO add test for cache_refresh_required false
+# TODO add test for exception from get_supported_versions
+# TODO add test for exception from update_cache
+# TODO add test for exception from read_supported_versions_from_cache
+@pytest.mark.parametrize(
+    "client, get_reference, get_supported_versions_return_value",
+    [
+        ("elasticache", "redis", ["4.0.10", "5.0.6"]),
+        # "invalid-client",
+    ],
+)
+def test_get_supported_versions(client, get_reference, get_supported_versions_return_value):
+    mock_cache_provider = MagicMock()
+    mock_client_provider = MagicMock()
+
+    mock_cache_provider.cache_refresh_required.return_value = True
+    mock_client_provider.get_reference.return_value = get_reference
+    mock_client_provider.get_supported_versions.return_value = get_supported_versions_return_value
+    get_client_provider_fn = Mock(return_value=mock_client_provider)
+
+    versions = get_supported_versions(client, mock_cache_provider, get_client_provider_fn)
+
+    mock_cache_provider.update_cache.assert_called()  # TODO update to assert called with
+    mock_cache_provider.read_supported_versions_from_cache.assert_not_called()
+
+    assert versions == get_supported_versions_return_value

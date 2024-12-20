@@ -10,9 +10,11 @@ import botocore
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.providers.aws import AWSException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import AWSException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import Vpc

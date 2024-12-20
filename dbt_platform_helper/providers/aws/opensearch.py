@@ -1,5 +1,6 @@
 import boto3
 
+from dbt_platform_helper.providers.aws.interfaces import ClientProvider
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
@@ -38,7 +39,7 @@ class OpensearchProvider:
         return CacheProvider()
 
 
-class OpensearchProviderV2:
+class OpensearchProviderV2(ClientProvider):
 
     def __init__(self, client: boto3.client = boto3.client("opensearch")):
         self.client = client

@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbt_platform_helper.providers.redis import RedisProvider
-from dbt_platform_helper.providers.redis import RedisProviderV2
+from dbt_platform_helper.providers.aws.redis import RedisProvider
+from dbt_platform_helper.providers.aws.redis import RedisProviderV2
 
 
 # TODO - we don't want to use the fixtures from conftest since one applies get_supported_redis_versions

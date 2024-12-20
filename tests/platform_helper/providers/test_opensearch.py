@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbt_platform_helper.providers.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProviderV2
 
 
 @pytest.mark.skip_opensearch_fixture

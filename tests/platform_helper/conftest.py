@@ -14,8 +14,8 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.aws.redis import RedisProvider
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
