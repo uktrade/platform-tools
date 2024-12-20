@@ -5,18 +5,25 @@ import click
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.yaml_file import FileProvider
+from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
-from dbt_platform_helper.providers.yaml_file import YamlFileProviderException
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigProvider:
-    def __init__(self, config_validator, echo=click.secho):
+    def __init__(
+        self,
+        config_validator: ConfigValidator,
+        file_provider: FileProvider = None,
+        echo=click.secho,
+    ):
         self.config = {}
         self.validator = config_validator
         self.echo = echo
-        self.yaml_file_provider = YamlFileProvider
+        self.file_provider = file_provider or YamlFileProvider
 
     def validate_platform_config(self):
         PlatformConfigSchema.schema().validate(self.config)
@@ -27,8 +34,8 @@ class ConfigProvider:
 
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
         try:
-            self.config = self.yaml_file_provider.load(path)
-        except YamlFileProviderException as e:
+            self.config = self.file_provider.load(path)
+        except FileProviderException as e:
             abort_with_error(f"Error loading configuration from {path}: {e}")
 
         try:
@@ -39,6 +46,7 @@ class ConfigProvider:
         return self.config
 
     @staticmethod
+    # TODO this general function should be moved out of ConfigProvider
     def config_file_check(path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
             abort_with_error(

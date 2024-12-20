@@ -1,3 +1,5 @@
+from abc import ABC
+from abc import abstractmethod
 from pathlib import Path
 
 import yaml
@@ -6,7 +8,15 @@ from yamllint import linter
 from yamllint.config import YamlLintConfig
 
 
-class YamlFileProviderException(Exception):
+class FileProviderException(Exception):
+    pass
+
+
+class YamlFileProviderException(FileProviderException):
+    pass
+
+
+class FileNotFoundException(YamlFileProviderException):
     pass
 
 
@@ -18,14 +28,22 @@ class DuplicateKeysException(YamlFileProviderException):
     pass
 
 
-class FileNotFoundException(YamlFileProviderException):
-    pass
+class FileProvider(ABC):
+    @abstractmethod
+    def load(path: str) -> dict:
+        raise NotImplementedError("Implement this in the subclass")
 
 
-class YamlFileProvider:
-    def load(path):
+class YamlFileProvider(FileProvider):
+    def load(path: str) -> dict:
+        """
+        Raises:
+            FileNotFoundException: file is not there
+            InvalidYamlException: file contains invalid yaml
+            DuplicateKeysException: yaml contains duplicate keys
+        """
         if not Path(path).exists():
-            # TODO this error message is domain specific and should not mention deployment directory here
+            # TODO this error message is domain specific and should not mention deployment directory project here
             raise FileNotFoundException(
                 f"`{path}` is missing. Please check it exists and you are in the root directory of your deployment project."
             )
@@ -37,11 +55,12 @@ class YamlFileProvider:
         if not yaml_content:
             return {}
 
-        YamlFileProvider._lint_yaml_for_duplicate_keys(path)
+        YamlFileProvider.lint_yaml_for_duplicate_keys(path)
 
         return yaml_content
 
-    def _lint_yaml_for_duplicate_keys(path):
+    @staticmethod
+    def lint_yaml_for_duplicate_keys(path):
         duplicate_keys = []
         with open(path, "r") as yaml_file:
             file_contents = yaml_file.read()

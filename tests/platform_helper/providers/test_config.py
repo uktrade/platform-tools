@@ -43,7 +43,7 @@ extensions:
     expected_error = f'duplication of key "{duplicate_key}"'
 
     with pytest.raises(DuplicateKeysException, match=expected_error):
-        YamlFileProvider._lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+        YamlFileProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
