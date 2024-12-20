@@ -38,7 +38,7 @@ class RedisProvider:
 
 class RedisProviderV2:
 
-    def __init__(self, client: boto3.client = boto3.client("opensearch")):
+    def __init__(self, client: boto3.client = boto3.client("elasticache")):
         self.client = client
         self.engine = "redis"
 
