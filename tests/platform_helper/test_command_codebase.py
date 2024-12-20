@@ -10,8 +10,10 @@ from dbt_platform_helper.commands.codebase import list
 from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.git import CommitNotFoundException
 
