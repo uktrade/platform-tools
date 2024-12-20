@@ -433,7 +433,7 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
-def start_pipeline_extraction(codepipeline_client, build_options):
+def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
     response = codepipeline_client.start_pipeline_execution(**build_options)
     return response["pipelineExecutionId"]
 

@@ -20,7 +20,7 @@ from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
-from dbt_platform_helper.utils.aws import start_pipeline_extraction
+from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import check_if_commit_exists
 from dbt_platform_helper.utils.template import setup_templates
@@ -42,7 +42,9 @@ class Codebase:
         ] = get_build_url_from_pipeline_execution_id,
         list_latest_images: Callable[[str], str] = list_latest_images,
         start_build_extraction: Callable[[str], str] = start_build_extraction,
-        start_pipeline_extraction: Callable[[str], str] = start_pipeline_extraction,
+        start_pipeline_and_return_execution_id: Callable[
+            [str], str
+        ] = start_pipeline_and_return_execution_id,
         check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         run_subprocess: Callable[[str], str] = subprocess.run,
     ):
@@ -57,7 +59,7 @@ class Codebase:
         self.get_build_url_from_pipeline_execution_id = get_build_url_from_pipeline_execution_id
         self.list_latest_images = list_latest_images
         self.start_build_extraction = start_build_extraction
-        self.start_pipeline_extraction = start_pipeline_extraction
+        self.start_pipeline_and_return_execution_id = start_pipeline_and_return_execution_id
         self.check_if_commit_exists = check_if_commit_exists
         self.run_subprocess = run_subprocess
 
@@ -237,7 +239,9 @@ class Codebase:
         build_options,
     ):
         if confirm(confirmation_message):
-            execution_id = self.start_pipeline_extraction(codepipeline_client, build_options)
+            execution_id = self.start_pipeline_and_return_execution_id(
+                codepipeline_client, build_options
+            )
             return get_build_url_from_pipeline_execution_id(execution_id, build_options["name"])
         return None
 
