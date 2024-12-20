@@ -1,4 +1,3 @@
-from copy import deepcopy
 from os import makedirs
 from pathlib import Path
 
@@ -67,38 +66,3 @@ def generate_override_files_from_template(base_path, overrides_path, output_dir,
 
     generate_files_for_dir("*")
     generate_files_for_dir("bin/*")
-
-
-def apply_environment_defaults(config):
-    if "environments" not in config:
-        return config
-
-    enriched_config = deepcopy(config)
-
-    environments = enriched_config["environments"]
-    env_defaults = environments.get("*", {})
-    without_defaults_entry = {
-        name: data if data else {} for name, data in environments.items() if name != "*"
-    }
-
-    default_versions = config.get("default_versions", {})
-
-    def combine_env_data(data):
-        return {
-            **env_defaults,
-            **data,
-            "versions": {
-                **default_versions,
-                **env_defaults.get("versions", {}),
-                **data.get("versions", {}),
-            },
-        }
-
-    defaulted_envs = {
-        env_name: combine_env_data(env_data)
-        for env_name, env_data in without_defaults_entry.items()
-    }
-
-    enriched_config["environments"] = defaulted_envs
-
-    return enriched_config
