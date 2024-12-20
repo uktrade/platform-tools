@@ -39,6 +39,7 @@ class ConfigProvider:
         return self.config
 
     @staticmethod
+    # TODO this general function should be moved out of ConfigProvider
     def config_file_check(path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
             abort_with_error(
