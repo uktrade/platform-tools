@@ -488,7 +488,7 @@ class TestGenerate:
     @pytest.mark.parametrize(
         "env_modules_version, cli_modules_version, expected_version, should_include_moved_block",
         [
-            (None, None, "5", True),
+            (None, None, "7", True),
             ("7", None, "7", True),
             (None, "8", "8", True),
             ("9", "10", "10", True),

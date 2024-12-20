@@ -491,7 +491,7 @@ platform-helper environment generate-terraform --name <name> [--terraform-platfo
 -n <text>`
   - The name of the environment to generate a manifest for.
 - `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules. (Default version is '5').
+  - Override the default version of terraform-platform-modules. (Default version is '7').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -564,7 +564,7 @@ platform-helper pipeline generate [--terraform-platform-modules-version <terrafo
   - Override the default version of terraform-platform-modules with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 
 platform-config.yml/default_versions/terraform-platform-modules. 
-In absence of these inputs, defaults to version '5'.
+In absence of these inputs, defaults to version '7'.
 - `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
