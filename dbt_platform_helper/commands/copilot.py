@@ -11,6 +11,8 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -249,7 +251,6 @@ def copilot_provider():
 @copilot.command()
 def make_addons():
     """Generate addons CloudFormation for each environment."""
-
     try:
         _make_addons()
     except Exception as exc:
@@ -264,6 +265,8 @@ def _make_addons():
         raise click.Abort
 
     config_file_check()
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config_file_check()
 
     templates = setup_templates()
     extensions = _get_extensions()
