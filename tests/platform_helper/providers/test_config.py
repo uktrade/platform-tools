@@ -1,5 +1,4 @@
 from pathlib import Path
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -346,9 +345,7 @@ def test_apply_defaults():
         },
     }
 
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result == {
         "application": "my-app",
@@ -444,10 +441,8 @@ def test_apply_defaults_for_versions(
         config["environments"]["*"]["versions"] = env_default_versions
     if env_versions:
         config["environments"]["one"]["versions"] = env_versions
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
 
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result["environments"]["one"].get("versions") == expected_result
 
@@ -463,10 +458,8 @@ def test_apply_defaults_with_no_defaults():
             },
         },
     }
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
 
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result == {
         "application": "my-app",
