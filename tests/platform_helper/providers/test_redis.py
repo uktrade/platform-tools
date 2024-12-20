@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.providers.redis import RedisProviderV2
 
 
 # TODO - we don't want to use the fixtures from conftest since one applies get_supported_redis_versions
@@ -42,3 +43,42 @@ def test_get_supported_redis_versions_when_cache_refresh_required():
     elasticache_client.describe_cache_engine_versions.assert_called_with(Engine="redis")
     mock_cache_provider.update_cache.assert_called_with("redis", ["4.0.10", "5.0.6"])
     assert supported_redis_versions_response == ["4.0.10", "5.0.6"]
+
+
+def test_redis_provider_get_reference():
+    elasticache_client = MagicMock()
+    redis_provider = RedisProviderV2(elasticache_client)
+
+    reference = redis_provider.get_reference()
+
+    assert reference == "redis"
+
+
+def test_redis_provider_get_supported_versions():
+
+    elasticache_client = MagicMock()
+    elasticache_client.describe_cache_engine_versions.return_value = {
+        "CacheEngineVersions": [
+            {
+                "Engine": "redis",
+                "EngineVersion": "4.0.10",
+                "CacheParameterGroupFamily": "redis4.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 4.0.10",
+            },
+            {
+                "Engine": "redis",
+                "EngineVersion": "5.0.6",
+                "CacheParameterGroupFamily": "redis5.0",
+                "CacheEngineDescription": "Redis",
+                "CacheEngineVersionDescription": "redis version 5.0.6",
+            },
+        ]
+    }
+
+    redis_provider = RedisProviderV2(elasticache_client)
+
+    supported_versions_response = redis_provider.get_supported_versions()
+
+    elasticache_client.describe_cache_engine_versions.assert_called_with(Engine="redis")
+    assert supported_versions_response == ["4.0.10", "5.0.6"]

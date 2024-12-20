@@ -4,8 +4,11 @@ import click
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.cache import CacheProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
 from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.providers.redis import RedisProviderV2
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -14,6 +17,26 @@ def get_env_deploy_account_info(config, env, key):
     return (
         config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
     )
+
+
+def get_client_provider(client: str):
+    if client == "elasticache":
+        return RedisProviderV2()
+    elif client == "opensearch":
+        return OpensearchProviderV2()
+    else:
+        # TODO make specific exception
+        raise Exception(f"client {client} not found")
+
+
+def get_supported_versions(client: str, cache_provider=CacheProvider()):
+    client_provider = get_client_provider(client)
+    if cache_provider.cache_refresh_required(client_provider.get_reference()):
+        supported_versions = client_provider.get_supported_versions()
+        cache_provider.update_cache(client_provider.get_reference(), supported_versions)
+        return supported_versions
+    else:
+        return cache_provider.read_supported_versions_from_cache(client_provider.get_reference())
 
 
 class ConfigValidator:
@@ -79,6 +102,9 @@ class ConfigValidator:
             config=config,
             extension_type="redis",
             version_key="engine",
+            # get_supported_versions=get_supported_versions(
+            #     "elasticache"
+            #     ),
             get_supported_versions=RedisProvider(
                 boto3.client("elasticache")
             ).get_supported_redis_versions,
@@ -89,6 +115,9 @@ class ConfigValidator:
             config=config,
             extension_type="opensearch",
             version_key="engine",
+            # get_supported_versions=get_supported_versions(
+            #     "opensearch"
+            #     ),
             get_supported_versions=OpensearchProvider(
                 boto3.client("opensearch")
             ).get_supported_opensearch_versions,
