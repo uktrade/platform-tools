@@ -26,7 +26,6 @@ def get_client_provider(client: str):
     elif client == "opensearch":
         return OpensearchProviderV2()
     else:
-        # TODO make specific exception
         raise InvalidAWSClient(client)
 
 
