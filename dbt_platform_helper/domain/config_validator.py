@@ -4,6 +4,7 @@ import click
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.aws import InvalidAWSClient
 from dbt_platform_helper.providers.cache import CacheProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
@@ -26,7 +27,7 @@ def get_client_provider(client: str):
         return OpensearchProviderV2()
     else:
         # TODO make specific exception
-        raise Exception(f"client {client} not found")
+        raise InvalidAWSClient(client)
 
 
 def get_supported_versions(client: str, cache_provider=CacheProvider()):

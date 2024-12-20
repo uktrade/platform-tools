@@ -19,6 +19,11 @@ class ImageNotFoundException(AWSException):
         )
 
 
+class InvalidAWSClient(AWSException):
+    def __init__(self, client: str):
+        super().__init__(f"""The client {client} was not found.""")
+
+
 class LogGroupNotFoundException(AWSException):
     def __init__(self, log_group_name: str):
         super().__init__(f"""No log group called "{log_group_name}".""")

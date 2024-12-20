@@ -3,6 +3,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.domain.config_validator import get_client_provider
+from dbt_platform_helper.providers.opensearch import OpensearchProviderV2
+from dbt_platform_helper.providers.redis import RedisProviderV2
 
 
 @pytest.mark.parametrize(
@@ -355,3 +358,20 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
 
     assert expected_response in captured.out
     assert captured.err == ""
+
+
+@pytest.mark.parametrize(
+    "client, valid, client_type",
+    [
+        ("elasticache", True, RedisProviderV2),
+        ("opensearch", True, OpensearchProviderV2),
+        ("invalid-client", False, None),
+    ],
+)
+def test_get_client_provider(client, valid, client_type):
+    if valid:
+        response_provider = get_client_provider(client)
+        assert isinstance(response_provider, client_type)
+    else:
+        with pytest.raises(Exception, match=f"The client {client} was not found."):
+            response_provider = get_client_provider(client)
