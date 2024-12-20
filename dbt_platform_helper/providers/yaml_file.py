@@ -25,6 +25,7 @@ class FileNotFoundException(YamlFileProviderException):
 class YamlFileProvider:
     def load(path):
         if not Path(path).exists():
+            #TODO this error message is domain specific and should not mention deployment directory here
             raise FileNotFoundException(
                 f"`{path}` is missing. Please check it exists and you are in the root directory of your deployment project."
             )
