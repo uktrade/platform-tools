@@ -2,8 +2,8 @@ from copy import deepcopy
 from pathlib import Path
 
 import click
-from schema import SchemaError
 
+from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -12,8 +12,8 @@ from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigProvider:
-    def __init__(self, config_validator, config=None, echo=click.secho):
-        self.config = config or {}
+    def __init__(self, config_validator, echo=click.secho):
+        self.config = {}
         self.validator = config_validator
         self.echo = echo
         self.yaml_file_provider = YamlFileProvider
