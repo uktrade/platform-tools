@@ -10,22 +10,19 @@ import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import apply_environment_defaults
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.validation import config_file_check
-from dbt_platform_helper.utils.validation import load_and_validate_platform_config
 from dbt_platform_helper.utils.validation import validate_addons
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -252,21 +249,19 @@ def copilot_provider():
 def make_addons():
     """Generate addons CloudFormation for each environment."""
     try:
-        _make_addons()
+        config_provider = ConfigProvider(ConfigValidator())
+        _make_addons(config_provider)
     except Exception as exc:
         abort_with_error(exc)
 
 
-def _make_addons():
+def _make_addons(config_provider: ConfigProvider):
+    config_provider.config_file_check()
     try:
-        platform_config = load_and_validate_platform_config()
+        config_provider.load_and_validate_platform_config()
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
-
-    config_file_check()
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config_file_check()
 
     templates = setup_templates()
     extensions = _get_extensions()
@@ -336,7 +331,7 @@ def _make_addons():
             log_destination_arns,
         )
 
-    environments = apply_environment_defaults(platform_config)["environments"]
+    environments = config_provider.apply_environment_defaults()["environments"]
 
     provider = copilot_provider()
     provider.generate_cross_account_s3_policies(environments, extensions)

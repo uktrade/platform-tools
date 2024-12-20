@@ -106,10 +106,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
@@ -254,13 +251,11 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
-    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
-        mock_load_and_validate,
-        mock_copilot_provider,
+        mock_config_provider,
         mock_get_session,
         fakefs,
         addon_file,
@@ -270,6 +265,7 @@ class TestMakeAddonsCommand:
         contents."""
         # Arrange
         mock_aws_client(mock_get_session)
+        mock_config_provider.apply_environment_defaults = lambda conf: conf
 
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
@@ -358,10 +354,7 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -438,10 +431,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -456,10 +446,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
@@ -525,10 +512,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
@@ -581,10 +565,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
@@ -670,10 +651,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.versioning.running_as_installed_package",
         new=Mock(return_value=False),
     )
-    @patch(
-        "dbt_platform_helper.commands.copilot.load_and_validate_platform_config",
-        new=Mock(return_value=False),
-    )
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -705,17 +683,16 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
-    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     def test_addon_instructions_with_postgres_addon_types(
         self,
-        mock_load_and_validate,
-        mock_copilot_provider,
+        mock_config_provider,
         fakefs,
         addon_config,
         addon_type,
         secret_name,
     ):
+        mock_config_provider.apply_environment_defaults = lambda conf: conf
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(addon_config, fakefs)
 
@@ -746,12 +723,12 @@ class TestMakeAddonsCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.copilot_provider")
-    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
-        self, mock_load_and_validate, mock_copilot_provider, mock_get_aws_session_or_abort, fakefs
+        self, mock_config_provider, fakefs
     ):
+        mock_config_provider.apply_environment_defaults = lambda conf: conf
         services = ["web", "web-celery"]
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"extensions": {}}))
         fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
@@ -794,11 +771,11 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
     @patch("dbt_platform_helper.commands.copilot.copilot_provider")
-    @patch("dbt_platform_helper.commands.copilot.load_and_validate_platform_config")
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @mock_aws
     def test_s3_cross_account_policies_called(
         self,
-        mock_load_and_validate,
+        mock_config_provider,
         mock_copilot_provider,
         mock_application,
         mock_get_session,
@@ -818,9 +795,15 @@ class TestMakeAddonsCommand:
         mock_provider = Mock(name="Provider")
         mock_copilot_provider.return_value = mock_provider
         mock_provider.generate_cross_account_s3_policies.return_value = "TestData"
-        mock_load_and_validate.return_value = {
-            "environments": {"development": {}, "production": {}}
-        }
+        mock_load_and_validate_platform_config = Mock()
+        environment_config = {"environments": {"development": {}, "production": {}}}
+        mock_load_and_validate_platform_config.return_value = environment_config
+        mock_config_provider.return_value.apply_environment_defaults.return_value = (
+            environment_config
+        )
+        mock_config_provider.return_value.load_and_validate_platform_config = (
+            mock_load_and_validate_platform_config
+        )
 
         dev = Environment(
             name="development",
@@ -874,12 +857,12 @@ class TestMakeAddonsCommand:
 
         CliRunner().invoke(copilot, ["make-addons"])
 
-        mock_load_and_validate.assert_called()
+        mock_load_and_validate_platform_config.assert_called()
         exp = _get_extensions()
         exp["s3"]["environments"]["development"]["kms_key_arn"] = "arn-for-kms-alias"
         exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
         mock_provider.generate_cross_account_s3_policies.assert_called_with(
-            {"development": {"versions": {}}, "production": {"versions": {}}}, exp
+            {"development": {}, "production": {}}, exp
         )
 
 

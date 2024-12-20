@@ -1,3 +1,5 @@
+from typing import Callable
+
 import boto3
 import click
 
@@ -18,7 +20,7 @@ def get_env_deploy_account_info(config, env, key):
 
 class ConfigValidator:
 
-    def __init__(self, validations=[]):
+    def __init__(self, validations: Callable[[dict], None] = None):
         self.validations = validations or [
             self.validate_supported_redis_versions,
             self.validate_supported_opensearch_versions,
@@ -28,7 +30,7 @@ class ConfigValidator:
             self.validate_database_copy_section,
         ]
 
-    def run_validations(self, config):
+    def run_validations(self, config: dict):
         for validation in self.validations:
             validation(config)
 

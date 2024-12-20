@@ -10,12 +10,13 @@ from yamllint import linter
 from yamllint.config import YamlLintConfig
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigProvider:
-    def __init__(self, config_validator, echo=click.secho):
+    def __init__(self, config_validator: ConfigValidator, echo=click.secho):
         self.config = {}
         self.validator = config_validator
         self.echo = echo
