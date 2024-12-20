@@ -213,7 +213,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+    with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.build("test-application", "application", "ab1c234")
 
@@ -356,7 +356,7 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         },
     }
 
-    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+    with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
@@ -375,7 +375,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundException) as exc:
+    with pytest.raises(ApplicationNotFoundException):
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
 
 
@@ -385,7 +385,7 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
     mocks.load_application.return_value = mock_application
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationEnvironmentNotFoundException) as exc:
+    with pytest.raises(ApplicationEnvironmentNotFoundException):
         codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
         mocks.echo.assert_has_calls(
             [
@@ -405,7 +405,7 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+    with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
@@ -415,7 +415,7 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundException) as exc:
+    with pytest.raises(ApplicationNotFoundException):
         codebase.list("not-an-application", True)
 
 
