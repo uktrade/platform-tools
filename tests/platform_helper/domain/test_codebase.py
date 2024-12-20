@@ -357,7 +357,6 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
 
     client.start_pipeline_execution.assert_not_called()
 
-
 def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
