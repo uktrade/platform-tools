@@ -349,7 +349,7 @@ def assert_terraform(app_name, aws_account, expected_version, expected_branch):
             "demodjango-branch",
         ),  # Case with config_terraform_platform_version and specific branch
         (None, True, "4.0.0", None, None),  # Case with config_terraform_platform_version
-        (None, None, "5", None, None),  # Case with default TPM version and without branch, defaults
+        (None, None, "7", None, None),  # Case with default TPM version and without branch, defaults
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
