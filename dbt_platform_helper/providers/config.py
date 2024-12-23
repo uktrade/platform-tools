@@ -29,7 +29,7 @@ class ConfigProvider:
         PlatformConfigSchema.schema().validate(self.config)
 
         # TODO= logically this isn't validation but loading + parsing, to move.
-        enriched_config = self.apply_environment_defaults()
+        enriched_config = ConfigProvider.apply_environment_defaults(self.config)
         self.validator.run_validations(enriched_config)
 
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
@@ -54,11 +54,12 @@ class ConfigProvider:
                 "Please check it exists and you are in the root directory of your deployment project."
             )
 
-    def apply_environment_defaults(self):
-        if "environments" not in self.config:
-            return self.config
+    @staticmethod
+    def apply_environment_defaults(config):
+        if "environments" not in config:
+            return config
 
-        enriched_config = deepcopy(self.config)
+        enriched_config = deepcopy(config)
 
         environments = enriched_config["environments"]
         env_defaults = environments.get("*", {})
@@ -66,7 +67,7 @@ class ConfigProvider:
             name: data if data else {} for name, data in environments.items() if name != "*"
         }
 
-        default_versions = self.config.get("default_versions", {})
+        default_versions = config.get("default_versions", {})
 
         def combine_env_data(data):
             return {
