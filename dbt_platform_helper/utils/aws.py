@@ -25,6 +25,12 @@ SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 AWS_SESSION_CACHE = {}
 
 
+def get_env_deploy_account_info(config, env, key):
+    return (
+        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
+    )
+
+
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     REFRESH_TOKEN_MESSAGE = (
         "To refresh this SSO session run `aws sso login` with the corresponding profile"

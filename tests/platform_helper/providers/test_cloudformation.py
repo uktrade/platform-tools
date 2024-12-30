@@ -66,6 +66,11 @@ def test_update_conduit_stack_resources(
     stack = boto3.client("cloudformation").describe_stacks(StackName=f"task-{task_name}")
     template_yml = load_yaml(template["TemplateBody"])
 
+    params = []
+    if "Parameters" in template_yml:
+        for param in template_yml["Parameters"]:
+            params.append({"ParameterKey": param, "UsePreviousValue": True})
+
     assert stack["Stacks"][0]["Parameters"][0]["ParameterValue"] == "does-not-matter"
     assert template_yml["Resources"]["LogGroup"]["DeletionPolicy"] == "Retain"
     assert template_yml["Resources"]["TaskNameParameter"]["Properties"]["Name"] == parameter_name
@@ -80,6 +85,9 @@ def test_update_conduit_stack_resources(
         template_yml["Resources"]["SubscriptionFilter"]["Properties"]["FilterName"]
         == f"/copilot/conduit/{mock_application.name}/{env}/{addon_type}/{addon_name}/{task_name.rsplit('-', 1)[1]}/read"
     )
+    assert len(params) == len(
+        template_yml.get("Parameters", [])
+    ), "The number of parameters does not match"
 
 
 @mock_aws
