@@ -7,15 +7,17 @@ from unittest.mock import patch
 
 import boto3
 import botocore
+from dbt_platform_helper.constants import (
+    ALPHANUMERIC_ENVIRONMENT_NAME,
+    ALPHANUMERIC_SERVICE_NAME,
+    CLUSTER_NAME_SUFFIX,
+    HYPHENATED_APPLICATION_NAME,
+    REFRESH_TOKEN_MESSAGE,
+    SERVICE_NAME_SUFFIX,
+)
 import pytest
 from moto import mock_aws
 
-from dbt_platform_helper.constants import ALPHANUMERIC_ENVIRONMENT_NAME
-from dbt_platform_helper.constants import ALPHANUMERIC_SERVICE_NAME
-from dbt_platform_helper.constants import CLUSTER_NAME_SUFFIX
-from dbt_platform_helper.constants import HYPHENATED_APPLICATION_NAME
-from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
-from dbt_platform_helper.constants import SERVICE_NAME_SUFFIX
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
