@@ -20,6 +20,7 @@ from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.vpc import Vpc
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
 SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
@@ -375,12 +376,6 @@ def get_connection_string(
     conn = connection_data(session, connection_string_parameter, master_secret_arn)
 
     return f"postgres://{conn['username']}:{conn['password']}@{conn['host']}:{conn['port']}/{conn['dbname']}"
-
-
-class Vpc:
-    def __init__(self, subnets: list[str], security_groups: list[str]):
-        self.subnets = subnets
-        self.security_groups = security_groups
 
 
 def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) -> Vpc:
