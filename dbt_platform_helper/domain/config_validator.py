@@ -6,7 +6,6 @@ from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
-from dbt_platform_helper.utils.aws import get_env_deploy_account_info
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -183,8 +182,20 @@ class ConfigValidator:
                 from_env = section["from"]
                 to_env = section["to"]
 
-                from_account = get_env_deploy_account_info(config, from_env, "id")
-                to_account = get_env_deploy_account_info(config, to_env, "id")
+                from_account = (
+                    config.get("environments", {})
+                    .get(from_env, {})
+                    .get("accounts", {})
+                    .get("deploy", {})
+                    .get("id")
+                )
+                to_account = (
+                    config.get("environments", {})
+                    .get(to_env, {})
+                    .get("accounts", {})
+                    .get("deploy", {})
+                    .get("id")
+                )
 
                 if from_env == to_env:
                     errors.append(

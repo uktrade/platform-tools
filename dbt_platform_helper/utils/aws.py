@@ -26,12 +26,6 @@ SSM_PATH = "/copilot/{app}/{env}/secrets/{name}"
 AWS_SESSION_CACHE = {}
 
 
-def get_env_deploy_account_info(config, env, key):
-    return (
-        config.get("environments", {}).get(env, {}).get("accounts", {}).get("deploy", {}).get(key)
-    )
-
-
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
     aws_profile = aws_profile or os.getenv("AWS_PROFILE")
     if aws_profile in AWS_SESSION_CACHE:
