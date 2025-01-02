@@ -16,3 +16,12 @@ CONDUIT_ADDON_TYPES = [
     "redis",
 ]
 CONDUIT_DOCKER_IMAGE_LOCATION = "public.ecr.aws/uktrade/tunnel"
+HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
+ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
+ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
+COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
+CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
+SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
+REFRESH_TOKEN_MESSAGE = (
+    "To refresh this SSO session run `aws sso login` with the corresponding profile"
+)

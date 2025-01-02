@@ -59,6 +59,11 @@ class YamlFileProvider(FileProvider):
 
         return yaml_content
 
+    def write(path: str, contents: dict, comment: str = ""):
+        with open(path, "w") as file:
+            file.write(comment)
+            yaml.dump(contents, file)
+
     @staticmethod
     def lint_yaml_for_duplicate_keys(path):
         duplicate_keys = []
