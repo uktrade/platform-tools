@@ -5,10 +5,12 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
-from dbt_platform_helper.providers.aws import ImageNotFoundException
-from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutException
+from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.secrets import AddonNotFoundException

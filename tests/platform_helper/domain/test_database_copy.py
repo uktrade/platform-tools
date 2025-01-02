@@ -6,7 +6,7 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
-from dbt_platform_helper.providers.aws import AWSException
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
