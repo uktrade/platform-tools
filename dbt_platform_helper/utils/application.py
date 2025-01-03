@@ -24,11 +24,6 @@ class Environment:
     account_id: str
     sessions: Dict[str, boto3.Session]
 
-    # def __init__(self, name: str, account_id: str, sessions: Dict[str, boto3.Session]):
-    #     self.name = name
-    #     self.account_id = account_id
-    #     self.sessions = sessions
-
     @property
     def session(self):
         if self.account_id not in self.sessions:
@@ -44,21 +39,12 @@ class Service:
     name: str
     kind: str
 
-    # def __init__(self, name: str, kind: str):
-    #     self.name = name
-    #     self.kind = kind
-
 
 @dataclass
 class Application:
     name: str
     environments: Dict[str, Environment] = field(default_factory=dict)
     services: Dict[str, Service] = field(default_factory=dict)
-
-    # def __init__(self, name: str):
-    #     self.name = name
-    #     self.environments = {}
-    #     self.services = {}
 
     def __str__(self):
         output = f"Application {self.name} with"
