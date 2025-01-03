@@ -1,12 +1,14 @@
+from dataclasses import dataclass
+
 from boto3 import Session
 
 from dbt_platform_helper.providers.aws import AWSException
 
 
+@dataclass
 class Vpc:
-    def __init__(self, subnets: list[str], security_groups: list[str]):
-        self.subnets = subnets
-        self.security_groups = security_groups
+    subnets: list[str]
+    security_groups: list[str]
 
 
 def get_vpc_info_by_name(session: Session, app: str, env: str, vpc_name: str) -> Vpc:
