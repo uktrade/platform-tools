@@ -1,16 +1,19 @@
 import pytest
+from moto import mock_aws
 
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.vpc import Vpc
-from dbt_platform_helper.providers.vpc import get_vpc_info_by_name
+from dbt_platform_helper.providers.vpc import VpcProvider
 from tests.platform_helper.utils.test_aws import ObjectWithId
 from tests.platform_helper.utils.test_aws import mock_vpc_info_session
 
 
+@mock_aws
 def test_get_vpc_info_by_name_success():
     mock_session, mock_client, _ = mock_vpc_info_session()
+    vpc_provider = VpcProvider(mock_session)
 
-    result = get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+    result = vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     expected_vpc = Vpc(
         subnets=["subnet-private-1", "subnet-private-2"], security_groups=["sg-abc123"]
@@ -24,32 +27,38 @@ def test_get_vpc_info_by_name_success():
     assert result.security_groups == expected_vpc.security_groups
 
 
+@mock_aws
 def test_get_vpc_info_by_name_failure_no_matching_vpc():
     mock_session, mock_client, _ = mock_vpc_info_session()
+    vpc_provider = VpcProvider(mock_session)
 
     vpc_data = {"Vpcs": []}
     mock_client.describe_vpcs.return_value = vpc_data
 
     with pytest.raises(AWSException) as ex:
-        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+        vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     assert "VPC not found for name 'my_vpc'" in str(ex)
 
 
+@mock_aws
 def test_get_vpc_info_by_name_failure_no_vpc_id_in_response():
     mock_session, mock_client, _ = mock_vpc_info_session()
+    vpc_provider = VpcProvider(mock_session)
 
     vpc_data = {"Vpcs": [{"Id": "abc123"}]}
     mock_client.describe_vpcs.return_value = vpc_data
 
     with pytest.raises(AWSException) as ex:
-        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+        vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     assert "VPC id not present in vpc 'my_vpc'" in str(ex)
 
 
+@mock_aws
 def test_get_vpc_info_by_name_failure_no_private_subnets_in_vpc():
-    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+    mock_session, mock_client, _ = mock_vpc_info_session()
+    vpc_provider = VpcProvider(mock_session)
 
     mock_client.describe_route_tables.return_value = {
         "RouteTables": [
@@ -75,13 +84,15 @@ def test_get_vpc_info_by_name_failure_no_private_subnets_in_vpc():
     }
 
     with pytest.raises(AWSException) as ex:
-        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+        vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     assert "No private subnets found in vpc 'my_vpc'" in str(ex)
 
 
+@mock_aws
 def test_get_vpc_info_by_name_failure_no_matching_security_groups():
-    mock_session, mock_client, mock_vpc = mock_vpc_info_session()
+    mock_session, _, mock_vpc = mock_vpc_info_session()
+    vpc_provider = VpcProvider(mock_session)
 
     mock_vpc.security_groups.all.return_value = [
         ObjectWithId("sg-abc345", tags=[]),
@@ -91,6 +102,6 @@ def test_get_vpc_info_by_name_failure_no_matching_security_groups():
     ]
 
     with pytest.raises(AWSException) as ex:
-        get_vpc_info_by_name(mock_session, "my_app", "my_env", "my_vpc")
+        vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
