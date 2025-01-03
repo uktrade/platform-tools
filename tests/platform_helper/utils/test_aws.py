@@ -21,6 +21,7 @@ from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.vpc import Vpc
+from dbt_platform_helper.providers.vpc import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
@@ -34,7 +35,6 @@ from dbt_platform_helper.utils.aws import (
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
-from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from tests.platform_helper.conftest import mock_aws_client
