@@ -152,21 +152,17 @@ def test_codebase_prepare_does_not_generate_files_in_a_repo_with_a_copilot_direc
         codebase.prepare()
 
 
+@mock_aws_client
 def test_codebase_build_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundException):
+    with pytest.raises(
+        ApplicationNotFoundException,
+        match="""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+    ):
         codebase.build("not-an-application", "application", "ab1c23d")
-        mocks.echo.assert_has_calls(
-            [
-                call(
-                    """The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
-                    fg="red",
-                ),
-            ]
-        )
 
 
 def test_codebase_build_commit_not_found():
@@ -213,7 +209,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
+    with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.build("test-application", "application", "ab1c234")
 
@@ -363,7 +359,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundException) as exc:
+    with pytest.raises(ApplicationNotFoundException):
         codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
 
 
@@ -373,16 +369,24 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
     mocks.load_application.return_value = mock_application
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationEnvironmentNotFoundException) as exc:
+    with pytest.raises(
+        ApplicationEnvironmentNotFoundException,
+        match="""The environment "not-an-environment" either does not exist or has not been deployed.""",
+    ):
         codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
-        mocks.echo.assert_has_calls(
-            [
-                call(
-                    """The environment "not-an-environment" either does not exist or has not been deployed.""",
-                    fg="red",
-                ),
-            ]
-        )
+
+
+def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
+    mocks = CodebaseMocks(confirm=Mock(return_value=False))
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.get_parameter.return_value = {
+        "Parameter": {"Value": json.dumps({"name": "application"})},
+    }
+
+    with pytest.raises(ApplicationDeploymentNotTriggered):
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
@@ -390,7 +394,7 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
-    with pytest.raises(ApplicationNotFoundException) as exc:
+    with pytest.raises(ApplicationNotFoundException):
         codebase.list("not-an-application", True)
 
 

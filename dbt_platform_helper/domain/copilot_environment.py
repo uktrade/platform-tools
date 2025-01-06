@@ -136,8 +136,8 @@ class CopilotEnvironment:
         self.config_provider = config_provider
 
     def generate(self, environment_name):
-        self.config_provider.load_and_validate_platform_config()
-        enriched_config = self.config_provider.apply_environment_defaults()
+        config = self.config_provider.load_and_validate_platform_config()
+        enriched_config = self.config_provider.apply_environment_defaults(config)
 
         env_config = enriched_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")

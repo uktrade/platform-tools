@@ -1,5 +1,4 @@
 from pathlib import Path
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +7,8 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -40,18 +41,9 @@ extensions:
 
     Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
     expected_error = f'duplication of key "{duplicate_key}"'
-    config_provider = ConfigProvider(ConfigValidator())
 
-    linting_failures = config_provider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
-    assert expected_error in linting_failures[0]
-
-    with pytest.raises(SystemExit) as excinfo:
-        config_provider.load_and_validate_platform_config(PLATFORM_CONFIG_FILE)
-
-    captured = capsys.readouterr()
-
-    assert expected_error in captured.err
-    assert excinfo.value.code == 1
+    with pytest.raises(DuplicateKeysException, match=expected_error):
+        YamlFileProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
 
 
 @pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
@@ -321,7 +313,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
     with pytest.raises(SystemExit):
         ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
-    assert f"Error: {PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+    assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
 
 def test_validation_runs_against_platform_config_yml(fakefs):
@@ -353,9 +345,7 @@ def test_apply_defaults():
         },
     }
 
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result == {
         "application": "my-app",
@@ -451,10 +441,8 @@ def test_apply_defaults_for_versions(
         config["environments"]["*"]["versions"] = env_default_versions
     if env_versions:
         config["environments"]["one"]["versions"] = env_versions
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
 
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result["environments"]["one"].get("versions") == expected_result
 
@@ -470,10 +458,8 @@ def test_apply_defaults_with_no_defaults():
             },
         },
     }
-    config_provider = ConfigProvider(Mock())
-    config_provider.config = config
 
-    result = config_provider.apply_environment_defaults()
+    result = ConfigProvider.apply_environment_defaults(config)
 
     assert result == {
         "application": "my-app",

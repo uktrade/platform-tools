@@ -44,10 +44,10 @@ class TerraformEnvironment:
         self.config_provider = config_provider
 
     def generate(self, name, terraform_platform_modules_version):
-        conf = self.config_provider.load_and_validate_platform_config()
-        enriched_config = self.config_provider.apply_environment_defaults()
+        config = self.config_provider.load_and_validate_platform_config()
+        enriched_config = self.config_provider.apply_environment_defaults(config)
 
         env_config = enriched_config["environments"][name]
         _generate_terraform_environment_manifests(
-            conf["application"], name, env_config, terraform_platform_modules_version
+            config["application"], name, env_config, terraform_platform_modules_version
         )
