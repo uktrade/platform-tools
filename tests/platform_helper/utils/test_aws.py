@@ -10,6 +10,12 @@ import botocore
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.constants import ALPHANUMERIC_ENVIRONMENT_NAME
+from dbt_platform_helper.constants import ALPHANUMERIC_SERVICE_NAME
+from dbt_platform_helper.constants import CLUSTER_NAME_SUFFIX
+from dbt_platform_helper.constants import HYPHENATED_APPLICATION_NAME
+from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
+from dbt_platform_helper.constants import SERVICE_NAME_SUFFIX
 from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
@@ -37,16 +43,6 @@ from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
 from tests.platform_helper.conftest import mock_get_caller_identity
-
-HYPHENATED_APPLICATION_NAME = "hyphenated-application-name"
-ALPHANUMERIC_ENVIRONMENT_NAME = "alphanumericenvironmentname123"
-ALPHANUMERIC_SERVICE_NAME = "alphanumericservicename123"
-COPILOT_IDENTIFIER = "c0PIlotiD3ntIF3r"
-CLUSTER_NAME_SUFFIX = f"Cluster-{COPILOT_IDENTIFIER}"
-SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
-REFRESH_TOKEN_MESSAGE = (
-    "To refresh this SSO session run `aws sso login` with the corresponding profile"
-)
 
 
 def test_get_aws_session_or_abort_profile_not_configured(clear_session_cache, capsys):

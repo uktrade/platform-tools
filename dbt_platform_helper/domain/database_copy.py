@@ -112,8 +112,8 @@ class DatabaseCopy:
         if not vpc_name:
             if not Path(PLATFORM_CONFIG_FILE).exists():
                 self.abort("You must either be in a deploy repo, or provide the vpc name option.")
-            self.config_provider.load_and_validate_platform_config()
-            env_config = self.config_provider.apply_environment_defaults()["environments"]
+            config = self.config_provider.load_and_validate_platform_config()
+            env_config = self.config_provider.apply_environment_defaults(config)["environments"]
             vpc_name = env_config.get(env, {}).get("vpc")
         return vpc_name
 

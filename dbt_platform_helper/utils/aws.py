@@ -13,6 +13,7 @@ import click
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import (
@@ -28,9 +29,6 @@ AWS_SESSION_CACHE = {}
 
 
 def get_aws_session_or_abort(aws_profile: str = None) -> boto3.session.Session:
-    REFRESH_TOKEN_MESSAGE = (
-        "To refresh this SSO session run `aws sso login` with the corresponding profile"
-    )
     aws_profile = aws_profile or os.getenv("AWS_PROFILE")
     if aws_profile in AWS_SESSION_CACHE:
         return AWS_SESSION_CACHE[aws_profile]
