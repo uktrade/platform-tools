@@ -287,7 +287,6 @@ def _make_addons(config_provider: ConfigProvider):
     services = []
     for ext_name, ext_data in extensions.items():
         extension = {**ext_data}
-        print(f">>>>>>>>> {ext_name}")
         addon_type = extension.pop("type")
         environments = extension.pop("environments")
         environment_addon_config = {

@@ -767,8 +767,6 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
-    @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
     @patch("dbt_platform_helper.commands.copilot.copilot_provider")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
@@ -778,8 +776,6 @@ class TestMakeAddonsCommand:
         mock_config_provider,
         mock_copilot_provider,
         mock_application,
-        mock_get_session,
-        mock_get_session2,
         fakefs,
     ):
         dev_session = MagicMock(name="dev-session-mock")
@@ -789,8 +785,6 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-        mock_get_session.side_effect = [dev_session, prod_session]
-        mock_get_session2.side_effect = [dev_session, prod_session]
 
         mock_provider = Mock(name="Provider")
         mock_copilot_provider.return_value = mock_provider
