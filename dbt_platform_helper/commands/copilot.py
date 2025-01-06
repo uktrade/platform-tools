@@ -258,7 +258,7 @@ def make_addons():
 def _make_addons(config_provider: ConfigProvider):
     config_provider.config_file_check()
     try:
-        config_provider.load_and_validate_platform_config()
+        config = config_provider.load_and_validate_platform_config()
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
@@ -330,7 +330,7 @@ def _make_addons(config_provider: ConfigProvider):
             log_destination_arns,
         )
 
-    environments = config_provider.apply_environment_defaults()["environments"]
+    environments = config_provider.apply_environment_defaults(config)["environments"]
 
     provider = copilot_provider()
     provider.generate_cross_account_s3_policies(environments, extensions)
