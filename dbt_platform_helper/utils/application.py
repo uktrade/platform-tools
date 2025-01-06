@@ -1,8 +1,6 @@
 import json
 import os
 import re
-from dataclasses import dataclass
-from dataclasses import field
 from pathlib import Path
 from typing import Dict
 
@@ -18,11 +16,15 @@ from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
-@dataclass
 class Environment:
     name: str
     account_id: str
     sessions: Dict[str, boto3.Session]
+
+    def __init__(self, name: str, account_id: str, sessions: Dict[str, boto3.Session]):
+        self.name = name
+        self.account_id = account_id
+        self.sessions = sessions
 
     @property
     def session(self):
@@ -34,17 +36,24 @@ class Environment:
         return self.sessions[self.account_id]
 
 
-@dataclass
 class Service:
     name: str
     kind: str
 
+    def __init__(self, name: str, kind: str):
+        self.name = name
+        self.kind = kind
 
-@dataclass
+
 class Application:
     name: str
-    environments: Dict[str, Environment] = field(default_factory=dict)
-    services: Dict[str, Service] = field(default_factory=dict)
+    environments: Dict[str, Environment]
+    services: Dict[str, Service]
+
+    def __init__(self, name: str):
+        self.name = name
+        self.environments = {}
+        self.services = {}
 
     def __str__(self):
         output = f"Application {self.name} with"

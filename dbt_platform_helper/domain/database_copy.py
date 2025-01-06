@@ -11,12 +11,12 @@ from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.vpc import Vpc
-from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
+from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -28,7 +28,7 @@ class DatabaseCopy:
         database: str,
         auto_approve: bool = False,
         load_application: Callable[[str], Application] = load_application,
-        vpc_config: Callable[[Session, str, str, str], Vpc] = VpcProvider.get_vpc_info_by_name,
+        vpc_config: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
