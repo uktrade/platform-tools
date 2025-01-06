@@ -10,9 +10,9 @@ class Vpc:
 
 
 class VpcProvider:
-    def __init__(self, ec2_session):
-        self.ec2_client = ec2_session.client("ec2")
-        self.ec2_resource = ec2_session.resource("ec2")
+    def __init__(self, session):
+        self.ec2_client = session.client("ec2")
+        self.ec2_resource = session.resource("ec2")
 
     def get_vpc_info_by_name(self, app: str, env: str, vpc_name: str) -> Vpc:
         vpc_response = self.ec2_client.describe_vpcs(
