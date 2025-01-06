@@ -12,9 +12,9 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.models.application import get_application_name
+from dbt_platform_helper.models.application import load_application
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.utils.application import get_application_name
-from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files

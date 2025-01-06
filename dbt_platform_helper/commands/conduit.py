@@ -1,11 +1,11 @@
 import click
 
 from dbt_platform_helper.domain.conduit import Conduit
+from dbt_platform_helper.models.application import load_application
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
-from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,

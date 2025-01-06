@@ -4,6 +4,8 @@ from unittest.mock import call
 import pytest
 
 from dbt_platform_helper.domain.conduit import Conduit
+from dbt_platform_helper.models.application import Application
+from dbt_platform_helper.models.application import Environment
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
@@ -11,8 +13,6 @@ from dbt_platform_helper.providers.secrets import AddonNotFoundException
 from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
 from dbt_platform_helper.providers.secrets import ParameterNotFoundException
 from dbt_platform_helper.providers.secrets import SecretNotFoundException
-from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import Environment
 
 app_name = "failed_app"
 addon_name = "important-db"

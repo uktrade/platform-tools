@@ -93,13 +93,13 @@ environments:
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
     with patch(
-        "dbt_platform_helper.utils.application.load_application",
+        "dbt_platform_helper.models.application.load_application",
     ) as load_application:
         os.environ.pop("AWS_PROFILE", None)
 
-        from dbt_platform_helper.utils.application import Application
-        from dbt_platform_helper.utils.application import Environment
-        from dbt_platform_helper.utils.application import Service
+        from dbt_platform_helper.models.application import Application
+        from dbt_platform_helper.models.application import Environment
+        from dbt_platform_helper.models.application import Service
 
         sessions = {
             "000000000": boto3,

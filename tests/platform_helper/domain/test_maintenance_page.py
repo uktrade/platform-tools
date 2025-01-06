@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from moto import mock_aws
 
 from dbt_platform_helper.domain.maintenance_page import *
-from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.models.application import Application
 
 
 class TestGetMaintenancePage:

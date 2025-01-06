@@ -9,10 +9,10 @@ import requests
 import yaml
 from boto3 import Session
 
+from dbt_platform_helper.models.application import Application
+from dbt_platform_helper.models.application import ApplicationException
+from dbt_platform_helper.models.application import load_application
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationException
-from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort

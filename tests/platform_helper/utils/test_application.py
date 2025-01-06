@@ -7,11 +7,11 @@ from unittest.mock import patch
 import boto3
 from moto import mock_aws
 
-from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationNotFoundException
-from dbt_platform_helper.utils.application import Environment
-from dbt_platform_helper.utils.application import get_application_name
-from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.models.application import Application
+from dbt_platform_helper.models.application import ApplicationNotFoundException
+from dbt_platform_helper.models.application import Environment
+from dbt_platform_helper.models.application import get_application_name
+from dbt_platform_helper.models.application import load_application
 
 
 def test_getting_an_application_name_from_workspace(fakefs):
@@ -23,7 +23,7 @@ def test_getting_an_application_name_from_workspace(fakefs):
     assert get_application_name() == "test-app"
 
 
-@patch("dbt_platform_helper.utils.application.abort_with_error", return_value=None)
+@patch("dbt_platform_helper.models.application.abort_with_error", return_value=None)
 def test_getting_an_application_name_when_no_workspace_file(abort_with_error, fakefs):
     get_application_name()
 
@@ -32,8 +32,10 @@ def test_getting_an_application_name_when_no_workspace_file(abort_with_error, fa
     )
 
 
-@patch("dbt_platform_helper.utils.application.get_profile_name_from_account_id", return_value="foo")
-@patch("dbt_platform_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+@patch(
+    "dbt_platform_helper.models.application.get_profile_name_from_account_id", return_value="foo"
+)
+@patch("dbt_platform_helper.models.application.get_aws_session_or_abort", return_value=boto3)
 class EnvironmentTest(TestCase):
     def test_environment_session(self, get_aws_session_or_abort, get_profile_name_from_account_id):
         environment = Environment("test", "999999999", {})
@@ -50,8 +52,10 @@ class EnvironmentTest(TestCase):
         get_profile_name_from_account_id.assert_called_once()
 
 
-@patch("dbt_platform_helper.utils.application.get_profile_name_from_account_id", return_value="foo")
-@patch("dbt_platform_helper.utils.application.get_aws_session_or_abort", return_value=boto3)
+@patch(
+    "dbt_platform_helper.models.application.get_profile_name_from_account_id", return_value="foo"
+)
+@patch("dbt_platform_helper.models.application.get_aws_session_or_abort", return_value=boto3)
 class ApplicationTest(TestCase):
     def test_empty_application(self, get_aws_session_or_abort, get_profile_name_from_account_id):
         application = Application("test")
@@ -75,7 +79,7 @@ class ApplicationTest(TestCase):
         )
 
     @mock_aws
-    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    @patch("dbt_platform_helper.models.application.get_application_name", return_value="test")
     def test_loading_an_application_with_environments(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
     ):
@@ -120,7 +124,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.environments["one"].session, boto3)
         self.assertEqual(application.environments["two"].session, boto3)
 
-    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    @patch("dbt_platform_helper.models.application.get_application_name", return_value="test")
     def test_load_application_does_not_fail_when_addons_params_are_present(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
     ):
@@ -172,7 +176,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(str(application), "Application test with environments one:111111111")
 
     @mock_aws
-    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    @patch("dbt_platform_helper.models.application.get_application_name", return_value="test")
     def test_loading_an_empty_application(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
     ):
@@ -237,7 +241,7 @@ class ApplicationTest(TestCase):
         self.assertEqual(application.services["web2"].kind, "Load Balanced Web Service")
 
     @mock_aws
-    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    @patch("dbt_platform_helper.models.application.get_application_name", return_value="test")
     def test_loading_an_application_in_a_different_account(
         self, get_application_name, get_aws_session_or_abort, get_profile_name_from_account_id
     ):

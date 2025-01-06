@@ -9,13 +9,13 @@ from typing import Union
 import boto3
 import click
 
+from dbt_platform_helper.models.application import Environment
+from dbt_platform_helper.models.application import Service
+from dbt_platform_helper.models.application import load_application
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
-from dbt_platform_helper.utils.application import Environment
-from dbt_platform_helper.utils.application import Service
-from dbt_platform_helper.utils.application import load_application
 
 
 class MaintenancePageProvider:

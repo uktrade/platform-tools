@@ -7,8 +7,8 @@ import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.models.application import get_application_name
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn

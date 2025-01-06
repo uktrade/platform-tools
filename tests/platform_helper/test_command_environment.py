@@ -13,9 +13,9 @@ from dbt_platform_helper.commands.environment import generate_terraform
 from dbt_platform_helper.commands.environment import offline
 from dbt_platform_helper.commands.environment import online
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.models.application import Service
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
-from dbt_platform_helper.utils.application import Service
 from tests.platform_helper.conftest import BASE_DIR
 
 

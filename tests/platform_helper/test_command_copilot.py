@@ -18,7 +18,7 @@ from dbt_platform_helper.commands.copilot import _get_extensions
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.commands.copilot import is_service
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.models.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
 
@@ -100,10 +100,10 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch(
-        "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
+        "dbt_platform_helper.models.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
-    @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.models.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -764,7 +764,7 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch(
-        "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
+        "dbt_platform_helper.models.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
     @patch("dbt_platform_helper.commands.copilot.load_application", autospec=True)

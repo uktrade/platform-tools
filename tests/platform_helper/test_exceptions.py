@@ -5,6 +5,7 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.models.application import ApplicationNotFoundException
 from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
@@ -16,7 +17,6 @@ from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigExce
 from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
 from dbt_platform_helper.providers.secrets import ParameterNotFoundException
 from dbt_platform_helper.providers.secrets import SecretNotFoundException
-from dbt_platform_helper.utils.application import ApplicationNotFoundException
 
 
 @pytest.mark.parametrize(

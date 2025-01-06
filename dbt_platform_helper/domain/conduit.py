@@ -3,12 +3,12 @@ from collections.abc import Callable
 
 import click
 
+from dbt_platform_helper.models.application import Application
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.secrets import Secrets
-from dbt_platform_helper.utils.application import Application
 
 
 class Conduit:
