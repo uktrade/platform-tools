@@ -789,13 +789,16 @@ class TestMakeAddonsCommand:
         mock_provider = Mock(name="Provider")
         mock_copilot_provider.return_value = mock_provider
         mock_provider.generate_cross_account_s3_policies.return_value = "TestData"
-        mock_load_and_validate_platform_config = Mock()
+
+        mock_load_and_validate_platform_config = Mock(name="load_and_validate_platform_config")
         environment_config = {"environments": {"development": {}, "production": {}}}
         mock_load_and_validate_platform_config.return_value = environment_config
-        mock_config_provider.return_value.apply_environment_defaults.return_value = (
-            environment_config
-        )
-        mock_config_provider.return_value.load_and_validate_platform_config = (
+
+        mock_config_provider_instance = Mock(name="ConfigProviderInstance")
+        mock_config_provider.return_value = mock_config_provider_instance
+
+        mock_config_provider_instance.apply_environment_defaults.return_value = environment_config
+        mock_config_provider_instance.load_and_validate_platform_config = (
             mock_load_and_validate_platform_config
         )
 
@@ -855,6 +858,9 @@ class TestMakeAddonsCommand:
         exp = _get_extensions()
         exp["s3"]["environments"]["development"]["kms_key_arn"] = "arn-for-kms-alias"
         exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
+        mock_config_provider_instance.apply_environment_defaults.assert_called_with(
+            environment_config
+        )
         mock_provider.generate_cross_account_s3_policies.assert_called_with(
             {"development": {}, "production": {}}, exp
         )
