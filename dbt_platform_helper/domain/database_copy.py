@@ -28,7 +28,8 @@ class DatabaseCopy:
         database: str,
         auto_approve: bool = False,
         load_application: Callable[[str], Application] = load_application,
-        vpc_config: Callable[[Session, str, str, str], Vpc] = VpcProvider.get_vpc_info_by_name,
+        # TODO this isn't ideal but needed as we need to retrieve different sessions to inject in the VpcProvider for each env during the copy command
+        vpc_provider: Callable[[Session], VpcProvider] = VpcProvider,
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
@@ -43,7 +44,7 @@ class DatabaseCopy:
         self.app = app
         self.database = database
         self.auto_approve = auto_approve
-        self.vpc_config = vpc_config
+        self.vpc_provider = vpc_provider
         self.db_connection_string = db_connection_string
         self.maintenance_page_provider = maintenance_page_provider
         self.input = input
@@ -76,7 +77,8 @@ class DatabaseCopy:
         env_session = environment.session
 
         try:
-            vpc_config = self.vpc_config(env_session, self.app, env, vpc_name)
+            vpc_provider = self.vpc_provider(env_session)
+            vpc_config = vpc_provider.get_vpc_info_by_name(self.app, env, vpc_name)
         except AWSException as ex:
             self.abort(str(ex))
 
