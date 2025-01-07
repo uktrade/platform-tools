@@ -302,6 +302,12 @@ class PlatformConfigSchema:
             "x-large",
             "x-large-ha",
             "x-large-high-io",
+            "2x-large",
+            "2x-large-ha",
+            "2x-large-high-io",
+            "4x-large",
+            "4x-large-ha",
+            "4x-large-high-io",
         )
 
         # Todo: Move to Postgres provider?
