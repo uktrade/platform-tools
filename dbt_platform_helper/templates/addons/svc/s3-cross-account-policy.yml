@@ -1,0 +1,67 @@
+# {% extra_header %}
+# {% version_info %}
+
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001 # Parameter not used
+
+Parameters:
+  # Copilot required Parameters...
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+
+Resources: {% for resource in resources %}
+  {{ resource.app_prefix }}XEnvAccessPolicy:
+    Metadata:
+      'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants Read access to the S3 bucket.
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: 'KMSDecryptAndGenerate'
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource: 'arn:aws:kms:eu-west-2:{{ resource.bucket_account }}:key/*'
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/copilot-environment:
+                  - "{{ resource.access_env }}"
+          - Sid: 'S3ObjectActions'
+            Effect: Allow
+            Action:
+              {% if resource.read %}- s3:Get*{% endif %}
+              {% if resource.write %}- s3:Put*{% endif %}
+            Resource: 'arn:aws:s3:::{{ resource.bucket_name }}/*'
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/copilot-environment:
+                  - "{{ resource.access_env }}"
+          - Sid: 'S3ListAction'
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: 'arn:aws:s3:::{{ resource.bucket_name }}'
+            Condition:
+              StringEquals:
+                aws:PrincipalTag/copilot-environment:
+                  - "{{ resource.access_env }}"
+    {% endfor %}
+Outputs:{% for resource in resources %}
+  {{ resource.app_prefix }}XEnvAccessPolicy:
+    Description: "The IAM::ManagedPolicy to attach to the task role"
+    Value:
+      Ref: {{ resource.app_prefix }}XEnvAccessPolicy
+ {% endfor %}
