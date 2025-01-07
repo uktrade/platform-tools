@@ -82,5 +82,10 @@ def generate(name, vpc_name):
     help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
-    config_provider = ConfigProvider(ConfigValidator())
-    TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
+
+    try:
+        config_provider = ConfigProvider(ConfigValidator())
+        TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
+    except PlatformException as pe:
+        click.secho(str(pe), fg="red")
+        raise click.Abort
