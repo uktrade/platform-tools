@@ -7,6 +7,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProvider
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -35,6 +36,10 @@ class ConfigProvider:
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
         try:
             self.config = self.file_provider.load(path)
+        except FileNotFoundException as e:
+            abort_with_error(
+                f"{e} Please check it exists and you are in the root directory of your deployment project."
+            )
         except FileProviderException as e:
             abort_with_error(f"Error loading configuration from {path}: {e}")
 
