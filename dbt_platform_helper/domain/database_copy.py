@@ -28,7 +28,7 @@ class DatabaseCopy:
         database: str,
         auto_approve: bool = False,
         load_application: Callable[[str], Application] = load_application,
-        # TODO this isn't ideal but needed as we need to retrieve different sessions to inject in the VpcProvider for each env during the copy command
+        # TODO We inject VpcProvider as a callable here so that it can be instantiated within the method.  To be improved
         vpc_provider: Callable[[Session], VpcProvider] = VpcProvider,
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
