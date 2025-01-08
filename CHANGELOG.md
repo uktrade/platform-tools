@@ -11,7 +11,7 @@
 ### Bug Fixes
 
 * DBTP-1641 - Add missing postgres plans to validation schema ([#710](https://github.com/uktrade/platform-tools/issues/710)) ([bacee31](https://github.com/uktrade/platform-tools/commit/bacee3189e430458027882e57d5facfcbf65ed90))
-* for the bug introduced during merging a conflict in the previous PR ([#707](https://github.com/uktrade/platform-tools/issues/707)) ([ab9f0ab](https://github.com/uktrade/platform-tools/commit/ab9f0abae6ac6f0aa19462196871cd783c877bf0))
+* fix for the bug introduced during merging a conflict in the previous PR ([#707](https://github.com/uktrade/platform-tools/issues/707)) ([ab9f0ab](https://github.com/uktrade/platform-tools/commit/ab9f0abae6ac6f0aa19462196871cd783c877bf0))
 * Update dependencies to fix flaky E2E test ([#711](https://github.com/uktrade/platform-tools/issues/711)) ([3e4ac8a](https://github.com/uktrade/platform-tools/commit/3e4ac8aca348e4ee0b5aa9afc3b751fc15282be5))
 
 ## [12.4.1](https://github.com/uktrade/platform-tools/compare/12.4.0...12.4.1) (2024-12-11)
