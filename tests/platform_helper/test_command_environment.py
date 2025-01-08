@@ -109,12 +109,10 @@ class TestMaintenancePage:
 
 class TestGenerateCopilot:
 
-    @patch("dbt_platform_helper.commands.environment.ConfigProvider")
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
-    def test_generate_copilot_success(self, copilot_environment_mock, config_provider_mock):
-        """Test that given name and terraform-platform-modules-version, the
-        generate terraform command calls CopilotEnvironment generate with app,
-        env, addon type and addon name."""
+    def test_generate_copilot_success(self, copilot_environment_mock):
+        """Test that given a environment name, the generate command calls
+        CopilotEnvironment.generate with the environment name."""
 
         mock_copilot_environment_instance = copilot_environment_mock.return_value
 
@@ -126,15 +124,17 @@ class TestGenerateCopilot:
         assert result.exit_code == 0
         mock_copilot_environment_instance.generate.assert_called_with("test")
 
-    @patch("dbt_platform_helper.commands.environment.ConfigProvider")
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
     @patch("click.secho")
     def test_generate_copilot_catches_platform_exception_and_exits(
-        self, mock_click, copilot_environment_mock, config_provider_mock
+        self, mock_click, copilot_environment_mock
     ):
-        """Test that given name and terraform-platform-modules-version, the
-        generate terraform command calls CopilotEnvironment generate with app,
-        env, addon type and addon name."""
+        """
+        Test that given environment name and the CopilotEnvironment generate
+        raises a PlatformException,
+
+        The exception is caught and the command exits.
+        """
 
         mock_copilot_environment_instance = copilot_environment_mock.return_value
         mock_copilot_environment_instance.generate.side_effect = PlatformException("i've failed")
@@ -150,9 +150,8 @@ class TestGenerateCopilot:
 
 
 class TestGenerateTerraform:
-    @patch("dbt_platform_helper.commands.environment.ConfigProvider")
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
-    def test_generate_terraform_success(self, terraform_environment_mock, config_provider_mock):
+    def test_generate_terraform_success(self, terraform_environment_mock):
         """Test that given name and terraform-platform-modules-version, the
         generate terraform command calls TerraformEnvironment generate with app,
         env, addon type and addon name."""
@@ -168,11 +167,10 @@ class TestGenerateTerraform:
 
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")
 
-    @patch("dbt_platform_helper.commands.environment.ConfigProvider")
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")
     def test_generate_terraform_catches_platform_exception_and_exits(
-        self, mock_click, terraform_environment_mock, config_provider_mock
+        self, mock_click, terraform_environment_mock
     ):
         """
         Test that given name and terraform-platform-modules-version and the
