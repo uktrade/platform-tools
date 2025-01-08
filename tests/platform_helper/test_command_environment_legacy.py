@@ -33,6 +33,7 @@ class TestEnvironmentOfflineCommand:
         "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # TODO this test checks all the submethods are called as expected from the domain class.  Not related to click.  Should be moved to maintenance page domain level tests
     def test_successful_offline(
         self,
         add_maintenance_page,
@@ -82,6 +83,7 @@ class TestEnvironmentOfflineCommand:
         "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # TODO this test checks all the submethods are called as expected from the domain class.  Not related to click.  Should be moved to maintenance page domain level tests
     def test_successful_offline_with_custom_template(
         self,
         add_maintenance_page,
@@ -137,6 +139,7 @@ class TestEnvironmentOfflineCommand:
         "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # TODO move to domain level test for the activate function
     def test_successful_offline_when_already_offline(
         self,
         add_maintenance_page,
@@ -186,6 +189,7 @@ class TestEnvironmentOfflineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
+    # TODO move to domain level test for the activate function
     def test_offline_an_environment_when_load_balancer_not_found(
         self,
         add_maintenance_page,
@@ -217,6 +221,7 @@ class TestEnvironmentOfflineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
+    # TODO move to domain level test for the activate function
     def test_offline_an_environment_when_listener_not_found(
         self,
         add_maintenance_page,
@@ -254,6 +259,7 @@ class TestEnvironmentOfflineCommand:
         "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # TODO move to domain level test for the activate function
     def test_successful_offline_multiple_services(
         self,
         add_maintenance_page,
@@ -307,6 +313,7 @@ class TestEnvironmentOnlineCommand:
         "dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value="default"
     )
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page", return_value=None)
+    # TODO move to domain level test for the deactivate function
     def test_successful_online(
         self,
         remove_maintenance_page,
@@ -342,6 +349,7 @@ class TestEnvironmentOnlineCommand:
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page", return_value=None)
+    # TODO move to domain level test for the deactivate function
     def test_online_an_environment_that_is_not_offline(
         self,
         remove_maintenance_page,
@@ -366,6 +374,7 @@ class TestEnvironmentOnlineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
+    # TODO move to domain level test for the deactivate function
     def test_online_an_environment_when_listener_not_found(
         self,
         remove_maintenance_page,
@@ -395,6 +404,7 @@ class TestEnvironmentOnlineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
+    # TODO move to domain level test for the deactivate function
     def test_online_an_environment_when_load_balancer_not_found(
         self,
         remove_maintenance_page,
@@ -455,6 +465,7 @@ class TestGenerate:
         environment_config,
         expected_vpc,
     ):
+        # TODO can mock ConfigProvier instead to set up config
         default_conf = environment_config.get("*", {})
         default_conf["accounts"] = {
             "deploy": {"name": "non-prod-acc", "id": "1122334455"},
@@ -462,28 +473,36 @@ class TestGenerate:
         }
         environment_config["*"] = default_conf
 
-        mocked_session = MagicMock()
-        mock_get_aws_session_1.return_value = mocked_session
-        fakefs.add_real_directory(
-            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
-        )
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump({"application": "my-app", "environments": environment_config}),
         )
 
+        mocked_session = MagicMock()
+        mock_get_aws_session_1.return_value = mocked_session
+        fakefs.add_real_directory(
+            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
+        )
+
         result = CliRunner().invoke(generate, ["--name", "test"])
+
+        # Comparing the generated file with the expected file - domain level test.
+        # TODO Check file provider has been called on the expected contents instead of using fakefs.
         actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
         expected = yaml.safe_load(
             Path("copilot/fixtures/test_environment_manifest.yml").read_text()
         )
 
+        # Checking functions are called as expected - domain level test
+        # TODO get_vpc_id should be replaced with VpcProvider
         mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
         mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123", "test")
         mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
         mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
 
         assert actual == expected
+
+        # TODO Check output of command - domain level test
         assert "File copilot/environments/test/manifest.yml created" in result.output
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -498,6 +517,7 @@ class TestGenerate:
             ("9-tf", "10", "10", True),
         ],
     )
+    # Test covers different versioning scenarios, ensuring cli correctly overrides config version
     def test_generate_terraform(
         self,
         mock_get_aws_session_1,
@@ -519,6 +539,10 @@ class TestGenerate:
             "test": None,
         }
 
+        # This block is relevant for ensuring the moved block test gets output and
+        # for testing that the correct version of terraform is in the generated file
+        # TODO can be tested at domain level, testing generated content directly rather
+        # than the file
         if env_modules_version:
             environment_config["test"] = {
                 "versions": {"terraform-platform-modules": env_modules_version}
@@ -526,6 +550,8 @@ class TestGenerate:
 
         mocked_session = MagicMock()
         mock_get_aws_session_1.return_value = mocked_session
+
+        # TODO Why copilot here?
         fakefs.add_real_directory(
             BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
         )
@@ -535,6 +561,8 @@ class TestGenerate:
         )
 
         args = ["--name", "test"]
+
+        # Tests that command works with --terraform-platform-modules-version flag
         if cli_modules_version:
             args.extend(["--terraform-platform-modules-version", cli_modules_version])
 
@@ -554,6 +582,7 @@ class TestGenerate:
         assert moved_block in content
 
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
+    # TODO Can be tested at domain level with a mocked config provider
     def test_fail_early_if_platform_config_invalid(self, mock_session_1, fakefs):
 
         fakefs.add_real_directory(
@@ -570,6 +599,7 @@ class TestGenerate:
         assert result.exit_code != 0
         assert "Missing key: 'application'" in result.output
 
+    # TODO tests hint from Cli if invalid argument is used so should be in the command level tests.
     def test_fail_with_explanation_if_vpc_name_option_used(self, fakefs):
 
         fakefs.add_real_directory(
