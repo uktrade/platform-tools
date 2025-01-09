@@ -10,6 +10,8 @@ def to_yaml(value):
     return yaml.dump(value, sort_keys=False)
 
 
+# TODO - extract file provider functionality from this - and figure out what it actually does!
+# Move to the new file provider - or potentially copilot?
 def generate_override_files(base_path, file_path, output_dir):
     def generate_files_for_dir(pattern):
         for file in file_path.glob(pattern):
