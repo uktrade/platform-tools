@@ -5,7 +5,7 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
-from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
+from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -37,7 +37,7 @@ def environment():
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
     try:
-        MaintenancePageProvider().activate(app, env, svc, template, vpc)
+        MaintenancePage().activate(app, env, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -49,7 +49,7 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
     try:
-        MaintenancePageProvider().deactivate(app, env)
+        MaintenancePage().deactivate(app, env)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -71,6 +71,9 @@ def generate(name, vpc_name):
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
+    except PlatformException as err:
+        click.secho(str(err), fg="red")
+        raise click.Abort
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -82,5 +85,10 @@ def generate(name, vpc_name):
     help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
-    config_provider = ConfigProvider(ConfigValidator())
-    TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
+
+    try:
+        config_provider = ConfigProvider(ConfigValidator())
+        TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
+    except PlatformException as err:
+        click.secho(str(err), fg="red")
+        raise click.Abort

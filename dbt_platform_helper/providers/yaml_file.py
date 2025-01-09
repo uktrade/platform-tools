@@ -16,7 +16,7 @@ class YamlFileProviderException(FileProviderException):
     pass
 
 
-class FileNotFoundException(YamlFileProviderException):
+class FileNotFoundException(FileProviderException):
     pass
 
 
@@ -43,10 +43,7 @@ class YamlFileProvider(FileProvider):
             DuplicateKeysException: yaml contains duplicate keys
         """
         if not Path(path).exists():
-            # TODO this error message is domain specific and should not mention deployment directory project here
-            raise FileNotFoundException(
-                f"`{path}` is missing. Please check it exists and you are in the root directory of your deployment project."
-            )
+            raise FileNotFoundException(f"`{path}` is missing.")
         try:
             yaml_content = yaml.safe_load(Path(path).read_text())
         except ParserError:

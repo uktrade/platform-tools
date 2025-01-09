@@ -18,7 +18,7 @@ from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 
 
-class MaintenancePageProvider:
+class MaintenancePage:
     def activate(self, app, env, svc, template, vpc):
         application = load_application(app)
         application_environment = get_app_environment(app, env)
