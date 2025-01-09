@@ -1,14 +1,16 @@
-from dbt_platform_helper.providers.aws.exceptions import InvalidAWSClient
-from dbt_platform_helper.providers.aws.interfaces import ClientProvider
-from dbt_platform_helper.providers.aws.opensearch import OpensearchProviderV2
-from dbt_platform_helper.providers.aws.redis import RedisProviderV2
+from dbt_platform_helper.providers.aws.interfaces import GetReferenceProtocal
+from dbt_platform_helper.providers.aws.interfaces import GetVersionsProtocol
 
 
-# TODO think of a way of stubbing ClientProvider's to improve testing and local development.
-def get_client_provider(client: str) -> ClientProvider:
-    if client == "elasticache":
-        return RedisProviderV2()
-    elif client == "opensearch":
-        return OpensearchProviderV2()
-    else:
-        raise InvalidAWSClient(client)
+def get_supported_versions(obj: GetVersionsProtocol) -> list[str]:
+    if hasattr(obj, "__get_supported_versions__"):
+        return obj.__get_supported_versions__()
+    raise AttributeError(
+        f"Object of type {type(obj).__name__} does not support get_supported_versions"
+    )
+
+
+def get_reference(obj: GetReferenceProtocal) -> str:
+    if hasattr(obj, "__get_reference__"):
+        return obj.__get_reference__()
+    raise AttributeError(f"Object of type {type(obj).__name__} does not support get_reference")

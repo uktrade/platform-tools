@@ -36,16 +36,16 @@ class RedisProvider:
         return CacheProvider()
 
 
-class RedisProviderV2:
+class RedisProviderDuck:
 
-    def __init__(self, client: boto3.client = boto3.client("elasticache")):
+    def __init__(self, client: boto3.client):
         self.client = client
         self.engine = "redis"
 
-    def get_reference(self) -> str:
+    def __get_reference__(self) -> str:
         return self.engine.lower()
 
-    def get_supported_versions(self):
+    def __get_supported_versions__(self) -> list[str]:
         supported_versions_response = self.client.describe_cache_engine_versions(Engine=self.engine)
 
         supported_versions = [

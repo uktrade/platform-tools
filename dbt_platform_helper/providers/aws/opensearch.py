@@ -1,6 +1,5 @@
 import boto3
 
-from dbt_platform_helper.providers.aws.interfaces import ClientProvider
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
@@ -39,17 +38,17 @@ class OpensearchProvider:
         return CacheProvider()
 
 
-class OpensearchProviderV2(ClientProvider):
+class OpensearchProviderDuck:
 
-    def __init__(self, client: boto3.client = boto3.client("opensearch")):
+    def __init__(self, client: boto3.client):
         self.client = client
         # TODO extract engine so you could swap between opensearch and elastic in the same provider
         self.engine = "OpenSearch"
 
-    def get_reference(self) -> str:
+    def __get_reference__(self) -> str:
         return self.engine.lower()
 
-    def get_supported_versions(self):
+    def __get_supported_versions__(self) -> list[str]:
         response = self.client.list_versions()
         all_versions = response["Versions"]
 

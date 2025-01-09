@@ -1,17 +1,9 @@
-from abc import ABC
-from abc import abstractmethod
+from typing import Protocol
 
 
-class ClientProvider(ABC):
+class GetVersionsProtocol(Protocol):
+    def __get_support_versions__(self) -> list[str]: ...
 
-    def __init__(self, client):
-        self.client = client
-        self.engine = None
 
-    @abstractmethod
-    def get_reference(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_supported_versions(self):
-        raise NotImplementedError()
+class GetReferenceProtocal(Protocol):
+    def __get_reference__(self) -> str: ...

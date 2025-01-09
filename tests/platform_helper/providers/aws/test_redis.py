@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from dbt_platform_helper.providers.aws.redis import RedisProvider
-from dbt_platform_helper.providers.aws.redis import RedisProviderV2
+from dbt_platform_helper.providers.aws.redis import RedisProviderDuck
 
 
 # TODO - we don't want to use the fixtures from conftest since one applies get_supported_redis_versions
@@ -47,9 +47,9 @@ def test_get_supported_redis_versions_when_cache_refresh_required():
 
 def test_redis_provider_get_reference():
     elasticache_client = MagicMock()
-    redis_provider = RedisProviderV2(elasticache_client)
+    redis_provider = RedisProviderDuck(elasticache_client)
 
-    reference = redis_provider.get_reference()
+    reference = redis_provider.__get_reference__()
 
     assert reference == "redis"
 
@@ -76,9 +76,9 @@ def test_redis_provider_get_supported_versions():
         ]
     }
 
-    redis_provider = RedisProviderV2(elasticache_client)
+    redis_provider = RedisProviderDuck(elasticache_client)
 
-    supported_versions_response = redis_provider.get_supported_versions()
+    supported_versions_response = redis_provider.__get_supported_versions__()
 
     elasticache_client.describe_cache_engine_versions.assert_called_with(Engine="redis")
     assert supported_versions_response == ["4.0.10", "5.0.6"]
