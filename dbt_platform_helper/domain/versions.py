@@ -5,10 +5,12 @@ from dbt_platform_helper.providers.aws.interfaces import GetVersionsProtocol
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
+class AwsGetVersionProtocol(GetReferenceProtocol, GetVersionsProtocol):
+    pass
+
+
 def get_supported_aws_versions(
-    client_provider: (
-        GetReferenceProtocol | GetVersionsProtocol
-    ),  # TODO how to interface required functions of object
+    client_provider: AwsGetVersionProtocol,
     cache_provider=CacheProvider(),
 ) -> list[str]:
     """
