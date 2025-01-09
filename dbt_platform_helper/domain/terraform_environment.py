@@ -8,51 +8,49 @@ from dbt_platform_helper.utils.template import setup_templates
 class TerraformEnvironment:
     def __init__(self, config_provider):
         self.config_provider = config_provider
+        self.template = setup_templates().get_template("environments/main.tf")
+        self.config = self.config_provider.apply_environment_defaults(
+            self.config_provider.load_and_validate_platform_config()
+        )
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
-        config = self.config_provider.load_and_validate_platform_config()
-        enriched_config = self.config_provider.apply_environment_defaults(config)
-
-        env_config = enriched_config["environments"][environment_name]
-        contents = self._generate_terraform_environment_manifests(
-            config["application"],
-            environment_name,
-            env_config,
-            terraform_platform_modules_version_override,
-        )
-        click.echo(
-            FileProvider.mkfile(
-                ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
-            )
-        )
-
-    def _generate_terraform_environment_manifests(
-        self, application, environment_name, env_config, cli_terraform_platform_modules_version
-    ):
-        env_template = setup_templates().get_template("environments/main.tf")
-
+        env_config = self.config["environments"][environment_name]
         terraform_platform_modules_version = self._determine_terraform_platform_modules_version(
-            env_config, cli_terraform_platform_modules_version
+            env_config, terraform_platform_modules_version_override
         )
 
-        return env_template.render(
+        contents = self.template.render(
             {
-                "application": application,
+                "application": self.config["application"],
                 "environment": environment_name,
                 "config": env_config,
                 "terraform_platform_modules_version": terraform_platform_modules_version,
             }
         )
 
+        click.echo(
+            FileProvider.mkfile(
+                ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
+            )
+        )
+
     def _determine_terraform_platform_modules_version(
         self, env_conf, terraform_platform_modules_version_override
     ):
-        env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
-            "terraform-platform-modules"
-        )
-        version_preference_order = [
-            terraform_platform_modules_version_override,
-            env_conf_terraform_platform_modules_version,
-            DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
-        ]
-        return [version for version in version_preference_order if version][0]
+        """
+        Terraform platform modules version can be defined as an override, within
+        the config, or defaulted. An override is always prioritied, followed by
+        config version.
+
+        Returns:
+            string: version by priority
+        """
+        if terraform_platform_modules_version_override:
+            return terraform_platform_modules_version_override
+
+        config_version = env_conf.get("versions", {}).get("terraform-platform-modules")
+
+        if config_version:
+            return config_version
+
+        return DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
