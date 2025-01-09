@@ -2,8 +2,8 @@ from typing import Protocol
 
 
 class GetVersionsProtocol(Protocol):
-    def __get_support_versions__(self) -> list[str]: ...
+    def __get_supported_versions__(self) -> list[str]: ...
 
 
-class GetReferenceProtocal(Protocol):
+class GetReferenceProtocol(Protocol):
     def __get_reference__(self) -> str: ...
