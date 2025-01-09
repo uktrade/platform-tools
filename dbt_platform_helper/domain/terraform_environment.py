@@ -1,7 +1,7 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -24,7 +24,9 @@ def _generate_terraform_environment_manifests(
     )
 
     click.echo(
-        mkfile(".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True)
+        FileProvider.mkfile(
+            ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
+        )
     )
 
 

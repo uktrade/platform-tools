@@ -8,7 +8,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
-from dbt_platform_helper.providers.yaml_file import FileProvider
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -18,7 +17,7 @@ class ConfigProvider:
     def __init__(
         self,
         config_validator: ConfigValidator,
-        file_provider: FileProvider = None,
+        file_provider: YamlFileProvider = None,
         echo=click.secho,
     ):
         self.config = {}

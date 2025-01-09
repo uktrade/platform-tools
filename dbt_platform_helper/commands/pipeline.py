@@ -8,13 +8,13 @@ import click
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files_from_template
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import setup_templates
@@ -178,7 +178,7 @@ def _create_file_from_template(
     contents = templates.get_template(
         f"pipelines/{file_name if template_name is None else template_name}"
     ).render(template_data)
-    message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
+    message = FileProvider.mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
     click.echo(message)
 
 
@@ -207,7 +207,7 @@ def _generate_terraform_environment_pipeline_manifest(
     dir_path = f"terraform/environment-pipelines/{aws_account}"
     makedirs(dir_path, exist_ok=True)
 
-    click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+    click.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
 
 
 def _determine_terraform_platform_modules_version(
