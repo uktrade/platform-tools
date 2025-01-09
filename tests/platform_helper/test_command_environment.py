@@ -202,3 +202,18 @@ class TestGenerateTerraform:
         assert result.exit_code == 1
         mock_click.assert_called_with("""i've failed""", fg="red")
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+
+    @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
+    @patch("click.secho")
+    def test_generate_terraform_warns_and_exits_if_depracated_flag_used(
+        self, mock_click, terraform_environment_mock
+    ):
+        """Test that given --vpc-name flag, the command exits with a warning."""
+        result = CliRunner().invoke(generate, ["--name", "test", "--vpc-name", "other-vpc"])
+
+        assert result.exit_code != 0
+        mock_click.assert_called_with(
+            """This option is deprecated. Please add the VPC name for your envs to platform-config.yml""",
+            fg="red",
+        )
+        terraform_environment_mock.assert_not_called()
