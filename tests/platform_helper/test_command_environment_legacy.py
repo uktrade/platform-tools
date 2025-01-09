@@ -598,19 +598,3 @@ class TestGenerate:
 
         assert result.exit_code != 0
         assert "Missing key: 'application'" in result.output
-
-    # TODO tests hint from Cli if invalid argument is used so should be in the command level tests.
-    def test_fail_with_explanation_if_vpc_name_option_used(self, fakefs):
-
-        fakefs.add_real_directory(
-            BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
-        )
-        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "my-app"}))
-
-        result = CliRunner().invoke(generate, ["--name", "test", "--vpc-name", "other-vpc"])
-
-        assert result.exit_code != 0
-        assert (
-            f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}"
-            in result.output
-        )
