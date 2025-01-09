@@ -56,15 +56,8 @@ def online(app, env):
 
 
 @environment.command()
-@click.option("--vpc-name", hidden=True)
 @click.option("--name", "-n", required=True)
-def generate(name, vpc_name):
-    if vpc_name:
-        click.secho(
-            f"This option is deprecated. Please add the VPC name for your envs to {PLATFORM_CONFIG_FILE}",
-            fg="red",
-        )
-        raise click.Abort
+def generate(name):
     try:
         config_provider = ConfigProvider(ConfigValidator())
         CopilotEnvironment(config_provider).generate(name)

@@ -28,13 +28,14 @@ def _generate_terraform_environment_manifests(
     )
 
 
-def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
-    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
+def _determine_terraform_platform_modules_version(
+    env_conf, terraform_platform_modules_version_override
+):
     env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
         "terraform-platform-modules"
     )
     version_preference_order = [
-        cli_terraform_platform_modules_version,
+        terraform_platform_modules_version_override,
         env_conf_terraform_platform_modules_version,
         DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
     ]
