@@ -15,16 +15,15 @@ class TerraformEnvironment:
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         env_config = self.config["environments"][environment_name]
-        terraform_platform_modules_version = self._determine_terraform_platform_modules_version(
-            env_config, terraform_platform_modules_version_override
-        )
 
         contents = self.template.render(
             {
                 "application": self.config["application"],
                 "environment": environment_name,
                 "config": env_config,
-                "terraform_platform_modules_version": terraform_platform_modules_version,
+                "terraform_platform_modules_version": self._determine_terraform_platform_modules_version(
+                    env_config, terraform_platform_modules_version_override
+                ),
             }
         )
 
