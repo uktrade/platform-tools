@@ -14,19 +14,13 @@ def _generate_terraform_environment_manifests(
         env_config, cli_terraform_platform_modules_version
     )
 
-    contents = env_template.render(
+    return env_template.render(
         {
             "application": application,
             "environment": environment_name,
             "config": env_config,
             "terraform_platform_modules_version": terraform_platform_modules_version,
         }
-    )
-
-    click.echo(
-        FileProvider.mkfile(
-            ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
-        )
     )
 
 
@@ -48,11 +42,19 @@ class TerraformEnvironment:
     def __init__(self, config_provider):
         self.config_provider = config_provider
 
-    def generate(self, environment_name, terraform_platform_modules_version):
+    def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.load_and_validate_platform_config()
         enriched_config = self.config_provider.apply_environment_defaults(config)
 
         env_config = enriched_config["environments"][environment_name]
-        _generate_terraform_environment_manifests(
-            config["application"], environment_name, env_config, terraform_platform_modules_version
+        contents = _generate_terraform_environment_manifests(
+            config["application"],
+            environment_name,
+            env_config,
+            terraform_platform_modules_version_override,
+        )
+        click.echo(
+            FileProvider.mkfile(
+                ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
+            )
         )
