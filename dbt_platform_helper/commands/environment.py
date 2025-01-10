@@ -61,6 +61,7 @@ def generate(name):
     try:
         config_provider = ConfigProvider(ConfigValidator())
         CopilotEnvironment(config_provider).generate(name)
+    # TODO this exception will never be caught as the config provider catches schema errors and aborts
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
         raise click.Abort
