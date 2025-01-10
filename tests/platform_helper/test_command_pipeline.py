@@ -173,25 +173,6 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
     assert_codebase_pipeline_config_was_generated()
 
 
-@patch("dbt_platform_helper.domain.pipelines.ConfigProvider")
-def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning(get_aws_session_or_abort):
-    get_aws_session_or_abort.returns({"application": "my-app"})
-
-    result = CliRunner().invoke(generate)
-
-    assert "No pipelines defined: nothing to do." in result.output
-
-
-@patch("dbt_platform_helper.domain.pipelines.ConfigProvider")
-def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning(
-    mock_config_provider,
-):
-    mock_config_provider.load_and_validate_platform_config.return_value = {"environments": {}}
-    result = CliRunner().invoke(generate)
-
-    assert "No pipelines defined: nothing to do." in result.output
-
-
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")

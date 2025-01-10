@@ -3,7 +3,7 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.domain.pipelines import _generate
+from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -45,4 +45,5 @@ def generate(terraform_platform_modules_version, deploy_branch):
     This command does the following in relation to the codebase pipelines:
     - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
     """
-    _generate(terraform_platform_modules_version, deploy_branch)
+    pipelines = Pipelines()
+    pipelines.generate(terraform_platform_modules_version, deploy_branch)
