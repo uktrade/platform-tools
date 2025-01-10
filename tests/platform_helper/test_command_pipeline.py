@@ -264,14 +264,14 @@ def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_m
     ) in result.output
 
 
-def test_pipeline_generate_with_no_workspace_file_fails_with_message(fakefs):
+def test_pipeline_generate_with_no_platform_config_fails_with_message(fakefs):
     setup_fixtures(fakefs)
-    os.remove("copilot/.workspace")
+    os.remove(PLATFORM_CONFIG_FILE)
 
     result = CliRunner().invoke(generate)
 
     assert result.exit_code == 1
-    assert "Cannot get application name. No copilot/.workspace file found" in result.output
+    assert f"Cannot get application name. {PLATFORM_CONFIG_FILE} is missing."
 
 
 @freeze_time("2023-08-22 16:00:00")

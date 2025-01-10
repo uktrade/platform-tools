@@ -30,10 +30,12 @@ class Pipelines:
         config_provider=ConfigProvider(ConfigValidator()),
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
+        get_codestar_arn: Callable[[str], str] = get_codestar_connection_arn,
     ):
         self.config_provider = config_provider
         self.echo = echo
         self.abort = abort
+        self.get_codestar_arn = get_codestar_arn
 
     def generate(self, terraform_platform_modules_version, deploy_branch):
         pipeline_config = self.config_provider.load_and_validate_platform_config()
@@ -56,7 +58,7 @@ class Pipelines:
         if not git_repo:
             self.abort("The current directory is not a git repository")
 
-        codestar_connection_arn = get_codestar_connection_arn(app_name)
+        codestar_connection_arn = self.get_codestar_arn(app_name)
         if codestar_connection_arn is None:
             self.abort(f'There is no CodeStar Connection named "{app_name}" to use')
 
@@ -95,7 +97,7 @@ class Pipelines:
 
     def _clean_pipeline_config(self, pipelines_dir):
         if pipelines_dir.exists():
-            click.echo("Deleting copilot/pipelines directory.")
+            self.echo("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
 
     def _generate_codebase_pipeline(
@@ -152,7 +154,7 @@ class Pipelines:
             f"pipelines/{file_name if template_name is None else template_name}"
         ).render(template_data)
         message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
-        click.echo(message)
+        self.echo(message)
 
     def _generate_terraform_environment_pipeline_manifest(
         self,
@@ -181,4 +183,33 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        click.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+
+    def generate_terraform_codebase_pipeline_manifest(
+        self,
+        application,
+        aws_account,
+        cli_terraform_platform_modules_version,
+        platform_config_terraform_modules_default_version,
+        deploy_branch,
+    ):
+        env_pipeline_template = setup_templates().get_template("codebase-pipelines/main.tf")
+
+        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
+            cli_terraform_platform_modules_version,
+            platform_config_terraform_modules_default_version,
+        )
+
+        contents = env_pipeline_template.render(
+            {
+                "application": application,
+                "aws_account": aws_account,
+                "terraform_platform_modules_version": terraform_platform_modules_version,
+                "deploy_branch": deploy_branch,
+            }
+        )
+
+        dir_path = f"terraform/environment-pipelines/{aws_account}"
+        makedirs(dir_path, exist_ok=True)
+
+        self.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
