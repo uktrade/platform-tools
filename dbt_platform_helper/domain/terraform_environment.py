@@ -41,30 +41,23 @@ class TerraformEnvironment:
         self.echo = echo_fn
         self.config_provider = config_provider
         self.template = setup_templates().get_template("environments/main.tf")
-        self.config = self.config_provider.apply_environment_defaults(
+
+    def generate(self, environment_name, terraform_platform_modules_version_override=None):
+        config = self.config_provider.apply_environment_defaults(
             self.config_provider.load_and_validate_platform_config()
         )
 
-    def generate(self, environment_name, terraform_platform_modules_version_override=None):
-        terraform_platform_modules_version = (
-            terraform_platform_modules_version_override
-            or self.config["environments"][environment_name]
-            .get("versions", {})
-            .get("terraform-platform-modules")
-            or DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-        )
+        environment_config = config["environments"][environment_name]
 
-        contents = self.template.render(
-            {
-                "application": self.config["application"],
-                "environment": environment_name,
-                "config": self.config["environments"][environment_name],
-                "terraform_platform_modules_version": terraform_platform_modules_version,
-            }
+        manifest = PlatformTerraformManifestGenerator().generate_manifest(
+            environment_name,
+            config["application"],
+            environment_config,
+            terraform_platform_modules_version_override,
         )
 
         self.echo(
             FileProvider.mkfile(
-                ".", f"terraform/environments/{environment_name}/main.tf", contents, overwrite=True
+                ".", f"terraform/environments/{environment_name}/main.tf", manifest, overwrite=True
             )
         )
