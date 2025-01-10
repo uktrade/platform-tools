@@ -6,15 +6,16 @@ from dbt_platform_helper.utils.template import setup_templates
 
 
 class PlatformTerraformManifestGenerator:
-    def __init__(self):
+    def __init__(self, file_provider):
+        self.file_provider = file_provider
         self.manifest_template = setup_templates().get_template("environments/main.tf")
 
     def generate_manifest(
         self,
         application_name: str,
         environment_name: str,
-        environment_config,
-        terraform_platform_modules_version_override=None,
+        environment_config: dict,
+        terraform_platform_modules_version_override: str = None,
     ):
         terraform_platform_modules_version = (
             terraform_platform_modules_version_override
@@ -32,15 +33,19 @@ class PlatformTerraformManifestGenerator:
             }
         )
 
-    def write_manifest():
-        pass
+    def write_manifest(self, environment_name: str, manifest_content: str):
+        return self.file_provider.mkfile(
+            ".",
+            f"terraform/environments/{environment_name}/main.tf",
+            manifest_content,
+            overwrite=True,
+        )
 
 
 class TerraformEnvironment:
     def __init__(self, config_provider, echo_fn=click.echo):
         self.echo = echo_fn
         self.config_provider = config_provider
-        self.template = setup_templates().get_template("environments/main.tf")
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.apply_environment_defaults(
@@ -48,16 +53,13 @@ class TerraformEnvironment:
         )
 
         environment_config = config["environments"][environment_name]
+        manifest_generator = PlatformTerraformManifestGenerator(FileProvider())
 
-        manifest = PlatformTerraformManifestGenerator().generate_manifest(
+        manifest = manifest_generator.generate_manifest(
             environment_name,
             config["application"],
             environment_config,
             terraform_platform_modules_version_override,
         )
 
-        self.echo(
-            FileProvider.mkfile(
-                ".", f"terraform/environments/{environment_name}/main.tf", manifest, overwrite=True
-            )
-        )
+        self.echo(manifest_generator.write_manifest(environment_name, manifest))

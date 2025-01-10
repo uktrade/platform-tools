@@ -1,7 +1,10 @@
+from unittest.mock import Mock
+
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.terraform_environment import (
     PlatformTerraformManifestGenerator,
 )
+from dbt_platform_helper.providers.files import FileProvider
 
 
 class TestPlatformTerraformManifestGenerator:
@@ -21,7 +24,7 @@ class TestPlatformTerraformManifestGenerator:
             "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         )
 
-        result = PlatformTerraformManifestGenerator().generate_manifest(
+        result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
             "test-app", "test", test_environment_config, 123456
         )
 
@@ -44,7 +47,7 @@ class TestPlatformTerraformManifestGenerator:
             "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         )
 
-        result = PlatformTerraformManifestGenerator().generate_manifest(
+        result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
             "test-app", "test", test_environment_config
         )
 
@@ -66,10 +69,23 @@ class TestPlatformTerraformManifestGenerator:
             "moved {\n  from = module.extensions-tf\n  to   = module.extensions\n}\n"
         )
 
-        result = PlatformTerraformManifestGenerator().generate_manifest(
+        result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
             "test-app", "test", test_environment_config
         )
 
         assert expected_header in result
         assert expected_modules in result
         assert expected_moved_block in result
+
+    def test_generator_write_manifest_makes_the_expected_manifest_file(self):
+        mock_file_provider = Mock(spec=FileProvider)
+        PlatformTerraformManifestGenerator(mock_file_provider).write_manifest(
+            "test-environment", "test-manifest-content"
+        )
+
+        mock_file_provider.mkfile.assert_called_once_with(
+            ".",
+            f"terraform/environments/test-environment/main.tf",
+            "test-manifest-content",
+            overwrite=True,
+        )
