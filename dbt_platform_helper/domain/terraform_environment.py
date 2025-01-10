@@ -5,6 +5,35 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.template import setup_templates
 
 
+class PlatformTerraformManifestGenerator:
+    def __init__(self):
+        self.manifest_template = setup_templates().get_template("environments/main.tf")
+
+    def generate_manifest(
+        self,
+        application_name: str,
+        environment_name: str,
+        environment_config,
+        terraform_platform_modules_version_override=None,
+    ):
+        terraform_platform_modules_version = (
+            terraform_platform_modules_version_override
+            or environment_config.get("versions", {}).get(
+                "terraform-platform-modules", DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
+            )
+        )
+        print(environment_config)
+
+        return self.manifest_template.render(
+            {
+                "application": application_name,
+                "environment": environment_name,
+                "config": environment_config,
+                "terraform_platform_modules_version": terraform_platform_modules_version,
+            }
+        )
+
+
 class TerraformEnvironment:
     def __init__(self, config_provider, echo_fn=click.echo):
         self.echo = echo_fn
