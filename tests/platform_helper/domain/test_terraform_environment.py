@@ -1,5 +1,4 @@
 from unittest.mock import Mock
-from unittest.mock import patch
 
 from dbt_platform_helper.domain.terraform_environment import (
     PlatformTerraformManifestGenerator,
@@ -31,10 +30,18 @@ class TestGenerateTerraform:
         }
 
         mock_config_provider = Mock(spec=ConfigProvider)
+        mock_echo_fn = Mock()
         mock_config_provider.get_enriched_config.return_value = enriched_config
+        mock_generator.generate_manifest.return_value = "I am a junk manifest for testing!"
+        mock_generator.write_manifest.return_value = "Hello, World!"
 
-        with patch("dbt_platform_helper.domain.terraform_environment.FileProvider"):
-            TerraformEnvironment(mock_config_provider, mock_generator).generate("test")
+        terraform_environment = TerraformEnvironment(
+            config_provider=mock_config_provider,
+            manifest_generator=mock_generator,
+            echo_fn=mock_echo_fn,
+        )
+
+        terraform_environment.generate("test")
 
         mock_generator.generate_manifest.assert_called_with(
             environment_name="test",
@@ -42,3 +49,7 @@ class TestGenerateTerraform:
             environment_config=test_environment_config,
             terraform_platform_modules_version_override=None,
         )
+        mock_generator.write_manifest.assert_called_with(
+            environment_name="test", manifest_content="I am a junk manifest for testing!"
+        )
+        mock_echo_fn.assert_called_with("Hello, World!")

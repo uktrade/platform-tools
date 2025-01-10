@@ -65,4 +65,8 @@ class TerraformEnvironment:
             terraform_platform_modules_version_override=terraform_platform_modules_version_override,
         )
 
-        self.echo(self.manifest_generator.write_manifest(environment_name, manifest))
+        self.echo(
+            self.manifest_generator.write_manifest(
+                environment_name=environment_name, manifest_content=manifest
+            )
+        )

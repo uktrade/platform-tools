@@ -25,7 +25,7 @@ class TestPlatformTerraformManifestGenerator:
         )
 
         result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
-            "test-app", "test", test_environment_config, 123456
+            "test", "test-app", test_environment_config, 123456
         )
 
         assert expected_header in result
@@ -51,7 +51,7 @@ class TestPlatformTerraformManifestGenerator:
         )
 
         result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
-            "test-app", "test", test_environment_config
+            "test", "test-app", test_environment_config
         )
 
         assert expected_header in result
@@ -76,7 +76,7 @@ class TestPlatformTerraformManifestGenerator:
         )
 
         result = PlatformTerraformManifestGenerator(Mock()).generate_manifest(
-            "test-app", "test", test_environment_config
+            "test", "test-app", test_environment_config
         )
 
         assert expected_header in result
