@@ -728,3 +728,19 @@ def mock_get_supported_redis_versions(request, monkeypatch):
         return ["6.2", "7.0", "7.1"]
 
     monkeypatch.setattr(RedisProvider, "get_supported_redis_versions", mock_return_value)
+
+
+# TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
+
+import dbt_platform_helper.domain.versions as versions
+
+
+@pytest.fixture(autouse=True)
+def mock_get_aws_supported_versions(request, monkeypatch):
+    if "skip_supported_versions_fixture" in request.keywords:
+        return
+
+    def mock_return_value(self):
+        return ["6.2", "7.0", "7.1"]
+
+    monkeypatch.setattr(versions, "get_supported_aws_versions", mock_return_value)

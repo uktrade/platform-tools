@@ -335,20 +335,19 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
                     }
                 },
             },
-            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
+            "redis version for environment prod is not in the list of supported redis versions: ['6.2', '7.0', '7.1']. Provided Version: invalid",
         ),
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
 
     mock_redis_provider = MagicMock()
-    mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
     ConfigValidator()._validate_extension_supported_versions(
         config=config,
+        aws_provider=mock_redis_provider,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=mock_redis_provider.get_supported_redis_versions,
     )
 
     captured = capsys.readouterr()
