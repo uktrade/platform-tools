@@ -12,8 +12,8 @@ class PlatformTerraformManifestGenerator:
 
     def generate_manifest(
         self,
-        application_name: str,
         environment_name: str,
+        application_name: str,
         environment_config: dict,
         terraform_platform_modules_version_override: str = None,
     ):
@@ -43,20 +43,26 @@ class PlatformTerraformManifestGenerator:
 
 
 class TerraformEnvironment:
-    def __init__(self, config_provider, echo_fn=click.echo):
+    def __init__(
+        self,
+        config_provider,
+        manifest_generator: PlatformTerraformManifestGenerator = None,
+        echo_fn=click.echo,
+    ):
         self.echo = echo_fn
         self.config_provider = config_provider
+        self.manifest_generator = manifest_generator or PlatformTerraformManifestGenerator(
+            FileProvider()
+        )
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.get_enriched_config()
 
-        manifest_generator = PlatformTerraformManifestGenerator(FileProvider())
-
-        manifest = manifest_generator.generate_manifest(
-            environment_name,
-            config["application"],
-            config["environments"][environment_name],
-            terraform_platform_modules_version_override,
+        manifest = self.manifest_generator.generate_manifest(
+            environment_name=environment_name,
+            application_name=config["application"],
+            environment_config=config["environments"][environment_name],
+            terraform_platform_modules_version_override=terraform_platform_modules_version_override,
         )
 
-        self.echo(manifest_generator.write_manifest(environment_name, manifest))
+        self.echo(self.manifest_generator.write_manifest(environment_name, manifest))
