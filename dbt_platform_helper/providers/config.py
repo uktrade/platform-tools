@@ -25,6 +25,7 @@ class ConfigProvider:
         self.echo = echo
         self.file_provider = file_provider or YamlFileProvider
 
+    # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
     def get_enriched_config(self):
         return self.apply_environment_defaults(self.load_and_validate_platform_config())
 
