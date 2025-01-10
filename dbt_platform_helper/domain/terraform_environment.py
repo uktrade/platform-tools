@@ -22,7 +22,6 @@ class PlatformTerraformManifestGenerator:
                 "terraform-platform-modules", DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
             )
         )
-        print(environment_config)
 
         return self.manifest_template.render(
             {
@@ -32,6 +31,9 @@ class PlatformTerraformManifestGenerator:
                 "terraform_platform_modules_version": terraform_platform_modules_version,
             }
         )
+
+    def write_manifest():
+        pass
 
 
 class TerraformEnvironment:
