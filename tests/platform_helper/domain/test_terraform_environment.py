@@ -1,6 +1,3 @@
-# TODO - "most" of this is now tested by the new test_command_environment, some of this should be delagated to domain-level tests instead.
-# Needs reviewing and then the file should be deleted.
-
 from unittest.mock import Mock
 
 import pytest
@@ -15,6 +12,7 @@ from dbt_platform_helper.providers.files import FileProvider
 
 class TestGenerateTerraform:
 
+    # TODO this should live in config provider, then it can be mocked in these tests
     def test_get_enriched_config_returns_expected_config(self):
         mock_file_provider = Mock(spec=FileProvider)
         mock_file_provider.load.return_value = {
