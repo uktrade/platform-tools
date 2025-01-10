@@ -31,8 +31,11 @@ class TestPlatformTerraformManifestGenerator:
         assert expected_header in result
         assert expected_modules in result
         assert expected_moved_block in result
+        assert 'environment = "test"' in result
+        assert 'application    = "test-app"' in result
+        assert 'vpc_name    = "vpc3"'
 
-    def test_generator_generates_expected_manifest_content_without_version_override(self):
+    def test_generator_generates_expected_manifest_content_with_tpm_version_set_in_config(self):
         test_environment_config = {
             "vpc": "vpc3",
             "accounts": {
@@ -54,6 +57,9 @@ class TestPlatformTerraformManifestGenerator:
         assert expected_header in result
         assert expected_modules in result
         assert expected_moved_block in result
+        assert 'environment = "test"' in result
+        assert 'application    = "test-app"' in result
+        assert 'vpc_name    = "vpc3"'
 
     def test_generator_generates_expected_manifest_content_with_default_version(self):
         test_environment_config = {
@@ -76,6 +82,9 @@ class TestPlatformTerraformManifestGenerator:
         assert expected_header in result
         assert expected_modules in result
         assert expected_moved_block in result
+        assert 'environment = "test"' in result
+        assert 'application    = "test-app"' in result
+        assert 'vpc_name    = "vpc3"'
 
     def test_generator_write_manifest_makes_the_expected_manifest_file(self):
         mock_file_provider = Mock(spec=FileProvider)
