@@ -25,6 +25,9 @@ class ConfigProvider:
         self.echo = echo
         self.file_provider = file_provider or YamlFileProvider
 
+    def get_enriched_config(self):
+        return self.apply_environment_defaults(self.load_and_validate_platform_config())
+
     def validate_platform_config(self):
         PlatformConfigSchema.schema().validate(self.config)
 

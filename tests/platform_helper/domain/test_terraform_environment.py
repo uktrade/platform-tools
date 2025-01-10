@@ -12,44 +12,6 @@ from dbt_platform_helper.providers.files import FileProvider
 
 class TestGenerateTerraform:
 
-    # TODO this should live in config provider, then it can be mocked in these tests
-    def test_get_enriched_config_returns_expected_config(self):
-        mock_file_provider = Mock(spec=FileProvider)
-        mock_file_provider.load.return_value = {
-            "application": "test-app",
-            "environments": {
-                "*": {
-                    "vpc": "vpc3",
-                    "accounts": {
-                        "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                        "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
-                    },
-                },
-                "test": {"versions": {"terraform-platform-modules": "123456"}},
-            },
-        }
-
-        expected_enriched_config_config = {
-            "application": "test-app",
-            "environments": {
-                "test": {
-                    "vpc": "vpc3",
-                    "accounts": {
-                        "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                        "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
-                    },
-                    "versions": {"terraform-platform-modules": "123456"},
-                }
-            },
-        }
-
-        mock_config_validator = Mock()
-
-        result = TerraformEnvironment(
-            ConfigProvider(mock_config_validator, mock_file_provider)
-        ).get_enriched_config()
-        assert result == expected_enriched_config_config
-
     # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     # @patch("dbt_platform_helper.providers.file.Fileprovider", new=Mock())
     # Test covers different versioning scenarios, ensuring cli correctly overrides config version
