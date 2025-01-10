@@ -52,13 +52,12 @@ class TerraformEnvironment:
             self.config_provider.load_and_validate_platform_config()
         )
 
-        environment_config = config["environments"][environment_name]
         manifest_generator = PlatformTerraformManifestGenerator(FileProvider())
 
         manifest = manifest_generator.generate_manifest(
             environment_name,
             config["application"],
-            environment_config,
+            config["environments"][environment_name],
             terraform_platform_modules_version_override,
         )
 
