@@ -1,6 +1,7 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -42,6 +43,14 @@ class PlatformTerraformManifestGenerator:
         )
 
 
+class TerraformEnvironmentException(PlatformException):
+    pass
+
+
+class EnvironmentNotFoundException(TerraformEnvironmentException):
+    pass
+
+
 class TerraformEnvironment:
     def __init__(
         self,
@@ -57,6 +66,11 @@ class TerraformEnvironment:
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.get_enriched_config()
+
+        if environment_name not in config.get("environments").keys():
+            raise EnvironmentNotFoundException(
+                f"Error: cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
+            )
 
         manifest = self.manifest_generator.generate_manifest(
             environment_name=environment_name,
