@@ -13,6 +13,7 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
+import dbt_platform_helper.domain.versions as versions
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.aws.redis import RedisProvider
@@ -731,10 +732,6 @@ def mock_get_supported_redis_versions(request, monkeypatch):
 
 
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
-
-import dbt_platform_helper.domain.versions as versions
-
-
 @pytest.fixture(autouse=True)
 def mock_get_aws_supported_versions(request, monkeypatch):
     if "skip_supported_versions_fixture" in request.keywords:
