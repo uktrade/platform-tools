@@ -7,8 +7,8 @@ import dbt_platform_helper.domain.versions as versions
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.aws.opensearch import OpensearchProviderDuck
-from dbt_platform_helper.providers.aws.redis import RedisProviderDuck
+from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.aws.redis import RedisProvider
 from dbt_platform_helper.utils.messages import abort_with_error
 
 
@@ -74,7 +74,7 @@ class ConfigValidator:
     def validate_supported_redis_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=RedisProviderDuck(boto3.client("elasticache")),
+            aws_provider=RedisProvider(boto3.client("elasticache")),
             extension_type="redis",  # TODO this is information which can live in the RedisProvider
             version_key="engine",  # TODO this is information which can live in the RedisProvider
         )
@@ -82,7 +82,7 @@ class ConfigValidator:
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=OpensearchProviderDuck(boto3.client("opensearch")),
+            aws_provider=OpensearchProvider(boto3.client("opensearch")),
             extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
             version_key="engine",  # TODO this is information which can live in the OpensearchProvider
         )
