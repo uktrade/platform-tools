@@ -47,6 +47,11 @@ class TerraformEnvironment:
         self.echo = echo_fn
         self.config_provider = config_provider
 
+    def get_enriched_config(self):
+        return self.config_provider.apply_environment_defaults(
+            self.config_provider.load_and_validate_platform_config()
+        )
+
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.apply_environment_defaults(
             self.config_provider.load_and_validate_platform_config()

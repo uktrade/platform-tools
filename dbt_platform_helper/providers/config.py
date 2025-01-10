@@ -29,6 +29,8 @@ class ConfigProvider:
         PlatformConfigSchema.schema().validate(self.config)
 
         # TODO= logically this isn't validation but loading + parsing, to move.
+        # also, we apply defaults but discard that data.  Should we just apply
+        # defaults to config returned by load_and_validate
         enriched_config = ConfigProvider.apply_environment_defaults(self.config)
         self.validator.run_validations(enriched_config)
 
