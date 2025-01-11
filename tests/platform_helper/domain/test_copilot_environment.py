@@ -12,11 +12,13 @@ import yaml
 from moto import mock_aws
 
 from dbt_platform_helper.domain.copilot_environment import CertificateNotFoundException
+from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.domain.copilot_environment import find_https_certificate
 from dbt_platform_helper.domain.copilot_environment import get_cert_arn
 from dbt_platform_helper.domain.copilot_environment import get_subnet_ids
 from dbt_platform_helper.domain.copilot_environment import get_vpc_id
+from dbt_platform_helper.providers.config import ConfigProvider
 
 
 @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
@@ -596,3 +598,93 @@ class TestCrossEnvironmentS3Templating:
         assert kms_statement4["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
         obj_act_statement4 = policy_doc4["Statement"][1]
         assert obj_act_statement4["Action"] == ["s3:Get*", "s3:Put*"]
+
+
+class TestCopilotGenerate:
+    # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    # @patch(
+    #     "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
+    #     return_value="arn:aws:acm:test",
+    # )
+    # @patch(
+    #     "dbt_platform_helper.domain.copilot_environment.get_subnet_ids",
+    #     return_value=(["def456"], ["ghi789"]),
+    # )
+    # @patch("dbt_platform_helper.domain.copilot_environment.get_vpc_id", return_value="vpc-abc123")
+    # @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
+    # @pytest.mark.parametrize(
+    #     "environment_config, expected_vpc",
+    #     [
+    #         ({"test": {}}, None),
+    #         ({"test": {"vpc": "vpc1"}}, "vpc1"),
+    #         ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
+    #         ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
+    #     ],
+    # )
+    # def test_generate(
+    #     self,
+    #     mock_get_aws_session_1,
+    #     mock_get_vpc_id,
+    #     mock_get_subnet_ids,
+    #     mock_get_cert_arn,
+    #     fakefs,
+    #     environment_config,
+    #     expected_vpc,
+    # ):
+    #     # TODO can mock ConfigProvier instead to set up config
+    #     default_conf = environment_config.get("*", {})
+    #     default_conf["accounts"] = {
+    #         "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+    #         "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+    #     }
+    #     environment_config["*"] = default_conf
+
+    #     fakefs.create_file(
+    #         PLATFORM_CONFIG_FILE,
+    #         contents=yaml.dump({"application": "my-app", "environments": environment_config}),
+    #     )
+
+    #     mocked_session = MagicMock()
+    #     mock_get_aws_session_1.return_value = mocked_session
+    #     fakefs.add_real_directory(
+    #         BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
+    #     )
+
+    #     result = CliRunner().invoke(generate, ["--name", "test"])
+
+    #     # Comparing the generated file with the expected file - domain level test.
+    #     # TODO Check file provider has been called on the expected contents instead of using fakefs.
+    #     actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
+    #     expected = yaml.safe_load(
+    #         Path("copilot/fixtures/test_environment_manifest.yml").read_text()
+    #     )
+
+    #     # Checking functions are called as expected - domain level test
+    #     # TODO get_vpc_id should be replaced with VpcProvider
+    #     mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
+    #     mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123", "test")
+    #     mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
+    #     mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
+
+    #     assert actual == expected
+
+    #     # TODO Check output of command - domain level test
+    #     assert "File copilot/environments/test/manifest.yml created" in result.output
+
+    def test_fail_early_if_platform_config_invalid(self, capfd):
+        mock_file_provider = Mock()
+        mock_file_provider.load.return_value = {}
+
+        with patch(
+            "dbt_platform_helper.providers.config.abort_with_error"
+        ) as mock_abort_with_error:
+            mock_abort_with_error.side_effect = SystemExit(1)
+            with pytest.raises(SystemExit) as e:
+                CopilotEnvironment(ConfigProvider(Mock(), mock_file_provider)).generate("test")
+
+        assert e.value.code == 1
+
+        mock_abort_with_error.assert_called_with(
+            f"Schema error in platform-config.yml. Missing key: 'application'"
+        )
+        mock_file_provider.mkfile.assert_not_called()
