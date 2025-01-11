@@ -297,7 +297,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
 
-        assert "Wrong key 'something-invalid'" in str(ex)
+    assert "Wrong key 'something-invalid'" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
