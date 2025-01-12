@@ -9,32 +9,45 @@ from typing import Union
 import boto3
 import click
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 
 
-class MaintenancePage:
-    def activate(self, app, env, svc, template, vpc):
-        application = load_application(app)
-        application_environment = get_app_environment(app, env)
+class MaintenancePageException(PlatformException):
+    pass
 
+
+class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
+    pass
+
+
+class MaintenancePage:
+
+    def _get_deployed_load_balanced_web_services(self, app: Application, svc: str):
         if "*" in svc:
-            services = [
-                s for s in application.services.values() if s.kind == "Load Balanced Web Service"
-            ]
+            services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
         else:
             all_services = [get_app_service(app, s) for s in list(svc)]
             services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
-
         if not services:
+            raise LoadBalancedWebServiceNotFoundException
+        return services
+
+    def activate(self, app, env, svc, template, vpc):
+        try:
+            services = self._get_deployed_load_balanced_web_services(load_application(app), svc)
+        except LoadBalancedWebServiceNotFoundException:
             click.secho(f"No services deployed yet to {app} environment {env}", fg="red")
             raise click.Abort
 
+        application_environment = get_app_environment(app, env)
         try:
             https_listener = find_https_listener(application_environment.session, app, env)
             current_maintenance_page = get_maintenance_page(
