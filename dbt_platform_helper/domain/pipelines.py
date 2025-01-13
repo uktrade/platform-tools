@@ -7,11 +7,11 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.files import generate_override_files_from_template
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
@@ -149,7 +149,9 @@ class Pipelines:
         contents = templates.get_template(
             f"pipelines/{file_name if template_name is None else template_name}"
         ).render(template_data)
-        message = mkfile(base_path, pipelines_dir / file_name, contents, overwrite=True)
+        message = FileProvider.mkfile(
+            base_path, pipelines_dir / file_name, contents, overwrite=True
+        )
         self.echo(message)
 
     def _generate_terraform_environment_pipeline_manifest(
@@ -179,7 +181,7 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        self.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
 
     def generate_terraform_codebase_pipeline_manifest(
         self,
@@ -208,4 +210,4 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        self.echo(mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
