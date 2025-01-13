@@ -30,8 +30,13 @@ class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
 
 
 class MaintenancePage:
-    def __init__(self, user_prompt_callback: Callable[[str], bool] = click.confirm):
+    def __init__(
+        self,
+        user_prompt_callback: Callable[[str], bool] = click.confirm,
+        echo: Callable[[str], str] = click.secho,
+    ):
         self.user_prompt_callback = user_prompt_callback
+        self.echo = echo
 
     def _get_deployed_load_balanced_web_services(self, app: Application, svc: str):
         if "*" in svc:
@@ -47,7 +52,7 @@ class MaintenancePage:
         try:
             services = self._get_deployed_load_balanced_web_services(load_application(app), svc)
         except LoadBalancedWebServiceNotFoundException:
-            click.secho(f"No services deployed yet to {app} environment {env}", fg="red")
+            self.echo(f"No services deployed yet to {app} environment {env}", fg="red")
             raise click.Abort
 
         application_environment = get_app_environment(app, env)
@@ -84,7 +89,7 @@ class MaintenancePage:
                     allowed_ips,
                     template,
                 )
-                click.secho(
+                self.echo(
                     f"Maintenance page '{template}' added for environment {env} in application {app}",
                     fg="green",
                 )
@@ -92,13 +97,13 @@ class MaintenancePage:
                 raise click.Abort
 
         except LoadBalancerNotFoundException:
-            click.secho(
+            self.echo(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
         except ListenerNotFoundException:
-            click.secho(
+            self.echo(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
@@ -112,7 +117,7 @@ class MaintenancePage:
                 application_environment.session, https_listener
             )
             if not current_maintenance_page:
-                click.secho("There is no current maintenance page to remove", fg="red")
+                self.echo("There is no current maintenance page to remove", fg="red")
                 raise click.Abort
 
             if not self.user_prompt_callback(
@@ -122,18 +127,18 @@ class MaintenancePage:
                 raise click.Abort
 
             remove_maintenance_page(application_environment.session, https_listener)
-            click.secho(
+            self.echo(
                 f"Maintenance page removed from environment {env} in application {app}", fg="green"
             )
 
         except LoadBalancerNotFoundException:
-            click.secho(
+            self.echo(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
         except ListenerNotFoundException:
-            click.secho(
+            self.echo(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
