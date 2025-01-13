@@ -35,7 +35,7 @@ class VpcProvider:
             Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
         )["RouteTables"]
 
-        subnets = []
+        private_subnets = []
         for route_table in route_tables:
             private_routes = [route for route in route_table["Routes"] if "NatGatewayId" in route]
             if not private_routes:
@@ -43,9 +43,9 @@ class VpcProvider:
             for association in route_table["Associations"]:
                 if "SubnetId" in association:
                     subnet_id = association["SubnetId"]
-                    subnets.append(subnet_id)
+                    private_subnets.append(subnet_id)
 
-        if not subnets:
+        if not private_subnets:
             raise AWSException(f"No private subnets found in vpc '{vpc_name}'")
 
         tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
@@ -54,4 +54,4 @@ class VpcProvider:
         if not sec_groups:
             raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
-        return Vpc(subnets, sec_groups)
+        return Vpc(private_subnets, sec_groups)
