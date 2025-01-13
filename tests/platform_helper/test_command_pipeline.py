@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
 import yaml
 from click.testing import CliRunner
 from freezegun.api import freeze_time
@@ -14,6 +15,34 @@ from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import assert_file_created_in_stdout
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
+
+
+@pytest.mark.parametrize(
+    "cli_args,expected_pipeline_args",
+    [
+        ([], [None, None]),
+        (
+            ["--terraform-platform-modules-version", "1.2.3", "--deploy-branch", "my-branch"],
+            ["1.2.3", "my-branch"],
+        ),
+        (["--terraform-platform-modules-version", "1.2.3"], ["1.2.3", None]),
+        (["--deploy-branch", "my-branch"], [None, "my-branch"]),
+        (
+            ["--terraform-platform-modules-version", "1.2.3", "--deploy-branch", "my-branch"],
+            ["1.2.3", "my-branch"],
+        ),
+    ],
+)
+@patch("dbt_platform_helper.commands.pipeline.Pipelines", return_value="uktrade/test-app-deploy")
+def test_pipeline_generate_passes_args_to_pipelines_instance(
+    mock_pipelines, cli_args, expected_pipeline_args
+):
+    mock_pipeline_instance = Mock()
+    mock_pipelines.return_value = mock_pipeline_instance
+
+    CliRunner().invoke(generate, cli_args)
+
+    mock_pipeline_instance.generate.assert_called_once_with(*expected_pipeline_args)
 
 
 @freeze_time("2023-08-22 16:00:00")
