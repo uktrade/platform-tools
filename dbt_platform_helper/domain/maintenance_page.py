@@ -42,7 +42,7 @@ class MaintenancePage:
         if "*" in svc:
             services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
         else:
-            all_services = [get_app_service(app, s) for s in list(svc)]
+            all_services = [get_app_service(app.name, s) for s in list(svc)]
             services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
         if not services:
             raise LoadBalancedWebServiceNotFoundException
