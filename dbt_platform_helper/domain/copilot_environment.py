@@ -5,9 +5,9 @@ import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
@@ -111,7 +111,7 @@ def _generate_copilot_environment_manifests(
         }
     )
     click.echo(
-        mkfile(
+        FileProvider.mkfile(
             ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
         )
     )
@@ -155,7 +155,7 @@ class CopilotEnvironment:
 
 
 class CopilotTemplating:
-    def __init__(self, mkfile_fn=mkfile):
+    def __init__(self, mkfile_fn=FileProvider.mkfile):
         self.mkfile_fn = mkfile_fn
 
     def generate_cross_account_s3_policies(self, environments: dict, extensions):
