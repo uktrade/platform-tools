@@ -7,9 +7,6 @@ from pathlib import Path
 from typing import Dict
 
 import boto3
-from boto3 import Session
-import yaml
-from yaml.parser import ParserError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.platform_exception import PlatformException
