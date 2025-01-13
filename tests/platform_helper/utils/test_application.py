@@ -262,3 +262,46 @@ class ApplicationTest(TestCase):
         )
 
         self.assertRaises(ApplicationNotFoundException, load_application, "sample")
+
+    def test_loading_an_application_services_with_token(
+        self, get_aws_session_or_abort, get_profile_name_from_account_id
+    ):
+        session = MagicMock(name="session-mock")
+        client = MagicMock(name="client-mock")
+        session.client.return_value = client
+
+        client.get_caller_identity.return_value = {"Account": "abc_123"}
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/environments/my_env",
+                        "Value": '{"name": "my_env", "accountID": "abc_123"}',
+                    }
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/components/web",
+                        "Value": '{"app": "demoddjango", "name": "web", "type": "Load Balanced Web Service"}',
+                    }
+                ],
+                "NextToken": "sometoken",
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/another-test/components/web11",
+                        "Value": '{"app": "demoddjango", "name": "web11", "type": "Load Balanced Web Service"}',
+                    }
+                ]
+            },
+        ]
+        application = load_application(app="another-test", default_session=session)
+
+        self.assertEqual(len(application.services), 2)
+        self.assertEqual(application.services["web"].name, "web")
+        self.assertEqual(application.services["web"].kind, "Load Balanced Web Service")
+        self.assertEqual(application.services["web11"].name, "web11")
+        self.assertEqual(application.services["web11"].kind, "Load Balanced Web Service")

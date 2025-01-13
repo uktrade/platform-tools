@@ -8,6 +8,8 @@ from typing import Dict
 
 import boto3
 from boto3 import Session
+import yaml
+from yaml.parser import ParserError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.platform_exception import PlatformException
@@ -60,7 +62,7 @@ class Application:
         return str(self) == str(other)
 
 
-def load_application(app: str = None, default_session: Session = None) -> Application:
+def load_application(app=None, default_session=None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()
 
@@ -72,7 +74,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
             WithDecryption=False,
         )
     except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundException(app)
+        raise ApplicationNotFoundException(application.name)
 
     path = f"/copilot/applications/{application.name}/environments"
     secrets = get_ssm_secrets(app, None, current_session, path)
@@ -106,10 +108,19 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
         Recursive=False,
         WithDecryption=False,
     )
+    results = response["Parameters"]
+    while "NextToken" in response:
+        response = ssm_client.get_parameters_by_path(
+            Path=f"/copilot/applications/{application.name}/components",
+            Recursive=False,
+            WithDecryption=False,
+            NextToken=response["NextToken"],
+        )
+        results.extend(response["Parameters"])
 
     application.services = {
         svc["name"]: Service(svc["name"], svc["type"])
-        for svc in [json.loads(parameter["Value"]) for parameter in response["Parameters"]]
+        for svc in [json.loads(parameter["Value"]) for parameter in results]
     }
 
     return application
