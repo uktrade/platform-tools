@@ -3,62 +3,38 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import Callable
 from typing import List
 from typing import Union
 
 import boto3
 import click
 
-from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import find_https_listener
-from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 from dbt_platform_helper.utils.application import load_application
 
 
-class MaintenancePageException(PlatformException):
-    pass
-
-
-class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
-    pass
-
-
 class MaintenancePage:
-    def __init__(
-        self,
-        user_prompt_callback: Callable[[str], bool] = click.confirm,
-        echo: Callable[[str], str] = click.secho,
-    ):
-        self.user_prompt_callback = user_prompt_callback
-        self.echo = echo
-
-    def _get_deployed_load_balanced_web_services(self, app: Application, svc: str):
-        if "*" in svc:
-            services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
-        else:
-            all_services = [get_app_service(app.name, s) for s in list(svc)]
-            services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
-        if not services:
-            raise LoadBalancedWebServiceNotFoundException
-        return services
-
     def activate(self, app, env, svc, template, vpc):
-        try:
-            services = self._get_deployed_load_balanced_web_services(load_application(app), svc)
-        except LoadBalancedWebServiceNotFoundException:
-            # TODO DBTP-1643 - this bit of logic does not depend on env, so env shouldn't really be in the exception
-            # message
-            # Exception should be propagated to command and caught there.
-            self.echo(f"No services deployed yet to {app} environment {env}", fg="red")
+        application = load_application(app)
+        application_environment = get_app_environment(app, env)
+
+        if "*" in svc:
+            services = [
+                s for s in application.services.values() if s.kind == "Load Balanced Web Service"
+            ]
+        else:
+            all_services = [get_app_service(app, s) for s in list(svc)]
+            services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
+
+        if not services:
+            click.secho(f"No services deployed yet to {app} environment {env}", fg="red")
             raise click.Abort
 
-        application_environment = get_app_environment(app, env)
         try:
             https_listener = find_https_listener(application_environment.session, app, env)
             current_maintenance_page = get_maintenance_page(
@@ -66,7 +42,7 @@ class MaintenancePage:
             )
             remove_current_maintenance_page = False
             if current_maintenance_page:
-                remove_current_maintenance_page = self.user_prompt_callback(
+                remove_current_maintenance_page = click.confirm(
                     f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
                     f"environment in {app}.\nWould you like to replace it with a '{template}' "
                     f"maintenance page?"
@@ -74,7 +50,7 @@ class MaintenancePage:
                 if not remove_current_maintenance_page:
                     raise click.Abort
 
-            if remove_current_maintenance_page or self.user_prompt_callback(
+            if remove_current_maintenance_page or click.confirm(
                 f"You are about to enable the '{template}' maintenance page for the {env} "
                 f"environment in {app}.\nWould you like to continue?"
             ):
@@ -92,7 +68,7 @@ class MaintenancePage:
                     allowed_ips,
                     template,
                 )
-                self.echo(
+                click.secho(
                     f"Maintenance page '{template}' added for environment {env} in application {app}",
                     fg="green",
                 )
@@ -100,13 +76,13 @@ class MaintenancePage:
                 raise click.Abort
 
         except LoadBalancerNotFoundException:
-            self.echo(
+            click.secho(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
         except ListenerNotFoundException:
-            self.echo(
+            click.secho(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
@@ -120,28 +96,28 @@ class MaintenancePage:
                 application_environment.session, https_listener
             )
             if not current_maintenance_page:
-                self.echo("There is no current maintenance page to remove", fg="red")
+                click.secho("There is no current maintenance page to remove", fg="red")
                 raise click.Abort
 
-            if not self.user_prompt_callback(
+            if not click.confirm(
                 f"There is currently a '{current_maintenance_page}' maintenance page, "
                 f"would you like to remove it?"
             ):
                 raise click.Abort
 
             remove_maintenance_page(application_environment.session, https_listener)
-            self.echo(
+            click.secho(
                 f"Maintenance page removed from environment {env} in application {app}", fg="green"
             )
 
         except LoadBalancerNotFoundException:
-            self.echo(
+            click.secho(
                 f"No load balancer found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
 
         except ListenerNotFoundException:
-            self.echo(
+            click.secho(
                 f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
             )
             raise click.Abort
