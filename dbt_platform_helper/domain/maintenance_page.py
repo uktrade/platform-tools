@@ -52,6 +52,9 @@ class MaintenancePage:
         try:
             services = self._get_deployed_load_balanced_web_services(load_application(app), svc)
         except LoadBalancedWebServiceNotFoundException:
+            # TODO DBTP-1643 - this bit of logic does not depend on env, so env shouldn't really be in the exception
+            # message
+            # Exception should be propagated to command and caught there.
             self.echo(f"No services deployed yet to {app} environment {env}", fg="red")
             raise click.Abort
 
