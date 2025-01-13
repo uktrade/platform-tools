@@ -27,14 +27,16 @@ from dbt_platform_helper.utils.versioning import (
 class Pipelines:
     def __init__(
         self,
-        config_provider=ConfigProvider(ConfigValidator()),
+        config_provider: ConfigProvider = ConfigProvider(ConfigValidator()),
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
+        get_git_remote: Callable[[], str] = git_remote,
         get_codestar_arn: Callable[[str], str] = get_codestar_connection_arn,
     ):
         self.config_provider = config_provider
         self.echo = echo
         self.abort = abort
+        self.get_git_remote = get_git_remote
         self.get_codestar_arn = get_codestar_arn
 
     def generate(self, terraform_platform_modules_version, deploy_branch):
@@ -54,7 +56,7 @@ class Pipelines:
         templates = setup_templates()
         app_name = get_application_name()
 
-        git_repo = git_remote()
+        git_repo = self.get_git_remote()
         if not git_repo:
             self.abort("The current directory is not a git repository")
 

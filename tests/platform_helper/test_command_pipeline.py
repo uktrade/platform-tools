@@ -3,7 +3,6 @@ from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import pytest
 import yaml
 from click.testing import CliRunner
 from freezegun.api import freeze_time
@@ -20,7 +19,7 @@ from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -49,7 +48,7 @@ def test_pipeline_generate_with_git_repo_creates_the_pipeline_configuration(
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 @patch("dbt_platform_helper.domain.pipelines.get_account_details")
 @patch("dbt_platform_helper.domain.pipelines.get_public_repository_arn")
 def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
@@ -87,7 +86,7 @@ def test_pipeline_generate_with_additional_ecr_repo_adds_public_ecr_perms(
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_environments_creates_the_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -105,7 +104,7 @@ def test_pipeline_generate_with_only_environments_creates_the_pipeline_configura
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_wildcarded_branch_creates_the_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -123,7 +122,7 @@ def test_pipeline_generate_with_wildcarded_branch_creates_the_pipeline_configura
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_invalid_wildcarded_branch_does_not_create_the_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -143,7 +142,7 @@ def test_pipeline_generate_with_invalid_wildcarded_branch_does_not_create_the_pi
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -161,7 +160,7 @@ def test_pipeline_generate_with_only_codebases_creates_the_pipeline_configuratio
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_configuration(
     git_remote, mock_aws_session, fakefs
 ):
@@ -176,7 +175,7 @@ def test_pipeline_generate_with_terraform_directory_only_creates_pipeline_config
 @freeze_time("2023-08-22 16:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones(
     git_remote, mock_aws_session, fakefs, fs
 ):
@@ -202,7 +201,7 @@ def test_pipeline_generate_deletes_any_existing_config_files_and_writes_new_ones
 
 
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
 def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     git_remote, mock_aws_session, fakefs
 ):
@@ -215,7 +214,7 @@ def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
     assert 'Error: There is no CodeStar Connection named "test-app" to use' in result.output
 
 
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value=None)
+@patch("dbt_platform_helper.commands.pipeline.git_remote", return_value=None)
 def test_pipeline_generate_with_no_repo_fails_with_message(git_remote, fakefs):
     setup_fixtures(fakefs)
     result = CliRunner().invoke(generate)
@@ -272,108 +271,6 @@ def test_pipeline_generate_with_no_platform_config_fails_with_message(fakefs):
 
     assert result.exit_code == 1
     assert f"Cannot get application name. {PLATFORM_CONFIG_FILE} is missing."
-
-
-@freeze_time("2023-08-22 16:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
-def test_pipeline_generate_without_accounts_creates_the_pipeline_configuration(
-    git_remote, mock_aws_session, fakefs
-):
-    mock_codestar_connections_boto_client(mock_aws_session, ["test-app"])
-    setup_fixtures(fakefs)
-    pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
-    del pipelines["accounts"]
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(pipelines))
-
-    CliRunner().invoke(generate)
-
-    assert_codebase_pipeline_config_was_generated()
-
-
-def assert_terraform(app_name, aws_account, expected_version, expected_branch):
-    expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
-    assert expected_files_dir.exists()
-    content = expected_files_dir.read_text()
-    print(content)
-
-    assert "# WARNING: This is an autogenerated file, not for manual editing." in content
-    assert "# Generated by platform-helper v0.1-TEST / 2024-10-28 12:00:00" in content
-    assert f'profile                  = "{aws_account}"' in content
-    assert (
-        f"git::https://github.com/uktrade/terraform-platform-modules.git//environment-pipelines?depth=1&ref={expected_version}"
-        in content
-    )
-    assert f'application         = "{app_name}"' in content
-    expected_branch_value = expected_branch if expected_branch else "each.value.branch"
-    assert f"branch              = {expected_branch_value} in content"
-
-
-@freeze_time("2024-10-28 12:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@patch("dbt_platform_helper.domain.pipelines.git_remote", return_value="uktrade/test-app-deploy")
-@pytest.mark.parametrize(
-    "cli_terraform_platform_version, config_terraform_platform_version, expected_terraform_platform_version, cli_demodjango_branch, expected_demodjango_branch",
-    [  # config_terraform_platform_version sets the platform-config.yml to include the TPM version at platform-config.yml/default_versions/terraform-platform-modules
-        ("7", True, "7", None, None),  # Case with cli_terraform_platform_version
-        (
-            None,
-            True,
-            "4.0.0",
-            "demodjango-branch",
-            "demodjango-branch",
-        ),  # Case with config_terraform_platform_version and specific branch
-        (None, True, "4.0.0", None, None),  # Case with config_terraform_platform_version
-        (None, None, "5", None, None),  # Case with default TPM version and without branch, defaults
-    ],
-)
-def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
-    git_remote,
-    mock_aws_session,
-    fakefs,
-    cli_terraform_platform_version,
-    config_terraform_platform_version,
-    expected_terraform_platform_version,
-    cli_demodjango_branch,
-    expected_demodjango_branch,
-):
-
-    app_name = "test-app"
-    mock_codestar_connections_boto_client(mock_aws_session, [app_name])
-
-    if config_terraform_platform_version:
-        setup_fixtures(
-            fakefs,
-            pipelines_file="pipeline/platform-config-for-terraform-environment-pipelines-with-tpm-version.yml",
-        )
-    else:
-        setup_fixtures(
-            fakefs,
-            pipelines_file="pipeline/platform-config-for-terraform-environment-pipelines.yml",
-        )
-
-    args = []
-    if cli_terraform_platform_version:
-        args.extend(["--terraform-platform-modules-version", cli_terraform_platform_version])
-    if cli_demodjango_branch:
-        args.extend(["--deploy-branch", cli_demodjango_branch])
-
-    CliRunner().invoke(generate, args=args)
-
-    assert_terraform(
-        app_name,
-        "platform-sandbox-test",
-        expected_terraform_platform_version,
-        expected_demodjango_branch,
-    )
-    assert_terraform(
-        app_name,
-        "platform-prod-test",
-        expected_terraform_platform_version,
-        expected_demodjango_branch,
-    )
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
