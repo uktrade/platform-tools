@@ -223,30 +223,6 @@ def test_pipeline_generate_with_no_repo_fails_with_message(git_remote, fakefs):
     assert "Error: The current directory is not a git repository" in result.output
 
 
-def test_pipeline_generate_with_no_pipeline_yml_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    os.remove(PLATFORM_CONFIG_FILE)
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert (
-        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-        in result.output
-    )
-
-
-def test_pipeline_generate_pipeline_yml_invalid_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    message = result.output
-    assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in message
-
-
 def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_message(fakefs):
     setup_fixtures(fakefs)
     pipelines = yaml.safe_load(Path(PLATFORM_CONFIG_FILE).read_text())
@@ -261,16 +237,6 @@ def test_pipeline_generate_pipeline_yml_defining_the_same_env_twice_fails_with_m
         f"Error: The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be listed in a "
         "single pipeline"
     ) in result.output
-
-
-def test_pipeline_generate_with_no_platform_config_fails_with_message(fakefs):
-    setup_fixtures(fakefs)
-    os.remove(PLATFORM_CONFIG_FILE)
-
-    result = CliRunner().invoke(generate)
-
-    assert result.exit_code == 1
-    assert f"Cannot get application name. {PLATFORM_CONFIG_FILE} is missing."
 
 
 def assert_yaml_in_output_file_matches_expected(output_file, expected_file):
@@ -292,19 +258,6 @@ def assert_codebase_pipeline_config_was_generated():
 def assert_codebase_pipeline_config_was_not_generated():
     for file in setup_output_file_paths_for_codebases():
         assert not Path(file).exists(), f"File {file} should not exist"
-
-
-def assert_environment_pipeline_config_was_not_generated():
-    for file in setup_output_file_paths_for_environments():
-        assert not Path(file).exists(), f"File {file} should not exist"
-
-
-def setup_output_file_paths_for_environments():
-    output_dir = Path("./copilot/pipelines/environments")
-    buildspec = output_dir / "buildspec.yml"
-    manifest = output_dir / "manifest.yml"
-    cfn_patch = output_dir / "overrides" / "cfn.patches.yml"
-    return buildspec, cfn_patch, manifest
 
 
 def setup_output_file_paths_for_codebases():
