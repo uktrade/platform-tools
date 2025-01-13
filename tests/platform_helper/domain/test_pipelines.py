@@ -7,29 +7,63 @@ import yaml
 from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
+from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.utils.messages import abort_with_error
+
+
+class PipelineMocks:
+    def __init__(self, app_name):
+        self.mock_config_provider = ConfigProvider(ConfigValidator())
+        self.mock_echo = Mock()
+        self.mock_abort = abort_with_error
+        self.mock_git_remote = Mock()
+        self.mock_git_remote.return_value = "uktrade/test-app-deploy"
+        self.mock_codestar = Mock()
+        self.mock_codestar.return_value = (
+            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
+        )
+
+    def params(self):
+        return {
+            "config_provider": self.mock_config_provider,
+            "echo": self.mock_echo,
+            "abort": self.mock_abort,
+            "get_git_remote": self.mock_git_remote,
+            "get_codestar_arn": self.mock_codestar,
+        }
 
 
 def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
-    mock_echo = Mock()
     mock_config_provider = Mock()
-    mock_config_provider.load_and_validate_platform_config.return_value = {"application": "my-app"}
-    pipelines = Pipelines(config_provider=mock_config_provider, echo=mock_echo)
+    app_name = "my-app"
+    mock_config_provider.load_and_validate_platform_config.return_value = {"application": app_name}
 
+    mocks = PipelineMocks(app_name)
+    mocks.mock_config_provider = mock_config_provider
+
+    pipelines = Pipelines(**mocks.params())
     pipelines.generate(None, None)
 
-    mock_echo.assert_called_once_with("No pipelines defined: nothing to do.", err=True, fg="yellow")
+    mocks.mock_echo.assert_called_once_with(
+        "No pipelines defined: nothing to do.", err=True, fg="yellow"
+    )
 
 
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning():
-    mock_echo = Mock()
     mock_config_provider = Mock()
     mock_config_provider.load_and_validate_platform_config.return_value = {"environments": {}}
-    pipelines = Pipelines(config_provider=mock_config_provider, echo=mock_echo)
 
+    mocks = PipelineMocks("app-name")
+    mocks.mock_config_provider = mock_config_provider
+
+    pipelines = Pipelines(**mocks.params())
     pipelines.generate(None, None)
 
-    mock_echo.assert_called_once_with("No pipelines defined: nothing to do.", err=True, fg="yellow")
+    mocks.mock_echo.assert_called_once_with(
+        "No pipelines defined: nothing to do.", err=True, fg="yellow"
+    )
 
 
 @freeze_time("2024-10-28 12:00:00")
@@ -65,18 +99,11 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
             "terraform-platform-modules": "4.0.0"
         }
 
-    mock_echo = Mock()
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
-    mock_get_git_remote = Mock()
-    mock_get_git_remote.return_value = "uktrade/test-app-deploy"
-    mock_codestar = Mock()
-    mock_codestar.return_value = (
-        f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
-    )
 
-    pipelines = Pipelines(
-        echo=mock_echo, get_git_remote=mock_get_git_remote, get_codestar_arn=mock_codestar
-    )
+    mocks = PipelineMocks(app_name)
+
+    pipelines = Pipelines(**mocks.params())
     pipelines.generate(cli_terraform_platform_version, cli_demodjango_branch)
 
     assert_terraform(

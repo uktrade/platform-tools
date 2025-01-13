@@ -3,21 +3,15 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 
-import click
-
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
-from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.files import mkfile
-from dbt_platform_helper.utils.git import git_remote
-from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
@@ -27,11 +21,11 @@ from dbt_platform_helper.utils.versioning import (
 class Pipelines:
     def __init__(
         self,
-        config_provider: ConfigProvider = ConfigProvider(ConfigValidator()),
-        echo: Callable[[str], str] = click.secho,
-        abort: Callable[[str], None] = abort_with_error,
-        get_git_remote: Callable[[], str] = git_remote,
-        get_codestar_arn: Callable[[str], str] = get_codestar_connection_arn,
+        config_provider: ConfigProvider,
+        echo: Callable[[str], str],
+        abort: Callable[[str], None],
+        get_git_remote: Callable[[], str],
+        get_codestar_arn: Callable[[str], str],
     ):
         self.config_provider = config_provider
         self.echo = echo
