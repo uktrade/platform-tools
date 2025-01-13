@@ -14,7 +14,7 @@ class VpcProvider:
         self.ec2_client = session.client("ec2")
         self.ec2_resource = session.resource("ec2")
 
-    def get_vpc_info_by_name(self, app: str, env: str, vpc_name: str) -> Vpc:
+    def get_vpc_id(self, vpc_name):
         vpc_response = self.ec2_client.describe_vpcs(
             Filters=[{"Name": "tag:Name", "Values": [vpc_name]}]
         )
@@ -28,6 +28,12 @@ class VpcProvider:
 
         if not vpc_id:
             raise AWSException(f"VPC id not present in vpc '{vpc_name}'")
+
+        return vpc_id
+
+    def get_vpc_info_by_name(self, app: str, env: str, vpc_name: str) -> Vpc:
+
+        vpc_id = self.get_vpc_id(vpc_name)
 
         vpc = self.ec2_resource.Vpc(vpc_id)
 
