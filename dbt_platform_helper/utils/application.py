@@ -8,7 +8,6 @@ from typing import Dict
 
 import boto3
 import yaml
-from boto3 import Session
 from yaml.parser import ParserError
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -60,7 +59,7 @@ class Application:
         return str(self) == str(other)
 
 
-def load_application(app: str | None = None, default_session: Session | None = None) -> Application:
+def load_application(app = None, default_session = None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()
 
