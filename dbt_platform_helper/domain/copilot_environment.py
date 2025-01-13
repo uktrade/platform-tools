@@ -1,11 +1,11 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable
 
 import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.providers.vpc import VpcProvider
@@ -15,7 +15,13 @@ from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
 
+# TODO - prob some error message here... e.g. "VPC: {vpc_name} not found in account, check your platform-config.yaml and aws-profile configuration"
+class VPCNotFoundError(PlatformException):
+    pass
+
+
 # TODO - move helper functions into suitable provider classes
+# VPC Provider method
 def get_subnet_ids(session, vpc_id, environment_name):
     subnets = session.client("ec2").describe_subnets(
         Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
@@ -75,50 +81,6 @@ def get_cert_arn(session, application, env_name):
     return arn
 
 
-def get_vpc_id(session, env_name, vpc_name=None):
-    if not vpc_name:
-        vpc_name = f"{session.profile_name}-{env_name}"
-
-    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
-    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        filters[0]["Values"] = [session.profile_name]
-        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        click.secho(
-            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
-        )
-        raise click.Abort
-
-    return vpcs[0]["VpcId"]
-
-
-def _generate_copilot_environment_manifests(
-    environment_name, application_name, env_config, session, vpc_provider: VpcProvider
-):
-    env_template = setup_templates().get_template("env/manifest.yml")
-    vpc_name = env_config.get("vpc", None)
-    vpc_id = get_vpc_id(session, environment_name, vpc_name)
-    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
-    cert_arn = get_cert_arn(session, application_name, environment_name)
-    contents = env_template.render(
-        {
-            "name": environment_name,
-            "vpc_id": vpc_id,
-            "pub_subnet_ids": pub_subnet_ids,
-            "priv_subnet_ids": priv_subnet_ids,
-            "certificate_arn": cert_arn,
-        }
-    )
-    click.echo(
-        FileProvider.mkfile(
-            ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
-        )
-    )
-
-
 def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")
@@ -139,30 +101,74 @@ class CertificateNotFoundException(PlatformException):
 
 
 class CopilotEnvironment:
-    def __init__(
-        self, config_provider, vpc_provider: Callable[[boto3.Session], VpcProvider] = VpcProvider
-    ):
+    def __init__(self, config_provider, vpc_provider=None):
         self.config_provider = config_provider
-        self.vpc_provider = vpc_provider or VpcProvider
+        self.vpc_provider = vpc_provider
 
     def generate(self, environment_name):
+
         config = self.config_provider.load_and_validate_platform_config()
         enriched_config = self.config_provider.apply_environment_defaults(config)
 
         env_config = enriched_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
         click.secho(f"Using {profile_for_environment} for this AWS session")
-        session = get_aws_session_or_abort(profile_for_environment)
-        vpc_provider = self.vpc_provider(session)
 
-        _generate_copilot_environment_manifests(
+        # Interrim setup stuff TBA/TODO determine where this lives
+        session = get_aws_session_or_abort(profile_for_environment)
+        vpc_provider = self.vpc_provider(session)  # TODO
+        copilot_templating = CopilotTemplating(vpc_provider, FileProvider, FileProvider().mkfile())
+
+        copilot_templating.generate_copilot_environment_manifests(
             environment_name, enriched_config["application"], env_config, session, vpc_provider
         )
 
 
 class CopilotTemplating:
-    def __init__(self, mkfile_fn=FileProvider.mkfile):
+    # TODO - remove mkfile_fn - inject provider instead
+    def __init__(
+        self,
+        vpc_provider: VpcProvider = None,
+        file_provider: FileProvider = None,
+        mkfile_fn=FileProvider.mkfile,
+    ):
         self.mkfile_fn = mkfile_fn
+        self.vpc_provider = vpc_provider
+        self.file_provider = file_provider
+
+    def generate_copilot_environment_manifests(
+        self, environment_name, application_name, env_config, session
+    ):
+        env_template = setup_templates().get_template("env/manifest.yml")
+
+        # Get template variables
+        vpc_id = self._get_environment_vpc_id(
+            session, environment_name, env_config.get("vpc", None)
+        )
+        pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
+        cert_arn = get_cert_arn(session, application_name, environment_name)
+
+        return env_template.render(
+            {
+                "name": environment_name,
+                "vpc_id": vpc_id,
+                "pub_subnet_ids": pub_subnet_ids,
+                "priv_subnet_ids": priv_subnet_ids,
+                "certificate_arn": cert_arn,
+            }
+        )
+        # click.echo(self._write_template(environment_name, manifest_contents))
+
+    def _write_template(self, environment_name: str, manifest_contents: str):
+
+        return click.echo(
+            self.file_provider.mkfile(
+                ".",
+                f"copilot/environments/{environment_name}/manifest.yml",
+                manifest_contents,
+                overwrite=True,
+            )
+        )
 
     def generate_cross_account_s3_policies(self, environments: dict, extensions):
         resource_blocks = defaultdict(list)
@@ -208,3 +214,24 @@ class CopilotTemplating:
 
             self.mkfile_fn(output_dir, file_path, file_content, True)
             click.echo(f"File {file_path} created")
+
+    # TODO: This functionality makes no sense... Why are we checking for a vpc in AWS under 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
+    # TODO - refactor this somehow
+    # {session.profile_name}-{env_name} looks to work with the naming convention we use for our demodjango-deploy platform-config.yaml. Aghhh
+
+    # TODO (with a clearer head after refactoring slightly) - Check with the team why we bother to check aws-profile names to find the VPC. Since these profile names can be named litterally anything it feels like a moot check to have.
+    # If no one has a good reason for the check just remove it and fail fast if the VPC they provider in their platform config is invalid (and move on)
+    def _get_environment_vpc_id(self, session, env_name, vpc_name):
+
+        if not vpc_name:
+            vpc_name = f"{session.profile_name}-{env_name}"
+
+        try:
+            vpc_id = self.vpc_provider.get_vpc_id_by_name(vpc_name)
+        except AWSException:
+            vpc_id = self.vpc_provider.get_vpc_id_by_name(session.profile_name)
+
+        if not vpc_id:
+            raise VPCNotFoundError
+
+        return vpc_id

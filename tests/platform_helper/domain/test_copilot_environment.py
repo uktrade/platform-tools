@@ -17,35 +17,35 @@ from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.domain.copilot_environment import find_https_certificate
 from dbt_platform_helper.domain.copilot_environment import get_cert_arn
 from dbt_platform_helper.domain.copilot_environment import get_subnet_ids
-from dbt_platform_helper.domain.copilot_environment import get_vpc_id
+
+# from dbt_platform_helper.domain.copilot_environment import get_vpc_id
 from dbt_platform_helper.providers.config import ConfigProvider
 
+# @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
+# @mock_aws
+# def test_get_vpc_id(vpc_name):
+#     session = boto3.session.Session()
+#     vpc = create_moto_mocked_vpc(session, vpc_name)
+#     expected_vpc_id = vpc["VpcId"]
 
-@pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
-@mock_aws
-def test_get_vpc_id(vpc_name):
-    session = boto3.session.Session()
-    vpc = create_moto_mocked_vpc(session, vpc_name)
-    expected_vpc_id = vpc["VpcId"]
+#     actual_vpc_id = get_vpc_id(session, "prod")
 
-    actual_vpc_id = get_vpc_id(session, "prod")
+#     assert expected_vpc_id == actual_vpc_id
 
-    assert expected_vpc_id == actual_vpc_id
+#     vpc_id_from_name = get_vpc_id(session, "not-an-env", vpc_name=vpc_name)
 
-    vpc_id_from_name = get_vpc_id(session, "not-an-env", vpc_name=vpc_name)
-
-    assert expected_vpc_id == vpc_id_from_name
+#     assert expected_vpc_id == vpc_id_from_name
 
 
-@mock_aws
-def test_get_vpc_id_failure(capsys):
+# @mock_aws
+# def test_get_vpc_id_failure(capsys):
 
-    with pytest.raises(click.Abort):
-        get_vpc_id(boto3.session.Session(), "development")
+#     with pytest.raises(click.Abort):
+#         get_vpc_id(boto3.session.Session(), "development")
 
-    captured = capsys.readouterr()
+#     captured = capsys.readouterr()
 
-    assert "No VPC found with name default-development in AWS account default." in captured.out
+#     assert "No VPC found with name default-development in AWS account default." in captured.out
 
 
 @mock_aws
@@ -600,7 +600,40 @@ class TestCrossEnvironmentS3Templating:
         assert obj_act_statement4["Action"] == ["s3:Get*", "s3:Put*"]
 
 
+class TestCopilotTemplating:
+
+    @patch(
+        "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
+        return_value="arn:aws:acm:test",
+    )
+    @patch(
+        "dbt_platform_helper.domain.copilot_environment.get_subnet_ids",
+        return_value=(["def456"], ["ghi789"]),
+    )
+    @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
+    def test_copilot_templating_generate_generates_expected_manifest(
+        self, mock_get_cert_arn, mock_get_subnet_ids, mock_get_session
+    ):
+
+        mock_vpc_provider = Mock()
+        mock_file_provider = Mock()
+
+        mock_vpc_provider.get_vpc_id_by_name.return_value = "vpc-abc123"
+
+        mocked_session = MagicMock()
+        mock_get_session.return_value = mocked_session
+
+        copilot_templating = CopilotTemplating(
+            mock_vpc_provider, mock_file_provider, "im a file provider!"
+        )
+        result = copilot_templating.generate_copilot_environment_manifests(
+            "connors-environment", "connors-application", {"config": "im config"}, mock_get_session
+        )
+        assert result == "foo"
+
+
 class TestCopilotGenerate:
+
     # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     # @patch(
     #     "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
