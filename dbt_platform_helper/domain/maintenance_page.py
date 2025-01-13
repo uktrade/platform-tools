@@ -3,6 +3,7 @@ import random
 import re
 import string
 from pathlib import Path
+from typing import Callable
 from typing import List
 from typing import Union
 
@@ -29,6 +30,8 @@ class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
 
 
 class MaintenancePage:
+    def __init__(self, user_prompt_callback: Callable[[str], bool] = click.confirm):
+        self.user_prompt_callback = user_prompt_callback
 
     def _get_deployed_load_balanced_web_services(self, app: Application, svc: str):
         if "*" in svc:
@@ -55,7 +58,7 @@ class MaintenancePage:
             )
             remove_current_maintenance_page = False
             if current_maintenance_page:
-                remove_current_maintenance_page = click.confirm(
+                remove_current_maintenance_page = self.user_prompt_callback(
                     f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
                     f"environment in {app}.\nWould you like to replace it with a '{template}' "
                     f"maintenance page?"
@@ -63,7 +66,7 @@ class MaintenancePage:
                 if not remove_current_maintenance_page:
                     raise click.Abort
 
-            if remove_current_maintenance_page or click.confirm(
+            if remove_current_maintenance_page or self.user_prompt_callback(
                 f"You are about to enable the '{template}' maintenance page for the {env} "
                 f"environment in {app}.\nWould you like to continue?"
             ):
@@ -112,7 +115,7 @@ class MaintenancePage:
                 click.secho("There is no current maintenance page to remove", fg="red")
                 raise click.Abort
 
-            if not click.confirm(
+            if not self.user_prompt_callback(
                 f"There is currently a '{current_maintenance_page}' maintenance page, "
                 f"would you like to remove it?"
             ):
