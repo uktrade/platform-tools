@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import Callable
 
 import boto3
 import click
@@ -7,6 +8,7 @@ import click
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
@@ -94,7 +96,7 @@ def get_vpc_id(session, env_name, vpc_name=None):
 
 
 def _generate_copilot_environment_manifests(
-    environment_name, application_name, env_config, session
+    environment_name, application_name, env_config, session, vpc_provider: VpcProvider
 ):
     env_template = setup_templates().get_template("env/manifest.yml")
     vpc_name = env_config.get("vpc", None)
@@ -137,8 +139,11 @@ class CertificateNotFoundException(PlatformException):
 
 
 class CopilotEnvironment:
-    def __init__(self, config_provider):
+    def __init__(
+        self, config_provider, vpc_provider: Callable[[boto3.Session], VpcProvider] = VpcProvider
+    ):
         self.config_provider = config_provider
+        self.vpc_provider = vpc_provider or VpcProvider
 
     def generate(self, environment_name):
         config = self.config_provider.load_and_validate_platform_config()
@@ -148,9 +153,10 @@ class CopilotEnvironment:
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
         click.secho(f"Using {profile_for_environment} for this AWS session")
         session = get_aws_session_or_abort(profile_for_environment)
+        vpc_provider = self.vpc_provider(session)
 
         _generate_copilot_environment_manifests(
-            environment_name, enriched_config["application"], env_config, session
+            environment_name, enriched_config["application"], env_config, session, vpc_provider
         )
 
 
