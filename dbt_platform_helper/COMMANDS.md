@@ -460,12 +460,10 @@ platform-helper environment online --app <application> --env <environment>
 ## Usage
 
 ```
-platform-helper environment generate --name <name> [--vpc-name <vpc_name>] 
+platform-helper environment generate --name <name> 
 ```
 
 ## Options
-
-- `--vpc-name <text>`
 
 - `--name
 -n <text>`

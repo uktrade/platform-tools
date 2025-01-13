@@ -13,12 +13,12 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.files import generate_override_files
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
@@ -379,7 +379,9 @@ def _generate_service_addons(
 
             (output_dir / service_path).mkdir(parents=True, exist_ok=True)
             click.echo(
-                mkfile(output_dir, service_path / f"{addon_name}.yml", contents, overwrite=True)
+                FileProvider.mkfile(
+                    output_dir, service_path / f"{addon_name}.yml", contents, overwrite=True
+                )
             )
 
 

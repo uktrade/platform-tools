@@ -10,6 +10,7 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationException
 from dbt_platform_helper.utils.application import load_application
@@ -19,7 +20,6 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
-from dbt_platform_helper.utils.files import mkfile
 from dbt_platform_helper.utils.git import check_if_commit_exists
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -92,7 +92,7 @@ class Codebase:
             repository=repository, builder_version=builder_version
         )
         self.echo(
-            mkfile(
+            FileProvider.mkfile(
                 Path("."), ".copilot/image_build_run.sh", image_build_run_contents, overwrite=True
             )
         )
@@ -100,13 +100,17 @@ class Codebase:
         image_build_run_file = Path(".copilot/image_build_run.sh")
         image_build_run_file.chmod(image_build_run_file.stat().st_mode | stat.S_IEXEC)
 
-        self.echo(mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True))
+        self.echo(
+            FileProvider.mkfile(Path("."), ".copilot/config.yml", config_contents, overwrite=True)
+        )
 
         for phase in ["build", "install", "post_build", "pre_build"]:
             phase_contents = templates.get_template(f".copilot/phases/{phase}.sh").render()
 
             self.echo(
-                mkfile(Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True)
+                FileProvider.mkfile(
+                    Path("./.copilot"), f"phases/{phase}.sh", phase_contents, overwrite=True
+                )
             )
 
     def build(self, app: str, codebase: str, commit: str):

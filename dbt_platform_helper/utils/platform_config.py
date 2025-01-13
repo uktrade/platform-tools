@@ -18,10 +18,3 @@ def load_unvalidated_config_file():
         return yaml.safe_load(file_contents)
     except yaml.parser.ParserError:
         return {}
-
-
-def get_environment_pipeline_names():
-    pipelines_config = load_unvalidated_config_file().get("environment_pipelines")
-    if pipelines_config:
-        return pipelines_config.keys()
-    return {}

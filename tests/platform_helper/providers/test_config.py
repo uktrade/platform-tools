@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +9,7 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -246,6 +248,42 @@ def test_load_and_validate_config_valid_file(yaml_file):
         conf = yaml.safe_load(fd)
 
     assert validated == conf
+
+
+def test_get_enriched_config_returns_config_with_environment_defaults_applied():
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = {
+        "application": "test-app",
+        "environments": {
+            "*": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+            },
+            "test": {"versions": {"terraform-platform-modules": "123456"}},
+        },
+    }
+
+    expected_enriched_config_config = {
+        "application": "test-app",
+        "environments": {
+            "test": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+                "versions": {"terraform-platform-modules": "123456"},
+            }
+        },
+    }
+
+    mock_config_validator = Mock()
+
+    result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
+    assert result == expected_enriched_config_config
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(
