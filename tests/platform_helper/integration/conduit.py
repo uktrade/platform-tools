@@ -78,14 +78,15 @@ def setup_environment(mock_cluster_client_task, mock_stack):
             )
             mock_secretsmanager = boto3.client("secretsmanager")
             secret_name = "/copilot/test/one/secrets/FAKE_POSTGRES"
+            parameter_name = "conduit-test-one-fake-postgres-tq7vzeigl2vf"
             add_addon_config_parameter()
             mock_secretsmanager.create_secret(
                 Name=secret_name + "_READ_ONLY_USER",
                 SecretString="not-a-real-secret",
             )
             ssm_client.put_parameter(
-                Name=secret_name,
-                Value="something-secret",
+                Name=secret_name + "_READ_ONLY_USER",
+                Value=parameter_name,
                 Type="SecureString",
             )
 
@@ -135,6 +136,11 @@ We should have integration tests to ensure everything ties together correctly
 """
 
 
+def check_moto_resources():
+    ssm_client = boto3.client("ssm")
+    print(ssm_client.get_parameters(Names=["*"]))
+
+
 # poetry run pytest -m integration
 # run e2e against AWS - USE_MOCKS=false poetry run pytest -m e2e
 @mock_aws
@@ -160,6 +166,8 @@ def test_conduit(get_aws_session_or_abort, get_profile_name_from_account_id, set
         )
 
         print(result.output)
+        ssm_client = boto3.client("ssm")
+        print(ssm_client.describe_parameters()["Parameters"])
         assert result.exit_code == 0
 
         mock_subprocess.assert_has_calls(
@@ -178,6 +186,8 @@ def test_conduit(get_aws_session_or_abort, get_profile_name_from_account_id, set
             shell=True,
         )
         """
+
+        check_moto_resources()
 
 
 # TODO test already running task
