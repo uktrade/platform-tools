@@ -521,3 +521,32 @@ def test_apply_defaults_with_no_defaults():
             "three": {"a": "aaa", "versions": {}},
         },
     }
+
+
+def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, capsys):
+    platform_config = """
+application: test-app
+codebase_pipelines:
+- name: application
+  repository: organisation/repository
+  services:
+  - run_group_1:
+      - web
+  pipelines:
+  - name: main
+    branch: main
+    environments:
+    - name: dev
+  - name: other
+    branch: other-branch
+    environments:
+    - name: dev
+    - name: staging
+    """
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=platform_config)
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    exp = f"Error: The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be listed in a single pipeline"
+    assert exp in capsys.readouterr().err
