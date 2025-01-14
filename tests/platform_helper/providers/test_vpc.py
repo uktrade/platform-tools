@@ -16,14 +16,14 @@ def test_get_vpc_info_by_name_success():
     result = vpc_provider.get_vpc_info_by_name("my_app", "my_env", "my_vpc")
 
     expected_vpc = Vpc(
-        subnets=["subnet-private-1", "subnet-private-2"], security_groups=["sg-abc123"]
+        [], private_subnets=["subnet-private-1", "subnet-private-2"], security_groups=["sg-abc123"]
     )
 
     mock_client.describe_vpcs.assert_called_once_with(
         Filters=[{"Name": "tag:Name", "Values": ["my_vpc"]}]
     )
 
-    assert result.subnets == expected_vpc.subnets
+    assert result.private_subnets == expected_vpc.private_subnets
     assert result.security_groups == expected_vpc.security_groups
 
 

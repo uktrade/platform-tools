@@ -147,7 +147,7 @@ class DatabaseCopy:
             ],
             networkConfiguration={
                 "awsvpcConfiguration": {
-                    "subnets": vpc_config.subnets,
+                    "subnets": vpc_config.private_subnets,
                     "securityGroups": vpc_config.security_groups,
                     "assignPublicIp": "DISABLED",
                 }

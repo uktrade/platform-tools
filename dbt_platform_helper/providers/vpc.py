@@ -1,11 +1,21 @@
 from dataclasses import dataclass
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws import AWSException
+
+
+class VpcProviderException(PlatformException):
+    pass
+
+
+class SubnetsNotFoundException(VpcProviderException):
+    pass
 
 
 @dataclass
 class Vpc:
-    subnets: list[str]
+    public_subnets: list[str]
+    private_subnets: list[str]
     security_groups: list[str]
 
 
@@ -13,6 +23,23 @@ class VpcProvider:
     def __init__(self, session):
         self.ec2_client = session.client("ec2")
         self.ec2_resource = session.resource("ec2")
+
+    def get_subnet_ids(self, vpc_id):
+        subnets = self.ec2_client.describe_subnets(
+            Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+        )["Subnets"]
+
+        if not subnets:
+            raise SubnetsNotFoundException(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
+
+        public_tag = {"Key": "subnet_type", "Value": "public"}
+        public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+        private_tag = {"Key": "subnet_type", "Value": "private"}
+        private_subnets = [
+            subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]
+        ]
+
+        return public_subnets, private_subnets
 
     def get_vpc_id_by_name(self, vpc_name: str) -> str:
         vpc_response = self.ec2_client.describe_vpcs(
@@ -61,4 +88,4 @@ class VpcProvider:
         if not sec_groups:
             raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
-        return Vpc(private_subnets, sec_groups)
+        return Vpc([], private_subnets, sec_groups)
