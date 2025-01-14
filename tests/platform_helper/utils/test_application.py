@@ -16,7 +16,7 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 
 
-def test_getting_an_application_name_from_workspace(fakefs):
+def test_getting_an_application_name_from_platform_config(fakefs):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
     assert get_application_name() == "test-app"
 
