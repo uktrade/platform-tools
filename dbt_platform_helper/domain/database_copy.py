@@ -35,7 +35,7 @@ class DatabaseCopy:
         ] = get_connection_string,
         maintenance_page_provider: Callable[
             [str, str, list[str], str, str], None
-        ] = MaintenancePage(),
+        ] = MaintenancePage,
         input: Callable[[str], str] = click.prompt,
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
@@ -183,11 +183,13 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
+            self.maintenance_page_provider(self.application).activate(
+                to_env, services, template, to_vpc
+            )
         self.dump(from_env, from_vpc, f"data_dump_{to_env}")
         self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
-            self.maintenance_page_provider.deactivate(self.app, to_env)
+            self.maintenance_page_provider(self.application).deactivate(to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:

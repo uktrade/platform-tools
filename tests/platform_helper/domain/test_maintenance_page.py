@@ -1,10 +1,10 @@
+from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner
 from moto import mock_aws
 
 from dbt_platform_helper.domain.maintenance_page import *
@@ -211,27 +211,22 @@ class TestEnvironmentMaintenanceTemplates:
 
 
 class TestCommandHelperMethods:
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    def test_get_app_environment(self, mock_load_application):
+    def test_get_app_environment(self):
 
         development = Mock()
         application = Application(name="test-application")
         application.environments = {"development": development}
-        mock_load_application.return_value = application
 
-        app_environment = get_app_environment("test-application", "development")
+        app_environment = get_app_environment(application, "development")
 
         assert app_environment == development
 
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    def test_get_app_environment_does_not_exist(self, mock_load_application, capsys):
+    def test_get_app_environment_does_not_exist(self, capsys):
 
-        CliRunner()
         application = Application(name="test-application")
-        mock_load_application.return_value = application
 
         with pytest.raises(click.Abort):
-            get_app_environment("test-application", "development")
+            get_app_environment(application, "development")
 
         captured = capsys.readouterr()
 
@@ -537,3 +532,312 @@ class TestCommandHelperMethods:
     )
     def test_normalise_to_cidr(self, ip, expected_cidr):
         assert normalise_to_cidr(ip) == expected_cidr
+
+
+app = "test-application"
+env = "development"
+
+
+class MaintenancePageMocks:
+    def __init__(self, app_name="test-application", *args, **kwargs):
+        session = Mock()
+        sessions = {"000000000": session}
+        dummy_application = Application(app_name)
+        dummy_application.environments = {env: Environment(env, "000000000", sessions)}
+        dummy_application.services = {"web": Service("web", "Load Balanced Web Service")}
+        self.application = dummy_application
+
+        self.user_prompt_callback = kwargs.get("user_prompt_callback", Mock())
+        self.echo = kwargs.get("echo", Mock())
+        self.find_https_listener = kwargs.get(
+            "find_https_listener", Mock(return_value="https_listener")
+        )
+        self.get_maintenance_page = kwargs.get("get_maintenance_page", Mock(return_value=None))
+        self.get_env_ips = kwargs.get("get_env_ips", Mock(return_value=["0.1.2.3, 4.5.6.7"]))
+        self.add_maintenance_page = kwargs.get("add_maintenance_page", Mock(return_value=None))
+
+    def params(self):
+        return {
+            "application": self.application,
+            "user_prompt_callback": self.user_prompt_callback,
+            "echo": self.echo,
+            "find_https_listener": self.find_https_listener,
+            "get_maintenance_page": self.get_maintenance_page,
+            "get_env_ips": self.get_env_ips,
+            "add_maintenance_page": self.add_maintenance_page,
+        }
+
+
+class TestActivateMethod:
+    def test_successful_activate(
+        self,
+    ):
+        svc = ["web"]
+        template = "default"
+        vpc = None
+        # vars app, env, svc, template, vpc
+        # defs           web, default,
+        # template: "default", "migration", "dmas-migration"
+        maintenance_mocks = MaintenancePageMocks(app)
+        provider = MaintenancePage(**maintenance_mocks.params())
+        provider.activate(env, svc, template, vpc)
+
+        maintenance_mocks.find_https_listener.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.get_env_ips.assert_called_with(
+            vpc, maintenance_mocks.application.environments["development"]
+        )
+        maintenance_mocks.add_maintenance_page.assert_called_with(
+            ANY,
+            "https_listener",
+            "test-application",
+            "development",
+            [maintenance_mocks.application.services["web"]],
+            ["0.1.2.3, 4.5.6.7"],
+            "default",
+        )
+
+        maintenance_mocks.user_prompt_callback.assert_has_calls(
+            [
+                call(
+                    "You are about to enable the 'default' maintenance page for the development "
+                    "environment in test-application.\nWould you like to continue?"
+                ),
+            ]
+        )
+        maintenance_mocks.echo.assert_called_with(
+            "Maintenance page 'default' added for environment development in "
+            "application test-application",
+            fg="green",
+        )
+
+    # @patch("dbt_platform_helper.domain.maintenance_page.load_application")
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+    #     return_value="https_listener",
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # # TODO this test checks all the submethods are called as expected from the domain class.  Not related to click.  Should be moved to maintenance page domain level tests
+    # def test_successful_offline_with_custom_template(
+    #     self,
+    #     add_maintenance_page,
+    #     get_env_ips,
+    #     get_maintenance_page,
+    #     find_https_listener,
+    #     load_application,
+    #     mock_application,
+    # ):
+    #     load_application.return_value = mock_application
+
+    #     result = CliRunner().invoke(
+    #         offline,
+    #         ["--app", "test-application", "--env", "development", "--template", "migration"],
+    #         input="y\n",
+    #     )
+
+    #     assert (
+    #         "You are about to enable the 'migration' maintenance page for the development "
+    #         "environment in test-application."
+    #     ) in result.output
+    #     assert "Would you like to continue? [y/N]: y" in result.output
+
+    #     find_https_listener.assert_called_with(ANY, "test-application", "development")
+    #     get_maintenance_page.assert_called_with(ANY, "https_listener")
+    #     get_env_ips.assert_called_with(None, mock_application.environments["development"])
+    #     add_maintenance_page.assert_called_with(
+    #         ANY,
+    #         "https_listener",
+    #         "test-application",
+    #         "development",
+    #         [mock_application.services["web"]],
+    #         ["0.1.2.3, 4.5.6.7"],
+    #         "migration",
+    #     )
+
+    #     assert (
+    #         "Maintenance page 'migration' added for environment development in "
+    #         "application test-application"
+    #     ) in result.output
+
+    # @patch("dbt_platform_helper.domain.maintenance_page.load_application")
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+    #     return_value="https_listener",
+    # )
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.get_maintenance_page",
+    #     return_value="maintenance",
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page", return_value=None)
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # # TODO move to domain level test for the activate function
+    # def test_successful_offline_when_already_offline(
+    #     self,
+    #     add_maintenance_page,
+    #     get_env_ips,
+    #     remove_maintenance_page,
+    #     get_maintenance_page,
+    #     find_https_listener,
+    #     load_application,
+    #     mock_application,
+    # ):
+    #     load_application.return_value = mock_application
+
+    #     result = CliRunner().invoke(
+    #         offline, ["--app", "test-application", "--env", "development"], input="y\n"
+    #     )
+
+    #     assert (
+    #         "There is currently a 'maintenance' maintenance page for the development "
+    #         "environment in test-application."
+    #     ) in result.output
+    #     assert (
+    #         "Would you like to replace it with a 'default' maintenance page? [y/N]: y"
+    #         in result.output
+    #     )
+
+    #     find_https_listener.assert_called_with(ANY, "test-application", "development")
+    #     get_maintenance_page.assert_called_with(ANY, "https_listener")
+    #     remove_maintenance_page.assert_called_with(ANY, "https_listener")
+    #     get_env_ips.assert_called_with(None, mock_application.environments["development"])
+    #     add_maintenance_page.assert_called_with(
+    #         ANY,
+    #         "https_listener",
+    #         "test-application",
+    #         "development",
+    #         [mock_application.services["web"]],
+    #         ["0.1.2.3, 4.5.6.7"],
+    #         "default",
+    #     )
+
+    #     assert (
+    #         "Maintenance page 'default' added for environment development in "
+    #         "application test-application"
+    #     ) in result.output
+
+    # @patch("dbt_platform_helper.domain.maintenance_page.load_application")
+    # @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    # @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
+    # @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
+    # @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
+    # # TODO move to domain level test for the activate function
+    # def test_offline_an_environment_when_load_balancer_not_found(
+    #     self,
+    #     add_maintenance_page,
+    #     remove_maintenance_page,
+    #     get_maintenance_page,
+    #     find_https_listener,
+    #     load_application,
+    #     mock_application,
+    # ):
+    #     find_https_listener.side_effect = LoadBalancerNotFoundException()
+    #     load_application.return_value = mock_application
+
+    #     result = CliRunner().invoke(
+    #         offline, ["--app", "test-application", "--env", "development"], input="y\n"
+    #     )
+
+    #     assert (
+    #         "No load balancer found for environment development in the application "
+    #         "test-application."
+    #     ) in result.output
+    #     assert "Aborted!" in result.output
+
+    #     find_https_listener.assert_called_with(ANY, "test-application", "development")
+    #     get_maintenance_page.assert_not_called()
+    #     remove_maintenance_page.assert_not_called()
+
+    # @patch("dbt_platform_helper.domain.maintenance_page.load_application")
+    # @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    # @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
+    # @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
+    # @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
+    # # TODO move to domain level test for the activate function
+    # def test_offline_an_environment_when_listener_not_found(
+    #     self,
+    #     add_maintenance_page,
+    #     remove_maintenance_page,
+    #     get_maintenance_page,
+    #     find_https_listener,
+    #     load_application,
+    #     mock_application,
+    # ):
+    #     load_application.return_value = mock_application
+    #     find_https_listener.side_effect = ListenerNotFoundException()
+
+    #     result = CliRunner().invoke(
+    #         offline, ["--app", "test-application", "--env", "development"], input="y\n"
+    #     )
+
+    #     assert (
+    #         "No HTTPS listener found for environment development in the application "
+    #         "test-application."
+    #     ) in result.output
+    #     assert "Aborted!" in result.output
+
+    #     find_https_listener.assert_called_with(ANY, "test-application", "development")
+    #     get_maintenance_page.assert_not_called()
+    #     remove_maintenance_page.assert_not_called()
+    #     add_maintenance_page.assert_not_called()
+
+    # @patch("dbt_platform_helper.domain.maintenance_page.load_application")
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+    #     return_value="https_listener",
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
+    # @patch(
+    #     "dbt_platform_helper.domain.maintenance_page.get_env_ips", return_value=["0.1.2.3, 4.5.6.7"]
+    # )
+    # @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page", return_value=None)
+    # # TODO move to domain level test for the activate function
+    # def test_successful_offline_multiple_services(
+    #     self,
+    #     add_maintenance_page,
+    #     get_env_ips,
+    #     get_maintenance_page,
+    #     find_https_listener,
+    #     load_application,
+    #     mock_application,
+    # ):
+    #     mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+    #     load_application.return_value = mock_application
+
+    #     result = CliRunner().invoke(
+    #         offline,
+    #         ["--app", "test-application", "--env", "development", "--svc", "*"],
+    #         input="y\n",
+    #     )
+
+    #     assert (
+    #         "You are about to enable the 'default' maintenance page for the development "
+    #         "environment in test-application."
+    #     ) in result.output
+    #     assert "Would you like to continue? [y/N]: y" in result.output
+
+    #     find_https_listener.assert_called_with(ANY, "test-application", "development")
+    #     get_maintenance_page.assert_called_with(ANY, "https_listener")
+    #     get_env_ips.assert_called_with(None, mock_application.environments["development"])
+    #     add_maintenance_page.assert_called_with(
+    #         ANY,
+    #         "https_listener",
+    #         "test-application",
+    #         "development",
+    #         [mock_application.services["web"], mock_application.services["web2"]],
+    #         ["0.1.2.3, 4.5.6.7"],
+    #         "default",
+    #     )
+
+    #     assert (
+    #         "Maintenance page 'default' added for environment development in "
+    #         "application test-application"
+    #     ) in result.output
