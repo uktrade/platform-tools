@@ -42,16 +42,17 @@ class VpcProvider:
     def __init__(self, session):
         self.ec2_client = session.client("ec2")
 
-    def get_subnet_ids(self, vpc_id):
+    def _get_subnet_ids(self, vpc_id):
         subnets = self.ec2_client.describe_subnets(
             Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-        )["Subnets"]
+        ).get("Subnets")
 
         if not subnets:
             raise SubnetsNotFoundException(f"No subnets found for VPC with id: {vpc_id}.")
 
         public_tag = {"Key": "subnet_type", "Value": "public"}
         public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
+
         private_tag = {"Key": "subnet_type", "Value": "private"}
         private_subnets = [
             subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]
@@ -59,7 +60,7 @@ class VpcProvider:
 
         return public_subnets, private_subnets
 
-    def get_vpc_id_by_name(self, vpc_name: str) -> str:
+    def _get_vpc_id_by_name(self, vpc_name: str) -> str:
         vpcs = self.ec2_client.describe_vpcs(
             Filters=[{"Name": "tag:Name", "Values": [vpc_name]}]
         ).get("Vpcs", [])
@@ -84,9 +85,9 @@ class VpcProvider:
 
     def get_vpc(self, app: str, env: str, vpc_name: str) -> Vpc:
 
-        vpc_id = self.get_vpc_id_by_name(vpc_name)
+        vpc_id = self._get_vpc_id_by_name(vpc_name)
 
-        public_subnets, private_subnets = self.get_subnet_ids(vpc_id)
+        public_subnets, private_subnets = self._get_subnet_ids(vpc_id)
 
         # TODO should we return empty arrays and let the consumer decide when to throw an exception?
         if not private_subnets:
