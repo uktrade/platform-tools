@@ -50,7 +50,7 @@ class VpcProvider:
         if not matching_vpcs:
             raise AWSException(f"VPC not found for name '{vpc_name}'")
 
-        vpc_id = vpc_response["Vpcs"][0].get("VpcId")
+        vpc_id = matching_vpcs[0].get("VpcId")
 
         # bit of a random check - i'd vote to remove this since the every vpc needs a one...
         if not vpc_id:
