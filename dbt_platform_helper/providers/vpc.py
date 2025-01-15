@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws import AWSException
 
 
 class VpcProviderException(PlatformException):
@@ -9,6 +8,26 @@ class VpcProviderException(PlatformException):
 
 
 class SubnetsNotFoundException(VpcProviderException):
+    pass
+
+
+class PrivateSubnetsNotFoundException(VpcProviderException):
+    pass
+
+
+class PublicSubnetsNotFoundException(VpcProviderException):
+    pass
+
+
+class SecurityGroupNotFoundException(VpcProviderException):
+    pass
+
+
+class VpcNotFoundForNameException(VpcProviderException):
+    pass
+
+
+class VpcIdMissingException(VpcProviderException):
     pass
 
 
@@ -41,20 +60,17 @@ class VpcProvider:
         return public_subnets, private_subnets
 
     def get_vpc_id_by_name(self, vpc_name: str) -> str:
-        vpc_response = self.ec2_client.describe_vpcs(
+        vpcs = self.ec2_client.describe_vpcs(
             Filters=[{"Name": "tag:Name", "Values": [vpc_name]}]
-        )
+        ).get("Vpcs", [])
 
-        matching_vpcs = vpc_response.get("Vpcs", [])
+        if not vpcs:
+            raise VpcNotFoundForNameException(f"VPC not found for name '{vpc_name}'")
 
-        if not matching_vpcs:
-            raise AWSException(f"VPC not found for name '{vpc_name}'")
+        vpc_id = vpcs[0].get("VpcId")
 
-        vpc_id = matching_vpcs[0].get("VpcId")
-
-        # bit of a random check - i'd vote to remove this since the every vpc needs a one...
         if not vpc_id:
-            raise AWSException(f"VPC id not present in vpc '{vpc_name}'")
+            raise VpcIdMissingException(f"VPC id not present in vpc '{vpc_name}'")
 
         return vpc_id
 
@@ -72,14 +88,18 @@ class VpcProvider:
 
         public_subnets, private_subnets = self.get_subnet_ids(vpc_id)
 
-        # TODO should be moved to consumer
+        # TODO should we return empty arrays and let the consumer decide when to throw an exception?
         if not private_subnets:
-            raise AWSException(f"No private subnets found in vpc '{vpc_name}'")
+            raise PrivateSubnetsNotFoundException(f"No private subnets found in vpc '{vpc_name}'")
+
+        if not public_subnets:
+            raise PublicSubnetsNotFoundException(f"No public subnets found in vpc '{vpc_name}'")
 
         sec_groups = self._get_security_groups(app, env, vpc_id)
 
-        # TODO should be moved to consumer
         if not sec_groups:
-            raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
+            raise SecurityGroupNotFoundException(
+                f"No matching security groups found in vpc '{vpc_name}'"
+            )
 
         return Vpc(public_subnets, private_subnets, sec_groups)
