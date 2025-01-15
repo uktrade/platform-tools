@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -521,6 +522,33 @@ def test_apply_defaults_with_no_defaults():
             "three": {"a": "aaa", "versions": {}},
         },
     }
+
+
+def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
+    platform_config = {
+        "application": "test-app",
+        "codebase_pipelines": [
+            {
+                "name": "application",
+                "repository": "organisation/repository",
+                "services": [
+                    {"run_group_1": ["web"]},
+                    {"run_group_2": ["api", "celery-beat"]},
+                ],
+                "pipelines": [
+                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]}
+                ],
+            }
+        ],
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+
+    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    assert config[CODEBASE_PIPELINES_KEY][0]["services"] == [
+        {"run_group_1": ["web"]},
+        {"run_group_2": ["api", "celery-beat"]},
+    ]
 
 
 def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, capsys):

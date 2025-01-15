@@ -5,13 +5,9 @@ from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
-from dbt_platform_helper.utils.aws import get_account_details
-from dbt_platform_helper.utils.aws import get_public_repository_arn
-from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
@@ -47,7 +43,6 @@ class Pipelines:
             "default_versions", {}
         ).get("terraform-platform-modules", "")
 
-        templates = setup_templates()
         app_name = get_application_name()
 
         git_repo = self.get_git_remote()
@@ -77,82 +72,12 @@ class Pipelines:
                 )
 
         if has_codebase_pipelines:
-            account_id, _ = get_account_details()
-
-            for codebase in pipeline_config[CODEBASE_PIPELINES_KEY]:
-                self._generate_codebase_pipeline(
-                    account_id,
-                    app_name,
-                    codestar_connection_arn,
-                    git_repo,
-                    codebase,
-                    base_path,
-                    copilot_pipelines_dir,
-                    templates,
-                )
+            pass
 
     def _clean_pipeline_config(self, pipelines_dir):
         if pipelines_dir.exists():
             self.echo("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
-
-    def _generate_codebase_pipeline(
-        self,
-        account_id,
-        app_name,
-        codestar_connection_arn,
-        git_repo,
-        codebase,
-        base_path,
-        pipelines_dir,
-        templates,
-    ):
-        makedirs(pipelines_dir / codebase["name"] / "overrides", exist_ok=True)
-        environments = []
-        for pipelines in codebase["pipelines"]:
-            environments += pipelines[ENVIRONMENTS_KEY]
-
-        additional_ecr = codebase.get("additional_ecr_repository", None)
-        add_public_perms = additional_ecr and additional_ecr.startswith("public.ecr.aws")
-        additional_ecr_arn = get_public_repository_arn(additional_ecr) if add_public_perms else None
-
-        template_data = {
-            "account_id": account_id,
-            "app_name": app_name,
-            "deploy_repo": git_repo,
-            "codebase": codebase,
-            ENVIRONMENTS_KEY: environments,
-            "codestar_connection_arn": codestar_connection_arn,
-            "codestar_connection_id": codestar_connection_arn.split("/")[-1],
-            "additional_ecr_arn": additional_ecr_arn,
-        }
-
-        self._create_file_from_template(
-            base_path,
-            f"{codebase['name']}/manifest.yml",
-            pipelines_dir,
-            template_data,
-            templates,
-            "codebase/manifest.yml",
-        )
-
-        overrides_path = Path(__file__).parent.parent.joinpath(
-            "templates/pipelines/codebase/overrides"
-        )
-        generate_override_files_from_template(
-            base_path, overrides_path, pipelines_dir / codebase["name"] / "overrides", template_data
-        )
-
-    def _create_file_from_template(
-        self, base_path, file_name, pipelines_dir, template_data, templates, template_name=None
-    ):
-        contents = templates.get_template(
-            f"pipelines/{file_name if template_name is None else template_name}"
-        ).render(template_data)
-        message = FileProvider.mkfile(
-            base_path, pipelines_dir / file_name, contents, overwrite=True
-        )
-        self.echo(message)
 
     def _generate_terraform_environment_pipeline_manifest(
         self,
@@ -163,35 +88,6 @@ class Pipelines:
         deploy_branch,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
-
-        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version,
-            platform_config_terraform_modules_default_version,
-        )
-
-        contents = env_pipeline_template.render(
-            {
-                "application": application,
-                "aws_account": aws_account,
-                "terraform_platform_modules_version": terraform_platform_modules_version,
-                "deploy_branch": deploy_branch,
-            }
-        )
-
-        dir_path = f"terraform/environment-pipelines/{aws_account}"
-        makedirs(dir_path, exist_ok=True)
-
-        self.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
-
-    def generate_terraform_codebase_pipeline_manifest(
-        self,
-        application,
-        aws_account,
-        cli_terraform_platform_modules_version,
-        platform_config_terraform_modules_default_version,
-        deploy_branch,
-    ):
-        env_pipeline_template = setup_templates().get_template("codebase-pipelines/main.tf")
 
         terraform_platform_modules_version = get_required_terraform_platform_modules_version(
             cli_terraform_platform_modules_version,

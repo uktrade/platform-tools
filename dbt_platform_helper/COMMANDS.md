@@ -664,7 +664,7 @@ platform-helper notify (environment-progress|add-comment)
 
 [↩ Parent](#platform-helper-notify)
 
-    Send environment progress notifications
+    Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
 
 ## Usage
 
@@ -692,7 +692,7 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 - `--commit-sha <text>`
 
 - `--slack-ref <text>`
-  - Slack message reference
+  - Slack message reference of the message to update
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -700,7 +700,7 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper-notify)
 
-    Add comment to a notification
+    Add a comment to an existing Slack message
 
 ## Usage
 

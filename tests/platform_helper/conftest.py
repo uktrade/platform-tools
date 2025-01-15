@@ -585,9 +585,10 @@ codebase_pipelines:
     deploy_repository_branch: feature-branch
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
     services:
-      - celery-worker
-      - celery-beat
-      - web
+        - run_order_1:
+          - celery-worker
+          - celery-beat
+          - web
     pipelines:
       - name: main
         branch: main

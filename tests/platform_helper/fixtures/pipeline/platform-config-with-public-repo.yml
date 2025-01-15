@@ -14,7 +14,8 @@ codebase_pipelines:
     repository: organisation/repository
     additional_ecr_repository: public.ecr.aws/uktrade-platform-sandbox/demodjango/application
     services:
-      - web
+      - run_group:
+          - web
     pipelines:
       - name: main
         branch: main
