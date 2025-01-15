@@ -581,6 +581,7 @@ environment_pipelines:
 
 codebase_pipelines:
   - name: application
+    slack_channel: OTHER_SLACK_CHANNEL_ID
     repository: uktrade/test-app
     deploy_repository_branch: feature-branch
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application

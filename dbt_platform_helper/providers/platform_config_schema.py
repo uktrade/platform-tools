@@ -132,6 +132,7 @@ class PlatformConfigSchema:
             {
                 "name": str,
                 "repository": str,
+                Optional("slack_channel"): str,
                 Optional("additional_ecr_repository"): str,
                 Optional("deploy_repository_branch"): str,
                 "services": [{str: [str]}],

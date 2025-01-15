@@ -11,6 +11,7 @@ environments:
 
 codebase_pipelines:
   - name: application
+    slack_channel: CODEBASE_SLACK_CHANNEL_ID
     repository: organisation/repository
     services:
       - run_group:
