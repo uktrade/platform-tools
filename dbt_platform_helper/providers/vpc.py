@@ -22,7 +22,6 @@ class Vpc:
 class VpcProvider:
     def __init__(self, session):
         self.ec2_client = session.client("ec2")
-        self.ec2_resource = session.resource("ec2")
 
     def get_subnet_ids(self, vpc_id):
         subnets = self.ec2_client.describe_subnets(
@@ -30,7 +29,7 @@ class VpcProvider:
         )["Subnets"]
 
         if not subnets:
-            raise SubnetsNotFoundException(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
+            raise SubnetsNotFoundException(f"No subnets found for VPC with id: {vpc_id}.")
 
         public_tag = {"Key": "subnet_type", "Value": "public"}
         public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
@@ -59,33 +58,28 @@ class VpcProvider:
 
         return vpc_id
 
-    def get_vpc_info_by_name(self, app: str, env: str, vpc_name: str) -> Vpc:
+    def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
+
+        vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
+        tag_filter = {"Name": f"tag:Name", "Values": f"copilot-{app}-{env}-env"}
+        response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
+
+        return [sg.get("GroupId") for sg in response.get("SecurityGroups")]
+
+    def get_vpc(self, app: str, env: str, vpc_name: str) -> Vpc:
 
         vpc_id = self.get_vpc_id_by_name(vpc_name)
 
-        vpc = self.ec2_resource.Vpc(vpc_id)
+        public_subnets, private_subnets = self.get_subnet_ids(vpc_id)
 
-        route_tables = self.ec2_client.describe_route_tables(
-            Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-        )["RouteTables"]
-
-        private_subnets = []
-        for route_table in route_tables:
-            private_routes = [route for route in route_table["Routes"] if "NatGatewayId" in route]
-            if not private_routes:
-                continue
-            for association in route_table["Associations"]:
-                if "SubnetId" in association:
-                    subnet_id = association["SubnetId"]
-                    private_subnets.append(subnet_id)
-
+        # TODO should be moved to consumer
         if not private_subnets:
             raise AWSException(f"No private subnets found in vpc '{vpc_name}'")
 
-        tag_value = {"Key": "Name", "Value": f"copilot-{app}-{env}-env"}
-        sec_groups = [sg.id for sg in vpc.security_groups.all() if sg.tags and tag_value in sg.tags]
+        sec_groups = self._get_security_groups(app, env, vpc_id)
 
+        # TODO should be moved to consumer
         if not sec_groups:
             raise AWSException(f"No matching security groups found in vpc '{vpc_name}'")
 
-        return Vpc([], private_subnets, sec_groups)
+        return Vpc(public_subnets, private_subnets, sec_groups)
