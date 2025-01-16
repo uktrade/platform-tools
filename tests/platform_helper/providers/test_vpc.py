@@ -37,8 +37,10 @@ def test_get_vpc_success():
         security_groups=["sg-abc123"],
     )
 
+    assert result.public_subnets == expected_vpc.public_subnets
     assert result.private_subnets == expected_vpc.private_subnets
     assert result.security_groups == expected_vpc.security_groups
+    assert result.id == expected_vpc.id
 
 
 @mock_aws
