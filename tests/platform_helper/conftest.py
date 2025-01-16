@@ -579,7 +579,7 @@ environment_pipelines:
       prod:
         requires_approval: true
 
-codebase_pipelines:
+codebase-pipelines:
   - name: application
     slack_channel: OTHER_SLACK_CHANNEL_ID
     repository: uktrade/test-app

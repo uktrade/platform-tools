@@ -6,7 +6,7 @@ PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
 DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "5"
 
 # Keys
-CODEBASE_PIPELINES_KEY = "codebase_pipelines"
+CODEBASE_PIPELINES_KEY = "codebase-pipelines"
 ENVIRONMENTS_KEY = "environments"
 ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 

@@ -514,7 +514,7 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
 def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, capsys):
     config = {
         "application": "test-app",
-        "codebase_pipelines": [
+        "codebase-pipelines": [
             {
                 "name": "application",
                 "repository": "organisation/repository",

@@ -378,7 +378,7 @@ def test_apply_defaults_with_no_defaults():
 def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
     platform_config = {
         "application": "test-app",
-        "codebase_pipelines": [
+        "codebase-pipelines": [
             {
                 "name": "application",
                 "repository": "organisation/repository",
@@ -406,7 +406,7 @@ def test_codebase_slack_channel_fails_if_not_a_string(fakefs, capsys):
     channel = 1
     config = {
         "application": "test-app",
-        "codebase_pipelines": [
+        "codebase-pipelines": [
             {
                 "name": "application",
                 "slack_channel": channel,

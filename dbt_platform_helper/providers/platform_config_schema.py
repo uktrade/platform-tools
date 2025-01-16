@@ -20,7 +20,7 @@ class PlatformConfigSchema:
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("accounts"): Or([str], [int]),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
-                Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
+                Optional("codebase-pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
                     "environment_pipelines"
                 ): PlatformConfigSchema.__environment_pipelines_schema(),
