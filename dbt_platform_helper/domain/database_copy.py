@@ -33,9 +33,7 @@ class DatabaseCopy:
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
-        maintenance_page_provider: Callable[
-            [str, str, list[str], str, str], None
-        ] = MaintenancePage,
+        maintenance_page: Callable[[str, str, list[str], str, str], None] = MaintenancePage,
         input: Callable[[str], str] = click.prompt,
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
@@ -46,7 +44,7 @@ class DatabaseCopy:
         self.auto_approve = auto_approve
         self.vpc_provider = vpc_provider
         self.db_connection_string = db_connection_string
-        self.maintenance_page_provider = maintenance_page_provider
+        self.maintenance_page = maintenance_page
         self.input = input
         self.echo = echo
         self.abort = abort
@@ -183,13 +181,11 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider(self.application).activate(
-                to_env, services, template, to_vpc
-            )
+            self.maintenance_page(self.application).activate(to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc, f"data_dump_{to_env}")
         self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
-            self.maintenance_page_provider(self.application).deactivate(to_env)
+            self.maintenance_page(self.application).deactivate(to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:
