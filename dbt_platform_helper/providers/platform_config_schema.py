@@ -20,7 +20,7 @@ class PlatformConfigSchema:
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("accounts"): Or([str], [int]),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
-                Optional("codebase-pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
+                Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
                     "environment_pipelines"
                 ): PlatformConfigSchema.__environment_pipelines_schema(),
@@ -127,10 +127,9 @@ class PlatformConfigSchema:
         }
 
     @staticmethod
-    def __codebase_pipelines_schema() -> list[dict]:
-        return [
-            {
-                "name": str,
+    def __codebase_pipelines_schema() -> dict:
+        return {
+            str: {
                 "repository": str,
                 Optional("slack_channel"): str,
                 Optional("additional_ecr_repository"): str,
@@ -161,7 +160,7 @@ class PlatformConfigSchema:
                     ),
                 ],
             },
-        ]
+        }
 
     @staticmethod
     def __default_versions_schema() -> dict:

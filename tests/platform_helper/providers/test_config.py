@@ -378,9 +378,8 @@ def test_apply_defaults_with_no_defaults():
 def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
     platform_config = {
         "application": "test-app",
-        "codebase-pipelines": [
-            {
-                "name": "application",
+        "codebase_pipelines": {
+            "application": {
                 "repository": "organisation/repository",
                 "services": [
                     {"run_group_1": ["web"]},
@@ -390,13 +389,13 @@ def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
                     {"name": "main", "branch": "main", "environments": [{"name": "dev"}]}
                 ],
             }
-        ],
+        },
     }
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
 
     config = ConfigProvider(mock_validator()).load_and_validate_platform_config()
 
-    assert config[CODEBASE_PIPELINES_KEY][0]["services"] == [
+    assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
         {"run_group_1": ["web"]},
         {"run_group_2": ["api", "celery-beat"]},
     ]
@@ -406,15 +405,15 @@ def test_codebase_slack_channel_fails_if_not_a_string(fakefs, capsys):
     channel = 1
     config = {
         "application": "test-app",
-        "codebase-pipelines": [
-            {
+        "codebase_pipelines": {
+            "application": {
                 "name": "application",
                 "slack_channel": channel,
                 "repository": "organisation/repository",
                 "services": [],
                 "pipelines": [],
             }
-        ],
+        },
     }
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 

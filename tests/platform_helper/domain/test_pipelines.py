@@ -16,6 +16,7 @@ from dbt_platform_helper.utils.messages import abort_with_error
 class PipelineMocks:
     def __init__(self, app_name):
         self.mock_config_provider = ConfigProvider(ConfigValidator())
+        self.mock_terraform_manifest_provider = Mock()
         self.mock_echo = Mock()
         self.mock_abort = abort_with_error
         self.mock_git_remote = Mock()
@@ -28,6 +29,7 @@ class PipelineMocks:
     def params(self):
         return {
             "config_provider": self.mock_config_provider,
+            # "terraform_manifest_provider": self.mock_terraform_manifest_provider,
             "echo": self.mock_echo,
             "abort": self.mock_abort,
             "get_git_remote": self.mock_git_remote,
@@ -122,6 +124,12 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
 
 def test_generate_pipeline_generates_codebase_pipeline():
     pass
+    # mocks = PipelineMocks("test-app")
+    #
+    # pipelines = Pipelines(**mocks.params())
+    # pipelines.generate(None, None)
+
+    # mocks.mock_terraform_manifest_provider.generate_codebase_pipeline_config.assert_called_once()
 
 
 def assert_terraform(app_name, aws_account, expected_version, expected_branch):

@@ -10,7 +10,7 @@ environments:
     requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
     slack_channel: CODEBASE_SLACK_CHANNEL_ID
     repository: organisation/repository
     services:

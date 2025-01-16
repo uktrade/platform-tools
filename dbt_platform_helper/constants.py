@@ -4,9 +4,10 @@ PLATFORM_CONFIG_FILE = "platform-config.yml"
 PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
 # Todo: Move to ???
 DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "5"
+SUPPORTED_TERRAFORM_VERSION = "~> 1.8"
 
 # Keys
-CODEBASE_PIPELINES_KEY = "codebase-pipelines"
+CODEBASE_PIPELINES_KEY = "codebase_pipelines"
 ENVIRONMENTS_KEY = "environments"
 ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 

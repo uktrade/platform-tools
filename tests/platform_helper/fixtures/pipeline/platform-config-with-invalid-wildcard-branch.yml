@@ -10,7 +10,7 @@ environments:
     requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
     repository: organisation/repository
     services:
       - run_group:
