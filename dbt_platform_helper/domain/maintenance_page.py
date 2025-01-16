@@ -142,6 +142,21 @@ def add_maintenance_page(
     )
 
 
+def remove_maintenance_page(session: boto3.Session, listener_arn: str):
+    lb_client = session.client("elbv2")
+
+    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+    tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
+        "TagDescriptions"
+    ]
+
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
+        deleted = delete_listener_rule(tag_descriptions, name, lb_client)
+
+        if name == "MaintenancePage" and not deleted:
+            raise ListenerRuleNotFoundException()
+
+
 class MaintenancePage:
     def __init__(
         self,
@@ -156,6 +171,7 @@ class MaintenancePage:
         add_maintenance_page: Callable[
             [boto3.Session, str, str, str, List[Service], tuple, str], None
         ] = add_maintenance_page,
+        remove_maintenance_page: Callable[[boto3.Session, str], None] = remove_maintenance_page,
     ):
         self.application = application
         self.user_prompt_callback = user_prompt_callback
@@ -164,6 +180,7 @@ class MaintenancePage:
         self.get_maintenance_page = get_maintenance_page
         self.get_env_ips = get_env_ips
         self.add_maintenance_page = add_maintenance_page
+        self.remove_maintenance_page = remove_maintenance_page
 
     def _get_deployed_load_balanced_web_services(self, app: Application, svc: List[str]):
         if "*" in svc:
@@ -175,9 +192,9 @@ class MaintenancePage:
             raise LoadBalancedWebServiceNotFoundException
         return services
 
-    def activate(self, env, svc: List[str], template, vpc):
+    def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
         try:
-            services = self._get_deployed_load_balanced_web_services(self.application, svc)
+            services = self._get_deployed_load_balanced_web_services(self.application, services)
         except LoadBalancedWebServiceNotFoundException:
             # TODO DBTP-1643 - this bit of logic does not depend on env, so env shouldn't really be in the exception
             # message
@@ -210,7 +227,7 @@ class MaintenancePage:
                 f"environment in {self.application.name}.\nWould you like to continue?"
             ):
                 if current_maintenance_page and remove_current_maintenance_page:
-                    remove_maintenance_page(application_environment.session, https_listener)
+                    self.remove_maintenance_page(application_environment.session, https_listener)
 
                 allowed_ips = self.get_env_ips(vpc, application_environment)
 
@@ -232,21 +249,25 @@ class MaintenancePage:
 
         except LoadBalancerNotFoundException:
             self.echo(
-                f"No load balancer found for environment {env} in the application {app}.", fg="red"
+                f"No load balancer found for environment {env} in the application {self.application.name}.",
+                fg="red",
             )
             raise click.Abort
 
         except ListenerNotFoundException:
             self.echo(
-                f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
+                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
+                fg="red",
             )
             raise click.Abort
 
-    def deactivate(self, app, env):
-        application_environment = get_app_environment(app, env)
+    def deactivate(self, app, env: str):
+        application_environment = get_app_environment(self.application, env)
 
         try:
-            https_listener = find_https_listener(application_environment.session, app, env)
+            https_listener = find_https_listener(
+                application_environment.session, self.application.name, env
+            )
             current_maintenance_page = get_maintenance_page(
                 application_environment.session, https_listener
             )
@@ -262,18 +283,21 @@ class MaintenancePage:
 
             remove_maintenance_page(application_environment.session, https_listener)
             self.echo(
-                f"Maintenance page removed from environment {env} in application {app}", fg="green"
+                f"Maintenance page removed from environment {env} in application {self.application.name}",
+                fg="green",
             )
 
         except LoadBalancerNotFoundException:
             self.echo(
-                f"No load balancer found for environment {env} in the application {app}.", fg="red"
+                f"No load balancer found for environment {env} in the application {self.application.name}.",
+                fg="red",
             )
             raise click.Abort
 
         except ListenerNotFoundException:
             self.echo(
-                f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
+                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
+                fg="red",
             )
             raise click.Abort
 
@@ -304,21 +328,6 @@ def get_app_environment(application: Application, env_name: str) -> Environment:
         raise click.Abort
 
     return application_environment
-
-
-def remove_maintenance_page(session: boto3.Session, listener_arn: str):
-    lb_client = session.client("elbv2")
-
-    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
-        "TagDescriptions"
-    ]
-
-    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
-        deleted = delete_listener_rule(tag_descriptions, name, lb_client)
-
-        if name == "MaintenancePage" and not deleted:
-            raise ListenerRuleNotFoundException()
 
 
 def get_rules_tag_descriptions(rules: list, lb_client):
