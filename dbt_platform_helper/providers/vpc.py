@@ -33,6 +33,7 @@ class VpcIdMissingException(VpcProviderException):
 
 @dataclass
 class Vpc:
+    id: str
     public_subnets: list[str]
     private_subnets: list[str]
     security_groups: list[str]
@@ -89,7 +90,6 @@ class VpcProvider:
 
         public_subnets, private_subnets = self._get_subnet_ids(vpc_id)
 
-        # TODO should we return empty arrays and let the consumer decide when to throw an exception?
         if not private_subnets:
             raise PrivateSubnetsNotFoundException(f"No private subnets found in vpc '{vpc_name}'")
 
@@ -103,4 +103,4 @@ class VpcProvider:
                 f"No matching security groups found in vpc '{vpc_name}'"
             )
 
-        return Vpc(public_subnets, private_subnets, sec_groups)
+        return Vpc(vpc_id, public_subnets, private_subnets, sec_groups)

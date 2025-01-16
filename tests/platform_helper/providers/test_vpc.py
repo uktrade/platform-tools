@@ -31,6 +31,7 @@ def test_get_vpc_success():
     )
 
     expected_vpc = Vpc(
+        id="vpc-123456",
         public_subnets=["subnet-public-1", "subnet-public-2"],
         private_subnets=["subnet-private-1", "subnet-private-2"],
         security_groups=["sg-abc123"],

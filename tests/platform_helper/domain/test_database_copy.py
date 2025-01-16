@@ -14,7 +14,9 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundException
 
 
 class DataCopyMocks:
-    def __init__(self, app="test-app", env="test-env", acc="12345", vpc=Vpc([], [], []), **kwargs):
+    def __init__(
+        self, app="test-app", env="test-env", acc="12345", vpc=Vpc("", [], [], []), **kwargs
+    ):
         self.application = Application(app)
         self.environment = Mock()
         self.environment.account_id = acc
@@ -54,7 +56,7 @@ class DataCopyMocks:
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    vpc = Vpc([], ["subnet_1", "subnet_2"], ["sec_group_1"])
+    vpc = Vpc("", [], ["subnet_1", "subnet_2"], ["sec_group_1"])
     mocks = DataCopyMocks(vpc=vpc)
     db_connection_string = "connection_string"
 
