@@ -754,6 +754,7 @@ class TestActivateMethod:
         maintenance_mocks.echo.assert_not_called()
         maintenance_mocks.remove_maintenance_page.assert_not_called()
 
+    # TODO this doesn't need to be caught in maintenance domain
     def test_offline_an_environment_when_load_balancer_not_found(
         self,
     ):
@@ -777,6 +778,7 @@ class TestActivateMethod:
             maintenance_mocks.get_maintenance_page.assert_not_called()
             maintenance_mocks.remove_maintenance_page.assert_not_called()
 
+    # TODO this doesn't need to be caught in maintenance domain
     def test_offline_an_environment_when_listener_not_found(
         self,
     ):
@@ -910,50 +912,80 @@ class TestDeactivateCommand:
             app,
         )
         provider = MaintenancePage(**maintenance_mocks.params())
+
+        provider.deactivate(env)
+
+        maintenance_mocks.find_https_listener.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.echo.assert_called_with(
+            "There is no current maintenance page to remove",
+            fg="yellow",
+        )
+
+    def test_deactivate_an_environment_do_not_remove_mainenance_page(
+        self,
+    ):
+        maintenance_mocks = MaintenancePageMocks(
+            app,
+            get_maintenance_page=Mock(return_value="default"),
+            user_prompt_callback=Mock(return_value=False),
+        )
+        provider = MaintenancePage(**maintenance_mocks.params())
+
+        provider.deactivate(env)
+
+        maintenance_mocks.find_https_listener.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.user_prompt_callback.assert_called_with(
+            "There is currently a 'default' maintenance page, " "would you like to remove it?"
+        )
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.echo.assert_not_called()
+
+    def test_online_an_environment_when_listener_not_found(
+        self,
+    ):
+
+        maintenance_mocks = MaintenancePageMocks(
+            app, find_https_listener=Mock(side_effect=ListenerNotFoundException())
+        )
+        provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(click.Abort):
             provider.deactivate(env)
 
             maintenance_mocks.find_https_listener.assert_called_with(
                 ANY, "test-application", "development"
             )
-            maintenance_mocks.get_maintenance_page.assert_called_with(ANY, "https_listener")
-            maintenance_mocks.remove_maintenance_page.assert_called_with(ANY, "https_listener")
+            maintenance_mocks.get_maintenance_page.assert_not_called()
+            maintenance_mocks.remove_maintenance_page.assert_not_called()
             maintenance_mocks.echo.assert_called_with(
-                "There is no current maintenance page to remove",
+                "No HTTPS listener found for environment development in the application "
+                "test-application.",
                 fg="red",
             )
 
-    # def test_online_an_environment_when_listener_not_found(
-    #     self,
-    # ):
+    def test_online_an_environment_when_load_balancer_not_found(
+        self,
+    ):
+        maintenance_mocks = MaintenancePageMocks(
+            app, find_https_listener=Mock(side_effect=LoadBalancerNotFoundException())
+        )
+        provider = MaintenancePage(**maintenance_mocks.params())
+        with pytest.raises(click.Abort):
+            provider.deactivate(env)
 
-    #     maintenance_mocks = MaintenancePageMocks(
-    #         app, find_https_listener=Mock(side_effect=ListenerNotFoundException())
-    #     )
-    #     provider = MaintenancePage(**maintenance_mocks.params())
-    #     with pytest.raises(ListenerNotFoundException,
-    #                        match="No HTTPS listener found for environment development in the application test-applicaiton."):
-    #         provider.deactivate(env)
-
-    #         maintenance_mocks.find_https_listener.assert_called_with(
-    #             ANY, "test-application", "development"
-    #         )
-    #         maintenance_mocks.get_maintenance_page.assert_not_called()
-    #         maintenance_mocks.remove_maintenance_page.assert_not_called()
-
-    # def test_online_an_environment_when_load_balancer_not_found(
-    #     self,
-    # ):
-    #     maintenance_mocks = MaintenancePageMocks(
-    #         app, find_https_listener=Mock(side_effect=LoadBalancerNotFoundException())
-    #     )
-    #     provider = MaintenancePage(**maintenance_mocks.params())
-    #     with pytest.raises(LoadBalancerNotFoundException,
-    #                        match="No load balancer found for environment development in the application test-application."):
-    #         provider.deactivate(env)
-
-    #         maintenance_mocks.find_https_listener.assert_called_with(
-    #             ANY, "test-application", "development"
-    #         )
-    #         maintenance_mocks.get_maintenance_page.assert_not_called()
-    #         maintenance_mocks.remove_maintenance_page.assert_not_called()
+            maintenance_mocks.find_https_listener.assert_called_with(
+                ANY, "test-application", "development"
+            )
+            maintenance_mocks.get_maintenance_page.assert_not_called()
+            maintenance_mocks.remove_maintenance_page.assert_not_called()
+            maintenance_mocks.echo.assert_called_with(
+                "No load balancer found for environment development in the application "
+                "test-application.",
+                fg="red",
+            )

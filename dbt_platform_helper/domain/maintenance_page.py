@@ -263,16 +263,17 @@ class MaintenancePage:
             current_maintenance_page = self.get_maintenance_page(
                 application_environment.session, https_listener
             )
+
+            # TODO discuss, reduce number of return statements but more nested if statements
             if not current_maintenance_page:
-                self.echo("There is no current maintenance page to remove", fg="red")
-                raise click.Abort
+                self.echo("There is no current maintenance page to remove", fg="yellow")
+                return
 
             if not self.user_prompt_callback(
                 f"There is currently a '{current_maintenance_page}' maintenance page, "
                 f"would you like to remove it?"
             ):
-                # TODO not an abort
-                raise click.Abort
+                return
 
             self.remove_maintenance_page(application_environment.session, https_listener)
             self.echo(
