@@ -261,14 +261,14 @@ class MaintenancePage:
             )
             raise click.Abort
 
-    def deactivate(self, app, env: str):
+    def deactivate(self, env: str):
         application_environment = get_app_environment(self.application, env)
 
         try:
-            https_listener = find_https_listener(
+            https_listener = self.find_https_listener(
                 application_environment.session, self.application.name, env
             )
-            current_maintenance_page = get_maintenance_page(
+            current_maintenance_page = self.get_maintenance_page(
                 application_environment.session, https_listener
             )
             if not current_maintenance_page:
@@ -281,7 +281,7 @@ class MaintenancePage:
             ):
                 raise click.Abort
 
-            remove_maintenance_page(application_environment.session, https_listener)
+            self.remove_maintenance_page(application_environment.session, https_listener)
             self.echo(
                 f"Maintenance page removed from environment {env} in application {self.application.name}",
                 fg="green",

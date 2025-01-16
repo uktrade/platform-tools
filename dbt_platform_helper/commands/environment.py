@@ -50,7 +50,7 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
     try:
-        MaintenancePage(app).deactivate(app, env)
+        MaintenancePage(app).deactivate(env)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort

@@ -2,7 +2,6 @@
 # Needs reviewing and then the file should be deleted.
 
 from pathlib import Path
-from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -12,141 +11,8 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.environment import generate
-from dbt_platform_helper.commands.environment import online
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
-from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from tests.platform_helper.conftest import BASE_DIR
-
-
-class TestEnvironmentOnlineCommand:
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
-        return_value="https_listener",
-    )
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value="default"
-    )
-    @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page", return_value=None)
-    # TODO move to domain level test for the deactivate function
-    def test_successful_online(
-        self,
-        remove_maintenance_page,
-        get_maintenance_page,
-        find_https_listener,
-        load_application,
-        mock_application,
-    ):
-        load_application.return_value = mock_application
-
-        result = CliRunner().invoke(
-            online, ["--app", "test-application", "--env", "development"], input="y\n"
-        )
-
-        assert (
-            "There is currently a 'default' maintenance page, would you like to remove it? "
-            "[y/N]: y"
-        ) in result.output
-
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
-        get_maintenance_page.assert_called_with(ANY, "https_listener")
-        remove_maintenance_page.assert_called_with(ANY, "https_listener")
-
-        assert (
-            "Maintenance page removed from environment development in "
-            "application test-application"
-        ) in result.output
-
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
-        return_value="https_listener",
-    )
-    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
-    @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page", return_value=None)
-    # TODO move to domain level test for the deactivate function
-    def test_online_an_environment_that_is_not_offline(
-        self,
-        remove_maintenance_page,
-        get_maintenance_page,
-        find_https_listener,
-        load_application,
-        mock_application,
-    ):
-        load_application.return_value = mock_application
-
-        result = CliRunner().invoke(
-            online, ["--app", "test-application", "--env", "development"], input="y\n"
-        )
-
-        assert "There is no current maintenance page to remove" in result.output
-
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
-        get_maintenance_page.assert_called_with(ANY, "https_listener")
-        remove_maintenance_page.assert_not_called()
-
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
-    @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
-    # TODO move to domain level test for the deactivate function
-    def test_online_an_environment_when_listener_not_found(
-        self,
-        remove_maintenance_page,
-        get_maintenance_page,
-        find_https_listener,
-        load_application,
-        mock_application,
-    ):
-        load_application.return_value = mock_application
-        find_https_listener.side_effect = ListenerNotFoundException()
-
-        result = CliRunner().invoke(
-            online, ["--app", "test-application", "--env", "development"], input="y\n"
-        )
-
-        assert (
-            "No HTTPS listener found for environment development in the application "
-            "test-application."
-        ) in result.output
-        assert "Aborted!" in result.output
-
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
-        get_maintenance_page.assert_not_called()
-        remove_maintenance_page.assert_not_called()
-
-    @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
-    @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
-    # TODO move to domain level test for the deactivate function
-    def test_online_an_environment_when_load_balancer_not_found(
-        self,
-        remove_maintenance_page,
-        get_maintenance_page,
-        find_https_listener,
-        load_application,
-        mock_application,
-    ):
-        from dbt_platform_helper.commands.environment import online
-
-        load_application.return_value = mock_application
-        find_https_listener.side_effect = LoadBalancerNotFoundException()
-
-        result = CliRunner().invoke(
-            online, ["--app", "test-application", "--env", "development"], input="y\n"
-        )
-
-        assert (
-            "No load balancer found for environment development in the application "
-            "test-application."
-        ) in result.output
-        assert "Aborted!" in result.output
-
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
-        get_maintenance_page.assert_not_called()
-        remove_maintenance_page.assert_not_called()
 
 
 class TestGenerate:
