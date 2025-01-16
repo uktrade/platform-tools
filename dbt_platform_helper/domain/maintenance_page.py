@@ -25,10 +25,8 @@ class MaintenancePageException(PlatformException):
 
 
 class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
-    pass
-
-    # def __init__(self):
-    #     super().__init__("""ECS exec agent never reached "RUNNING" status""")
+    def __init__(self, application_name):
+        super().__init__(f"No services deployed yet to {application_name} ")
 
 
 def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
@@ -189,20 +187,12 @@ class MaintenancePage:
             all_services = [get_app_service(app, s) for s in list(svc)]
             services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
         if not services:
-            raise LoadBalancedWebServiceNotFoundException
+            raise LoadBalancedWebServiceNotFoundException(app.name)
         return services
 
     def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
-        try:
-            services = self._get_deployed_load_balanced_web_services(self.application, services)
-        except LoadBalancedWebServiceNotFoundException:
-            # TODO DBTP-1643 - this bit of logic does not depend on env, so env shouldn't really be in the exception
-            # message
-            # Exception should be propagated to command and caught there.
-            self.echo(
-                f"No services deployed yet to {self.application.name} environment {env}", fg="red"
-            )
-            raise click.Abort
+
+        services = self._get_deployed_load_balanced_web_services(self.application, services)
 
         application_environment = get_app_environment(self.application, env)
         try:
@@ -220,7 +210,7 @@ class MaintenancePage:
                     f"maintenance page?"
                 )
                 if not remove_current_maintenance_page:
-                    raise click.Abort
+                    return
 
             if remove_current_maintenance_page or self.user_prompt_callback(
                 f"You are about to enable the '{template}' maintenance page for the {env} "
@@ -244,10 +234,9 @@ class MaintenancePage:
                     f"Maintenance page '{template}' added for environment {env} in application {self.application.name}",
                     fg="green",
                 )
-            else:
-                raise click.Abort
 
         except LoadBalancerNotFoundException:
+            # TODO push exception to command layer
             self.echo(
                 f"No load balancer found for environment {env} in the application {self.application.name}.",
                 fg="red",
@@ -255,11 +244,14 @@ class MaintenancePage:
             raise click.Abort
 
         except ListenerNotFoundException:
+            # TODO push exception to command layer
             self.echo(
                 f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
                 fg="red",
             )
             raise click.Abort
+
+        return
 
     def deactivate(self, env: str):
         application_environment = get_app_environment(self.application, env)
@@ -279,6 +271,7 @@ class MaintenancePage:
                 f"There is currently a '{current_maintenance_page}' maintenance page, "
                 f"would you like to remove it?"
             ):
+                # TODO not an abort
                 raise click.Abort
 
             self.remove_maintenance_page(application_environment.session, https_listener)
@@ -288,6 +281,7 @@ class MaintenancePage:
             )
 
         except LoadBalancerNotFoundException:
+            # TODO push exception to command layer
             self.echo(
                 f"No load balancer found for environment {env} in the application {self.application.name}.",
                 fg="red",
@@ -295,6 +289,7 @@ class MaintenancePage:
             raise click.Abort
 
         except ListenerNotFoundException:
+            # TODO push exception to command layer
             self.echo(
                 f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
                 fg="red",
@@ -306,6 +301,7 @@ def get_app_service(application: Application, svc_name: str) -> Service:
     application_service = application.services.get(svc_name)
 
     if not application_service:
+        # TODO raise exception instead of abort
         click.secho(
             f"The service {svc_name} was not found in the application {application.name}. "
             f"It either does not exist, or has not been deployed.",
