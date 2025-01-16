@@ -120,6 +120,10 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     )
 
 
+def test_generate_pipeline_generates_codebase_pipeline():
+    pass
+
+
 def assert_terraform(app_name, aws_account, expected_version, expected_branch):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()

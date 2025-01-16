@@ -18,7 +18,7 @@ class PlatformConfigSchema:
                 "application": str,
                 Optional("legacy_project", default=False): bool,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
-                Optional("accounts"): list[str],
+                Optional("accounts"): Or([str], [int]),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
@@ -80,7 +80,7 @@ class PlatformConfigSchema:
                 "cache": str,
                 "request": str,
             },
-            Optional("additional"): list[
+            Optional("additional"): [
                 {
                     "path": str,
                     "cache": str,
@@ -94,12 +94,12 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): Or(
                     {
-                        Optional("additional_address_list"): list,
-                        Optional("allowed_methods"): list,
-                        Optional("cached_methods"): list,
+                        Optional("additional_address_list"): [str],
+                        Optional("allowed_methods"): [str],
+                        Optional("cached_methods"): [str],
                         Optional("cdn_compress"): bool,
                         Optional("cdn_domains_list"): dict,
-                        Optional("cdn_geo_locations"): list,
+                        Optional("cdn_geo_locations"): [str],
                         Optional("cdn_geo_restriction_type"): str,
                         Optional("cdn_logging_bucket"): str,
                         Optional("cdn_logging_bucket_prefix"): str,
@@ -109,10 +109,10 @@ class PlatformConfigSchema:
                         Optional("enable_logging"): bool,
                         Optional("env_root"): str,
                         Optional("forwarded_values_forward"): str,
-                        Optional("forwarded_values_headers"): list,
+                        Optional("forwarded_values_headers"): [str],
                         Optional("forwarded_values_query_string"): bool,
                         Optional("origin_protocol_policy"): str,
-                        Optional("origin_ssl_protocols"): list,
+                        Optional("origin_ssl_protocols"): [str],
                         Optional("slack_alert_channel_alb_secret_rotation"): str,
                         Optional("viewer_certificate_minimum_protocol_version"): str,
                         Optional("viewer_certificate_ssl_support_method"): str,
