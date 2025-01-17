@@ -116,6 +116,7 @@ def test_create_redis_or_opensearch_addon_client_task(
     mock_subprocess.call.assert_called()
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
@@ -169,6 +170,7 @@ def test_create_postgres_addon_client_task(
     mock_subprocess.call.assert_called()
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
@@ -258,6 +260,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
 
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app test-application --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "

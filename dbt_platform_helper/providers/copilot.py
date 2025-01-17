@@ -95,6 +95,7 @@ def create_postgres_admin_task(
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--env-vars CONNECTION_SECRET='{connection_string}' "
