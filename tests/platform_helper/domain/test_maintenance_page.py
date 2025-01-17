@@ -654,7 +654,7 @@ class TestActivateMethod:
             fg="green",
         )
 
-    def test_successful_offline_when_already_offline(
+    def test_successful_activate_when_already_activated(
         self,
     ):
 
@@ -755,7 +755,7 @@ class TestActivateMethod:
         maintenance_mocks.remove_maintenance_page.assert_not_called()
 
     # TODO this doesn't need to be caught in maintenance domain
-    def test_offline_an_environment_when_load_balancer_not_found(
+    def test_activate_page_when_load_balancer_not_found(
         self,
     ):
 
@@ -779,7 +779,7 @@ class TestActivateMethod:
             maintenance_mocks.remove_maintenance_page.assert_not_called()
 
     # TODO this doesn't need to be caught in maintenance domain
-    def test_offline_an_environment_when_listener_not_found(
+    def test_activate_page_when_listener_not_found(
         self,
     ):
         maintenance_mocks = MaintenancePageMocks(
@@ -802,7 +802,7 @@ class TestActivateMethod:
             maintenance_mocks.remove_maintenance_page.assert_not_called()
             maintenance_mocks.add_maintenance_page.assert_not_called()
 
-    def test_offline_an_environment_when_no_load_balancer_service_found(
+    def test_activate_an_environment_when_no_load_balancer_service_found(
         self,
     ):
         services = ["not-an-alb-service"]
@@ -825,7 +825,7 @@ class TestActivateMethod:
             maintenance_mocks.remove_maintenance_page.assert_not_called()
             maintenance_mocks.add_maintenance_page.assert_not_called()
 
-    def test_successful_offline_multiple_services(
+    def test_successful_activate_multiple_services(
         self,
     ):
 
@@ -947,7 +947,7 @@ class TestDeactivateCommand:
         maintenance_mocks.remove_maintenance_page.assert_not_called()
         maintenance_mocks.echo.assert_not_called()
 
-    def test_online_an_environment_when_listener_not_found(
+    def test_deactivate_an_environment_when_listener_not_found(
         self,
     ):
 
@@ -969,7 +969,7 @@ class TestDeactivateCommand:
                 fg="red",
             )
 
-    def test_online_an_environment_when_load_balancer_not_found(
+    def test_deactivate_an_environment_when_load_balancer_not_found(
         self,
     ):
         maintenance_mocks = MaintenancePageMocks(
