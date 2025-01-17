@@ -33,26 +33,6 @@ def get_cert_arn(
     return arn
 
 
-def get_vpc_id(session, env_name, vpc_name=None):
-    if not vpc_name:
-        vpc_name = f"{session.profile_name}-{env_name}"
-
-    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
-    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        filters[0]["Values"] = [session.profile_name]
-        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
-
-    if not vpcs:
-        click.secho(
-            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
-        )
-        raise click.Abort
-
-    return vpcs[0]["VpcId"]
-
-
 def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")
