@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
@@ -23,6 +24,9 @@ from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
+from dbt_platform_helper.utils.versioning import (
+    get_required_terraform_platform_modules_version,
+)
 from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import string_version
 from dbt_platform_helper.utils.versioning import validate_template_version
@@ -532,3 +536,22 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     assert result == "1.2.3"
     mock_version.assert_not_called()
     mock_get.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "cli_terraform_platform_version, config_terraform_platform_version, expected_version",
+    [
+        ("feature_branch", "5", "feature_branch"),
+        (None, "5", "5"),
+        (None, None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION),
+    ],
+)
+def test_determine_terraform_platform_modules_version(
+    cli_terraform_platform_version, config_terraform_platform_version, expected_version
+):
+    assert (
+        get_required_terraform_platform_modules_version(
+            cli_terraform_platform_version, config_terraform_platform_version
+        )
+        == expected_version
+    )

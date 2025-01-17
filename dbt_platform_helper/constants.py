@@ -8,6 +8,7 @@ DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "5"
 # Keys
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"
 ENVIRONMENTS_KEY = "environments"
+ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 
 # Conduit
 CONDUIT_ADDON_TYPES = [

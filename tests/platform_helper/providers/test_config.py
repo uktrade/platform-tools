@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -352,6 +353,19 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
         ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+
+def test_load_and_validate_platform_config_fails_with_missing_config_file(fakefs, capsys):
+    if Path(PLATFORM_CONFIG_FILE).exists():
+        os.remove(Path(PLATFORM_CONFIG_FILE))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    assert (
+        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        in capsys.readouterr().err
+    )
 
 
 def test_validation_runs_against_platform_config_yml(fakefs):

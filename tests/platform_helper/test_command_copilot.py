@@ -181,8 +181,6 @@ class TestMakeAddonsCommand:
                 error_response={}, operation_name="describe_key"
             )
 
-        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
-
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
@@ -653,11 +651,8 @@ class TestMakeAddonsCommand:
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_exit_if_no_local_copilot_environments(self, fakefs):
-        fakefs.create_file(PLATFORM_CONFIG_FILE)
-
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
-
-        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
 
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -693,7 +688,6 @@ class TestMakeAddonsCommand:
         secret_name,
     ):
         mock_config_provider.apply_environment_defaults = lambda conf: conf
-        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(addon_config, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -730,8 +724,9 @@ class TestMakeAddonsCommand:
     ):
         mock_config_provider.apply_environment_defaults = lambda conf: conf
         services = ["web", "web-celery"]
-        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"extensions": {}}))
-        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "test-app", "extensions": {}})
+        )
 
         fakefs.create_file(
             "./copilot/environments/development/manifest.yml",
@@ -849,7 +844,6 @@ class TestMakeAddonsCommand:
         ]
 
         client.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
-        fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
         CliRunner().invoke(copilot, ["make-addons"])
@@ -901,7 +895,7 @@ def test_is_service_empty_manifest(fakefs, capfd):
 
 
 def create_test_manifests(addon_file_contents, fakefs):
-    content = yaml.dump({"extensions": addon_file_contents})
+    content = yaml.dump({"application": "test-app", "extensions": addon_file_contents})
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=content)
     fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
     fakefs.create_file("copilot/environments/development/manifest.yml")

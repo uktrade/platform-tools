@@ -1,3 +1,4 @@
+application: test-app
 extensions:
   ##### s3 bucket example:
   my-s3-bucket:

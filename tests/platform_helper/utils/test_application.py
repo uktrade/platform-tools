@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import boto3
 from moto import mock_aws
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
@@ -14,21 +16,27 @@ from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 
 
-def test_getting_an_application_name_from_workspace(fakefs):
-    fakefs.add_real_file(
-        Path(__file__).parent.parent.joinpath("fixtures/valid_workspace.yml"),
-        True,
-        "copilot/.workspace",
-    )
+def test_getting_an_application_name_from_platform_config(fakefs):
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
     assert get_application_name() == "test-app"
 
 
-@patch("dbt_platform_helper.utils.application.abort_with_error", return_value=None)
-def test_getting_an_application_name_when_no_workspace_file(abort_with_error, fakefs):
-    get_application_name()
+def test_getting_an_application_name_when_no_application_found(fakefs):
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="")
+    abort_with_error = Mock()
+    get_application_name(abort=abort_with_error)
 
     abort_with_error.assert_called_with(
-        "Cannot get application name. No copilot/.workspace file found"
+        f"Cannot get application name. No 'application' key can be found in {PLATFORM_CONFIG_FILE}"
+    )
+
+
+def test_getting_an_application_name_when_no_platform_config_file(fakefs):
+    abort_with_error = Mock()
+    get_application_name(abort=abort_with_error)
+
+    abort_with_error.assert_called_with(
+        f"Cannot get application name. {PLATFORM_CONFIG_FILE} is missing."
     )
 
 
