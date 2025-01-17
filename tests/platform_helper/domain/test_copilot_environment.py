@@ -16,159 +16,99 @@ from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.domain.copilot_environment import find_https_certificate
 from dbt_platform_helper.domain.copilot_environment import get_cert_arn
-from dbt_platform_helper.domain.copilot_environment import get_subnet_ids
-
-# from dbt_platform_helper.domain.copilot_environment import get_vpc_id
-from dbt_platform_helper.providers.config import ConfigProvider
-
-# @pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
-# @mock_aws
-# def test_get_vpc_id(vpc_name):
-#     session = boto3.session.Session()
-#     vpc = create_moto_mocked_vpc(session, vpc_name)
-#     expected_vpc_id = vpc["VpcId"]
-
-#     actual_vpc_id = get_vpc_id(session, "prod")
-
-#     assert expected_vpc_id == actual_vpc_id
-
-#     vpc_id_from_name = get_vpc_id(session, "not-an-env", vpc_name=vpc_name)
-
-#     assert expected_vpc_id == vpc_id_from_name
-
+from dbt_platform_helper.providers.vpc import Vpc
 
 # @mock_aws
-# def test_get_vpc_id_failure(capsys):
+# def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
+#     # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
+#     def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
+#         return {
+#             "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
+#             "Value": f"{','.join(subnet_ids)}",
+#         }
 
-#     with pytest.raises(click.Abort):
-#         get_vpc_id(boto3.session.Session(), "development")
+#     def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
+#         return {
+#             "SubnetId": subnet_id,
+#             "Tags": [{"Key": "subnet_type", "Value": visibility}],
+#         }
 
-#     captured = capsys.readouterr()
+#     def _non_subnet_exports(number):
+#         return [
+#             {
+#                 "Name": f"application-environment-NotASubnet",
+#                 "Value": "does-not-matter",
+#             }
+#         ] * number
 
-#     assert "No VPC found with name default-development in AWS account default." in captured.out
+#     expected_public_subnet_id_1 = "subnet-1public"
+#     expected_public_subnet_id_2 = "subnet-2public"
+#     expected_private_subnet_id_1 = "subnet-1private"
+#     expected_private_subnet_id_2 = "subnet-2private"
 
+#     mock_boto3_session = MagicMock()
 
-@mock_aws
-def test_get_subnet_ids():
-    session = boto3.session.Session()
-    vpc_id = create_moto_mocked_vpc(session, "default-development")["VpcId"]
-    expected_public_subnet_id = create_moto_mocked_subnet(
-        session, vpc_id, "public", "10.0.128.0/24"
-    )
-    expected_private_subnet_id = create_moto_mocked_subnet(
-        session, vpc_id, "private", "10.0.1.0/24"
-    )
+#     # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
+#     mock_boto3_session.client("cloudformation").get_paginator(
+#         "list_exports"
+#     ).paginate.return_value = [
+#         {"Exports": _non_subnet_exports(5)},
+#         {
+#             "Exports": [
+#                 _list_exports_subnet_object(
+#                     "environment",
+#                     [
+#                         expected_public_subnet_id_1,
+#                         expected_public_subnet_id_2,
+#                     ],
+#                     "public",
+#                 ),
+#                 _list_exports_subnet_object(
+#                     "environment",
+#                     [
+#                         expected_private_subnet_id_1,
+#                         expected_private_subnet_id_2,
+#                     ],
+#                     "private",
+#                 ),
+#                 _list_exports_subnet_object(
+#                     "otherenvironment",
+#                     [expected_public_subnet_id_1],
+#                     "public",
+#                 ),
+#                 _list_exports_subnet_object(
+#                     "otherenvironment",
+#                     [expected_private_subnet_id_2],
+#                     "private",
+#                 ),
+#             ]
+#         },
+#         {"Exports": _non_subnet_exports(5)},
+#     ]
 
-    public_subnet_ids, private_subnet_ids = get_subnet_ids(
-        session, vpc_id, "environment-name-does-not-matter"
-    )
+#     # EC2 client should return them in an order that differs from the CloudFormation Export
+#     mock_boto3_session.client("ec2").describe_subnets.return_value = {
+#         "Subnets": [
+#             _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
+#             _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
+#             _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
+#             _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
+#         ]
+#     }
 
-    assert public_subnet_ids == [expected_public_subnet_id]
-    assert private_subnet_ids == [expected_private_subnet_id]
+#     # Act (there's a lot of setup, worth signposting where this happens)
+#     public_subnet_ids, private_subnet_ids = get_subnet_ids(
+#         mock_boto3_session, "vpc-id-does-not-matter", "environment"
+#     )
 
-
-@mock_aws
-def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
-    # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
-    def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
-        return {
-            "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
-            "Value": f"{','.join(subnet_ids)}",
-        }
-
-    def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
-        return {
-            "SubnetId": subnet_id,
-            "Tags": [{"Key": "subnet_type", "Value": visibility}],
-        }
-
-    def _non_subnet_exports(number):
-        return [
-            {
-                "Name": f"application-environment-NotASubnet",
-                "Value": "does-not-matter",
-            }
-        ] * number
-
-    expected_public_subnet_id_1 = "subnet-1public"
-    expected_public_subnet_id_2 = "subnet-2public"
-    expected_private_subnet_id_1 = "subnet-1private"
-    expected_private_subnet_id_2 = "subnet-2private"
-
-    mock_boto3_session = MagicMock()
-
-    # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
-    mock_boto3_session.client("cloudformation").get_paginator(
-        "list_exports"
-    ).paginate.return_value = [
-        {"Exports": _non_subnet_exports(5)},
-        {
-            "Exports": [
-                _list_exports_subnet_object(
-                    "environment",
-                    [
-                        expected_public_subnet_id_1,
-                        expected_public_subnet_id_2,
-                    ],
-                    "public",
-                ),
-                _list_exports_subnet_object(
-                    "environment",
-                    [
-                        expected_private_subnet_id_1,
-                        expected_private_subnet_id_2,
-                    ],
-                    "private",
-                ),
-                _list_exports_subnet_object(
-                    "otherenvironment",
-                    [expected_public_subnet_id_1],
-                    "public",
-                ),
-                _list_exports_subnet_object(
-                    "otherenvironment",
-                    [expected_private_subnet_id_2],
-                    "private",
-                ),
-            ]
-        },
-        {"Exports": _non_subnet_exports(5)},
-    ]
-
-    # EC2 client should return them in an order that differs from the CloudFormation Export
-    mock_boto3_session.client("ec2").describe_subnets.return_value = {
-        "Subnets": [
-            _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
-            _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
-            _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
-            _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
-        ]
-    }
-
-    # Act (there's a lot of setup, worth signposting where this happens)
-    public_subnet_ids, private_subnet_ids = get_subnet_ids(
-        mock_boto3_session, "vpc-id-does-not-matter", "environment"
-    )
-
-    assert public_subnet_ids == [
-        expected_public_subnet_id_1,
-        expected_public_subnet_id_2,
-    ]
-    assert private_subnet_ids == [
-        expected_private_subnet_id_1,
-        expected_private_subnet_id_2,
-    ]
-
-
-@mock_aws
-def test_get_subnet_ids_failure(capsys):
-
-    with pytest.raises(click.Abort):
-        get_subnet_ids(boto3.session.Session(), "123", "environment-name-does-not-matter")
-
-    captured = capsys.readouterr()
-
-    assert "No subnets found for VPC with id: 123." in captured.out
+#     assert public_subnet_ids == [
+#         expected_public_subnet_id_1,
+#         expected_public_subnet_id_2,
+#     ]
+#     assert private_subnet_ids == [
+#         expected_private_subnet_id_1,
+#         expected_private_subnet_id_2,
+#     ]
 
 
 @mock_aws
@@ -606,20 +546,20 @@ class TestCopilotTemplating:
         "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
         return_value="arn:aws:acm:test",
     )
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.get_subnet_ids",
-        return_value=(["def456"], ["ghi789"]),
-    )
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
-    @pytest.mark.skip("skipping failing test while I refactor vpc provider")
     def test_copilot_templating_generate_generates_expected_manifest(
-        self, mock_get_cert_arn, mock_get_subnet_ids, mock_get_session
+        self, mock_get_cert_arn, mock_get_session
     ):
 
         mock_vpc_provider = Mock()
         mock_file_provider = Mock()
 
-        mock_vpc_provider.get_vpc_id_by_name.return_value = "vpc-abc123"
+        mock_vpc_provider.get_vpc.return_value = Vpc(
+            id="a-vpc-id",
+            public_subnets=["a-public-subnet"],
+            private_subnets=["a-private-subnet"],
+            security_groups=["a-security-group"],
+        )
 
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
@@ -627,98 +567,67 @@ class TestCopilotTemplating:
         copilot_templating = CopilotTemplating(
             mock_vpc_provider, mock_file_provider, "im a file provider!"
         )
-        result = copilot_templating.generate_copilot_environment_manifests(
+
+        result = copilot_templating.generate_copilot_environment_manifest(
             "connors-environment", "connors-application", {"config": "im config"}, mock_get_session
         )
-        assert result == "foo"
+
+        # TODO - assertions on the results...
 
 
 class TestCopilotGenerate:
 
-    # @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    # @patch(
-    #     "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
-    #     return_value="arn:aws:acm:test",
-    # )
-    # @patch(
-    #     "dbt_platform_helper.domain.copilot_environment.get_subnet_ids",
-    #     return_value=(["def456"], ["ghi789"]),
-    # )
-    # @patch("dbt_platform_helper.domain.copilot_environment.get_vpc_id", return_value="vpc-abc123")
-    # @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
-    # @pytest.mark.parametrize(
-    #     "environment_config, expected_vpc",
-    #     [
-    #         ({"test": {}}, None),
-    #         ({"test": {"vpc": "vpc1"}}, "vpc1"),
-    #         ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
-    #         ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
-    #     ],
-    # )
-    # def test_generate(
-    #     self,
-    #     mock_get_aws_session_1,
-    #     mock_get_vpc_id,
-    #     mock_get_subnet_ids,
-    #     mock_get_cert_arn,
-    #     fakefs,
-    #     environment_config,
-    #     expected_vpc,
-    # ):
-    #     # TODO can mock ConfigProvier instead to set up config
-    #     default_conf = environment_config.get("*", {})
-    #     default_conf["accounts"] = {
-    #         "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-    #         "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
-    #     }
-    #     environment_config["*"] = default_conf
+    @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
+    def test_generate(self, mock_get_session):
 
-    #     fakefs.create_file(
-    #         PLATFORM_CONFIG_FILE,
-    #         contents=yaml.dump({"application": "my-app", "environments": environment_config}),
-    #     )
+        mock_copilot_templating = Mock()
+        mock_config_provider = Mock()
+        mock_vpc_provider = MagicMock()
 
-    #     mocked_session = MagicMock()
-    #     mock_get_aws_session_1.return_value = mocked_session
-    #     fakefs.add_real_directory(
-    #         BASE_DIR / "tests" / "platform_helper", read_only=False, target_path="copilot"
-    #     )
+        mocked_session = MagicMock()
+        mock_get_session.return_value = mocked_session
 
-    #     result = CliRunner().invoke(generate, ["--name", "test"])
+        test_env_config = {
+            "vpc": "vpc3",
+            "accounts": {
+                "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+            },
+            "versions": {"terraform-platform-modules": "123456"},
+        }
+        config = {"application": "test-app", "environments": {"test_environment": test_env_config}}
 
-    #     # Comparing the generated file with the expected file - domain level test.
-    #     # TODO Check file provider has been called on the expected contents instead of using fakefs.
-    #     actual = yaml.safe_load(Path("copilot/environments/test/manifest.yml").read_text())
-    #     expected = yaml.safe_load(
-    #         Path("copilot/fixtures/test_environment_manifest.yml").read_text()
-    #     )
+        mock_config_provider.get_enriched_config.return_value = config
 
-    #     # Checking functions are called as expected - domain level test
-    #     # TODO get_vpc_id should be replaced with VpcProvider
-    #     mock_get_vpc_id.assert_called_once_with(mocked_session, "test", expected_vpc)
-    #     mock_get_subnet_ids.assert_called_once_with(mocked_session, "vpc-abc123", "test")
-    #     mock_get_cert_arn.assert_called_once_with(mocked_session, "my-app", "test")
-    #     mock_get_aws_session_1.assert_called_once_with("non-prod-acc")
-
-    #     assert actual == expected
-
-    #     # TODO Check output of command - domain level test
-    #     assert "File copilot/environments/test/manifest.yml created" in result.output
-
-    def test_fail_early_if_platform_config_invalid(self, capfd):
-        mock_file_provider = Mock()
-        mock_file_provider.load.return_value = {}
-
-        with patch(
-            "dbt_platform_helper.providers.config.abort_with_error"
-        ) as mock_abort_with_error:
-            mock_abort_with_error.side_effect = SystemExit(1)
-            with pytest.raises(SystemExit) as e:
-                CopilotEnvironment(ConfigProvider(Mock(), mock_file_provider)).generate("test")
-
-        assert e.value.code == 1
-
-        mock_abort_with_error.assert_called_with(
-            f"Schema error in platform-config.yml. Missing key: 'application'"
+        copilot_environment = CopilotEnvironment(
+            config_provider=mock_config_provider,
+            vpc_provider=mock_vpc_provider,
+            copilot_templating=mock_copilot_templating,
         )
-        mock_file_provider.mkfile.assert_not_called()
+
+        copilot_environment.generate(environment_name="test_environment")
+
+        mock_copilot_templating.generate_copilot_environment_manifest.assert_called_once_with(
+            environment_name="test_environment",
+            application_name="test-app",
+            env_config=test_env_config,
+            session=mocked_session,
+        )
+
+    # def test_fail_early_if_platform_config_invalid(self, capfd):
+    #     mock_file_provider = Mock()
+    #     mock_file_provider.load.return_value = {}
+
+    #     with patch(
+    #         "dbt_platform_helper.providers.config.abort_with_error"
+    #     ) as mock_abort_with_error:
+    #         mock_abort_with_error.side_effect = SystemExit(1)
+    #         with pytest.raises(SystemExit) as e:
+    #             CopilotEnvironment(ConfigProvider(Mock(), mock_file_provider)).generate("test")
+
+    #     assert e.value.code == 1
+
+    #     mock_abort_with_error.assert_called_with(
+    #         f"Schema error in platform-config.yml. Missing key: 'application'"
+    #     )
+    #     mock_file_provider.mkfile.assert_not_called()

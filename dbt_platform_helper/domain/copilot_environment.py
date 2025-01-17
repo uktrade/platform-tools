@@ -5,9 +5,9 @@ import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
@@ -15,61 +15,13 @@ from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
 
-# TODO - prob some error message here... e.g. "VPC: {vpc_name} not found in account, check your platform-config.yaml and aws-profile configuration"
-class VPCNotFoundError(PlatformException):
+class CertificateNotFoundException(PlatformException):
     pass
 
 
-# TODO - move helper functions into suitable provider classes
-# VPC Provider method
-def get_subnet_ids(session, vpc_id, environment_name):
-    subnets = session.client("ec2").describe_subnets(
-        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-    )["Subnets"]
-
-    if not subnets:
-        click.secho(f"No subnets found for VPC with id: {vpc_id}.", fg="red")
-        raise click.Abort
-
-    public_tag = {"Key": "subnet_type", "Value": "public"}
-    public_subnets = [subnet["SubnetId"] for subnet in subnets if public_tag in subnet["Tags"]]
-    private_tag = {"Key": "subnet_type", "Value": "private"}
-    private_subnets = [subnet["SubnetId"] for subnet in subnets if private_tag in subnet["Tags"]]
-
-    # This call and the method declaration can be removed when we stop using AWS Copilot to deploy the services
-    public_subnets, private_subnets = _match_subnet_id_order_to_cloudformation_exports(
-        session,
-        environment_name,
-        public_subnets,
-        private_subnets,
-    )
-
-    return public_subnets, private_subnets
-
-
-def _match_subnet_id_order_to_cloudformation_exports(
-    session, environment_name, public_subnets, private_subnets
-):
-    public_subnet_exports = []
-    private_subnet_exports = []
-    for page in session.client("cloudformation").get_paginator("list_exports").paginate():
-        for export in page["Exports"]:
-            if f"-{environment_name}-" in export["Name"]:
-                if export["Name"].endswith("-PublicSubnets"):
-                    public_subnet_exports = export["Value"].split(",")
-                if export["Name"].endswith("-PrivateSubnets"):
-                    private_subnet_exports = export["Value"].split(",")
-
-    # If the elements match, regardless of order, use the list from the CloudFormation exports
-    if set(public_subnets) == set(public_subnet_exports):
-        public_subnets = public_subnet_exports
-    if set(private_subnets) == set(private_subnet_exports):
-        private_subnets = private_subnet_exports
-
-    return public_subnets, private_subnets
-
-
-def get_cert_arn(session, application, env_name):
+def get_cert_arn(
+    session, application, env_name
+):  # TODO move into CopilotTemplating.generate method...
     try:
         arn = find_https_certificate(session, application, env_name)
     except:
@@ -81,7 +33,9 @@ def get_cert_arn(session, application, env_name):
     return arn
 
 
-def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
+def find_https_certificate(
+    session: boto3.Session, app: str, env: str
+) -> str:  # TODO - Loadbalancer provider
     listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")
     certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
@@ -96,32 +50,42 @@ def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     return certificate_arn
 
 
-class CertificateNotFoundException(PlatformException):
-    pass
-
-
 class CopilotEnvironment:
-    def __init__(self, config_provider, vpc_provider=None):
+    def __init__(self, config_provider, vpc_provider=None, copilot_templating=None):
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
+        self.copilot_templating = copilot_templating or CopilotTemplating(
+            vpc_provider=self.vpc_provider,
+            file_provider=FileProvider,
+            mkfile_fn=FileProvider.mkfile(),
+        )
 
     def generate(self, environment_name):
 
-        config = self.config_provider.load_and_validate_platform_config()
-        enriched_config = self.config_provider.apply_environment_defaults(config)
+        platform_config = self.config_provider.get_enriched_config()
 
-        env_config = enriched_config["environments"][environment_name]
+        # TODO - potentially worth a look but this line throws an error if you provide an invalid env name...
+        env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
-        click.secho(f"Using {profile_for_environment} for this AWS session")
 
-        # Interrim setup stuff TBA/TODO determine where this lives
-        session = get_aws_session_or_abort(profile_for_environment)
-        vpc_provider = self.vpc_provider(session)  # TODO
-        copilot_templating = CopilotTemplating(vpc_provider, FileProvider, FileProvider().mkfile())
+        click.secho(
+            f"Using {profile_for_environment} for this AWS session"
+        )  # TODO - echo_fn and assert on result.
 
-        copilot_templating.generate_copilot_environment_manifests(
-            environment_name, enriched_config["application"], env_config, session, vpc_provider
+        session = get_aws_session_or_abort(
+            profile_for_environment
+        )  # TODO - session could likely fall away?
+
+        copilot_environment_manifest = (
+            self.copilot_templating.generate_copilot_environment_manifest(
+                environment_name=environment_name,
+                application_name=platform_config["application"],
+                env_config=env_config,
+                session=session,
+            )
         )
+
+        self.copilot_templating.write_template(environment_name, copilot_environment_manifest)
 
 
 class CopilotTemplating:
@@ -136,30 +100,28 @@ class CopilotTemplating:
         self.vpc_provider = vpc_provider
         self.file_provider = file_provider
 
-    def generate_copilot_environment_manifests(
+    def generate_copilot_environment_manifest(
         self, environment_name, application_name, env_config, session
     ):
         env_template = setup_templates().get_template("env/manifest.yml")
 
-        # Get template variables
-        vpc_id = self._get_environment_vpc_id(
-            session, environment_name, env_config.get("vpc", None)
-        )
-        pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
-        cert_arn = get_cert_arn(session, application_name, environment_name)
+        vpc = self._get_environment_vpc(session, environment_name, env_config.get("vpc", None))
+
+        print(f"VPC: {vpc.public_subnets}")
 
         return env_template.render(
             {
                 "name": environment_name,
-                "vpc_id": vpc_id,
-                "pub_subnet_ids": pub_subnet_ids,
-                "priv_subnet_ids": priv_subnet_ids,
-                "certificate_arn": cert_arn,
+                "vpc_id": vpc.id,
+                "pub_subnet_ids": vpc.public_subnets,
+                "priv_subnet_ids": vpc.private_subnets,
+                "certificate_arn": get_cert_arn(
+                    session, application_name, environment_name
+                ),  # TODO - likely lives in a loadbalancer provider,
             }
         )
-        # click.echo(self._write_template(environment_name, manifest_contents))
 
-    def _write_template(self, environment_name: str, manifest_contents: str):
+    def write_template(self, environment_name: str, manifest_contents: str):
 
         return click.echo(
             self.file_provider.mkfile(
@@ -169,6 +131,31 @@ class CopilotTemplating:
                 overwrite=True,
             )
         )
+
+    def _match_subnet_id_order_to_cloudformation_exports(
+        session, environment_name, public_subnets, private_subnets
+    ):
+        """Addresses an issue identified in DBTP-1524 'If the order of the
+        subnets in the environment manifest has changed, copilot env deploy
+        tries to do destructive changes.'."""
+        public_subnet_exports = []
+        private_subnet_exports = []
+
+        for page in session.client("cloudformation").get_paginator("list_exports").paginate():
+            for export in page["Exports"]:
+                if f"-{environment_name}-" in export["Name"]:
+                    if export["Name"].endswith("-PublicSubnets"):
+                        public_subnet_exports = export["Value"].split(",")
+                    if export["Name"].endswith("-PrivateSubnets"):
+                        private_subnet_exports = export["Value"].split(",")
+
+        # If the elements match, regardless of order, use the list from the CloudFormation exports
+        if set(public_subnets) == set(public_subnet_exports):
+            public_subnets = public_subnet_exports
+        if set(private_subnets) == set(private_subnet_exports):
+            private_subnets = private_subnet_exports
+
+        return public_subnets, private_subnets
 
     def generate_cross_account_s3_policies(self, environments: dict, extensions):
         resource_blocks = defaultdict(list)
@@ -221,17 +208,17 @@ class CopilotTemplating:
 
     # TODO (with a clearer head after refactoring slightly) - Check with the team why we bother to check aws-profile names to find the VPC. Since these profile names can be named litterally anything it feels like a moot check to have.
     # If no one has a good reason for the check just remove it and fail fast if the VPC they provider in their platform config is invalid (and move on)
-    def _get_environment_vpc_id(self, session, env_name, vpc_name):
+    def _get_environment_vpc(self, session, env_name, vpc_name):
 
         if not vpc_name:
             vpc_name = f"{session.profile_name}-{env_name}"
 
         try:
-            vpc_id = self.vpc_provider._get_vpc_id_by_name(vpc_name)
-        except AWSException:
-            vpc_id = self.vpc_provider._get_vpc_id_by_name(session.profile_name)
+            vpc = self.vpc_provider.get_vpc(vpc_name)
+        except VpcNotFoundForNameException:
+            vpc = self.vpc_provider.get_vpc(session.profile_name)
 
-        if not vpc_id:
-            raise VPCNotFoundError
+        if not vpc:
+            raise VpcNotFoundForNameException
 
-        return vpc_id
+        return vpc
