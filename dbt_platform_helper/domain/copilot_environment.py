@@ -65,8 +65,7 @@ class CopilotEnvironment:
         self.vpc_provider = vpc_provider
         self.copilot_templating = copilot_templating or CopilotTemplating(
             vpc_provider=self.vpc_provider,
-            file_provider=FileProvider,
-            mkfile_fn=FileProvider.mkfile(),
+            file_provider=FileProvider(),
         )
 
     def generate(self, environment_name):
@@ -103,9 +102,7 @@ class CopilotTemplating:
         self,
         vpc_provider: VpcProvider = None,
         file_provider: FileProvider = None,
-        mkfile_fn=FileProvider.mkfile,
     ):
-        self.mkfile_fn = mkfile_fn
         self.vpc_provider = vpc_provider
         self.file_provider = file_provider
         self.templates = setup_templates()
@@ -207,7 +204,7 @@ class CopilotTemplating:
             output_dir = Path(".").absolute()
             file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
 
-            self.mkfile_fn(output_dir, file_path, file_content, True)
+            self.file_provider.mkfile(output_dir, file_path, file_content, True)
             click.echo(f"File {file_path} created")
 
     # TODO: This functionality makes no sense... Why are we checking for a vpc in AWS under 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})

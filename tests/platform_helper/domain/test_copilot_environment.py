@@ -329,13 +329,14 @@ class TestCrossEnvironmentS3Templating:
 
         Also tests passed in templates
         """
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile = Mock()
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(self.environments(), self.s3_xenv_extensions())
 
-        assert mock_mkfile.call_count == 1
+        assert mock_file_provider.mkfile.call_count == 1
 
-        calls = mock_mkfile.call_args_list
+        calls = mock_file_provider.mkfile.call_args_list
 
         act_output_dir = calls[0][0][0]
         act_output_path = calls[0][0][1]
@@ -412,23 +413,25 @@ class TestCrossEnvironmentS3Templating:
         )
 
     def test_generate_cross_account_s3_policies_no_addons(self):
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile = Mock()
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(self.environments(), {})
 
-        assert mock_mkfile.call_count == 0
+        assert mock_file_provider.mkfile.call_count == 0
 
     def test_generate_cross_account_s3_policies_multiple_addons(self):
         """More comprehensive tests that check multiple corner cases."""
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile.return_value = "file written"
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(
             self.environments(), self.s3_xenv_multiple_extensions()
         )
 
-        assert mock_mkfile.call_count == 3
+        assert mock_file_provider.mkfile.call_count == 3
 
-        calls = mock_mkfile.call_args_list
+        calls = mock_file_provider.mkfile.call_args_list
 
         # Case 1: hotfix -> staging. other_svc_1
         act_output_dir = calls[0][0][0]
@@ -553,6 +556,7 @@ class TestCopilotTemplating:
 
         mock_vpc_provider = Mock()
         mock_file_provider = Mock()
+        mock_file_provider.mkfile.return_value = "im a file provider!"
 
         mock_vpc_provider.get_vpc.return_value = Vpc(
             id="a-vpc-id",
@@ -564,9 +568,7 @@ class TestCopilotTemplating:
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
 
-        copilot_templating = CopilotTemplating(
-            mock_vpc_provider, mock_file_provider, "im a file provider!"
-        )
+        copilot_templating = CopilotTemplating(mock_vpc_provider, mock_file_provider)
 
         result = copilot_templating.generate_copilot_environment_manifest(
             "connors-environment", "connors-application", {"config": "im config"}, mock_get_session
