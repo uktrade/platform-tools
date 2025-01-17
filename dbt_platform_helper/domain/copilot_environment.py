@@ -20,10 +20,10 @@ class CertificateNotFoundException(PlatformException):
 
 
 def get_cert_arn(
-    session, application, env_name
+    session, app_name, env_name
 ):  # TODO move into CopilotTemplating.generate method...
     try:
-        arn = find_https_certificate(session, application, env_name)
+        arn = find_https_certificate(session, app_name, env_name)
     except:
         click.secho(
             f"No certificate found with domain name matching environment {env_name}.", fg="red"
