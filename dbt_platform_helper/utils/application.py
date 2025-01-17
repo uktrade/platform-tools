@@ -7,15 +7,14 @@ from pathlib import Path
 from typing import Dict
 
 import boto3
-import yaml
-from boto3 import Session
-from yaml.parser import ParserError
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
 
 @dataclass
@@ -60,7 +59,7 @@ class Application:
         return str(self) == str(other)
 
 
-def load_application(app: str = None, default_session: Session = None) -> Application:
+def load_application(app=None, default_session=None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()
 
@@ -72,7 +71,7 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
             WithDecryption=False,
         )
     except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundException(app)
+        raise ApplicationNotFoundException(application.name)
 
     path = f"/copilot/applications/{application.name}/environments"
     secrets = get_ssm_secrets(app, None, current_session, path)
@@ -106,27 +105,35 @@ def load_application(app: str = None, default_session: Session = None) -> Applic
         Recursive=False,
         WithDecryption=False,
     )
+    results = response["Parameters"]
+    while "NextToken" in response:
+        response = ssm_client.get_parameters_by_path(
+            Path=f"/copilot/applications/{application.name}/components",
+            Recursive=False,
+            WithDecryption=False,
+            NextToken=response["NextToken"],
+        )
+        results.extend(response["Parameters"])
 
     application.services = {
         svc["name"]: Service(svc["name"], svc["type"])
-        for svc in [json.loads(parameter["Value"]) for parameter in response["Parameters"]]
+        for svc in [json.loads(parameter["Value"]) for parameter in results]
     }
 
     return application
 
 
-def get_application_name():
-    app_name = None
-    try:
-        app_config = yaml.safe_load(Path("copilot/.workspace").read_text())
-        app_name = app_config["application"]
-    except (FileNotFoundError, ParserError):
-        pass
-
-    if app_name is None:
-        abort_with_error("Cannot get application name. No copilot/.workspace file found")
-
-    return app_name
+def get_application_name(abort=abort_with_error):
+    if Path(PLATFORM_CONFIG_FILE).exists():
+        try:
+            app_config = load_unvalidated_config_file()
+            return app_config["application"]
+        except KeyError:
+            abort(
+                f"Cannot get application name. No 'application' key can be found in {PLATFORM_CONFIG_FILE}"
+            )
+    else:
+        abort(f"Cannot get application name. {PLATFORM_CONFIG_FILE} is missing.")
 
 
 class ApplicationException(PlatformException):

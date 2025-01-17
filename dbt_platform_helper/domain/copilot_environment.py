@@ -81,6 +81,49 @@ def get_cert_arn(session, application, env_name):
     return arn
 
 
+def get_vpc_id(session, env_name, vpc_name=None):
+    if not vpc_name:
+        vpc_name = f"{session.profile_name}-{env_name}"
+
+    filters = [{"Name": "tag:Name", "Values": [vpc_name]}]
+    vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        filters[0]["Values"] = [session.profile_name]
+        vpcs = session.client("ec2").describe_vpcs(Filters=filters)["Vpcs"]
+
+    if not vpcs:
+        click.secho(
+            f"No VPC found with name {vpc_name} in AWS account {session.profile_name}.", fg="red"
+        )
+        raise click.Abort
+
+    return vpcs[0]["VpcId"]
+
+
+def _generate_copilot_environment_manifests(
+    environment_name, application_name, env_config, session
+):
+    env_template = setup_templates().get_template("env/manifest.yml")
+    vpc_name = env_config.get("vpc", None)
+    vpc_id = get_vpc_id(session, environment_name, vpc_name)
+    pub_subnet_ids, priv_subnet_ids = get_subnet_ids(session, vpc_id, environment_name)
+    cert_arn = get_cert_arn(session, application_name, environment_name)
+    contents = env_template.render(
+        {
+            "name": environment_name,
+            "vpc_id": vpc_id,
+            "pub_subnet_ids": pub_subnet_ids,
+            "priv_subnet_ids": priv_subnet_ids,
+            "certificate_arn": cert_arn,
+        }
+    )
+    click.echo(
+        FileProvider.mkfile(
+            ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
+        )
+    )
+
 def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
     listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")

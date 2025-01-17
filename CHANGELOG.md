@@ -1,5 +1,13 @@
 # Changelog
 
+## [12.5.1](https://github.com/uktrade/platform-tools/compare/12.5.0...12.5.1) (2025-01-17)
+
+
+### Bug Fixes
+
+* DBTP-1644: handle next token when getting services for application ([#721](https://github.com/uktrade/platform-tools/issues/721)) ([b87e532](https://github.com/uktrade/platform-tools/commit/b87e532a7d53ef60bf8939c515bbac0d52cb7438))
+* DBTP-1645 - conduit out of memory when querying large data sets ([#726](https://github.com/uktrade/platform-tools/issues/726)) ([d38441a](https://github.com/uktrade/platform-tools/commit/d38441ac9290883f2a0be45594b494b0d923e23f))
+
 ## [12.5.0](https://github.com/uktrade/platform-tools/compare/12.4.1...12.5.0) (2025-01-08)
 
 
