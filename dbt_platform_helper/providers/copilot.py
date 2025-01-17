@@ -60,11 +60,11 @@ def create_addon_client_task(
 
     subprocess.call(
         f"copilot task run --app {application.name} --env {env} "
-        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--secrets CONNECTION_SECRET={_get_secrets_provider(application, env).get_connection_secret_arn(secret_name)} "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -96,10 +96,10 @@ def create_postgres_admin_task(
 
     subprocess.call(
         f"copilot task run --app {app.name} --env {env} "
-        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
         f"--env-vars CONNECTION_SECRET='{connection_string}' "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
