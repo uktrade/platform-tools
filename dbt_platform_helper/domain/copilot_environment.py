@@ -19,9 +19,8 @@ class CertificateNotFoundException(PlatformException):
     pass
 
 
-def get_cert_arn(
-    session, app_name, env_name
-):  # TODO move into CopilotTemplating.generate method...
+# TODO move into CopilotTemplating.generate method...
+def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
     try:
         arn = find_https_certificate(session, app_name, env_name)
     except:
@@ -33,8 +32,8 @@ def get_cert_arn(
     return arn
 
 
-def find_https_certificate(session: boto3.Session, app: str, env: str) -> str:
-    listener_arn = find_https_listener(session, app, env)
+def find_https_certificate(session: boto3.Session, app_name: str, env_name: str) -> str:
+    listener_arn = find_https_listener(session, app_name, env_name)
     cert_client = session.client("elbv2")
     certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
         "Certificates"
