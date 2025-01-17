@@ -6,15 +6,17 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
-from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.vpc import Vpc
+from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 
 
 class DataCopyMocks:
-    def __init__(self, app="test-app", env="test-env", acc="12345", vpc=Vpc([], []), **kwargs):
+    def __init__(
+        self, app="test-app", env="test-env", acc="12345", vpc=Vpc("", [], [], []), **kwargs
+    ):
         self.application = Application(app)
         self.environment = Mock()
         self.environment.account_id = acc
@@ -29,7 +31,7 @@ class DataCopyMocks:
             Mock()
         )  # this is the callable class so should return a class when called
         self.instantiated_vpc_provider = Mock()
-        self.instantiated_vpc_provider.get_vpc_info_by_name.return_value = self.vpc
+        self.instantiated_vpc_provider.get_vpc.return_value = self.vpc
         self.vpc_provider.return_value = self.instantiated_vpc_provider
         self.db_connection_string = Mock(return_value="test-db-connection-string")
         self.maintenance_page_provider = Mock()
@@ -54,7 +56,7 @@ class DataCopyMocks:
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    vpc = Vpc(["subnet_1", "subnet_2"], ["sec_group_1"])
+    vpc = Vpc("", [], ["subnet_1", "subnet_2"], ["sec_group_1"])
     mocks = DataCopyMocks(vpc=vpc)
     db_connection_string = "connection_string"
 
@@ -129,9 +131,7 @@ def test_database_dump():
 
     mocks.load_application.assert_called_once()
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
-        app, env, "test-vpc-override"
-    )
+    mocks.instantiated_vpc_provider.get_vpc.assert_called_once_with(app, env, "test-vpc-override")
     mocks.db_connection_string.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
     )
@@ -171,9 +171,7 @@ def test_database_load_with_response_of_yes():
     mocks.load_application.assert_called_once()
 
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
-        app, env, "test-vpc-override"
-    )
+    mocks.instantiated_vpc_provider.get_vpc.assert_called_once_with(app, env, "test-vpc-override")
 
     mocks.db_connection_string.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
@@ -219,7 +217,7 @@ def test_database_load_with_response_of_no():
     mocks.environment.session.assert_not_called()
 
     mocks.vpc_provider.assert_not_called()
-    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_not_called()
+    mocks.instantiated_vpc_provider.get_vpc.assert_not_called()
 
     mocks.db_connection_string.assert_not_called()
 
@@ -235,8 +233,8 @@ def test_database_load_with_response_of_no():
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_vpc_errors(is_dump):
     mocks = DataCopyMocks()
-    mocks.instantiated_vpc_provider.get_vpc_info_by_name.side_effect = AWSException(
-        "A VPC error occurred"
+    mocks.instantiated_vpc_provider.get_vpc.side_effect = VpcProviderException(
+        "A VPC provider error occurred"
     )
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
@@ -249,7 +247,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
 
     assert exc.value.code == 1
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.abort.assert_called_once_with("A VPC error occurred")
+    mocks.abort.assert_called_once_with("A VPC provider error occurred")
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -547,9 +545,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
         db_copy.load(env, None)
 
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
-        "test-app", env, "test-env-vpc"
-    )
+    mocks.instantiated_vpc_provider.get_vpc.assert_called_once_with("test-app", env, "test-env-vpc")
 
 
 @pytest.mark.parametrize("is_dump", [True, False])

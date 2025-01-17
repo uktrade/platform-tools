@@ -227,9 +227,9 @@ class CopilotTemplating:
             vpc_name = f"{session.profile_name}-{env_name}"
 
         try:
-            vpc_id = self.vpc_provider.get_vpc_id_by_name(vpc_name)
+            vpc_id = self.vpc_provider._get_vpc_id_by_name(vpc_name)
         except AWSException:
-            vpc_id = self.vpc_provider.get_vpc_id_by_name(session.profile_name)
+            vpc_id = self.vpc_provider._get_vpc_id_by_name(session.profile_name)
 
         if not vpc_id:
             raise VPCNotFoundError
