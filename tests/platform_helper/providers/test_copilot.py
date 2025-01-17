@@ -54,6 +54,7 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app {mock_application.name} --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name test-task "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
         "--env-vars CONNECTION_SECRET='\"connection string\"' "

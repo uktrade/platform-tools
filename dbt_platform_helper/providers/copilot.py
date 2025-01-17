@@ -60,6 +60,7 @@ def create_addon_client_task(
 
     subprocess.call(
         f"copilot task run --app {application.name} --env {env} "
+        f"--cpu 2048 --memory 4096 "
         f"--task-group-name {task_name} "
         f"{execution_role}"
         f"--image {CONDUIT_DOCKER_IMAGE_LOCATION}:{addon_type} "
