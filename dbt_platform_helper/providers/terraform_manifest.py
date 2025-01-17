@@ -87,6 +87,7 @@ class TerraformManifestProvider:
                 "pipelines": "${each.value.pipelines}",
                 "services": "${each.value.services}",
                 "requires_image_build": "${each.value.requires_image_build}",
+                "slack_channel": "${each.value.slack_channel}",
                 "env_config": "${local.environments}",
             }
         }
