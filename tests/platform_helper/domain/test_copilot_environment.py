@@ -558,12 +558,14 @@ class TestCopilotTemplating:
         mock_file_provider = Mock()
         mock_file_provider.mkfile.return_value = "im a file provider!"
 
-        mock_vpc_provider.get_vpc.return_value = Vpc(
+        test_vpc = Vpc(
             id="a-vpc-id",
             public_subnets=["a-public-subnet"],
             private_subnets=["a-private-subnet"],
             security_groups=["a-security-group"],
         )
+
+        mock_vpc_provider.get_vpc.return_value = test_vpc
 
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
@@ -571,7 +573,12 @@ class TestCopilotTemplating:
         copilot_templating = CopilotTemplating(mock_vpc_provider, mock_file_provider)
 
         result = copilot_templating.generate_copilot_environment_manifest(
-            "connors-environment", "connors-application", {"config": "im config"}, mock_get_session
+            "connors-environment",
+            "connors-application",
+            {"config": "im config"},
+            mock_get_session,
+            test_vpc,
+            "test-cert-arn",
         )
 
         # TODO - assertions on the results...
@@ -580,11 +587,18 @@ class TestCopilotTemplating:
 class TestCopilotGenerate:
 
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
-    def test_generate(self, mock_get_session):
+    @patch(
+        "dbt_platform_helper.domain.copilot_environment.find_https_certificate",
+        return_value="test-cert-arn",
+    )
+    def test_generate(self, mock_find_https_certificate, mock_get_session):
 
         mock_copilot_templating = Mock()
         mock_config_provider = Mock()
+
+        mock_vpc = Mock()
         mock_vpc_provider = MagicMock()
+        mock_vpc_provider.get_vpc.return_value = mock_vpc
 
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
@@ -614,6 +628,8 @@ class TestCopilotGenerate:
             application_name="test-app",
             env_config=test_env_config,
             session=mocked_session,
+            vpc=mock_vpc,
+            cert_arn="test-cert-arn",
         )
 
     # def test_fail_early_if_platform_config_invalid(self, capfd):

@@ -90,10 +90,31 @@ class CopilotEnvironment:
                 application_name=platform_config["application"],
                 env_config=env_config,
                 session=session,
+                vpc=self._get_environment_vpc(
+                    session, environment_name, env_config.get("vpc", None)
+                ),
+                cert_arn=get_cert_arn(
+                    session, platform_config["application"], environment_name
+                ),  # TODO - likely lives in a loadbalancer provider,
             )
         )
 
         self.copilot_templating.write_template(environment_name, copilot_environment_manifest)
+
+    def _get_environment_vpc(self, session, env_name, vpc_name):
+
+        if not vpc_name:
+            vpc_name = f"{session.profile_name}-{env_name}"
+
+        try:
+            vpc = self.vpc_provider.get_vpc(vpc_name)
+        except VpcNotFoundForNameException:
+            vpc = self.vpc_provider.get_vpc(session.profile_name)
+
+        if not vpc:
+            raise VpcNotFoundForNameException
+
+        return vpc
 
 
 class CopilotTemplating:
@@ -108,11 +129,9 @@ class CopilotTemplating:
         self.templates = setup_templates()
 
     def generate_copilot_environment_manifest(
-        self, environment_name, application_name, env_config, session
+        self, environment_name, application_name, env_config, session, vpc, cert_arn
     ):
         env_template = self.templates.get_template("env/manifest.yml")
-
-        vpc = self._get_environment_vpc(session, environment_name, env_config.get("vpc", None))
 
         print(f"VPC: {vpc.public_subnets}")
 
@@ -122,9 +141,7 @@ class CopilotTemplating:
                 "vpc_id": vpc.id,
                 "pub_subnet_ids": vpc.public_subnets,
                 "priv_subnet_ids": vpc.private_subnets,
-                "certificate_arn": get_cert_arn(
-                    session, application_name, environment_name
-                ),  # TODO - likely lives in a loadbalancer provider,
+                "certificate_arn": cert_arn,
             }
         )
 
@@ -213,17 +230,3 @@ class CopilotTemplating:
 
     # TODO (with a clearer head after refactoring slightly) - Check with the team why we bother to check aws-profile names to find the VPC. Since these profile names can be named litterally anything it feels like a moot check to have.
     # If no one has a good reason for the check just remove it and fail fast if the VPC they provider in their platform config is invalid (and move on)
-    def _get_environment_vpc(self, session, env_name, vpc_name):
-
-        if not vpc_name:
-            vpc_name = f"{session.profile_name}-{env_name}"
-
-        try:
-            vpc = self.vpc_provider.get_vpc(vpc_name)
-        except VpcNotFoundForNameException:
-            vpc = self.vpc_provider.get_vpc(session.profile_name)
-
-        if not vpc:
-            raise VpcNotFoundForNameException
-
-        return vpc
