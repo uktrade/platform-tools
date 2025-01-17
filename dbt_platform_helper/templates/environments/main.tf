@@ -7,7 +7,7 @@ locals {
   args = {
     application    = "{{ application }}"
     services       = local.config["extensions"]
-    dns_account_id = local.env_config["{{ environment }}"]["accounts"]["dns"]["id"]
+    env_config     = local.env_config
   }
 }
 
