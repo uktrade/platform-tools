@@ -54,9 +54,10 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
 
     mock_subprocess.call.assert_called_once_with(
         f"copilot task run --app {mock_application.name} --env {env} "
-        f"--task-group-name test-task "
+        "--task-group-name test-task "
         "--image public.ecr.aws/uktrade/tunnel:postgres "
         "--env-vars CONNECTION_SECRET='\"connection string\"' "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -120,6 +121,7 @@ def test_create_redis_or_opensearch_addon_client_task(
         f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -173,6 +175,7 @@ def test_create_postgres_addon_client_task(
         f"--execution-role {addon_name}-{mock_application.name}-{env}-conduitEcsTask "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,
@@ -261,6 +264,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
         f"--task-group-name {task_name} "
         f"--image public.ecr.aws/uktrade/tunnel:{addon_type} "
         "--secrets CONNECTION_SECRET=test-arn "
+        "--cpu 2048 --memory 4096 "
         "--platform-os linux "
         "--platform-arch arm64",
         shell=True,

@@ -33,7 +33,7 @@ class TestGenerateTerraform:
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
             manifest_generator=Mock(),
-            echo_fn=Mock(),
+            echo=Mock(),
         )
         with pytest.raises(
             PlatformException,
@@ -58,7 +58,7 @@ class TestGenerateTerraform:
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
             manifest_generator=mock_generator,
-            echo_fn=mock_echo_fn,
+            echo=mock_echo_fn,
         )
 
         terraform_environment.generate("test")

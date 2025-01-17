@@ -693,6 +693,49 @@ environment_pipelines:
 """
 
 
+@pytest.fixture()
+def platform_config_for_env_pipelines():
+    return yaml.safe_load(
+        """
+application: test-app
+environments:
+  dev:
+    accounts:
+      deploy:
+        name: "platform-sandbox-test"
+        id: "1111111111"
+      dns:
+        name: "platform-sandbox-test"
+        id: "2222222222"
+  prod:
+    accounts:
+      deploy:
+        name: "platform-prod-test"
+        id: "3333333333"
+      dns:
+        name: "platform-prod-test"
+        id: "4444444444"
+    requires_approval: true
+
+environment_pipelines:
+   main:
+       account: platform-sandbox-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         dev:
+   prod-main:
+       account: platform-prod-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         prod:
+    """
+    )
+
+
 @pytest.fixture
 def create_valid_platform_config_file(fakefs, valid_platform_config):
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(valid_platform_config))

@@ -10,6 +10,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.commands.secrets import copy
 from dbt_platform_helper.commands.secrets import list
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import SSM_PATH
 from tests.platform_helper.conftest import FIXTURES_DIR
 
@@ -172,6 +173,10 @@ def setup_newenv_environment(tmp_path):
     copilot_dir.mkdir()
 
     with open(copilot_dir / ".workspace", "w") as fh:
+        fh.write("application: test-application\n")
+
+    platform_config = tmp_path / PLATFORM_CONFIG_FILE
+    with open(platform_config, "w") as fh:
         fh.write("application: test-application\n")
 
     my_file = FIXTURES_DIR / "newenv_environment_manifest.yml"
