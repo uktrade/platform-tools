@@ -97,4 +97,5 @@ def test_generate_codebase_pipeline_config_creates_file(platform_env_config):
     )
     assert module["pipelines"] == "${each.value.pipelines}"
     assert module["services"] == "${each.value.services}"
+    assert module["requires_image_build"] == "${each.value.requires_image_build}"
     assert module["env_config"] == "${local.environments}"

@@ -73,10 +73,12 @@ class TerraformManifestProvider:
             "required_providers": {"aws": {"source": "hashicorp/aws", "version": "~> 5"}},
         }
 
-    def _add_codebase_pipeline_module(self, terraform):
+    @staticmethod
+    def _add_codebase_pipeline_module(terraform):
+        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}"
         terraform["module"] = {
             "codebase-pipelines": {
-                "source": f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}",
+                "source": source,
                 "for_each": "${local.all_codebases}",
                 "application": "${local.application}",
                 "codebase": "${each.key}",
@@ -84,6 +86,7 @@ class TerraformManifestProvider:
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
                 "pipelines": "${each.value.pipelines}",
                 "services": "${each.value.services}",
+                "requires_image_build": "${each.value.requires_image_build}",
                 "env_config": "${local.environments}",
             }
         }

@@ -401,8 +401,8 @@ def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
     ]
 
 
-def test_codebase_slack_channel_fails_if_not_a_string(fakefs, capsys):
-    channel = 1
+@pytest.mark.parametrize("channel", [1, [], {}, True])
+def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
     config = {
         "application": "test-app",
         "codebase_pipelines": {
@@ -419,6 +419,36 @@ def test_codebase_slack_channel_fails_if_not_a_string(fakefs, capsys):
 
     with pytest.raises(SystemExit):
         ConfigProvider(mock_validator()).load_and_validate_platform_config()
+    error = capsys.readouterr().err
 
-    exp = ".*Key 'slack_channel' error:.*1 should be instance of 'str'.*"
-    assert re.match(exp, capsys.readouterr().err, re.DOTALL)
+    exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
+        str(channel)
+    )
+    assert re.match(exp, error, re.DOTALL)
+
+
+@pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
+def test_codebase_requires_image_build_fails_if_not_a_bool(fakefs, capsys, requires_image):
+    config = {
+        "application": "test-app",
+        "codebase_pipelines": {
+            "application": {
+                "name": "application",
+                "requires_image_build": requires_image,
+                "slack_channel": "channel",
+                "repository": "organisation/repository",
+                "services": [],
+                "pipelines": [],
+            }
+        },
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(mock_validator()).load_and_validate_platform_config()
+    error = capsys.readouterr().err
+
+    exp = r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*" % re.escape(
+        str(requires_image)
+    )
+    assert re.match(exp, error, re.DOTALL)
