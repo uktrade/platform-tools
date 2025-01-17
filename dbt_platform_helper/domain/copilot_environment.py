@@ -47,6 +47,18 @@ def find_https_certificate(session: boto3.Session, app_name: str, env_name: str)
     return certificate_arn
 
 
+# TODO
+# Write a test to give us confidence that vpc provider is working as expected
+# remove mkfile_fn dependency from templating
+# decide on a pattern for handling session.  Needed from session -
+# - profile_name
+# - vpc provider session - ec2 to retrieve vpc info
+# - cloudformation to check order of subnets
+# - load balancer to get listener certs
+# CopilotTemplating should only take data needed to generate a valid copilot manifest
+# e.g. subnets, cert arns, vpc_id, ....
+
+
 class CopilotEnvironment:
     def __init__(self, config_provider, vpc_provider=None, copilot_templating=None):
         self.config_provider = config_provider
@@ -96,11 +108,12 @@ class CopilotTemplating:
         self.mkfile_fn = mkfile_fn
         self.vpc_provider = vpc_provider
         self.file_provider = file_provider
+        self.templates = setup_templates()
 
     def generate_copilot_environment_manifest(
         self, environment_name, application_name, env_config, session
     ):
-        env_template = setup_templates().get_template("env/manifest.yml")
+        env_template = self.templates.get_template("env/manifest.yml")
 
         vpc = self._get_environment_vpc(session, environment_name, env_config.get("vpc", None))
 
@@ -186,12 +199,10 @@ class CopilotTemplating:
             click.echo("\n>>> No cross-environment S3 policies to create.\n")
             return
 
-        templates = setup_templates()
-
         for service in sorted(resource_blocks.keys()):
             resources = resource_blocks[service]
             click.echo(f"\n>>> Creating S3 cross account policies for {service}.\n")
-            template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
+            template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
             file_content = template.render({"resources": resources})
             output_dir = Path(".").absolute()
             file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
