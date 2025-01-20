@@ -59,7 +59,11 @@ def online(app, env):
 @click.option("--name", "-n", required=True)
 def generate(name):
     try:
+
+        # session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
+        # vpc_provider = vpc_provider()
+        # TODO - setup loadbalancer provider here too...
         CopilotEnvironment(config_provider).generate(name)
     # TODO this exception will never be caught as the config provider catches schema errors and aborts
     except SchemaError as ex:
