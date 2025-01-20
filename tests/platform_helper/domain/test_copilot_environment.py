@@ -588,6 +588,8 @@ class TestCopilotGenerate:
     def test_generate(self, mock_find_https_certificate, mock_get_session):
 
         mock_copilot_templating = Mock()
+        mock_copilot_templating.write_template.return_value = "test template written"
+        mock_copilot_templating.generate_copilot_environment_manifest.return_value = "mock manifest"
         mock_config_provider = Mock()
 
         mock_vpc = Mock()
@@ -624,7 +626,13 @@ class TestCopilotGenerate:
             environment_name="test_environment", vpc=mock_vpc, cert_arn="test-cert-arn"
         )
 
-        mock_echo.assert_has_calls([call("Using non-prod-acc for this AWS session")])
+        mock_copilot_templating.write_template.assert_called_with(
+            "test_environment", "mock manifest"
+        )
+
+        mock_echo.assert_has_calls(
+            [call("Using non-prod-acc for this AWS session"), call("test template written")]
+        )
 
     # def test_fail_early_if_platform_config_invalid(self, capfd):
     #     mock_file_provider = Mock()

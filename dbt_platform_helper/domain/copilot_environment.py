@@ -22,7 +22,7 @@ class CertificateNotFoundException(PlatformException):
     pass
 
 
-# TODO move into CopilotTemplating.generate method...
+# TODO move into CopilotEnvironment.generate method...
 def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
     try:
         arn = find_https_certificate(session, app_name, env_name)
@@ -53,9 +53,7 @@ def find_https_certificate(
 
 
 # TODO
-# decide on a pattern for handling session.  Needed from session -
-# - profile_name
-# - vpc provider session - ec2 to retrieve vpc info
+# decide on a pattern for handling session to address -
 # - cloudformation to check order of subnets
 # - load balancer to get listener certs
 
@@ -101,7 +99,9 @@ class CopilotEnvironment:
             )
         )
 
-        self.copilot_templating.write_template(environment_name, copilot_environment_manifest)
+        self.echo(
+            self.copilot_templating.write_template(environment_name, copilot_environment_manifest)
+        )
 
     def _get_environment_vpc(self, session, env_name, vpc_name):
 
@@ -142,13 +142,11 @@ class CopilotTemplating:
 
     def write_template(self, environment_name: str, manifest_contents: str):
 
-        return click.echo(
-            self.file_provider.mkfile(
-                ".",
-                f"copilot/environments/{environment_name}/manifest.yml",
-                manifest_contents,
-                overwrite=True,
-            )
+        return self.file_provider.mkfile(
+            ".",
+            f"copilot/environments/{environment_name}/manifest.yml",
+            manifest_contents,
+            overwrite=True,
         )
 
     def _match_subnet_id_order_to_cloudformation_exports(
