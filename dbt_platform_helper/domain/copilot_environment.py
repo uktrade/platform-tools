@@ -7,6 +7,7 @@ import click
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -128,9 +129,7 @@ class CopilotTemplating:
         self.file_provider = file_provider
         self.templates = setup_templates()
 
-    def generate_copilot_environment_manifest(
-        self, environment_name, application_name, env_config, session, vpc, cert_arn
-    ):
+    def generate_copilot_environment_manifest(self, environment_name: str, vpc: Vpc, cert_arn: str):
         env_template = self.templates.get_template("env/manifest.yml")
 
         print(f"VPC: {vpc.public_subnets}")
