@@ -16,7 +16,7 @@ from dbt_platform_helper.utils.application import Service
 class TestEnvironmentOfflineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
@@ -30,7 +30,7 @@ class TestEnvironmentOfflineCommand:
         add_maintenance_page,
         get_env_ips,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -46,7 +46,9 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
         assert "Would you like to continue? [y/N]: y" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
@@ -66,7 +68,7 @@ class TestEnvironmentOfflineCommand:
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
@@ -80,7 +82,7 @@ class TestEnvironmentOfflineCommand:
         add_maintenance_page,
         get_env_ips,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -98,7 +100,9 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
         assert "Would you like to continue? [y/N]: y" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
@@ -118,7 +122,7 @@ class TestEnvironmentOfflineCommand:
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch(
@@ -137,7 +141,7 @@ class TestEnvironmentOfflineCommand:
         get_env_ips,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -156,7 +160,9 @@ class TestEnvironmentOfflineCommand:
             in result.output
         )
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
         get_env_ips.assert_called_with(None, mock_application.environments["development"])
@@ -176,7 +182,7 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
@@ -186,11 +192,11 @@ class TestEnvironmentOfflineCommand:
         add_maintenance_page,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
-        find_https_listener.side_effect = LoadBalancerNotFoundException()
+        get_https_listener_for_application.side_effect = LoadBalancerNotFoundException()
         load_application.return_value = mock_application
 
         result = CliRunner().invoke(
@@ -203,12 +209,14 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
         assert "Aborted!" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.add_maintenance_page")
@@ -218,12 +226,12 @@ class TestEnvironmentOfflineCommand:
         add_maintenance_page,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
         load_application.return_value = mock_application
-        find_https_listener.side_effect = ListenerNotFoundException()
+        get_https_listener_for_application.side_effect = ListenerNotFoundException()
 
         result = CliRunner().invoke(
             offline, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -235,14 +243,16 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
         assert "Aborted!" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
         add_maintenance_page.assert_not_called()
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
@@ -256,7 +266,7 @@ class TestEnvironmentOfflineCommand:
         add_maintenance_page,
         get_env_ips,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -275,7 +285,9 @@ class TestEnvironmentOfflineCommand:
         ) in result.output
         assert "Would you like to continue? [y/N]: y" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         get_env_ips.assert_called_with(None, mock_application.environments["development"])
         add_maintenance_page.assert_called_with(
@@ -297,7 +309,7 @@ class TestEnvironmentOfflineCommand:
 class TestEnvironmentOnlineCommand:
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch(
@@ -309,7 +321,7 @@ class TestEnvironmentOnlineCommand:
         self,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -324,7 +336,9 @@ class TestEnvironmentOnlineCommand:
             "[y/N]: y"
         ) in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_called_with(ANY, "https_listener")
 
@@ -335,7 +349,7 @@ class TestEnvironmentOnlineCommand:
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.find_https_listener",
+        "dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application",
         return_value="https_listener",
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page", return_value=None)
@@ -345,7 +359,7 @@ class TestEnvironmentOnlineCommand:
         self,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
@@ -357,12 +371,14 @@ class TestEnvironmentOnlineCommand:
 
         assert "There is no current maintenance page to remove" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_called_with(ANY, "https_listener")
         remove_maintenance_page.assert_not_called()
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     # TODO move to domain level test for the deactivate function
@@ -370,12 +386,12 @@ class TestEnvironmentOnlineCommand:
         self,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
         load_application.return_value = mock_application
-        find_https_listener.side_effect = ListenerNotFoundException()
+        get_https_listener_for_application.side_effect = ListenerNotFoundException()
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -387,12 +403,14 @@ class TestEnvironmentOnlineCommand:
         ) in result.output
         assert "Aborted!" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
 
     @patch("dbt_platform_helper.domain.maintenance_page.load_application")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_https_listener")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_https_listener_for_application")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page")
     @patch("dbt_platform_helper.domain.maintenance_page.remove_maintenance_page")
     # TODO move to domain level test for the deactivate function
@@ -400,14 +418,14 @@ class TestEnvironmentOnlineCommand:
         self,
         remove_maintenance_page,
         get_maintenance_page,
-        find_https_listener,
+        get_https_listener_for_application,
         load_application,
         mock_application,
     ):
         from dbt_platform_helper.commands.environment import online
 
         load_application.return_value = mock_application
-        find_https_listener.side_effect = LoadBalancerNotFoundException()
+        get_https_listener_for_application.side_effect = LoadBalancerNotFoundException()
 
         result = CliRunner().invoke(
             online, ["--app", "test-application", "--env", "development"], input="y\n"
@@ -419,7 +437,9 @@ class TestEnvironmentOnlineCommand:
         ) in result.output
         assert "Aborted!" in result.output
 
-        find_https_listener.assert_called_with(ANY, "test-application", "development")
+        get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
         get_maintenance_page.assert_not_called()
         remove_maintenance_page.assert_not_called()
 

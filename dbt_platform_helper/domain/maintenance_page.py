@@ -14,7 +14,9 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
-from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.load_balancers import (
+    get_https_listener_for_application,
+)
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
@@ -60,7 +62,9 @@ class MaintenancePage:
 
         application_environment = get_app_environment(app, env)
         try:
-            https_listener = find_https_listener(application_environment.session, app, env)
+            https_listener = get_https_listener_for_application(
+                application_environment.session, app, env
+            )
             current_maintenance_page = get_maintenance_page(
                 application_environment.session, https_listener
             )
@@ -115,7 +119,9 @@ class MaintenancePage:
         application_environment = get_app_environment(app, env)
 
         try:
-            https_listener = find_https_listener(application_environment.session, app, env)
+            https_listener = get_https_listener_for_application(
+                application_environment.session, app, env
+            )
             current_maintenance_page = get_maintenance_page(
                 application_environment.session, https_listener
             )

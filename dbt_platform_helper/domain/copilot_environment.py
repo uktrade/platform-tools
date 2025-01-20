@@ -2,13 +2,14 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Callable
 
-import boto3
 import click
 
-from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
-from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.load_balancers import CertificateNotFoundException
+from dbt_platform_helper.providers.load_balancers import (
+    get_https_certificate_for_application,
+)
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
@@ -17,39 +18,17 @@ from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
+# # TODO move into CopilotEnvironment.generate method...
+# def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
+#     try:
+#         arn = find_https_certificate(session, app_name, env_name)
+#     except:
+#         click.secho(
+#             f"No certificate found with domain name matching environment {env_name}.", fg="red"
+#         )
+#         raise click.Abort
 
-class CertificateNotFoundException(PlatformException):
-    pass
-
-
-# TODO move into CopilotEnvironment.generate method...
-def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
-    try:
-        arn = find_https_certificate(session, app_name, env_name)
-    except:
-        click.secho(
-            f"No certificate found with domain name matching environment {env_name}.", fg="red"
-        )
-        raise click.Abort
-
-    return arn
-
-
-def find_https_certificate(
-    session: boto3.Session, app: str, env: str
-) -> str:  # TODO - Loadbalancer provider
-    listener_arn = find_https_listener(session, app, env)
-    cert_client = session.client("elbv2")
-    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
-        "Certificates"
-    ]
-
-    try:
-        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
-    except StopIteration:
-        raise CertificateNotFoundException()
-
-    return certificate_arn
+#     return arn
 
 
 # TODO
@@ -81,11 +60,19 @@ class CopilotEnvironment:
         env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
 
-        self.echo(
-            f"Using {profile_for_environment} for this AWS session"
-        )  # TODO - echo_fn and assert on result.
+        self.echo(f"Using {profile_for_environment} for this AWS session")
 
-        session = get_aws_session_or_abort(profile_for_environment)
+        try:
+            session = get_aws_session_or_abort(profile_for_environment)
+            certificate_arn = get_https_certificate_for_application(
+                session, platform_config["application"], environment_name
+            )
+        except CertificateNotFoundException:
+            self.echo(
+                f"No certificate found with domain name matching environment {environment_name}.",
+                fg="red",
+            )
+            click.Abort()
 
         copilot_environment_manifest = (
             self.copilot_templating.generate_copilot_environment_manifest(
@@ -93,9 +80,7 @@ class CopilotEnvironment:
                 vpc=self._get_environment_vpc(
                     session, environment_name, env_config.get("vpc", None)
                 ),
-                cert_arn=get_cert_arn(
-                    session, platform_config["application"], environment_name
-                ),  # TODO - likely lives in a loadbalancer provider,
+                cert_arn=certificate_arn,
             )
         )
 

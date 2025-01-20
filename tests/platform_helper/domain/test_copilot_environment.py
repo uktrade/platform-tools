@@ -6,17 +6,10 @@ from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
-import boto3
-import click
-import pytest
 import yaml
-from moto import mock_aws
 
-from dbt_platform_helper.domain.copilot_environment import CertificateNotFoundException
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
-from dbt_platform_helper.domain.copilot_environment import find_https_certificate
-from dbt_platform_helper.domain.copilot_environment import get_cert_arn
 from dbt_platform_helper.providers.vpc import Vpc
 
 # @mock_aws
@@ -112,32 +105,6 @@ from dbt_platform_helper.providers.vpc import Vpc
 #     ]
 
 
-@mock_aws
-@patch(
-    "dbt_platform_helper.domain.copilot_environment.find_https_certificate",
-    return_value="CertificateArn",
-)
-def test_get_cert_arn(find_https_certificate):
-
-    session = boto3.session.Session()
-    actual_arn = get_cert_arn(session, "test-application", "development")
-
-    assert "CertificateArn" == actual_arn
-
-
-@mock_aws
-def test_cert_arn_failure(capsys):
-
-    session = boto3.session.Session()
-
-    with pytest.raises(click.Abort):
-        get_cert_arn(session, "test-application", "development")
-
-    captured = capsys.readouterr()
-
-    assert "No certificate found with domain name matching environment development." in captured.out
-
-
 def create_moto_mocked_subnet(session, vpc_id, visibility, cidr_block):
     return session.client("ec2").create_subnet(
         CidrBlock=cidr_block,
@@ -166,48 +133,6 @@ def create_moto_mocked_vpc(session, vpc_name):
         ],
     )["Vpc"]
     return vpc
-
-
-class TestFindHTTPSCertificate:
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_no_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
-
-        with pytest.raises(CertificateNotFoundException):
-            find_https_certificate(boto_mock, "test-application", "development")
-
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_single_https_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
-        }
-
-        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
-        assert "certificate_arn" == certificate_arn
-
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_multiple_https_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [
-                {"CertificateArn": "certificate_arn_default", "IsDefault": "True"},
-                {"CertificateArn": "certificate_arn_not_default", "IsDefault": "False"},
-            ]
-        }
-
-        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
-        assert "certificate_arn_default" == certificate_arn
 
 
 class TestCrossEnvironmentS3Templating:
@@ -547,7 +472,7 @@ class TestCrossEnvironmentS3Templating:
 class TestCopilotTemplating:
 
     @patch(
-        "dbt_platform_helper.domain.copilot_environment.get_cert_arn",
+        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
         return_value="arn:aws:acm:test",
     )
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
@@ -582,10 +507,10 @@ class TestCopilotGenerate:
 
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
     @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_certificate",
+        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
         return_value="test-cert-arn",
     )
-    def test_generate(self, mock_find_https_certificate, mock_get_session):
+    def test_generate(self, mock_get_certificate, mock_get_session):
 
         mock_copilot_templating = Mock()
         mock_copilot_templating.write_template.return_value = "test template written"

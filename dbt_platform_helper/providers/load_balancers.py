@@ -2,8 +2,11 @@ import boto3
 
 from dbt_platform_helper.platform_exception import PlatformException
 
+# TODO - a good candidate for a dataclass when this is refactored into a class.
+# Below methods should also really be refactored to not be so tightly coupled with eachother.
 
-def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
+
+def get_load_balancer_for_application(session: boto3.Session, app: str, env: str) -> str:
     lb_client = session.client("elbv2")
 
     describe_response = lb_client.describe_load_balancers()
@@ -23,8 +26,8 @@ def find_load_balancer(session: boto3.Session, app: str, env: str) -> str:
     return load_balancer_arn
 
 
-def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
-    load_balancer_arn = find_load_balancer(session, app, env)
+def get_https_listener_for_application(session: boto3.Session, app: str, env: str) -> str:
+    load_balancer_arn = get_load_balancer_for_application(session, app, env)
     lb_client = session.client("elbv2")
     listeners = lb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)["Listeners"]
 
@@ -41,22 +44,9 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
-def get_cert_arn(session: boto3.Session, application: str, env_name: str):
-    try:
-        arn = find_https_certificate(session, application, env_name)
-    except:
-        click.secho(
-            f"No certificate found with domain name matching environment {env_name}.", fg="red"
-        )
-        raise click.Abort
+def get_https_certificate_for_application(session: boto3.Session, app: str, env: str) -> str:
 
-    return arn
-
-
-def get_https_certificate_for_application_loadbalancer(
-    session: boto3.Session, app: str, env: str
-) -> str:
-    listener_arn = find_https_listener(session, app, env)
+    listener_arn = get_https_listener_for_application(session, app, env)
     cert_client = session.client("elbv2")
     certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
         "Certificates"
@@ -83,4 +73,8 @@ class ListenerNotFoundException(LoadBalancerException):
 
 
 class ListenerRuleNotFoundException(LoadBalancerException):
+    pass
+
+
+class CertificateNotFoundException(PlatformException):
     pass
