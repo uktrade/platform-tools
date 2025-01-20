@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import Callable
 
 import boto3
 import click
@@ -65,12 +66,14 @@ class CopilotEnvironment:
         config_provider: ConfigProvider,
         vpc_provider: VpcProvider = None,
         copilot_templating=None,
+        echo: Callable[[str], str] = click.secho,
     ):
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
         self.copilot_templating = copilot_templating or CopilotTemplating(
             file_provider=FileProvider(),
         )
+        self.echo = echo
 
     def generate(self, environment_name):
 
@@ -80,7 +83,7 @@ class CopilotEnvironment:
         env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
 
-        click.secho(
+        self.echo(
             f"Using {profile_for_environment} for this AWS session"
         )  # TODO - echo_fn and assert on result.
 
@@ -117,7 +120,6 @@ class CopilotEnvironment:
 
 
 class CopilotTemplating:
-    # TODO - remove mkfile_fn - inject provider instead
     def __init__(
         self,
         file_provider: FileProvider = None,

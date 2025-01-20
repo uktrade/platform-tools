@@ -3,6 +3,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
 import boto3
@@ -608,10 +609,13 @@ class TestCopilotGenerate:
 
         mock_config_provider.get_enriched_config.return_value = config
 
+        mock_echo = Mock()
+
         copilot_environment = CopilotEnvironment(
             config_provider=mock_config_provider,
             vpc_provider=mock_vpc_provider,
             copilot_templating=mock_copilot_templating,
+            echo=mock_echo,
         )
 
         copilot_environment.generate(environment_name="test_environment")
@@ -619,6 +623,8 @@ class TestCopilotGenerate:
         mock_copilot_templating.generate_copilot_environment_manifest.assert_called_once_with(
             environment_name="test_environment", vpc=mock_vpc, cert_arn="test-cert-arn"
         )
+
+        mock_echo.assert_has_calls([call("Using non-prod-acc for this AWS session")])
 
     # def test_fail_early_if_platform_config_invalid(self, capfd):
     #     mock_file_provider = Mock()
