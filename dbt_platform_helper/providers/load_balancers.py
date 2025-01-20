@@ -41,6 +41,35 @@ def find_https_listener(session: boto3.Session, app: str, env: str) -> str:
     return listener_arn
 
 
+def get_cert_arn(session: boto3.Session, application: str, env_name: str):
+    try:
+        arn = find_https_certificate(session, application, env_name)
+    except:
+        click.secho(
+            f"No certificate found with domain name matching environment {env_name}.", fg="red"
+        )
+        raise click.Abort
+
+    return arn
+
+
+def get_https_certificate_for_application_loadbalancer(
+    session: boto3.Session, app: str, env: str
+) -> str:
+    listener_arn = find_https_listener(session, app, env)
+    cert_client = session.client("elbv2")
+    certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
+        "Certificates"
+    ]
+
+    try:
+        certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
+    except StopIteration:
+        raise CertificateNotFoundException()
+
+    return certificate_arn
+
+
 class LoadBalancerException(PlatformException):
     pass
 

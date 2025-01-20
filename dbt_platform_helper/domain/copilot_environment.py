@@ -33,8 +33,10 @@ def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
     return arn
 
 
-def find_https_certificate(session: boto3.Session, app_name: str, env_name: str) -> str:
-    listener_arn = find_https_listener(session, app_name, env_name)
+def find_https_certificate(
+    session: boto3.Session, app: str, env: str
+) -> str:  # TODO - Loadbalancer provider
+    listener_arn = find_https_listener(session, app, env)
     cert_client = session.client("elbv2")
     certificates = cert_client.describe_listener_certificates(ListenerArn=listener_arn)[
         "Certificates"
@@ -81,16 +83,11 @@ class CopilotEnvironment:
             f"Using {profile_for_environment} for this AWS session"
         )  # TODO - echo_fn and assert on result.
 
-        session = get_aws_session_or_abort(
-            profile_for_environment
-        )  # TODO - session could likely fall away?
+        session = get_aws_session_or_abort(profile_for_environment)
 
         copilot_environment_manifest = (
             self.copilot_templating.generate_copilot_environment_manifest(
                 environment_name=environment_name,
-                application_name=platform_config["application"],
-                env_config=env_config,
-                session=session,
                 vpc=self._get_environment_vpc(
                     session, environment_name, env_config.get("vpc", None)
                 ),
@@ -224,8 +221,17 @@ class CopilotTemplating:
             click.echo(f"File {file_path} created")
 
     # TODO: This functionality makes no sense... Why are we checking for a vpc in AWS under 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
-    # TODO - refactor this somehow
-    # {session.profile_name}-{env_name} looks to work with the naming convention we use for our demodjango-deploy platform-config.yaml. Aghhh
+    def _get_environment_vpc(self, session, env_name, vpc_name):
 
-    # TODO (with a clearer head after refactoring slightly) - Check with the team why we bother to check aws-profile names to find the VPC. Since these profile names can be named litterally anything it feels like a moot check to have.
-    # If no one has a good reason for the check just remove it and fail fast if the VPC they provider in their platform config is invalid (and move on)
+        if not vpc_name:
+            vpc_name = f"{session.profile_name}-{env_name}"
+
+        try:
+            vpc = self.vpc_provider.get_vpc(vpc_name)
+        except VpcNotFoundForNameException:
+            vpc = self.vpc_provider.get_vpc(session.profile_name)
+
+        if not vpc:
+            raise VpcNotFoundForNameException
+
+        return vpc

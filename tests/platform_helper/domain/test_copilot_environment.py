@@ -574,9 +574,6 @@ class TestCopilotTemplating:
 
         result = copilot_templating.generate_copilot_environment_manifest(
             "connors-environment",
-            "connors-application",
-            {"config": "im config"},
-            mock_get_session,
             test_vpc,
             "test-cert-arn",
         )
@@ -624,12 +621,7 @@ class TestCopilotGenerate:
         copilot_environment.generate(environment_name="test_environment")
 
         mock_copilot_templating.generate_copilot_environment_manifest.assert_called_once_with(
-            environment_name="test_environment",
-            application_name="test-app",
-            env_config=test_env_config,
-            session=mocked_session,
-            vpc=mock_vpc,
-            cert_arn="test-cert-arn",
+            environment_name="test_environment", vpc=mock_vpc, cert_arn="test-cert-arn"
         )
 
     # def test_fail_early_if_platform_config_invalid(self, capfd):
