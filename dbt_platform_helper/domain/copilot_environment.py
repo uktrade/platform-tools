@@ -69,7 +69,6 @@ class CopilotEnvironment:
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
         self.copilot_templating = copilot_templating or CopilotTemplating(
-            vpc_provider=self.vpc_provider,
             file_provider=FileProvider(),
         )
 
@@ -121,17 +120,13 @@ class CopilotTemplating:
     # TODO - remove mkfile_fn - inject provider instead
     def __init__(
         self,
-        vpc_provider: VpcProvider = None,
         file_provider: FileProvider = None,
     ):
-        self.vpc_provider = vpc_provider
         self.file_provider = file_provider
         self.templates = setup_templates()
 
     def generate_copilot_environment_manifest(self, environment_name: str, vpc: Vpc, cert_arn: str):
         env_template = self.templates.get_template("env/manifest.yml")
-
-        print(f"VPC: {vpc.public_subnets}")
 
         return env_template.render(
             {

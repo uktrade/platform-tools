@@ -553,8 +553,6 @@ class TestCopilotTemplating:
     def test_copilot_templating_generate_generates_expected_manifest(
         self, mock_get_cert_arn, mock_get_session
     ):
-
-        mock_vpc_provider = Mock()
         mock_file_provider = Mock()
         mock_file_provider.mkfile.return_value = "im a file provider!"
 
@@ -565,12 +563,10 @@ class TestCopilotTemplating:
             security_groups=["a-security-group"],
         )
 
-        mock_vpc_provider.get_vpc.return_value = test_vpc
-
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
 
-        copilot_templating = CopilotTemplating(mock_vpc_provider, mock_file_provider)
+        copilot_templating = CopilotTemplating(mock_file_provider)
 
         result = copilot_templating.generate_copilot_environment_manifest(
             "connors-environment",
