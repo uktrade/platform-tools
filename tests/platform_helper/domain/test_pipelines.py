@@ -17,6 +17,7 @@ class PipelineMocks:
     def __init__(self, app_name):
         self.mock_config_provider = ConfigProvider(ConfigValidator())
         self.mock_terraform_manifest_provider = Mock()
+        self.mock_ecr_provider = Mock()
         self.mock_echo = Mock()
         self.mock_abort = abort_with_error
         self.mock_git_remote = Mock()
@@ -25,11 +26,13 @@ class PipelineMocks:
         self.mock_codestar.return_value = (
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
+        self.mock_ecr_provider.get_ecr_repo_names.return_value = []
 
     def params(self):
         return {
             "config_provider": self.mock_config_provider,
             "terraform_manifest_provider": self.mock_terraform_manifest_provider,
+            "ecr_provider": self.mock_ecr_provider,
             "echo": self.mock_echo,
             "abort": self.mock_abort,
             "get_git_remote": self.mock_git_remote,
@@ -132,7 +135,33 @@ def test_generate_pipeline_generates_codebase_pipeline(codebase_pipeline_config,
     pipelines.generate(None, None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
-    mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(codebase_pipeline_config)
+    mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
+        codebase_pipeline_config, set()
+    )
+
+
+def test_generate_pipeline_generates_codebase_pipeline_with_includes(
+    two_codebase_pipeline_config, fakefs
+):
+    app_name = "test-app"
+
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(two_codebase_pipeline_config))
+
+    mocks = PipelineMocks(app_name)
+    mocks.mock_ecr_provider.get_ecr_repo_names.return_value = [
+        "my-app/test_codebase",
+        "some-other-repo",
+        "my-app/test_codebase_2",
+        "yet-another-repo",
+    ]
+
+    pipelines = Pipelines(**mocks.params())
+    pipelines.generate(None, None)
+
+    mock_t_m_p = mocks.mock_terraform_manifest_provider
+    mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
+        two_codebase_pipeline_config, {"my-app/test_codebase", "my-app/test_codebase_2"}
+    )
 
 
 def assert_terraform(app_name, aws_account, expected_version, expected_branch):

@@ -6,6 +6,7 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -54,6 +55,7 @@ def generate(terraform_platform_modules_version, deploy_branch):
     pipelines = Pipelines(
         ConfigProvider(ConfigValidator()),
         TerraformManifestProvider(),
+        ECRProvider(),
         click.secho,
         abort_with_error,
         git_remote,

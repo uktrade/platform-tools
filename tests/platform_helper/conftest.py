@@ -637,7 +637,6 @@ def codebase_pipeline_config(platform_env_config):
         **platform_env_config,
         "codebase_pipelines": {
             "test_codebase": {
-                # "account": "non-prod-acc",
                 "repository": "uktrade/repo1",
                 "services": [
                     {"run_group_1": ["web"]},
@@ -657,6 +656,27 @@ def codebase_pipeline_config(platform_env_config):
             }
         },
     }
+
+
+@pytest.fixture
+def two_codebase_pipeline_config(codebase_pipeline_config):
+    codebase_pipeline_config["codebase_pipelines"]["test_codebase_2"] = {
+        "repository": "uktrade/repo2",
+        "services": [
+            {"run_group_1": ["web"]},
+        ],
+        "pipelines": [
+            {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
+            {
+                "name": "tagged",
+                "tag": True,
+                "environments": [
+                    {"name": "staging"},
+                ],
+            },
+        ],
+    }
+    return codebase_pipeline_config
 
 
 @pytest.fixture

@@ -108,29 +108,13 @@ def test_generate_codebase_pipeline_config_creates_required_imports(codebase_pip
 
 @freeze_time("2025-01-16 13:00:00")
 def test_generate_codebase_pipeline_config_creates_required_imports_for_two_codebases(
-    codebase_pipeline_config,
+    two_codebase_pipeline_config,
 ):
-    codebase_pipeline_config["codebase_pipelines"]["test_codebase_2"] = {
-        "repository": "uktrade/repo1",
-        "services": [
-            {"run_group_1": ["web"]},
-        ],
-        "pipelines": [
-            {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
-            {
-                "name": "tagged",
-                "tag": True,
-                "environments": [
-                    {"name": "staging"},
-                ],
-            },
-        ],
-    }
     file_provider = Mock()
     template_provider = TerraformManifestProvider(file_provider)
 
     template_provider.generate_codebase_pipeline_config(
-        codebase_pipeline_config, ["test_codebase", "test_codebase_2"]
+        two_codebase_pipeline_config, ["test_codebase", "test_codebase_2"]
     )
 
     contents = file_provider.mkfile.call_args.args[2]

@@ -6,6 +6,7 @@ from shutil import rmtree
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
@@ -20,6 +21,7 @@ class Pipelines:
         self,
         config_provider: ConfigProvider,
         terraform_manifest_provider: TerraformManifestProvider,
+        ecr_provider: ECRProvider,
         echo: Callable[[str], str],
         abort: Callable[[str], None],
         get_git_remote: Callable[[], str],
@@ -31,8 +33,9 @@ class Pipelines:
         self.get_git_remote = get_git_remote
         self.get_codestar_arn = get_codestar_arn
         self.terraform_manifest_provider = terraform_manifest_provider
+        self.ecr_provider = ecr_provider
 
-    def generate(self, terraform_platform_modules_version, deploy_branch):
+    def generate(self, cli_terraform_platform_modules_version, deploy_branch):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
@@ -61,6 +64,11 @@ class Pipelines:
 
         self._clean_pipeline_config(copilot_pipelines_dir)
 
+        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
+            cli_terraform_platform_modules_version,
+            platform_config_terraform_modules_default_version,
+        )
+
         if has_environment_pipelines:
             environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
 
@@ -70,12 +78,22 @@ class Pipelines:
                     platform_config["application"],
                     aws_account,
                     terraform_platform_modules_version,
-                    platform_config_terraform_modules_default_version,
                     deploy_branch,
                 )
 
         if has_codebase_pipelines:
-            self.terraform_manifest_provider.generate_codebase_pipeline_config(platform_config)
+            # TODO: pass through t-p-m-version
+            codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
+            required_ecrs = {
+                f"{platform_config['application']}/{codebase}"
+                for codebase in codebase_pipelines.keys()
+            }
+            provisioned_ecrs = set(self.ecr_provider.get_ecr_repo_names())
+            ecr_intersection = required_ecrs & provisioned_ecrs
+
+            self.terraform_manifest_provider.generate_codebase_pipeline_config(
+                platform_config, ecr_intersection
+            )
 
     def _clean_pipeline_config(self, pipelines_dir):
         if pipelines_dir.exists():
@@ -86,16 +104,10 @@ class Pipelines:
         self,
         application,
         aws_account,
-        cli_terraform_platform_modules_version,
-        platform_config_terraform_modules_default_version,
+        terraform_platform_modules_version,
         deploy_branch,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
-
-        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version,
-            platform_config_terraform_modules_default_version,
-        )
 
         contents = env_pipeline_template.render(
             {
