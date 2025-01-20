@@ -29,7 +29,7 @@ class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
         super().__init__(f"No services deployed yet to {application_name} ")
 
 
-def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
+def get_maintenance_page_type(session: boto3.Session, listener_arn: str) -> Union[str, None]:
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -162,9 +162,9 @@ class MaintenancePage:
         user_prompt_callback: Callable[[str], bool] = click.confirm,
         echo: Callable[[str], str] = click.secho,
         find_https_listener: Callable[[boto3.Session, str, str], str] = find_https_listener,
-        get_maintenance_page: Callable[
+        get_maintenance_page_type: Callable[
             [boto3.Session, str], Union[str, None]
-        ] = get_maintenance_page,
+        ] = get_maintenance_page_type,
         get_env_ips: Callable[[str, Environment], List[str]] = get_env_ips,
         add_maintenance_page: Callable[
             [boto3.Session, str, str, str, List[Service], tuple, str], None
@@ -175,7 +175,7 @@ class MaintenancePage:
         self.user_prompt_callback = user_prompt_callback
         self.echo = echo
         self.find_https_listener = find_https_listener
-        self.get_maintenance_page = get_maintenance_page
+        self.get_maintenance_page_type = get_maintenance_page_type
         self.get_env_ips = get_env_ips
         self.add_maintenance_page = add_maintenance_page
         self.remove_maintenance_page = remove_maintenance_page
@@ -199,7 +199,7 @@ class MaintenancePage:
             https_listener = self.find_https_listener(
                 application_environment.session, self.application.name, env
             )
-            current_maintenance_page = self.get_maintenance_page(
+            current_maintenance_page = self.get_maintenance_page_type(
                 application_environment.session, https_listener
             )
             remove_current_maintenance_page = False
@@ -260,7 +260,7 @@ class MaintenancePage:
             https_listener = self.find_https_listener(
                 application_environment.session, self.application.name, env
             )
-            current_maintenance_page = self.get_maintenance_page(
+            current_maintenance_page = self.get_maintenance_page_type(
                 application_environment.session, https_listener
             )
 
