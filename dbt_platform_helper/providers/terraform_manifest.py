@@ -12,7 +12,7 @@ class TerraformManifestProvider:
     def __init__(self, file_provider: FileProvider = FileProvider()):
         self.file_provider = file_provider
 
-    def generate_codebase_pipeline_config(self, platform_config: dict):
+    def generate_codebase_pipeline_config(self, platform_config: dict, ecr_imports: list[str]):
         """Expects the platform config to have already had defaults applied."""
         platform_config = platform_config
         default_account = (
@@ -28,6 +28,7 @@ class TerraformManifestProvider:
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account)
         self._add_codebase_pipeline_module(terraform)
+        self._add_imports(terraform, ecr_imports)
 
         self.file_provider.mkfile(
             str(Path(".").absolute()), "terraform/codebase-pipelines", json.dumps(terraform), True
@@ -91,3 +92,11 @@ class TerraformManifestProvider:
                 "env_config": "${local.environments}",
             }
         }
+
+    def _add_imports(self, terraform, ecr_imports):
+        if ecr_imports:
+            terraform["import"] = {
+                "for_each": "${%s}" % json.dumps(ecr_imports),
+                "id": "${local.application}/${each.key}",
+                "to": "${module.codebase-pipelines[each.key].aws_ecr_repository.this}",
+            }

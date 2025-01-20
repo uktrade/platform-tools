@@ -636,7 +636,7 @@ def codebase_pipeline_config(platform_env_config):
     return {
         **platform_env_config,
         "codebase_pipelines": {
-            "test": {
+            "test_codebase": {
                 # "account": "non-prod-acc",
                 "repository": "uktrade/repo1",
                 "services": [
