@@ -44,7 +44,6 @@ class DatabaseCopy:
         self.auto_approve = auto_approve
         self.vpc_provider = vpc_provider
         self.db_connection_string = db_connection_string
-        self.maintenance_page = maintenance_page
         self.input = input
         self.echo = echo
         self.abort = abort
@@ -61,6 +60,8 @@ class DatabaseCopy:
             self.application = load_application(self.app)
         except ApplicationNotFoundException:
             abort(f"No such application '{app}'.")
+
+        self.maintenance_page = maintenance_page(self.application)
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
@@ -181,11 +182,11 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page(self.application).activate(to_env, services, template, to_vpc)
+            self.maintenance_page.activate(to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc, f"data_dump_{to_env}")
         self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
-            self.maintenance_page(self.application).deactivate(to_env)
+            self.maintenance_page.deactivate(to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:
