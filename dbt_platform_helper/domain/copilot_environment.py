@@ -5,6 +5,7 @@ import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.providers.vpc import Vpc
@@ -51,19 +52,20 @@ def find_https_certificate(
 
 
 # TODO
-# Write a test to give us confidence that vpc provider is working as expected
-# remove mkfile_fn dependency from templating
 # decide on a pattern for handling session.  Needed from session -
 # - profile_name
 # - vpc provider session - ec2 to retrieve vpc info
 # - cloudformation to check order of subnets
 # - load balancer to get listener certs
-# CopilotTemplating should only take data needed to generate a valid copilot manifest
-# e.g. subnets, cert arns, vpc_id, ....
 
 
 class CopilotEnvironment:
-    def __init__(self, config_provider, vpc_provider=None, copilot_templating=None):
+    def __init__(
+        self,
+        config_provider: ConfigProvider,
+        vpc_provider: VpcProvider = None,
+        copilot_templating=None,
+    ):
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
         self.copilot_templating = copilot_templating or CopilotTemplating(
