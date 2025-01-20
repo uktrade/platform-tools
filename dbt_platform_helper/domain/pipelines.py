@@ -7,6 +7,7 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
@@ -18,6 +19,7 @@ class Pipelines:
     def __init__(
         self,
         config_provider: ConfigProvider,
+        terraform_manifest_provider: TerraformManifestProvider,
         echo: Callable[[str], str],
         abort: Callable[[str], None],
         get_git_remote: Callable[[], str],
@@ -28,18 +30,19 @@ class Pipelines:
         self.abort = abort
         self.get_git_remote = get_git_remote
         self.get_codestar_arn = get_codestar_arn
+        self.terraform_manifest_provider = terraform_manifest_provider
 
     def generate(self, terraform_platform_modules_version, deploy_branch):
-        pipeline_config = self.config_provider.load_and_validate_platform_config()
+        platform_config = self.config_provider.load_and_validate_platform_config()
 
-        has_codebase_pipelines = CODEBASE_PIPELINES_KEY in pipeline_config
-        has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
+        has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
+        has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in platform_config
 
         if not (has_codebase_pipelines or has_environment_pipelines):
             self.echo("No pipelines defined: nothing to do.", err=True, fg="yellow")
             return
 
-        platform_config_terraform_modules_default_version = pipeline_config.get(
+        platform_config_terraform_modules_default_version = platform_config.get(
             "default_versions", {}
         ).get("terraform-platform-modules", "")
 
@@ -59,12 +62,12 @@ class Pipelines:
         self._clean_pipeline_config(copilot_pipelines_dir)
 
         if has_environment_pipelines:
-            environment_pipelines = pipeline_config[ENVIRONMENT_PIPELINES_KEY]
+            environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
 
             for config in environment_pipelines.values():
                 aws_account = config.get("account")
                 self._generate_terraform_environment_pipeline_manifest(
-                    pipeline_config["application"],
+                    platform_config["application"],
                     aws_account,
                     terraform_platform_modules_version,
                     platform_config_terraform_modules_default_version,
@@ -72,7 +75,7 @@ class Pipelines:
                 )
 
         if has_codebase_pipelines:
-            pass
+            self.terraform_manifest_provider.generate_codebase_pipeline_config(platform_config)
 
     def _clean_pipeline_config(self, pipelines_dir):
         if pipelines_dir.exists():

@@ -632,6 +632,34 @@ def platform_env_config():
 
 
 @pytest.fixture
+def codebase_pipeline_config(platform_env_config):
+    return {
+        **platform_env_config,
+        "codebase_pipelines": {
+            "test": {
+                # "account": "non-prod-acc",
+                "repository": "uktrade/repo1",
+                "services": [
+                    {"run_group_1": ["web"]},
+                    {"run_group_2": ["api", "celery-worker"]},
+                ],
+                "pipelines": [
+                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
+                    {
+                        "name": "tagged",
+                        "tag": True,
+                        "environments": [
+                            {"name": "staging"},
+                            {"name": "prod", "requires_approval": True},
+                        ],
+                    },
+                ],
+            }
+        },
+    }
+
+
+@pytest.fixture
 def s3_extensions_fixture(fakefs):
     fakefs.create_file(
         PLATFORM_CONFIG_FILE,

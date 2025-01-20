@@ -11,36 +11,11 @@ from dbt_platform_helper.providers.terraform_manifest import TerraformManifestPr
 
 
 @freeze_time("2025-01-16 13:00:00")
-def test_generate_codebase_pipeline_config_creates_file(platform_env_config):
-    platform_config = {
-        **platform_env_config,
-        "codebase_pipelines": {
-            "test": {
-                "account": "non-prod-acc",
-                "repository": "uktrade/repo1",
-                "services": [
-                    {"run_group_1": ["web"]},
-                    {"run_group_2": ["api", "celery-worker"]},
-                ],
-                "pipelines": [
-                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
-                    {
-                        "name": "tagged",
-                        "tag": True,
-                        "environments": [
-                            {"name": "dev"},
-                            {"name": "prod", "requires_approval": True},
-                        ],
-                    },
-                ],
-            }
-        },
-    }
-
+def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config):
     file_provider = Mock()
-    template_provider = TerraformManifestProvider(platform_config, file_provider)
+    template_provider = TerraformManifestProvider(file_provider)
 
-    template_provider.generate_codebase_pipeline_config()
+    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config)
 
     assert file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args

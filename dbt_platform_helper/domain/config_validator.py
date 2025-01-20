@@ -116,20 +116,19 @@ class ConfigValidator:
             abort_with_error(message)
 
     def validate_codebase_pipelines(self, config):
-        if CODEBASE_PIPELINES_KEY in config:
-            for codebase in config[CODEBASE_PIPELINES_KEY]:
-                codebase_environments = []
+        for name, codebase in config.get(CODEBASE_PIPELINES_KEY, {}).items():
+            codebase_environments = []
 
-                for pipeline in codebase["pipelines"]:
-                    codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
+            for pipeline in codebase["pipelines"]:
+                codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
 
-                unique_codebase_environments = sorted(list(set(codebase_environments)))
+            unique_codebase_environments = sorted(list(set(codebase_environments)))
 
-                if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                    abort_with_error(
-                        f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                        "listed in a single pipeline per codebase"
-                    )
+            if sorted(codebase_environments) != sorted(unique_codebase_environments):
+                abort_with_error(
+                    f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
+                    "listed in a single pipeline per codebase"
+                )
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []

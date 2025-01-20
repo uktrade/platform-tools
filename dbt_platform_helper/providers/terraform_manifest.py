@@ -9,24 +9,24 @@ from dbt_platform_helper.providers.files import FileProvider
 
 
 class TerraformManifestProvider:
-    def __init__(self, platform_config: dict, file_provider: FileProvider = FileProvider()):
-        self.platform_config = platform_config
-        self.default_account = (
-            self.platform_config.get("environments", {})
+    def __init__(self, file_provider: FileProvider = FileProvider()):
+        self.file_provider = file_provider
+
+    def generate_codebase_pipeline_config(self, platform_config: dict):
+        """Expects the platform config to have already had defaults applied."""
+        platform_config = platform_config
+        default_account = (
+            platform_config.get("environments", {})
             .get("*", {})
             .get("accounts", {})
             .get("deploy", {})
             .get("name")
         )
-        self.file_provider = file_provider
-
-    def generate_codebase_pipeline_config(self):
-        """Expects the platform config to have already had defaults applied."""
         terraform = {}
         self._add_header(terraform)
         self._add_locals(terraform)
-        self._add_provider(terraform)
-        self._add_backend(terraform)
+        self._add_provider(terraform, default_account)
+        self._add_backend(terraform, platform_config, default_account)
         self._add_codebase_pipeline_module(terraform)
 
         self.file_provider.mkfile(
@@ -50,24 +50,24 @@ class TerraformManifestProvider:
             "environments": '${local.platform_config["environments"]}',
         }
 
-    def _add_provider(self, terraform):
+    def _add_provider(self, terraform, default_account):
         terraform["provider"] = {"aws": {}}
         terraform["provider"]["aws"]["region"] = "eu-west-2"
-        terraform["provider"]["aws"]["profile"] = self.default_account
-        terraform["provider"]["aws"]["alias"] = self.default_account
+        terraform["provider"]["aws"]["profile"] = default_account
+        terraform["provider"]["aws"]["alias"] = default_account
         terraform["provider"]["aws"]["shared_credentials_files"] = ["~/.aws/config"]
 
-    def _add_backend(self, terraform):
+    def _add_backend(self, terraform, platform_config, default_account):
         terraform["terraform"] = {
             "required_version": SUPPORTED_TERRAFORM_VERSION,
             "backend": {
                 "s3": {
-                    "bucket": f"terraform-platform-state-{self.default_account}",
-                    "key": f"tfstate/application/{self.platform_config['application']}-codebase-pipelines.tfstate",
+                    "bucket": f"terraform-platform-state-{default_account}",
+                    "key": f"tfstate/application/{platform_config['application']}-codebase-pipelines.tfstate",
                     "region": "eu-west-2",
                     "encrypt": True,
-                    "kms_key_id": f"alias/terraform-platform-state-s3-key-{self.default_account}",
-                    "dynamodb_table": f"terraform-platform-lockdb-{self.default_account}",
+                    "kms_key_id": f"alias/terraform-platform-state-s3-key-{default_account}",
+                    "dynamodb_table": f"terraform-platform-lockdb-{default_account}",
                 }
             },
             "required_providers": {"aws": {"source": "hashicorp/aws", "version": "~> 5"}},

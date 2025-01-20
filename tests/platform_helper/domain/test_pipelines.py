@@ -29,7 +29,7 @@ class PipelineMocks:
     def params(self):
         return {
             "config_provider": self.mock_config_provider,
-            # "terraform_manifest_provider": self.mock_terraform_manifest_provider,
+            "terraform_manifest_provider": self.mock_terraform_manifest_provider,
             "echo": self.mock_echo,
             "abort": self.mock_abort,
             "get_git_remote": self.mock_git_remote,
@@ -122,14 +122,17 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     )
 
 
-def test_generate_pipeline_generates_codebase_pipeline():
-    pass
-    # mocks = PipelineMocks("test-app")
-    #
-    # pipelines = Pipelines(**mocks.params())
-    # pipelines.generate(None, None)
+def test_generate_pipeline_generates_codebase_pipeline(codebase_pipeline_config, fakefs):
+    app_name = "test-app"
 
-    # mocks.mock_terraform_manifest_provider.generate_codebase_pipeline_config.assert_called_once()
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(codebase_pipeline_config))
+
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+    pipelines.generate(None, None)
+
+    mock_t_m_p = mocks.mock_terraform_manifest_provider
+    mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(codebase_pipeline_config)
 
 
 def assert_terraform(app_name, aws_account, expected_version, expected_branch):

@@ -494,7 +494,6 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
-
     mock_redis_provider = MagicMock()
     mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
 
@@ -514,9 +513,8 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
 def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, capsys):
     config = {
         "application": "test-app",
-        "codebase_pipelines": [
-            {
-                "name": "application",
+        "codebase_pipelines": {
+            "application": {
                 "repository": "organisation/repository",
                 "services": [
                     {"run_group_1": ["web"]},
@@ -527,7 +525,7 @@ def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, caps
                     {"name": "other", "branch": "main", "environments": [{"name": "dev"}]},
                 ],
             }
-        ],
+        },
     }
     with pytest.raises(SystemExit):
         ConfigValidator().validate_codebase_pipelines(config)
