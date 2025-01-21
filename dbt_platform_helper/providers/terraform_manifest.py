@@ -2,6 +2,9 @@ import json
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
+from typing import Callable
+
+import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
@@ -9,8 +12,11 @@ from dbt_platform_helper.providers.files import FileProvider
 
 
 class TerraformManifestProvider:
-    def __init__(self, file_provider: FileProvider = FileProvider()):
+    def __init__(
+        self, file_provider: FileProvider = FileProvider(), echo: Callable[[str], None] = click.echo
+    ):
         self.file_provider = file_provider
+        self.echo = echo
 
     def generate_codebase_pipeline_config(self, platform_config: dict, ecr_imports: set[str]):
         default_account = (
@@ -28,9 +34,13 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_module(terraform)
         self._add_imports(terraform, list(ecr_imports))
 
-        self.file_provider.mkfile(
-            str(Path(".").absolute()), "terraform/codebase-pipelines", json.dumps(terraform), True
+        message = self.file_provider.mkfile(
+            str(Path(".").absolute()),
+            "terraform/codebase-pipelines/main.tf.json",
+            json.dumps(terraform),
+            True,
         )
+        self.echo(message)
 
     @staticmethod
     def _add_header(terraform: dict):

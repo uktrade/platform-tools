@@ -77,12 +77,16 @@ class Pipelines:
 
         if has_environment_pipelines:
             environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
+            accounts = {
+                config.get("account")
+                for config in environment_pipelines.values()
+                if "account" in config
+            }
 
-            for config in environment_pipelines.values():
-                aws_account = config.get("account")
+            for account in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
                     platform_config["application"],
-                    aws_account,
+                    account,
                     terraform_platform_modules_version,
                     deploy_branch,
                 )

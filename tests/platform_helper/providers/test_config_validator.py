@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 
@@ -508,30 +507,3 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
 
     assert expected_response in captured.out
     assert captured.err == ""
-
-
-def test_two_codebase_pipelines_cannot_manage_the_same_environments(fakefs, capsys):
-    config = {
-        "application": "test-app",
-        "codebase_pipelines": {
-            "application": {
-                "repository": "organisation/repository",
-                "services": [
-                    {"run_group_1": ["web"]},
-                    {"run_group_2": ["api", "celery-beat"]},
-                ],
-                "pipelines": [
-                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
-                    {"name": "other", "branch": "main", "environments": [{"name": "dev"}]},
-                ],
-            }
-        },
-    }
-    with pytest.raises(SystemExit):
-        ConfigValidator().validate_codebase_pipelines(config)
-
-    exp = (
-        f"Error: The {PLATFORM_CONFIG_FILE} file is invalid, each environment can"
-        " only be listed in a single pipeline per codebase"
-    )
-    assert exp in capsys.readouterr().err

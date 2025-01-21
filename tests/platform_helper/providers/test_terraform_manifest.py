@@ -12,15 +12,20 @@ from dbt_platform_helper.providers.terraform_manifest import TerraformManifestPr
 
 @freeze_time("2025-01-16 13:00:00")
 def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config):
-    file_provider = Mock()
-    template_provider = TerraformManifestProvider(file_provider)
+    mock_file_provider = Mock()
+    mock_file_provider.mkfile.return_value = "File created"
+    mock_echo_fn = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider, mock_echo_fn)
 
-    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, [])
+    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, set())
 
-    assert file_provider.mkfile.call_count == 1
-    base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args
+    assert mock_file_provider.mkfile.call_count == 1
+    base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
+
+    mock_echo_fn.assert_called_once_with("File created")
+
     assert base_path == str(Path(".").absolute())
-    assert file_path == "terraform/codebase-pipelines"
+    assert file_path == "terraform/codebase-pipelines/main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)
@@ -87,7 +92,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports(codebase_pip
     assert file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args
     assert base_path == str(Path(".").absolute())
-    assert file_path == "terraform/codebase-pipelines"
+    assert file_path == "terraform/codebase-pipelines/main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)
@@ -147,7 +152,7 @@ def test_generate_codebase_pipeline_config_omits_include_block_if_no_codebases_p
     assert file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args
     assert base_path == str(Path(".").absolute())
-    assert file_path == "terraform/codebase-pipelines"
+    assert file_path == "terraform/codebase-pipelines/main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)

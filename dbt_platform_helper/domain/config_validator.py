@@ -3,9 +3,6 @@ from typing import Callable
 import boto3
 import click
 
-from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -18,7 +15,6 @@ class ConfigValidator:
             self.validate_supported_redis_versions,
             self.validate_supported_opensearch_versions,
             self.validate_environment_pipelines,
-            self.validate_codebase_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
         ]
@@ -114,21 +110,6 @@ class ConfigValidator:
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
             abort_with_error(message)
-
-    def validate_codebase_pipelines(self, config):
-        for name, codebase in config.get(CODEBASE_PIPELINES_KEY, {}).items():
-            codebase_environments = []
-
-            for pipeline in codebase["pipelines"]:
-                codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
-
-            unique_codebase_environments = sorted(list(set(codebase_environments)))
-
-            if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                abort_with_error(
-                    f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                    "listed in a single pipeline per codebase"
-                )
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
