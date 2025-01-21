@@ -28,10 +28,8 @@ class TestClickIOProvider:
         io.warn("Warning!")
         mock_echo.assert_called_once_with("Warning!", fg="yellow")
 
-    # @patch(builtins.input)
-    # def test_confirm(self, mock_input):
-    #     mock_input.return_value="y"
-    #     io = IOProvider(click.secho, click.secho, click.confirm)
-    #     result = io.confirm("Are you sure?")
-    #     assert result == True
-    # assert "Are you sure?" in captured
+    @patch("click.confirm")
+    def test_confirm(self, mock_confirm):
+        io = ClickIOProvider()
+        io.confirm("Are you sure?")
+        mock_confirm.assert_called_once_with("Are you sure?")
