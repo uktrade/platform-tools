@@ -9,6 +9,7 @@ from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -36,8 +37,10 @@ def environment():
 @click.option("--vpc", type=str)
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
+
     try:
-        MaintenancePage().activate(app, env, svc, template, vpc)
+        application = load_application(app)
+        MaintenancePage(application).activate(env, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -48,8 +51,10 @@ def offline(app, env, svc, template, vpc):
 @click.option("--env", type=str, required=True)
 def online(app, env):
     """Remove a maintenance page from an environment."""
+
     try:
-        MaintenancePage().deactivate(app, env)
+        application = load_application(app)
+        MaintenancePage(application).deactivate(env)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
