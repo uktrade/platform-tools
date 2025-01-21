@@ -118,7 +118,7 @@ def test_get_enriched_config_returns_config_with_environment_defaults_applied():
         },
     }
 
-    expected_enriched_config_config = {
+    expected_enriched_config = {
         "application": "test-app",
         "environments": {
             "test": {
@@ -135,7 +135,7 @@ def test_get_enriched_config_returns_config_with_environment_defaults_applied():
     mock_config_validator = Mock()
 
     result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
-    assert result == expected_enriched_config_config
+    assert result == expected_enriched_config
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(

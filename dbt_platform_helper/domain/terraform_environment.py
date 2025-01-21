@@ -60,9 +60,9 @@ class TerraformEnvironment:
         self,
         config_provider,
         manifest_generator: PlatformTerraformManifestGenerator = None,
-        echo_fn=click.echo,
+        echo=click.echo,
     ):
-        self.echo = echo_fn
+        self.echo = echo
         self.config_provider = config_provider
         self.manifest_generator = manifest_generator or PlatformTerraformManifestGenerator(
             FileProvider()
