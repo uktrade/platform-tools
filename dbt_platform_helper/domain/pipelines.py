@@ -36,6 +36,12 @@ class Pipelines:
         self.ecr_provider = ecr_provider
 
     def generate(self, cli_terraform_platform_modules_version, deploy_branch):
+        try:
+            self._generate_pipeline_config(cli_terraform_platform_modules_version, deploy_branch)
+        except Exception as exc:
+            self.abort(str(exc))
+
+    def _generate_pipeline_config(self, cli_terraform_platform_modules_version, deploy_branch):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
