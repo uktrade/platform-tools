@@ -5,7 +5,6 @@ from unittest.mock import Mock
 
 from freezegun import freeze_time
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
@@ -17,7 +16,7 @@ def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config
     mock_echo_fn = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider, mock_echo_fn)
 
-    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, set())
+    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, "7", set())
 
     assert mock_file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
@@ -65,7 +64,7 @@ def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}"
+        == f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref=7"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -87,7 +86,9 @@ def test_generate_codebase_pipeline_config_creates_required_imports(codebase_pip
     file_provider = Mock()
     template_provider = TerraformManifestProvider(file_provider)
 
-    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, ["test_codebase"])
+    template_provider.generate_codebase_pipeline_config(
+        codebase_pipeline_config, "7", ["test_codebase"]
+    )
 
     assert file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args
@@ -119,7 +120,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports_for_two_code
     template_provider = TerraformManifestProvider(file_provider)
 
     template_provider.generate_codebase_pipeline_config(
-        two_codebase_pipeline_config, ["test_codebase", "test_codebase_2"]
+        two_codebase_pipeline_config, "7", ["test_codebase", "test_codebase_2"]
     )
 
     contents = file_provider.mkfile.call_args.args[2]
@@ -147,7 +148,7 @@ def test_generate_codebase_pipeline_config_omits_include_block_if_no_codebases_p
     file_provider = Mock()
     template_provider = TerraformManifestProvider(file_provider)
 
-    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, [])
+    template_provider.generate_codebase_pipeline_config(codebase_pipeline_config, "7", [])
 
     assert file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = file_provider.mkfile.call_args.args

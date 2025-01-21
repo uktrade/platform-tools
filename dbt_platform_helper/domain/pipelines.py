@@ -92,7 +92,6 @@ class Pipelines:
                 )
 
         if has_codebase_pipelines:
-            # TODO: pass through t-p-m-version
             codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
             required_ecrs = {
                 f"{platform_config['application']}/{codebase}"
@@ -102,7 +101,7 @@ class Pipelines:
             ecr_intersection = required_ecrs & provisioned_ecrs
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
-                platform_config, ecr_intersection
+                platform_config, terraform_platform_modules_version, ecr_intersection
             )
 
     def _clean_pipeline_config(self, pipelines_dir):

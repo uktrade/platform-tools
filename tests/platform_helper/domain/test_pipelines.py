@@ -132,11 +132,11 @@ def test_generate_pipeline_generates_codebase_pipeline(codebase_pipeline_config,
 
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
-    pipelines.generate(None, None)
+    pipelines.generate("5", None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        codebase_pipeline_config, set()
+        codebase_pipeline_config, "5", set()
     )
 
 
@@ -156,11 +156,11 @@ def test_generate_pipeline_generates_codebase_pipeline_with_includes(
     ]
 
     pipelines = Pipelines(**mocks.params())
-    pipelines.generate(None, None)
+    pipelines.generate("6", None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        two_codebase_pipeline_config, {"my-app/test_codebase", "my-app/test_codebase_2"}
+        two_codebase_pipeline_config, "6", {"my-app/test_codebase", "my-app/test_codebase_2"}
     )
 
 

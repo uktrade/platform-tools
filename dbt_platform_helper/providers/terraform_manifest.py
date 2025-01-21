@@ -6,7 +6,6 @@ from typing import Callable
 
 import click
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.files import FileProvider
 
@@ -18,7 +17,9 @@ class TerraformManifestProvider:
         self.file_provider = file_provider
         self.echo = echo
 
-    def generate_codebase_pipeline_config(self, platform_config: dict, ecr_imports: set[str]):
+    def generate_codebase_pipeline_config(
+        self, platform_config: dict, terraform_platform_modules_version: str, ecr_imports: set[str]
+    ):
         default_account = (
             platform_config.get("environments", {})
             .get("*", {})
@@ -31,7 +32,7 @@ class TerraformManifestProvider:
         self._add_locals(terraform)
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account)
-        self._add_codebase_pipeline_module(terraform)
+        self._add_codebase_pipeline_module(terraform, terraform_platform_modules_version)
         self._add_imports(terraform, list(ecr_imports))
 
         message = self.file_provider.mkfile(
@@ -85,8 +86,8 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_codebase_pipeline_module(terraform: dict):
-        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}"
+    def _add_codebase_pipeline_module(terraform: dict, terraform_platform_modules_version):
+        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={terraform_platform_modules_version}"
         terraform["module"] = {
             "codebase-pipelines": {
                 "source": source,
