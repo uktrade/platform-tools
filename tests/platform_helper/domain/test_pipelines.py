@@ -6,6 +6,7 @@ import pytest
 import yaml
 from freezegun.api import freeze_time
 
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
@@ -125,18 +126,23 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     )
 
 
-def test_generate_pipeline_generates_codebase_pipeline(codebase_pipeline_config, fakefs):
+@pytest.mark.parametrize(
+    "cli_version, exp_version", [("6", "6"), (None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION)]
+)
+def test_generate_pipeline_generates_codebase_pipeline(
+    cli_version, exp_version, codebase_pipeline_config, fakefs
+):
     app_name = "test-app"
 
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(codebase_pipeline_config))
 
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
-    pipelines.generate("5", None)
+    pipelines.generate(cli_version, None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        codebase_pipeline_config, "5", set()
+        codebase_pipeline_config, exp_version, set()
     )
 
 
