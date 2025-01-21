@@ -105,10 +105,10 @@ def test_generate_codebase_pipeline_config_creates_required_imports(codebase_pip
 
     assert "import" in json_content
     assert json_content["import"]["for_each"] == '${["test_codebase"]}'
-    assert json_content["import"]["id"] == "${local.application}/${each.key}"
+    assert json_content["import"]["id"] == "${each.value}"
     assert (
         json_content["import"]["to"]
-        == "${module.codebase-pipelines[each.key].aws_ecr_repository.this}"
+        == "module.codebase-pipelines[each.key].aws_ecr_repository.this"
     )
 
 
@@ -134,10 +134,10 @@ def test_generate_codebase_pipeline_config_creates_required_imports_for_two_code
 
     assert "import" in json_content
     assert json_content["import"]["for_each"] == '${["test_codebase", "test_codebase_2"]}'
-    assert json_content["import"]["id"] == "${local.application}/${each.key}"
+    assert json_content["import"]["id"] == "${each.value}"
     assert (
         json_content["import"]["to"]
-        == "${module.codebase-pipelines[each.key].aws_ecr_repository.this}"
+        == "module.codebase-pipelines[each.key].aws_ecr_repository.this"
     )
 
 

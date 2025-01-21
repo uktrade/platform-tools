@@ -142,11 +142,11 @@ def test_generate_pipeline_generates_codebase_pipeline(
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        codebase_pipeline_config, exp_version, set()
+        codebase_pipeline_config, exp_version, {}
     )
 
 
-def test_generate_pipeline_generates_codebase_pipeline_with_includes(
+def test_generate_pipeline_generates_codebase_pipeline_with_imports(
     two_codebase_pipeline_config, fakefs
 ):
     app_name = "test-app"
@@ -166,7 +166,9 @@ def test_generate_pipeline_generates_codebase_pipeline_with_includes(
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        two_codebase_pipeline_config, "6", {"my-app/test_codebase", "my-app/test_codebase_2"}
+        two_codebase_pipeline_config,
+        "6",
+        {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
     )
 
 

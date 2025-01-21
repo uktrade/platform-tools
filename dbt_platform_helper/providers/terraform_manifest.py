@@ -18,7 +18,10 @@ class TerraformManifestProvider:
         self.echo = echo
 
     def generate_codebase_pipeline_config(
-        self, platform_config: dict, terraform_platform_modules_version: str, ecr_imports: set[str]
+        self,
+        platform_config: dict,
+        terraform_platform_modules_version: str,
+        ecr_imports: dict[str, str],
     ):
         default_account = (
             platform_config.get("environments", {})
@@ -33,12 +36,12 @@ class TerraformManifestProvider:
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account)
         self._add_codebase_pipeline_module(terraform, terraform_platform_modules_version)
-        self._add_imports(terraform, list(ecr_imports))
+        self._add_imports(terraform, ecr_imports)
 
         message = self.file_provider.mkfile(
             str(Path(".").absolute()),
             "terraform/codebase-pipelines/main.tf.json",
-            json.dumps(terraform),
+            json.dumps(terraform, indent=2),
             True,
         )
         self.echo(message)
@@ -105,10 +108,10 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_imports(terraform: dict, ecr_imports: list[str]):
+    def _add_imports(terraform: dict, ecr_imports: dict[str, str]):
         if ecr_imports:
             terraform["import"] = {
                 "for_each": "${%s}" % json.dumps(ecr_imports),
-                "id": "${local.application}/${each.key}",
-                "to": "${module.codebase-pipelines[each.key].aws_ecr_repository.this}",
+                "id": "${each.value}",
+                "to": "module.codebase-pipelines[each.key].aws_ecr_repository.this",
             }
