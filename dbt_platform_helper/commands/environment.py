@@ -38,9 +38,8 @@ def environment():
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
 
-    application = load_application(app)
     try:
-        # TODO move application loading here
+        application = load_application(app)
         MaintenancePage(application).activate(env, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
@@ -53,8 +52,8 @@ def offline(app, env, svc, template, vpc):
 def online(app, env):
     """Remove a maintenance page from an environment."""
 
-    application = load_application(app)
     try:
+        application = load_application(app)
         MaintenancePage(application).deactivate(env)
     except PlatformException as err:
         click.secho(str(err), fg="red")

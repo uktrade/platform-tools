@@ -162,6 +162,7 @@ class MaintenancePage:
         user_prompt_callback: Callable[[str], bool] = click.confirm,
         echo: Callable[[str], str] = click.secho,
         find_https_listener: Callable[[boto3.Session, str, str], str] = find_https_listener,
+        # TODO refactor get_maintenance_page_type, add_maintenance_page, remove_maintenance_page into MaintenancePage class with LoadBalancerProvider as the dependency
         get_maintenance_page_type: Callable[
             [boto3.Session, str], Union[str, None]
         ] = get_maintenance_page_type,
