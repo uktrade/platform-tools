@@ -1,6 +1,8 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
+from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
+from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.template import setup_templates
@@ -31,6 +33,8 @@ class PlatformTerraformManifestGenerator:
                 "environment": environment_name,
                 "config": environment_config,
                 "terraform_platform_modules_version": terraform_platform_modules_version,
+                "terraform_version": SUPPORTED_TERRAFORM_VERSION,
+                "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
             }
         )
 

@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 from freezegun import freeze_time
 
+from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
@@ -59,7 +60,7 @@ def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config
 
     aws_req_provider = terraform["required_providers"]["aws"]
     assert aws_req_provider["source"] == "hashicorp/aws"
-    assert aws_req_provider["version"] == "~> 5"
+    assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
 
     module = json_content["module"]["codebase-pipelines"]
     assert (

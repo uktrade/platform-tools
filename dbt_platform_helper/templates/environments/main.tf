@@ -12,7 +12,7 @@ locals {
 }
 
 terraform {
-  required_version = "~> 1.8"
+  required_version = "{{ terraform_version }}"
   backend "s3" {
     bucket         = "terraform-platform-state-{{ config.accounts.deploy.name }}"
     key            = "tfstate/application/{{ application }}-{{ environment }}.tfstate"
@@ -24,7 +24,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5"
+      version = "{{ aws_provider_version }}"
     }
   }
 }

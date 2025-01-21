@@ -5,6 +5,8 @@ from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
+from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
+from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -129,6 +131,8 @@ class Pipelines:
                 "aws_account": aws_account,
                 "terraform_platform_modules_version": terraform_platform_modules_version,
                 "deploy_branch": deploy_branch,
+                "terraform_version": SUPPORTED_TERRAFORM_VERSION,
+                "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
             }
         )
 

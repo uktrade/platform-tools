@@ -6,6 +6,7 @@ from typing import Callable
 
 import click
 
+from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.files import FileProvider
 
@@ -85,7 +86,9 @@ class TerraformManifestProvider:
                     "dynamodb_table": f"terraform-platform-lockdb-{default_account}",
                 }
             },
-            "required_providers": {"aws": {"source": "hashicorp/aws", "version": "~> 5"}},
+            "required_providers": {
+                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
+            },
         }
 
     @staticmethod
