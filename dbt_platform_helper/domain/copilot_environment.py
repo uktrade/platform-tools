@@ -18,19 +18,6 @@ from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
-# # TODO move into CopilotEnvironment.generate method...
-# def get_cert_arn(session: boto3.Session, app_name: str, env_name: str) -> str:
-#     try:
-#         arn = find_https_certificate(session, app_name, env_name)
-#     except:
-#         click.secho(
-#             f"No certificate found with domain name matching environment {env_name}.", fg="red"
-#         )
-#         raise click.Abort
-
-#     return arn
-
-
 # TODO
 # decide on a pattern for handling session to address -
 # - cloudformation to check order of subnets
@@ -62,6 +49,7 @@ class CopilotEnvironment:
 
         self.echo(f"Using {profile_for_environment} for this AWS session")
 
+        certificate_arn = ""
         try:
             session = get_aws_session_or_abort(profile_for_environment)
             certificate_arn = get_https_certificate_for_application(
@@ -72,7 +60,7 @@ class CopilotEnvironment:
                 f"No certificate found with domain name matching environment {environment_name}.",
                 fg="red",
             )
-            click.Abort()
+            raise click.Abort
 
         copilot_environment_manifest = (
             self.copilot_templating.generate_copilot_environment_manifest(
