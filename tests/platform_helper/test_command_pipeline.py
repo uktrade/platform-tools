@@ -38,31 +38,6 @@ def test_pipeline_generate_passes_args_to_pipelines_instance(
     mock_pipeline_instance.generate.assert_called_once_with(*expected_pipeline_args)
 
 
-# TODO: May need these back for the import
-# @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-# @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value="uktrade/test-app-deploy")
-# def test_pipeline_generate_with_no_codestar_connection_exits_with_message(
-#     git_remote, mock_aws_session, fakefs
-# ):
-#     mock_codestar_connections_boto_client(mock_aws_session, [])
-#     setup_fixtures(fakefs)
-#
-#     result = CliRunner().invoke(generate)
-#
-#     assert result.exit_code == 1
-#     assert 'Error: There is no CodeStar Connection named "test-app" to use' in result.output
-#
-#
-# @patch("dbt_platform_helper.commands.pipeline.git_remote", return_value=None)
-# def test_pipeline_generate_with_no_repo_fails_with_message(git_remote, fakefs):
-#     setup_fixtures(fakefs)
-#     result = CliRunner().invoke(generate)
-#
-#     assert result.exit_code == 1
-#     assert "Error: The current directory is not a git repository" in result.output
-#
-
-
 def setup_fixtures(fakefs, pipelines_file=f"pipeline/{PLATFORM_CONFIG_FILE}"):
     fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, PLATFORM_CONFIG_FILE)
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
