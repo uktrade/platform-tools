@@ -26,7 +26,7 @@ class TestClickIOProvider:
     def test_input(self):
         mock_input = StringIO("web")
         with patch("sys.stdin", mock_input):
-            result = ClickIOProvider.input("Please select a service")
+            result = ClickIOProvider.input("Please enter a service")
             assert result == "web"
 
     @pytest.mark.parametrize(
