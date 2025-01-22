@@ -22,6 +22,12 @@ class TestClickIOProvider:
         io.info("Info.")
         assert "Info." in str(capsys.readouterr())
 
+    def test_input(self):
+        mock_input = StringIO("web")
+        with patch("sys.stdin", mock_input):
+            result = ClickIOProvider.input("Please select a service")
+            assert result == "web"
+
     @pytest.mark.parametrize(
         "input, expected",
         [
@@ -54,6 +60,12 @@ class TestClickIOProvider:
         io = ClickIOProvider()
         io.info("Info.")
         mock_echo.assert_called_once_with("Info.")
+
+    @patch("click.prompt")
+    def test_input(self, mock_prompt):
+        io = ClickIOProvider()
+        io.input("Please select a service")
+        mock_prompt.assert_called_once_with("Please select a service")
 
     @patch("click.confirm")
     def test_confirm(self, mock_confirm):

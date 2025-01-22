@@ -15,5 +15,9 @@ class ClickIOProvider:
         click.secho(message)
 
     @staticmethod
+    def input(message: str) -> str:
+        return click.prompt(message)
+
+    @staticmethod
     def confirm(message: str) -> bool:
         return click.confirm(message)
