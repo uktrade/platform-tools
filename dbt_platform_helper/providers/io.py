@@ -5,7 +5,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 class ClickIOProvider:
     def warn(self, message: str):
-        click.secho(message, fg="orange")
+        click.secho(message, fg="magenta")
 
     def error(self, message: str):
         click.secho(message, fg="red")

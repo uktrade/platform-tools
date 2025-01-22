@@ -55,7 +55,7 @@ class TestClickIOProvider:
     def test_warn_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.warn("Warning!")
-        mock_echo.assert_called_once_with("Warning!", fg="yellow")
+        mock_echo.assert_called_once_with("Warning!", fg="magenta")
 
     @patch("click.secho")
     def test_error_calls_secho_with_correct_formatting(self, mock_echo):
