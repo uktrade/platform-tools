@@ -14,127 +14,82 @@ from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.vpc import Vpc
 
-# @mock_aws
-# def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
-#     # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
-#     def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
-#         return {
-#             "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
-#             "Value": f"{','.join(subnet_ids)}",
-#         }
 
-#     def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
-#         return {
-#             "SubnetId": subnet_id,
-#             "Tags": [{"Key": "subnet_type", "Value": visibility}],
-#         }
+def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
+    # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
+    def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
+        return {
+            "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
+            "Value": f"{','.join(subnet_ids)}",
+        }
 
-#     def _non_subnet_exports(number):
-#         return [
-#             {
-#                 "Name": f"application-environment-NotASubnet",
-#                 "Value": "does-not-matter",
-#             }
-#         ] * number
-
-#     expected_public_subnet_id_1 = "subnet-1public"
-#     expected_public_subnet_id_2 = "subnet-2public"
-#     expected_private_subnet_id_1 = "subnet-1private"
-#     expected_private_subnet_id_2 = "subnet-2private"
-
-#     mock_boto3_session = MagicMock()
-
-#     # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
-#     mock_boto3_session.client("cloudformation").get_paginator(
-#         "list_exports"
-#     ).paginate.return_value = [
-#         {"Exports": _non_subnet_exports(5)},
-#         {
-#             "Exports": [
-#                 _list_exports_subnet_object(
-#                     "environment",
-#                     [
-#                         expected_public_subnet_id_1,
-#                         expected_public_subnet_id_2,
-#                     ],
-#                     "public",
-#                 ),
-#                 _list_exports_subnet_object(
-#                     "environment",
-#                     [
-#                         expected_private_subnet_id_1,
-#                         expected_private_subnet_id_2,
-#                     ],
-#                     "private",
-#                 ),
-#                 _list_exports_subnet_object(
-#                     "otherenvironment",
-#                     [expected_public_subnet_id_1],
-#                     "public",
-#                 ),
-#                 _list_exports_subnet_object(
-#                     "otherenvironment",
-#                     [expected_private_subnet_id_2],
-#                     "private",
-#                 ),
-#             ]
-#         },
-#         {"Exports": _non_subnet_exports(5)},
-#     ]
-
-#     # EC2 client should return them in an order that differs from the CloudFormation Export
-#     mock_boto3_session.client("ec2").describe_subnets.return_value = {
-#         "Subnets": [
-#             _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
-#             _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
-#             _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
-#             _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
-#         ]
-#     }
-
-#     # Act (there's a lot of setup, worth signposting where this happens)
-#     public_subnet_ids, private_subnet_ids = get_subnet_ids(
-#         mock_boto3_session, "vpc-id-does-not-matter", "environment"
-#     )
-
-#     assert public_subnet_ids == [
-#         expected_public_subnet_id_1,
-#         expected_public_subnet_id_2,
-#     ]
-#     assert private_subnet_ids == [
-#         expected_private_subnet_id_1,
-#         expected_private_subnet_id_2,
-#     ]
-
-
-def create_moto_mocked_subnet(session, vpc_id, visibility, cidr_block):
-    return session.client("ec2").create_subnet(
-        CidrBlock=cidr_block,
-        VpcId=vpc_id,
-        TagSpecifications=[
+    def _non_subnet_exports(number):
+        return [
             {
-                "ResourceType": "subnet",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": visibility},
-                ],
-            },
-        ],
-    )["Subnet"]["SubnetId"]
+                "Name": f"application-environment-NotASubnet",
+                "Value": "does-not-matter",
+            }
+        ] * number
 
+    expected_public_subnet_id_1 = "subnet-1public"
+    expected_public_subnet_id_2 = "subnet-2public"
+    expected_private_subnet_id_1 = "subnet-1private"
+    expected_private_subnet_id_2 = "subnet-2private"
 
-def create_moto_mocked_vpc(session, vpc_name):
-    vpc = session.client("ec2").create_vpc(
-        CidrBlock="10.0.0.0/16",
-        TagSpecifications=[
-            {
-                "ResourceType": "vpc",
-                "Tags": [
-                    {"Key": "Name", "Value": vpc_name},
-                ],
-            },
-        ],
-    )["Vpc"]
-    return vpc
+    subnet_exports = [
+        _list_exports_subnet_object(
+            "environment",
+            [
+                expected_public_subnet_id_1,
+                expected_public_subnet_id_2,
+            ],
+            "public",
+        ),
+        _list_exports_subnet_object(
+            "environment",
+            [
+                expected_private_subnet_id_1,
+                expected_private_subnet_id_2,
+            ],
+            "private",
+        ),
+    ]
+
+    mock_cloudformation_provider = Mock()
+    # We build up a list of exports that will be filtered through within the method being tested
+    mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = (
+        _non_subnet_exports(5) + subnet_exports
+    )
+
+    # Subnets in the vpc object are in a different order to what is returned from Cfn
+    mock_vpc = Vpc(
+        id="a-relly-cool-vpc",
+        private_subnets=[expected_private_subnet_id_2, expected_private_subnet_id_1],
+        public_subnets=[expected_public_subnet_id_2, expected_public_subnet_id_1],
+        security_groups=["i-dont-matter"],
+    )
+
+    # Copilot environment can be setup with all mocks as we only are testing the _match_subnet_id_order_to_cloudformation_exports method which needs a cfn provider.
+    copilot_environment = CopilotEnvironment(
+        config_provider=Mock(),
+        cloudformation_provider=mock_cloudformation_provider,
+        vpc_provider=Mock(),
+        copilot_templating=Mock(),
+        echo=Mock(),
+    )
+
+    mock_updated_vpc = copilot_environment._match_subnet_id_order_to_cloudformation_exports(
+        "environment", mock_vpc
+    )
+
+    assert mock_updated_vpc.public_subnets == [
+        expected_public_subnet_id_1,
+        expected_public_subnet_id_2,
+    ]
+    assert mock_updated_vpc.private_subnets == [
+        expected_private_subnet_id_1,
+        expected_private_subnet_id_2,
+    ]
 
 
 class TestCrossEnvironmentS3Templating:
@@ -516,6 +471,13 @@ class TestCopilotGenerate:
         "versions": {"terraform-platform-modules": "123456"},
     }
 
+    MOCK_VPC = Vpc(
+        id="a-really-cool-subnet",
+        private_subnets=["public-1"],
+        public_subnets=["private-1"],
+        security_groups=["group1"],
+    )
+
     @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
     @patch(
         "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
@@ -526,27 +488,32 @@ class TestCopilotGenerate:
         mock_copilot_templating = Mock()
         mock_copilot_templating.write_template.return_value = "test template written"
         mock_copilot_templating.generate_copilot_environment_manifest.return_value = "mock manifest"
-        mock_config_provider = Mock()
 
-        mock_vpc = Mock()
         mock_vpc_provider = MagicMock()
-        mock_vpc_provider.get_vpc.return_value = mock_vpc
+        mock_vpc_provider.get_vpc.return_value = self.MOCK_VPC
 
         mocked_session = MagicMock()
         mock_get_session.return_value = mocked_session
 
+        mock_config_provider = Mock()
         config = {
             "application": "test-app",
             "environments": {"test_environment": self.VALID_ENVIRONMENT_CONFIG},
         }
-
         mock_config_provider.get_enriched_config.return_value = config
 
         mock_echo = Mock()
 
+        mock_cloudformation_provider = Mock()
+        mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = [
+            {"Value": "private-1", "Name": "test_environment-PrivateSubnets"},
+            {"Value": "public-1", "Name": "test_environment-PublicSubnets"},
+        ]
+
         copilot_environment = CopilotEnvironment(
             config_provider=mock_config_provider,
             vpc_provider=mock_vpc_provider,
+            cloudformation_provider=mock_cloudformation_provider,
             copilot_templating=mock_copilot_templating,
             echo=mock_echo,
         )
@@ -554,7 +521,7 @@ class TestCopilotGenerate:
         copilot_environment.generate(environment_name="test_environment")
 
         mock_copilot_templating.generate_copilot_environment_manifest.assert_called_once_with(
-            environment_name="test_environment", vpc=mock_vpc, cert_arn="test-cert-arn"
+            environment_name="test_environment", vpc=self.MOCK_VPC, cert_arn="test-cert-arn"
         )
 
         mock_copilot_templating.write_template.assert_called_with(

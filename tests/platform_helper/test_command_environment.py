@@ -110,12 +110,18 @@ class TestMaintenancePage:
 
 class TestGenerateCopilot:
 
-    @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.environment.VpcProvider")
     @patch("dbt_platform_helper.commands.environment.ConfigProvider")
+    @patch("dbt_platform_helper.commands.environment.VpcProvider")
+    @patch("dbt_platform_helper.commands.environment.CloudFormation")
+    @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
     def test_generate_copilot_success(
-        self, mock_config_provider, mock_vpc_provider, mock_session, copilot_environment_mock
+        self,
+        copilot_environment_mock,
+        cloudformation_provider_mock,
+        mock_vpc_provider,
+        mock_config_provider,
+        mock_session,
     ):
         """Test that given a environment name, the generate command calls
         CopilotEnvironment.generate with the environment name."""
@@ -131,7 +137,10 @@ class TestGenerateCopilot:
         copilot_environment_mock.return_value.generate.assert_called_with("test")
         mock_vpc_provider.assert_called_once_with(mock_session.return_value)
         copilot_environment_mock.assert_called_once_with(
-            mock_config_provider.return_value, mock_vpc_provider.return_value
+            mock_config_provider.return_value,
+            mock_vpc_provider.return_value,
+            cloudformation_provider_mock.return_value,
+            mock_session.return_value,
         )
 
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")

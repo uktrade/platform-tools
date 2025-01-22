@@ -8,6 +8,7 @@ from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -61,10 +62,14 @@ def online(app, env):
 @click.option("--name", "-n", required=True)
 def generate(name):
     try:
+        session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
-        vpc_provider = VpcProvider(get_aws_session_or_abort())
+        vpc_provider = VpcProvider(session)
+        cloudformation_provider = CloudFormation(session.client("cloudformation"))
         # TODO - setup loadbalancer provider here too...
-        CopilotEnvironment(config_provider, vpc_provider).generate(name)
+        CopilotEnvironment(
+            config_provider, vpc_provider, cloudformation_provider, session
+        ).generate(name)
     # TODO this exception will never be caught as the config provider catches schema errors and aborts
     except SchemaError as ex:
         click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")

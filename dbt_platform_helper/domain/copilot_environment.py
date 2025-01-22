@@ -7,6 +7,7 @@ import click
 from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
 )
+from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import (
@@ -15,15 +16,12 @@ from dbt_platform_helper.providers.load_balancers import (
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
 # TODO
-# decide on a pattern for handling session to address -
-# - cloudformation to check order of subnets
-# - load balancer to get listener certs
+# New quick test i
 
 
 class CopilotEnvironment:
@@ -31,6 +29,8 @@ class CopilotEnvironment:
         self,
         config_provider: ConfigProvider,
         vpc_provider: VpcProvider = None,
+        cloudformation_provider: CloudFormation = None,
+        session=None,  # TODO - this is a temporary fix, will fall away once the Loadbalancer provider is in place.
         copilot_templating=None,
         echo: Callable[[str], str] = click.secho,
     ):
@@ -40,6 +40,8 @@ class CopilotEnvironment:
             file_provider=FileProvider(),
         )
         self.echo = echo
+        self.session = session
+        self.cloudformation_provider = cloudformation_provider
 
     def generate(self, environment_name):
 
@@ -49,25 +51,23 @@ class CopilotEnvironment:
             raise EnvironmentNotFoundException(
                 f"Error: cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
             )
+
         env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
 
         self.echo(f"Using {profile_for_environment} for this AWS session")
 
-        certificate_arn = ""
-        session = get_aws_session_or_abort(profile_for_environment)
         certificate_arn = get_https_certificate_for_application(
-            session, platform_config["application"], environment_name
+            self.session, platform_config["application"], environment_name
         )
 
-        copilot_environment_manifest = (
-            self.copilot_templating.generate_copilot_environment_manifest(
-                environment_name=environment_name,
-                vpc=self._get_environment_vpc(
-                    session, environment_name, env_config.get("vpc", None)
-                ),
-                cert_arn=certificate_arn,
-            )
+        vpc = self._get_environment_vpc(self.session, environment_name, env_config.get("vpc", None))
+
+        copilot_environment_manifest = self.copilot_templating.generate_copilot_environment_manifest(
+            environment_name=environment_name,
+            # We need to correct the subnet id order before adding it to the template. See pydoc on below method for details.
+            vpc=self._match_subnet_id_order_to_cloudformation_exports(environment_name, vpc),
+            cert_arn=certificate_arn,
         )
 
         self.echo(
@@ -86,6 +86,37 @@ class CopilotEnvironment:
 
         if not vpc:
             raise VpcNotFoundForNameException
+
+        return vpc
+
+    def _match_subnet_id_order_to_cloudformation_exports(self, environment_name, vpc):
+        """
+        Addresses an issue identified in DBTP-1524 'If the order of the subnets
+        in the environment manifest has changed, copilot env deploy tries to do
+        destructive changes.'.
+
+        Takes a Vpc object which has a private and public subnets attribute and
+        sorts them to match the order within cfn exports.
+        """
+
+        exports = self.cloudformation_provider.get_cloudformation_exports_for_environment(
+            environment_name
+        )
+
+        public_subnet_exports = []
+        private_subnet_exports = []
+
+        for export in exports:
+            if export["Name"].endswith("-PublicSubnets"):
+                public_subnet_exports = export["Value"].split(",")
+            elif export["Name"].endswith("-PrivateSubnets"):
+                private_subnet_exports = export["Value"].split(",")
+
+        # If the elements match, regardless of order, use the list from the CloudFormation exports
+        if set(vpc.public_subnets) == set(public_subnet_exports):
+            vpc.public_subnets = public_subnet_exports
+        if set(vpc.private_subnets) == set(private_subnet_exports):
+            vpc.private_subnets = private_subnet_exports
 
         return vpc
 
@@ -119,31 +150,6 @@ class CopilotTemplating:
             manifest_contents,
             overwrite=True,
         )
-
-    def _match_subnet_id_order_to_cloudformation_exports(
-        session, environment_name, public_subnets, private_subnets
-    ):
-        """Addresses an issue identified in DBTP-1524 'If the order of the
-        subnets in the environment manifest has changed, copilot env deploy
-        tries to do destructive changes.'."""
-        public_subnet_exports = []
-        private_subnet_exports = []
-
-        for page in session.client("cloudformation").get_paginator("list_exports").paginate():
-            for export in page["Exports"]:
-                if f"-{environment_name}-" in export["Name"]:
-                    if export["Name"].endswith("-PublicSubnets"):
-                        public_subnet_exports = export["Value"].split(",")
-                    if export["Name"].endswith("-PrivateSubnets"):
-                        private_subnet_exports = export["Value"].split(",")
-
-        # If the elements match, regardless of order, use the list from the CloudFormation exports
-        if set(public_subnets) == set(public_subnet_exports):
-            public_subnets = public_subnet_exports
-        if set(private_subnets) == set(private_subnet_exports):
-            private_subnets = private_subnet_exports
-
-        return public_subnets, private_subnets
 
     def generate_cross_account_s3_policies(self, environments: dict, extensions):
         resource_blocks = defaultdict(list)

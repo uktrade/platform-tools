@@ -8,7 +8,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class CloudFormation:
-    def __init__(self, cloudformation_client, iam_client, ssm_client):
+    def __init__(self, cloudformation_client, iam_client=None, ssm_client=None):
         self.cloudformation_client = cloudformation_client
         self.iam_client = iam_client
         self.ssm_client = ssm_client
@@ -124,6 +124,16 @@ class CloudFormation:
                 raise CloudFormationException(
                     stack_name, f"Error while waiting for stack status: {str(err)}"
                 )
+
+    def get_cloudformation_exports_for_environment(self, environment_name):
+        exports = []
+
+        for page in self.cloudformation_client.get_paginator("list_exports").paginate():
+            for export in page["Exports"]:
+                if f"-{environment_name}-" in export["Name"]:
+                    exports.append(export)
+
+        return exports
 
 
 class CloudFormationException(PlatformException):
