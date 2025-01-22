@@ -4,19 +4,19 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class ClickIOProvider:
-    def warn(message: str):
+    def warn(self, message: str):
         click.secho(message, fg="yellow")
 
-    def error(message: str):
+    def error(self, message: str):
         click.secho(message, fg="red")
 
-    def info(message: str):
+    def info(self, message: str):
         click.secho(message)
 
-    def input(message: str) -> str:
+    def input(self, message: str) -> str:
         return click.prompt(message)
 
-    def confirm(message: str) -> bool:
+    def confirm(self, message: str) -> bool:
         try:
             return click.confirm(message)
         except click.Abort as e:
