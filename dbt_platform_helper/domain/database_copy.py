@@ -11,6 +11,7 @@ from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import Application
@@ -189,11 +190,12 @@ class DatabaseCopy:
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:
             return True
-
-        user_input = self.io.confirm(
-            f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue?"
-        )
-        return user_input
+        try:
+            return self.io.confirm(
+                f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue?"
+            )
+        except ClickIOProviderException:
+            return False
 
     def tail_logs(self, is_dump: bool, env: str):
         action = "dump" if is_dump else "load"

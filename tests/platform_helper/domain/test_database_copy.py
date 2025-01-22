@@ -8,6 +8,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
@@ -18,7 +19,6 @@ class DataCopyMocks:
         self.application = Application(app)
         self.environment = Mock()
         self.environment.account_id = acc
-        # TODO - inject a mock config_provider object here.
         self.application.environments = {env: self.environment, "test-env-2": Mock()}
         self.load_application = Mock(return_value=self.application)
         self.client = Mock()
@@ -140,13 +140,12 @@ def test_database_dump():
     mock_run_database_copy_task.assert_called_once_with(
         mocks.environment.session, env, mocks.vpc, True, "test-db-connection-string", None
     )
-    mocks.input.assert_not_called()
-    mocks.echo.assert_has_calls(
+    mocks.io.confirm.assert_not_called()
+    mocks.io.info.assert_has_calls(
         [
-            call("Dumping test-db from the test-env environment into S3", fg="white", bold=True),
+            call("Dumping test-db from the test-env environment into S3"),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="white",
             ),
         ]
     )
@@ -185,20 +184,17 @@ def test_database_load_with_response_of_yes():
         mocks.environment.session, env, mocks.vpc, False, "test-db-connection-string", None
     )
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call(
                 "Loading data into test-db in the test-env environment from S3",
-                fg="white",
-                bold=True,
             ),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="white",
             ),
         ]
     )
@@ -208,7 +204,7 @@ def test_database_load_with_response_of_yes():
 
 def test_database_load_with_response_of_no():
     mocks = DataCopyMocks()
-    mocks.input = Mock(return_value="no")
+    mocks.io.confirm.return_value = False
 
     mock_run_database_copy_task = Mock()
 
@@ -227,10 +223,10 @@ def test_database_load_with_response_of_no():
 
     mock_run_database_copy_task.assert_not_called()
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
-    mocks.echo.assert_not_called()
+    mocks.io.info.assert_not_called()
     db_copy.tail_logs.assert_not_called()
 
 
@@ -324,28 +320,40 @@ def test_database_copy_initialization_handles_app_name_errors():
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
 def test_is_confirmed_ready_to_load(user_response):
     mocks = DataCopyMocks()
-    mocks.input.return_value = user_response
+    mocks.io.confirm.return_value = user_response
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
 
-@pytest.mark.parametrize("user_response", ["n", "N", " no ", "squiggly"])
-def test_is_not_confirmed_ready_to_load(user_response):
+def test_is_not_confirmed_ready_to_load():
     mocks = DataCopyMocks()
-    mocks.input.return_value = user_response
+    mocks.io.confirm.return_value = False
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
+    )
+
+
+def test_is_not_confirmed_if_invalid_user_input_type():
+    mocks = DataCopyMocks()
+    mocks.io.confirm.side_effect = ClickIOProviderException()
+
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    assert not db_copy.is_confirmed_ready_to_load("test-env")
+
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
 
@@ -356,7 +364,7 @@ def test_is_confirmed_ready_to_load_with_yes_flag():
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_not_called()
+    mocks.io.confirm.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -445,12 +453,15 @@ def test_tail_logs(is_dump):
         ],
     )
 
-    mocks.echo.assert_has_calls(
+    mocks.io.warn.assert_has_calls(
         [
             call(
                 f"Tailing /ecs/test-app-test-env-test-db-{action} logs",
-                fg="yellow",
-            ),
+            )
+        ]
+    )
+    mocks.io.info.assert_has_calls(
+        [
             call(f"Starting data {action}"),
             call("A load of SQL shenanigans"),
             call(f"Stopping data {action}"),
