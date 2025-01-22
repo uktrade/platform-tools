@@ -18,7 +18,6 @@ class PlatformConfigSchema:
                 "application": str,
                 Optional("legacy_project", default=False): bool,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
-                Optional("accounts"): Or([str], [int]),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
