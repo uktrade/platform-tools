@@ -40,9 +40,7 @@ class CodebaseMocks:
     def __init__(self, **kwargs):
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
-        self.input = kwargs.get("input", Mock(return_value="yes"))
-        self.echo = kwargs.get("echo", Mock())
-        self.confirm = kwargs.get("confirm", Mock(return_value=True))
+        self.io = kwargs.get("io", Mock())
         self.check_codebase_exists = kwargs.get(
             "check_codebase_exists",
             Mock(
@@ -65,9 +63,7 @@ class CodebaseMocks:
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
             "check_codebase_exists": self.check_codebase_exists,
             "check_image_exists": self.check_image_exists,
-            "input": self.input,
-            "echo": self.echo,
-            "confirm": self.confirm,
+            "io": self.io,
             "run_subprocess": self.run_subprocess,
             "check_if_commit_exists": self.check_if_commit_exists,
         }
@@ -113,7 +109,7 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
 
     compare_directories = filecmp.dircmp(str(expected_files_dir), str(copilot_dir))
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call(
                 "File .copilot/image_build_run.sh created",
@@ -202,7 +198,8 @@ def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path)
 
 
 def test_codebase_build_does_not_trigger_deployment_without_confirmation():
-    mocks = CodebaseMocks(confirm=Mock(return_value=False))
+    mocks = CodebaseMocks()
+    mocks.io.confirm.return_value = False
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameter.return_value = {
@@ -216,7 +213,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
 
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
     mocks = CodebaseMocks()
-    mocks.confirm.return_value = True
+    mocks.io.confirm.return_value = True
     mock_application.environments = {
         "development": Environment(
             name="development",
@@ -250,7 +247,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         ],
     )
 
-    mocks.confirm.assert_has_calls(
+    mocks.io.confirm.assert_has_calls(
         [
             call(
                 'You are about to deploy "test-application" for "application" with commit '
@@ -259,7 +256,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         ]
     )
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call(
                 "Your deployment has been triggered. Check your build progress in the AWS Console: "
@@ -339,7 +336,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 def test_codebase_deploy_does_not_trigger_build_without_confirmation():
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
-    mocks.confirm.return_value = False
+    mocks.io.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
     client.get_parameter.return_value = {
@@ -356,7 +353,7 @@ def test_codebase_deploy_does_not_trigger_build_without_confirmation():
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-    mocks.confirm.assert_has_calls(
+    mocks.io.confirm.assert_has_calls(
         [
             call(
                 'You are about to deploy "test-application" for "application" with commit '
@@ -389,7 +386,8 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
 
 
 def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
-    mocks = CodebaseMocks(confirm=Mock(return_value=False))
+    mocks = CodebaseMocks()
+    mocks.io.confirm.return_value = False
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.get_parameter.return_value = {
@@ -422,7 +420,7 @@ def test_codebase_list_returns_empty_when_no_codebases():
     codebase = Codebase(**mocks.params())
     codebase.list("test-application", True)
 
-    mocks.echo.assert_has_calls([])
+    mocks.io.info.assert_has_calls([])
 
 
 def test_lists_codebases_with_multiple_pages_of_images():
@@ -463,7 +461,7 @@ def test_lists_codebases_with_multiple_pages_of_images():
     ]
     codebase.list("test-application", True)
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call("- application (https://github.com/uktrade/example)"),
             call(
@@ -520,7 +518,7 @@ def test_lists_codebases_with_disordered_images_in_chronological_order():
     ]
     codebase.list("test-application", True)
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call("The following codebases are available:"),
             call("- application (https://github.com/uktrade/example)"),
@@ -574,7 +572,7 @@ def test_lists_codebases_with_images_successfully():
 
     codebase.list("test-application", True)
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call("The following codebases are available:"),
             call("- application (https://github.com/uktrade/example)"),
