@@ -26,7 +26,7 @@ class TestClickIOProvider:
     def test_input(self):
         mock_input = StringIO("web")
         with patch("sys.stdin", mock_input):
-            result = ClickIOProvider.input("Please enter a service")
+            result = ClickIOProvider().input("Please enter a service")
             assert result == "web"
 
     @pytest.mark.parametrize(
@@ -41,14 +41,14 @@ class TestClickIOProvider:
     def test_confirm_with_various_valid_user_input(self, input, expected):
         mock_input = StringIO(input)
         with patch("sys.stdin", mock_input):
-            result = ClickIOProvider.confirm("Is that really your name?")
+            result = ClickIOProvider().confirm("Is that really your name?")
             assert result == expected
 
     def test_confirm_throws_abort_error_when_invalid_input(self):
         mock_input = StringIO("maybe")
         with patch("sys.stdin", mock_input):
             with pytest.raises(ClickIOProviderException) as e:
-                ClickIOProvider.confirm("Is that really your name?")
+                ClickIOProvider().confirm("Is that really your name?")
             assert str(e.value) == "Is that really your name? [y/N]: Error: invalid input"
 
     @patch("click.secho")
