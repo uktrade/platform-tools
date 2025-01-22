@@ -27,7 +27,7 @@ from dbt_platform_helper.utils.template import setup_templates
 class Codebase:
     def __init__(
         self,
-        io: ClickIOProvider = ClickIOProvider,
+        io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
         check_codebase_exists: Callable[[str], str] = check_codebase_exists,

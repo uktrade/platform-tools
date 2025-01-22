@@ -16,7 +16,7 @@ class Conduit:
         secrets_provider: Secrets,
         cloudformation_provider: CloudFormation,
         ecs_provider: ECS,
-        io: ClickIOProvider = ClickIOProvider,
+        io: ClickIOProvider = ClickIOProvider(),
         subprocess: subprocess = subprocess,
         connect_to_addon_client_task=connect_to_addon_client_task,
         create_addon_client_task=create_addon_client_task,
