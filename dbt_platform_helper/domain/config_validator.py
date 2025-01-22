@@ -1,11 +1,11 @@
 from typing import Callable
 
 import boto3
-import click
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
 from dbt_platform_helper.utils.messages import abort_with_error
@@ -13,7 +13,9 @@ from dbt_platform_helper.utils.messages import abort_with_error
 
 class ConfigValidator:
 
-    def __init__(self, validations: Callable[[dict], None] = None):
+    def __init__(
+        self, validations: Callable[[dict], None] = None, io: ClickIOProvider = ClickIOProvider()
+    ):
         self.validations = validations or [
             self.validate_supported_redis_versions,
             self.validate_supported_opensearch_versions,
@@ -22,6 +24,7 @@ class ConfigValidator:
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
         ]
+        self.io = io
 
     def run_validations(self, config: dict):
         for validation in self.validations:
@@ -48,9 +51,8 @@ class ConfigValidator:
             environments = extension.get("environments", {})
 
             if not isinstance(environments, dict):
-                click.secho(
+                self.io.error(
                     f"Error: {extension_type} extension definition is invalid type, expected dictionary",
-                    fg="red",
                 )
                 continue
             for environment, env_config in environments.items():
@@ -64,9 +66,8 @@ class ConfigValidator:
                     )
 
         for version_failure in extensions_with_invalid_version:
-            click.secho(
+            self.io.error(
                 f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
-                fg="red",
             )
 
     def validate_supported_redis_versions(self, config):
