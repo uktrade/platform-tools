@@ -13,10 +13,12 @@ from dbt_platform_helper.platform_exception import PlatformException
 class TestMaintenancePage:
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
-    def test_online_success(self, mock_maintenance_page):
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_online_success(self, load_application, mock_maintenance_page, mock_application):
         """Test that given a app name and a environment, the maintenenace page
         deactivate() method is called with the given app and environment."""
 
+        load_application.return_value = mock_application
         mock_maintenance_page_instance = mock_maintenance_page.return_value
 
         result = CliRunner().invoke(
@@ -25,15 +27,20 @@ class TestMaintenancePage:
         )
 
         assert result.exit_code == 0
-        mock_maintenance_page_instance.deactivate.assert_called_with("test-app", "test-env")
+        mock_maintenance_page.assert_called_with(mock_application)
+        mock_maintenance_page_instance.deactivate.assert_called_with("test-env")
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
     @patch("click.secho")
-    def test_online_failure(self, mock_click, mock_maintenance_page):
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_online_failure(
+        self, load_application, mock_click, mock_maintenance_page, mock_application
+    ):
         """Test that given a app name and a environment, and the online() raises
         a PlatformException, the error is caught and the error message is
         returned."""
 
+        load_application.return_value = mock_application
         mock_maintenance_page_instance = mock_maintenance_page.return_value
         mock_maintenance_page_instance.deactivate.side_effect = PlatformException("i've failed")
 
@@ -44,14 +51,17 @@ class TestMaintenancePage:
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""i've failed""", fg="red")
-        mock_maintenance_page_instance.deactivate.assert_called_with("test-app", "test-env")
+        mock_maintenance_page.assert_called_with(mock_application)
+        mock_maintenance_page_instance.deactivate.assert_called_with("test-env")
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
-    def test_offline_success(self, mock_maintenance_page):
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_offline_success(self, load_application, mock_maintenance_page, mock_application):
         """Test that given a app name, environment, service name, page template
         and vpc, the maintenenace page activate() method is called with the
         given parameters."""
 
+        load_application.return_value = mock_application
         mock_maintenance_page_instance = mock_maintenance_page.return_value
 
         result = CliRunner().invoke(
@@ -71,17 +81,21 @@ class TestMaintenancePage:
         )
 
         assert result.exit_code == 0
+        mock_maintenance_page.assert_called_with(mock_application)
         mock_maintenance_page_instance.activate.assert_called_with(
-            "test-app", "test-env", ("test-svc",), "default", "test-vpc"
+            "test-env", ("test-svc",), "default", "test-vpc"
         )
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
     @patch("click.secho")
-    def test_offline_failure(self, mock_click, mock_maintenance_page):
+    @patch("dbt_platform_helper.commands.environment.load_application")
+    def test_offline_failure(
+        self, load_application, mock_click, mock_maintenance_page, mock_application
+    ):
         """Test that given a app name, environment, service name, page template
         and vpc, and the offline() method raises a PlatformException, the error
         is caught and the error message is returned."""
-
+        load_application.return_value = mock_application
         mock_maintenance_page_instance = mock_maintenance_page.return_value
         mock_maintenance_page_instance.activate.side_effect = PlatformException("i've failed")
 
@@ -103,8 +117,9 @@ class TestMaintenancePage:
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""i've failed""", fg="red")
+        mock_maintenance_page.assert_called_with(mock_application)
         mock_maintenance_page_instance.activate.assert_called_with(
-            "test-app", "test-env", ("test-svc",), "default", "test-vpc"
+            "test-env", ("test-svc",), "default", "test-vpc"
         )
 
 

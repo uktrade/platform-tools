@@ -20,7 +20,6 @@ from dbt_platform_helper.providers.load_balancers import (
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
-from dbt_platform_helper.utils.application import load_application
 
 
 class MaintenancePageException(PlatformException):
@@ -28,162 +27,11 @@ class MaintenancePageException(PlatformException):
 
 
 class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
-    pass
+    def __init__(self, application_name):
+        super().__init__(f"No services deployed yet to {application_name} ")
 
 
-class MaintenancePage:
-    def __init__(
-        self,
-        user_prompt_callback: Callable[[str], bool] = click.confirm,
-        echo: Callable[[str], str] = click.secho,
-    ):
-        self.user_prompt_callback = user_prompt_callback
-        self.echo = echo
-
-    def _get_deployed_load_balanced_web_services(self, app: Application, svc: str):
-        if "*" in svc:
-            services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
-        else:
-            all_services = [get_app_service(app.name, s) for s in list(svc)]
-            services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
-        if not services:
-            raise LoadBalancedWebServiceNotFoundException
-        return services
-
-    def activate(self, app, env, svc, template, vpc):
-        try:
-            services = self._get_deployed_load_balanced_web_services(load_application(app), svc)
-        except LoadBalancedWebServiceNotFoundException:
-            # TODO DBTP-1643 - this bit of logic does not depend on env, so env shouldn't really be in the exception
-            # message
-            # Exception should be propagated to command and caught there.
-            self.echo(f"No services deployed yet to {app} environment {env}", fg="red")
-            raise click.Abort
-
-        application_environment = get_app_environment(app, env)
-        try:
-            https_listener = get_https_listener_for_application(
-                application_environment.session, app, env
-            )
-            current_maintenance_page = get_maintenance_page(
-                application_environment.session, https_listener
-            )
-            remove_current_maintenance_page = False
-            if current_maintenance_page:
-                remove_current_maintenance_page = self.user_prompt_callback(
-                    f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
-                    f"environment in {app}.\nWould you like to replace it with a '{template}' "
-                    f"maintenance page?"
-                )
-                if not remove_current_maintenance_page:
-                    raise click.Abort
-
-            if remove_current_maintenance_page or self.user_prompt_callback(
-                f"You are about to enable the '{template}' maintenance page for the {env} "
-                f"environment in {app}.\nWould you like to continue?"
-            ):
-                if current_maintenance_page and remove_current_maintenance_page:
-                    remove_maintenance_page(application_environment.session, https_listener)
-
-                allowed_ips = get_env_ips(vpc, application_environment)
-
-                add_maintenance_page(
-                    application_environment.session,
-                    https_listener,
-                    app,
-                    env,
-                    services,
-                    allowed_ips,
-                    template,
-                )
-                self.echo(
-                    f"Maintenance page '{template}' added for environment {env} in application {app}",
-                    fg="green",
-                )
-            else:
-                raise click.Abort
-
-        except LoadBalancerNotFoundException:
-            self.echo(
-                f"No load balancer found for environment {env} in the application {app}.", fg="red"
-            )
-            raise click.Abort
-
-        except ListenerNotFoundException:
-            self.echo(
-                f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
-            )
-            raise click.Abort
-
-    def deactivate(self, app, env):
-        application_environment = get_app_environment(app, env)
-
-        try:
-            https_listener = get_https_listener_for_application(
-                application_environment.session, app, env
-            )
-            current_maintenance_page = get_maintenance_page(
-                application_environment.session, https_listener
-            )
-            if not current_maintenance_page:
-                self.echo("There is no current maintenance page to remove", fg="red")
-                raise click.Abort
-
-            if not self.user_prompt_callback(
-                f"There is currently a '{current_maintenance_page}' maintenance page, "
-                f"would you like to remove it?"
-            ):
-                raise click.Abort
-
-            remove_maintenance_page(application_environment.session, https_listener)
-            self.echo(
-                f"Maintenance page removed from environment {env} in application {app}", fg="green"
-            )
-
-        except LoadBalancerNotFoundException:
-            self.echo(
-                f"No load balancer found for environment {env} in the application {app}.", fg="red"
-            )
-            raise click.Abort
-
-        except ListenerNotFoundException:
-            self.echo(
-                f"No HTTPS listener found for environment {env} in the application {app}.", fg="red"
-            )
-            raise click.Abort
-
-
-def get_app_service(app_name: str, svc_name: str) -> Service:
-    application = load_application(app_name)
-    application_service = application.services.get(svc_name)
-
-    if not application_service:
-        click.secho(
-            f"The service {svc_name} was not found in the application {app_name}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
-        )
-        raise click.Abort
-
-    return application_service
-
-
-def get_app_environment(app_name: str, env_name: str) -> Environment:
-    application = load_application(app_name)
-    application_environment = application.environments.get(env_name)
-
-    if not application_environment:
-        click.secho(
-            f"The environment {env_name} was not found in the application {app_name}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
-        )
-        raise click.Abort
-
-    return application_environment
-
-
-def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str, None]:
+def get_maintenance_page_type(session: boto3.Session, listener_arn: str) -> Union[str, None]:
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -198,45 +46,18 @@ def get_maintenance_page(session: boto3.Session, listener_arn: str) -> Union[str
     return maintenance_page_type
 
 
-def remove_maintenance_page(session: boto3.Session, listener_arn: str):
-    lb_client = session.client("elbv2")
+def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
+    account_name = f"{application_environment.session.profile_name}-vpc"
+    vpc_name = vpc if vpc else account_name
+    ssm_client = application_environment.session.client("ssm")
 
-    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
-        "TagDescriptions"
-    ]
+    try:
+        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/EGRESS_IPS")["Parameter"]["Value"]
+    except ssm_client.exceptions.ParameterNotFound:
+        click.secho(f"No parameter found with name: /{vpc_name}/EGRESS_IPS")
+        raise click.Abort
 
-    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
-        deleted = delete_listener_rule(tag_descriptions, name, lb_client)
-
-        if name == "MaintenancePage" and not deleted:
-            raise ListenerRuleNotFoundException()
-
-
-def get_rules_tag_descriptions(rules: list, lb_client):
-    tag_descriptions = []
-    chunk_size = 20
-
-    for i in range(0, len(rules), chunk_size):
-        chunk = rules[i : i + chunk_size]
-        resource_arns = [r["RuleArn"] for r in chunk]
-        response = lb_client.describe_tags(ResourceArns=resource_arns)
-        tag_descriptions.extend(response["TagDescriptions"])
-
-    return tag_descriptions
-
-
-def delete_listener_rule(tag_descriptions: list, tag_name: str, lb_client: boto3.client):
-    current_rule_arn = None
-
-    for description in tag_descriptions:
-        tags = {t["Key"]: t["Value"] for t in description["Tags"]}
-        if tags.get("name") == tag_name:
-            current_rule_arn = description["ResourceArn"]
-            if current_rule_arn:
-                lb_client.delete_rule(RuleArn=current_rule_arn)
-
-    return current_rule_arn
+    return [ip.strip() for ip in param_value.split(",")]
 
 
 def add_maintenance_page(
@@ -319,6 +140,220 @@ def add_maintenance_page(
             {"Key": "type", "Value": template},
         ],
     )
+
+
+def remove_maintenance_page(session: boto3.Session, listener_arn: str):
+    lb_client = session.client("elbv2")
+
+    rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+    tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
+
+    for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
+        deleted = delete_listener_rule(tag_descriptions, name, lb_client)
+
+        if name == "MaintenancePage" and not deleted:
+            raise ListenerRuleNotFoundException()
+
+
+class MaintenancePage:
+    def __init__(
+        self,
+        application: Application,
+        user_prompt_callback: Callable[[str], bool] = click.confirm,
+        echo: Callable[[str], str] = click.secho,
+        get_https_listener_for_application: Callable[
+            [boto3.Session, str, str], str
+        ] = get_https_listener_for_application,
+        # TODO refactor get_maintenance_page_type, add_maintenance_page, remove_maintenance_page into MaintenancePage class with LoadBalancerProvider as the dependency
+        get_maintenance_page_type: Callable[
+            [boto3.Session, str], Union[str, None]
+        ] = get_maintenance_page_type,
+        get_env_ips: Callable[[str, Environment], List[str]] = get_env_ips,
+        add_maintenance_page: Callable[
+            [boto3.Session, str, str, str, List[Service], tuple, str], None
+        ] = add_maintenance_page,
+        remove_maintenance_page: Callable[[boto3.Session, str], None] = remove_maintenance_page,
+    ):
+        self.application = application
+        self.user_prompt_callback = user_prompt_callback
+        self.echo = echo
+        self.get_https_listener_for_application = get_https_listener_for_application
+        self.get_maintenance_page_type = get_maintenance_page_type
+        self.get_env_ips = get_env_ips
+        self.add_maintenance_page = add_maintenance_page
+        self.remove_maintenance_page = remove_maintenance_page
+
+    def _get_deployed_load_balanced_web_services(self, app: Application, svc: List[str]):
+        if "*" in svc:
+            services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
+        else:
+            all_services = [get_app_service(app, s) for s in list(svc)]
+            services = [s for s in all_services if s.kind == "Load Balanced Web Service"]
+        if not services:
+            raise LoadBalancedWebServiceNotFoundException(app.name)
+        return services
+
+    def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
+
+        services = self._get_deployed_load_balanced_web_services(self.application, services)
+
+        application_environment = get_app_environment(self.application, env)
+        try:
+            https_listener = self.get_https_listener_for_application(
+                application_environment.session, self.application.name, env
+            )
+            current_maintenance_page = self.get_maintenance_page_type(
+                application_environment.session, https_listener
+            )
+            remove_current_maintenance_page = False
+            if current_maintenance_page:
+                remove_current_maintenance_page = self.user_prompt_callback(
+                    f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
+                    f"environment in {self.application.name}.\nWould you like to replace it with a '{template}' "
+                    f"maintenance page?"
+                )
+                if not remove_current_maintenance_page:
+                    return
+
+            if remove_current_maintenance_page or self.user_prompt_callback(
+                f"You are about to enable the '{template}' maintenance page for the {env} "
+                f"environment in {self.application.name}.\nWould you like to continue?"
+            ):
+                if current_maintenance_page and remove_current_maintenance_page:
+                    self.remove_maintenance_page(application_environment.session, https_listener)
+
+                allowed_ips = self.get_env_ips(vpc, application_environment)
+
+                self.add_maintenance_page(
+                    application_environment.session,
+                    https_listener,
+                    self.application.name,
+                    env,
+                    services,
+                    allowed_ips,
+                    template,
+                )
+                self.echo(
+                    f"Maintenance page '{template}' added for environment {env} in application {self.application.name}",
+                    fg="green",
+                )
+
+        except LoadBalancerNotFoundException:
+            # TODO push exception to command layer
+            self.echo(
+                f"No load balancer found for environment {env} in the application {self.application.name}.",
+                fg="red",
+            )
+            raise click.Abort
+
+        except ListenerNotFoundException:
+            # TODO push exception to command layer
+            self.echo(
+                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
+                fg="red",
+            )
+            raise click.Abort
+
+        return
+
+    def deactivate(self, env: str):
+        application_environment = get_app_environment(self.application, env)
+
+        try:
+            https_listener = self.get_https_listener_for_application(
+                application_environment.session, self.application.name, env
+            )
+            current_maintenance_page = self.get_maintenance_page_type(
+                application_environment.session, https_listener
+            )
+
+            # TODO discuss, reduce number of return statements but more nested if statements
+            if not current_maintenance_page:
+                self.echo("There is no current maintenance page to remove", fg="yellow")
+                return
+
+            if not self.user_prompt_callback(
+                f"There is currently a '{current_maintenance_page}' maintenance page, "
+                f"would you like to remove it?"
+            ):
+                return
+
+            self.remove_maintenance_page(application_environment.session, https_listener)
+            self.echo(
+                f"Maintenance page removed from environment {env} in application {self.application.name}",
+                fg="green",
+            )
+
+        except LoadBalancerNotFoundException:
+            # TODO push exception to command layer
+            self.echo(
+                f"No load balancer found for environment {env} in the application {self.application.name}.",
+                fg="red",
+            )
+            raise click.Abort
+
+        except ListenerNotFoundException:
+            # TODO push exception to command layer
+            self.echo(
+                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
+                fg="red",
+            )
+            raise click.Abort
+
+
+def get_app_service(application: Application, svc_name: str) -> Service:
+    application_service = application.services.get(svc_name)
+
+    if not application_service:
+        # TODO raise exception instead of abort
+        click.secho(
+            f"The service {svc_name} was not found in the application {application.name}. "
+            f"It either does not exist, or has not been deployed.",
+            fg="red",
+        )
+        raise click.Abort
+
+    return application_service
+
+
+def get_app_environment(application: Application, env_name: str) -> Environment:
+    application_environment = application.environments.get(env_name)
+
+    if not application_environment:
+        click.secho(
+            f"The environment {env_name} was not found in the application {application.name}. "
+            f"It either does not exist, or has not been deployed.",
+            fg="red",
+        )
+        raise click.Abort
+
+    return application_environment
+
+
+def get_rules_tag_descriptions(rules: list, lb_client):
+    tag_descriptions = []
+    chunk_size = 20
+
+    for i in range(0, len(rules), chunk_size):
+        chunk = rules[i : i + chunk_size]
+        resource_arns = [r["RuleArn"] for r in chunk]
+        response = lb_client.describe_tags(ResourceArns=resource_arns)
+        tag_descriptions.extend(response["TagDescriptions"])
+
+    return tag_descriptions
+
+
+def delete_listener_rule(tag_descriptions: list, tag_name: str, lb_client: boto3.client):
+    current_rule_arn = None
+
+    for description in tag_descriptions:
+        tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+        if tags.get("name") == tag_name:
+            current_rule_arn = description["ResourceArn"]
+            if current_rule_arn:
+                lb_client.delete_rule(RuleArn=current_rule_arn)
+
+    return current_rule_arn
 
 
 def get_maintenance_page_template(template) -> str:
@@ -478,17 +513,3 @@ def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group
     ]
 
     return conditions
-
-
-def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
-    account_name = f"{application_environment.session.profile_name}-vpc"
-    vpc_name = vpc if vpc else account_name
-    ssm_client = application_environment.session.client("ssm")
-
-    try:
-        param_value = ssm_client.get_parameter(Name=f"/{vpc_name}/EGRESS_IPS")["Parameter"]["Value"]
-    except ssm_client.exceptions.ParameterNotFound:
-        click.secho(f"No parameter found with name: /{vpc_name}/EGRESS_IPS")
-        raise click.Abort
-
-    return [ip.strip() for ip in param_value.split(",")]

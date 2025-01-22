@@ -11,6 +11,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.vpc import VpcProvider
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
@@ -39,8 +40,10 @@ def environment():
 @click.option("--vpc", type=str)
 def offline(app, env, svc, template, vpc):
     """Take load-balanced web services offline with a maintenance page."""
+
     try:
-        MaintenancePage().activate(app, env, svc, template, vpc)
+        application = load_application(app)
+        MaintenancePage(application).activate(env, svc, template, vpc)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
@@ -51,8 +54,10 @@ def offline(app, env, svc, template, vpc):
 @click.option("--env", type=str, required=True)
 def online(app, env):
     """Remove a maintenance page from an environment."""
+
     try:
-        MaintenancePage().deactivate(app, env)
+        application = load_application(app)
+        MaintenancePage(application).deactivate(env)
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort

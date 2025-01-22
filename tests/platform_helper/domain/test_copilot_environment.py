@@ -432,10 +432,7 @@ class TestCopilotTemplating:
         "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
         return_value="arn:aws:acm:test",
     )
-    @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
-    def test_copilot_templating_generate_generates_expected_manifest(
-        self, mock_get_cert_arn, mock_get_session
-    ):
+    def test_copilot_templating_generate_generates_expected_manifest(self, mock_get_cert_arn):
         mock_file_provider = Mock()
         mock_file_provider.mkfile.return_value = "im a file provider!"
 
@@ -445,9 +442,6 @@ class TestCopilotTemplating:
             private_subnets=["a-private-subnet"],
             security_groups=["a-security-group"],
         )
-
-        mocked_session = MagicMock()
-        mock_get_session.return_value = mocked_session
 
         copilot_templating = CopilotTemplating(mock_file_provider)
 
@@ -478,12 +472,12 @@ class TestCopilotGenerate:
         security_groups=["group1"],
     )
 
-    @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
+    # TODO - temporary patch, will fall away once loadbalancer lives in a class and it can be injected and mocked approriatley.
     @patch(
         "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
         return_value="test-cert-arn",
     )
-    def test_generate_success(self, mock_get_certificate, mock_get_session):
+    def test_generate_success(self, mock_get_certificate):
 
         mock_copilot_templating = Mock()
         mock_copilot_templating.write_template.return_value = "test template written"
@@ -491,9 +485,6 @@ class TestCopilotGenerate:
 
         mock_vpc_provider = MagicMock()
         mock_vpc_provider.get_vpc.return_value = self.MOCK_VPC
-
-        mocked_session = MagicMock()
-        mock_get_session.return_value = mocked_session
 
         mock_config_provider = Mock()
         config = {

@@ -20,9 +20,6 @@ from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
-# TODO
-# New quick test i
-
 
 class CopilotEnvironment:
     def __init__(
