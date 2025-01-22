@@ -1,21 +1,7 @@
 import click
 
 
-class IOProvider:
-    @staticmethod
-    def warn(message: str):
-        pass
-
-    @staticmethod
-    def error(message: str):
-        pass
-
-    @staticmethod
-    def confirm(message: str) -> bool:
-        pass
-
-
-class ClickIOProvider(IOProvider):
+class ClickIOProvider:
     @staticmethod
     def warn(message: str):
         click.secho(message, fg="yellow")
