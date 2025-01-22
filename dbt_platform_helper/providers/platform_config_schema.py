@@ -16,7 +16,6 @@ class PlatformConfigSchema:
             {
                 # The following line is for the AWS Copilot version, will be removed under DBTP-1002
                 "application": str,
-                Optional("legacy_project", default=False): bool,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),

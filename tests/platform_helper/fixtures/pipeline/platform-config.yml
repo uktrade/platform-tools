@@ -1,5 +1,4 @@
 application: test-app
-legacy_project: true
 
 environments:
   dev:
