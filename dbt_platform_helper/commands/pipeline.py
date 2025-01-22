@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
