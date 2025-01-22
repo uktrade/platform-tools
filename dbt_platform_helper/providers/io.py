@@ -1,5 +1,7 @@
 import click
 
+from dbt_platform_helper.platform_exception import PlatformException
+
 
 class ClickIOProvider:
     @staticmethod
@@ -20,4 +22,11 @@ class ClickIOProvider:
 
     @staticmethod
     def confirm(message: str) -> bool:
-        return click.confirm(message)
+        try:
+            return click.confirm(message)
+        except click.Abort as e:
+            raise ClickIOProviderException(message + " [y/N]: Error: invalid input")
+
+
+class ClickIOProviderException(PlatformException):
+    pass
