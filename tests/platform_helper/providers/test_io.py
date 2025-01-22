@@ -17,6 +17,11 @@ class TestClickIOProvider:
         io.error("Error!")
         assert "Error!" in str(capsys.readouterr())
 
+    def test_info_stdout(self, capsys):
+        io = ClickIOProvider()
+        io.info("Info.")
+        assert "Info." in str(capsys.readouterr())
+
     @pytest.mark.parametrize(
         "input, expected",
         [
@@ -33,16 +38,22 @@ class TestClickIOProvider:
             assert result == expected
 
     @patch("click.secho")
+    def test_warn_calls_secho_with_correct_formatting(self, mock_echo):
+        io = ClickIOProvider()
+        io.warn("Warning!")
+        mock_echo.assert_called_once_with("Warning!", fg="yellow")
+
+    @patch("click.secho")
     def test_error_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.error("Error!")
         mock_echo.assert_called_once_with("Error!", fg="red")
 
     @patch("click.secho")
-    def test_warn_calls_secho_with_correct_formatting(self, mock_echo):
+    def test_info_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
-        io.warn("Warning!")
-        mock_echo.assert_called_once_with("Warning!", fg="yellow")
+        io.info("Info.")
+        mock_echo.assert_called_once_with("Info.")
 
     @patch("click.confirm")
     def test_confirm(self, mock_confirm):
