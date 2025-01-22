@@ -104,8 +104,8 @@ class TerraformManifestProvider:
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
                 "pipelines": "${each.value.pipelines}",
                 "services": "${each.value.services}",
-                "requires_image_build": "${each.value.requires_image_build}",
-                "slack_channel": "${each.value.slack_channel}",
+                "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
+                "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_channel_id")}',
                 "env_config": "${local.environments}",
             }
         }

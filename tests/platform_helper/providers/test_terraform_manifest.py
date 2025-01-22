@@ -77,8 +77,11 @@ def test_generate_codebase_pipeline_config_creates_file(codebase_pipeline_config
     )
     assert module["pipelines"] == "${each.value.pipelines}"
     assert module["services"] == "${each.value.services}"
-    assert module["requires_image_build"] == "${each.value.requires_image_build}"
-    assert module["slack_channel"] == "${each.value.slack_channel}"
+    assert module["requires_image_build"] == '${lookup(each.value, "requires_image_build", true)}'
+    assert (
+        module["slack_channel"]
+        == '${lookup(each.value, "slack_channel", "/codebuild/slack_channel_id")}'
+    )
     assert module["env_config"] == "${local.environments}"
 
 
