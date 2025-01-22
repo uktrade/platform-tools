@@ -42,6 +42,7 @@ class TestClickIOProvider:
             ("n", False),
             ("yes", True),
             ("no", False),
+            ("   Y   ", True),
         ],
     )
     def test_confirm_with_various_valid_user_input(self, input, expected):

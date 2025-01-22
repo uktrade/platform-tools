@@ -37,9 +37,10 @@ class DataCopyMocks:
         self.maintenance_page_instance.deactivate.return_value = None
         self.maintenance_page = Mock(return_value=self.maintenance_page_instance)
 
-        self.input = Mock(return_value="yes")
-        self.echo = Mock()
-        self.abort = Mock(side_effect=SystemExit(1))
+        self.io = Mock()
+        self.io.confirm = Mock(return_value="yes")
+        self.io.abort_with_error = Mock(side_effect=SystemExit(1))
+
         self.config_provider = kwargs.get("config_provider", Mock())
 
     def params(self):
@@ -48,9 +49,7 @@ class DataCopyMocks:
             "vpc_provider": self.vpc_provider,
             "db_connection_string": self.db_connection_string,
             "maintenance_page": self.maintenance_page,
-            "input": self.input,
-            "echo": self.echo,
-            "abort": self.abort,
+            "io": self.io,
             "config_provider": self.config_provider,
         }
 
@@ -252,7 +251,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
 
     assert exc.value.code == 1
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.abort.assert_called_once_with("A VPC error occurred")
+    mocks.io.abort_with_error.assert_called_once_with("A VPC error occurred")
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -269,7 +268,9 @@ def test_database_dump_handles_db_name_errors(is_dump):
             db_copy.load("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("Parameter not found. (Database: test-app-test-env-bad-db)")
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Parameter not found. (Database: test-app-test-env-bad-db)"
+    )
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -285,7 +286,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
             db_copy.load("bad-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
     )
 
@@ -306,7 +307,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
             db_copy.load("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(f"{error_msg} (Account id: 12345)")
+    mocks.io.abort_with_error.assert_called_once_with(f"{error_msg} (Account id: 12345)")
 
 
 def test_database_copy_initialization_handles_app_name_errors():
@@ -317,7 +318,7 @@ def test_database_copy_initialization_handles_app_name_errors():
         DatabaseCopy("bad-app", "test-db", **mocks.params())
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("No such application 'bad-app'.")
+    mocks.io.abort_with_error.assert_called_once_with("No such application 'bad-app'.")
 
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
@@ -484,7 +485,9 @@ def test_tail_logs_exits_with_error_if_task_aborts(is_dump):
         db_copy.tail_logs(is_dump, "test-env")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("Task aborted abnormally. See logs above for details.")
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Task aborted abnormally. See logs above for details."
+    )
 
 
 def test_database_copy_account_id():
@@ -517,7 +520,7 @@ def test_error_if_neither_platform_config_or_application_supplied(fs):
         DatabaseCopy(None, "test-db", **mocks.params())
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         "You must either be in a deploy repo, or provide the --app option."
     )
 
@@ -579,7 +582,7 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
             db_copy.load(env, None)
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         f"You must either be in a deploy repo, or provide the vpc name option."
     )
 
@@ -599,7 +602,7 @@ def test_enrich_vpc_name_aborts_if_no_platform_config(fs):
     with pytest.raises(SystemExit):
         db_copy.enrich_vpc_name("test-env", None)
 
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         f"You must either be in a deploy repo, or provide the vpc name option."
     )
 
