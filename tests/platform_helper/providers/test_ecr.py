@@ -5,7 +5,9 @@ from dbt_platform_helper.providers.ecr import ECRProvider
 
 
 def test_aws_get_ecr_repos_success():
+    mock_session = Mock()
     mock_client = Mock()
+    mock_session.client.return_value = mock_client
     mock_client.describe_repositories.return_value = {
         "ResponseMetadata": {
             "HTTPHeaders": {
@@ -52,9 +54,11 @@ def test_aws_get_ecr_repos_success():
             },
         ],
     }
-    aws_provider = ECRProvider(mock_client)
+
+    aws_provider = ECRProvider(mock_session)
     repositories = aws_provider.get_ecr_repo_names()
 
+    mock_session.client.assert_called_once_with("ecr")
     assert len(repositories) == 3
     assert "test-app/codebase_1" in repositories
     assert "test-app/codebase_2" in repositories
