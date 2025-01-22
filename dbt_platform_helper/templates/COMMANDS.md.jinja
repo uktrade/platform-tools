@@ -1,8 +1,10 @@
 # Commands Reference
 
-{% for command in toc -%}
-- [{{ command }}](#{{ command.lower() | replace(" ", "-") }})
-{% endfor %}
+{% for meta in metadata -%}
+{% if meta.name -%}
+{{ meta.indent }}- [{{ meta.name }}](#{{ meta.name.lower() | replace(" ", "-") }})
+{% endif -%}
+{% endfor -%}
 
 {%- for meta in metadata +%}
 {% if meta.name -%}
