@@ -1,12 +1,10 @@
 import subprocess
-from collections.abc import Callable
-
-import click
 
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 
@@ -18,7 +16,7 @@ class Conduit:
         secrets_provider: Secrets,
         cloudformation_provider: CloudFormation,
         ecs_provider: ECS,
-        echo: Callable[[str], str] = click.secho,
+        io: ClickIOProvider = ClickIOProvider,
         subprocess: subprocess = subprocess,
         connect_to_addon_client_task=connect_to_addon_client_task,
         create_addon_client_task=create_addon_client_task,
@@ -29,7 +27,7 @@ class Conduit:
         self.cloudformation_provider = cloudformation_provider
         self.ecs_provider = ecs_provider
         self.subprocess = subprocess
-        self.echo = echo
+        self.io = io
         self.connect_to_addon_client_task = connect_to_addon_client_task
         self.create_addon_client_task = create_addon_client_task
 
@@ -39,10 +37,10 @@ class Conduit:
             addon_name, access
         )
 
-        self.echo(f"Checking if a conduit task is already running for {addon_type}")
+        self.io.info(f"Checking if a conduit task is already running for {addon_type}")
         task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
         if not task_arns:
-            self.echo("Creating conduit task")
+            self.io.info("Creating conduit task")
             self.create_addon_client_task(
                 clients["iam"],
                 clients["ssm"],
@@ -55,7 +53,7 @@ class Conduit:
                 access,
             )
 
-            self.echo("Updating conduit task")
+            self.io.info("Updating conduit task")
             self._update_stack_resources(
                 self.application.name,
                 env,
@@ -69,13 +67,13 @@ class Conduit:
             task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
 
         else:
-            self.echo("Conduit task already running")
+            self.io.info("Conduit task already running")
 
-        self.echo(f"Checking if exec is available for conduit task...")
+        self.io.info(f"Checking if exec is available for conduit task...")
 
         self.ecs_provider.ecs_exec_is_available(cluster_arn, task_arns)
 
-        self.echo("Connecting to conduit task")
+        self.io.info("Connecting to conduit task")
         self.connect_to_addon_client_task(
             clients["ecs"], self.subprocess, self.application.name, env, cluster_arn, task_name
         )
@@ -115,7 +113,7 @@ class Conduit:
             parameter_name,
             access,
         )
-        self.echo("Waiting for conduit task update to complete...")
+        self.io.info("Waiting for conduit task update to complete...")
         self.cloudformation_provider.wait_for_cloudformation_to_reach_status(
             "stack_update_complete", stack_name
         )
