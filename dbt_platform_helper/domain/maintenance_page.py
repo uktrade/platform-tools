@@ -144,9 +144,7 @@ def remove_maintenance_page(session: boto3.Session, listener_arn: str):
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-    tag_descriptions = lb_client.describe_tags(ResourceArns=[r["RuleArn"] for r in rules])[
-        "TagDescriptions"
-    ]
+    tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
 
     for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
