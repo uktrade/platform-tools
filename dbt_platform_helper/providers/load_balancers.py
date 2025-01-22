@@ -55,7 +55,7 @@ def get_https_certificate_for_application(session: boto3.Session, app: str, env:
     try:
         certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
     except StopIteration:
-        raise CertificateNotFoundException()
+        raise CertificateNotFoundException(env)
 
     return certificate_arn
 
@@ -77,4 +77,7 @@ class ListenerRuleNotFoundException(LoadBalancerException):
 
 
 class CertificateNotFoundException(PlatformException):
-    pass
+    def __init__(self, environment_name: str):
+        super().__init__(
+            f"""No certificate found with domain name matching environment {environment_name}."."""
+        )

@@ -6,13 +6,12 @@ from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
-import click
 import pytest
 import yaml
 
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
-from dbt_platform_helper.providers.load_balancers import CertificateNotFoundException
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.vpc import Vpc
 
 # @mock_aws
@@ -566,65 +565,24 @@ class TestCopilotGenerate:
             [call("Using non-prod-acc for this AWS session"), call("test template written")]
         )
 
-    @patch("dbt_platform_helper.domain.copilot_environment.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application")
-    def test_generate_fails_fast_when_no_certificate_found(
-        self, mock_get_certificate, mock_get_session
-    ):
+    def test_raises_a_platform_exception_if_environment_does_not_exist_in_config(self):
 
         mock_config_provider = Mock()
-        mock_get_certificate.side_effect = CertificateNotFoundException()
-
-        mocked_session = MagicMock()
-        mock_get_session.return_value = mocked_session
-
         config = {
             "application": "test-app",
             "environments": {"test_environment": self.VALID_ENVIRONMENT_CONFIG},
         }
-
         mock_config_provider.get_enriched_config.return_value = config
-
-        mock_echo = Mock()
 
         copilot_environment = CopilotEnvironment(
             config_provider=mock_config_provider,
             vpc_provider=Mock(),
             copilot_templating=Mock(),
-            echo=mock_echo,
+            echo=Mock(),
         )
 
-        with pytest.raises(click.exceptions.Abort):
-            copilot_environment.generate(environment_name="test_environment")
-
-        mock_echo.assert_has_calls(
-            [
-                call("Using non-prod-acc for this AWS session"),
-                call(
-                    "No certificate found with domain name matching environment test_environment.",
-                    fg="red",
-                ),
-            ]
-        )
-
-    # # TODO - WIP
-    # def test_fail_fast_if_platform_config_invalid(self):
-
-    #     mock_config_provider = Mock()
-    #     # mock_config_provider.get_enriched_config.side_effect = config
-
-    #     mock_echo = Mock()
-
-    #     copilot_environment = CopilotEnvironment(
-    #         config_provider=mock_config_provider,
-    #         vpc_provider=Mock(),
-    #         copilot_templating=Mock(),
-    #         echo=mock_echo,
-    #     )
-
-    #     with pytest.raises(click.exceptions.Abort):
-    #         copilot_environment.generate(environment_name="test_environment")
-
-    #     mock_echo.assert_has_calls(
-    #         [call("Using non-prod-acc for this AWS session"), call("No certificate found with domain name matching environment test_environment.", fg='red')]
-    #     )
+        with pytest.raises(
+            PlatformException,
+            match="Error: cannot generate terraform for environment not-an-environment.  It does not exist in your configuration",
+        ):
+            copilot_environment.generate("not-an-environment")

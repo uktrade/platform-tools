@@ -4,9 +4,11 @@ from typing import Callable
 
 import click
 
+from dbt_platform_helper.domain.terraform_environment import (
+    EnvironmentNotFoundException,
+)
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
-from dbt_platform_helper.providers.load_balancers import CertificateNotFoundException
 from dbt_platform_helper.providers.load_balancers import (
     get_https_certificate_for_application,
 )
@@ -43,24 +45,20 @@ class CopilotEnvironment:
 
         platform_config = self.config_provider.get_enriched_config()
 
-        # TODO - potentially worth a look but this line throws an error if you provide an invalid env name...
+        if environment_name not in platform_config.get("environments").keys():
+            raise EnvironmentNotFoundException(
+                f"Error: cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
+            )
         env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
 
         self.echo(f"Using {profile_for_environment} for this AWS session")
 
         certificate_arn = ""
-        try:
-            session = get_aws_session_or_abort(profile_for_environment)
-            certificate_arn = get_https_certificate_for_application(
-                session, platform_config["application"], environment_name
-            )
-        except CertificateNotFoundException:
-            self.echo(
-                f"No certificate found with domain name matching environment {environment_name}.",
-                fg="red",
-            )
-            raise click.Abort
+        session = get_aws_session_or_abort(profile_for_environment)
+        certificate_arn = get_https_certificate_for_application(
+            session, platform_config["application"], environment_name
+        )
 
         copilot_environment_manifest = (
             self.copilot_templating.generate_copilot_environment_manifest(
