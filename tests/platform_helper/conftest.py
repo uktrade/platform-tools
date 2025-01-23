@@ -632,7 +632,7 @@ def platform_env_config():
 
 
 @pytest.fixture
-def codebase_pipeline_config(platform_env_config):
+def codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_config):
     return {
         **platform_env_config,
         "codebase_pipelines": {
@@ -659,8 +659,12 @@ def codebase_pipeline_config(platform_env_config):
 
 
 @pytest.fixture
-def two_codebase_pipeline_config(codebase_pipeline_config):
-    codebase_pipeline_config["codebase_pipelines"]["test_codebase_2"] = {
+def codebase_pipeline_config_for_2_pipelines_and_1_run_group(
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
+):
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups["codebase_pipelines"][
+        "test_codebase_2"
+    ] = {
         "repository": "uktrade/repo2",
         "services": [
             {"run_group_1": ["web"]},
@@ -676,7 +680,7 @@ def two_codebase_pipeline_config(codebase_pipeline_config):
             },
         ],
     }
-    return codebase_pipeline_config
+    return codebase_pipeline_config_for_1_pipeline_and_2_run_groups
 
 
 @pytest.fixture

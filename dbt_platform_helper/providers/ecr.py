@@ -13,7 +13,7 @@ class ECRProvider:
             self.session = get_aws_session_or_abort()
         return self.session.client("ecr")
 
-    def get_ecr_repo_names(self):
+    def get_ecr_repo_names(self) -> list[str]:
         return [
             repo["repositoryName"]
             for repo in self._get_client().describe_repositories().get("repositories", {})

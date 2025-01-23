@@ -45,11 +45,10 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
     mock_config_provider = Mock()
     app_name = "my-app"
     mock_config_provider.load_and_validate_platform_config.return_value = {"application": app_name}
-
     mocks = PipelineMocks(app_name)
     mocks.mock_config_provider = mock_config_provider
-
     pipelines = Pipelines(**mocks.params())
+
     pipelines.generate(None, None)
 
     mocks.mock_echo.assert_called_once_with(
@@ -60,11 +59,10 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning():
     mock_config_provider = Mock()
     mock_config_provider.load_and_validate_platform_config.return_value = {"environments": {}}
-
     mocks = PipelineMocks("app-name")
     mocks.mock_config_provider = mock_config_provider
-
     pipelines = Pipelines(**mocks.params())
+
     pipelines.generate(None, None)
 
     mocks.mock_echo.assert_called_once_with(
@@ -104,12 +102,10 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
         platform_config_for_env_pipelines["default_versions"] = {
             "terraform-platform-modules": "4.0.0"
         }
-
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
-
     mocks = PipelineMocks(app_name)
-
     pipelines = Pipelines(**mocks.params())
+
     pipelines.generate(cli_terraform_platform_version, cli_demodjango_branch)
 
     assert_terraform(
@@ -130,29 +126,32 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     "cli_version, exp_version", [("6", "6"), (None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION)]
 )
 def test_generate_pipeline_generates_codebase_pipeline(
-    cli_version, exp_version, codebase_pipeline_config, fakefs
+    cli_version, exp_version, codebase_pipeline_config_for_1_pipeline_and_2_run_groups, fakefs
 ):
     app_name = "test-app"
-
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(codebase_pipeline_config))
-
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(codebase_pipeline_config_for_1_pipeline_and_2_run_groups),
+    )
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
+
     pipelines.generate(cli_version, None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        codebase_pipeline_config, exp_version, {}
+        codebase_pipeline_config_for_1_pipeline_and_2_run_groups, exp_version, {}
     )
 
 
 def test_generate_pipeline_generates_codebase_pipeline_with_imports(
-    two_codebase_pipeline_config, fakefs
+    codebase_pipeline_config_for_2_pipelines_and_1_run_group, fakefs
 ):
     app_name = "test-app"
-
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(two_codebase_pipeline_config))
-
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(codebase_pipeline_config_for_2_pipelines_and_1_run_group),
+    )
     mocks = PipelineMocks(app_name)
     mocks.mock_ecr_provider.get_ecr_repo_names.return_value = [
         "my-app/test_codebase",
@@ -160,13 +159,13 @@ def test_generate_pipeline_generates_codebase_pipeline_with_imports(
         "my-app/test_codebase_2",
         "yet-another-repo",
     ]
-
     pipelines = Pipelines(**mocks.params())
+
     pipelines.generate("6", None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        two_codebase_pipeline_config,
+        codebase_pipeline_config_for_2_pipelines_and_1_run_group,
         "6",
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
     )
