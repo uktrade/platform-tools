@@ -632,7 +632,7 @@ def platform_env_config():
 
 
 @pytest.fixture
-def codebase_pipeline_config(platform_env_config):
+def add_codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_config):
     return {
         **platform_env_config,
         "codebase_pipelines": {
