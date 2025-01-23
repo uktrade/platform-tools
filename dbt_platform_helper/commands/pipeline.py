@@ -6,12 +6,8 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.files import FileProvider
-from dbt_platform_helper.utils.application import get_application_name
-from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.files import generate_override_files_from_template
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.versioning import (
