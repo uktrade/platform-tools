@@ -14,7 +14,7 @@ class ECRProvider:
         return self.session.client("ecr")
 
     def get_ecr_repo_names(self) -> list[str]:
-        return [
-            repo["repositoryName"]
-            for repo in self._get_client().describe_repositories().get("repositories", {})
-        ]
+        out = []
+        for page in self._get_client().get_paginator("describe_repositories").paginate():
+            out.extend([repo["repositoryName"] for repo in page.get("repositories", {})])
+        return out

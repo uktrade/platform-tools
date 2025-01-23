@@ -89,19 +89,19 @@ class Pipelines:
 
         if has_codebase_pipelines:
             codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
-            required_ecrs = {
+            ecrs_to_be_managed = {
                 codebase: f"{platform_config['application']}/{codebase}"
                 for codebase in codebase_pipelines.keys()
             }
-            provisioned_ecrs = set(self.ecr_provider.get_ecr_repo_names())
-            required_imports = {
+            ecrs_already_provisioned = set(self.ecr_provider.get_ecr_repo_names())
+            ecrs_that_need_importing = {
                 codebase: repo
-                for codebase, repo in required_ecrs.items()
-                if repo in provisioned_ecrs
+                for codebase, repo in ecrs_to_be_managed.items()
+                if repo in ecrs_already_provisioned
             }
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
-                platform_config, terraform_platform_modules_version, required_imports
+                platform_config, terraform_platform_modules_version, ecrs_that_need_importing
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
