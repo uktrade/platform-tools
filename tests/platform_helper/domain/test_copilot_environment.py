@@ -541,6 +541,6 @@ class TestCopilotGenerate:
 
         with pytest.raises(
             PlatformException,
-            match="Error: cannot generate terraform for environment not-an-environment.  It does not exist in your configuration",
+            match="Error: cannot generate copilot manifests for environment not-an-environment.  It does not exist in your configuration",
         ):
             copilot_environment.generate("not-an-environment")

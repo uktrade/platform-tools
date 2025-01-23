@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable
 
 import click
+from boto3 import Session
 
 from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
@@ -27,7 +28,7 @@ class CopilotEnvironment:
         config_provider: ConfigProvider,
         vpc_provider: VpcProvider = None,
         cloudformation_provider: CloudFormation = None,
-        session=None,  # TODO - this is a temporary fix, will fall away once the Loadbalancer provider is in place.
+        session: Session = None,  # TODO - this is a temporary fix, will fall away once the Loadbalancer provider is in place.
         copilot_templating=None,
         echo: Callable[[str], str] = click.secho,
     ):
@@ -46,7 +47,7 @@ class CopilotEnvironment:
 
         if environment_name not in platform_config.get("environments").keys():
             raise EnvironmentNotFoundException(
-                f"Error: cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
+                f"Error: cannot generate copilot manifests for environment {environment_name}.  It does not exist in your configuration"
             )
 
         env_config = platform_config["environments"][environment_name]
