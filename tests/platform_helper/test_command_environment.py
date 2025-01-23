@@ -141,8 +141,10 @@ class TestGenerateCopilot:
         mock_session,
     ):
         """Test that given a environment name, the generate command calls
-        CopilotEnvironment.generate with the environment name."""
+        CopilotEnvironment.generate with the expected providers."""
         mock_session.return_value = Mock()
+        mock_cloudformation_client = Mock()
+        mock_session.return_value.client.return_value = mock_cloudformation_client
         mock_config_validator.return_value = Mock()
 
         result = CliRunner().invoke(
@@ -153,6 +155,8 @@ class TestGenerateCopilot:
         assert result.exit_code == 0
 
         copilot_environment_mock.return_value.generate.assert_called_with("test")
+        mock_session.return_value.client.assert_called_once_with("cloudformation")
+        cloudformation_provider_mock.assert_called_with(mock_cloudformation_client)
         mock_vpc_provider.assert_called_once_with(mock_session.return_value)
         mock_config_validator.assert_called_once_with()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
