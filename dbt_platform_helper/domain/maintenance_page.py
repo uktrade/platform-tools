@@ -11,6 +11,7 @@ import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
@@ -111,7 +112,6 @@ def add_maintenance_page(
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
-            fg="green",
         )
 
     lb_client.create_rule(
@@ -157,8 +157,7 @@ class MaintenancePage:
     def __init__(
         self,
         application: Application,
-        user_prompt_callback: Callable[[str], bool] = click.confirm,
-        echo: Callable[[str], str] = click.secho,
+        io: ClickIOProvider = ClickIOProvider(),
         find_https_listener: Callable[[boto3.Session, str, str], str] = find_https_listener,
         # TODO refactor get_maintenance_page_type, add_maintenance_page, remove_maintenance_page into MaintenancePage class with LoadBalancerProvider as the dependency
         get_maintenance_page_type: Callable[
@@ -171,8 +170,7 @@ class MaintenancePage:
         remove_maintenance_page: Callable[[boto3.Session, str], None] = remove_maintenance_page,
     ):
         self.application = application
-        self.user_prompt_callback = user_prompt_callback
-        self.echo = echo
+        self.io = io
         self.find_https_listener = find_https_listener
         self.get_maintenance_page_type = get_maintenance_page_type
         self.get_env_ips = get_env_ips
@@ -192,8 +190,8 @@ class MaintenancePage:
     def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
 
         services = self._get_deployed_load_balanced_web_services(self.application, services)
-
         application_environment = get_app_environment(self.application, env)
+
         try:
             https_listener = self.find_https_listener(
                 application_environment.session, self.application.name, env
@@ -203,7 +201,7 @@ class MaintenancePage:
             )
             remove_current_maintenance_page = False
             if current_maintenance_page:
-                remove_current_maintenance_page = self.user_prompt_callback(
+                remove_current_maintenance_page = self.io.confirm(
                     f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
                     f"environment in {self.application.name}.\nWould you like to replace it with a '{template}' "
                     f"maintenance page?"
@@ -211,7 +209,7 @@ class MaintenancePage:
                 if not remove_current_maintenance_page:
                     return
 
-            if remove_current_maintenance_page or self.user_prompt_callback(
+            if remove_current_maintenance_page or self.io.confirm(
                 f"You are about to enable the '{template}' maintenance page for the {env} "
                 f"environment in {self.application.name}.\nWould you like to continue?"
             ):
@@ -229,28 +227,21 @@ class MaintenancePage:
                     allowed_ips,
                     template,
                 )
-                self.echo(
+                self.io.info(
                     f"Maintenance page '{template}' added for environment {env} in application {self.application.name}",
-                    fg="green",
                 )
 
         except LoadBalancerNotFoundException:
             # TODO push exception to command layer
-            self.echo(
+            self.io.abort_with_error(
                 f"No load balancer found for environment {env} in the application {self.application.name}.",
-                fg="red",
             )
-            raise click.Abort
 
         except ListenerNotFoundException:
             # TODO push exception to command layer
-            self.echo(
+            self.io.abort_with_error(
                 f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
-                fg="red",
             )
-            raise click.Abort
-
-        return
 
     def deactivate(self, env: str):
         application_environment = get_app_environment(self.application, env)
@@ -265,36 +256,31 @@ class MaintenancePage:
 
             # TODO discuss, reduce number of return statements but more nested if statements
             if not current_maintenance_page:
-                self.echo("There is no current maintenance page to remove", fg="yellow")
+                self.io.warn("There is no current maintenance page to remove")
                 return
 
-            if not self.user_prompt_callback(
+            if not self.io.confirm(
                 f"There is currently a '{current_maintenance_page}' maintenance page, "
                 f"would you like to remove it?"
             ):
                 return
 
             self.remove_maintenance_page(application_environment.session, https_listener)
-            self.echo(
+            self.io.info(
                 f"Maintenance page removed from environment {env} in application {self.application.name}",
-                fg="green",
             )
 
         except LoadBalancerNotFoundException:
             # TODO push exception to command layer
-            self.echo(
+            self.io.abort_with_error(
                 f"No load balancer found for environment {env} in the application {self.application.name}.",
-                fg="red",
             )
-            raise click.Abort
 
         except ListenerNotFoundException:
             # TODO push exception to command layer
-            self.echo(
+            self.io.abort_with_error(
                 f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
-                fg="red",
             )
-            raise click.Abort
 
 
 def get_app_service(application: Application, svc_name: str) -> Service:
