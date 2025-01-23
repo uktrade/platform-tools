@@ -29,7 +29,7 @@ class ConfigProvider:
     def get_enriched_config(self):
         return self.apply_environment_defaults(self.load_and_validate_platform_config())
 
-    def validate_platform_config(self):
+    def _validate_platform_config(self):
         PlatformConfigSchema.schema().validate(self.config)
 
         # TODO= logically this isn't validation but loading + parsing, to move.
@@ -49,7 +49,7 @@ class ConfigProvider:
             abort_with_error(f"Error loading configuration from {path}: {e}")
 
         try:
-            self.validate_platform_config()
+            self._validate_platform_config()
         except SchemaError as e:
             abort_with_error(f"Schema error in {path}. {e}")
 

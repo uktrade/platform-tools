@@ -409,12 +409,9 @@ def valid_platform_config():
     return yaml.safe_load(
         """
 application: test-app
-legacy_project: true
-
 default_versions: 
     platform-helper: 10.2.0
     terraform-platform-modules: 1.2.3
-
 environments:
   "*":
     accounts:
@@ -580,7 +577,7 @@ environment_pipelines:
         requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
     slack_channel: OTHER_SLACK_CHANNEL_ID
     repository: uktrade/test-app
     deploy_repository_branch: feature-branch

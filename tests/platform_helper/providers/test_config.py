@@ -8,6 +8,7 @@ import yaml
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
@@ -15,8 +16,13 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
-def mock_validator():
-    return Mock()
+def test_comprehensive_platform_config_validates_successfully(valid_platform_config):
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = valid_platform_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+    config_provider.load_and_validate_platform_config()
+    # No assertions as this will raise an error if there is one.
 
 
 def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
@@ -72,11 +78,13 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
         }
     }
 
-    # Should not error if config is sound.
-    config_provider = ConfigProvider(mock_validator())
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = platform_env_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
     config_provider.config = platform_env_config
 
-    config_provider.validate_platform_config()
+    # Should not error if config is sound.
+    config_provider._validate_platform_config()
 
 
 @pytest.mark.parametrize(
@@ -91,7 +99,7 @@ def test_load_and_validate_config_valid_file(yaml_file):
     """Test that, given the path to a valid yaml file, load_and_validate_config
     returns the loaded yaml unmodified."""
 
-    config_provider = ConfigProvider(mock_validator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     path = FIXTURES_DIR / yaml_file
     validated = config_provider.load_and_validate_platform_config(path=path)
@@ -144,7 +152,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    config_provider = ConfigProvider(mock_validator())
+    config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = valid_platform_config
 
     with pytest.raises(SystemExit) as ex:
@@ -166,7 +174,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(mock_validator())
+    config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = valid_platform_config
 
     with pytest.raises(SystemExit) as ex:
@@ -188,7 +196,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(mock_validator())
+    config_provider = ConfigProvider(ConfigValidator())
 
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
@@ -202,7 +210,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
 
     Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
-        ConfigProvider(mock_validator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
@@ -212,7 +220,7 @@ def test_load_and_validate_platform_config_fails_with_missing_config_file(fakefs
         os.remove(Path(PLATFORM_CONFIG_FILE))
 
     with pytest.raises(SystemExit):
-        ConfigProvider(mock_validator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert (
         f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
@@ -222,7 +230,7 @@ def test_load_and_validate_platform_config_fails_with_missing_config_file(fakefs
 
 def test_validation_runs_against_platform_config_yml(fakefs):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents='{"application": "my_app"}')
-    config = ConfigProvider(mock_validator()).load_and_validate_platform_config(
+    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config(
         path=PLATFORM_CONFIG_FILE
     )
 
@@ -231,7 +239,7 @@ def test_validation_runs_against_platform_config_yml(fakefs):
 
 
 def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
-    config_provider = ConfigProvider(mock_validator())
+    config_provider = ConfigProvider(ConfigValidator())
     config_provider.load_and_validate_platform_config()
 
     assert "Warning" not in capfd.readouterr().out
@@ -393,7 +401,7 @@ def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
     }
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
 
-    config = ConfigProvider(mock_validator()).load_and_validate_platform_config()
+    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
         {"run_group_1": ["web"]},
@@ -418,7 +426,7 @@ def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
     with pytest.raises(SystemExit):
-        ConfigProvider(mock_validator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
     error = capsys.readouterr().err
 
     exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
@@ -445,7 +453,7 @@ def test_codebase_requires_image_build_fails_if_not_a_bool(fakefs, capsys, requi
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
     with pytest.raises(SystemExit):
-        ConfigProvider(mock_validator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
     error = capsys.readouterr().err
 
     exp = r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*" % re.escape(
