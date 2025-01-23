@@ -8,11 +8,13 @@ from unittest.mock import patch
 
 import pytest
 import yaml
+from freezegun import freeze_time
 
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.vpc import Vpc
+from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
@@ -428,6 +430,9 @@ class TestCrossEnvironmentS3Templating:
 
 class TestCopilotTemplating:
 
+    # Patch is here to pin the platform-helper version to v.0.1-TEST as otherwise this would change the resultant file when the version bumps
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @freeze_time("2023-08-22 16:00:00")
     def test_copilot_templating_generate_generates_expected_manifest(self):
         mock_file_provider = Mock()
 
@@ -446,7 +451,10 @@ class TestCopilotTemplating:
             "test-cert-arn",
         )
 
-        # TODO - assertions on the results...
+        # Parsing the result as yaml is not ideal, we really want to compare both as raw strings since this loses the comments.
+        assert yaml.safe_load(result) == yaml.safe_load(
+            Path(f"{FIXTURES_DIR}/copilot_environment_manifest_valid.yml").read_text()
+        )
 
     def test_copilot_templating_write_calls_file_provider_with_expected_arguments(self):
         mock_file_provider = Mock()
