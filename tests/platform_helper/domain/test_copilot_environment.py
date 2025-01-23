@@ -480,7 +480,7 @@ class TestCopilotGenerate:
     def test_generate_success(self, mock_get_certificate):
 
         mock_copilot_templating = Mock()
-        mock_copilot_templating.write_template.return_value = "test template written"
+        mock_copilot_templating.write_manifest.return_value = "test template written"
         mock_copilot_templating.generate_copilot_environment_manifest.return_value = "mock manifest"
 
         mock_vpc_provider = MagicMock()
@@ -515,7 +515,7 @@ class TestCopilotGenerate:
             environment_name="test_environment", vpc=self.MOCK_VPC, cert_arn="test-cert-arn"
         )
 
-        mock_copilot_templating.write_template.assert_called_with(
+        mock_copilot_templating.write_manifest.assert_called_with(
             "test_environment", "mock manifest"
         )
 

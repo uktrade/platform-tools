@@ -69,7 +69,7 @@ class CopilotEnvironment:
         )
 
         self.echo(
-            self.copilot_templating.write_template(environment_name, copilot_environment_manifest)
+            self.copilot_templating.write_manifest(environment_name, copilot_environment_manifest)
         )
 
     def _get_environment_vpc(self, session, env_name, vpc_name):
@@ -140,7 +140,7 @@ class CopilotTemplating:
             }
         )
 
-    def write_template(self, environment_name: str, manifest_contents: str):
+    def write_manifest(self, environment_name: str, manifest_contents: str):
 
         return self.file_provider.mkfile(
             ".",
