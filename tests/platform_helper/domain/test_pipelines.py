@@ -172,20 +172,6 @@ def test_generate_pipeline_generates_codebase_pipeline_with_imports(
     )
 
 
-def test_pipeline_generate_exceptions_are_handled(capsys):
-    mocks = PipelineMocks("test-app")
-    mocks.mock_config_provider = Mock()
-    mocks.mock_config_provider.load_and_validate_platform_config.side_effect = Exception(
-        "Something went wrong"
-    )
-    pipelines = Pipelines(**mocks.params())
-
-    with pytest.raises(SystemExit):
-        pipelines.generate(None, None)
-
-    assert "Error: Something went wrong" in capsys.readouterr().err
-
-
 def assert_terraform(app_name, aws_account, expected_version, expected_branch):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()

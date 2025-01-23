@@ -51,13 +51,16 @@ def generate(terraform_platform_modules_version: str, deploy_branch: str):
     This command does the following in relation to the codebase pipelines:
     - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
     """
-    pipelines = Pipelines(
-        ConfigProvider(ConfigValidator()),
-        TerraformManifestProvider(),
-        ECRProvider(),
-        click.secho,
-        abort_with_error,
-        git_remote,
-        get_codestar_connection_arn,
-    )
-    pipelines.generate(terraform_platform_modules_version, deploy_branch)
+    try:
+        pipelines = Pipelines(
+            ConfigProvider(ConfigValidator()),
+            TerraformManifestProvider(),
+            ECRProvider(),
+            click.secho,
+            abort_with_error,
+            git_remote,
+            get_codestar_connection_arn,
+        )
+        pipelines.generate(terraform_platform_modules_version, deploy_branch)
+    except Exception as exc:
+        abort_with_error(str(exc))

@@ -38,6 +38,16 @@ def test_pipeline_generate_passes_args_to_pipelines_instance(
     mock_pipeline_instance.generate.assert_called_once_with(*expected_pipeline_args)
 
 
+@patch(
+    "dbt_platform_helper.commands.pipeline.Pipelines", side_effect=Exception("Something went wrong")
+)
+def test_pipeline_generate_exceptions_are_handled(mock_pipelines):
+    result = CliRunner().invoke(generate, [])
+    assert result.exit_code == 1
+
+    assert "Error: Something went wrong" in result.output
+
+
 def setup_fixtures(fakefs, pipelines_file=f"pipeline/{PLATFORM_CONFIG_FILE}"):
     fakefs.add_real_file(FIXTURES_DIR / pipelines_file, False, PLATFORM_CONFIG_FILE)
     fakefs.add_real_file(FIXTURES_DIR / "valid_workspace.yml", False, "copilot/.workspace")
