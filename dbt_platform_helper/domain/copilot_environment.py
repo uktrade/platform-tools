@@ -41,7 +41,7 @@ class CopilotEnvironment:
         self.session = session
         self.cloudformation_provider = cloudformation_provider
 
-    def generate(self, environment_name):
+    def generate(self, environment_name: str) -> None:
 
         platform_config = self.config_provider.get_enriched_config()
 
@@ -74,7 +74,7 @@ class CopilotEnvironment:
             )
         )
 
-    def _get_environment_vpc(self, session, env_name, vpc_name):
+    def _get_environment_vpc(self, session: Session, env_name: str, vpc_name: str) -> Vpc:
 
         if not vpc_name:
             vpc_name = f"{session.profile_name}-{env_name}"
@@ -89,7 +89,9 @@ class CopilotEnvironment:
 
         return vpc
 
-    def _match_subnet_id_order_to_cloudformation_exports(self, environment_name, vpc):
+    def _match_subnet_id_order_to_cloudformation_exports(
+        self, environment_name: str, vpc: Vpc
+    ) -> Vpc:
         """
         Addresses an issue identified in DBTP-1524 'If the order of the subnets
         in the environment manifest has changed, copilot env deploy tries to do
@@ -125,11 +127,15 @@ class CopilotTemplating:
     def __init__(
         self,
         file_provider: FileProvider = None,
+        # TODO file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
+        # Or we align with PlatformTerraformManifestGenerator and rename from Templating to reflect the file writing responsibility
     ):
         self.file_provider = file_provider
         self.templates = setup_templates()
 
-    def generate_copilot_environment_manifest(self, environment_name: str, vpc: Vpc, cert_arn: str):
+    def generate_copilot_environment_manifest(
+        self, environment_name: str, vpc: Vpc, cert_arn: str
+    ) -> str:
         env_template = self.templates.get_template("env/manifest.yml")
 
         return env_template.render(
@@ -142,7 +148,7 @@ class CopilotTemplating:
             }
         )
 
-    def write_environment_manifest(self, environment_name: str, manifest_contents: str):
+    def write_environment_manifest(self, environment_name: str, manifest_contents: str) -> str:
 
         return self.file_provider.mkfile(
             ".",
