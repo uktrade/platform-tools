@@ -659,7 +659,7 @@ def add_codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_co
 
 
 @pytest.fixture
-def add_codebase_pipeline_config_for_2_pipelines_and_1_run_group(platform_env_config):
+def two_codebase_pipeline_config(codebase_pipeline_config):
     codebase_pipeline_config["codebase_pipelines"]["test_codebase_2"] = {
         "repository": "uktrade/repo2",
         "services": [
