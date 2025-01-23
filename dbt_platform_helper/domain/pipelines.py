@@ -8,6 +8,7 @@ from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENTS_KEY
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_public_repository_arn
@@ -22,16 +23,14 @@ class Pipelines:
     def __init__(
         self,
         config_provider: ConfigProvider,
-        echo: Callable[[str], str],
-        abort: Callable[[str], None],
         get_git_remote: Callable[[], str],
         get_codestar_arn: Callable[[str], str],
+        io: ClickIOProvider = ClickIOProvider(),
     ):
         self.config_provider = config_provider
-        self.echo = echo
-        self.abort = abort
         self.get_git_remote = get_git_remote
         self.get_codestar_arn = get_codestar_arn
+        self.io = io
 
     def generate(self, terraform_platform_modules_version, deploy_branch):
         pipeline_config = self.config_provider.load_and_validate_platform_config()
@@ -40,7 +39,7 @@ class Pipelines:
         has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in pipeline_config
 
         if not (has_codebase_pipelines or has_environment_pipelines):
-            self.echo("No pipelines defined: nothing to do.", err=True, fg="yellow")
+            self.io.warn("No pipelines defined: nothing to do.")
             return
 
         platform_config_terraform_modules_default_version = pipeline_config.get(
@@ -52,11 +51,11 @@ class Pipelines:
 
         git_repo = self.get_git_remote()
         if not git_repo:
-            self.abort("The current directory is not a git repository")
+            self.io.abort_with_error("The current directory is not a git repository")
 
         codestar_connection_arn = self.get_codestar_arn(app_name)
         if codestar_connection_arn is None:
-            self.abort(f'There is no CodeStar Connection named "{app_name}" to use')
+            self.io.abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
         base_path = Path(".")
         copilot_pipelines_dir = base_path / f"copilot/pipelines"
@@ -93,7 +92,7 @@ class Pipelines:
 
     def _clean_pipeline_config(self, pipelines_dir):
         if pipelines_dir.exists():
-            self.echo("Deleting copilot/pipelines directory.")
+            self.io.info("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
 
     def _generate_codebase_pipeline(
@@ -152,7 +151,7 @@ class Pipelines:
         message = FileProvider.mkfile(
             base_path, pipelines_dir / file_name, contents, overwrite=True
         )
-        self.echo(message)
+        self.io.info(message)
 
     def _generate_terraform_environment_pipeline_manifest(
         self,
@@ -181,7 +180,7 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        self.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.io.info(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
 
     def generate_terraform_codebase_pipeline_manifest(
         self,
@@ -210,4 +209,4 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        self.echo(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.io.info(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))

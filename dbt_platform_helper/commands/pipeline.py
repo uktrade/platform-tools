@@ -9,7 +9,6 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import git_remote
-from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -52,8 +51,6 @@ def generate(terraform_platform_modules_version, deploy_branch):
     """
     pipelines = Pipelines(
         ConfigProvider(ConfigValidator()),
-        click.secho,
-        abort_with_error,
         git_remote,
         get_codestar_connection_arn,
     )
