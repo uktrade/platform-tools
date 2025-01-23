@@ -127,7 +127,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
 
 
 @freeze_time("2025-01-16 13:00:00")
-def test_generate_codebase_pipeline_config_omits_include_block_if_no_codebases_provided(
+def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_provided(
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
 ):
     file_provider = Mock()
