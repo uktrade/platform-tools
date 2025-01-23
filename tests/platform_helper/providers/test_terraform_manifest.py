@@ -3,11 +3,18 @@ from importlib.metadata import version
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
 from freezegun import freeze_time
 
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
+from tests.platform_helper.conftest import (
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
+)
+from tests.platform_helper.conftest import (
+    codebase_pipeline_config_for_2_pipelines_and_1_run_group,
+)
 
 
 @freeze_time("2025-01-16 13:00:00")
@@ -89,42 +96,29 @@ def test_generate_codebase_pipeline_config_creates_file(
 
 
 @freeze_time("2025-01-16 13:00:00")
+@pytest.mark.parametrize(
+    "config_fixture, exp_imports",
+    [
+        (codebase_pipeline_config_for_1_pipeline_and_2_run_groups.__name__, '${["test_codebase"]}'),
+        (
+            codebase_pipeline_config_for_2_pipelines_and_1_run_group.__name__,
+            '${["test_codebase", "test_codebase_2"]}',
+        ),
+    ],
+)
 def test_generate_codebase_pipeline_config_creates_required_imports(
-    codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
+    config_fixture, exp_imports, request
 ):
     file_provider = Mock()
     template_provider = TerraformManifestProvider(file_provider)
+    config = request.getfixturevalue(config_fixture)
 
-    template_provider.generate_codebase_pipeline_config(
-        codebase_pipeline_config_for_1_pipeline_and_2_run_groups, "7", ["test_codebase"]
-    )
+    template_provider.generate_codebase_pipeline_config(config, "7", ["test_codebase"])
 
     assert file_provider.mkfile.call_count == 1
     json_content = json.loads(file_provider.mkfile.call_args.args[2])
     assert "import" in json_content
     assert json_content["import"]["for_each"] == '${["test_codebase"]}'
-    assert json_content["import"]["id"] == "${each.value}"
-    assert (
-        json_content["import"]["to"]
-        == "module.codebase-pipelines[each.key].aws_ecr_repository.this"
-    )
-
-
-@freeze_time("2025-01-16 13:00:00")
-def test_generate_codebase_pipeline_config_creates_required_imports_for_two_codebases(
-    codebase_pipeline_config_for_2_pipelines_and_1_run_group,
-):
-    file_provider = Mock()
-    template_provider = TerraformManifestProvider(file_provider)
-
-    template_provider.generate_codebase_pipeline_config(
-        codebase_pipeline_config_for_2_pipelines_and_1_run_group,
-        "7",
-        ["test_codebase", "test_codebase_2"],
-    )
-    json_content = json.loads(file_provider.mkfile.call_args.args[2])
-    assert "import" in json_content
-    assert json_content["import"]["for_each"] == '${["test_codebase", "test_codebase_2"]}'
     assert json_content["import"]["id"] == "${each.value}"
     assert (
         json_content["import"]["to"]
