@@ -37,13 +37,15 @@ class Pipelines:
         self.terraform_manifest_provider = terraform_manifest_provider
         self.ecr_provider = ecr_provider
 
-    def generate(self, cli_terraform_platform_modules_version, deploy_branch):
+    def generate(self, cli_terraform_platform_modules_version: str, deploy_branch: str):
         try:
             self._generate_pipeline_config(cli_terraform_platform_modules_version, deploy_branch)
         except Exception as exc:
             self.abort(str(exc))
 
-    def _generate_pipeline_config(self, cli_terraform_platform_modules_version, deploy_branch):
+    def _generate_pipeline_config(
+        self, cli_terraform_platform_modules_version: str, deploy_branch: str
+    ):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
@@ -95,12 +97,11 @@ class Pipelines:
 
         if has_codebase_pipelines:
             codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
-            provisioned_ecrs = set(self.ecr_provider.get_ecr_repo_names())
             required_ecrs = {
                 codebase: f"{platform_config['application']}/{codebase}"
                 for codebase in codebase_pipelines.keys()
-                if f"{platform_config['application']}/{codebase}" in provisioned_ecrs
             }
+            provisioned_ecrs = set(self.ecr_provider.get_ecr_repo_names())
             required_imports = {
                 codebase: repo
                 for codebase, repo in required_ecrs.items()
@@ -111,17 +112,17 @@ class Pipelines:
                 platform_config, terraform_platform_modules_version, required_imports
             )
 
-    def _clean_pipeline_config(self, pipelines_dir):
+    def _clean_pipeline_config(self, pipelines_dir: Path):
         if pipelines_dir.exists():
             self.echo("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
 
     def _generate_terraform_environment_pipeline_manifest(
         self,
-        application,
-        aws_account,
-        terraform_platform_modules_version,
-        deploy_branch,
+        application: str,
+        aws_account: str,
+        terraform_platform_modules_version: str,
+        deploy_branch: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 

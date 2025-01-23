@@ -38,7 +38,7 @@ def pipeline():
     <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
     default=None,
 )
-def generate(terraform_platform_modules_version, deploy_branch):
+def generate(terraform_platform_modules_version: str, deploy_branch: str):
     """
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.

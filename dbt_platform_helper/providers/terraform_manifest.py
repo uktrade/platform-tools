@@ -92,7 +92,7 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_codebase_pipeline_module(terraform: dict, terraform_platform_modules_version):
+    def _add_codebase_pipeline_module(terraform: dict, terraform_platform_modules_version: str):
         source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={terraform_platform_modules_version}"
         terraform["module"] = {
             "codebase-pipelines": {
