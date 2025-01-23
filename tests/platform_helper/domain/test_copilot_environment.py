@@ -428,13 +428,8 @@ class TestCrossEnvironmentS3Templating:
 
 class TestCopilotTemplating:
 
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
-        return_value="arn:aws:acm:test",
-    )
-    def test_copilot_templating_generate_generates_expected_manifest(self, mock_get_cert_arn):
+    def test_copilot_templating_generate_generates_expected_manifest(self):
         mock_file_provider = Mock()
-        mock_file_provider.mkfile.return_value = "im a file provider!"
 
         test_vpc = Vpc(
             id="a-vpc-id",
@@ -453,6 +448,23 @@ class TestCopilotTemplating:
 
         # TODO - assertions on the results...
 
+    def test_copilot_templating_write_calls_file_provider_with_expected_arguments(self):
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile.return_value = "ive written to a file!"
+
+        result = CopilotTemplating(mock_file_provider).write_environment_manifest(
+            "connors-environment",
+            "test manifest contents",
+        )
+
+        assert result == "ive written to a file!"
+        mock_file_provider.mkfile.assert_called_once_with(
+            ".",
+            "copilot/environments/connors-environment/manifest.yml",
+            "test manifest contents",
+            overwrite=True,
+        )
+
 
 class TestCopilotGenerate:
 
@@ -466,7 +478,7 @@ class TestCopilotGenerate:
     }
 
     MOCK_VPC = Vpc(
-        id="a-really-cool-subnet",
+        id="a-really-cool-vpc",
         private_subnets=["public-1"],
         public_subnets=["private-1"],
         security_groups=["group1"],
