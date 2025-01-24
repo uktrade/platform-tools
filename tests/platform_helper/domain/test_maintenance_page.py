@@ -551,8 +551,8 @@ class MaintenancePageMocks:
 
         self.user_prompt_callback = kwargs.get("user_prompt_callback", Mock())
         self.echo = kwargs.get("echo", Mock())
-        self.find_https_listener = kwargs.get(
-            "find_https_listener", Mock(return_value="https_listener")
+        self.get_https_listener_for_application = kwargs.get(
+            "get_https_listener_for_application", Mock(return_value="https_listener")
         )
         self.get_maintenance_page_type = kwargs.get(
             "get_maintenance_page_type", Mock(return_value=None)
@@ -568,7 +568,7 @@ class MaintenancePageMocks:
             "application": self.application,
             "user_prompt_callback": self.user_prompt_callback,
             "echo": self.echo,
-            "find_https_listener": self.find_https_listener,
+            "get_https_listener_for_application": self.get_https_listener_for_application,
             "get_maintenance_page_type": self.get_maintenance_page_type,
             "get_env_ips": self.get_env_ips,
             "add_maintenance_page": self.add_maintenance_page,
@@ -586,7 +586,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -625,7 +625,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -666,7 +666,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -710,7 +710,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -738,7 +738,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -762,7 +762,8 @@ class TestActivateMethod:
     ):
 
         maintenance_mocks = MaintenancePageMocks(
-            app, find_https_listener=Mock(side_effect=LoadBalancerNotFoundException())
+            app,
+            get_https_listener_for_application=Mock(side_effect=LoadBalancerNotFoundException()),
         )
         provider = MaintenancePage(**maintenance_mocks.params())
 
@@ -774,7 +775,7 @@ class TestActivateMethod:
                 "test-application.",
                 fg="red",
             )
-            maintenance_mocks.find_https_listener.assert_called_with(
+            maintenance_mocks.get_https_listener_for_application.assert_called_with(
                 ANY, "test-application", "development"
             )
             maintenance_mocks.get_maintenance_page_type.assert_not_called()
@@ -785,7 +786,7 @@ class TestActivateMethod:
         self,
     ):
         maintenance_mocks = MaintenancePageMocks(
-            app, find_https_listener=Mock(side_effect=ListenerNotFoundException())
+            app, get_https_listener_for_application=Mock(side_effect=ListenerNotFoundException())
         )
         provider = MaintenancePage(**maintenance_mocks.params())
 
@@ -797,7 +798,7 @@ class TestActivateMethod:
                 "test-application.",
                 fg="red",
             )
-            maintenance_mocks.find_https_listener.assert_called_with(
+            maintenance_mocks.get_https_listener_for_application.assert_called_with(
                 ANY, "test-application", "development"
             )
             maintenance_mocks.get_maintenance_page_type.assert_not_called()
@@ -822,7 +823,7 @@ class TestActivateMethod:
         ):
             provider.activate(env, services, template, vpc)
 
-            maintenance_mocks.find_https_listener.assert_not_called()
+            maintenance_mocks.get_https_listener_for_application.assert_not_called()
             maintenance_mocks.get_maintenance_page_type.assert_not_called()
             maintenance_mocks.remove_maintenance_page.assert_not_called()
             maintenance_mocks.add_maintenance_page.assert_not_called()
@@ -842,7 +843,7 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, services, template, vpc)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -889,7 +890,7 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -917,7 +918,7 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -939,7 +940,7 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.find_https_listener.assert_called_with(
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
@@ -954,13 +955,13 @@ class TestDeactivateCommand:
     ):
 
         maintenance_mocks = MaintenancePageMocks(
-            app, find_https_listener=Mock(side_effect=ListenerNotFoundException())
+            app, get_https_listener_for_application=Mock(side_effect=ListenerNotFoundException())
         )
         provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(click.Abort):
             provider.deactivate(env)
 
-            maintenance_mocks.find_https_listener.assert_called_with(
+            maintenance_mocks.get_https_listener_for_application.assert_called_with(
                 ANY, "test-application", "development"
             )
             maintenance_mocks.get_maintenance_page_type.assert_not_called()
@@ -975,13 +976,14 @@ class TestDeactivateCommand:
         self,
     ):
         maintenance_mocks = MaintenancePageMocks(
-            app, find_https_listener=Mock(side_effect=LoadBalancerNotFoundException())
+            app,
+            get_https_listener_for_application=Mock(side_effect=LoadBalancerNotFoundException()),
         )
         provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(click.Abort):
             provider.deactivate(env)
 
-            maintenance_mocks.find_https_listener.assert_called_with(
+            maintenance_mocks.get_https_listener_for_application.assert_called_with(
                 ANY, "test-application", "development"
             )
             maintenance_mocks.get_maintenance_page_type.assert_not_called()
