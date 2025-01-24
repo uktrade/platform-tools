@@ -18,8 +18,10 @@ from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
+from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
+from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
 from dbt_platform_helper.utils.git import check_if_commit_exists
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -33,8 +35,14 @@ class Codebase:
         check_codebase_exists: Callable[[str], str] = check_codebase_exists,
         check_image_exists: Callable[[str], str] = check_image_exists,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
+        get_build_url_from_pipeline_execution_id: Callable[
+            [str], str
+        ] = get_build_url_from_pipeline_execution_id,
         list_latest_images: Callable[[str], str] = list_latest_images,
         start_build_extraction: Callable[[str], str] = start_build_extraction,
+        start_pipeline_and_return_execution_id: Callable[
+            [str], str
+        ] = start_pipeline_and_return_execution_id,
         check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         run_subprocess: Callable[[str], str] = subprocess.run,
     ):
@@ -44,8 +52,10 @@ class Codebase:
         self.check_codebase_exists = check_codebase_exists
         self.check_image_exists = check_image_exists
         self.get_build_url_from_arn = get_build_url_from_arn
+        self.get_build_url_from_pipeline_execution_id = get_build_url_from_pipeline_execution_id
         self.list_latest_images = list_latest_images
         self.start_build_extraction = start_build_extraction
+        self.start_pipeline_and_return_execution_id = start_pipeline_and_return_execution_id
         self.check_if_commit_exists = check_if_commit_exists
         self.run_subprocess = run_subprocess
 
@@ -147,17 +157,17 @@ class Codebase:
 
         self.check_image_exists(session, application, codebase, commit)
 
-        codebuild_client = session.client("codebuild")
-        build_url = self.__start_build_with_confirmation(
-            codebuild_client,
-            self.get_build_url_from_arn,
-            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment. Do you want to continue?',
+        pipeline_name = f"{app}-{codebase}-manual-release-pipeline"
+        codepipeline_client = session.client("codepipeline")
+
+        build_url = self.__start_pipeline_execution_with_confirmation(
+            codepipeline_client,
+            self.get_build_url_from_pipeline_execution_id,
+            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
             {
-                "projectName": f"pipeline-{application.name}-{codebase}-BuildProject",
-                "artifactsOverride": {"type": "NO_ARTIFACTS"},
-                "sourceTypeOverride": "NO_SOURCE",
-                "environmentVariablesOverride": [
-                    {"name": "COPILOT_ENVIRONMENT", "value": env},
+                "name": pipeline_name,
+                "variables": [
+                    {"name": "ENVIRONMENT", "value": env},
                     {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
                 ],
             },
@@ -215,6 +225,20 @@ class Codebase:
         if self.io.confirm(confirmation_message):
             build_arn = self.start_build_extraction(codebuild_client, build_options)
             return get_build_url_from_arn(build_arn)
+        return None
+
+    def __start_pipeline_execution_with_confirmation(
+        self,
+        codepipeline_client,
+        get_build_url_from_pipeline_execution_id,
+        confirmation_message,
+        build_options,
+    ):
+        if self.io.confirm(confirmation_message):
+            execution_id = self.start_pipeline_and_return_execution_id(
+                codepipeline_client, build_options
+            )
+            return get_build_url_from_pipeline_execution_id(execution_id, build_options["name"])
         return None
 
 

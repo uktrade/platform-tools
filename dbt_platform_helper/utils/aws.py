@@ -381,6 +381,11 @@ def start_build_extraction(codebuild_client, build_options):
     return response["build"]["arn"]
 
 
+def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
+    response = codepipeline_client.start_pipeline_execution(**build_options)
+    return response["pipelineExecutionId"]
+
+
 # Todo: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
@@ -421,6 +426,11 @@ def get_build_url_from_arn(build_arn: str) -> str:
         f"https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/{account_id}/projects/"
         f"{project_name}/build/{project_name}%3A{build_id}"
     )
+
+
+def get_build_url_from_pipeline_execution_id(execution_id: str, pipeline_name: str) -> str:
+
+    return f"https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}"
 
 
 def list_latest_images(ecr_client, ecr_repository_name, codebase_repository, echo):
