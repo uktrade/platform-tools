@@ -64,8 +64,15 @@ def online(app, env):
 
 
 @environment.command()
-@click.option("--name", "-n", required=True)
+@click.option(
+    "--name",
+    "-n",
+    required=True,
+    help="The name of the environment to generate a copilot manifest for.",
+)
 def generate(name):
+    """Gathers various IDs and ARNs from AWS and generates the AWS Copilot
+    environment manifest at copilot/environments/<environment>/manifest.yml."""
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
