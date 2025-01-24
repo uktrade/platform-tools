@@ -12,7 +12,13 @@ from tests.platform_helper.utils.test_aws import mock_vpc_info_session
 
 @mock_aws
 def set_up_test_platform_vpc(
-    client: boto3.client, cidr: str, private_subnet_cidr: str, public_subnet_cidr: str, name: str
+    client: boto3.client,
+    app_name: str,
+    env_name: str,
+    cidr: str,
+    private_subnet_cidr: str,
+    public_subnet_cidr: str,
+    name: str,
 ):
     vpc_id = client.create_vpc(CidrBlock=cidr)["Vpc"]["VpcId"]
     public_subnet_id = client.create_subnet(CidrBlock=public_subnet_cidr, VpcId=vpc_id)["Subnet"][
@@ -37,7 +43,7 @@ def set_up_test_platform_vpc(
         Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "private"}],
     )
     client.create_tags(
-        Resources=[sg_id], Tags=[{"Key": "Name", "Value": "copilot-test-app-test-env-env"}]
+        Resources=[sg_id], Tags=[{"Key": "Name", "Value": f"copilot-{app_name}-{env_name}-env"}]
     )
 
     return Vpc(
@@ -54,6 +60,8 @@ class TestGetVpcBotoIntegration:
         client = boto3.client("ec2")
         expected_vpc = set_up_test_platform_vpc(
             client,
+            "test-app",
+            "test-env",
             "10.0.0.0/16",
             private_subnet_cidr="10.0.2.0/24",
             public_subnet_cidr="10.0.1.0/24",
@@ -61,6 +69,8 @@ class TestGetVpcBotoIntegration:
         )
         set_up_test_platform_vpc(
             client,
+            "test-app",
+            "test-env",
             "172.16.0.0/16",
             private_subnet_cidr="172.16.2.0/24",
             public_subnet_cidr="172.16.1.0/24",
@@ -75,10 +85,12 @@ class TestGetVpcBotoIntegration:
         assert result == expected_vpc
 
     @mock_aws
-    def test_get_vpc_failure_no_matching_vpc(self):
+    def test_get_vpc_failure_no_matching_vpc_name(self):
         client = boto3.client("ec2")
         set_up_test_platform_vpc(
             client,
+            "my_app",
+            "my_env",
             "10.0.0.0/16",
             private_subnet_cidr="10.0.2.0/24",
             public_subnet_cidr="10.0.1.0/24",
@@ -102,6 +114,48 @@ class TestGetVpcBotoIntegration:
             VpcProvider(mock_session).get_vpc("my_app", "my_env", "test-vpc")
 
         assert "VPC not found for name 'test-vpc'" in str(ex)
+
+    @mock_aws
+    def test_get_vpc_failure_given_non_existent_app(self):
+        client = boto3.client("ec2")
+        set_up_test_platform_vpc(
+            client,
+            "my_app",
+            "my_env",
+            "10.0.0.0/16",
+            private_subnet_cidr="10.0.2.0/24",
+            public_subnet_cidr="10.0.1.0/24",
+            name="test-vpc",
+        )
+
+        mock_session = Mock()
+        mock_session.client.return_value = client
+
+        with pytest.raises(VpcProviderException) as ex:
+            VpcProvider(mock_session).get_vpc("non-existent-app", "my_env", "test-vpc")
+
+        assert "No matching security groups found in vpc 'test-vpc'" in str(ex)
+
+    @mock_aws
+    def test_get_vpc_failure_given_non_existent_env(self):
+        client = boto3.client("ec2")
+        set_up_test_platform_vpc(
+            client,
+            "my_app",
+            "my_env",
+            "10.0.0.0/16",
+            private_subnet_cidr="10.0.2.0/24",
+            public_subnet_cidr="10.0.1.0/24",
+            name="test-vpc",
+        )
+
+        mock_session = Mock()
+        mock_session.client.return_value = client
+
+        with pytest.raises(VpcProviderException) as ex:
+            VpcProvider(mock_session).get_vpc("my_app", "my_non_existent_env", "test-vpc")
+
+        assert "No matching security groups found in vpc 'test-vpc'" in str(ex)
 
 
 class TestGetVpcGivenMockedResponses:
