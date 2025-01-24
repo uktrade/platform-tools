@@ -10,70 +10,63 @@ from dbt_platform_helper.providers.vpc import VpcProviderException
 from tests.platform_helper.utils.test_aws import mock_vpc_info_session
 
 
+def set_up_test_platform_vpc(
+    client: boto3.client, cidr: str, private_subnet_cidr: str, public_subnet_cidr: str, name: str
+):
+    vpc = client.create_vpc(CidrBlock=cidr)
+    client.create_tags(Resources=[vpc["Vpc"]["VpcId"]], Tags=[{"Key": "Name", "Value": name}])
+    public_subnet = client.create_subnet(CidrBlock=public_subnet_cidr, VpcId=vpc["Vpc"]["VpcId"])
+    private_subnet = client.create_subnet(CidrBlock=private_subnet_cidr, VpcId=vpc["Vpc"]["VpcId"])
+
+    client.create_tags(
+        Resources=[public_subnet["Subnet"]["SubnetId"]],
+        Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "public"}],
+    )
+    client.create_tags(
+        Resources=[private_subnet["Subnet"]["SubnetId"]],
+        Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "private"}],
+    )
+
+    sg_tag = "copilot-test-app-test-env-env"
+    sg = client.create_security_group(
+        GroupName="test_vpc_sg",
+        Description="SG tagged with expected name",
+        VpcId=vpc["Vpc"]["VpcId"],
+    )
+    client.create_tags(Resources=[sg["GroupId"]], Tags=[{"Key": "Name", "Value": sg_tag}])
+
+    return Vpc(
+        vpc["Vpc"]["VpcId"],
+        [public_subnet["Subnet"]["SubnetId"]],
+        [private_subnet["Subnet"]["SubnetId"]],
+        [sg["GroupId"]],
+    )
+
+
 @mock_aws
 def test_get_vpc_success_against_mocked_aws_environment():
     client = boto3.client("ec2")
-
-    vpc1 = client.create_vpc(CidrBlock="10.0.0.0/16")
-    client.create_tags(
-        Resources=[vpc1["Vpc"]["VpcId"]], Tags=[{"Key": "Name", "Value": "test-vpc"}]
+    expected_vpc = set_up_test_platform_vpc(
+        client,
+        "10.0.0.0/16",
+        private_subnet_cidr="10.0.2.0/24",
+        public_subnet_cidr="10.0.1.0/24",
+        name="test-vpc",
     )
-    vpc1_public_subnet = client.create_subnet(CidrBlock="10.0.1.0/24", VpcId=vpc1["Vpc"]["VpcId"])
-    vpc1_private_subnet = client.create_subnet(CidrBlock="10.0.2.0/24", VpcId=vpc1["Vpc"]["VpcId"])
-
-    client.create_tags(
-        Resources=[vpc1_public_subnet["Subnet"]["SubnetId"]],
-        Tags=[{"Key": "vpc-id", "Value": "test-vpc"}, {"Key": "subnet_type", "Value": "public"}],
+    non_matching_vpc = set_up_test_platform_vpc(
+        client,
+        "172.16.0.0/16",
+        private_subnet_cidr="172.16.2.0/24",
+        public_subnet_cidr="172.16.1.0/24",
+        name="test-vpc-2",
     )
-    client.create_tags(
-        Resources=[vpc1_private_subnet["Subnet"]["SubnetId"]],
-        Tags=[{"Key": "vpc-id", "Value": "test-vpc"}, {"Key": "subnet_type", "Value": "private"}],
-    )
-
-    sg_tag = "copilot-test-app-test-env-env"
-    sg_1 = client.create_security_group(
-        GroupName="test_vpc_sg",
-        Description="SG tagged with expected name",
-        VpcId=vpc1["Vpc"]["VpcId"],
-    )
-    client.create_tags(Resources=[sg_1["GroupId"]], Tags=[{"Key": "Name", "Value": sg_tag}])
-
-    vpc2 = client.create_vpc(CidrBlock="172.16.0.0/16")
-    client.create_tags(
-        Resources=[vpc2["Vpc"]["VpcId"]], Tags=[{"Key": "Name", "Value": "test-vpc-2"}]
-    )
-
-    vpc2_public_subnet = client.create_subnet(CidrBlock="172.16.1.0/24", VpcId=vpc2["Vpc"]["VpcId"])
-    vpc2_private_subnet = client.create_subnet(
-        CidrBlock="172.16.2.0/24", VpcId=vpc2["Vpc"]["VpcId"]
-    )
-
-    client.create_tags(
-        Resources=[vpc2_public_subnet["Subnet"]["SubnetId"]],
-        Tags=[{"Key": "vpc-id", "Value": "test-vpc-2"}, {"Key": "subnet_type", "Value": "public"}],
-    )
-    client.create_tags(
-        Resources=[vpc2_private_subnet["Subnet"]["SubnetId"]],
-        Tags=[{"Key": "vpc-id", "Value": "test-vpc-2"}, {"Key": "subnet_type", "Value": "private"}],
-    )
-
-    sg_tag = "copilot-test-app-test-env-env"
-    sg_2 = client.create_security_group(
-        GroupName="test_vpc_2_sg",
-        Description="SG tagged with expected name",
-        VpcId=vpc2["Vpc"]["VpcId"],
-    )
-    client.create_tags(Resources=[sg_2["GroupId"]], Tags=[{"Key": "Name", "Value": sg_tag}])
 
     mock_session = Mock()
     mock_session.client.return_value = client
 
     result = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
 
-    assert result.private_subnets == [vpc1_private_subnet["Subnet"]["SubnetId"]]
-    assert result.public_subnets == [vpc1_public_subnet["Subnet"]["SubnetId"]]
-    assert result.id == vpc1["Vpc"]["VpcId"]
-    assert result.security_groups == [sg_1["GroupId"]]
+    assert result == expected_vpc
 
 
 @mock_aws
