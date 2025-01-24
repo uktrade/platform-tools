@@ -2,6 +2,7 @@ import click
 
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -20,8 +21,7 @@ def prepare():
     try:
         Codebase().prepare()
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @codebase.command()
@@ -37,8 +37,7 @@ def list(app, with_images):
     try:
         Codebase().list(app, with_images)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @codebase.command()
@@ -54,8 +53,7 @@ def build(app, codebase, commit):
     try:
         Codebase().build(app, codebase, commit)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @codebase.command()
@@ -71,5 +69,4 @@ def deploy(app, env, codebase, commit):
     try:
         Codebase().deploy(app, env, codebase, commit)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
