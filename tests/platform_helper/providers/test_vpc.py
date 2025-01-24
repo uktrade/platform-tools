@@ -10,35 +10,40 @@ from dbt_platform_helper.providers.vpc import VpcProviderException
 from tests.platform_helper.utils.test_aws import mock_vpc_info_session
 
 
+@mock_aws
 def set_up_test_platform_vpc(
     client: boto3.client, cidr: str, private_subnet_cidr: str, public_subnet_cidr: str, name: str
 ):
-    vpc = client.create_vpc(CidrBlock=cidr)
-    client.create_tags(Resources=[vpc["Vpc"]["VpcId"]], Tags=[{"Key": "Name", "Value": name}])
-    public_subnet = client.create_subnet(CidrBlock=public_subnet_cidr, VpcId=vpc["Vpc"]["VpcId"])
-    private_subnet = client.create_subnet(CidrBlock=private_subnet_cidr, VpcId=vpc["Vpc"]["VpcId"])
+    vpc_id = client.create_vpc(CidrBlock=cidr)["Vpc"]["VpcId"]
+    public_subnet_id = client.create_subnet(CidrBlock=public_subnet_cidr, VpcId=vpc_id)["Subnet"][
+        "SubnetId"
+    ]
+    private_subnet_id = client.create_subnet(CidrBlock=private_subnet_cidr, VpcId=vpc_id)["Subnet"][
+        "SubnetId"
+    ]
+    sg = client.create_security_group(
+        GroupName="test_vpc_sg",
+        Description=f"SG for {name}",
+        VpcId=vpc_id,
+    )
 
+    client.create_tags(Resources=[vpc_id], Tags=[{"Key": "Name", "Value": name}])
     client.create_tags(
-        Resources=[public_subnet["Subnet"]["SubnetId"]],
+        Resources=[public_subnet_id],
         Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "public"}],
     )
     client.create_tags(
-        Resources=[private_subnet["Subnet"]["SubnetId"]],
+        Resources=[private_subnet_id],
         Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "private"}],
     )
-
-    sg_tag = "copilot-test-app-test-env-env"
-    sg = client.create_security_group(
-        GroupName="test_vpc_sg",
-        Description="SG tagged with expected name",
-        VpcId=vpc["Vpc"]["VpcId"],
+    client.create_tags(
+        Resources=[sg["GroupId"]], Tags=[{"Key": "Name", "Value": "copilot-test-app-test-env-env"}]
     )
-    client.create_tags(Resources=[sg["GroupId"]], Tags=[{"Key": "Name", "Value": sg_tag}])
 
     return Vpc(
-        vpc["Vpc"]["VpcId"],
-        [public_subnet["Subnet"]["SubnetId"]],
-        [private_subnet["Subnet"]["SubnetId"]],
+        vpc_id,
+        [public_subnet_id],
+        [private_subnet_id],
         [sg["GroupId"]],
     )
 
