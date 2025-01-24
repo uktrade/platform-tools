@@ -1,9 +1,9 @@
 # Commands Reference
 
 - [cli](#cli)
-- [cli hello](#cli-hello)
-- [cli argument-replacements](#cli-argument-replacements)
-- [cli option-replacements](#cli-option-replacements)
+  - [cli hello](#cli-hello)
+  - [cli argument-replacements](#cli-argument-replacements)
+  - [cli option-replacements](#cli-option-replacements)
 
 # cli
 
