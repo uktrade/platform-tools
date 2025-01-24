@@ -58,7 +58,7 @@ class TestGetVpcBotoIntegration:
     @mock_aws
     def test_get_vpc_success(self):
         client = boto3.client("ec2")
-        expected_vpc = set_up_test_platform_vpc(
+        expected_vpc_1 = set_up_test_platform_vpc(
             client,
             "test-app",
             "test-env",
@@ -67,7 +67,7 @@ class TestGetVpcBotoIntegration:
             public_subnet_cidr="10.0.1.0/24",
             name="test-vpc",
         )
-        set_up_test_platform_vpc(
+        expected_vpc_2 = set_up_test_platform_vpc(
             client,
             "test-app",
             "test-env",
@@ -80,9 +80,11 @@ class TestGetVpcBotoIntegration:
         mock_session = Mock()
         mock_session.client.return_value = client
 
-        result = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
+        result_1 = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
+        assert result_1 == expected_vpc_1
 
-        assert result == expected_vpc
+        result_2 = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc-2")
+        assert result_2 == expected_vpc_2
 
     @mock_aws
     def test_get_vpc_failure_no_matching_vpc_name(self):
