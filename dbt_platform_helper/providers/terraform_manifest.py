@@ -105,7 +105,7 @@ class TerraformManifestProvider:
                 "pipelines": "${each.value.pipelines}",
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
-                "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_channel_id")}',
+                "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
                 "env_config": "${local.environments}",
             }
         }

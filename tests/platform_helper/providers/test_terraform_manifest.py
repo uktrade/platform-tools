@@ -90,7 +90,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert module["requires_image_build"] == '${lookup(each.value, "requires_image_build", true)}'
     assert (
         module["slack_channel"]
-        == '${lookup(each.value, "slack_channel", "/codebuild/slack_channel_id")}'
+        == '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}'
     )
     assert module["env_config"] == "${local.environments}"
 

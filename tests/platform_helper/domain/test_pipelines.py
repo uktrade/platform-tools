@@ -75,7 +75,7 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @pytest.mark.parametrize(
     "cli_terraform_platform_version, config_terraform_platform_version, expected_terraform_platform_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_terraform_platform_version sets the platform-config.yml to include the TPM version at platform-config.yml/default_versions/terraform-platform-modules
-        ("7", True, "7", None, None),  # Case with cli_terraform_platform_version
+        ("5", True, "5", None, None),  # Case with cli_terraform_platform_version
         (
             None,
             True,
@@ -84,7 +84,13 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
             "demodjango-branch",
         ),  # Case with config_terraform_platform_version and specific branch
         (None, True, "4.0.0", None, None),  # Case with config_terraform_platform_version
-        (None, None, "5", None, None),  # Case with default TPM version and without branch, defaults
+        (
+            None,
+            None,
+            DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
+            None,
+            None,
+        ),  # Case with default TPM version and without branch, defaults
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(

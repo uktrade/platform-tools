@@ -84,7 +84,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     config_provider.config = platform_env_config
 
     # Should not error if config is sound.
-    config_provider._validate_platform_config()
+    config_provider.load_and_validate_platform_config()
 
 
 @pytest.mark.parametrize(
