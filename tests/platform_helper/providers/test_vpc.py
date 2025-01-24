@@ -48,145 +48,171 @@ def set_up_test_platform_vpc(
     )
 
 
-@mock_aws
-def test_get_vpc_success_against_mocked_aws_environment():
-    client = boto3.client("ec2")
-    expected_vpc = set_up_test_platform_vpc(
-        client,
-        "10.0.0.0/16",
-        private_subnet_cidr="10.0.2.0/24",
-        public_subnet_cidr="10.0.1.0/24",
-        name="test-vpc",
-    )
-    non_matching_vpc = set_up_test_platform_vpc(
-        client,
-        "172.16.0.0/16",
-        private_subnet_cidr="172.16.2.0/24",
-        public_subnet_cidr="172.16.1.0/24",
-        name="test-vpc-2",
-    )
+class TestGetVpcBotoIntegration:
+    @mock_aws
+    def test_get_vpc_success(self):
+        client = boto3.client("ec2")
+        expected_vpc = set_up_test_platform_vpc(
+            client,
+            "10.0.0.0/16",
+            private_subnet_cidr="10.0.2.0/24",
+            public_subnet_cidr="10.0.1.0/24",
+            name="test-vpc",
+        )
+        set_up_test_platform_vpc(
+            client,
+            "172.16.0.0/16",
+            private_subnet_cidr="172.16.2.0/24",
+            public_subnet_cidr="172.16.1.0/24",
+            name="test-vpc-2",
+        )
 
-    mock_session = Mock()
-    mock_session.client.return_value = client
+        mock_session = Mock()
+        mock_session.client.return_value = client
 
-    result = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
+        result = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
 
-    assert result == expected_vpc
+        assert result == expected_vpc
 
+    @mock_aws
+    def test_get_vpc_failure_no_matching_vpc(self):
+        client = boto3.client("ec2")
+        set_up_test_platform_vpc(
+            client,
+            "10.0.0.0/16",
+            private_subnet_cidr="10.0.2.0/24",
+            public_subnet_cidr="10.0.1.0/24",
+            name="test-vpc",
+        )
 
-@mock_aws
-def test_get_vpc_success():
-    mock_session, mock_client, _ = mock_vpc_info_session()
+        mock_session = Mock()
+        mock_session.client.return_value = client
 
-    vpc_provider = VpcProvider(mock_session)
+        with pytest.raises(VpcProviderException) as ex:
+            VpcProvider(mock_session).get_vpc("my_app", "my_env", "non-existent-vpc")
 
-    result = vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        assert "VPC not found for name 'non-existent-vpc'" in str(ex)
 
-    mock_client.describe_vpcs.assert_called_once_with(
-        Filters=[{"Name": "tag:Name", "Values": ["my_vpc"]}]
-    )
+    @mock_aws
+    def test_get_vpc_failure_no_vpcs(self):
+        mock_session = Mock()
+        mock_session.client.return_value = boto3.client("ec2")
 
-    mock_client.describe_subnets.assert_called_once_with(
-        Filters=[{"Name": "vpc-id", "Values": ["vpc-123456"]}]
-    )
+        with pytest.raises(VpcProviderException) as ex:
+            VpcProvider(mock_session).get_vpc("my_app", "my_env", "test-vpc")
 
-    mock_client.describe_security_groups.assert_called_once_with(
-        Filters=[
-            {"Name": "vpc-id", "Values": ["vpc-123456"]},
-            {"Name": "tag:Name", "Values": ["copilot-my_app-my_env-env"]},
-        ]
-    )
-
-    expected_vpc = Vpc(
-        id="vpc-123456",
-        public_subnets=["subnet-public-1", "subnet-public-2"],
-        private_subnets=["subnet-private-1", "subnet-private-2"],
-        security_groups=["sg-abc123"],
-    )
-
-    assert result == expected_vpc
+        assert "VPC not found for name 'test-vpc'" in str(ex)
 
 
-@mock_aws
-def test_get_vpc_failure_no_matching_vpc():
-    mock_session, mock_client, _ = mock_vpc_info_session()
-    vpc_provider = VpcProvider(mock_session)
+class TestGetVpcGivenMockedResponses:
+    @mock_aws
+    def test_get_vpc_sucess_given_mocked_responses(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
 
-    no_vpcs_response = {"Vpcs": []}
-    mock_client.describe_vpcs.return_value = no_vpcs_response
+        vpc_provider = VpcProvider(mock_session)
 
-    with pytest.raises(VpcProviderException) as ex:
-        vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        result = vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
-    assert "VPC not found for name 'my_vpc'" in str(ex)
+        mock_client.describe_vpcs.assert_called_once_with(
+            Filters=[{"Name": "tag:Name", "Values": ["my_vpc"]}]
+        )
 
+        mock_client.describe_subnets.assert_called_once_with(
+            Filters=[{"Name": "vpc-id", "Values": ["vpc-123456"]}]
+        )
 
-@mock_aws
-def test_get_vpc_failure_no_vpc_id_in_response():
-    mock_session, mock_client, _ = mock_vpc_info_session()
-    vpc_provider = VpcProvider(mock_session)
+        mock_client.describe_security_groups.assert_called_once_with(
+            Filters=[
+                {"Name": "vpc-id", "Values": ["vpc-123456"]},
+                {"Name": "tag:Name", "Values": ["copilot-my_app-my_env-env"]},
+            ]
+        )
 
-    vpc_data = {"Vpcs": [{"Id": "abc123"}]}
-    mock_client.describe_vpcs.return_value = vpc_data
+        expected_vpc = Vpc(
+            id="vpc-123456",
+            public_subnets=["subnet-public-1", "subnet-public-2"],
+            private_subnets=["subnet-private-1", "subnet-private-2"],
+            security_groups=["sg-abc123"],
+        )
 
-    with pytest.raises(VpcProviderException) as ex:
-        vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        assert result == expected_vpc
 
-    assert "VPC id not present in vpc 'my_vpc'" in str(ex)
+    @mock_aws
+    def test_get_vpc_failure_given_no_vpcs_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        vpc_provider = VpcProvider(mock_session)
 
+        no_vpcs_response = {"Vpcs": []}
+        mock_client.describe_vpcs.return_value = no_vpcs_response
 
-@mock_aws
-def test_get_vpc_failure_no_private_subnets_in_vpc():
-    mock_session, mock_client, _ = mock_vpc_info_session()
-    mock_client.describe_subnets.return_value = {
-        "Subnets": [
-            {
-                "SubnetId": "test",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": "public"},
-                ],
-                "VpcId": "vpc-123456",
-            }
-        ]
-    }
-    vpc_provider = VpcProvider(mock_session)
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
-    with pytest.raises(VpcProviderException) as ex:
-        vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        assert "VPC not found for name 'my_vpc'" in str(ex)
 
-    assert "No private subnets found in vpc 'my_vpc'" in str(ex)
+    @mock_aws
+    def test_get_vpc_failure_no_vpc_id_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        vpc_provider = VpcProvider(mock_session)
 
+        vpc_data = {"Vpcs": [{"Id": "abc123"}]}
+        mock_client.describe_vpcs.return_value = vpc_data
 
-@mock_aws
-def test_get_vpc_failure_no_public_subnets_in_vpc():
-    mock_session, mock_client, _ = mock_vpc_info_session()
-    mock_client.describe_subnets.return_value = {
-        "Subnets": [
-            {
-                "SubnetId": "test",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": "private"},
-                ],
-                "VpcId": "vpc-123456",
-            }
-        ]
-    }
-    vpc_provider = VpcProvider(mock_session)
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
-    with pytest.raises(VpcProviderException) as ex:
-        vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        assert "VPC id not present in vpc 'my_vpc'" in str(ex)
 
-    assert "No public subnets found in vpc 'my_vpc'" in str(ex)
+    @mock_aws
+    def test_get_vpc_failure_no_matching_private_subnets_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        mock_client.describe_subnets.return_value = {
+            "Subnets": [
+                {
+                    "SubnetId": "test",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "public"},
+                    ],
+                    "VpcId": "vpc-123456",
+                }
+            ]
+        }
+        vpc_provider = VpcProvider(mock_session)
 
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
-@mock_aws
-def test_get_vpc_failure_no_matching_security_groups():
-    mock_session, mock_client, _ = mock_vpc_info_session()
-    vpc_provider = VpcProvider(mock_session)
+        assert "No private subnets found in vpc 'my_vpc'" in str(ex)
 
-    mock_client.describe_security_groups.return_value = {"SecurityGroups": []}
+    @mock_aws
+    def test_get_vpc_failure_no_matching_public_subnets_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        mock_client.describe_subnets.return_value = {
+            "Subnets": [
+                {
+                    "SubnetId": "test",
+                    "Tags": [
+                        {"Key": "subnet_type", "Value": "private"},
+                    ],
+                    "VpcId": "vpc-123456",
+                }
+            ]
+        }
+        vpc_provider = VpcProvider(mock_session)
 
-    with pytest.raises(VpcProviderException) as ex:
-        vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
-    assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
+        assert "No public subnets found in vpc 'my_vpc'" in str(ex)
+
+    @mock_aws
+    def test_get_vpc_failure_no_matching_security_groups_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        vpc_provider = VpcProvider(mock_session)
+
+        mock_client.describe_security_groups.return_value = {"SecurityGroups": []}
+
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+
+        assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
