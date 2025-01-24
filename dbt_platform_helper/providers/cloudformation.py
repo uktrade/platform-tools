@@ -8,6 +8,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class CloudFormation:
+    # TODO add handling for optional client parameters to handle case of calling boto API with None
     def __init__(self, cloudformation_client, iam_client=None, ssm_client=None):
         self.cloudformation_client = cloudformation_client
         self.iam_client = iam_client
