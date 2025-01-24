@@ -262,6 +262,17 @@ class TestGetVpcGivenMockedResponses:
         assert "No public subnets found in vpc 'my_vpc'" in str(ex)
 
     @mock_aws
+    def test_get_vpc_failure_no_subnets_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        mock_client.describe_subnets.return_value = {"Subnets": []}
+        vpc_provider = VpcProvider(mock_session)
+
+        with pytest.raises(VpcProviderException) as ex:
+            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
+
+        assert "No subnets found for VPC with id: vpc-123456" in str(ex)
+
+    @mock_aws
     def test_get_vpc_failure_no_matching_security_groups_in_response(self):
         mock_session, mock_client, _ = mock_vpc_info_session()
         vpc_provider = VpcProvider(mock_session)
