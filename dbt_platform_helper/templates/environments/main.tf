@@ -34,7 +34,6 @@ module "extensions" {
 
   args        = local.args
   environment = "{{ environment }}"
-  vpc_name    = "{{ config.vpc }}"
 }
 
 /* 
