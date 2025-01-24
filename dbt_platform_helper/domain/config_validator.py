@@ -52,7 +52,7 @@ class ConfigValidator:
 
             if not isinstance(environments, dict):
                 self.io.error(
-                    f"Error: {extension_type} extension definition is invalid type, expected dictionary",
+                    f"{extension_type} extension definition is invalid type, expected dictionary",
                 )
                 continue
             for environment, env_config in environments.items():

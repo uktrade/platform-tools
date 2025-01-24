@@ -8,7 +8,7 @@ class ClickIOProvider:
         click.secho(message, fg="magenta")
 
     def error(self, message: str):
-        click.secho(message, fg="red")
+        click.secho(f"Error: {message}", fg="red")
 
     def info(self, message: str):
         click.secho(message)
