@@ -1,8 +1,6 @@
 import click
-from schema import SchemaError
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
@@ -82,10 +80,6 @@ def generate(name):
         CopilotEnvironment(
             config_provider, vpc_provider, cloudformation_provider, session
         ).generate(name)
-    # TODO this exception will never be caught as the config provider catches schema errors and aborts
-    except SchemaError as ex:
-        click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
-        raise click.Abort
     except PlatformException as err:
         click.secho(str(err), fg="red")
         raise click.Abort
