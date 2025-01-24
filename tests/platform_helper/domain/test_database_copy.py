@@ -8,9 +8,9 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
-from dbt_platform_helper.utils.aws import Vpc
 
 
 class DataCopyMocks:
@@ -25,10 +25,17 @@ class DataCopyMocks:
         self.environment.session.client.return_value = self.client
 
         self.vpc = vpc
-        self.vpc_config = Mock()
-        self.vpc_config.return_value = vpc
+        self.vpc_provider = (
+            Mock()
+        )  # this is the callable class so should return a class when called
+        self.instantiated_vpc_provider = Mock()
+        self.instantiated_vpc_provider.get_vpc_info_by_name.return_value = self.vpc
+        self.vpc_provider.return_value = self.instantiated_vpc_provider
         self.db_connection_string = Mock(return_value="test-db-connection-string")
-        self.maintenance_page_provider = Mock()
+        self.maintenance_page_instance = Mock()
+        self.maintenance_page_instance.activate.return_value = None
+        self.maintenance_page_instance.deactivate.return_value = None
+        self.maintenance_page = Mock(return_value=self.maintenance_page_instance)
 
         self.input = Mock(return_value="yes")
         self.echo = Mock()
@@ -38,9 +45,9 @@ class DataCopyMocks:
     def params(self):
         return {
             "load_application": self.load_application,
-            "vpc_config": self.vpc_config,
+            "vpc_provider": self.vpc_provider,
             "db_connection_string": self.db_connection_string,
-            "maintenance_page_provider": self.maintenance_page_provider,
+            "maintenance_page": self.maintenance_page,
             "input": self.input,
             "echo": self.echo,
             "abort": self.abort,
@@ -124,8 +131,9 @@ def test_database_dump():
     db_copy.dump(env, vpc_name)
 
     mocks.load_application.assert_called_once()
-    mocks.vpc_config.assert_called_once_with(
-        mocks.environment.session, app, env, "test-vpc-override"
+    mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
+    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
+        app, env, "test-vpc-override"
     )
     mocks.db_connection_string.assert_called_once_with(
         mocks.environment.session, app, env, "test-app-test-env-test-db"
@@ -165,8 +173,9 @@ def test_database_load_with_response_of_yes():
 
     mocks.load_application.assert_called_once()
 
-    mocks.vpc_config.assert_called_once_with(
-        mocks.environment.session, app, env, "test-vpc-override"
+    mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
+    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
+        app, env, "test-vpc-override"
     )
 
     mocks.db_connection_string.assert_called_once_with(
@@ -212,7 +221,8 @@ def test_database_load_with_response_of_no():
 
     mocks.environment.session.assert_not_called()
 
-    mocks.vpc_config.assert_not_called()
+    mocks.vpc_provider.assert_not_called()
+    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_not_called()
 
     mocks.db_connection_string.assert_not_called()
 
@@ -228,7 +238,9 @@ def test_database_load_with_response_of_no():
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_vpc_errors(is_dump):
     mocks = DataCopyMocks()
-    mocks.vpc_config.side_effect = AWSException("A VPC error occurred")
+    mocks.instantiated_vpc_provider.get_vpc_info_by_name.side_effect = AWSException(
+        "A VPC error occurred"
+    )
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
@@ -239,6 +251,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
             db_copy.load("test-env", "bad-vpc-name")
 
     assert exc.value.code == 1
+    mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
     mocks.abort.assert_called_once_with("A VPC error occurred")
 
 
@@ -364,14 +377,16 @@ def test_copy_command(services, template):
     db_copy.copy("test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template)
 
     db_copy.enrich_vpc_name.assert_called_once_with("test-to-env", "test-to-vpc")
-    mocks.maintenance_page_provider.activate.assert_called_once_with(
-        "test-app", "test-to-env", services, template, "test-vpc-override"
+    mocks.maintenance_page.assert_called_once_with(mocks.application)
+    mocks.maintenance_page_instance.activate.assert_called_once_with(
+        "test-to-env", services, template, "test-vpc-override"
     )
     db_copy.dump.assert_called_once_with("test-from-env", "test-from-vpc", "data_dump_test-to-env")
     db_copy.load.assert_called_once_with(
         "test-to-env", "test-vpc-override", "data_dump_test-to-env"
     )
-    mocks.maintenance_page_provider.deactivate.assert_called_once_with("test-app", "test-to-env")
+
+    mocks.maintenance_page_instance.deactivate.assert_called_once_with("test-to-env")
 
 
 @pytest.mark.parametrize(
@@ -394,8 +409,8 @@ def test_copy_command_with_no_maintenance_page(services, template):
         "test-from-env", "test-to-env", "test-from-vpc", "test-to-vpc", services, template, True
     )
 
-    mocks.maintenance_page_provider.offline.assert_not_called()
-    mocks.maintenance_page_provider.online.assert_not_called()
+    mocks.maintenance_page.offline.assert_not_called()
+    mocks.maintenance_page.online.assert_not_called()
 
 
 @pytest.mark.parametrize("is_dump", [True, False])
@@ -536,8 +551,9 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
     else:
         db_copy.load(env, None)
 
-    mocks.vpc_config.assert_called_once_with(
-        mocks.environment.session, "test-app", env, "test-env-vpc"
+    mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
+    mocks.instantiated_vpc_provider.get_vpc_info_by_name.assert_called_once_with(
+        "test-app", env, "test-env-vpc"
     )
 
 

@@ -1,10 +1,15 @@
+from collections import defaultdict
+from pathlib import Path
+
 import boto3
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.load_balancers import find_https_listener
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
-from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
+from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -106,7 +111,7 @@ def _generate_copilot_environment_manifests(
         }
     )
     click.echo(
-        mkfile(
+        FileProvider.mkfile(
             ".", f"copilot/environments/{environment_name}/manifest.yml", contents, overwrite=True
         )
     )
@@ -147,3 +152,53 @@ class CopilotEnvironment:
         _generate_copilot_environment_manifests(
             environment_name, enriched_config["application"], env_config, session
         )
+
+
+class CopilotTemplating:
+    def __init__(self, mkfile_fn=FileProvider.mkfile):
+        self.mkfile_fn = mkfile_fn
+
+    def generate_cross_account_s3_policies(self, environments: dict, extensions):
+        resource_blocks = defaultdict(list)
+
+        for ext_name, ext_data in extensions.items():
+            for env_name, env_data in ext_data.get("environments", {}).items():
+                if "cross_environment_service_access" in env_data:
+                    bucket = env_data.get("bucket_name")
+                    x_env_data = env_data["cross_environment_service_access"]
+                    for access_name, access_data in x_env_data.items():
+                        service = access_data.get("service")
+                        read = access_data.get("read", False)
+                        write = access_data.get("write", False)
+                        if read or write:
+                            resource_blocks[service].append(
+                                {
+                                    "bucket_name": bucket,
+                                    "app_prefix": camel_case(f"{service}-{bucket}-{access_name}"),
+                                    "bucket_env": env_name,
+                                    "access_env": access_data.get("environment"),
+                                    "bucket_account": environments.get(env_name, {})
+                                    .get("accounts", {})
+                                    .get("deploy", {})
+                                    .get("id"),
+                                    "read": read,
+                                    "write": write,
+                                }
+                            )
+
+        if not resource_blocks:
+            click.echo("\n>>> No cross-environment S3 policies to create.\n")
+            return
+
+        templates = setup_templates()
+
+        for service in sorted(resource_blocks.keys()):
+            resources = resource_blocks[service]
+            click.echo(f"\n>>> Creating S3 cross account policies for {service}.\n")
+            template = templates.get_template(S3_CROSS_ACCOUNT_POLICY)
+            file_content = template.render({"resources": resources})
+            output_dir = Path(".").absolute()
+            file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
+
+            self.mkfile_fn(output_dir, file_path, file_content, True)
+            click.echo(f"File {file_path} created")

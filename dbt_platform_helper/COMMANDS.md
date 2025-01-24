@@ -1,40 +1,40 @@
 # Commands Reference
 
 - [platform-helper](#platform-helper)
-- [platform-helper application](#platform-helper-application)
-- [platform-helper application container-stats](#platform-helper-application-container-stats)
-- [platform-helper application task-stats](#platform-helper-application-task-stats)
-- [platform-helper codebase](#platform-helper-codebase)
-- [platform-helper codebase prepare](#platform-helper-codebase-prepare)
-- [platform-helper codebase list](#platform-helper-codebase-list)
-- [platform-helper codebase build](#platform-helper-codebase-build)
-- [platform-helper codebase deploy](#platform-helper-codebase-deploy)
-- [platform-helper conduit](#platform-helper-conduit)
-- [platform-helper config](#platform-helper-config)
-- [platform-helper config validate](#platform-helper-config-validate)
-- [platform-helper config aws](#platform-helper-config-aws)
-- [platform-helper copilot](#platform-helper-copilot)
-- [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
-- [platform-helper environment](#platform-helper-environment)
-- [platform-helper environment offline](#platform-helper-environment-offline)
-- [platform-helper environment online](#platform-helper-environment-online)
-- [platform-helper environment generate](#platform-helper-environment-generate)
-- [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
-- [platform-helper generate](#platform-helper-generate)
-- [platform-helper pipeline](#platform-helper-pipeline)
-- [platform-helper pipeline generate](#platform-helper-pipeline-generate)
-- [platform-helper secrets](#platform-helper-secrets)
-- [platform-helper secrets copy](#platform-helper-secrets-copy)
-- [platform-helper secrets list](#platform-helper-secrets-list)
-- [platform-helper notify](#platform-helper-notify)
-- [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
-- [platform-helper notify add-comment](#platform-helper-notify-add-comment)
-- [platform-helper database](#platform-helper-database)
-- [platform-helper database dump](#platform-helper-database-dump)
-- [platform-helper database load](#platform-helper-database-load)
-- [platform-helper database copy](#platform-helper-database-copy)
-- [platform-helper version](#platform-helper-version)
-- [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
+  - [platform-helper application](#platform-helper-application)
+    - [platform-helper application container-stats](#platform-helper-application-container-stats)
+    - [platform-helper application task-stats](#platform-helper-application-task-stats)
+  - [platform-helper codebase](#platform-helper-codebase)
+    - [platform-helper codebase prepare](#platform-helper-codebase-prepare)
+    - [platform-helper codebase list](#platform-helper-codebase-list)
+    - [platform-helper codebase build](#platform-helper-codebase-build)
+    - [platform-helper codebase deploy](#platform-helper-codebase-deploy)
+  - [platform-helper conduit](#platform-helper-conduit)
+  - [platform-helper config](#platform-helper-config)
+    - [platform-helper config validate](#platform-helper-config-validate)
+    - [platform-helper config aws](#platform-helper-config-aws)
+  - [platform-helper copilot](#platform-helper-copilot)
+    - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
+  - [platform-helper environment](#platform-helper-environment)
+    - [platform-helper environment offline](#platform-helper-environment-offline)
+    - [platform-helper environment online](#platform-helper-environment-online)
+    - [platform-helper environment generate](#platform-helper-environment-generate)
+    - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
+  - [platform-helper generate](#platform-helper-generate)
+  - [platform-helper pipeline](#platform-helper-pipeline)
+    - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
+  - [platform-helper secrets](#platform-helper-secrets)
+    - [platform-helper secrets copy](#platform-helper-secrets-copy)
+    - [platform-helper secrets list](#platform-helper-secrets-list)
+  - [platform-helper notify](#platform-helper-notify)
+    - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
+    - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
+  - [platform-helper database](#platform-helper-database)
+    - [platform-helper database dump](#platform-helper-database-dump)
+    - [platform-helper database load](#platform-helper-database-load)
+    - [platform-helper database copy](#platform-helper-database-copy)
+  - [platform-helper version](#platform-helper-version)
+    - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
 
 # platform-helper
 
@@ -460,12 +460,10 @@ platform-helper environment online --app <application> --env <environment>
 ## Usage
 
 ```
-platform-helper environment generate --name <name> [--vpc-name <vpc_name>] 
+platform-helper environment generate --name <name> 
 ```
 
 ## Options
-
-- `--vpc-name <text>`
 
 - `--name
 -n <text>`

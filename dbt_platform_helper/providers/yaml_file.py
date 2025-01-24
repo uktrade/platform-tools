@@ -1,5 +1,3 @@
-from abc import ABC
-from abc import abstractmethod
 from pathlib import Path
 
 import yaml
@@ -16,7 +14,7 @@ class YamlFileProviderException(FileProviderException):
     pass
 
 
-class FileNotFoundException(YamlFileProviderException):
+class FileNotFoundException(FileProviderException):
     pass
 
 
@@ -28,13 +26,7 @@ class DuplicateKeysException(YamlFileProviderException):
     pass
 
 
-class FileProvider(ABC):
-    @abstractmethod
-    def load(path: str) -> dict:
-        raise NotImplementedError("Implement this in the subclass")
-
-
-class YamlFileProvider(FileProvider):
+class YamlFileProvider:
     def load(path: str) -> dict:
         """
         Raises:
@@ -43,10 +35,7 @@ class YamlFileProvider(FileProvider):
             DuplicateKeysException: yaml contains duplicate keys
         """
         if not Path(path).exists():
-            # TODO this error message is domain specific and should not mention deployment directory project here
-            raise FileNotFoundException(
-                f"`{path}` is missing. Please check it exists and you are in the root directory of your deployment project."
-            )
+            raise FileNotFoundException(f"`{path}` is missing.")
         try:
             yaml_content = yaml.safe_load(Path(path).read_text())
         except ParserError:

@@ -8,15 +8,15 @@ from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
-from dbt_platform_helper.domain.maintenance_page import MaintenancePageProvider
+from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.vpc import Vpc
+from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import Vpc
 from dbt_platform_helper.utils.aws import get_connection_string
-from dbt_platform_helper.utils.aws import get_vpc_info_by_name
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from dbt_platform_helper.utils.messages import abort_with_error
 
@@ -28,13 +28,12 @@ class DatabaseCopy:
         database: str,
         auto_approve: bool = False,
         load_application: Callable[[str], Application] = load_application,
-        vpc_config: Callable[[Session, str, str, str], Vpc] = get_vpc_info_by_name,
+        # TODO We inject VpcProvider as a callable here so that it can be instantiated within the method.  To be improved
+        vpc_provider: Callable[[Session], VpcProvider] = VpcProvider,
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
-        maintenance_page_provider: Callable[
-            [str, str, list[str], str, str], None
-        ] = MaintenancePageProvider(),
+        maintenance_page: Callable[[str, str, list[str], str, str], None] = MaintenancePage,
         input: Callable[[str], str] = click.prompt,
         echo: Callable[[str], str] = click.secho,
         abort: Callable[[str], None] = abort_with_error,
@@ -43,9 +42,8 @@ class DatabaseCopy:
         self.app = app
         self.database = database
         self.auto_approve = auto_approve
-        self.vpc_config = vpc_config
+        self.vpc_provider = vpc_provider
         self.db_connection_string = db_connection_string
-        self.maintenance_page_provider = maintenance_page_provider
         self.input = input
         self.echo = echo
         self.abort = abort
@@ -63,6 +61,8 @@ class DatabaseCopy:
         except ApplicationNotFoundException:
             abort(f"No such application '{app}'.")
 
+        self.maintenance_page = maintenance_page(self.application)
+
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
@@ -76,7 +76,8 @@ class DatabaseCopy:
         env_session = environment.session
 
         try:
-            vpc_config = self.vpc_config(env_session, self.app, env, vpc_name)
+            vpc_provider = self.vpc_provider(env_session)
+            vpc_config = vpc_provider.get_vpc_info_by_name(self.app, env, vpc_name)
         except AWSException as ex:
             self.abort(str(ex))
 
@@ -181,11 +182,11 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
+            self.maintenance_page.activate(to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc, f"data_dump_{to_env}")
         self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
-            self.maintenance_page_provider.deactivate(self.app, to_env)
+            self.maintenance_page.deactivate(to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:

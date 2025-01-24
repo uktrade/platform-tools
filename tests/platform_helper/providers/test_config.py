@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +9,7 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -247,6 +250,42 @@ def test_load_and_validate_config_valid_file(yaml_file):
     assert validated == conf
 
 
+def test_get_enriched_config_returns_config_with_environment_defaults_applied():
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = {
+        "application": "test-app",
+        "environments": {
+            "*": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+            },
+            "test": {"versions": {"terraform-platform-modules": "123456"}},
+        },
+    }
+
+    expected_enriched_config = {
+        "application": "test-app",
+        "environments": {
+            "test": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+                "versions": {"terraform-platform-modules": "123456"},
+            }
+        },
+    }
+
+    mock_config_validator = Mock()
+
+    result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
+    assert result == expected_enriched_config
+
+
 def test_validation_fails_if_invalid_default_version_keys_present(
     fakefs, capsys, valid_platform_config
 ):
@@ -314,6 +353,19 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
         ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+
+def test_load_and_validate_platform_config_fails_with_missing_config_file(fakefs, capsys):
+    if Path(PLATFORM_CONFIG_FILE).exists():
+        os.remove(Path(PLATFORM_CONFIG_FILE))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    assert (
+        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        in capsys.readouterr().err
+    )
 
 
 def test_validation_runs_against_platform_config_yml(fakefs):
