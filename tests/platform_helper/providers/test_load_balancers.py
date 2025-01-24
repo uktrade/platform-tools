@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from dbt_platform_helper.providers.load_balancers import CertificateNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import (
@@ -75,16 +76,16 @@ class TestFindLoadBalancer:
 
 
 class TestGetHttpsCertificateForApplicationLoadbalancer:
-    # @patch(
-    #     "dbt_platform_helper.domain.copilot_environment.get_https_listener_for_application",
-    #     return_value="https_listener_arn",
-    # )
-    # def test_when_no_certificate_present(self, mock_get_https_listener_for_application):
-    #     boto_mock = MagicMock()
-    #     boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
+    @patch(
+        "dbt_platform_helper.providers.load_balancers.get_https_listener_for_application",
+        return_value="https_listener_arn",
+    )
+    def test_when_no_certificate_present(self, mock_get_https_listener_for_application):
+        boto_mock = MagicMock()
+        boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
 
-    #     with pytest.raises(CertificateNotFoundException):
-    #         find_https_certificate(boto_mock, "test-application", "development")
+        with pytest.raises(CertificateNotFoundException):
+            get_https_certificate_for_application(boto_mock, "test-application", "development")
 
     @patch(
         "dbt_platform_helper.providers.load_balancers.get_https_listener_for_application",
