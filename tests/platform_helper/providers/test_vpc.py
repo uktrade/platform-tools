@@ -21,11 +21,11 @@ def set_up_test_platform_vpc(
     private_subnet_id = client.create_subnet(CidrBlock=private_subnet_cidr, VpcId=vpc_id)["Subnet"][
         "SubnetId"
     ]
-    sg = client.create_security_group(
+    sg_id = client.create_security_group(
         GroupName="test_vpc_sg",
         Description=f"SG for {name}",
         VpcId=vpc_id,
-    )
+    )["GroupId"]
 
     client.create_tags(Resources=[vpc_id], Tags=[{"Key": "Name", "Value": name}])
     client.create_tags(
@@ -37,14 +37,14 @@ def set_up_test_platform_vpc(
         Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "private"}],
     )
     client.create_tags(
-        Resources=[sg["GroupId"]], Tags=[{"Key": "Name", "Value": "copilot-test-app-test-env-env"}]
+        Resources=[sg_id], Tags=[{"Key": "Name", "Value": "copilot-test-app-test-env-env"}]
     )
 
     return Vpc(
         vpc_id,
         [public_subnet_id],
         [private_subnet_id],
-        [sg["GroupId"]],
+        [sg_id],
     )
 
 
