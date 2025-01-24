@@ -55,11 +55,15 @@ class CopilotEnvironment:
 
         self.echo(f"Using {profile_for_environment} for this AWS session")
 
+        app_name = platform_config["application"]
+
         certificate_arn = get_https_certificate_for_application(
-            self.session, platform_config["application"], environment_name
+            self.session, app_name, environment_name
         )
 
-        vpc = self._get_environment_vpc(self.session, environment_name, env_config.get("vpc", None))
+        vpc = self._get_environment_vpc(
+            self.session, app_name, environment_name, env_config.get("vpc", None)
+        )
 
         copilot_environment_manifest = self.copilot_templating.generate_copilot_environment_manifest(
             environment_name=environment_name,
@@ -74,15 +78,15 @@ class CopilotEnvironment:
             )
         )
 
-    def _get_environment_vpc(self, session: Session, env_name: str, vpc_name: str) -> Vpc:
+    def _get_environment_vpc(self, session: Session, app_name, env_name: str, vpc_name: str) -> Vpc:
 
         if not vpc_name:
             vpc_name = f"{session.profile_name}-{env_name}"
 
         try:
-            vpc = self.vpc_provider.get_vpc(vpc_name)
+            vpc = self.vpc_provider.get_vpc(app_name, env_name, vpc_name)
         except VpcNotFoundForNameException:
-            vpc = self.vpc_provider.get_vpc(session.profile_name)
+            vpc = self.vpc_provider.get_vpc(app_name, env_name, session.profile_name)
 
         if not vpc:
             raise VpcNotFoundForNameException

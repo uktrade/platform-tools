@@ -477,7 +477,7 @@ class TestCopilotTemplating:
 class TestCopilotGenerate:
 
     VALID_ENVIRONMENT_CONFIG = {
-        "vpc": "vpc3",
+        "vpc": "a-really-cool-vpc",
         "accounts": {
             "deploy": {"name": "non-prod-acc", "id": "1122334455"},
             "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
@@ -537,6 +537,10 @@ class TestCopilotGenerate:
 
         mock_copilot_templating.write_environment_manifest.assert_called_with(
             "test_environment", "mock manifest"
+        )
+
+        mock_vpc_provider.get_vpc.assert_called_once_with(
+            "test-app", "test_environment", "a-really-cool-vpc"
         )
 
         mock_echo.assert_has_calls(
