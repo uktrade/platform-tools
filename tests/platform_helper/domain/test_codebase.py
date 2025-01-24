@@ -17,8 +17,8 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.git import CommitNotFoundException
@@ -41,18 +41,6 @@ class CodebaseMocks:
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
-        self.check_codebase_exists = kwargs.get(
-            "check_codebase_exists",
-            Mock(
-                return_value="""
-                                             {
-                                                "name": "test-app", 
-                                                "repository": "uktrade/test-app",
-                                                "services": "1234"
-                                             }
-                                        """
-            ),
-        )
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
         self.run_subprocess = kwargs.get("run_subprocess", Mock())
         self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
@@ -61,7 +49,6 @@ class CodebaseMocks:
         return {
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
-            "check_codebase_exists": self.check_codebase_exists,
             "check_image_exists": self.check_image_exists,
             "io": self.io,
             "run_subprocess": self.run_subprocess,
@@ -262,10 +249,9 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     )
 
 
-def test_codebase_deploy_exception_with_a_nonexistent_codebase():
-    mocks = CodebaseMocks(
-        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundException("application"))
-    )
+@pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
+def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
+    mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
@@ -273,23 +259,7 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(CopilotCodebaseNotFoundException):
-        codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
-
-
-def test_check_codebase_exists_returns_error_when_no_json():
-    mocks = CodebaseMocks(
-        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundException("application"))
-    )
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
-    with pytest.raises(CopilotCodebaseNotFoundException):
+    with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 

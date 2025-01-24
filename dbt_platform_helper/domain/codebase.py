@@ -14,7 +14,6 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationException
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
@@ -32,7 +31,6 @@ class Codebase:
         io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
-        check_codebase_exists: Callable[[str], str] = check_codebase_exists,
         check_image_exists: Callable[[str], str] = check_image_exists,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
         get_build_url_from_pipeline_execution_id: Callable[
@@ -49,7 +47,6 @@ class Codebase:
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
-        self.check_codebase_exists = check_codebase_exists
         self.check_image_exists = check_image_exists
         self.get_build_url_from_arn = get_build_url_from_arn
         self.get_build_url_from_pipeline_execution_id = get_build_url_from_pipeline_execution_id
@@ -152,8 +149,6 @@ class Codebase:
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundException(env)
-
-        self.check_codebase_exists(session, application, codebase)
 
         self.check_image_exists(session, application, codebase, commit)
 
