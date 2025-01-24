@@ -78,6 +78,9 @@ class CopilotEnvironment:
             )
         )
 
+    # TODO: There should always be a vpc_name as defaults have been applied to the config.  This function can
+    # probably fall away. We shouldn't need to check 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
+    # To be checked.
     def _get_environment_vpc(self, session: Session, app_name, env_name: str, vpc_name: str) -> Vpc:
 
         if not vpc_name:
@@ -203,19 +206,3 @@ class CopilotTemplating:
 
             self.file_provider.mkfile(output_dir, file_path, file_content, True)
             click.echo(f"File {file_path} created")
-
-    # TODO: This functionality makes no sense... Why are we checking for a vpc in AWS under 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
-    def _get_environment_vpc(self, session, env_name, vpc_name):
-
-        if not vpc_name:
-            vpc_name = f"{session.profile_name}-{env_name}"
-
-        try:
-            vpc = self.vpc_provider.get_vpc(vpc_name)
-        except VpcNotFoundForNameException:
-            vpc = self.vpc_provider.get_vpc(session.profile_name)
-
-        if not vpc:
-            raise VpcNotFoundForNameException
-
-        return vpc
