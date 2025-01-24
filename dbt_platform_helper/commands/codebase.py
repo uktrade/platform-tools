@@ -63,7 +63,7 @@ def build(app, codebase, commit):
 @click.option("--env", help="AWS Copilot environment", required=True)
 @click.option(
     "--codebase",
-    help="The codebase name as specified in the platform-config.yml file",
+    help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
 @click.option("--commit", help="GitHub commit hash", required=True)

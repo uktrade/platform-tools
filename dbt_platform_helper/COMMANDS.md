@@ -246,7 +246,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
