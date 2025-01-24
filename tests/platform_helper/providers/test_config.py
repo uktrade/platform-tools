@@ -143,7 +143,31 @@ def test_get_enriched_config_returns_config_with_environment_defaults_applied():
     mock_config_validator = Mock()
 
     result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
+
     assert result == expected_enriched_config
+
+
+@pytest.mark.parametrize(
+    "mock_environment_config, expected_vpc_for_test_environment",
+    [
+        ({"test": {}}, None),
+        ({"test": {"vpc": "vpc1"}}, "vpc1"),
+        ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
+        ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
+    ],
+)
+def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environment_defaults_applied(
+    mock_environment_config, expected_vpc_for_test_environment
+):
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = {
+        "application": "test-app",
+        "environments": mock_environment_config,
+    }
+
+    result = ConfigProvider(Mock(), mock_file_provider).get_enriched_config()
+
+    assert result.get("environments").get("test").get("vpc") == expected_vpc_for_test_environment
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(
@@ -158,7 +182,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
 
-        assert "Wrong key 'something-invalid'" in str(ex)
+    assert "Wrong key 'something-invalid'" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(

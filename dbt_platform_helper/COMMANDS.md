@@ -457,6 +457,9 @@ platform-helper environment online --app <application> --env <environment>
 
 [↩ Parent](#platform-helper-environment)
 
+    Gathers various IDs and ARNs from AWS and generates the AWS Copilot
+    environment manifest at copilot/environments/<environment>/manifest.yml.
+
 ## Usage
 
 ```
@@ -467,7 +470,7 @@ platform-helper environment generate --name <name>
 
 - `--name
 -n <text>`
-
+  - The name of the environment to generate a copilot manifest for.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

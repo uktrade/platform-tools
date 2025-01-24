@@ -41,6 +41,8 @@ class TestGenerateTerraform:
         ):
             terraform_environment.generate("not-an-environment")
 
+    # TODO test can be made more complete by using a file fixture for the expected content on the manifest
+    # (See copilot tests)
     def test_terraform_environment_generate_writes_the_expected_manifest_to_file(
         self,
     ):
