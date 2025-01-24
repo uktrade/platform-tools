@@ -23,6 +23,7 @@ from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
@@ -34,7 +35,6 @@ from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
-from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
