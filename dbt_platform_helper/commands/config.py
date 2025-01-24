@@ -98,7 +98,7 @@ def deployment():
 
     recommendations = {}
 
-    ConfigProvider.config_file_check()
+    ConfigProvider().config_file_check()
 
     for template_file in addons_templates:
         generated_with_version = maybe
