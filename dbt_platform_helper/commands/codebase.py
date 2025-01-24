@@ -45,7 +45,7 @@ def list(app, with_images):
 @click.option("--app", help="AWS application name", required=True)
 @click.option(
     "--codebase",
-    help="The codebase name as specified in the platform-config.yml file",
+    help="The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.",
     required=True,
 )
 @click.option("--commit", help="GitHub commit hash", required=True)

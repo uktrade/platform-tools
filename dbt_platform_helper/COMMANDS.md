@@ -222,7 +222,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._

@@ -132,7 +132,7 @@ class Codebase:
             self.get_build_url_from_arn,
             f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
             {
-                "projectName": f"codebuild-{app}-{codebase}",
+                "projectName": f"{app}-{codebase}-codebase-pipeline-image-build",
                 "artifactsOverride": {"type": "NO_ARTIFACTS"},
                 "sourceVersion": commit,
             },
