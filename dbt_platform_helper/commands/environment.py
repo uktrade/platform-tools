@@ -70,6 +70,8 @@ def online(app, env):
 def generate(name):
     """Gathers various IDs and ARNs from AWS and generates the AWS Copilot
     environment manifest at copilot/environments/<environment>/manifest.yml."""
+
+    click_io = ClickIOProvider()
     try:
         click_io = ClickIOProvider()
         session = get_aws_session_or_abort()
