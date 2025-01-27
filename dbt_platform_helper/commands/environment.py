@@ -73,12 +73,11 @@ def generate(name):
 
     click_io = ClickIOProvider()
     try:
-        click_io = ClickIOProvider()
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
         vpc_provider = VpcProvider(session)
         cloudformation_provider = CloudFormation(session.client("cloudformation"))
-        
+
         CopilotEnvironment(
             config_provider, vpc_provider, cloudformation_provider, session
         ).generate(name)
