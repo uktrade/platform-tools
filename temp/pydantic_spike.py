@@ -9,8 +9,8 @@ from pydantic import RootModel
 
 
 class InnerDict(BaseModel):
-    property_1: str
-    property_2: str
+    property_1: str = Field(description="Must be a string")
+    property_2: str = Field(description="Must be a string")
 
 
 class DictOfDictsOnlySpecificNamesAllowed(BaseModel):

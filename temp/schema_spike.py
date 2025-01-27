@@ -4,6 +4,10 @@ import yaml
 from schema import Literal
 from schema import Schema
 
+inner_dict = {
+    Literal("property_1", description="Must be a string"): str,
+    Literal("property_2", description="Must be a string"): str,
+}
 schema = Schema(
     {
         Literal(
@@ -11,10 +15,12 @@ schema = Schema(
             description="The name of your application. Letters, numbers, hyphens and underscores are allowed.",
         ): str,
         "dict_of_dicts_only_specific_names_allowed": {
-            "specific_name_1": {"property_1": str, "property_2": str},
-            "specific_name_2": {"property_1": str, "property_2": str},
+            "specific_name_1": inner_dict,
+            "specific_name_2": inner_dict,
         },
-        "dict_of_dicts_any_name_allowed": {str: {"property_1": str, "property_2": str}},
+        Literal(
+            "dict_of_dicts_any_name_allowed", description="Any number of InnerDicts with any key"
+        ): {str: inner_dict},
     }
 )
 
