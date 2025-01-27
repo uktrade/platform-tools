@@ -131,7 +131,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
 @pytest.mark.parametrize(
     "cli_version, exp_version", [("6", "6"), (None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION)]
 )
-def test_generate_pipeline_generates_codebase_pipeline(
+def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_version(
     cli_version, exp_version, codebase_pipeline_config_for_1_pipeline_and_2_run_groups, fakefs
 ):
     app_name = "test-app"
