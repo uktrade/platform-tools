@@ -28,8 +28,13 @@ class MaintenancePageException(PlatformException):
 
 
 class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
-    def __init__(self, application_name):
+    def __init__(self, application_name: str):
         super().__init__(f"No services deployed yet to {application_name} ")
+
+
+class FailedToActivateMaintenancePageException(MaintenancePageException):
+    def __init__(self, rolled_back_rules: dict[str, bool] = {}):  # original_exception
+        super().__init__()
 
 
 def get_maintenance_page_type(session: boto3.Session, listener_arn: str) -> Union[str, None]:
@@ -141,7 +146,8 @@ def add_maintenance_page(
             ],
         )
     except Exception:
-        clean_up_maintenance_page_rules(session, listener_arn)
+        deleted_rules = clean_up_maintenance_page_rules(session, listener_arn)
+        raise FailedToActivateMaintenancePageException(deleted_rules)
 
 
 def clean_up_maintenance_page_rules(

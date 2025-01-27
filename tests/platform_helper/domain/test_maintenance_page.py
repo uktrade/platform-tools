@@ -591,7 +591,7 @@ class TestCommandHelperMethods:
 
         mock_session.client.side_effect = mock_client
 
-        try:
+        with pytest.raises(FailedToActivateMaintenancePageException, match=""):
             add_maintenance_page(
                 mock_session,
                 listener_arn,
@@ -601,50 +601,48 @@ class TestCommandHelperMethods:
                 ["1.2.3.4"],
                 template,
             )
-        except ClientError:
-            pass
 
-        assert mock_create_rule.call_count == 2
+            assert mock_create_rule.call_count == 2
 
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        tags_descriptions = elbv2_client.describe_tags(
-            ResourceArns=[rule["RuleArn"] for rule in rules]
-        )
+            rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+            tags_descriptions = elbv2_client.describe_tags(
+                ResourceArns=[rule["RuleArn"] for rule in rules]
+            )
 
-        # check that it only contains test tag and not maintenance page tags. Note default rule has no tags
-        for description in tags_descriptions["TagDescriptions"]:
-            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
-            assert tags.get("name", None) not in [
-                "MaintenancePage",
-                "AllowedIps",
-                "BypassIpFilter",
-                "AllowedSourceIps",
-            ]
-
-            if tags.get("test-key"):
-                assert tags["test-key"] == "test-value"
-
-        # check it doesn't contain any maintenance page rules
-        for rule in rules:
-            for conidition in rule["Conditions"]:
-                assert conidition not in [
-                    {
-                        "Field": "http-header",
-                        "HttpHeaderConfig": {
-                            "HttpHeaderName": "X-Forwarded-For",
-                            "Values": ["1.2.3.4"],
-                        },
-                    },
-                    {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
-                    {
-                        "Field": "http-header",
-                        "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
-                    },
-                    {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+            # check that it only contains test tag and not maintenance page tags. Note default rule has no tags
+            for description in tags_descriptions["TagDescriptions"]:
+                tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+                assert tags.get("name", None) not in [
+                    "MaintenancePage",
+                    "AllowedIps",
+                    "BypassIpFilter",
+                    "AllowedSourceIps",
                 ]
-            assert rule["Priority"] not in ["1", "2", "3", "4"]
 
-        assert len(rules) == 2
+                if tags.get("test-key"):
+                    assert tags["test-key"] == "test-value"
+
+            # check it doesn't contain any maintenance page rules
+            for rule in rules:
+                for conidition in rule["Conditions"]:
+                    assert conidition not in [
+                        {
+                            "Field": "http-header",
+                            "HttpHeaderConfig": {
+                                "HttpHeaderName": "X-Forwarded-For",
+                                "Values": ["1.2.3.4"],
+                            },
+                        },
+                        {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
+                        {
+                            "Field": "http-header",
+                            "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
+                        },
+                        {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+                    ]
+                assert rule["Priority"] not in ["1", "2", "3", "4"]
+
+            assert len(rules) == 2
 
 
 class MaintenancePageMocks:
