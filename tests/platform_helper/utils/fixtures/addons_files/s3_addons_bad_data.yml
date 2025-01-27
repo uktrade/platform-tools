@@ -153,6 +153,112 @@ my-s3-bucket-data-migration-worker-role-invalid-arn:
           source_bucket_arn: arn:aws:s3:::test-app
           source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
           worker_role_arn: 1234abc
+          
+my-s3-bucket-data-migration-import-sources-source-bucket-2-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_bucket_arn: 1234abc
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-2
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-2
+          - source_bucket_arn: arn:aws:s3:::valid-source-bucket-2
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-3
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-3
+            
+my-s3-bucket-data-migration-import-sources-source-bucket-3-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_bucket_arn: arn:aws:s3:::valid-source-bucket-2
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-2
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-2
+          - source_bucket_arn: 1234abc
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-3
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-3
+
+my-s3-bucket-data-migration-import-sources-kms-key-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_bucket_arn: arn:aws:s3:::test-app-2
+            source_kms_key_arn: 1234abc
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-2
+
+my-s3-bucket-data-migration-import-sources-worker-role-invalid-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_bucket_arn: arn:aws:s3:::test-app-2
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-2
+            worker_role_arn: 1234abc
+
+my-s3-bucket-data-migration-import-sources-empty:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources: []
+
+my-s3-bucket-data-migration-import-sources-missing-bucket-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-2
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role-2
+            
+my-s3-bucket-data-migration-import-sources-missing-worker-role-arn:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      data_migration:
+        import:
+          source_bucket_arn: arn:aws:s3:::test-app
+          source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+          worker_role_arn: arn:aws:iam::123456789012:role/test-role 
+        import_sources:
+          - source_kms_key_arn: arn:aws:kms::123456789012:key/test-key-2
+            source_bucket_arn: arn:aws:s3:::test-app-2              
 
 my-s3-external-access-bucket-invalid-arn:
   type: s3
