@@ -5,6 +5,7 @@ from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from dbt_platform_helper.domain.maintenance_page import *
@@ -538,6 +539,93 @@ class TestCommandHelperMethods:
     )
     def test_normalise_to_cidr(self, ip, expected_cidr):
         assert normalise_to_cidr(ip) == expected_cidr
+
+    @mock_aws
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_listener_roll_back_on_exception(
+        self, get_maintenance_page_template, choices, mock_application
+    ):
+
+        get_maintenance_page_template.return_value = "default"
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 2
+
+        original_create_rule = elbv2_client.create_rule
+
+        def mock_create_rule(*args, **kwargs):
+            if mock_create_rule.call_count == 1:
+                mock_create_rule.call_count += 1
+                raise ClientError(
+                    {"Error": {"Code": "ValidationError", "Message": "Simulated failure"}},
+                    "CreateRule",
+                )
+            mock_create_rule.call_count += 1
+            return original_create_rule(*args, **kwargs)
+
+        mock_create_rule.call_count = 0
+
+        elbv2_client.create_rule = mock_create_rule
+
+        mock_session = MagicMock()
+
+        def mock_client(service_name, **kwargs):
+            # TODO for service_name try get from kwargs["mocks"] else default
+            if service_name == "elbv2":
+                return elbv2_client
+            elif service_name == "resourcegroupstaggingapi":
+                return boto3.client("resourcegroupstaggingapi")
+
+        mock_session.client.side_effect = mock_client
+
+        try:
+            add_maintenance_page(
+                mock_session,
+                listener_arn,
+                "test-application",
+                "development",
+                [mock_application.services["web"]],
+                ["1.2.3.4"],
+                template,
+            )
+        except ClientError:
+            pass
+
+        assert mock_create_rule.call_count == 2
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+
+        for rule in rules:
+            for conidition in rule["Conditions"]:
+                assert conidition not in [
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {
+                            "HttpHeaderName": "X-Forwarded-For",
+                            "Values": ["1.2.3.4"],
+                        },
+                    },
+                    {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
+                    },
+                    {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+                ]
+            assert rule["Priority"] not in ["1", "2", "3", "4"]
+        assert len(rules) == 2
 
 
 class MaintenancePageMocks:
