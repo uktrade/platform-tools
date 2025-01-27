@@ -100,10 +100,14 @@ class TestRemoveMaintenancePage:
         delete_listener_rule.assert_has_calls(
             [
                 call(tag_descriptions, "MaintenancePage", boto_mock.client()),
+                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
                 call().__bool__(),  # return value of mock is referenced in line: `if name == "MaintenancePage" and not deleted`
                 call(tag_descriptions, "AllowedIps", boto_mock.client()),
+                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
                 call(tag_descriptions, "BypassIpFilter", boto_mock.client()),
+                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
                 call(tag_descriptions, "AllowedSourceIps", boto_mock.client()),
+                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
             ]
         )
 
