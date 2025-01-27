@@ -20,7 +20,6 @@ class DataCopyMocks:
         self.application = Application(app)
         self.environment = Mock()
         self.environment.account_id = acc
-        # TODO - inject a mock config_provider object here.
         self.application.environments = {env: self.environment, "test-env-2": Mock()}
         self.load_application = Mock(return_value=self.application)
         self.client = Mock()
@@ -39,9 +38,10 @@ class DataCopyMocks:
         self.maintenance_page_instance.deactivate.return_value = None
         self.maintenance_page = Mock(return_value=self.maintenance_page_instance)
 
-        self.input = Mock(return_value="yes")
-        self.echo = Mock()
-        self.abort = Mock(side_effect=SystemExit(1))
+        self.io = Mock()
+        self.io.confirm = Mock(return_value="yes")
+        self.io.abort_with_error = Mock(side_effect=SystemExit(1))
+
         self.config_provider = kwargs.get("config_provider", Mock())
 
     def params(self):
@@ -50,9 +50,7 @@ class DataCopyMocks:
             "vpc_provider": self.vpc_provider,
             "db_connection_string": self.db_connection_string,
             "maintenance_page": self.maintenance_page,
-            "input": self.input,
-            "echo": self.echo,
-            "abort": self.abort,
+            "io": self.io,
             "config_provider": self.config_provider,
         }
 
@@ -141,13 +139,12 @@ def test_database_dump():
     mock_run_database_copy_task.assert_called_once_with(
         mocks.environment.session, env, mocks.vpc, True, "test-db-connection-string", None
     )
-    mocks.input.assert_not_called()
-    mocks.echo.assert_has_calls(
+    mocks.io.confirm.assert_not_called()
+    mocks.io.info.assert_has_calls(
         [
-            call("Dumping test-db from the test-env environment into S3", fg="white", bold=True),
+            call("Dumping test-db from the test-env environment into S3"),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="white",
             ),
         ]
     )
@@ -184,20 +181,17 @@ def test_database_load_with_response_of_yes():
         mocks.environment.session, env, mocks.vpc, False, "test-db-connection-string", None
     )
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
-    mocks.echo.assert_has_calls(
+    mocks.io.info.assert_has_calls(
         [
             call(
                 "Loading data into test-db in the test-env environment from S3",
-                fg="white",
-                bold=True,
             ),
             call(
                 "Task arn://task-arn started. Waiting for it to complete (this may take some time)...",
-                fg="white",
             ),
         ]
     )
@@ -207,7 +201,7 @@ def test_database_load_with_response_of_yes():
 
 def test_database_load_with_response_of_no():
     mocks = DataCopyMocks()
-    mocks.input = Mock(return_value="no")
+    mocks.io.confirm.return_value = False
 
     mock_run_database_copy_task = Mock()
 
@@ -226,10 +220,10 @@ def test_database_load_with_response_of_no():
 
     mock_run_database_copy_task.assert_not_called()
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
-    mocks.echo.assert_not_called()
+    mocks.io.info.assert_not_called()
     db_copy.tail_logs.assert_not_called()
 
 
@@ -237,7 +231,7 @@ def test_database_load_with_response_of_no():
 def test_database_dump_handles_vpc_errors(is_dump):
     mocks = DataCopyMocks()
     mocks.instantiated_vpc_provider.get_vpc.side_effect = VpcProviderException(
-        "A VPC provider error occurred"
+        "A VPC error occurred"
     )
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
@@ -250,7 +244,7 @@ def test_database_dump_handles_vpc_errors(is_dump):
 
     assert exc.value.code == 1
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
-    mocks.abort.assert_called_once_with("A VPC provider error occurred")
+    mocks.io.abort_with_error.assert_called_once_with("A VPC error occurred")
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -267,7 +261,9 @@ def test_database_dump_handles_db_name_errors(is_dump):
             db_copy.load("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("Parameter not found. (Database: test-app-test-env-bad-db)")
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Parameter not found. (Database: test-app-test-env-bad-db)"
+    )
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -283,7 +279,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
             db_copy.load("bad-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
     )
 
@@ -304,7 +300,7 @@ def test_database_dump_handles_account_id_errors(is_dump):
             db_copy.load("test-env", "vpc-name")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(f"{error_msg} (Account id: 12345)")
+    mocks.io.abort_with_error.assert_called_once_with(f"{error_msg} (Account id: 12345)")
 
 
 def test_database_copy_initialization_handles_app_name_errors():
@@ -315,34 +311,46 @@ def test_database_copy_initialization_handles_app_name_errors():
         DatabaseCopy("bad-app", "test-db", **mocks.params())
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("No such application 'bad-app'.")
+    mocks.io.abort_with_error.assert_called_once_with("No such application 'bad-app'.")
 
 
 @pytest.mark.parametrize("user_response", ["y", "Y", " y ", "\ny", "YES", "yes"])
 def test_is_confirmed_ready_to_load(user_response):
     mocks = DataCopyMocks()
-    mocks.input.return_value = user_response
+    mocks.io.confirm.return_value = user_response
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
 
-@pytest.mark.parametrize("user_response", ["n", "N", " no ", "squiggly"])
-def test_is_not_confirmed_ready_to_load(user_response):
+def test_is_not_confirmed_ready_to_load():
     mocks = DataCopyMocks()
-    mocks.input.return_value = user_response
+    mocks.io.confirm.return_value = False
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
     assert not db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_called_once_with(
-        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue? (y/n)"
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
+    )
+
+
+def test_is_not_confirmed_if_invalid_user_input_type():
+    mocks = DataCopyMocks()
+    mocks.io.confirm.return_value = False
+
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    assert not db_copy.is_confirmed_ready_to_load("test-env")
+
+    mocks.io.confirm.assert_called_once_with(
+        f"\nWARNING: the load operation is destructive and will delete the test-db database in the test-env environment. Continue?"
     )
 
 
@@ -353,7 +361,7 @@ def test_is_confirmed_ready_to_load_with_yes_flag():
 
     assert db_copy.is_confirmed_ready_to_load("test-env")
 
-    mocks.input.assert_not_called()
+    mocks.io.confirm.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -442,12 +450,15 @@ def test_tail_logs(is_dump):
         ],
     )
 
-    mocks.echo.assert_has_calls(
+    mocks.io.warn.assert_has_calls(
         [
             call(
                 f"Tailing /ecs/test-app-test-env-test-db-{action} logs",
-                fg="yellow",
-            ),
+            )
+        ]
+    )
+    mocks.io.info.assert_has_calls(
+        [
             call(f"Starting data {action}"),
             call("A load of SQL shenanigans"),
             call(f"Stopping data {action}"),
@@ -482,7 +493,9 @@ def test_tail_logs_exits_with_error_if_task_aborts(is_dump):
         db_copy.tail_logs(is_dump, "test-env")
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with("Task aborted abnormally. See logs above for details.")
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Task aborted abnormally. See logs above for details."
+    )
 
 
 def test_database_copy_account_id():
@@ -515,7 +528,7 @@ def test_error_if_neither_platform_config_or_application_supplied(fs):
         DatabaseCopy(None, "test-db", **mocks.params())
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         "You must either be in a deploy repo, or provide the --app option."
     )
 
@@ -575,7 +588,7 @@ def test_database_dump_with_no_vpc_fails_if_not_in_deploy_repo(fs, is_dump):
             db_copy.load(env, None)
 
     assert exc.value.code == 1
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         f"You must either be in a deploy repo, or provide the vpc name option."
     )
 
@@ -595,7 +608,7 @@ def test_enrich_vpc_name_aborts_if_no_platform_config(fs):
     with pytest.raises(SystemExit):
         db_copy.enrich_vpc_name("test-env", None)
 
-    mocks.abort.assert_called_once_with(
+    mocks.io.abort_with_error.assert_called_once_with(
         f"You must either be in a deploy repo, or provide the vpc name option."
     )
 

@@ -50,7 +50,7 @@ class TestMaintenancePage:
         )
 
         assert result.exit_code == 1
-        mock_click.assert_called_with("""i've failed""", fg="red")
+        mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
         mock_maintenance_page.assert_called_with(mock_application)
         mock_maintenance_page_instance.deactivate.assert_called_with("test-env")
 
@@ -116,7 +116,7 @@ class TestMaintenancePage:
         )
 
         assert result.exit_code == 1
-        mock_click.assert_called_with("""i've failed""", fg="red")
+        mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
         mock_maintenance_page.assert_called_with(mock_application)
         mock_maintenance_page_instance.activate.assert_called_with(
             "test-env", ("test-svc",), "default", "test-vpc"
@@ -190,7 +190,7 @@ class TestGenerateCopilot:
 
         assert result.exit_code == 1
         mock_copilot_environment_instance.generate.assert_called_with("test")
-        mock_click.assert_called_with("""i've failed""", fg="red")
+        mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
 
 
 class TestGenerateTerraform:
@@ -244,5 +244,5 @@ class TestGenerateTerraform:
         )
 
         assert result.exit_code == 1
-        mock_click.assert_called_with("""i've failed""", fg="red")
+        mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")

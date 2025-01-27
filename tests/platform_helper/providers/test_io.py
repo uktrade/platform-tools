@@ -29,6 +29,12 @@ class TestClickIOProvider:
             result = ClickIOProvider().input("Please enter a service")
             assert result == "web"
 
+    def test_abort_with_error(self, capsys):
+        io = ClickIOProvider()
+        with pytest.raises(SystemExit):
+            io.abort_with_error("Error!")
+        assert "Error!" in str(capsys.readouterr())
+
     @pytest.mark.parametrize(
         "input, expected",
         [
@@ -36,6 +42,7 @@ class TestClickIOProvider:
             ("n", False),
             ("yes", True),
             ("no", False),
+            ("   Y   ", True),
         ],
     )
     def test_confirm_with_various_valid_user_input(self, input, expected):
@@ -61,7 +68,7 @@ class TestClickIOProvider:
     def test_error_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.error("Error!")
-        mock_echo.assert_called_once_with("Error!", fg="red")
+        mock_echo.assert_called_once_with("Error: Error!", fg="red")
 
     @patch("click.secho")
     def test_info_calls_secho_with_correct_formatting(self, mock_echo):
@@ -80,3 +87,10 @@ class TestClickIOProvider:
         io = ClickIOProvider()
         io.confirm("Are you sure?")
         mock_confirm.assert_called_once_with("Are you sure?")
+
+    @patch("click.secho")
+    def test_info_calls_secho_with_correct_formatting(self, mock_echo):
+        io = ClickIOProvider()
+        with pytest.raises(SystemExit):
+            io.abort_with_error("Aborting")
+        mock_echo.assert_called_once_with("Error: Aborting", err=True, fg="red")
