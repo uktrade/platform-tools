@@ -174,8 +174,8 @@ class MaintenancePage:
         remove_maintenance_page: Callable[[boto3.Session, str], None] = remove_maintenance_page,
     ):
         self.application = application
-        self.io = io
         self.get_https_listener_for_application = get_https_listener_for_application
+        self.io = io
         self.get_maintenance_page_type = get_maintenance_page_type
         self.get_env_ips = get_env_ips
         self.add_maintenance_page = add_maintenance_page
