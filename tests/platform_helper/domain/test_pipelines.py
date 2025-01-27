@@ -150,7 +150,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_vers
     )
 
 
-def test_generate_pipeline_generates_codebase_pipeline_with_imports(
+def test_generate_calls_generate_codebase_pipeline_config_with_imports(
     codebase_pipeline_config_for_2_pipelines_and_1_run_group, fakefs
 ):
     app_name = "test-app"

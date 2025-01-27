@@ -293,7 +293,7 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
     assert msg in console_message
 
 
-def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
+def test_validate_platform_config_fails_if_database_copy_to_and_from_are_the_same(
     capsys,
 ):
     """Edge cases for this are all covered in unit tests of
@@ -321,7 +321,9 @@ def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
     )
 
 
-def test_validate_platform_config_catches_environment_pipeline_errors(platform_env_config, capsys):
+def test_validate_platform_config_fails_if_environments_are_not_in_the_pipeline_account(
+    platform_env_config, capsys
+):
     platform_env_config["environment_pipelines"] = {
         "main": {
             "account": "non-prod",
