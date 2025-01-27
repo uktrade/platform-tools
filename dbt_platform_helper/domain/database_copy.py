@@ -75,7 +75,7 @@ class DatabaseCopy:
 
         try:
             vpc_provider = self.vpc_provider(env_session)
-            vpc_config = vpc_provider.get_vpc_info_by_name(self.app, env, vpc_name)
+            vpc_config = vpc_provider.get_vpc(self.app, env, vpc_name)
         except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
 
