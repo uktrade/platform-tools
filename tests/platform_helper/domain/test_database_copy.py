@@ -7,7 +7,6 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
@@ -232,7 +231,7 @@ def test_database_load_with_response_of_no():
 def test_database_dump_handles_vpc_errors(is_dump):
     mocks = DataCopyMocks()
     mocks.instantiated_vpc_provider.get_vpc.side_effect = VpcProviderException(
-        "A VPC provider error occurred"
+        "A VPC error occurred"
     )
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
@@ -246,7 +245,6 @@ def test_database_dump_handles_vpc_errors(is_dump):
     assert exc.value.code == 1
     mocks.vpc_provider.assert_called_once_with(mocks.environment.session)
     mocks.io.abort_with_error.assert_called_once_with("A VPC error occurred")
-
 
 
 @pytest.mark.parametrize("is_dump", (True, False))
@@ -345,7 +343,7 @@ def test_is_not_confirmed_ready_to_load():
 
 def test_is_not_confirmed_if_invalid_user_input_type():
     mocks = DataCopyMocks()
-    mocks.io.confirm.side_effect = ClickIOProviderException()
+    mocks.io.confirm.return_value = False
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
 
