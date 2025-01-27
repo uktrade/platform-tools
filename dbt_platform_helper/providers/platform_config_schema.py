@@ -430,7 +430,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
             )
 
         return True
@@ -451,6 +451,15 @@ class PlatformConfigSchema:
                 "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
                 "worker_role_arn": PlatformConfigSchema.__valid_iam_role_arn("worker_role_arn"),
             },
+            Optional("import_sources"): [
+                {
+                    Optional("source_kms_key_arn"): PlatformConfigSchema.__valid_kms_key_arn(
+                        "source_kms_key_arn"
+                    ),
+                    "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
+                    "worker_role_arn": PlatformConfigSchema.__valid_iam_role_arn("worker_role_arn"),
+                }
+            ],
         }
 
         _valid_s3_bucket_retention_policy = Or(
