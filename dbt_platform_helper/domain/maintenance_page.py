@@ -33,8 +33,25 @@ class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
 
 
 class FailedToActivateMaintenancePageException(MaintenancePageException):
-    def __init__(self, rolled_back_rules: dict[str, bool] = {}):  # original_exception
-        super().__init__()
+    def __init__(
+        self,
+        application_name: str,
+        env: str,
+        original_exception: Exception,
+        rolled_back_rules: dict[str, bool] = {},
+    ):  # original_exception
+        super().__init__(
+            f"Maintenance page failed to activate for the {application_name} application in environment {env}."
+        )
+        self.orginal_exception = original_exception
+        self.rolled_back_rules = rolled_back_rules
+
+    def __str__(self):
+        return (
+            f"{super().__str__()}\n"
+            f"Rolled-back rules: {self.rolled_back_rules }\n"
+            f"Original exception: {self.orginal_exception}"
+        )
 
 
 def get_maintenance_page_type(session: boto3.Session, listener_arn: str) -> Union[str, None]:
@@ -145,9 +162,9 @@ def add_maintenance_page(
                 {"Key": "type", "Value": template},
             ],
         )
-    except Exception:
+    except Exception as e:
         deleted_rules = clean_up_maintenance_page_rules(session, listener_arn)
-        raise FailedToActivateMaintenancePageException(deleted_rules)
+        raise FailedToActivateMaintenancePageException(app, env, e, deleted_rules)
 
 
 def clean_up_maintenance_page_rules(
@@ -161,7 +178,7 @@ def clean_up_maintenance_page_rules(
     deletes = {}
     for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
-        deletes[name] = deleted
+        deletes[name] = bool(deleted)
         if fail_when_not_deleted and name == "MaintenancePage" and not deleted:
             raise ListenerRuleNotFoundException()
 
