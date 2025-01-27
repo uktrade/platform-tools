@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -124,12 +125,27 @@ class TestMaintenancePage:
 
 class TestGenerateCopilot:
 
+    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.environment.ConfigProvider")
+    @patch("dbt_platform_helper.commands.environment.ConfigValidator")
+    @patch("dbt_platform_helper.commands.environment.VpcProvider")
+    @patch("dbt_platform_helper.commands.environment.CloudFormation")
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
-    def test_generate_copilot_success(self, copilot_environment_mock):
+    def test_generate_copilot_success(
+        self,
+        copilot_environment_mock,
+        cloudformation_provider_mock,
+        mock_vpc_provider,
+        mock_config_validator,
+        mock_config_provider,
+        mock_session,
+    ):
         """Test that given a environment name, the generate command calls
-        CopilotEnvironment.generate with the environment name."""
-
-        mock_copilot_environment_instance = copilot_environment_mock.return_value
+        CopilotEnvironment.generate with the expected providers."""
+        mock_session.return_value = Mock()
+        mock_cloudformation_client = Mock()
+        mock_session.return_value.client.return_value = mock_cloudformation_client
+        mock_config_validator.return_value = Mock()
 
         result = CliRunner().invoke(
             generate,
@@ -137,12 +153,25 @@ class TestGenerateCopilot:
         )
 
         assert result.exit_code == 0
-        mock_copilot_environment_instance.generate.assert_called_with("test")
+
+        copilot_environment_mock.return_value.generate.assert_called_with("test")
+        mock_session.return_value.client.assert_called_once_with("cloudformation")
+        cloudformation_provider_mock.assert_called_with(mock_cloudformation_client)
+        mock_vpc_provider.assert_called_once_with(mock_session.return_value)
+        mock_config_validator.assert_called_once_with()
+        mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
+        copilot_environment_mock.assert_called_once_with(
+            mock_config_provider.return_value,
+            mock_vpc_provider.return_value,
+            cloudformation_provider_mock.return_value,
+            mock_session.return_value,
+        )
 
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
+    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     @patch("click.secho")
     def test_generate_copilot_catches_platform_exception_and_exits(
-        self, mock_click, copilot_environment_mock
+        self, mock_click, mock_session, copilot_environment_mock
     ):
         """
         Test that given environment name and the CopilotEnvironment generate

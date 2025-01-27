@@ -3,81 +3,26 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
-import boto3
-import click
 import pytest
 import yaml
-from moto import mock_aws
+from freezegun import freeze_time
 
-from dbt_platform_helper.domain.copilot_environment import CertificateNotFoundException
+from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
-from dbt_platform_helper.domain.copilot_environment import find_https_certificate
-from dbt_platform_helper.domain.copilot_environment import get_cert_arn
-from dbt_platform_helper.domain.copilot_environment import get_subnet_ids
-from dbt_platform_helper.domain.copilot_environment import get_vpc_id
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.vpc import Vpc
+from tests.platform_helper.conftest import FIXTURES_DIR
 
 
-@pytest.mark.parametrize("vpc_name", ["default", "default-prod"])
-@mock_aws
-def test_get_vpc_id(vpc_name):
-    session = boto3.session.Session()
-    vpc = create_moto_mocked_vpc(session, vpc_name)
-    expected_vpc_id = vpc["VpcId"]
-
-    actual_vpc_id = get_vpc_id(session, "prod")
-
-    assert expected_vpc_id == actual_vpc_id
-
-    vpc_id_from_name = get_vpc_id(session, "not-an-env", vpc_name=vpc_name)
-
-    assert expected_vpc_id == vpc_id_from_name
-
-
-@mock_aws
-def test_get_vpc_id_failure(capsys):
-
-    with pytest.raises(click.Abort):
-        get_vpc_id(boto3.session.Session(), "development")
-
-    captured = capsys.readouterr()
-
-    assert "No VPC found with name default-development in AWS account default." in captured.out
-
-
-@mock_aws
-def test_get_subnet_ids():
-    session = boto3.session.Session()
-    vpc_id = create_moto_mocked_vpc(session, "default-development")["VpcId"]
-    expected_public_subnet_id = create_moto_mocked_subnet(
-        session, vpc_id, "public", "10.0.128.0/24"
-    )
-    expected_private_subnet_id = create_moto_mocked_subnet(
-        session, vpc_id, "private", "10.0.1.0/24"
-    )
-
-    public_subnet_ids, private_subnet_ids = get_subnet_ids(
-        session, vpc_id, "environment-name-does-not-matter"
-    )
-
-    assert public_subnet_ids == [expected_public_subnet_id]
-    assert private_subnet_ids == [expected_private_subnet_id]
-
-
-@mock_aws
 def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order():
     # This test and the associated behavior can be removed when we stop using AWS Copilot to deploy the services
     def _list_exports_subnet_object(environment: str, subnet_ids: list[str], visibility: str):
         return {
             "Name": f"application-{environment}-{visibility.capitalize()}Subnets",
             "Value": f"{','.join(subnet_ids)}",
-        }
-
-    def _describe_subnets_subnet_object(subnet_id: str, visibility: str):
-        return {
-            "SubnetId": subnet_id,
-            "Tags": [{"Key": "subnet_type", "Value": visibility}],
         }
 
     def _non_subnet_exports(number):
@@ -93,178 +38,60 @@ def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order()
     expected_private_subnet_id_1 = "subnet-1private"
     expected_private_subnet_id_2 = "subnet-2private"
 
-    mock_boto3_session = MagicMock()
-
-    # Cloudformation list_exports returns a paginated response with the exports in the expected order plus some we are not interested in
-    mock_boto3_session.client("cloudformation").get_paginator(
-        "list_exports"
-    ).paginate.return_value = [
-        {"Exports": _non_subnet_exports(5)},
-        {
-            "Exports": [
-                _list_exports_subnet_object(
-                    "environment",
-                    [
-                        expected_public_subnet_id_1,
-                        expected_public_subnet_id_2,
-                    ],
-                    "public",
-                ),
-                _list_exports_subnet_object(
-                    "environment",
-                    [
-                        expected_private_subnet_id_1,
-                        expected_private_subnet_id_2,
-                    ],
-                    "private",
-                ),
-                _list_exports_subnet_object(
-                    "otherenvironment",
-                    [expected_public_subnet_id_1],
-                    "public",
-                ),
-                _list_exports_subnet_object(
-                    "otherenvironment",
-                    [expected_private_subnet_id_2],
-                    "private",
-                ),
-            ]
-        },
-        {"Exports": _non_subnet_exports(5)},
+    subnet_exports = [
+        _list_exports_subnet_object(
+            "environment",
+            [
+                expected_public_subnet_id_1,
+                expected_public_subnet_id_2,
+            ],
+            "public",
+        ),
+        _list_exports_subnet_object(
+            "environment",
+            [
+                expected_private_subnet_id_1,
+                expected_private_subnet_id_2,
+            ],
+            "private",
+        ),
     ]
 
-    # EC2 client should return them in an order that differs from the CloudFormation Export
-    mock_boto3_session.client("ec2").describe_subnets.return_value = {
-        "Subnets": [
-            _describe_subnets_subnet_object(expected_public_subnet_id_2, "public"),
-            _describe_subnets_subnet_object(expected_public_subnet_id_1, "public"),
-            _describe_subnets_subnet_object(expected_private_subnet_id_2, "private"),
-            _describe_subnets_subnet_object(expected_private_subnet_id_1, "private"),
-        ]
-    }
-
-    # Act (there's a lot of setup, worth signposting where this happens)
-    public_subnet_ids, private_subnet_ids = get_subnet_ids(
-        mock_boto3_session, "vpc-id-does-not-matter", "environment"
+    mock_cloudformation_provider = Mock()
+    # We build up a list of exports that will be filtered through within the method being tested
+    mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = (
+        _non_subnet_exports(5) + subnet_exports
     )
 
-    assert public_subnet_ids == [
+    # Subnets in the vpc object are in a different order to what is returned from Cfn
+    mock_vpc = Vpc(
+        id="a-relly-cool-vpc",
+        private_subnets=[expected_private_subnet_id_2, expected_private_subnet_id_1],
+        public_subnets=[expected_public_subnet_id_2, expected_public_subnet_id_1],
+        security_groups=["i-dont-matter"],
+    )
+
+    # Copilot environment can be setup with all mocks as we only are testing the _match_subnet_id_order_to_cloudformation_exports method which needs a cfn provider.
+    copilot_environment = CopilotEnvironment(
+        config_provider=Mock(),
+        cloudformation_provider=mock_cloudformation_provider,
+        vpc_provider=Mock(),
+        copilot_templating=Mock(),
+        echo=Mock(),
+    )
+
+    mock_updated_vpc = copilot_environment._match_subnet_id_order_to_cloudformation_exports(
+        "environment", mock_vpc
+    )
+
+    assert mock_updated_vpc.public_subnets == [
         expected_public_subnet_id_1,
         expected_public_subnet_id_2,
     ]
-    assert private_subnet_ids == [
+    assert mock_updated_vpc.private_subnets == [
         expected_private_subnet_id_1,
         expected_private_subnet_id_2,
     ]
-
-
-@mock_aws
-def test_get_subnet_ids_failure(capsys):
-
-    with pytest.raises(click.Abort):
-        get_subnet_ids(boto3.session.Session(), "123", "environment-name-does-not-matter")
-
-    captured = capsys.readouterr()
-
-    assert "No subnets found for VPC with id: 123." in captured.out
-
-
-@mock_aws
-@patch(
-    "dbt_platform_helper.domain.copilot_environment.find_https_certificate",
-    return_value="CertificateArn",
-)
-def test_get_cert_arn(find_https_certificate):
-
-    session = boto3.session.Session()
-    actual_arn = get_cert_arn(session, "test-application", "development")
-
-    assert "CertificateArn" == actual_arn
-
-
-@mock_aws
-def test_cert_arn_failure(capsys):
-
-    session = boto3.session.Session()
-
-    with pytest.raises(click.Abort):
-        get_cert_arn(session, "test-application", "development")
-
-    captured = capsys.readouterr()
-
-    assert "No certificate found with domain name matching environment development." in captured.out
-
-
-def create_moto_mocked_subnet(session, vpc_id, visibility, cidr_block):
-    return session.client("ec2").create_subnet(
-        CidrBlock=cidr_block,
-        VpcId=vpc_id,
-        TagSpecifications=[
-            {
-                "ResourceType": "subnet",
-                "Tags": [
-                    {"Key": "subnet_type", "Value": visibility},
-                ],
-            },
-        ],
-    )["Subnet"]["SubnetId"]
-
-
-def create_moto_mocked_vpc(session, vpc_name):
-    vpc = session.client("ec2").create_vpc(
-        CidrBlock="10.0.0.0/16",
-        TagSpecifications=[
-            {
-                "ResourceType": "vpc",
-                "Tags": [
-                    {"Key": "Name", "Value": vpc_name},
-                ],
-            },
-        ],
-    )["Vpc"]
-    return vpc
-
-
-class TestFindHTTPSCertificate:
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_no_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
-
-        with pytest.raises(CertificateNotFoundException):
-            find_https_certificate(boto_mock, "test-application", "development")
-
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_single_https_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
-        }
-
-        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
-        assert "certificate_arn" == certificate_arn
-
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.find_https_listener",
-        return_value="https_listener_arn",
-    )
-    def test_when_multiple_https_certificate_present(self, mock_find_https_listener):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [
-                {"CertificateArn": "certificate_arn_default", "IsDefault": "True"},
-                {"CertificateArn": "certificate_arn_not_default", "IsDefault": "False"},
-            ]
-        }
-
-        certificate_arn = find_https_certificate(boto_mock, "test-application", "development")
-        assert "certificate_arn_default" == certificate_arn
 
 
 class TestCrossEnvironmentS3Templating:
@@ -387,13 +214,14 @@ class TestCrossEnvironmentS3Templating:
 
         Also tests passed in templates
         """
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile = Mock()
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(self.environments(), self.s3_xenv_extensions())
 
-        assert mock_mkfile.call_count == 1
+        assert mock_file_provider.mkfile.call_count == 1
 
-        calls = mock_mkfile.call_args_list
+        calls = mock_file_provider.mkfile.call_args_list
 
         act_output_dir = calls[0][0][0]
         act_output_path = calls[0][0][1]
@@ -470,23 +298,25 @@ class TestCrossEnvironmentS3Templating:
         )
 
     def test_generate_cross_account_s3_policies_no_addons(self):
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile = Mock()
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(self.environments(), {})
 
-        assert mock_mkfile.call_count == 0
+        assert mock_file_provider.mkfile.call_count == 0
 
     def test_generate_cross_account_s3_policies_multiple_addons(self):
         """More comprehensive tests that check multiple corner cases."""
-        mock_mkfile = Mock()
-        provider = CopilotTemplating(mkfile_fn=mock_mkfile)
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile.return_value = "file written"
+        provider = CopilotTemplating(file_provider=mock_file_provider)
         provider.generate_cross_account_s3_policies(
             self.environments(), self.s3_xenv_multiple_extensions()
         )
 
-        assert mock_mkfile.call_count == 3
+        assert mock_file_provider.mkfile.call_count == 3
 
-        calls = mock_mkfile.call_args_list
+        calls = mock_file_provider.mkfile.call_args_list
 
         # Case 1: hotfix -> staging. other_svc_1
         act_output_dir = calls[0][0][0]
@@ -596,3 +426,145 @@ class TestCrossEnvironmentS3Templating:
         assert kms_statement4["Resource"] == "arn:aws:kms:eu-west-2:987654321010:key/*"
         obj_act_statement4 = policy_doc4["Statement"][1]
         assert obj_act_statement4["Action"] == ["s3:Get*", "s3:Put*"]
+
+
+class TestCopilotTemplating:
+
+    # Patch is here to pin the platform-helper version to v.0.1-TEST as otherwise this would change the resultant file when the version bumps
+    @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+    @freeze_time("2023-08-22 16:00:00")
+    def test_copilot_templating_generate_generates_expected_manifest(self):
+        mock_file_provider = Mock()
+
+        test_vpc = Vpc(
+            id="a-vpc-id",
+            public_subnets=["a-public-subnet"],
+            private_subnets=["a-private-subnet"],
+            security_groups=["a-security-group"],
+        )
+
+        copilot_templating = CopilotTemplating(mock_file_provider)
+
+        result = copilot_templating.generate_copilot_environment_manifest(
+            "connors-environment",
+            test_vpc,
+            "test-cert-arn",
+        )
+
+        # Parsing the result as yaml is not ideal, we really want to compare both as raw strings since this loses the comments.
+        assert yaml.safe_load(result) == yaml.safe_load(
+            Path(f"{FIXTURES_DIR}/copilot_environment_manifest_valid.yml").read_text()
+        )
+
+    def test_copilot_templating_write_calls_file_provider_with_expected_arguments(self):
+        mock_file_provider = Mock()
+        mock_file_provider.mkfile.return_value = "ive written to a file!"
+
+        result = CopilotTemplating(mock_file_provider).write_environment_manifest(
+            "connors-environment",
+            "test manifest contents",
+        )
+
+        assert result == "ive written to a file!"
+        mock_file_provider.mkfile.assert_called_once_with(
+            ".",
+            "copilot/environments/connors-environment/manifest.yml",
+            "test manifest contents",
+            overwrite=True,
+        )
+
+
+class TestCopilotGenerate:
+
+    VALID_ENVIRONMENT_CONFIG = {
+        "vpc": "a-really-cool-vpc",
+        "accounts": {
+            "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+            "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+        },
+        "versions": {"terraform-platform-modules": "123456"},
+    }
+
+    MOCK_VPC = Vpc(
+        id="a-really-cool-vpc",
+        private_subnets=["public-1"],
+        public_subnets=["private-1"],
+        security_groups=["group1"],
+    )
+
+    # TODO - temporary patch, will fall away once loadbalancer lives in a class and it can be injected and mocked approriatley.
+    @patch(
+        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
+        return_value="test-cert-arn",
+    )
+    def test_generate_success(self, mock_get_certificate):
+
+        mock_copilot_templating = Mock()
+        mock_copilot_templating.write_environment_manifest.return_value = "test template written"
+        mock_copilot_templating.generate_copilot_environment_manifest.return_value = "mock manifest"
+
+        mock_vpc_provider = MagicMock()
+        mock_vpc_provider.get_vpc.return_value = self.MOCK_VPC
+
+        mock_config_provider = Mock()
+        config = {
+            "application": "test-app",
+            "environments": {"test_environment": self.VALID_ENVIRONMENT_CONFIG},
+        }
+        mock_config_provider.get_enriched_config.return_value = config
+
+        mock_echo = Mock()
+
+        mock_cloudformation_provider = Mock()
+        mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = [
+            {"Value": "private-1", "Name": "test_environment-PrivateSubnets"},
+            {"Value": "public-1", "Name": "test_environment-PublicSubnets"},
+        ]
+
+        copilot_environment = CopilotEnvironment(
+            config_provider=mock_config_provider,
+            vpc_provider=mock_vpc_provider,
+            cloudformation_provider=mock_cloudformation_provider,
+            copilot_templating=mock_copilot_templating,
+            echo=mock_echo,
+        )
+
+        copilot_environment.generate(environment_name="test_environment")
+
+        mock_copilot_templating.generate_copilot_environment_manifest.assert_called_once_with(
+            environment_name="test_environment", vpc=self.MOCK_VPC, cert_arn="test-cert-arn"
+        )
+
+        mock_copilot_templating.write_environment_manifest.assert_called_with(
+            "test_environment", "mock manifest"
+        )
+
+        mock_vpc_provider.get_vpc.assert_called_once_with(
+            "test-app", "test_environment", "a-really-cool-vpc"
+        )
+
+        mock_echo.assert_has_calls(
+            [call("Using non-prod-acc for this AWS session"), call("test template written")]
+        )
+
+    def test_raises_a_platform_exception_if_environment_does_not_exist_in_config(self):
+
+        mock_config_provider = Mock()
+        config = {
+            "application": "test-app",
+            "environments": {"test_environment": self.VALID_ENVIRONMENT_CONFIG},
+        }
+        mock_config_provider.get_enriched_config.return_value = config
+
+        copilot_environment = CopilotEnvironment(
+            config_provider=mock_config_provider,
+            vpc_provider=Mock(),
+            copilot_templating=Mock(),
+            echo=Mock(),
+        )
+
+        with pytest.raises(
+            PlatformException,
+            match="Error: cannot generate copilot manifests for environment not-an-environment.  It does not exist in your configuration",
+        ):
+            copilot_environment.generate("not-an-environment")

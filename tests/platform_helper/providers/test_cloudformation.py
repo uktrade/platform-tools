@@ -5,6 +5,7 @@ from unittest.mock import patch
 import boto3
 import pytest
 from botocore.exceptions import WaiterError
+from botocore.stub import Stubber
 from cfn_tools import load_yaml
 from moto import mock_aws
 
@@ -178,3 +179,33 @@ def test_wait_for_cloudformation_with_update_complete():
     waiter_mock.wait.assert_called_with(
         StackName="stack-name", WaiterConfig={"Delay": 5, "MaxAttempts": 20}
     )
+
+
+def test_get_cloudformation_exports_for_environment_gets_expected_exports():
+
+    list_exports_response = {
+        "Exports": [
+            {"Name": "cnnors-not-so-awesome-env", "Value": "value1"},
+            {"Name": "connors-not-so-awesome-env", "Value": "value2"},
+            {"Name": "-connors-awesome-env-", "Value": "value3"},
+            {"Name": "-connors-awesome-env-", "Value": "value4"},
+            {"Name": "connors-not-so-awesome-env", "Value": "value5"},
+        ]
+    }
+
+    cloudformation_client = boto3.client("cloudformation")
+    stubber = Stubber(cloudformation_client)
+
+    stubber.add_response("list_exports", list_exports_response)
+    stubber.activate()
+
+    cloudformation = CloudFormation(cloudformation_client, None, None)
+
+    exports_for_environment = cloudformation.get_cloudformation_exports_for_environment(
+        "connors-awesome-env"
+    )
+
+    assert exports_for_environment == [
+        {"Name": "-connors-awesome-env-", "Value": "value3"},
+        {"Name": "-connors-awesome-env-", "Value": "value4"},
+    ]

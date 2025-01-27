@@ -8,12 +8,12 @@ from boto3 import Session
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
-from dbt_platform_helper.providers.aws import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcProvider
+from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
@@ -76,8 +76,9 @@ class DatabaseCopy:
         try:
             vpc_provider = self.vpc_provider(env_session)
             vpc_config = vpc_provider.get_vpc_info_by_name(self.app, env, vpc_name)
-        except AWSException as ex:
+        except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
+
 
         database_identifier = f"{self.app}-{env}-{self.database}"
 
@@ -145,7 +146,7 @@ class DatabaseCopy:
             ],
             networkConfiguration={
                 "awsvpcConfiguration": {
-                    "subnets": vpc_config.subnets,
+                    "subnets": vpc_config.private_subnets,
                     "securityGroups": vpc_config.security_groups,
                     "assignPublicIp": "DISABLED",
                 }

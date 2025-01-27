@@ -15,7 +15,9 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
-from dbt_platform_helper.providers.load_balancers import find_https_listener
+from dbt_platform_helper.providers.load_balancers import (
+    get_https_listener_for_application,
+)
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
@@ -158,7 +160,9 @@ class MaintenancePage:
         self,
         application: Application,
         io: ClickIOProvider = ClickIOProvider(),
-        find_https_listener: Callable[[boto3.Session, str, str], str] = find_https_listener,
+        get_https_listener_for_application: Callable[
+            [boto3.Session, str, str], str
+        ] = get_https_listener_for_application,
         # TODO refactor get_maintenance_page_type, add_maintenance_page, remove_maintenance_page into MaintenancePage class with LoadBalancerProvider as the dependency
         get_maintenance_page_type: Callable[
             [boto3.Session, str], Union[str, None]
@@ -171,7 +175,7 @@ class MaintenancePage:
     ):
         self.application = application
         self.io = io
-        self.find_https_listener = find_https_listener
+        self.get_https_listener_for_application = get_https_listener_for_application
         self.get_maintenance_page_type = get_maintenance_page_type
         self.get_env_ips = get_env_ips
         self.add_maintenance_page = add_maintenance_page
@@ -193,7 +197,7 @@ class MaintenancePage:
         application_environment = get_app_environment(self.application, env)
 
         try:
-            https_listener = self.find_https_listener(
+            https_listener = self.get_https_listener_for_application(
                 application_environment.session, self.application.name, env
             )
             current_maintenance_page = self.get_maintenance_page_type(
@@ -247,7 +251,7 @@ class MaintenancePage:
         application_environment = get_app_environment(self.application, env)
 
         try:
-            https_listener = self.find_https_listener(
+            https_listener = self.get_https_listener_for_application(
                 application_environment.session, self.application.name, env
             )
             current_maintenance_page = self.get_maintenance_page_type(
