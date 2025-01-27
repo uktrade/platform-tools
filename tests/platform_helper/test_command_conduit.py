@@ -74,7 +74,7 @@ def test_start_conduit_with_exception_raised_exit_1(
         ],
     )
 
-    mock_click.assert_called_with("""No secret called "test-secret".""", fg="red")
+    mock_click.assert_called_with("""Error: No secret called "test-secret".""", err=True, fg="red")
 
     assert result.exit_code == 1
 
