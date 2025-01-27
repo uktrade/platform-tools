@@ -48,3 +48,124 @@ try:
 except Exception as error:
     print("Validation failed")
     print(str(error))
+
+# Expected output...
+#
+# ➜ python temp/pydantic_spike.py
+# SCHEMA SPECIFICATION...
+# {
+#     "properties": {
+#         "application": {
+#             "description": "The name of your application. Letters, numbers, hyphens and underscores are allowed.",
+#             "title": "Application",
+#             "type": "string"
+#         },
+#         "dict_of_dicts_only_specific_names_allowed": {
+#             "properties": {
+#                 "specific_name_1": {
+#                     "properties": {
+#                         "property_1": {
+#                             "description": "Must be a string",
+#                             "title": "Property 1",
+#                             "type": "string"
+#                         },
+#                         "property_2": {
+#                             "description": "Must be a string",
+#                             "title": "Property 2",
+#                             "type": "string"
+#                         }
+#                     },
+#                     "required": [
+#                         "property_1",
+#                         "property_2"
+#                     ],
+#                     "title": "InnerDict",
+#                     "type": "object"
+#                 },
+#                 "specific_name_2": {
+#                     "properties": {
+#                         "property_1": {
+#                             "description": "Must be a string",
+#                             "title": "Property 1",
+#                             "type": "string"
+#                         },
+#                         "property_2": {
+#                             "description": "Must be a string",
+#                             "title": "Property 2",
+#                             "type": "string"
+#                         }
+#                     },
+#                     "required": [
+#                         "property_1",
+#                         "property_2"
+#                     ],
+#                     "title": "InnerDict",
+#                     "type": "object"
+#                 }
+#             },
+#             "required": [
+#                 "specific_name_1",
+#                 "specific_name_2"
+#             ],
+#             "title": "DictOfDictsOnlySpecificNamesAllowed",
+#             "type": "object"
+#         },
+#         "dict_of_dicts_any_name_allowed": {
+#             "additionalProperties": {
+#                 "properties": {
+#                     "property_1": {
+#                         "description": "Must be a string",
+#                         "title": "Property 1",
+#                         "type": "string"
+#                     },
+#                     "property_2": {
+#                         "description": "Must be a string",
+#                         "title": "Property 2",
+#                         "type": "string"
+#                     }
+#                 },
+#                 "required": [
+#                     "property_1",
+#                     "property_2"
+#                 ],
+#                 "title": "InnerDict",
+#                 "type": "object"
+#             },
+#             "description": "Any number of InnerDicts with any key",
+#             "title": "DictOfDictsAnyNameAllowed",
+#             "type": "object"
+#         }
+#     },
+#     "required": [
+#         "application",
+#         "dict_of_dicts_only_specific_names_allowed",
+#         "dict_of_dicts_any_name_allowed"
+#     ],
+#     "title": "PlatformConfig",
+#     "type": "object"
+# }
+# VALIDATE SOME CONFIG...
+# {
+#     "application": "test-application",
+#     "dict_of_dicts_only_specific_names_allowed": {
+#         "specific_name_1": {
+#             "property_1": "specific-name-1-property-1",
+#             "property_2": "specific-name-1-property-2"
+#         },
+#         "specific_name_2": {
+#             "property_1": "specific-name-2-property-1",
+#             "property_2": "specific-name-2-property-2"
+#         }
+#     },
+#     "dict_of_dicts_any_name_allowed": {
+#         "any_name_1": {
+#             "property_1": "any-name-1-property-1",
+#             "property_2": "any-name-1-property-2"
+#         },
+#         "any_name_2": {
+#             "property_1": "any-name-2-property-1",
+#             "property_2": "any-name-2-property-2"
+#         }
+#     }
+# }
+# Validation succeeded
