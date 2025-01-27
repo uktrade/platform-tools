@@ -1,0 +1,17 @@
+application: test-application
+
+dict_of_dicts_only_specific_names_allowed:
+    specific_name_1:
+      property_1: specific-name-1-property-1
+      property_2: specific-name-1-property-2
+    specific_name_2:
+      property_1: specific-name-2-property-1
+      property_2: specific-name-2-property-2
+
+dict_of_dicts_any_name_allowed:
+  any_name_1:
+    property_1: any-name-1-property-1
+    property_2: any-name-1-property-2
+  any_name_2:
+    property_1: any-name-2-property-1
+    property_2: any-name-2-property-2

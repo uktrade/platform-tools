@@ -42,6 +42,7 @@ slack-sdk = "^3.27.1"
 jsonschema = "~=4.17.0"
 cfn-lint = "^1.4.2"
 pydantic = "^2.10.6"
+jsonref = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.5"}
