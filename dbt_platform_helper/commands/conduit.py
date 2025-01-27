@@ -4,6 +4,7 @@ from dbt_platform_helper.domain.conduit import Conduit
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptCommand
@@ -54,5 +55,4 @@ def conduit(addon_name: str, app: str, env: str, access: str):
             env, addon_name, access
         )
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))

@@ -549,11 +549,12 @@ class MaintenancePageMocks:
         dummy_application.services = {"web": Service("web", "Load Balanced Web Service")}
         self.application = dummy_application
 
-        self.user_prompt_callback = kwargs.get("user_prompt_callback", Mock())
-        self.echo = kwargs.get("echo", Mock())
         self.get_https_listener_for_application = kwargs.get(
             "get_https_listener_for_application", Mock(return_value="https_listener")
         )
+        self.io = kwargs.get("io", Mock())
+        self.io.confirm = Mock(return_value="yes")
+        self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.get_maintenance_page_type = kwargs.get(
             "get_maintenance_page_type", Mock(return_value=None)
         )
@@ -566,9 +567,8 @@ class MaintenancePageMocks:
     def params(self):
         return {
             "application": self.application,
-            "user_prompt_callback": self.user_prompt_callback,
-            "echo": self.echo,
             "get_https_listener_for_application": self.get_https_listener_for_application,
+            "io": self.io,
             "get_maintenance_page_type": self.get_maintenance_page_type,
             "get_env_ips": self.get_env_ips,
             "add_maintenance_page": self.add_maintenance_page,
@@ -603,7 +603,7 @@ class TestActivateMethod:
             "default",
         )
 
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "You are about to enable the 'default' maintenance page for the development "
@@ -611,10 +611,9 @@ class TestActivateMethod:
                 ),
             ]
         )
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.info.assert_called_with(
             "Maintenance page 'default' added for environment development in "
             "application test-application",
-            fg="green",
         )
 
     def test_successful_activate_with_custom_template(
@@ -642,7 +641,7 @@ class TestActivateMethod:
             "migration",
         )
 
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "You are about to enable the 'migration' maintenance page for the development "
@@ -650,10 +649,9 @@ class TestActivateMethod:
                 ),
             ]
         )
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.info.assert_called_with(
             "Maintenance page 'migration' added for environment development in "
             "application test-application",
-            fg="green",
         )
 
     def test_successful_activate_when_already_activated(
@@ -683,7 +681,7 @@ class TestActivateMethod:
             "default",
         )
 
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "There is currently a 'maintenance' maintenance page for the development "
@@ -691,22 +689,18 @@ class TestActivateMethod:
                 ),
             ]
         )
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.info.assert_called_with(
             "Maintenance page 'default' added for environment development in "
             "application test-application",
-            fg="green",
         )
 
         maintenance_mocks.remove_maintenance_page.assert_called_with(ANY, "https_listener")
 
     def test_activate_do_not_replace_template(self):
         maintenance_mocks = MaintenancePageMocks(
-            app,
-            get_maintenance_page_type=Mock(return_value="maintenance"),
-            user_prompt_callback=Mock(
-                return_value=False
-            ),  # TODO validate what click.confirm returns on yes or no
+            app, get_maintenance_page_type=Mock(return_value="maintenance")
         )
+        maintenance_mocks.io.confirm.return_value = False
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
@@ -714,7 +708,7 @@ class TestActivateMethod:
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "There is currently a 'maintenance' maintenance page for the development "
@@ -725,24 +719,23 @@ class TestActivateMethod:
 
         maintenance_mocks.get_env_ips.assert_not_called()
         maintenance_mocks.add_maintenance_page.assert_not_called()
-        maintenance_mocks.echo.assert_not_called()
+        maintenance_mocks.io.assert_not_called()
         maintenance_mocks.remove_maintenance_page.assert_not_called()
 
     def test_activate_do_not_enable_page(self):
         maintenance_mocks = MaintenancePageMocks(
             app,
-            user_prompt_callback=Mock(
-                return_value=False
-            ),  # TODO validate what click.confirm returns on yes or no
         )
+        maintenance_mocks.io.confirm.return_value = False
         provider = MaintenancePage(**maintenance_mocks.params())
+
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "You are about to enable the 'default' maintenance page for the development "
@@ -753,7 +746,6 @@ class TestActivateMethod:
 
         maintenance_mocks.get_env_ips.assert_not_called()
         maintenance_mocks.add_maintenance_page.assert_not_called()
-        maintenance_mocks.echo.assert_not_called()
         maintenance_mocks.remove_maintenance_page.assert_not_called()
 
     # TODO this doesn't need to be caught in maintenance domain
@@ -767,19 +759,18 @@ class TestActivateMethod:
         )
         provider = MaintenancePage(**maintenance_mocks.params())
 
-        with pytest.raises(click.Abort):
+        with pytest.raises(SystemExit):
             provider.activate(env, svc, template, vpc)
 
-            maintenance_mocks.echo.assert_called_with(
-                "No load balancer found for environment development in the application "
-                "test-application.",
-                fg="red",
-            )
-            maintenance_mocks.get_https_listener_for_application.assert_called_with(
-                ANY, "test-application", "development"
-            )
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.io.abort_with_error.assert_called_with(
+            "No load balancer found for environment development in the application "
+            "test-application.",
+        )
 
     # TODO this doesn't need to be caught in maintenance domain
     def test_activate_page_when_listener_not_found(
@@ -790,20 +781,19 @@ class TestActivateMethod:
         )
         provider = MaintenancePage(**maintenance_mocks.params())
 
-        with pytest.raises(click.Abort):
+        with pytest.raises(SystemExit):
             provider.activate(env, svc, template, vpc)
 
-            maintenance_mocks.echo.assert_called_with(
-                "No HTTPS listener found for environment development in the application "
-                "test-application.",
-                fg="red",
-            )
-            maintenance_mocks.get_https_listener_for_application.assert_called_with(
-                ANY, "test-application", "development"
-            )
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
-            maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.io.abort_with_error.assert_called_with(
+            "No HTTPS listener found for environment development in the application "
+            "test-application.",
+        )
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.add_maintenance_page.assert_not_called()
 
     def test_activate_an_environment_when_no_load_balancer_service_found(
         self,
@@ -863,7 +853,7 @@ class TestActivateMethod:
             "default",
         )
 
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "You are about to enable the 'default' maintenance page for the development "
@@ -871,10 +861,9 @@ class TestActivateMethod:
                 ),
             ]
         )
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.info.assert_called_with(
             "Maintenance page 'default' added for environment development in "
             "application test-application",
-            fg="green",
         )
 
 
@@ -895,17 +884,16 @@ class TestDeactivateCommand:
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
         maintenance_mocks.remove_maintenance_page.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.user_prompt_callback.assert_has_calls(
+        maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
                     "There is currently a 'default' maintenance page, would you like to remove it?"
                 ),
             ]
         )
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.info.assert_called_with(
             "Maintenance page removed from environment development in "
             "application test-application",
-            fg="green",
         )
 
     def test_deactivate_an_environment_that_is_deactivated(
@@ -923,19 +911,19 @@ class TestDeactivateCommand:
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
         maintenance_mocks.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.echo.assert_called_with(
+        maintenance_mocks.io.warn.assert_called_with(
             "There is no current maintenance page to remove",
-            fg="yellow",
         )
 
-    def test_deactivate_an_environment_do_not_remove_mainenance_page(
+    def test_deactivate_an_environment_do_not_remove_maintenance_page(
         self,
     ):
         maintenance_mocks = MaintenancePageMocks(
             app,
             get_maintenance_page_type=Mock(return_value="default"),
-            user_prompt_callback=Mock(return_value=False),
         )
+        maintenance_mocks.io.confirm.return_value = False
+
         provider = MaintenancePage(**maintenance_mocks.params())
 
         provider.deactivate(env)
@@ -944,11 +932,10 @@ class TestDeactivateCommand:
             ANY, "test-application", "development"
         )
         maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.user_prompt_callback.assert_called_with(
+        maintenance_mocks.io.confirm.assert_called_with(
             "There is currently a 'default' maintenance page, " "would you like to remove it?"
         )
         maintenance_mocks.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.echo.assert_not_called()
 
     def test_deactivate_an_environment_when_listener_not_found(
         self,
@@ -958,19 +945,19 @@ class TestDeactivateCommand:
             app, get_https_listener_for_application=Mock(side_effect=ListenerNotFoundException())
         )
         provider = MaintenancePage(**maintenance_mocks.params())
-        with pytest.raises(click.Abort):
+        with pytest.raises(SystemExit):
             provider.deactivate(env)
 
-            maintenance_mocks.get_https_listener_for_application.assert_called_with(
-                ANY, "test-application", "development"
-            )
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
-            maintenance_mocks.echo.assert_called_with(
-                "No HTTPS listener found for environment development in the application "
-                "test-application.",
-                fg="red",
-            )
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+
+        maintenance_mocks.io.abort_with_error.assert_called_with(
+            "No HTTPS listener found for environment development in the application "
+            "test-application.",
+        )
 
     def test_deactivate_an_environment_when_load_balancer_not_found(
         self,
@@ -980,16 +967,15 @@ class TestDeactivateCommand:
             get_https_listener_for_application=Mock(side_effect=LoadBalancerNotFoundException()),
         )
         provider = MaintenancePage(**maintenance_mocks.params())
-        with pytest.raises(click.Abort):
+        with pytest.raises(SystemExit):
             provider.deactivate(env)
 
-            maintenance_mocks.get_https_listener_for_application.assert_called_with(
-                ANY, "test-application", "development"
-            )
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
-            maintenance_mocks.echo.assert_called_with(
-                "No load balancer found for environment development in the application "
-                "test-application.",
-                fg="red",
-            )
+        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.io.abort_with_error.assert_called_with(
+            "No load balancer found for environment development in the application "
+            "test-application.",
+        )

@@ -8,6 +8,7 @@ from dbt_platform_helper.domain.terraform_environment import TerraformEnvironmen
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -43,8 +44,7 @@ def offline(app, env, svc, template, vpc):
         application = load_application(app)
         MaintenancePage(application).activate(env, svc, template, vpc)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @environment.command()
@@ -57,8 +57,7 @@ def online(app, env):
         application = load_application(app)
         MaintenancePage(application).deactivate(env)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @environment.command()
@@ -71,18 +70,19 @@ def online(app, env):
 def generate(name):
     """Gathers various IDs and ARNs from AWS and generates the AWS Copilot
     environment manifest at copilot/environments/<environment>/manifest.yml."""
+
+    click_io = ClickIOProvider()
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
         vpc_provider = VpcProvider(session)
         cloudformation_provider = CloudFormation(session.client("cloudformation"))
-        # TODO - setup loadbalancer provider here too...
+
         CopilotEnvironment(
             config_provider, vpc_provider, cloudformation_provider, session
         ).generate(name)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        click_io.abort_with_error(str(err))
 
 
 @environment.command(help="Generate terraform manifest for the specified environment.")
@@ -99,5 +99,4 @@ def generate_terraform(name, terraform_platform_modules_version):
         config_provider = ConfigProvider(ConfigValidator())
         TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
     except PlatformException as err:
-        click.secho(str(err), fg="red")
-        raise click.Abort
+        ClickIOProvider().abort_with_error(str(err))

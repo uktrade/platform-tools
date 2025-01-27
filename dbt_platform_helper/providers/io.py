@@ -8,7 +8,7 @@ class ClickIOProvider:
         click.secho(message, fg="magenta")
 
     def error(self, message: str):
-        click.secho(message, fg="red")
+        click.secho(f"Error: {message}", fg="red")
 
     def info(self, message: str):
         click.secho(message)
@@ -19,8 +19,12 @@ class ClickIOProvider:
     def confirm(self, message: str) -> bool:
         try:
             return click.confirm(message)
-        except click.Abort as e:
+        except click.Abort:
             raise ClickIOProviderException(message + " [y/N]: Error: invalid input")
+
+    def abort_with_error(self, message: str):
+        click.secho(f"Error: {message}", err=True, fg="red")
+        exit(1)
 
 
 class ClickIOProviderException(PlatformException):

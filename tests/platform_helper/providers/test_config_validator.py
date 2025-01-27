@@ -337,6 +337,11 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
             },
             "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
         ),
+        (
+            # Invalid extensions type defined in prod environment
+            {"extensions": {"connors-redis": {"type": "redis", "environments": True}}},
+            "Error: redis extension definition is invalid type, expected dictionary",
+        ),
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
