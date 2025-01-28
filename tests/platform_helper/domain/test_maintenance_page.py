@@ -307,6 +307,35 @@ class TestCommandHelperMethods:
             ],
         )["TargetGroups"][0]["TargetGroupArn"]
 
+    def _create_mock_session_with_failing_create_rule(self, elbv2_client, call_count_to_fail_on):
+        original_create_rule = elbv2_client.create_rule
+
+        def mock_create_rule(*args, **kwargs):
+            if mock_create_rule.call_count == call_count_to_fail_on:
+                mock_create_rule.call_count += 1
+                raise ClientError(
+                    {"Error": {"Code": "ValidationError", "Message": "Simulated failure"}},
+                    "CreateRule",
+                )
+            mock_create_rule.call_count += 1
+            return original_create_rule(*args, **kwargs)
+
+        mock_create_rule.call_count = 0
+        elbv2_client.create_rule = mock_create_rule
+
+        mock_session = MagicMock()
+
+        def mock_client(service_name, **kwargs):
+            # TODO for service_name try get from kwargs["mocks"] else default
+            if service_name == "elbv2":
+                return elbv2_client
+            elif service_name == "resourcegroupstaggingapi":
+                return boto3.client("resourcegroupstaggingapi")
+
+        mock_session.client.side_effect = mock_client
+
+        return mock_session, mock_create_rule
+
     @mock_aws
     def test_find_target_group(self):
 
@@ -589,32 +618,9 @@ class TestCommandHelperMethods:
         )
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 2
-
-        original_create_rule = elbv2_client.create_rule
-
-        def mock_create_rule(*args, **kwargs):
-            if mock_create_rule.call_count == create_rule_count_to_error:
-                mock_create_rule.call_count += 1
-                raise ClientError(
-                    {"Error": {"Code": "ValidationError", "Message": "Simulated failure"}},
-                    "CreateRule",
-                )
-            mock_create_rule.call_count += 1
-            return original_create_rule(*args, **kwargs)
-
-        mock_create_rule.call_count = 0
-        elbv2_client.create_rule = mock_create_rule
-
-        mock_session = MagicMock()
-
-        def mock_client(service_name, **kwargs):
-            # TODO for service_name try get from kwargs["mocks"] else default
-            if service_name == "elbv2":
-                return elbv2_client
-            elif service_name == "resourcegroupstaggingapi":
-                return boto3.client("resourcegroupstaggingapi")
-
-        mock_session.client.side_effect = mock_client
+        mock_session, mock_create_rule = self._create_mock_session_with_failing_create_rule(
+            elbv2_client, create_rule_count_to_error
+        )
 
         with pytest.raises(
             FailedToActivateMaintenancePageException,
