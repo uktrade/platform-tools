@@ -10,8 +10,8 @@ from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
-from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.versioning import (
@@ -28,6 +28,7 @@ class Pipelines:
         get_git_remote: Callable[[], str],
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
+        file_provider: FileProvider = FileProvider(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -35,6 +36,7 @@ class Pipelines:
         self.terraform_manifest_provider = terraform_manifest_provider
         self.ecr_provider = ecr_provider
         self.io = io
+        self.file_provider = file_provider
 
     def generate(self, cli_terraform_platform_modules_version: str, deploy_branch: str):
         platform_config = self.config_provider.load_and_validate_platform_config()
@@ -131,4 +133,6 @@ class Pipelines:
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
-        self.io.info(FileProvider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True))
+        self.io.info(
+            self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
+        )
