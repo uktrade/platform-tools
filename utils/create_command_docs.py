@@ -106,7 +106,7 @@ def get_cmd_metadata(
     )
 
     for sub in subcommands_names.values():
-        yield from get_cmd_metadata(sub, context, command_name, f"{indent}  ")
+        yield from get_cmd_metadata(sub, context, command_name, f"{indent}    ")
 
 
 def create_docs(base_command, output):
