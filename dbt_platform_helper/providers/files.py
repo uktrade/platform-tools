@@ -8,7 +8,7 @@ class FileProvider:
         pass
 
     @staticmethod
-    def mkfile(base_path: str, file_path: str, contents, overwrite=False) -> str:
+    def mkfile(base_path: str, file_path: str, contents: str, overwrite=False) -> str:
         file_path = Path(file_path)
         file = Path(base_path).joinpath(file_path)
         file_exists = file.exists()

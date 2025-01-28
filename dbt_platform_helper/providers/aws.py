@@ -19,6 +19,11 @@ class ImageNotFoundException(AWSException):
         )
 
 
+class RepositoryNotFoundException(AWSException):
+    def __init__(self, repository: str):
+        super().__init__(f"""The ECR repository "{repository}" could not be found.""")
+
+
 class LogGroupNotFoundException(AWSException):
     def __init__(self, log_group_name: str):
         super().__init__(f"""No log group called "{log_group_name}".""")

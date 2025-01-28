@@ -238,7 +238,7 @@ def test_validate_addons_success(addons_file):
                 "my-alb-origin-request-policy-should-be-a-dict": r"environments.*dev.*should be instance of 'dict'",
                 "my-alb-paths-default-cache-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-paths-default-request-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
-                "my-alb-paths-additional-should-be-a-list": r"environments.*dev.*raised TypeError",
+                "my-alb-paths-additional-should-be-a-list": r"Key 'additional' error.*False should be instance of 'list'",
             },
         ),
     ],

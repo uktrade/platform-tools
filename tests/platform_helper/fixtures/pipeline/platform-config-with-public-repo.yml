@@ -1,8 +1,4 @@
 application: test-app
-legacy_project: true
-accounts:
-  - 111111111
-  - 222222222
 
 environments:
   dev:
@@ -10,11 +6,14 @@ environments:
     requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
     repository: organisation/repository
+    slack_channel: CODEBASE_SLACK_CHANNEL_ID
+    requires_image_build: true
     additional_ecr_repository: public.ecr.aws/uktrade-platform-sandbox/demodjango/application
     services:
-      - web
+      - run_group:
+          - web
     pipelines:
       - name: main
         branch: main

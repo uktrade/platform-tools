@@ -1,5 +1,23 @@
 # Changelog
 
+## [12.6.0](https://github.com/uktrade/platform-tools/compare/12.5.1...12.6.0) (2025-01-28)
+
+
+### Features
+
+* DBTP-1635 Add additional S3 source bucket validation  ([#738](https://github.com/uktrade/platform-tools/issues/738)) ([f6f65d4](https://github.com/uktrade/platform-tools/commit/f6f65d4b2e53e80dcf073605f0b975cd01c0236c))
+
+
+### Bug Fixes
+
+* DBTP-1700 Increase indent on COMMAND.md list ([#739](https://github.com/uktrade/platform-tools/issues/739)) ([9987a20](https://github.com/uktrade/platform-tools/commit/9987a20811f7fc18ba1e07487220b29e059f592d))
+* use get_rules_tag_descriptions method to get descriptions ([#730](https://github.com/uktrade/platform-tools/issues/730)) ([e4dc724](https://github.com/uktrade/platform-tools/commit/e4dc7245a1db1048634bacfec791639569a237a2))
+
+
+### Documentation
+
+* DBTP-1332 Nest commands list for easier navigation ([#734](https://github.com/uktrade/platform-tools/issues/734)) ([d9bbe41](https://github.com/uktrade/platform-tools/commit/d9bbe4182e401a6d331d04ae929ab840dde82be0))
+
 ## [12.5.1](https://github.com/uktrade/platform-tools/compare/12.5.0...12.5.1) (2025-01-17)
 
 
