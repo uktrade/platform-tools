@@ -227,6 +227,85 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     config_provider.validate_platform_config()
 
 
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
+def test_validate_data_migration_fails_if_neither_import_and_import_sources_present(
+    mock_abort_with_error,
+):
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "extensions": {
+            "test-s3-bucket": {
+                "type": "s3",
+                "environments": {
+                    "dev": {
+                        "bucket_name": "placeholder-to-pass-schema-validation",
+                        "data_migration": {},
+                    }
+                },
+            }
+        },
+    }
+
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = config
+    config_provider.validate_platform_config()
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert (
+        "Error in 'test-s3-bucket.environments.dev.data_migration': 'import_sources' property is missing."
+        in message
+    )
+
+
+@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
+def test_validate_data_migration_fails_if_both_import_and_import_sources_present(
+    mock_abort_with_error,
+):
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "extensions": {
+            "test-s3-bucket": {
+                "type": "s3",
+                "environments": {
+                    "dev": {
+                        "bucket_name": "placeholder-to-pass-schema-validation",
+                        "data_migration": {
+                            "import": {
+                                "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                            },
+                            "import_sources": [
+                                {
+                                    "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                    "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                    "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                                }
+                            ],
+                        },
+                    }
+                },
+            }
+        },
+    }
+
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = config
+    config_provider.validate_platform_config()
+
+    message = mock_abort_with_error.call_args.args[0]
+
+    assert (
+        "Error in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."
+        in message
+    )
+
+
 @pytest.mark.parametrize(
     "yaml_file",
     [
