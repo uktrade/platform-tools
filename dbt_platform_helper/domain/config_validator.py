@@ -2,9 +2,6 @@ from typing import Callable
 
 import boto3
 
-from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
