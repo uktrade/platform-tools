@@ -442,14 +442,17 @@ class PlatformConfigSchema:
                 error=f"{key} must contain a valid ARN for an S3 bucket",
             )
 
+        _single_import_config = {
+            Optional("source_kms_key_arn"): PlatformConfigSchema.__valid_kms_key_arn(
+                "source_kms_key_arn"
+            ),
+            "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
+            "worker_role_arn": PlatformConfigSchema.__valid_iam_role_arn("worker_role_arn"),
+        }
+
         _valid_s3_data_migration = {
-            "import": {
-                Optional("source_kms_key_arn"): PlatformConfigSchema.__valid_kms_key_arn(
-                    "source_kms_key_arn"
-                ),
-                "source_bucket_arn": _valid_s3_bucket_arn("source_bucket_arn"),
-                "worker_role_arn": PlatformConfigSchema.__valid_iam_role_arn("worker_role_arn"),
-            },
+            Optional("import"): _single_import_config,
+            Optional("import_sources"): [_single_import_config],
         }
 
         _valid_s3_bucket_retention_policy = Or(

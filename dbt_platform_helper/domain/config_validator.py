@@ -19,6 +19,7 @@ class ConfigValidator:
             self.validate_environment_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
+            self.validate_database_migration_input_sources,
         ]
         self.io = io
 
@@ -218,6 +219,37 @@ class ConfigValidator:
                         errors.append(
                             f"Incorrect value for 'to_account' for environment '{to_env}'"
                         )
+
+        if errors:
+            abort_with_error("\n".join(errors))
+
+    def validate_database_migration_input_sources(self, config):
+        extensions = config.get("extensions", {})
+        if not extensions:
+            return
+
+        s3_extensions = {
+            key: ext for key, ext in extensions.items() if ext.get("type", None) == "s3"
+        }
+
+        if not s3_extensions:
+            return
+
+        errors = []
+
+        for extension_name, extension in s3_extensions.items():
+            for env, env_config in extension.get("environments", {}).items():
+                if "data_migration" not in env_config:
+                    continue
+                data_migration = env_config.get("data_migration", {})
+                if "import" in data_migration and "import_sources" in data_migration:
+                    errors.append(
+                        f"Error in '{extension_name}.environments.{env}.data_migration': only the 'import_sources' property is required - 'import' is deprecated."
+                    )
+                if "import" not in data_migration and "import_sources" not in data_migration:
+                    errors.append(
+                        f"Error in '{extension_name}.environments.{env}.data_migration': 'import_sources' property is missing."
+                    )
 
         if errors:
             abort_with_error("\n".join(errors))
