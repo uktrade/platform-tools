@@ -1,16 +1,17 @@
 # Commands Reference
 
 - [cli](#cli)
-  - [cli hello](#cli-hello)
-  - [cli argument-replacements](#cli-argument-replacements)
-  - [cli option-replacements](#cli-option-replacements)
+    - [cli group-command](#cli-group-command)
+        - [cli group-command hello](#cli-group-command-hello)
+        - [cli group-command argument-replacements](#cli-group-command-argument-replacements)
+        - [cli group-command option-replacements](#cli-group-command-option-replacements)
 
 # cli
 
 ## Usage
 
 ```
-cli (hello|argument-replacements|option-replacements) 
+cli group-command 
 ```
 
 ## Options
@@ -20,18 +21,37 @@ cli (hello|argument-replacements|option-replacements)
 
 ## Commands
 
-- [`argument-replacements` ↪](#cli-argument-replacements)
-- [`hello` ↪](#cli-hello)
-- [`option-replacements` ↪](#cli-option-replacements)
+- [`group-command` ↪](#cli-group-command)
 
-# cli hello
+# cli group-command
 
 [↩ Parent](#cli)
 
 ## Usage
 
 ```
-cli hello <name> [--count <count>] 
+cli group-command (hello|argument-replacements|option-replacements) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`argument-replacements` ↪](#cli-group-command-argument-replacements)
+- [`hello` ↪](#cli-group-command-hello)
+- [`option-replacements` ↪](#cli-group-command-option-replacements)
+
+# cli group-command hello
+
+[↩ Parent](#cli-group-command)
+
+## Usage
+
+```
+cli group-command hello <name> [--count <count>] 
 ```
 
 ## Arguments
@@ -45,14 +65,14 @@ cli hello <name> [--count <count>]
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# cli argument-replacements
+# cli group-command argument-replacements
 
-[↩ Parent](#cli)
+[↩ Parent](#cli-group-command)
 
 ## Usage
 
 ```
-cli argument-replacements <application> <environment> <service> 
+cli group-command argument-replacements <application> <environment> <service> 
 ```
 
 ## Arguments
@@ -66,14 +86,15 @@ cli argument-replacements <application> <environment> <service>
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# cli option-replacements
+# cli group-command option-replacements
 
-[↩ Parent](#cli)
+[↩ Parent](#cli-group-command)
 
 ## Usage
 
 ```
-cli option-replacements [--app <application>] [--env <environment>] [--svc <service>] 
+cli group-command option-replacements [--app <application>] [--env <environment>] 
+                                      [--svc <service>] 
 ```
 
 ## Options
