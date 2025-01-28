@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 import click
 
-from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.utils.messages import abort_with_error
-
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -61,9 +59,8 @@ def generate(terraform_platform_modules_version: str, deploy_branch: str):
             ECRProvider(),
             git_remote,
             get_codestar_connection_arn,
-            io
+            io,
         )
         pipelines.generate(terraform_platform_modules_version, deploy_branch)
     except Exception as exc:
         io.abort_with_error(str(exc))
-
