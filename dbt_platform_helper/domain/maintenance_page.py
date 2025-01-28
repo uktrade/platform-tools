@@ -40,7 +40,7 @@ class FailedToActivateMaintenancePageException(MaintenancePageException):
         env: str,
         original_exception: Exception,
         rolled_back_rules: dict[str, bool] = {},
-    ):  # original_exception
+    ):
         super().__init__(
             f"Maintenance page failed to activate for the {application_name} application in environment {env}."
         )
