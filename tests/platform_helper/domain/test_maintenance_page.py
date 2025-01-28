@@ -544,13 +544,14 @@ class TestCommandHelperMethods:
     def test_normalise_to_cidr(self, ip, expected_cidr):
         assert normalise_to_cidr(ip) == expected_cidr
 
+    @pytest.mark.parametrize("create_rule_count_to_error", [])
     @mock_aws
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
     def test_listener_roll_back_on_exception(
-        self, get_maintenance_page_template, choices, mock_application
+        self, get_maintenance_page_template, choices, create_rule_count_to_error, mock_application
     ):
 
         get_maintenance_page_template.return_value = "default"
@@ -571,7 +572,7 @@ class TestCommandHelperMethods:
         original_create_rule = elbv2_client.create_rule
 
         def mock_create_rule(*args, **kwargs):
-            if mock_create_rule.call_count == 1:
+            if mock_create_rule.call_count == create_rule_count_to_error:
                 mock_create_rule.call_count += 1
                 raise ClientError(
                     {"Error": {"Code": "ValidationError", "Message": "Simulated failure"}},
@@ -581,7 +582,6 @@ class TestCommandHelperMethods:
             return original_create_rule(*args, **kwargs)
 
         mock_create_rule.call_count = 0
-
         elbv2_client.create_rule = mock_create_rule
 
         mock_session = MagicMock()
@@ -632,12 +632,20 @@ class TestCommandHelperMethods:
                     "AllowedSourceIps",
                 ]
 
+                # assert test tag present
                 if tags.get("test-key"):
                     assert tags["test-key"] == "test-value"
 
+            # assert test condition present
+            assert rules[1]["Conditions"][0] == {
+                "Field": "host-header",
+                "HostHeaderConfig": {"Values": ["/test-path"]},
+            }
+            assert rules[1]["Priority"] == "333"
             # check it doesn't contain any maintenance page rules
             for rule in rules:
                 for conidition in rule["Conditions"]:
+                    # ensure maintenace page conditions are not present
                     assert conidition not in [
                         {
                             "Field": "http-header",
