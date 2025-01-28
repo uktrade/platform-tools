@@ -619,7 +619,6 @@ class TestCommandHelperMethods:
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
-            print("starting")
             add_maintenance_page(
                 mock_session,
                 listener_arn,
@@ -629,8 +628,6 @@ class TestCommandHelperMethods:
                 ["1.2.3.4"],
                 template,
             )
-
-            print("checking")
 
         excepted = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
