@@ -1,6 +1,5 @@
-import click
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 def abort_with_error(message):
-    click.secho(f"Error: {message}", err=True, fg="red")
-    exit(1)
+    ClickIOProvider().abort_with_error(message)

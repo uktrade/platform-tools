@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import click
 
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.utils.messages import abort_with_error
+
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
@@ -10,7 +13,6 @@ from dbt_platform_helper.providers.terraform_manifest import TerraformManifestPr
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 from dbt_platform_helper.utils.git import git_remote
-from dbt_platform_helper.utils.messages import abort_with_error
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -51,16 +53,17 @@ def generate(terraform_platform_modules_version: str, deploy_branch: str):
     This command does the following in relation to the codebase pipelines:
     - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
     """
+    io = ClickIOProvider()
     try:
         pipelines = Pipelines(
             ConfigProvider(ConfigValidator()),
             TerraformManifestProvider(),
             ECRProvider(),
-            click.secho,
-            abort_with_error,
             git_remote,
             get_codestar_connection_arn,
+            io
         )
         pipelines.generate(terraform_platform_modules_version, deploy_branch)
     except Exception as exc:
-        abort_with_error(str(exc))
+        io.abort_with_error(str(exc))
+

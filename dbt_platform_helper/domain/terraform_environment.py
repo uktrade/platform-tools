@@ -73,7 +73,7 @@ class TerraformEnvironment:
 
         if environment_name not in config.get("environments").keys():
             raise EnvironmentNotFoundException(
-                f"Error: cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
+                f"cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
             )
 
         manifest = self.manifest_generator.generate_manifest(

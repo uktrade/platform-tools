@@ -11,7 +11,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class PipelineMocks:
@@ -19,8 +18,8 @@ class PipelineMocks:
         self.mock_config_provider = ConfigProvider(ConfigValidator())
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
-        self.mock_echo = Mock()
-        self.mock_abort = abort_with_error
+        self.io = Mock()
+        self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.mock_git_remote = Mock()
         self.mock_git_remote.return_value = "uktrade/test-app-deploy"
         self.mock_codestar = Mock()
@@ -34,8 +33,7 @@ class PipelineMocks:
             "config_provider": self.mock_config_provider,
             "terraform_manifest_provider": self.mock_terraform_manifest_provider,
             "ecr_provider": self.mock_ecr_provider,
-            "echo": self.mock_echo,
-            "abort": self.mock_abort,
+            "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
         }
@@ -51,9 +49,7 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
 
     pipelines.generate(None, None)
 
-    mocks.mock_echo.assert_called_once_with(
-        "No pipelines defined: nothing to do.", err=True, fg="yellow"
-    )
+    mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
 
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning():
@@ -65,9 +61,7 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 
     pipelines.generate(None, None)
 
-    mocks.mock_echo.assert_called_once_with(
-        "No pipelines defined: nothing to do.", err=True, fg="yellow"
-    )
+    mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
 
 @freeze_time("2024-10-28 12:00:00")

@@ -492,6 +492,11 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
             },
             "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
         ),
+        (
+            # Invalid extensions type defined in prod environment
+            {"extensions": {"connors-redis": {"type": "redis", "environments": True}}},
+            "Error: redis extension definition is invalid type, expected dictionary",
+        ),
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
