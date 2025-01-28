@@ -544,14 +544,35 @@ class TestCommandHelperMethods:
     def test_normalise_to_cidr(self, ip, expected_cidr):
         assert normalise_to_cidr(ip) == expected_cidr
 
-    @pytest.mark.parametrize("create_rule_count_to_error", [])
+    @pytest.mark.parametrize(
+        "create_rule_count_to_error, expected_roll_back_message",
+        [
+            (
+                1,
+                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': False}",
+            ),
+            (
+                2,
+                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': True}",
+            ),
+            (
+                3,
+                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}",
+            ),
+        ],
+    )
     @mock_aws
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
     def test_listener_roll_back_on_exception(
-        self, get_maintenance_page_template, choices, create_rule_count_to_error, mock_application
+        self,
+        get_maintenance_page_template,
+        choices,
+        create_rule_count_to_error,
+        expected_roll_back_message,
+        mock_application,
     ):
 
         get_maintenance_page_template.return_value = "default"
@@ -598,6 +619,7 @@ class TestCommandHelperMethods:
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
+            print("starting")
             add_maintenance_page(
                 mock_session,
                 listener_arn,
@@ -608,62 +630,66 @@ class TestCommandHelperMethods:
                 template,
             )
 
-            excepted = (
-                "Maintenance page failed to activate for the test-application application in environment development.\n"
-                "Rolled-back rules: {'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': False}\n"
-                "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
-            )
-            assert str(e.value) == excepted
+            print("checking")
 
-            assert mock_create_rule.call_count == 2
+        excepted = (
+            "Maintenance page failed to activate for the test-application application in environment development.\n"
+            f"Rolled-back rules: {expected_roll_back_message}\n"
+            "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
+        )
+        assert str(e.value) == excepted
 
-            rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-            tags_descriptions = elbv2_client.describe_tags(
-                ResourceArns=[rule["RuleArn"] for rule in rules]
-            )
+        assert mock_create_rule.call_count == create_rule_count_to_error + 1
 
-            # check that it only contains test tag and not maintenance page tags. Note default rule has no tags
-            for description in tags_descriptions["TagDescriptions"]:
-                tags = {t["Key"]: t["Value"] for t in description["Tags"]}
-                assert tags.get("name", None) not in [
-                    "MaintenancePage",
-                    "AllowedIps",
-                    "BypassIpFilter",
-                    "AllowedSourceIps",
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        tags_descriptions = elbv2_client.describe_tags(
+            ResourceArns=[rule["RuleArn"] for rule in rules]
+        )
+
+        # check that it only contains test tag and not maintenance page tags. Note default rule has no tags
+        for description in tags_descriptions["TagDescriptions"]:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            assert tags.get("name", None) not in [
+                "MaintenancePage",
+                "AllowedIps",
+                "BypassIpFilter",
+                "AllowedSourceIps",
+            ]
+
+            # assert test tag present
+            if tags.get("test-key"):
+                assert tags["test-key"] == "test-value"
+
+        # assert test condition present
+        assert rules[0]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[0]["Priority"] == "500"
+        assert len(rules[1]["Conditions"]) == 0
+        assert rules[1]["Priority"] == "default"
+        # check it doesn't contain any maintenance page rules
+        for rule in rules:
+            for conidition in rule["Conditions"]:
+                # ensure maintenace page conditions are not present
+                assert conidition not in [
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {
+                            "HttpHeaderName": "X-Forwarded-For",
+                            "Values": ["1.2.3.4"],
+                        },
+                    },
+                    {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
+                    },
+                    {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
                 ]
+            assert rule["Priority"] not in ["1", "2", "3", "4"]
 
-                # assert test tag present
-                if tags.get("test-key"):
-                    assert tags["test-key"] == "test-value"
-
-            # assert test condition present
-            assert rules[1]["Conditions"][0] == {
-                "Field": "host-header",
-                "HostHeaderConfig": {"Values": ["/test-path"]},
-            }
-            assert rules[1]["Priority"] == "333"
-            # check it doesn't contain any maintenance page rules
-            for rule in rules:
-                for conidition in rule["Conditions"]:
-                    # ensure maintenace page conditions are not present
-                    assert conidition not in [
-                        {
-                            "Field": "http-header",
-                            "HttpHeaderConfig": {
-                                "HttpHeaderName": "X-Forwarded-For",
-                                "Values": ["1.2.3.4"],
-                            },
-                        },
-                        {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
-                        {
-                            "Field": "http-header",
-                            "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
-                        },
-                        {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
-                    ]
-                assert rule["Priority"] not in ["1", "2", "3", "4"]
-
-            assert len(rules) == 2
+        assert len(rules) == 2
 
 
 class MaintenancePageMocks:
