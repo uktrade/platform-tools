@@ -2,6 +2,7 @@ import itertools
 import random
 import re
 import string
+import traceback
 from pathlib import Path
 from typing import Callable
 from typing import List
@@ -164,7 +165,9 @@ def add_maintenance_page(
         )
     except Exception as e:
         deleted_rules = clean_up_maintenance_page_rules(session, listener_arn)
-        raise FailedToActivateMaintenancePageException(app, env, e, deleted_rules)
+        raise FailedToActivateMaintenancePageException(
+            app, env, f"{e}:\n {traceback.format_exc()}", deleted_rules
+        )
 
 
 def clean_up_maintenance_page_rules(

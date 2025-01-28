@@ -290,20 +290,20 @@ class TestCommandHelperMethods:
 
         return rule_response["Rules"][0]["RuleArn"], elbv2_client, listener_arn
 
-    def _create_target_group(self):
+    def _create_target_group(self, service_name="web"):
         ec2_client = boto3.client("ec2")
         vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
         vpc_id = vpc_response["Vpc"]["VpcId"]
 
         return boto3.client("elbv2").create_target_group(
-            Name="test-target-group",
+            Name=f"{service_name}-target-group",
             Protocol="HTTPS",
             Port=123,
             VpcId=vpc_id,
             Tags=[
                 {"Key": "copilot-application", "Value": "test-application"},
                 {"Key": "copilot-environment", "Value": "development"},
-                {"Key": "copilot-service", "Value": "web"},
+                {"Key": "copilot-service", "Value": service_name},
             ],
         )["TargetGroups"][0]["TargetGroupArn"]
 
@@ -640,7 +640,7 @@ class TestCommandHelperMethods:
             f"Rolled-back rules: {expected_roll_back_message}\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
-        assert str(e.value) == excepted
+        assert str(e.value).startswith(excepted)
 
         assert mock_create_rule.call_count == create_rule_count_to_error + 1
 
@@ -693,6 +693,122 @@ class TestCommandHelperMethods:
             assert rule["Priority"] not in ["1", "2", "3", "4"]
 
         assert len(rules) == 2
+
+    @mock_aws
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_listener_roll_back_on_exception_multiple_services(
+        self,
+        get_maintenance_page_template,
+        choices,
+        mock_application,
+    ):
+
+        get_maintenance_page_template.return_value = "default"
+        mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        target_group_arn_2 = self._create_target_group("web2")
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=501,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_2}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 3
+        mock_session, mock_create_rule = self._create_mock_session_with_failing_create_rule(
+            elbv2_client, 5  # will only error during loop on second service
+        )
+
+        with pytest.raises(
+            FailedToActivateMaintenancePageException,
+        ) as e:
+            add_maintenance_page(
+                mock_session,
+                listener_arn,
+                "test-application",
+                "development",
+                [mock_application.services["web"], mock_application.services["web2"]],
+                ["1.2.3.4"],
+                template,
+            )
+
+        excepted = (
+            "Maintenance page failed to activate for the test-application application in environment development.\n"
+            "Rolled-back rules: {'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}\n"
+            "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
+        )
+        assert str(e.value).startswith(excepted)
+
+        assert mock_create_rule.call_count == 6
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        tags_descriptions = elbv2_client.describe_tags(
+            ResourceArns=[rule["RuleArn"] for rule in rules]
+        )
+
+        # check that it only contains test tag and not maintenance page tags. Note default rule has no tags
+        for description in tags_descriptions["TagDescriptions"]:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            assert tags.get("name", None) not in [
+                "MaintenancePage",
+                "AllowedIps",
+                "BypassIpFilter",
+                "AllowedSourceIps",
+            ]
+
+            # assert test tag present
+            if tags.get("test-key"):
+                assert tags["test-key"] == "test-value"
+
+        # assert test condition present
+        assert rules[0]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[0]["Priority"] == "500"
+        assert rules[1]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[1]["Priority"] == "501"
+        assert len(rules[2]["Conditions"]) == 0
+        assert rules[2]["Priority"] == "default"
+        # check it doesn't contain any maintenance page rules
+        for rule in rules:
+            for conidition in rule["Conditions"]:
+                # ensure maintenace page conditions are not present
+                assert conidition not in [
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {
+                            "HttpHeaderName": "X-Forwarded-For",
+                            "Values": ["1.2.3.4"],
+                        },
+                    },
+                    {"Field": "source-ip", "SourceIpConfig": {"Values": ["1.2.3.4/32"]}},
+                    {
+                        "Field": "http-header",
+                        "HttpHeaderConfig": {"HttpHeaderName": "Bypass-Key", "Values": ["abc"]},
+                    },
+                    {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+                ]
+            assert rule["Priority"] not in ["1", "2", "3", "4", "5"]
+
+        assert len(rules) == 3
 
 
 class MaintenancePageMocks:
