@@ -87,10 +87,7 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
     config_provider.load_and_validate_platform_config()
 
 
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_data_migration_fails_if_neither_import_and_import_sources_present(
-    mock_abort_with_error,
-):
+def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present():
     """Edge cases for this are all covered in unit tests of
     validate_database_copy_section elsewhere in this file."""
     config = {
@@ -110,9 +107,12 @@ def test_validate_data_migration_fails_if_neither_import_and_import_sources_pres
 
     config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = config
-    config_provider.validate_platform_config()
+    mock_io = Mock()
+    config_provider.io = mock_io
+    config_provider.validator.io = mock_io
+    config_provider._validate_platform_config()
 
-    message = mock_abort_with_error.call_args.args[0]
+    message = mock_io.abort_with_error.call_args.args[0]
 
     assert (
         "Error in 'test-s3-bucket.environments.dev.data_migration': 'import_sources' property is missing."
@@ -120,10 +120,7 @@ def test_validate_data_migration_fails_if_neither_import_and_import_sources_pres
     )
 
 
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_data_migration_fails_if_both_import_and_import_sources_present(
-    mock_abort_with_error,
-):
+def test_validate_data_migration_fails_if_both_import_and_import_sources_present():
     """Edge cases for this are all covered in unit tests of
     validate_database_copy_section elsewhere in this file."""
     config = {
@@ -156,9 +153,12 @@ def test_validate_data_migration_fails_if_both_import_and_import_sources_present
 
     config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = config
-    config_provider.validate_platform_config()
+    mock_io = Mock()
+    config_provider.io = mock_io
+    config_provider.validator.io = mock_io
+    config_provider._validate_platform_config()
 
-    message = mock_abort_with_error.call_args.args[0]
+    message = mock_io.abort_with_error.call_args.args[0]
 
     assert (
         "Error in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."

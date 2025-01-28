@@ -5,7 +5,6 @@ import boto3
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
-from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigValidator:
@@ -111,7 +110,7 @@ class ConfigValidator:
                 envs = detail["bad_envs"]
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-            abort_with_error(message)
+            self.io.abort_with_error(message)
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
@@ -135,7 +134,7 @@ class ConfigValidator:
 
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
-            abort_with_error(error_message + "\n  ".join(errors))
+            self.io.abort_with_error(error_message + "\n  ".join(errors))
 
     def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
@@ -221,9 +220,9 @@ class ConfigValidator:
                         )
 
         if errors:
-            abort_with_error("\n".join(errors))
+            self.io.abort_with_error("\n".join(errors))
 
-    def validate_database_migration_input_sources(self, config):
+    def validate_database_migration_input_sources(self, config: dict):
         extensions = config.get("extensions", {})
         if not extensions:
             return
@@ -250,6 +249,5 @@ class ConfigValidator:
                     errors.append(
                         f"Error in '{extension_name}.environments.{env}.data_migration': 'import_sources' property is missing."
                     )
-
         if errors:
-            abort_with_error("\n".join(errors))
+            self.io.abort_with_error("\n".join(errors))
