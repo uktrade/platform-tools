@@ -2,13 +2,9 @@ from typing import Callable
 
 import boto3
 
-from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
-from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class ConfigValidator:
@@ -20,7 +16,6 @@ class ConfigValidator:
             self.validate_supported_redis_versions,
             self.validate_supported_opensearch_versions,
             self.validate_environment_pipelines,
-            self.validate_codebase_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
             self.validate_database_migration_input_sources,
@@ -115,23 +110,7 @@ class ConfigValidator:
                 envs = detail["bad_envs"]
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-            abort_with_error(message)
-
-    def validate_codebase_pipelines(self, config):
-        if CODEBASE_PIPELINES_KEY in config:
-            for codebase in config[CODEBASE_PIPELINES_KEY]:
-                codebase_environments = []
-
-                for pipeline in codebase["pipelines"]:
-                    codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
-
-                unique_codebase_environments = sorted(list(set(codebase_environments)))
-
-                if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                    abort_with_error(
-                        f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                        "listed in a single pipeline per codebase"
-                    )
+            self.io.abort_with_error(message)
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
@@ -155,7 +134,7 @@ class ConfigValidator:
 
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
-            abort_with_error(error_message + "\n  ".join(errors))
+            self.io.abort_with_error(error_message + "\n  ".join(errors))
 
     def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
@@ -241,9 +220,9 @@ class ConfigValidator:
                         )
 
         if errors:
-            abort_with_error("\n".join(errors))
+            self.io.abort_with_error("\n".join(errors))
 
-    def validate_database_migration_input_sources(self, config):
+    def validate_database_migration_input_sources(self, config: dict):
         extensions = config.get("extensions", {})
         if not extensions:
             return
@@ -270,6 +249,5 @@ class ConfigValidator:
                     errors.append(
                         f"Error in '{extension_name}.environments.{env}.data_migration': 'import_sources' property is missing."
                     )
-
         if errors:
-            abort_with_error("\n".join(errors))
+            self.io.abort_with_error("\n".join(errors))

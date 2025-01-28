@@ -17,8 +17,8 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
 from dbt_platform_helper.providers.aws import ImageNotFoundException
+from dbt_platform_helper.providers.aws import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.git import CommitNotFoundException
@@ -41,18 +41,6 @@ class CodebaseMocks:
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
-        self.check_codebase_exists = kwargs.get(
-            "check_codebase_exists",
-            Mock(
-                return_value="""
-                                             {
-                                                "name": "test-app", 
-                                                "repository": "uktrade/test-app",
-                                                "services": "1234"
-                                             }
-                                        """
-            ),
-        )
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
         self.run_subprocess = kwargs.get("run_subprocess", Mock())
         self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
@@ -61,7 +49,6 @@ class CodebaseMocks:
         return {
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
-            "check_codebase_exists": self.check_codebase_exists,
             "check_image_exists": self.check_image_exists,
             "io": self.io,
             "run_subprocess": self.run_subprocess,
@@ -228,21 +215,17 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     client.get_parameter.return_value = {
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
-    client.start_build.return_value = {
-        "build": {
-            "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
-        },
+    client.start_pipeline_execution.return_value = {
+        "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
 
     codebase = Codebase(**mocks.params())
     codebase.deploy("test-application", "development", "application", "ab1c23d")
 
-    client.start_build.assert_called_with(
-        projectName="pipeline-test-application-application-BuildProject",
-        artifactsOverride={"type": "NO_ARTIFACTS"},
-        sourceTypeOverride="NO_SOURCE",
-        environmentVariablesOverride=[
-            {"name": "COPILOT_ENVIRONMENT", "value": "development"},
+    client.start_pipeline_execution.assert_called_with(
+        name="test-application-application-manual-release-pipeline",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
             {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
         ],
     )
@@ -251,7 +234,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         [
             call(
                 'You are about to deploy "test-application" for "application" with commit '
-                '"ab1c23d" to the "development" environment. Do you want to continue?'
+                '"ab1c23d" to the "development" environment using the "test-application-application-manual-release-pipeline" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -260,17 +243,15 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         [
             call(
                 "Your deployment has been triggered. Check your build progress in the AWS Console: "
-                "https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/111111111111/projects/build"
-                "-project/build/build-project%3Abuild-id"
+                "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/test-application-application-manual-release-pipeline/executions/0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
             )
         ]
     )
 
 
-def test_codebase_deploy_exception_with_a_nonexistent_codebase():
-    mocks = CodebaseMocks(
-        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundException("application"))
-    )
+@pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
+def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
+    mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
@@ -278,23 +259,7 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase():
         "Parameter": {"Value": json.dumps({"name": "application"})},
     }
 
-    with pytest.raises(CopilotCodebaseNotFoundException):
-        codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
-
-
-def test_check_codebase_exists_returns_error_when_no_json():
-    mocks = CodebaseMocks(
-        check_codebase_exists=Mock(side_effect=CopilotCodebaseNotFoundException("application"))
-    )
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
-    with pytest.raises(CopilotCodebaseNotFoundException):
+    with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
@@ -333,34 +298,27 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
 
 
-def test_codebase_deploy_does_not_trigger_build_without_confirmation():
+def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-    client.exceptions.ParameterNotFound = ssm_exceptions.ParameterNotFound
-    client.start_build.return_value = {
-        "build": {
-            "arn": "arn:aws:codebuild:eu-west-2:111111111111:build/build-project:build-id",
-        },
-    }
-
-    with pytest.raises(ApplicationDeploymentNotTriggered):
+    with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "ab1c23d")
 
+    assert str(exc.value) == "Your deployment for application was not triggered."
+    assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit '
-                '"ab1c23d" to the "development" environment. Do you want to continue?'
+                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release-pipeline" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
+
+    client.start_pipeline_execution.assert_not_called()
 
 
 def test_codebase_deploy_does_not_trigger_build_without_an_application():

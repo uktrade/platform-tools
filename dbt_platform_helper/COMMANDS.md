@@ -222,7 +222,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 - `--app <text>`
   - AWS application name
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -246,7 +246,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--env <text>`
   - AWS Copilot environment
 - `--codebase <text>`
-  - The codebase name as specified in the platform-config.yml file
+  - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
 - `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
@@ -492,7 +492,7 @@ platform-helper environment generate-terraform --name <name> [--terraform-platfo
 -n <text>`
   - The name of the environment to generate a manifest for.
 - `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules. (Default version is '5').
+  - Override the default version of terraform-platform-modules. (Default version is '7').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -565,7 +565,7 @@ platform-helper pipeline generate [--terraform-platform-modules-version <terrafo
   - Override the default version of terraform-platform-modules with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 
 platform-config.yml/default_versions/terraform-platform-modules. 
-In absence of these inputs, defaults to version '5'.
+In absence of these inputs, defaults to version '7'.
 - `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
@@ -667,7 +667,7 @@ platform-helper notify (environment-progress|add-comment)
 
 [↩ Parent](#platform-helper-notify)
 
-    Send environment progress notifications
+    Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
 
 ## Usage
 
@@ -695,7 +695,7 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 - `--commit-sha <text>`
 
 - `--slack-ref <text>`
-  - Slack message reference
+  - Slack message reference of the message to update
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -703,7 +703,7 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper-notify)
 
-    Add comment to a notification
+    Add a comment to an existing Slack message
 
 ## Usage
 

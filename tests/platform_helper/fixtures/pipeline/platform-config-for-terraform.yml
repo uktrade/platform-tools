@@ -1,4 +1,5 @@
 application: test-app
+
 environments:
   dev:
     accounts:
@@ -19,10 +20,11 @@ environments:
     requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
     repository: organisation/repository
     services:
-      - web
+      - run_group:
+          - web
     pipelines:
       - name: main
         branch: main

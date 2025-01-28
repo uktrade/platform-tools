@@ -23,6 +23,7 @@ from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
@@ -790,3 +791,28 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
 
     with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
         wait_for_log_group_to_exist(mock_client, "not_found", 1)
+
+
+@pytest.mark.parametrize(
+    "execution_id, pipeline_name, expected_url",
+    [
+        (
+            "12345678-1234-1234-1234-123456789012",
+            "my-pipeline",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/my-pipeline/executions/12345678-1234-1234-1234-123456789012",
+        ),
+        (
+            "",
+            "my-pipeline",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/my-pipeline/executions/",
+        ),
+        (
+            "12345678-1234-1234-1234-123456789012",
+            "",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines//executions/12345678-1234-1234-1234-123456789012",
+        ),
+    ],
+)
+def test_get_build_url_from_pipeline_execution_id(execution_id, pipeline_name, expected_url):
+    result = get_build_url_from_pipeline_execution_id(execution_id, pipeline_name)
+    assert result == expected_url
