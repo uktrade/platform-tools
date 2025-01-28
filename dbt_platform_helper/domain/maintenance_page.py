@@ -2,6 +2,7 @@ import itertools
 import random
 import re
 import string
+import traceback
 from pathlib import Path
 from typing import Callable
 from typing import List
@@ -28,8 +29,30 @@ class MaintenancePageException(PlatformException):
 
 
 class LoadBalancedWebServiceNotFoundException(MaintenancePageException):
-    def __init__(self, application_name):
+    def __init__(self, application_name: str):
         super().__init__(f"No services deployed yet to {application_name} ")
+
+
+class FailedToActivateMaintenancePageException(MaintenancePageException):
+    def __init__(
+        self,
+        application_name: str,
+        env: str,
+        original_exception: Exception,
+        rolled_back_rules: dict[str, bool] = {},
+    ):
+        super().__init__(
+            f"Maintenance page failed to activate for the {application_name} application in environment {env}."
+        )
+        self.orginal_exception = original_exception
+        self.rolled_back_rules = rolled_back_rules
+
+    def __str__(self):
+        return (
+            f"{super().__str__()}\n"
+            f"Rolled-back rules: {self.rolled_back_rules }\n"
+            f"Original exception: {self.orginal_exception}"
+        )
 
 
 def get_maintenance_page_type(session: boto3.Session, listener_arn: str) -> Union[str, None]:
@@ -75,84 +98,98 @@ def add_maintenance_page(
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
     rule_priority = itertools.count(start=1)
+    try:
+        for svc in services:
+            target_group_arn = find_target_group(app, env, svc.name, session)
 
-    for svc in services:
-        target_group_arn = find_target_group(app, env, svc.name, session)
+            # not all of an application's services are guaranteed to have been deployed to an environment
+            if not target_group_arn:
+                continue
 
-        # not all of an application's services are guaranteed to have been deployed to an environment
-        if not target_group_arn:
-            continue
+            for ip in allowed_ips:
+                create_header_rule(
+                    lb_client,
+                    listener_arn,
+                    target_group_arn,
+                    "X-Forwarded-For",
+                    [ip],
+                    "AllowedIps",
+                    next(rule_priority),
+                )
+                create_source_ip_rule(
+                    lb_client,
+                    listener_arn,
+                    target_group_arn,
+                    [ip],
+                    "AllowedSourceIps",
+                    next(rule_priority),
+                )
 
-        for ip in allowed_ips:
             create_header_rule(
                 lb_client,
                 listener_arn,
                 target_group_arn,
-                "X-Forwarded-For",
-                [ip],
-                "AllowedIps",
+                "Bypass-Key",
+                [bypass_value],
+                "BypassIpFilter",
                 next(rule_priority),
             )
-            create_source_ip_rule(
-                lb_client,
-                listener_arn,
-                target_group_arn,
-                [ip],
-                "AllowedSourceIps",
-                next(rule_priority),
-            )
-
-        create_header_rule(
-            lb_client,
-            listener_arn,
-            target_group_arn,
-            "Bypass-Key",
-            [bypass_value],
-            "BypassIpFilter",
-            next(rule_priority),
-        )
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
         )
 
-    lb_client.create_rule(
-        ListenerArn=listener_arn,
-        Priority=next(rule_priority),
-        Conditions=[
-            {
-                "Field": "path-pattern",
-                "PathPatternConfig": {"Values": ["/*"]},
-            }
-        ],
-        Actions=[
-            {
-                "Type": "fixed-response",
-                "FixedResponseConfig": {
-                    "StatusCode": "503",
-                    "ContentType": "text/html",
-                    "MessageBody": maintenance_page_content,
-                },
-            }
-        ],
-        Tags=[
-            {"Key": "name", "Value": "MaintenancePage"},
-            {"Key": "type", "Value": template},
-        ],
-    )
+        lb_client.create_rule(
+            ListenerArn=listener_arn,
+            Priority=next(rule_priority),
+            Conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                }
+            ],
+            Actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": maintenance_page_content,
+                    },
+                }
+            ],
+            Tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": template},
+            ],
+        )
+    except Exception as e:
+        deleted_rules = clean_up_maintenance_page_rules(session, listener_arn)
+        raise FailedToActivateMaintenancePageException(
+            app, env, f"{e}:\n {traceback.format_exc()}", deleted_rules
+        )
 
 
-def remove_maintenance_page(session: boto3.Session, listener_arn: str):
+def clean_up_maintenance_page_rules(
+    session: boto3.Session, listener_arn: str, fail_when_not_deleted: bool = False
+) -> dict[str, bool]:
     lb_client = session.client("elbv2")
 
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
     tag_descriptions = get_rules_tag_descriptions(rules, lb_client)
 
+    deletes = {}
     for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
         deleted = delete_listener_rule(tag_descriptions, name, lb_client)
-
-        if name == "MaintenancePage" and not deleted:
+        deletes[name] = bool(deleted)
+        if fail_when_not_deleted and name == "MaintenancePage" and not deleted:
             raise ListenerRuleNotFoundException()
+
+    return deletes
+
+
+def remove_maintenance_page(session: boto3.Session, listener_arn: str):
+    clean_up_maintenance_page_rules(session, listener_arn, True)
 
 
 class MaintenancePage:
