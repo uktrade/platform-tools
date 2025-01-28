@@ -206,6 +206,64 @@ class TestAddMaintenancePage:
             ],
         )
 
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
+    @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
+    @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_no_target_group(
+        self,
+        get_maintenance_page_template,
+        find_target_group,
+        create_header_rule,
+        create_source_ip,
+        choices,
+        mock_application,
+    ):
+        boto_mock = MagicMock()
+        get_maintenance_page_template.return_value = "default"
+        find_target_group.return_value = None
+
+        add_maintenance_page(
+            boto_mock,
+            "listener_arn",
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            ["1.2.3.4"],
+            template,
+        )
+
+        assert create_header_rule.call_count == 0
+
+        create_source_ip.was_not_called()
+        boto_mock.client().create_rule.assert_called_once_with(
+            ListenerArn="listener_arn",
+            Priority=1,
+            Conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                }
+            ],
+            Actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": "default",
+                    },
+                }
+            ],
+            Tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": "default"},
+            ],
+        )
+
 
 class TestEnvironmentMaintenanceTemplates:
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
