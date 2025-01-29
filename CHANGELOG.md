@@ -1,5 +1,22 @@
 # Changelog
 
+## [13.0.0](https://github.com/uktrade/platform-tools/compare/12.6.0...13.0.0) (2025-01-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* Update release version 13.0.0 ([#743](https://github.com/uktrade/platform-tools/issues/743))
+
+### Features
+
+* DBTP-1505 Generate terraform codebase pipeline configuration. ([#723](https://github.com/uktrade/platform-tools/issues/723)) ([96c6d7d](https://github.com/uktrade/platform-tools/commit/96c6d7d4c070fa8f9e13ffedc23a86aa7e75d28c))
+* Update release version 13.0.0 ([#743](https://github.com/uktrade/platform-tools/issues/743)) ([1eec27f](https://github.com/uktrade/platform-tools/commit/1eec27f0d14b05c722da6c696ddf98d97a4a2cde))
+
+
+### Bug Fixes
+
+* DBTP-1553  Listener rule cleanup on exception during maintenance page set up ([#737](https://github.com/uktrade/platform-tools/issues/737)) ([bb4a38f](https://github.com/uktrade/platform-tools/commit/bb4a38fe0be53a2943d1bd297d3bbeba1f8cea6c))
+
 ## [12.6.0](https://github.com/uktrade/platform-tools/compare/12.5.1...12.6.0) (2025-01-28)
 
 
