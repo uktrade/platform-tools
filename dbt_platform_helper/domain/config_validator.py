@@ -2,9 +2,23 @@ from typing import Callable
 
 import boto3
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
+
+
+class ConfigValidatorException(PlatformException):
+    pass
+
+
+class ConfigValidatorError(ConfigValidatorException):
+    def __init__(self, message: str):
+        super().__init__(f"{message}")
+
+
+class ConfigValidationWarning(ConfigValidatorException):
+    pass
 
 
 class ConfigValidator:
@@ -110,7 +124,7 @@ class ConfigValidator:
                 envs = detail["bad_envs"]
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-            self.io.abort_with_error(message)
+            raise ConfigValidatorError(message)
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
