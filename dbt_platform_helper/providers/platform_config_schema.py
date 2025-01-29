@@ -53,10 +53,6 @@ class PlatformConfigSchema:
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
                 "subscription-filter"
             ),
-            # Todo: The next three are no longer relevant. Remove them.
-            "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
-            "vpc": PlatformConfigSchema.__no_configuration_required_schema("vpc"),
-            "xray": PlatformConfigSchema.__no_configuration_required_schema("xray"),
         }
 
     @staticmethod
@@ -188,8 +184,6 @@ class PlatformConfigSchema:
                             "id": str,
                         },
                     },
-                    # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
-                    Optional("requires_approval"): bool,
                     Optional("versions"): _valid_environment_specific_version_overrides,
                     Optional("vpc"): str,
                 },
@@ -398,7 +392,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def valid_s3_bucket_name(name: str):
-        # Todo: This is a public method becasue that's what the test expect. Perhaps it belongs in an S3 provider?
+        # Todo: This is a public method because that's what the test expect. Perhaps it belongs in an S3 provider?
         errors = []
         if not (2 < len(name) < 64):
             errors.append("Length must be between 3 and 63 characters inclusive.")
