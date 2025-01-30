@@ -212,7 +212,6 @@ class PlatformConfigSchema:
                             Optional(
                                 "versions"
                             ): _valid_environment_pipeline_specific_version_overrides,
-                            Optional("vpc"): str,
                         },
                     )
                 },
