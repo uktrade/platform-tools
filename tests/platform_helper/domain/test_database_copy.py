@@ -15,7 +15,12 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundException
 
 class DataCopyMocks:
     def __init__(
-        self, app="test-app", env="test-env", acc="12345", vpc=Vpc("", [], [], []), **kwargs
+        self,
+        app="test-app",
+        env="test-env",
+        acc="12345",
+        vpc=Vpc("", [], ["subnet_1", "subnet_2"], ["sec_group_1"]),
+        **kwargs,
     ):
         self.application = Application(app)
         self.environment = Mock()
@@ -57,8 +62,7 @@ class DataCopyMocks:
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
-    vpc = Vpc("", [], ["subnet_1", "subnet_2"], ["sec_group_1"])
-    mocks = DataCopyMocks(vpc=vpc)
+    mocks = DataCopyMocks()
     db_connection_string = "connection_string"
 
     db_copy = DatabaseCopy("test-app", "test-postgres", **mocks.params())
@@ -69,7 +73,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     actual_task_arn = db_copy.run_database_copy_task(
-        mock_session, "test-env", vpc, is_dump, db_connection_string, "test-dump-file"
+        mock_session, "test-env", mocks.vpc, is_dump, db_connection_string, "test-dump-file"
     )
 
     assert actual_task_arn == "arn:aws:ecs:test-task-arn"
@@ -282,6 +286,23 @@ def test_database_dump_handles_env_name_errors(is_dump):
     mocks.io.abort_with_error.assert_called_once_with(
         "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
     )
+
+
+@pytest.mark.parametrize("is_dump", (True, False))
+def test_database_dump_handles_missing_security_groups(is_dump):
+    vpc = Vpc("", ["public_subnet"], ["private_subnet"], [])
+    mocks = DataCopyMocks(vpc=vpc)
+
+    db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
+
+    with pytest.raises(SystemExit) as exc:
+        if is_dump:
+            db_copy.dump("test-env", "vpc-name")
+        else:
+            db_copy.load("test-env", "vpc-name")
+
+    assert exc.value.code == 1
+    mocks.io.abort_with_error.assert_called_once_with("No security groups found in vpc 'vpc-name'")
 
 
 @pytest.mark.parametrize("is_dump", (True, False))

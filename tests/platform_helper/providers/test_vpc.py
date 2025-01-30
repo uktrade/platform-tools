@@ -56,7 +56,7 @@ def set_up_test_platform_vpc(
 
 class TestGetVpcBotoIntegration:
     @mock_aws
-    def test_get_vpc_success(self):
+    def test_get_vpc_successfully_selects_the_right_vpc(self):
         client = boto3.client("ec2")
         expected_vpc_1 = set_up_test_platform_vpc(
             client,
@@ -118,9 +118,9 @@ class TestGetVpcBotoIntegration:
         assert "VPC not found for name 'test-vpc'" in str(ex)
 
     @mock_aws
-    def test_get_vpc_failure_given_non_existent_app(self):
+    def test_get_vpc_success_given_no_security_groups_for_app(self):
         client = boto3.client("ec2")
-        set_up_test_platform_vpc(
+        mock_vpc = set_up_test_platform_vpc(
             client,
             "my_app",
             "my_env",
@@ -130,18 +130,20 @@ class TestGetVpcBotoIntegration:
             name="test-vpc",
         )
 
+        mock_vpc.security_groups = []
+
         mock_session = Mock()
         mock_session.client.return_value = client
 
-        with pytest.raises(VpcProviderException) as ex:
-            VpcProvider(mock_session).get_vpc("non-existent-app", "my_env", "test-vpc")
-
-        assert "No matching security groups found in vpc 'test-vpc'" in str(ex)
+        result = VpcProvider(mock_session).get_vpc(
+            "no-security-groups-for-this-app", "my_env", "test-vpc"
+        )
+        assert result == mock_vpc
 
     @mock_aws
-    def test_get_vpc_failure_given_non_existent_env(self):
+    def test_get_vpc_success_given_no_security_groups_for_the_environment(self):
         client = boto3.client("ec2")
-        set_up_test_platform_vpc(
+        mock_vpc = set_up_test_platform_vpc(
             client,
             "my_app",
             "my_env",
@@ -151,13 +153,16 @@ class TestGetVpcBotoIntegration:
             name="test-vpc",
         )
 
+        mock_vpc.security_groups = []
+
         mock_session = Mock()
         mock_session.client.return_value = client
 
-        with pytest.raises(VpcProviderException) as ex:
-            VpcProvider(mock_session).get_vpc("my_app", "my_non_existent_env", "test-vpc")
+        result = VpcProvider(mock_session).get_vpc(
+            "my_app", "no_security_groups_in_this_env", "test-vpc"
+        )
 
-        assert "No matching security groups found in vpc 'test-vpc'" in str(ex)
+        assert result == mock_vpc
 
 
 class TestGetVpcGivenMockedResponses:
@@ -190,6 +195,23 @@ class TestGetVpcGivenMockedResponses:
             private_subnets=["subnet-private-1", "subnet-private-2"],
             security_groups=["sg-abc123"],
         )
+
+        assert result == expected_vpc
+
+    @mock_aws
+    def test_get_vpc_success_no_matching_security_groups_in_response(self):
+        mock_session, mock_client, _ = mock_vpc_info_session()
+        vpc_provider = VpcProvider(mock_session)
+
+        mock_client.describe_security_groups.return_value = {"SecurityGroups": []}
+
+        expected_vpc = Vpc(
+            id="vpc-123456",
+            public_subnets=["subnet-public-1", "subnet-public-2"],
+            private_subnets=["subnet-private-1", "subnet-private-2"],
+            security_groups=[],
+        )
+        result = vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
         assert result == expected_vpc
 
@@ -271,15 +293,3 @@ class TestGetVpcGivenMockedResponses:
             vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
 
         assert "No subnets found for VPC with id: vpc-123456" in str(ex)
-
-    @mock_aws
-    def test_get_vpc_failure_no_matching_security_groups_in_response(self):
-        mock_session, mock_client, _ = mock_vpc_info_session()
-        vpc_provider = VpcProvider(mock_session)
-
-        mock_client.describe_security_groups.return_value = {"SecurityGroups": []}
-
-        with pytest.raises(VpcProviderException) as ex:
-            vpc_provider.get_vpc("my_app", "my_env", "my_vpc")
-
-        assert "No matching security groups found in vpc 'my_vpc'" in str(ex)
