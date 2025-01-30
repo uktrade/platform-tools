@@ -868,6 +868,89 @@ class TestCommandHelperMethods:
 
         assert len(rules) == 3
 
+    @mock_aws
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_host_header_conditions_in_maintenance_page_rule(
+        self,
+        get_maintenance_page_template,
+        choices,
+        mock_application,
+    ):
+
+        get_maintenance_page_template.return_value = "default"
+
+        mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        target_group_arn_2 = self._create_target_group("web2")
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value-2"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path-2"]}}],
+            Priority=501,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_2}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 3
+
+        add_maintenance_page(
+            boto3.Session(),
+            listener_arn,
+            "test-application",
+            "development",
+            [mock_application.services["web"]],
+            ["1.2.3.4"],
+            template,
+        )
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        tags_descriptions = elbv2_client.describe_tags(
+            ResourceArns=[rule["RuleArn"] for rule in rules]
+        )
+
+        print(rules)
+        print(tags_descriptions)
+        for description in tags_descriptions["TagDescriptions"]:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            # assert test tag present
+            if tags.get("test-key"):
+                assert tags["test-key"] in ["test-value", "test-value-2"]
+
+        # assert test condition present
+        assert rules[0]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[0]["Priority"] == "500"
+        assert rules[1]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path-2"]},
+        }
+        assert rules[1]["Priority"] == "501"
+
+        # check rule number 6 as it is the maintenance page Rule, validate that it has a host header for web but not web2
+        assert rules[5]["Priority"] == "4"
+        assert rules[5]["Conditions"] == [
+            {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
+        ]
+
+        assert len(rules[6]["Conditions"]) == 0
+        assert rules[6]["Priority"] == "default"
+        assert len(rules) == 7
+
 
 class MaintenancePageMocks:
     def __init__(self, app_name="test-application", *args, **kwargs):
