@@ -13,8 +13,10 @@ class ConfigValidatorException(PlatformException):
 
 
 class ConfigValidatorError(ConfigValidatorException):
-    def __init__(self, message: str):
-        super().__init__(f"{message}")
+    def __init__(self, message: str, io_provider: ClickIOProvider = None):
+        self.io_provider = io_provider or ClickIOProvider()
+        self.io_provider.abort_with_error(message)
+        exit(1)
 
 
 class ConfigValidationWarning(ConfigValidatorException):
@@ -148,7 +150,7 @@ class ConfigValidator:
 
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
-            self.io.abort_with_error(error_message + "\n  ".join(errors))
+            raise ConfigValidatorError(error_message + "\n  ".join(errors))
 
     def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
@@ -234,7 +236,7 @@ class ConfigValidator:
                         )
 
         if errors:
-            self.io.abort_with_error("\n".join(errors))
+            raise ConfigValidatorError("\n".join(errors))
 
     def validate_database_migration_input_sources(self, config: dict):
         extensions = config.get("extensions", {})
