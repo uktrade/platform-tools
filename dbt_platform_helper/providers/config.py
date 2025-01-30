@@ -5,6 +5,7 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
+from dbt_platform_helper.domain.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
@@ -35,7 +36,10 @@ class ConfigProvider:
         # also, we apply defaults but discard that data.  Should we just apply
         # defaults to config returned by load_and_validate
         enriched_config = ConfigProvider.apply_environment_defaults(self.config)
-        self.validator.run_validations(enriched_config)
+        try:
+            self.validator.run_validations(enriched_config)
+        except ConfigValidatorError as exc:
+            self.io.abort_with_error("Config validation has failed", exc)
 
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
         try:

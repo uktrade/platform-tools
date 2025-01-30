@@ -8,18 +8,12 @@ from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
 
 
-class ConfigValidatorException(PlatformException):
+class ConfigValidatorError(PlatformException):
     pass
 
 
-class ConfigValidatorError(ConfigValidatorException):
-    def __init__(self, message: str, io_provider: ClickIOProvider = None):
-        self.io_provider = io_provider or ClickIOProvider()
-        self.io_provider.abort_with_error(message)
-
-
-class ConfigValidationWarning(ConfigValidatorException):
-    pass
+# class ConfigValidationWarning(ConfigValidatorException):
+#     pass
 
 
 class ConfigValidator:
