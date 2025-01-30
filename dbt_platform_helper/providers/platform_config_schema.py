@@ -208,16 +208,6 @@ class PlatformConfigSchema:
                     str: Or(
                         None,
                         {
-                            Optional("accounts"): {
-                                "deploy": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                                "dns": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                            },
                             Optional("requires_approval"): bool,
                             Optional(
                                 "versions"
