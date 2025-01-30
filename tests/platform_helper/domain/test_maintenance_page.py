@@ -955,7 +955,7 @@ class TestCommandHelperMethods:
                 ["web", "web2"],
                 {
                     "Field": "host-header",
-                    "HostHeaderConfig": {"Values": ["/test-path-2", "/test-path"]},
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
                 },
                 {"maintenance_page_index": 8, "expected_rules_length": 10, "priority": "7"},
             ),
