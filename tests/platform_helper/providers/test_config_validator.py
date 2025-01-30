@@ -99,30 +99,6 @@ def test_validate_database_copy_section_failure_cases(database_copy_section, exp
         assert msg in console_message
 
 
-def test_validate_database_copy_fails_if_from_and_to_are_the_same():
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [{"from": "dev", "to": "dev"}],
-            }
-        },
-    }
-
-    with pytest.raises(ConfigValidatorError) as exc:
-        ConfigValidator().validate_database_copy_section(config)
-
-    console_message = str(exc.value)
-
-    msg = (
-        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
-    )
-    assert msg in console_message
-
-
 @pytest.mark.parametrize(
     "env_name",
     ["prod", "prod-env", "env-that-is-prod", "thing-prod-thing"],

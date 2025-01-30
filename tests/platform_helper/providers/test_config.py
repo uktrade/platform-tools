@@ -108,15 +108,12 @@ def test_validate_data_migration_fails_if_neither_import_nor_import_sources_pres
     config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = config
     mock_io = Mock()
-    # mock_io.abort_with_error = Mock(side_effect=SystemExit(1))
-    config_provider.io.abort_with_error = mock_io = Mock(side_effect=SystemExit(1))
-    config_provider.validator.io = mock_io
+    config_provider.io = mock_io
 
-    with pytest.raises(SystemExit) as exc:
-        config_provider._validate_platform_config()
+    config_provider._validate_platform_config()
 
-    assert mock_io.abort_with_error.assert_called_with(
-        """Error: 'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
+    mock_io.abort_with_error.assert_called_with(
+        """Config validation has failed.\n'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
     )
 
 
@@ -155,16 +152,11 @@ def test_validate_data_migration_fails_if_both_import_and_import_sources_present
     config_provider.config = config
     mock_io = Mock()
     config_provider.io = mock_io
-    mock_io.abort_with_error = Mock(side_effect=SystemExit(1))
-    config_provider.validator.io = mock_io
 
-    with pytest.raises(SystemExit) as exc:
-        print("printed?")
-        config_provider._validate_platform_config()
-        print("yes?")
+    config_provider._validate_platform_config()
 
-    assert mock_io.abort_with_error.assert_called_with(
-        """Error: in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
+    mock_io.abort_with_error.assert_called_with(
+        """Config validation has failed.\nError in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
     )
 
 
@@ -275,7 +267,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_environment_version_override_keys_present(
-    invalid_key, fakefs, capsys, valid_platform_config
+    invalid_key, valid_platform_config
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
@@ -297,7 +289,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-    invalid_key, fakefs, capsys, valid_platform_config
+    invalid_key, valid_platform_config
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
@@ -309,7 +301,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
-def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
+def test_load_and_validate_platform_config_fails_with_invalid_yaml(capsys):
     """Test that, given the path to an invalid yaml file,
     load_and_validate_config aborts and prints an error."""
 
@@ -320,7 +312,7 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
 
-def test_load_and_validate_platform_config_fails_with_missing_config_file(fakefs, capsys):
+def test_load_and_validate_platform_config_fails_with_missing_config_file(capsys):
     if Path(PLATFORM_CONFIG_FILE).exists():
         os.remove(Path(PLATFORM_CONFIG_FILE))
 
