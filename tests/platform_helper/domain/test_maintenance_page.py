@@ -413,6 +413,35 @@ class TestCommandHelperMethods:
 
         return mock_session, mock_create_rule
 
+    def _custom_create_rule_with_validation(self):
+        """A bug in moto means that it will not return a validation error on
+        invalid conditions This adds an exception to cover a use case we require
+        to cover but it is not extensive."""
+        from botocore.exceptions import ClientError
+        from moto.elbv2.models import ELBv2Backend
+
+        # moto.mock_elbv2().start()
+        original_create_rule = ELBv2Backend.create_rule
+
+        def custom_create_rule(self, listener_arn, conditions, priority, actions, **kwargs):
+            host_header_count = sum(
+                1 for condition in conditions if condition.get("Field") == "host-header"
+            )
+            if host_header_count > 1:
+                raise ClientError(
+                    {
+                        "Error": {
+                            "Code": "ValidationError",
+                            "Message": "A rule can only have one 'host-header' condition",
+                        }
+                    },
+                    "CreateRule",
+                )
+
+            return original_create_rule(self, listener_arn, conditions, priority, actions, **kwargs)
+
+        ELBv2Backend.create_rule = custom_create_rule
+
     @mock_aws
     def test_find_target_group(self):
 
@@ -897,6 +926,17 @@ class TestCommandHelperMethods:
 
         assert len(rules) == 3
 
+    @pytest.mark.parametrize(
+        "services",
+        [
+            # (
+            ["web"],
+            # ),
+            # (
+            ["web", "web2"],
+            # ),
+        ],
+    )
     @mock_aws
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
@@ -906,10 +946,12 @@ class TestCommandHelperMethods:
         self,
         get_maintenance_page_template,
         choices,
+        services,
         mock_application,
     ):
 
         get_maintenance_page_template.return_value = "default"
+        self._custom_create_rule_with_validation()
 
         mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
 
@@ -939,7 +981,7 @@ class TestCommandHelperMethods:
             listener_arn,
             "test-application",
             "development",
-            [mock_application.services["web"]],
+            [mock_application.services[service] for service in services],
             ["1.2.3.4"],
             template,
         )
