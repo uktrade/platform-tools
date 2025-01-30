@@ -98,6 +98,7 @@ def add_maintenance_page(
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
     rule_priority = itertools.count(start=1)
+    host_header_conditions = []
     try:
         for svc in services:
             target_group_arn = find_target_group(app, env, svc.name, session)
@@ -106,6 +107,7 @@ def add_maintenance_page(
             if not target_group_arn:
                 continue
 
+            # TODO get host header conditions here and pass in, update the list of host header conditions
             for ip in allowed_ips:
                 create_header_rule(
                     lb_client,
@@ -146,7 +148,9 @@ def add_maintenance_page(
                 {
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
-                }
+                },
+                # TODO add host header for services
+                *host_header_conditions,
             ],
             Actions=[
                 {
@@ -446,6 +450,7 @@ def create_header_rule(
     rule_name: str,
     priority: int,
 ):
+    # TODO pass in conditions to reduce call count
     conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
 
     # add new condition to existing conditions
