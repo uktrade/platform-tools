@@ -108,16 +108,16 @@ def test_validate_data_migration_fails_if_neither_import_nor_import_sources_pres
     config_provider = ConfigProvider(ConfigValidator())
     config_provider.config = config
     mock_io = Mock()
+    mock_io.abort_with_error = Mock(side_effect=SystemExit(1))
     config_provider.io = mock_io
     config_provider.validator.io = mock_io
-    config_provider._validate_platform_config()
 
-    message = mock_io.abort_with_error.call_args.args[0]
+    with pytest.raises(SystemExit) as exc:
+        config_provider._validate_platform_config()
 
-    assert (
-        "Error in 'test-s3-bucket.environments.dev.data_migration': 'import_sources' property is missing."
-        in message
-    )
+        assert mock_io.abort_with_error.assert_called_once_with(
+            """Error: 'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
+        )
 
 
 def test_validate_data_migration_fails_if_both_import_and_import_sources_present():
@@ -155,15 +155,15 @@ def test_validate_data_migration_fails_if_both_import_and_import_sources_present
     config_provider.config = config
     mock_io = Mock()
     config_provider.io = mock_io
+    mock_io.abort_with_error = Mock(side_effect=SystemExit(1))
     config_provider.validator.io = mock_io
-    config_provider._validate_platform_config()
 
-    message = mock_io.abort_with_error.call_args.args[0]
+    with pytest.raises(SystemExit) as exc:
+        config_provider._validate_platform_config()
 
-    assert (
-        "Error in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."
-        in message
-    )
+        assert mock_io.abort_with_error.assert_called_once_with(
+            """Error: in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
+        )
 
 
 @pytest.mark.parametrize(

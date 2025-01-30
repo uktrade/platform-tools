@@ -16,7 +16,6 @@ class ConfigValidatorError(ConfigValidatorException):
     def __init__(self, message: str, io_provider: ClickIOProvider = None):
         self.io_provider = io_provider or ClickIOProvider()
         self.io_provider.abort_with_error(message)
-        exit(1)
 
 
 class ConfigValidationWarning(ConfigValidatorException):
@@ -263,7 +262,7 @@ class ConfigValidator:
                     )
                 if "import" not in data_migration and "import_sources" not in data_migration:
                     errors.append(
-                        f"Error in '{extension_name}.environments.{env}.data_migration': 'import_sources' property is missing."
+                        f"'import_sources' property in '{extension_name}.environments.{env}.data_migration' is missing."
                     )
         if errors:
-            self.io.abort_with_error("\n".join(errors))
+            raise ConfigValidatorError("\n".join(errors))
