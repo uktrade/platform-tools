@@ -927,14 +927,21 @@ class TestCommandHelperMethods:
         assert len(rules) == 3
 
     @pytest.mark.parametrize(
-        "services",
+        "services, expected_host_header, indices",
         [
-            # (
-            ["web"],
-            # ),
-            # (
-            ["web", "web2"],
-            # ),
+            (
+                ["web"],
+                {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
+                {"maintenance_page_index": 5, "expected_rules_length": 7, "priority": "4"},
+            ),
+            (
+                ["web", "web2"],
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                },
+                {"maintenance_page_index": 8, "expected_rules_length": 10, "priority": "7"},
+            ),
         ],
     )
     @mock_aws
@@ -947,6 +954,8 @@ class TestCommandHelperMethods:
         get_maintenance_page_template,
         choices,
         services,
+        expected_host_header,
+        indices,
         mock_application,
     ):
 
@@ -991,8 +1000,6 @@ class TestCommandHelperMethods:
             ResourceArns=[rule["RuleArn"] for rule in rules]
         )
 
-        print(rules)
-        print(tags_descriptions)
         for description in tags_descriptions["TagDescriptions"]:
             tags = {t["Key"]: t["Value"] for t in description["Tags"]}
             # assert test tag present
@@ -1012,15 +1019,16 @@ class TestCommandHelperMethods:
         assert rules[1]["Priority"] == "501"
 
         # check rule number 6 as it is the maintenance page Rule, validate that it has a host header for web but not web2
-        assert rules[5]["Priority"] == "4"
-        assert rules[5]["Conditions"] == [
+        assert rules[indices["maintenance_page_index"]]["Priority"] == indices["priority"]
+        assert rules[indices["maintenance_page_index"]]["Conditions"] == [
             {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
-            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
+            expected_host_header,
         ]
 
-        assert len(rules[6]["Conditions"]) == 0
-        assert rules[6]["Priority"] == "default"
-        assert len(rules) == 7
+        # default rule after maintenance page rule
+        assert len(rules[indices["maintenance_page_index"] + 1]["Conditions"]) == 0
+        assert rules[indices["maintenance_page_index"] + 1]["Priority"] == "default"
+        assert len(rules) == indices["expected_rules_length"]
 
 
 class MaintenancePageMocks:
