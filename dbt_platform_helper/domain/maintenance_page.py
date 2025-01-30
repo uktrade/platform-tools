@@ -107,7 +107,9 @@ def add_maintenance_page(
             if not target_group_arn:
                 continue
 
-            # TODO get host header conditions here and pass in, update the list of host header conditions
+            conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
+            host_header_conditions.extend(conditions)
+
             for ip in allowed_ips:
                 create_header_rule(
                     lb_client,
@@ -117,6 +119,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedIps",
                     next(rule_priority),
+                    conditions,
                 )
                 create_source_ip_rule(
                     lb_client,
@@ -125,6 +128,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedSourceIps",
                     next(rule_priority),
+                    conditions,
                 )
 
             create_header_rule(
@@ -135,6 +139,7 @@ def add_maintenance_page(
                 [bypass_value],
                 "BypassIpFilter",
                 next(rule_priority),
+                conditions,
             )
 
         click.secho(
@@ -149,7 +154,6 @@ def add_maintenance_page(
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
                 },
-                # TODO add host header for services
                 *host_header_conditions,
             ],
             Actions=[
@@ -449,10 +453,8 @@ def create_header_rule(
     values: list,
     rule_name: str,
     priority: int,
+    conditions: list,
 ):
-    # TODO pass in conditions to reduce call count
-    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
-
     # add new condition to existing conditions
     combined_conditions = [
         {
@@ -491,9 +493,8 @@ def create_source_ip_rule(
     values: list,
     rule_name: str,
     priority: int,
+    conditions: list,
 ):
-    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
-
     # add new condition to existing conditions
 
     combined_conditions = [
@@ -519,7 +520,7 @@ def create_source_ip_rule(
     )
 
 
-def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str):
+def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str) -> list:
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
     # Get current set of forwarding conditions for the target group
