@@ -1254,10 +1254,10 @@ class TestActivateMethod:
         ):
             provider.activate(env, services, template, vpc)
 
-            maintenance_mocks.get_https_listener_for_application.assert_not_called()
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
-            maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.get_https_listener_for_application.assert_not_called()
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.add_maintenance_page.assert_not_called()
 
     def test_successful_activate_multiple_services(
         self,
