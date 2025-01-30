@@ -265,7 +265,8 @@ class TestAddMaintenancePage:
                 {
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
-                }
+                },
+                {"Field": "host-header", "HostHeaderConfig": {"Values": []}},
             ],
             Actions=[
                 {
