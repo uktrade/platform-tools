@@ -157,11 +157,13 @@ def add_maintenance_page(
                 {
                     "Field": "host-header",
                     "HostHeaderConfig": {
-                        "Values": [
-                            value
-                            for condition in host_header_conditions
-                            for value in condition["HostHeaderConfig"]["Values"]
-                        ]
+                        "Values": list(
+                            {
+                                value
+                                for condition in host_header_conditions
+                                for value in condition["HostHeaderConfig"]["Values"]
+                            }
+                        )
                     },
                 },
             ],

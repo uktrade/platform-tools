@@ -424,10 +424,10 @@ class TestCommandHelperMethods:
         original_create_rule = ELBv2Backend.create_rule
 
         def custom_create_rule(self, listener_arn, conditions, priority, actions, **kwargs):
-            host_header_count = sum(
-                1 for condition in conditions if condition.get("Field") == "host-header"
-            )
-            if host_header_count > 1:
+            host_header_conditions = [
+                condition for condition in conditions if condition.get("Field") == "host-header"
+            ]
+            if len(host_header_conditions) > 1:
                 raise ClientError(
                     {
                         "Error": {
@@ -438,6 +438,23 @@ class TestCommandHelperMethods:
                     "CreateRule",
                 )
 
+            # all conditions paths must be unqiue.
+            if host_header_conditions:
+                all_values = [
+                    value
+                    for condition in host_header_conditions
+                    for value in condition["HostHeaderConfig"]["Values"]
+                ]
+                if len(all_values) != len(set(all_values)):
+                    raise ClientError(
+                        {
+                            "Error": {
+                                "Code": "ValidationError",
+                                "Message": "Condition values must be unique",
+                            }
+                        },
+                        "CreateRule",
+                    )
             return original_create_rule(self, listener_arn, conditions, priority, actions, **kwargs)
 
         ELBv2Backend.create_rule = custom_create_rule
@@ -938,7 +955,7 @@ class TestCommandHelperMethods:
                 ["web", "web2"],
                 {
                     "Field": "host-header",
-                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                    "HostHeaderConfig": {"Values": ["/test-path-2", "/test-path"]},
                 },
                 {"maintenance_page_index": 8, "expected_rules_length": 10, "priority": "7"},
             ),
@@ -978,7 +995,12 @@ class TestCommandHelperMethods:
         elbv2_client.create_rule(
             ListenerArn=listener_arn,
             Tags=[{"Key": "test-key", "Value": "test-value-2"}],
-            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path-2"]}}],
+            Conditions=[
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                }
+            ],
             Priority=501,
             Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_2}],
         )
@@ -1014,7 +1036,7 @@ class TestCommandHelperMethods:
         assert rules[0]["Priority"] == "500"
         assert rules[1]["Conditions"][0] == {
             "Field": "host-header",
-            "HostHeaderConfig": {"Values": ["/test-path-2"]},
+            "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
         }
         assert rules[1]["Priority"] == "501"
 
