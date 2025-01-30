@@ -107,7 +107,7 @@ def add_maintenance_page(
             if not target_group_arn:
                 continue
 
-            conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
+            conditions = get_host_header_conditions(lb_client, listener_arn, target_group_arn)
             host_header_conditions.extend(conditions)
 
             for ip in allowed_ips:
@@ -520,7 +520,9 @@ def create_source_ip_rule(
     )
 
 
-def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str) -> list:
+def get_host_header_conditions(
+    lb_client: boto3.client, listener_arn: str, target_group_arn: str
+) -> list:
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
     # Get current set of forwarding conditions for the target group

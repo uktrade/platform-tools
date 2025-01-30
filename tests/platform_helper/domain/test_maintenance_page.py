@@ -121,7 +121,7 @@ class TestAddMaintenancePage:
     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
     @patch(
-        "dbt_platform_helper.domain.maintenance_page.get_host_conditions",
+        "dbt_platform_helper.domain.maintenance_page.get_host_header_conditions",
         return_value=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
     )
     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
@@ -130,7 +130,7 @@ class TestAddMaintenancePage:
         self,
         get_maintenance_page_template,
         find_target_group,
-        get_host_conditions,
+        get_host_header_conditions,
         create_header_rule,
         create_source_ip,
         choices,
@@ -152,7 +152,7 @@ class TestAddMaintenancePage:
             template,
         )
 
-        get_host_conditions.assert_called_with(
+        get_host_header_conditions.assert_called_with(
             boto_mock.client(),
             "listener_arn",
             "target_group_arn",
@@ -227,14 +227,14 @@ class TestAddMaintenancePage:
     )
     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_host_conditions")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_host_header_conditions")
     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
     def test_no_target_group(
         self,
         get_maintenance_page_template,
         find_target_group,
-        get_host_conditions,
+        get_host_header_conditions,
         create_header_rule,
         create_source_ip,
         choices,
@@ -254,7 +254,7 @@ class TestAddMaintenancePage:
             template,
         )
 
-        get_host_conditions.assert_not_called()
+        get_host_header_conditions.assert_not_called()
         create_header_rule.assert_not_called()
 
         create_source_ip.was_not_called()
