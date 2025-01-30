@@ -209,9 +209,6 @@ class PlatformConfigSchema:
                         None,
                         {
                             Optional("requires_approval"): bool,
-                            Optional(
-                                "versions"
-                            ): _valid_environment_pipeline_specific_version_overrides,
                         },
                     )
                 },
