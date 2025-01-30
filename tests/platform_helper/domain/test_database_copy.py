@@ -290,7 +290,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
 
 @pytest.mark.parametrize("is_dump", (True, False))
 def test_database_dump_handles_missing_security_groups(is_dump):
-    vpc = Vpc("", ["public_subnet"], ["private_subnet"], [])
+    vpc = Vpc("123", ["public_subnet"], ["private_subnet"], [])
     mocks = DataCopyMocks(vpc=vpc)
 
     db_copy = DatabaseCopy("test-app", "test-db", **mocks.params())
