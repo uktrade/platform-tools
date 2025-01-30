@@ -154,7 +154,16 @@ def add_maintenance_page(
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
                 },
-                *host_header_conditions,
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {
+                        "Values": [
+                            value
+                            for condition in host_header_conditions
+                            for value in condition["HostHeaderConfig"]["Values"]
+                        ]
+                    },
+                },
             ],
             Actions=[
                 {
