@@ -1040,7 +1040,6 @@ class TestCommandHelperMethods:
         }
         assert rules[1]["Priority"] == "501"
 
-        # check rule number 6 as it is the maintenance page Rule, validate that it has a host header for web but not web2
         assert rules[indices["maintenance_page_index"]]["Priority"] == indices["priority"]
         assert rules[indices["maintenance_page_index"]]["Conditions"] == [
             {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},

@@ -98,7 +98,7 @@ def add_maintenance_page(
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
     rule_priority = itertools.count(start=1)
-    host_header_conditions = []
+    maintenance_page_host_header_conditions = []
     try:
         for svc in services:
             target_group_arn = find_target_group(app, env, svc.name, session)
@@ -107,8 +107,9 @@ def add_maintenance_page(
             if not target_group_arn:
                 continue
 
-            conditions = get_host_header_conditions(lb_client, listener_arn, target_group_arn)
-            host_header_conditions.extend(conditions)
+            service_conditions = get_host_header_conditions(
+                lb_client, listener_arn, target_group_arn
+            )
 
             for ip in allowed_ips:
                 create_header_rule(
@@ -119,7 +120,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedIps",
                     next(rule_priority),
-                    conditions,
+                    service_conditions,
                 )
                 create_source_ip_rule(
                     lb_client,
@@ -128,7 +129,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedSourceIps",
                     next(rule_priority),
-                    conditions,
+                    service_conditions,
                 )
 
             create_header_rule(
@@ -139,8 +140,11 @@ def add_maintenance_page(
                 [bypass_value],
                 "BypassIpFilter",
                 next(rule_priority),
-                conditions,
+                service_conditions,
             )
+
+            # add to accumilating list of conditions for maintenace page rule
+            maintenance_page_host_header_conditions.extend(service_conditions)
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
@@ -161,7 +165,7 @@ def add_maintenance_page(
                             list(
                                 {
                                     value
-                                    for condition in host_header_conditions
+                                    for condition in maintenance_page_host_header_conditions
                                     for value in condition["HostHeaderConfig"]["Values"]
                                 }
                             )
