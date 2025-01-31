@@ -79,6 +79,9 @@ class DatabaseCopy:
         except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
 
+        if not vpc_config.security_groups:
+            self.io.abort_with_error(f"No security groups found in vpc '{vpc_name}'")
+
         database_identifier = f"{self.app}-{env}-{self.database}"
 
         try:
@@ -121,7 +124,7 @@ class DatabaseCopy:
         self,
         session: boto3.session.Session,
         env: str,
-        vpc_config: Vpc,
+        vpc: Vpc,
         is_dump: bool,
         db_connection_string: str,
         filename: str,
@@ -145,8 +148,8 @@ class DatabaseCopy:
             ],
             networkConfiguration={
                 "awsvpcConfiguration": {
-                    "subnets": vpc_config.private_subnets,
-                    "securityGroups": vpc_config.security_groups,
+                    "subnets": vpc.private_subnets,
+                    "securityGroups": vpc.security_groups,
                     "assignPublicIp": "DISABLED",
                 }
             },

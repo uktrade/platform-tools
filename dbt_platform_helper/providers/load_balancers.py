@@ -21,7 +21,9 @@ def get_load_balancer_for_application(session: boto3.Session, app: str, env: str
             load_balancer_arn = lb["ResourceArn"]
 
     if not load_balancer_arn:
-        raise LoadBalancerNotFoundException()
+        raise LoadBalancerNotFoundException(
+            f"No load balancer found for {app} in the {env} environment"
+        )
 
     return load_balancer_arn
 
@@ -39,7 +41,7 @@ def get_https_listener_for_application(session: boto3.Session, app: str, env: st
         pass
 
     if not listener_arn:
-        raise ListenerNotFoundException()
+        raise ListenerNotFoundException(f"No HTTPS listener for {app} in the {env} environment")
 
     return listener_arn
 
