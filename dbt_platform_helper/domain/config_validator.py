@@ -12,10 +12,6 @@ class ConfigValidatorError(PlatformException):
     pass
 
 
-# class ConfigValidationWarning(ConfigValidatorException):
-#     pass
-
-
 class ConfigValidator:
 
     def __init__(
