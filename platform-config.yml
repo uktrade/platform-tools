@@ -1,0 +1,180 @@
+application: test-app
+codebase_pipelines:
+  application:
+    additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
+    deploy_repository_branch: feature-branch
+    pipelines:
+    - branch: main
+      environments:
+      - name: dev
+      name: main
+    - environments:
+      - name: staging
+        requires_approval: true
+      name: tagged
+      tag: true
+    repository: uktrade/test-app
+    services:
+    - run_order_1:
+      - celery-worker
+      - celery-beat
+      - web
+    slack_channel: OTHER_SLACK_CHANNEL_ID
+default_versions:
+  platform-helper: 10.2.0
+  terraform-platform-modules: 1.2.3
+environment_pipelines:
+  main:
+    account: non-prod-acc
+    environments:
+      dev: null
+      staging: null
+    pipeline_to_trigger: prod-main
+    slack_channel: /codebuild/notification_channel
+    trigger_on_push: true
+  prod-main:
+    account: prod-acc
+    branch: main
+    environments:
+      prod:
+        requires_approval: true
+    slack_channel: /codebuild/slack_oauth_channel
+    trigger_on_push: false
+    versions:
+      platform-helper: 9.0.9
+  test:
+    branch: my-feature-branch
+    environments:
+      test:
+        accounts:
+          deploy:
+            id: '9999999999'
+            name: prod-acc
+          dns:
+            id: '7777777777'
+            name: prod-dns-acc
+        requires_approval: true
+        vpc: testing_vpc
+    slack_channel: /codebuild/notification_channel
+    trigger_on_push: false
+    versions:
+      platform-helper: main
+environments:
+  '*':
+    accounts:
+      deploy:
+        id: '1122334455'
+        name: non-prod-acc
+      dns:
+        id: '6677889900'
+        name: non-prod-dns-acc
+    requires_approval: false
+    versions:
+      invalid-key: 1.2.3
+    vpc: non-prod-vpc
+  dev: null
+  hotfix:
+    accounts:
+      deploy:
+        id: '9999999999'
+        name: prod-acc
+      dns:
+        id: '6677889900'
+        name: non-prod-dns-acc
+    vpc: hotfix-vpc
+  prod:
+    accounts:
+      deploy:
+        id: '9999999999'
+        name: prod-acc
+      dns:
+        id: '7777777777'
+        name: prod-dns-acc
+    requires_approval: true
+    vpc: prod-vpc
+  staging: null
+  test:
+    versions:
+      terraform-platform-modules: 1.2.3
+extensions:
+  test-app-alb:
+    environments:
+      dev:
+        cdn_domains_list:
+          dev.test-app.uktrade.digital: test-app.uktrade.digital
+    type: alb
+  test-app-monitoring:
+    environments:
+      '*':
+        enable_ops_center: false
+    type: monitoring
+  test-app-opensearch:
+    environments:
+      '*':
+        engine: '1.3'
+        password_special_characters: -_.,
+        plan: small
+        urlencode_password: false
+        volume_size: 40
+    type: opensearch
+  test-app-postgres:
+    database_copy:
+    - from: prod
+      to: hotfix
+    environments:
+      dev:
+        deletion_protection: true
+      hotfix:
+        backup_retention_days: 10
+      prod:
+        backup_retention_days: 10
+      staging:
+        deletion_policy: Retain
+        deletion_protection: true
+    type: postgres
+    version: 16.2
+  test-app-redis:
+    environments:
+      '*':
+        apply_immediately: true
+        engine: '7.1'
+        plan: tiny
+    type: redis
+  test-app-s3-bucket:
+    environments:
+      dev:
+        bucket_name: test-app-policy-dev
+        versioning: false
+    services:
+    - web
+    type: s3-policy
+  test-app-s3-bucket-data-migration:
+    environments:
+      dev:
+        bucket_name: s3-data-migration
+        data_migration:
+          import:
+            source_bucket_arn: arn:aws:s3:::test-app
+            source_kms_key_arn: arn:aws:kms::123456789012:key/test-key
+            worker_role_arn: arn:aws:iam::123456789012:role/test-role
+        versioning: false
+    services:
+    - web
+    type: s3
+  test-app-s3-bucket-with-objects:
+    environments:
+      dev:
+        bucket_name: test-app-dev
+        lifecycle_rules:
+        - enabled: true
+          expiration_days: 1
+        versioning: false
+      staging:
+        bucket_name: test-app-staging
+        versioning: false
+    objects:
+    - body: Demodjango is working.
+      key: healthcheck.txt
+    services:
+    - web
+    type: s3

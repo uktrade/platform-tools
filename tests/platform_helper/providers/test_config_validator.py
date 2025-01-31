@@ -89,10 +89,10 @@ def test_validate_database_copy_section_failure_cases(database_copy_section, exp
 
     config["extensions"]["our-postgres"]["database_copy"] = database_copy_section
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc)
+    console_message = str(exception)
 
     for param in expected_parameters:
         msg = f"database_copy '{param}' parameter must be a valid environment (dev, test, prod) but was 'hotfix' in extension 'our-postgres'."
@@ -116,10 +116,10 @@ def test_validate_database_copy_section_fails_if_the_to_environment_is_prod(env_
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     msg = f"Copying to a prod environment is not supported: database_copy 'to' cannot be '{env_name}' in extension 'our-postgres'."
     assert msg in console_message
@@ -166,10 +166,10 @@ def test_validate_database_copy_multi_postgres_failures():
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert (
         f"database_copy 'from' parameter must be a valid environment (dev, test, prod) but was 'devvv' in extension 'our-postgres'."
@@ -201,10 +201,10 @@ def test_validate_database_copy_fails_if_cross_account_with_no_from_account():
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'from_account' parameter must be present."
     assert msg in console_message
@@ -226,10 +226,10 @@ def test_validate_database_copy_fails_if_cross_account_with_no_to_account():
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'to_account' parameter must be present."
     assert msg in console_message
@@ -258,10 +258,10 @@ def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_id
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     msg = f"Incorrect value for 'from_account' for environment 'prod'"
     assert msg in console_message
@@ -282,10 +282,10 @@ def test_validate_platform_config_fails_if_database_copy_to_and_from_are_the_sam
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_database_copy_section(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert (
         f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
@@ -311,10 +311,10 @@ def test_validate_platform_config_fails_if_environments_are_not_in_the_pipeline_
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_environment_pipelines(platform_env_config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert "The following pipelines are misconfigured:" in console_message
     assert (
@@ -347,10 +347,10 @@ def test_validate_platform_config_fails_if_pipeline_account_does_not_match_envir
         }
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_environment_pipelines(config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert "The following pipelines are misconfigured:" in console_message
     assert (
@@ -379,10 +379,10 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
         },
     }
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_environment_pipelines_triggers(platform_env_config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert "The following pipelines are misconfigured:" in console_message
     assert (
@@ -399,10 +399,10 @@ def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trig
         "pipeline_to_trigger"
     ] = "non-existent-pipeline"
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_environment_pipelines_triggers(valid_platform_config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert "The following pipelines are misconfigured:" in console_message
     assert f"  'main' - '' is not a valid target pipeline to trigger" in console_message
@@ -417,10 +417,10 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
 ):
     valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
 
-    with pytest.raises(ConfigValidatorError) as exc:
+    with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_environment_pipelines_triggers(valid_platform_config)
 
-    console_message = str(exc.value)
+    console_message = str(exception.value)
 
     assert "The following pipelines are misconfigured:" in console_message
     assert f"  'main' - pipelines cannot trigger themselves" in console_message
