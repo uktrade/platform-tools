@@ -8,6 +8,8 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+# If you update the schema here, please ensure that the changes are reflected in https://platform.readme.trade.gov.uk/reference/platform-config-yml/
+
 
 class PlatformConfigSchema:
     @staticmethod
