@@ -31,7 +31,7 @@ class TestGenerateTerraform:
         "environments": {"test": VALID_ENV_CONFIG},
     }
 
-    def atest_raises_a_platform_exception_if_environment_does_not_exist_in_config(self):
+    def test_raises_a_platform_exception_if_environment_does_not_exist_in_config(self):
         mock_config_provider = Mock(spec=ConfigProvider)
         mock_config_provider.get_enriched_config.return_value = self.VALID_ENRICHED_CONFIG
 
