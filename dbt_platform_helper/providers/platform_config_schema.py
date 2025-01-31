@@ -128,7 +128,6 @@ class PlatformConfigSchema:
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,
                 Optional("additional_ecr_repository"): str,
-                Optional("deploy_repository_branch"): str,
                 "services": [{str: [str]}],
                 "pipelines": [
                     Or(
