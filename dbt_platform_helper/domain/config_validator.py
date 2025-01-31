@@ -2,9 +2,14 @@ from typing import Callable
 
 import boto3
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
+
+
+class ConfigValidatorError(PlatformException):
+    pass
 
 
 class ConfigValidator:
@@ -110,7 +115,7 @@ class ConfigValidator:
                 envs = detail["bad_envs"]
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-            self.io.abort_with_error(message)
+            raise ConfigValidatorError(message)
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
@@ -134,7 +139,7 @@ class ConfigValidator:
 
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
-            self.io.abort_with_error(error_message + "\n  ".join(errors))
+            raise ConfigValidatorError(error_message + "\n  ".join(errors))
 
     def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
@@ -220,7 +225,7 @@ class ConfigValidator:
                         )
 
         if errors:
-            self.io.abort_with_error("\n".join(errors))
+            raise ConfigValidatorError("\n".join(errors))
 
     def validate_database_migration_input_sources(self, config: dict):
         extensions = config.get("extensions", {})
@@ -247,7 +252,7 @@ class ConfigValidator:
                     )
                 if "import" not in data_migration and "import_sources" not in data_migration:
                     errors.append(
-                        f"Error in '{extension_name}.environments.{env}.data_migration': 'import_sources' property is missing."
+                        f"'import_sources' property in '{extension_name}.environments.{env}.data_migration' is missing."
                     )
         if errors:
-            self.io.abort_with_error("\n".join(errors))
+            raise ConfigValidatorError("\n".join(errors))
