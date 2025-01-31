@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.0.1](https://github.com/uktrade/platform-tools/compare/13.0.0...13.0.1) (2025-01-31)
+
+
+### Bug Fixes
+
+* DBPT-1729 - Allows Vpc to be returned without security groups ([#747](https://github.com/uktrade/platform-tools/issues/747)) ([2685797](https://github.com/uktrade/platform-tools/commit/2685797d1e8b25ce2008483e0d33f6cd0627fa8d))
+
 ## [13.0.0](https://github.com/uktrade/platform-tools/compare/12.6.0...13.0.0) (2025-01-29)
 
 
