@@ -98,9 +98,4 @@ class VpcProvider:
 
         sec_groups = self._get_security_groups(app, env, vpc_id)
 
-        if not sec_groups:
-            raise SecurityGroupNotFoundException(
-                f"No matching security groups found in vpc '{vpc_name}'"
-            )
-
         return Vpc(vpc_id, public_subnets, private_subnets, sec_groups)
