@@ -421,7 +421,6 @@ class TestCommandHelperMethods:
         from botocore.exceptions import ClientError
         from moto.elbv2.models import ELBv2Backend
 
-        # moto.mock_elbv2().start()
         original_create_rule = ELBv2Backend.create_rule
 
         def custom_create_rule(self, listener_arn, conditions, priority, actions, **kwargs):
