@@ -42,7 +42,7 @@ class TestGenerateTerraform:
         )
         with pytest.raises(
             PlatformException,
-            match="Error: cannot generate terraform for environment not-an-environment.  It does not exist in your configuration",
+            match="cannot generate terraform for environment not-an-environment.  It does not exist in your configuration",
         ):
             terraform_environment.generate("not-an-environment")
 
