@@ -30,7 +30,6 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
                         PlatformConfigSchema.__postgres_schema(),
-                        PlatformConfigSchema.__prometheus_policy_schema(),
                         PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
                         PlatformConfigSchema.__s3_bucket_policy_schema(),
@@ -329,18 +328,6 @@ class PlatformConfigSchema:
                     Optional("body"): str,
                 }
             ],
-        }
-
-    @staticmethod
-    def __prometheus_policy_schema() -> dict:
-        return {
-            "type": "prometheus-policy",
-            Optional("services"): Or("__all__", [str]),
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "role_arn": str,
-                }
-            },
         }
 
     @staticmethod
