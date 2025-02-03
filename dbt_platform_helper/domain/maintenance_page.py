@@ -90,7 +90,7 @@ def add_maintenance_page(
     app: str,
     env: str,
     services: List[Service],
-    allowed_ips: tuple,
+    allowed_ips: List[str],
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
