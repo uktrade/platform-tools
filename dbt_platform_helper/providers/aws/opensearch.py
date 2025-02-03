@@ -8,10 +8,10 @@ class OpensearchProvider:
         # TODO extract engine so you could swap between opensearch and elastic in the same provider
         self.engine = "OpenSearch"
 
-    def __get_reference__(self) -> str:
+    def get_reference(self) -> str:
         return self.engine.lower()
 
-    def __get_supported_versions__(self) -> list[str]:
+    def get_supported_versions(self) -> list[str]:
         response = self.client.list_versions()
         all_versions = response["Versions"]
 

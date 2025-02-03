@@ -7,7 +7,7 @@ def test_redis_provider_get_reference():
     elasticache_client = MagicMock()
     redis_provider = RedisProvider(elasticache_client)
 
-    reference = redis_provider.__get_reference__()
+    reference = redis_provider.get_reference()
 
     assert reference == "redis"
 
@@ -36,7 +36,7 @@ def test_redis_provider_get_supported_versions():
 
     redis_provider = RedisProvider(elasticache_client)
 
-    supported_versions_response = redis_provider.__get_supported_versions__()
+    supported_versions_response = redis_provider.get_supported_versions()
 
     elasticache_client.describe_cache_engine_versions.assert_called_with(Engine="redis")
     assert supported_versions_response == ["4.0.10", "5.0.6"]

@@ -7,7 +7,7 @@ def test_opensearch_provider_get_reference():
     opensearch_client = MagicMock()
     opensearch_provider = OpensearchProvider(opensearch_client)
 
-    reference = opensearch_provider.__get_reference__()
+    reference = opensearch_provider.get_reference()
 
     assert reference == "opensearch"
 
@@ -27,7 +27,7 @@ def test_opensearch_provider_get_supported_versions():
     }
     opensearch_provider = OpensearchProvider(opensearch_client)
 
-    supported_opensearch_versions_response = opensearch_provider.__get_supported_versions__()
+    supported_opensearch_versions_response = opensearch_provider.get_supported_versions()
 
     opensearch_client.list_versions.assert_called_with()
     assert supported_opensearch_versions_response == ["2.15", "2.13", "2.11", "2.9"]

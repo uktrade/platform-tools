@@ -7,10 +7,10 @@ class RedisProvider:
         self.client = client
         self.engine = "redis"
 
-    def __get_reference__(self) -> str:
+    def get_reference(self) -> str:
         return self.engine.lower()
 
-    def __get_supported_versions__(self) -> list[str]:
+    def get_supported_versions(self) -> list[str]:
         supported_versions_response = self.client.describe_cache_engine_versions(Engine=self.engine)
 
         supported_versions = [
