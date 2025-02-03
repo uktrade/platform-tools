@@ -408,12 +408,9 @@ def valid_platform_config():
     return yaml.safe_load(
         """
 application: test-app
-legacy_project: true
-
 default_versions: 
     platform-helper: 10.2.0
     terraform-platform-modules: 1.2.3
-
 environments:
   "*":
     accounts:
@@ -579,14 +576,16 @@ environment_pipelines:
         requires_approval: true
 
 codebase_pipelines:
-  - name: application
+  application:
+    slack_channel: OTHER_SLACK_CHANNEL_ID
     repository: uktrade/test-app
     deploy_repository_branch: feature-branch
     additional_ecr_repository: public.ecr.aws/my-public-repo/test-app/application
     services:
-      - celery-worker
-      - celery-beat
-      - web
+        - run_order_1:
+          - celery-worker
+          - celery-beat
+          - web
     pipelines:
       - name: main
         branch: main
@@ -626,6 +625,58 @@ def platform_env_config():
             },
         },
     }
+
+
+@pytest.fixture
+def codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_config):
+    return {
+        **platform_env_config,
+        "codebase_pipelines": {
+            "test_codebase": {
+                "repository": "uktrade/repo1",
+                "services": [
+                    {"run_group_1": ["web"]},
+                    {"run_group_2": ["api", "celery-worker"]},
+                ],
+                "pipelines": [
+                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
+                    {
+                        "name": "tagged",
+                        "tag": True,
+                        "environments": [
+                            {"name": "staging"},
+                            {"name": "prod", "requires_approval": True},
+                        ],
+                    },
+                ],
+            }
+        },
+    }
+
+
+@pytest.fixture
+def codebase_pipeline_config_for_2_pipelines_and_1_run_group(
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
+):
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups["codebase_pipelines"][
+        "test_codebase_2"
+    ] = {
+        "repository": "uktrade/repo2",
+        "services": [
+            {"run_group_1": ["web"]},
+        ],
+        "pipelines": [
+            {"name": "main", "branch": "main", "environments": [{"name": "dev"}]},
+            {
+                "name": "tagged",
+                "tag": True,
+                "environments": [
+                    {"name": "staging"},
+                ],
+            },
+        ],
+    }
+    return codebase_pipeline_config_for_1_pipeline_and_2_run_groups
 
 
 @pytest.fixture
@@ -690,6 +741,49 @@ environment_pipelines:
       prod:
         requires_approval: true
 """
+
+
+@pytest.fixture()
+def platform_config_for_env_pipelines():
+    return yaml.safe_load(
+        """
+application: test-app
+environments:
+  dev:
+    accounts:
+      deploy:
+        name: "platform-sandbox-test"
+        id: "1111111111"
+      dns:
+        name: "platform-sandbox-test"
+        id: "2222222222"
+  prod:
+    accounts:
+      deploy:
+        name: "platform-prod-test"
+        id: "3333333333"
+      dns:
+        name: "platform-prod-test"
+        id: "4444444444"
+    requires_approval: true
+
+environment_pipelines:
+   main:
+       account: platform-sandbox-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         dev:
+   prod-main:
+       account: platform-prod-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         prod:
+    """
+    )
 
 
 @pytest.fixture

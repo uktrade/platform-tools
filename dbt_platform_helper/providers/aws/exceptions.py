@@ -19,9 +19,9 @@ class ImageNotFoundException(AWSException):
         )
 
 
-class InvalidAWSClient(AWSException):
-    def __init__(self, client: str):
-        super().__init__(f"""The client {client} was not found.""")
+class RepositoryNotFoundException(AWSException):
+    def __init__(self, repository: str):
+        super().__init__(f"""The ECR repository "{repository}" could not be found.""")
 
 
 class LogGroupNotFoundException(AWSException):

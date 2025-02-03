@@ -1,28 +1,32 @@
 from typing import Callable
 
 import boto3
-import click
 
 import dbt_platform_helper.domain.versions as versions
-from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import ENVIRONMENTS_KEY
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.aws.redis import RedisProvider
-from dbt_platform_helper.utils.messages import abort_with_error
+from dbt_platform_helper.providers.io import ClickIOProvider
+
+
+class ConfigValidatorError(PlatformException):
+    pass
 
 
 class ConfigValidator:
 
-    def __init__(self, validations: Callable[[dict], None] = None):
+    def __init__(
+        self, validations: Callable[[dict], None] = None, io: ClickIOProvider = ClickIOProvider()
+    ):
         self.validations = validations or [
             self.validate_supported_redis_versions,
             self.validate_supported_opensearch_versions,
             self.validate_environment_pipelines,
-            self.validate_codebase_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
+            self.validate_database_migration_input_sources,
         ]
+        self.io = io
 
     def run_validations(self, config: dict):
         for validation in self.validations:
@@ -50,9 +54,8 @@ class ConfigValidator:
             environments = extension.get("environments", {})
 
             if not isinstance(environments, dict):
-                click.secho(
-                    f"Error: {extension_type} extension definition is invalid type, expected dictionary",
-                    fg="red",
+                self.io.error(
+                    f"{extension_type} extension definition is invalid type, expected dictionary",
                 )
                 continue
             for environment, env_config in environments.items():
@@ -66,9 +69,8 @@ class ConfigValidator:
                     )
 
         for version_failure in extensions_with_invalid_version:
-            click.secho(
+            self.io.error(
                 f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
-                fg="red",
             )
 
     def validate_supported_redis_versions(self, config):
@@ -111,23 +113,7 @@ class ConfigValidator:
                 envs = detail["bad_envs"]
                 acc = detail["account"]
                 message += f"  '{pipeline}' - these environments are not in the '{acc}' account: {', '.join(envs)}\n"
-            abort_with_error(message)
-
-    def validate_codebase_pipelines(self, config):
-        if CODEBASE_PIPELINES_KEY in config:
-            for codebase in config[CODEBASE_PIPELINES_KEY]:
-                codebase_environments = []
-
-                for pipeline in codebase["pipelines"]:
-                    codebase_environments += [e["name"] for e in pipeline[ENVIRONMENTS_KEY]]
-
-                unique_codebase_environments = sorted(list(set(codebase_environments)))
-
-                if sorted(codebase_environments) != sorted(unique_codebase_environments):
-                    abort_with_error(
-                        f"The {PLATFORM_CONFIG_FILE} file is invalid, each environment can only be "
-                        "listed in a single pipeline per codebase"
-                    )
+            raise ConfigValidatorError(message)
 
     def validate_environment_pipelines_triggers(self, config):
         errors = []
@@ -151,7 +137,7 @@ class ConfigValidator:
 
         if errors:
             error_message = "The following pipelines are misconfigured: \n"
-            abort_with_error(error_message + "\n  ".join(errors))
+            raise ConfigValidatorError(error_message + "\n  ".join(errors))
 
     def validate_database_copy_section(self, config):
         extensions = config.get("extensions", {})
@@ -237,4 +223,34 @@ class ConfigValidator:
                         )
 
         if errors:
-            abort_with_error("\n".join(errors))
+            raise ConfigValidatorError("\n".join(errors))
+
+    def validate_database_migration_input_sources(self, config: dict):
+        extensions = config.get("extensions", {})
+        if not extensions:
+            return
+
+        s3_extensions = {
+            key: ext for key, ext in extensions.items() if ext.get("type", None) == "s3"
+        }
+
+        if not s3_extensions:
+            return
+
+        errors = []
+
+        for extension_name, extension in s3_extensions.items():
+            for env, env_config in extension.get("environments", {}).items():
+                if "data_migration" not in env_config:
+                    continue
+                data_migration = env_config.get("data_migration", {})
+                if "import" in data_migration and "import_sources" in data_migration:
+                    errors.append(
+                        f"Error in '{extension_name}.environments.{env}.data_migration': only the 'import_sources' property is required - 'import' is deprecated."
+                    )
+                if "import" not in data_migration and "import_sources" not in data_migration:
+                    errors.append(
+                        f"'import_sources' property in '{extension_name}.environments.{env}.data_migration' is missing."
+                    )
+        if errors:
+            raise ConfigValidatorError("\n".join(errors))

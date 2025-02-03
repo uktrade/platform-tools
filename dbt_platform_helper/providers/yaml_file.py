@@ -1,5 +1,3 @@
-from abc import ABC
-from abc import abstractmethod
 from pathlib import Path
 
 import yaml
@@ -28,13 +26,7 @@ class DuplicateKeysException(YamlFileProviderException):
     pass
 
 
-class FileProvider(ABC):
-    @abstractmethod
-    def load(path: str) -> dict:
-        raise NotImplementedError("Implement this in the subclass")
-
-
-class YamlFileProvider(FileProvider):
+class YamlFileProvider:
     def load(path: str) -> dict:
         """
         Raises:

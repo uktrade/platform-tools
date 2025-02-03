@@ -1,14 +1,13 @@
 import os
 from datetime import datetime
 
-from dbt_platform_helper.providers.yaml_file import FileProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 class CacheProvider:
     def __init__(
         self,
-        file_provider: FileProvider = None,
+        file_provider: YamlFileProvider = None,
     ):
         self._cache_file = ".platform-helper-config-cache.yml"
         self.file_provider = file_provider or YamlFileProvider

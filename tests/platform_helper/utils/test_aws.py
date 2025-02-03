@@ -25,6 +25,7 @@ from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
+from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
@@ -721,6 +722,23 @@ class ObjectWithId:
         self.tags = tags
 
 
+def describe_subnet_object(subnet_id: str, visibility: str):
+    return {
+        "SubnetId": subnet_id,
+        "Tags": [{"Key": "subnet_type", "Value": visibility}],
+    }
+
+
+def describe_security_group_object(vpc_id: str, sg_id: str, name: str):
+    return {
+        "GroupId": sg_id,
+        "Tags": [
+            {"Key": "Name", "Value": name},
+        ],
+        "VpcId": vpc_id,
+    }
+
+
 def mock_vpc_info_session():
     mock_session = Mock()
     mock_client = Mock()
@@ -728,109 +746,20 @@ def mock_vpc_info_session():
     vpc_data = {"Vpcs": [{"VpcId": "vpc-123456"}]}
     mock_client.describe_vpcs.return_value = vpc_data
 
-    mock_resource = Mock()
-    mock_session.resource.return_value = mock_resource
     mock_vpc = Mock()
-    mock_resource.Vpc.return_value = mock_vpc
 
-    mock_client.describe_route_tables.return_value = {
-        "RouteTables": [
-            {
-                "Associations": [
-                    {
-                        "Main": False,
-                        "RouteTableId": "rtb-09613a6769688def8",
-                        "SubnetId": "subnet-private-1",
-                    }
-                ],
-                "Routes": [
-                    {
-                        "DestinationCidrBlock": "10.151.0.0/16",
-                        "GatewayId": "local",
-                        "Origin": "CreateRouteTable",
-                        "State": "active",
-                    },
-                    {
-                        "DestinationCidrBlock": "0.0.0.0/0",
-                        "NatGatewayId": "nat-05c4f248a6db4d724",
-                        "Origin": "CreateRoute",
-                        "State": "active",
-                    },
-                ],
-                "VpcId": "vpc-010327b71b948b4bc",
-                "OwnerId": "891377058512",
-            },
-            {
-                "Associations": [
-                    {
-                        "Main": True,
-                        "RouteTableId": "rtb-00cbf3c8d611a46b8",
-                    }
-                ],
-                "Routes": [
-                    {
-                        "DestinationCidrBlock": "10.151.0.0/16",
-                        "GatewayId": "local",
-                        "Origin": "CreateRouteTable",
-                        "State": "active",
-                    }
-                ],
-                "VpcId": "vpc-010327b71b948b4bc",
-                "OwnerId": "891377058512",
-            },
-            {
-                "Associations": [
-                    {
-                        "Main": False,
-                        "RouteTableId": "rtb-01caa2856120956c3",
-                        "SubnetId": "subnet-public-1",
-                    },
-                    {
-                        "Main": False,
-                        "RouteTableId": "rtb-01caa2856120956c3",
-                        "SubnetId": "subnet-public-2",
-                    },
-                ],
-                "Routes": [
-                    {
-                        "DestinationCidrBlock": "10.151.0.0/16",
-                        "GatewayId": "local",
-                        "Origin": "CreateRouteTable",
-                        "State": "active",
-                    },
-                    {
-                        "DestinationCidrBlock": "0.0.0.0/0",
-                        "GatewayId": "igw-0b2cbfdbb1cbd8a6b",
-                        "Origin": "CreateRoute",
-                        "State": "active",
-                    },
-                ],
-                "OwnerId": "891377058512",
-            },
-            {
-                "Associations": [
-                    {
-                        "Main": False,
-                        "RouteTableId": "rtb-054dcff33741f4fe8",
-                        "SubnetId": "subnet-private-2",
-                    }
-                ],
-                "Routes": [
-                    {
-                        "DestinationCidrBlock": "10.151.0.0/16",
-                        "GatewayId": "local",
-                        "Origin": "CreateRouteTable",
-                        "State": "active",
-                    },
-                    {
-                        "DestinationCidrBlock": "0.0.0.0/0",
-                        "NatGatewayId": "nat-08ead90aee75d601e",
-                        "Origin": "CreateRoute",
-                        "State": "active",
-                    },
-                ],
-                "OwnerId": "891377058512",
-            },
+    mock_client.describe_subnets.return_value = {
+        "Subnets": [
+            describe_subnet_object("subnet-public-1", "public"),
+            describe_subnet_object("subnet-public-2", "public"),
+            describe_subnet_object("subnet-private-1", "private"),
+            describe_subnet_object("subnet-private-2", "private"),
+        ]
+    }
+
+    mock_client.describe_security_groups.return_value = {
+        "SecurityGroups": [
+            describe_security_group_object("vpc-123456", "sg-abc123", "copilot-my_app-my_env-env"),
         ]
     }
 
@@ -864,3 +793,28 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
 
     with pytest.raises(LogGroupNotFoundException, match=f'No log group called "not_found"'):
         wait_for_log_group_to_exist(mock_client, "not_found", 1)
+
+
+@pytest.mark.parametrize(
+    "execution_id, pipeline_name, expected_url",
+    [
+        (
+            "12345678-1234-1234-1234-123456789012",
+            "my-pipeline",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/my-pipeline/executions/12345678-1234-1234-1234-123456789012",
+        ),
+        (
+            "",
+            "my-pipeline",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/my-pipeline/executions/",
+        ),
+        (
+            "12345678-1234-1234-1234-123456789012",
+            "",
+            "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines//executions/12345678-1234-1234-1234-123456789012",
+        ),
+    ],
+)
+def test_get_build_url_from_pipeline_execution_id(execution_id, pipeline_name, expected_url):
+    result = get_build_url_from_pipeline_execution_id(execution_id, pipeline_name)
+    assert result == expected_url

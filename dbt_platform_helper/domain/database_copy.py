@@ -3,22 +3,22 @@ from collections.abc import Callable
 from pathlib import Path
 
 import boto3
-import click
 from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
-from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcProvider
+from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
-from dbt_platform_helper.utils.messages import abort_with_error
 
 
 class DatabaseCopy:
@@ -33,12 +33,8 @@ class DatabaseCopy:
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str
         ] = get_connection_string,
-        maintenance_page_provider: Callable[
-            [str, str, list[str], str, str], None
-        ] = MaintenancePage(),
-        input: Callable[[str], str] = click.prompt,
-        echo: Callable[[str], str] = click.secho,
-        abort: Callable[[str], None] = abort_with_error,
+        maintenance_page: Callable[[str, str, list[str], str, str], None] = MaintenancePage,
+        io: ClickIOProvider = ClickIOProvider(),
         config_provider: ConfigProvider = ConfigProvider(ConfigValidator()),
     ):
         self.app = app
@@ -46,15 +42,14 @@ class DatabaseCopy:
         self.auto_approve = auto_approve
         self.vpc_provider = vpc_provider
         self.db_connection_string = db_connection_string
-        self.maintenance_page_provider = maintenance_page_provider
-        self.input = input
-        self.echo = echo
-        self.abort = abort
+        self.io = io
         self.config_provider = config_provider
 
         if not self.app:
             if not Path(PLATFORM_CONFIG_FILE).exists():
-                self.abort("You must either be in a deploy repo, or provide the --app option.")
+                self.io.abort_with_error(
+                    "You must either be in a deploy repo, or provide the --app option."
+                )
 
             config = self.config_provider.load_and_validate_platform_config()
             self.app = config["application"]
@@ -62,7 +57,9 @@ class DatabaseCopy:
         try:
             self.application = load_application(self.app)
         except ApplicationNotFoundException:
-            abort(f"No such application '{app}'.")
+            self.io.abort_with_error(f"No such application '{app}'.")
+
+        self.maintenance_page = maintenance_page(self.application)
 
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
@@ -70,7 +67,7 @@ class DatabaseCopy:
         environments = self.application.environments
         environment = environments.get(env)
         if not environment:
-            self.abort(
+            self.io.abort_with_error(
                 f"No such environment '{env}'. Available environments are: {', '.join(environments.keys())}"
             )
 
@@ -78,9 +75,12 @@ class DatabaseCopy:
 
         try:
             vpc_provider = self.vpc_provider(env_session)
-            vpc_config = vpc_provider.get_vpc_info_by_name(self.app, env, vpc_name)
-        except AWSException as ex:
-            self.abort(str(ex))
+            vpc_config = vpc_provider.get_vpc(self.app, env, vpc_name)
+        except VpcProviderException as ex:
+            self.io.abort_with_error(str(ex))
+
+        if not vpc_config.security_groups:
+            self.io.abort_with_error(f"No security groups found in vpc '{vpc_name}'")
 
         database_identifier = f"{self.app}-{env}-{self.database}"
 
@@ -89,31 +89,32 @@ class DatabaseCopy:
                 env_session, self.app, env, database_identifier
             )
         except Exception as exc:
-            self.abort(f"{exc} (Database: {database_identifier})")
+            self.io.abort_with_error(f"{exc} (Database: {database_identifier})")
 
         try:
             task_arn = self.run_database_copy_task(
                 env_session, env, vpc_config, is_dump, db_connection_string, filename
             )
         except Exception as exc:
-            self.abort(f"{exc} (Account id: {self.account_id(env)})")
+            self.io.abort_with_error(f"{exc} (Account id: {self.account_id(env)})")
 
         if is_dump:
             message = f"Dumping {self.database} from the {env} environment into S3"
         else:
             message = f"Loading data into {self.database} in the {env} environment from S3"
 
-        self.echo(message, fg="white", bold=True)
-        self.echo(
-            f"Task {task_arn} started. Waiting for it to complete (this may take some time)...",
-            fg="white",
+        self.io.info(message)
+        self.io.info(
+            f"Task {task_arn} started. Waiting for it to complete (this may take some time)..."
         )
         self.tail_logs(is_dump, env)
 
     def enrich_vpc_name(self, env, vpc_name):
         if not vpc_name:
             if not Path(PLATFORM_CONFIG_FILE).exists():
-                self.abort("You must either be in a deploy repo, or provide the vpc name option.")
+                self.io.abort_with_error(
+                    "You must either be in a deploy repo, or provide the vpc name option."
+                )
             config = self.config_provider.load_and_validate_platform_config()
             env_config = self.config_provider.apply_environment_defaults(config)["environments"]
             vpc_name = env_config.get(env, {}).get("vpc")
@@ -123,7 +124,7 @@ class DatabaseCopy:
         self,
         session: boto3.session.Session,
         env: str,
-        vpc_config: Vpc,
+        vpc: Vpc,
         is_dump: bool,
         db_connection_string: str,
         filename: str,
@@ -147,8 +148,8 @@ class DatabaseCopy:
             ],
             networkConfiguration={
                 "awsvpcConfiguration": {
-                    "subnets": vpc_config.subnets,
-                    "securityGroups": vpc_config.security_groups,
+                    "subnets": vpc.private_subnets,
+                    "securityGroups": vpc.security_groups,
                     "assignPublicIp": "DISABLED",
                 }
             },
@@ -183,26 +184,27 @@ class DatabaseCopy:
     ):
         to_vpc = self.enrich_vpc_name(to_env, to_vpc)
         if not no_maintenance_page:
-            self.maintenance_page_provider.activate(self.app, to_env, services, template, to_vpc)
+            self.maintenance_page.activate(to_env, services, template, to_vpc)
         self.dump(from_env, from_vpc, f"data_dump_{to_env}")
         self.load(to_env, to_vpc, f"data_dump_{to_env}")
         if not no_maintenance_page:
-            self.maintenance_page_provider.deactivate(self.app, to_env)
+            self.maintenance_page.deactivate(to_env)
 
     def is_confirmed_ready_to_load(self, env: str) -> bool:
         if self.auto_approve:
             return True
-
-        user_input = self.input(
-            f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue? (y/n)"
-        )
-        return user_input.lower().strip() in ["y", "yes"]
+        try:
+            return self.io.confirm(
+                f"\nWARNING: the load operation is destructive and will delete the {self.database} database in the {env} environment. Continue?"
+            )
+        except ClickIOProviderException:
+            return False
 
     def tail_logs(self, is_dump: bool, env: str):
         action = "dump" if is_dump else "load"
         log_group_name = f"/ecs/{self.app}-{env}-{self.database}-{action}"
         log_group_arn = f"arn:aws:logs:eu-west-2:{self.account_id(env)}:log-group:{log_group_name}"
-        self.echo(f"Tailing {log_group_name} logs", fg="yellow")
+        self.io.warn(f"Tailing {log_group_name} logs")
         session = self.application.environments[env].session
         log_client = session.client("logs")
         wait_for_log_group_to_exist(log_client, log_group_name)
@@ -220,9 +222,11 @@ class DatabaseCopy:
                     match = re.match(r"(Stopping|Aborting) data (load|dump).*", message)
                     if match:
                         if match.group(1) == "Aborting":
-                            self.abort("Task aborted abnormally. See logs above for details.")
+                            self.io.abort_with_error(
+                                "Task aborted abnormally. See logs above for details."
+                            )
                         stopped = True
-                    self.echo(message)
+                    self.io.info(message)
 
     def account_id(self, env):
         envs = self.application.environments

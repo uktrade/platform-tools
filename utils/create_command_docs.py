@@ -37,12 +37,14 @@ class CommandMetadata(NamedTuple):
     parent_reference: str
     subcommands: Optional[Any]
     usage: str
+    indent: str
 
 
 def get_cmd_metadata(
     cmd: click.core.Command,
     parent: Optional[click.core.Context] = None,
     command_name: Optional[str] = None,
+    indent: str = "",
 ) -> Generator[CommandMetadata, None, None]:
     """
     Get command metadata recursively.
@@ -100,10 +102,11 @@ def get_cmd_metadata(
                 .split("\n"),
             )
         ),
+        indent=indent,
     )
 
     for sub in subcommands_names.values():
-        yield from get_cmd_metadata(sub, context, command_name)
+        yield from get_cmd_metadata(sub, context, command_name, f"{indent}    ")
 
 
 def create_docs(base_command, output):
@@ -111,8 +114,7 @@ def create_docs(base_command, output):
 
     templates = setup_templates()
     content = dict(
-        toc=[command.name for command in get_cmd_metadata(base_command)],
-        metadata=get_cmd_metadata(base_command),
+        metadata=list(get_cmd_metadata(base_command)),
     )
 
     with open(output, "w") as md_file:

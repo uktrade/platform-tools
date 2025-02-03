@@ -1,15 +1,28 @@
+import os
+import re
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock
 
 import pytest
 import yaml
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
+
+
+def test_comprehensive_platform_config_validates_successfully(valid_platform_config):
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = valid_platform_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+    config_provider.load_and_validate_platform_config()
+    # No assertions as this will raise an error if there is one.
 
 
 def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
@@ -46,158 +59,6 @@ extensions:
         YamlFileProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
 
 
-@pytest.mark.parametrize("pipeline_to_trigger", ("", "non-existent-pipeline"))
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_fails_if_pipeline_to_trigger_not_valid(
-    mock_abort_with_error, valid_platform_config, pipeline_to_trigger
-):
-    valid_platform_config["environment_pipelines"]["main"][
-        "pipeline_to_trigger"
-    ] = pipeline_to_trigger
-
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = valid_platform_config
-
-    config_provider.validate_platform_config()
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert "The following pipelines are misconfigured:" in message
-    assert (
-        f"  'main' - '{pipeline_to_trigger}' is not a valid target pipeline to trigger" in message
-    )
-
-
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_fails_with_multiple_errors_if_pipeline_to_trigger_is_invalid(
-    mock_abort_with_error, valid_platform_config
-):
-    valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = ""
-    valid_platform_config["environment_pipelines"]["test"][
-        "pipeline_to_trigger"
-    ] = "non-existent-pipeline"
-
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = valid_platform_config
-
-    config_provider.validate_platform_config()
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert "The following pipelines are misconfigured:" in message
-    assert f"  'main' - '' is not a valid target pipeline to trigger" in message
-    assert (
-        f"  'test' - 'non-existent-pipeline' is not a valid target pipeline to trigger" in message
-    )
-
-
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_itself(
-    mock_abort_with_error, valid_platform_config
-):
-    valid_platform_config["environment_pipelines"]["main"]["pipeline_to_trigger"] = "main"
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = valid_platform_config
-    config_provider.validate_platform_config()
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert "The following pipelines are misconfigured:" in message
-    assert f"  'main' - pipelines cannot trigger themselves" in message
-
-
-@pytest.mark.parametrize(
-    "account, envs, exp_bad_envs",
-    [
-        ("account-does-not-exist", ["dev"], ["dev"]),
-        ("prod-acc", ["dev", "staging", "prod"], ["dev", "staging"]),
-        ("non-prod-acc", ["dev", "prod"], ["prod"]),
-    ],
-)
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_fails_if_pipeline_account_does_not_match_environment_accounts_with_single_pipeline(
-    mock_abort_with_error, platform_env_config, account, envs, exp_bad_envs
-):
-    platform_env_config["environment_pipelines"] = {
-        "main": {
-            "account": account,
-            "slack_channel": "/codebuild/notification_channel",
-            "trigger_on_push": True,
-            "environments": {env: {} for env in envs},
-        }
-    }
-
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = platform_env_config
-    config_provider.validate_platform_config()
-
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert "The following pipelines are misconfigured:" in message
-    assert (
-        f"  'main' - these environments are not in the '{account}' account: {', '.join(exp_bad_envs)}"
-        in message
-    )
-
-
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_fails_if_database_copy_config_is_invalid(
-    mock_abort_with_error,
-):
-    """Edge cases for this are all covered in unit tests of
-    validate_database_copy_section elsewhere in this file."""
-    config = {
-        "application": "test-app",
-        "environments": {"dev": {}, "test": {}, "prod": {}},
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [{"from": "dev", "to": "dev"}],
-            }
-        },
-    }
-
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = config
-    config_provider.validate_platform_config()
-
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert (
-        f"database_copy 'to' and 'from' cannot be the same environment in extension 'our-postgres'."
-        in message
-    )
-
-
-@patch("dbt_platform_helper.domain.config_validator.abort_with_error")
-def test_validate_platform_config_catches_database_copy_errors(
-    mock_abort_with_error, platform_env_config
-):
-    platform_env_config["environment_pipelines"] = {
-        "main": {
-            "account": "non-prod",
-            "slack_channel": "/codebuild/notification_channel",
-            "trigger_on_push": True,
-            "environments": {"dev": {}, "prod": {}},
-        },
-        "prod": {
-            "account": "prod",
-            "slack_channel": "/codebuild/notification_channel",
-            "trigger_on_push": True,
-            "environments": {"dev": {}, "staging": {}, "prod": {}},
-        },
-    }
-
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = platform_env_config
-
-    config_provider.validate_platform_config()
-
-    message = mock_abort_with_error.call_args.args[0]
-
-    assert "The following pipelines are misconfigured:" in message
-    assert f"  'main' - these environments are not in the 'non-prod' account: dev" in message
-    assert f"  'prod' - these environments are not in the 'prod' account: dev, staging" in message
-
-
 @pytest.mark.parametrize(
     "account, envs",
     [
@@ -217,11 +78,86 @@ def test_validate_platform_config_succeeds_if_pipeline_account_matches_environme
         }
     }
 
-    # Should not error if config is sound.
-    config_provider = ConfigProvider(ConfigValidator())
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = platform_env_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
     config_provider.config = platform_env_config
 
-    config_provider.validate_platform_config()
+    # Should not error if config is sound.
+    config_provider.load_and_validate_platform_config()
+
+
+def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present():
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "extensions": {
+            "test-s3-bucket": {
+                "type": "s3",
+                "environments": {
+                    "dev": {
+                        "bucket_name": "placeholder-to-pass-schema-validation",
+                        "data_migration": {},
+                    }
+                },
+            }
+        },
+    }
+
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = config
+    mock_io = Mock()
+    config_provider.io = mock_io
+
+    config_provider._validate_platform_config()
+
+    mock_io.abort_with_error.assert_called_with(
+        """Config validation has failed.\n'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
+    )
+
+
+def test_validate_data_migration_fails_if_both_import_and_import_sources_present():
+    """Edge cases for this are all covered in unit tests of
+    validate_database_copy_section elsewhere in this file."""
+    config = {
+        "application": "test-app",
+        "extensions": {
+            "test-s3-bucket": {
+                "type": "s3",
+                "environments": {
+                    "dev": {
+                        "bucket_name": "placeholder-to-pass-schema-validation",
+                        "data_migration": {
+                            "import": {
+                                "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                            },
+                            "import_sources": [
+                                {
+                                    "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                    "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                    "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                                }
+                            ],
+                        },
+                    }
+                },
+            }
+        },
+    }
+
+    config_provider = ConfigProvider(ConfigValidator())
+    config_provider.config = config
+    mock_io = Mock()
+    config_provider.io = mock_io
+
+    config_provider._validate_platform_config()
+
+    mock_io.abort_with_error.assert_called_with(
+        """Config validation has failed.\nError in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
+    )
 
 
 @pytest.mark.parametrize(
@@ -247,6 +183,66 @@ def test_load_and_validate_config_valid_file(yaml_file):
     assert validated == conf
 
 
+def test_get_enriched_config_returns_config_with_environment_defaults_applied():
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = {
+        "application": "test-app",
+        "environments": {
+            "*": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+            },
+            "test": {"versions": {"terraform-platform-modules": "123456"}},
+        },
+    }
+
+    expected_enriched_config = {
+        "application": "test-app",
+        "environments": {
+            "test": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
+                "versions": {"terraform-platform-modules": "123456"},
+            }
+        },
+    }
+
+    mock_config_validator = Mock()
+
+    result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
+
+    assert result == expected_enriched_config
+
+
+@pytest.mark.parametrize(
+    "mock_environment_config, expected_vpc_for_test_environment",
+    [
+        ({"test": {}}, None),
+        ({"test": {"vpc": "vpc1"}}, "vpc1"),
+        ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
+        ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
+    ],
+)
+def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environment_defaults_applied(
+    mock_environment_config, expected_vpc_for_test_environment
+):
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = {
+        "application": "test-app",
+        "environments": mock_environment_config,
+    }
+
+    result = ConfigProvider(Mock(), mock_file_provider).get_enriched_config()
+
+    assert result.get("environments").get("test").get("vpc") == expected_vpc_for_test_environment
+
+
 def test_validation_fails_if_invalid_default_version_keys_present(
     fakefs, capsys, valid_platform_config
 ):
@@ -259,7 +255,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
 
-        assert "Wrong key 'something-invalid'" in str(ex)
+    assert "Wrong key 'something-invalid'" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
@@ -271,7 +267,7 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_environment_version_override_keys_present(
-    invalid_key, fakefs, capsys, valid_platform_config
+    invalid_key, valid_platform_config
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
@@ -293,7 +289,7 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-    invalid_key, fakefs, capsys, valid_platform_config
+    invalid_key, valid_platform_config
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
@@ -305,7 +301,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
         assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
-def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsys):
+def test_load_and_validate_platform_config_fails_with_invalid_yaml(capsys):
     """Test that, given the path to an invalid yaml file,
     load_and_validate_config aborts and prints an error."""
 
@@ -314,6 +310,19 @@ def test_load_and_validate_platform_config_fails_with_invalid_yaml(fakefs, capsy
         ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
 
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+
+def test_load_and_validate_platform_config_fails_with_missing_config_file(capsys):
+    if Path(PLATFORM_CONFIG_FILE).exists():
+        os.remove(Path(PLATFORM_CONFIG_FILE))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    assert (
+        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+        in capsys.readouterr().err
+    )
 
 
 def test_validation_runs_against_platform_config_yml(fakefs):
@@ -469,3 +478,82 @@ def test_apply_defaults_with_no_defaults():
             "three": {"a": "aaa", "versions": {}},
         },
     }
+
+
+def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
+    platform_config = {
+        "application": "test-app",
+        "codebase_pipelines": {
+            "application": {
+                "repository": "organisation/repository",
+                "services": [
+                    {"run_group_1": ["web"]},
+                    {"run_group_2": ["api", "celery-beat"]},
+                ],
+                "pipelines": [
+                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]}
+                ],
+            }
+        },
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+
+    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+    assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
+        {"run_group_1": ["web"]},
+        {"run_group_2": ["api", "celery-beat"]},
+    ]
+
+
+@pytest.mark.parametrize("channel", [1, [], {}, True])
+def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
+    config = {
+        "application": "test-app",
+        "codebase_pipelines": {
+            "application": {
+                "name": "application",
+                "slack_channel": channel,
+                "repository": "organisation/repository",
+                "services": [],
+                "pipelines": [],
+            }
+        },
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+    error = capsys.readouterr().err
+
+    exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
+        str(channel)
+    )
+    assert re.match(exp, error, re.DOTALL)
+
+
+@pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
+def test_codebase_requires_image_build_fails_if_not_a_bool(fakefs, capsys, requires_image):
+    config = {
+        "application": "test-app",
+        "codebase_pipelines": {
+            "application": {
+                "name": "application",
+                "requires_image_build": requires_image,
+                "slack_channel": "channel",
+                "repository": "organisation/repository",
+                "services": [],
+                "pipelines": [],
+            }
+        },
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+
+    with pytest.raises(SystemExit):
+        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+    error = capsys.readouterr().err
+
+    exp = r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*" % re.escape(
+        str(requires_image)
+    )
+    assert re.match(exp, error, re.DOTALL)

@@ -1,53 +1,90 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.utils.files import mkfile
+from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
+from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.template import setup_templates
 
 
-def _generate_terraform_environment_manifests(
-    application, env, env_config, cli_terraform_platform_modules_version
-):
-    env_template = setup_templates().get_template("environments/main.tf")
+class PlatformTerraformManifestGenerator:
+    def __init__(self, file_provider):
+        self.file_provider = file_provider
+        self.manifest_template = setup_templates().get_template("environments/main.tf")
 
-    terraform_platform_modules_version = _determine_terraform_platform_modules_version(
-        env_config, cli_terraform_platform_modules_version
-    )
+    def generate_manifest(
+        self,
+        environment_name: str,
+        application_name: str,
+        environment_config: dict,
+        terraform_platform_modules_version_override: str = None,
+    ):
+        terraform_platform_modules_version = (
+            terraform_platform_modules_version_override
+            or environment_config.get("versions", {}).get(
+                "terraform-platform-modules", DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
+            )
+        )
 
-    contents = env_template.render(
-        {
-            "application": application,
-            "environment": env,
-            "config": env_config,
-            "terraform_platform_modules_version": terraform_platform_modules_version,
-        }
-    )
+        return self.manifest_template.render(
+            {
+                "application": application_name,
+                "environment": environment_name,
+                "config": environment_config,
+                "terraform_platform_modules_version": terraform_platform_modules_version,
+                "terraform_version": SUPPORTED_TERRAFORM_VERSION,
+                "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
+            }
+        )
 
-    click.echo(mkfile(".", f"terraform/environments/{env}/main.tf", contents, overwrite=True))
+    def write_manifest(self, environment_name: str, manifest_content: str):
+        return self.file_provider.mkfile(
+            ".",
+            f"terraform/environments/{environment_name}/main.tf",
+            manifest_content,
+            overwrite=True,
+        )
 
 
-def _determine_terraform_platform_modules_version(env_conf, cli_terraform_platform_modules_version):
-    cli_terraform_platform_modules_version = cli_terraform_platform_modules_version
-    env_conf_terraform_platform_modules_version = env_conf.get("versions", {}).get(
-        "terraform-platform-modules"
-    )
-    version_preference_order = [
-        cli_terraform_platform_modules_version,
-        env_conf_terraform_platform_modules_version,
-        DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
-    ]
-    return [version for version in version_preference_order if version][0]
+class TerraformEnvironmentException(PlatformException):
+    pass
+
+
+class EnvironmentNotFoundException(TerraformEnvironmentException):
+    pass
 
 
 class TerraformEnvironment:
-    def __init__(self, config_provider):
+    def __init__(
+        self,
+        config_provider,
+        manifest_generator: PlatformTerraformManifestGenerator = None,
+        echo=click.echo,
+    ):
+        self.echo = echo
         self.config_provider = config_provider
+        self.manifest_generator = manifest_generator or PlatformTerraformManifestGenerator(
+            FileProvider()
+        )
 
-    def generate(self, name, terraform_platform_modules_version):
-        config = self.config_provider.load_and_validate_platform_config()
-        enriched_config = self.config_provider.apply_environment_defaults(config)
+    def generate(self, environment_name, terraform_platform_modules_version_override=None):
+        config = self.config_provider.get_enriched_config()
 
-        env_config = enriched_config["environments"][name]
-        _generate_terraform_environment_manifests(
-            config["application"], name, env_config, terraform_platform_modules_version
+        if environment_name not in config.get("environments").keys():
+            raise EnvironmentNotFoundException(
+                f"cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
+            )
+
+        manifest = self.manifest_generator.generate_manifest(
+            environment_name=environment_name,
+            application_name=config["application"],
+            environment_config=config["environments"][environment_name],
+            terraform_platform_modules_version_override=terraform_platform_modules_version_override,
+        )
+
+        self.echo(
+            self.manifest_generator.write_manifest(
+                environment_name=environment_name, manifest_content=manifest
+            )
         )

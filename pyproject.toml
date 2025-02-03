@@ -3,7 +3,7 @@ line-length = 100
 
 [tool.poetry]
 name = "dbt-platform-helper"
-version = "12.5.0"
+version = "13.0.1"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
@@ -17,7 +17,7 @@ packages = [
 platform-helper = "platform_helper:platform_helper"
 
 [tool.poetry.dependencies]
-Jinja2 = "3.1.4"
+Jinja2 = "3.1.5"
 PyYAML = "6.0.1"
 yamllint = "^1.35.1"
 boto3 = "^1.28.24"
