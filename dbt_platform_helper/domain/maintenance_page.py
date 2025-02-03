@@ -90,7 +90,7 @@ def add_maintenance_page(
     app: str,
     env: str,
     services: List[Service],
-    allowed_ips: tuple,
+    allowed_ips: List[str],
     template: str = "default",
 ):
     lb_client = session.client("elbv2")
@@ -98,6 +98,7 @@ def add_maintenance_page(
     bypass_value = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
 
     rule_priority = itertools.count(start=1)
+    maintenance_page_host_header_conditions = []
     try:
         for svc in services:
             target_group_arn = find_target_group(app, env, svc.name, session)
@@ -105,6 +106,10 @@ def add_maintenance_page(
             # not all of an application's services are guaranteed to have been deployed to an environment
             if not target_group_arn:
                 continue
+
+            service_conditions = get_host_header_conditions(
+                lb_client, listener_arn, target_group_arn
+            )
 
             for ip in allowed_ips:
                 create_header_rule(
@@ -115,6 +120,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedIps",
                     next(rule_priority),
+                    service_conditions,
                 )
                 create_source_ip_rule(
                     lb_client,
@@ -123,6 +129,7 @@ def add_maintenance_page(
                     [ip],
                     "AllowedSourceIps",
                     next(rule_priority),
+                    service_conditions,
                 )
 
             create_header_rule(
@@ -133,7 +140,11 @@ def add_maintenance_page(
                 [bypass_value],
                 "BypassIpFilter",
                 next(rule_priority),
+                service_conditions,
             )
+
+            # add to accumilating list of conditions for maintenace page rule
+            maintenance_page_host_header_conditions.extend(service_conditions)
 
         click.secho(
             f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
@@ -146,7 +157,21 @@ def add_maintenance_page(
                 {
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
-                }
+                },
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {
+                        "Values": sorted(
+                            list(
+                                {
+                                    value
+                                    for condition in maintenance_page_host_header_conditions
+                                    for value in condition["HostHeaderConfig"]["Values"]
+                                }
+                            )
+                        )
+                    },
+                },
             ],
             Actions=[
                 {
@@ -445,9 +470,8 @@ def create_header_rule(
     values: list,
     rule_name: str,
     priority: int,
+    conditions: list,
 ):
-    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
-
     # add new condition to existing conditions
     combined_conditions = [
         {
@@ -486,9 +510,8 @@ def create_source_ip_rule(
     values: list,
     rule_name: str,
     priority: int,
+    conditions: list,
 ):
-    conditions = get_host_conditions(lb_client, listener_arn, target_group_arn)
-
     # add new condition to existing conditions
 
     combined_conditions = [
@@ -514,7 +537,9 @@ def create_source_ip_rule(
     )
 
 
-def get_host_conditions(lb_client: boto3.client, listener_arn: str, target_group_arn: str):
+def get_host_header_conditions(
+    lb_client: boto3.client, listener_arn: str, target_group_arn: str
+) -> list:
     rules = lb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
 
     # Get current set of forwarding conditions for the target group
