@@ -12,6 +12,7 @@ from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
+from dbt_platform_helper.providers.yaml_file import InvalidYamlException
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -219,16 +220,14 @@ def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environ
     assert result.get("environments").get("test").get("vpc") == expected_vpc_for_test_environment
 
 
-def test_validation_fails_if_invalid_default_version_keys_present(
-    fakefs, capsys, valid_platform_config
-):
+def test_validation_fails_if_invalid_default_version_keys_present(capsys, valid_platform_config):
     valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
 
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = valid_platform_config
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = valid_platform_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(SystemExit):
         config_provider.load_and_validate_platform_config()
 
     assert "Wrong key 'something-invalid'" in capsys.readouterr().err
@@ -243,17 +242,17 @@ def test_validation_fails_if_invalid_default_version_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_environment_version_override_keys_present(
-    invalid_key, valid_platform_config
+    invalid_key, valid_platform_config, capsys
 ):
     valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = valid_platform_config
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = valid_platform_config
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(SystemExit):
         config_provider.load_and_validate_platform_config()
 
-        assert f"Wrong key '{invalid_key}'" in str(ex)
+    assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
@@ -280,13 +279,15 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
 
 
-def test_load_and_validate_platform_config_fails_with_invalid_yaml(capsys):
-    """Test that, given the path to an invalid yaml file,
-    load_and_validate_config aborts and prints an error."""
+def test_load_and_validate_exits_with_invalid_yaml(capsys):
+    """Test that, given the an invalid yaml file, load_and_validate_config
+    aborts and prints an error."""
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.side_effect = InvalidYamlException("platform-config.yml")
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    Path(PLATFORM_CONFIG_FILE).write_text("{invalid data")
     with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+        config_provider.load_and_validate_platform_config()
 
     assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 

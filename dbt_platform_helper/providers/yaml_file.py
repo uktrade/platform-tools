@@ -19,7 +19,8 @@ class FileNotFoundException(FileProviderException):
 
 
 class InvalidYamlException(YamlFileProviderException):
-    pass
+    def __init__(self, path: str):
+        super().__init__(f"""{path} is not valid YAML.""")
 
 
 class DuplicateKeysException(YamlFileProviderException):
@@ -40,7 +41,7 @@ class YamlFileProvider:
         try:
             yaml_content = yaml.safe_load(Path(path).read_text())
         except ParserError:
-            raise InvalidYamlException(f"{path} is not valid YAML.")
+            raise InvalidYamlException(path)
 
         if not yaml_content:
             return {}
