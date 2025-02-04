@@ -305,155 +305,144 @@ def test_load_and_validate_platform_config_fails_with_missing_config_file(capsys
     )
 
 
-def test_validation_runs_against_platform_config_yml(fakefs):
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents='{"application": "my_app"}')
-    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config(
-        path=PLATFORM_CONFIG_FILE
-    )
+class TestApplyEnvironmentDefaults:
+    def test_apply_defaults(self):
 
-    assert list(config.keys()) == ["application"]
-    assert config["application"] == "my_app"
-
-
-def test_apply_defaults():
-
-    config = {
-        "application": "my-app",
-        "environments": {
-            "*": {"a": "aaa", "b": {"c": "ccc"}},
-            "one": None,
-            "two": {},
-            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
-        },
-    }
-
-    result = ConfigProvider.apply_environment_defaults(config)
-
-    assert result == {
-        "application": "my-app",
-        "environments": {
-            "one": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
-            "two": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
-            "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc", "versions": {}},
-        },
-    }
-
-
-@pytest.mark.parametrize(
-    "default_versions, env_default_versions, env_versions, expected_result",
-    [
-        # Empty cases
-        (None, None, None, {}),
-        (None, None, {}, {}),
-        (None, {}, None, {}),
-        ({}, None, None, {}),
-        # Env versions populated
-        (
-            None,
-            None,
-            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-        ),
-        (
-            None,
-            None,
-            {"terraform-platform-modules": "2.0.0"},
-            {"terraform-platform-modules": "2.0.0"},
-        ),
-        (None, None, {"platform-helper": "9.0.0"}, {"platform-helper": "9.0.0"}),
-        # env_default_versions populated
-        (None, {"platform-helper": "10.0.0"}, None, {"platform-helper": "10.0.0"}),
-        (None, {"platform-helper": "10.0.0"}, {}, {"platform-helper": "10.0.0"}),
-        (
-            None,
-            {"platform-helper": "10.0.0"},
-            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-            {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-        ),
-        (
-            None,
-            {"platform-helper": "10.0.0"},
-            {"terraform-platform-modules": "2.0.0"},
-            {"platform-helper": "10.0.0", "terraform-platform-modules": "2.0.0"},
-        ),
-        # default_versions populated
-        (
-            None,
-            {"platform-helper": "10.0.0"},
-            {"platform-helper": "9.0.0"},
-            {"platform-helper": "9.0.0"},
-        ),
-        (
-            {"terraform-platform-modules": "1.0.0"},
-            None,
-            None,
-            {"terraform-platform-modules": "1.0.0"},
-        ),
-        (
-            {"terraform-platform-modules": "2.0.0"},
-            {"terraform-platform-modules": "3.0.0"},
-            None,
-            {"terraform-platform-modules": "3.0.0"},
-        ),
-        (
-            {"terraform-platform-modules": "3.0.0"},
-            None,
-            {"terraform-platform-modules": "4.0.0"},
-            {"terraform-platform-modules": "4.0.0"},
-        ),
-        (
-            {"terraform-platform-modules": "4.0.0"},
-            {"terraform-platform-modules": "5.0.0"},
-            {"terraform-platform-modules": "6.0.0"},
-            {"terraform-platform-modules": "6.0.0"},
-        ),
-    ],
-)
-def test_apply_defaults_for_versions(
-    default_versions, env_default_versions, env_versions, expected_result
-):
-    config = {
-        "application": "my-app",
-        "environments": {"*": {}, "one": {}},
-    }
-
-    if default_versions:
-        config["default_versions"] = default_versions
-    if env_default_versions:
-        config["environments"]["*"]["versions"] = env_default_versions
-    if env_versions:
-        config["environments"]["one"]["versions"] = env_versions
-
-    result = ConfigProvider.apply_environment_defaults(config)
-
-    assert result["environments"]["one"].get("versions") == expected_result
-
-
-def test_apply_defaults_with_no_defaults():
-    config = {
-        "application": "my-app",
-        "environments": {
-            "one": None,
-            "two": {},
-            "three": {
-                "a": "aaa",
+        config = {
+            "application": "my-app",
+            "environments": {
+                "*": {"a": "aaa", "b": {"c": "ccc"}},
+                "one": None,
+                "two": {},
+                "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
             },
-        },
-    }
+        }
 
-    result = ConfigProvider.apply_environment_defaults(config)
+        result = ConfigProvider.apply_environment_defaults(config)
 
-    assert result == {
-        "application": "my-app",
-        "environments": {
-            "one": {"versions": {}},
-            "two": {"versions": {}},
-            "three": {"a": "aaa", "versions": {}},
-        },
-    }
+        assert result == {
+            "application": "my-app",
+            "environments": {
+                "one": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
+                "two": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
+                "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc", "versions": {}},
+            },
+        }
+
+    @pytest.mark.parametrize(
+        "default_versions, env_default_versions, env_versions, expected_result",
+        [
+            # Empty cases
+            (None, None, None, {}),
+            (None, None, {}, {}),
+            (None, {}, None, {}),
+            ({}, None, None, {}),
+            # Env versions populated
+            (
+                None,
+                None,
+                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+            ),
+            (
+                None,
+                None,
+                {"terraform-platform-modules": "2.0.0"},
+                {"terraform-platform-modules": "2.0.0"},
+            ),
+            (None, None, {"platform-helper": "9.0.0"}, {"platform-helper": "9.0.0"}),
+            # env_default_versions populated
+            (None, {"platform-helper": "10.0.0"}, None, {"platform-helper": "10.0.0"}),
+            (None, {"platform-helper": "10.0.0"}, {}, {"platform-helper": "10.0.0"}),
+            (
+                None,
+                {"platform-helper": "10.0.0"},
+                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
+            ),
+            (
+                None,
+                {"platform-helper": "10.0.0"},
+                {"terraform-platform-modules": "2.0.0"},
+                {"platform-helper": "10.0.0", "terraform-platform-modules": "2.0.0"},
+            ),
+            # default_versions populated
+            (
+                None,
+                {"platform-helper": "10.0.0"},
+                {"platform-helper": "9.0.0"},
+                {"platform-helper": "9.0.0"},
+            ),
+            (
+                {"terraform-platform-modules": "1.0.0"},
+                None,
+                None,
+                {"terraform-platform-modules": "1.0.0"},
+            ),
+            (
+                {"terraform-platform-modules": "2.0.0"},
+                {"terraform-platform-modules": "3.0.0"},
+                None,
+                {"terraform-platform-modules": "3.0.0"},
+            ),
+            (
+                {"terraform-platform-modules": "3.0.0"},
+                None,
+                {"terraform-platform-modules": "4.0.0"},
+                {"terraform-platform-modules": "4.0.0"},
+            ),
+            (
+                {"terraform-platform-modules": "4.0.0"},
+                {"terraform-platform-modules": "5.0.0"},
+                {"terraform-platform-modules": "6.0.0"},
+                {"terraform-platform-modules": "6.0.0"},
+            ),
+        ],
+    )
+    def test_apply_defaults_for_versions(
+        self, default_versions, env_default_versions, env_versions, expected_result
+    ):
+        config = {
+            "application": "my-app",
+            "environments": {"*": {}, "one": {}},
+        }
+
+        if default_versions:
+            config["default_versions"] = default_versions
+        if env_default_versions:
+            config["environments"]["*"]["versions"] = env_default_versions
+        if env_versions:
+            config["environments"]["one"]["versions"] = env_versions
+
+        result = ConfigProvider.apply_environment_defaults(config)
+
+        assert result["environments"]["one"].get("versions") == expected_result
+
+    def test_apply_defaults_with_no_defaults(self):
+        config = {
+            "application": "my-app",
+            "environments": {
+                "one": None,
+                "two": {},
+                "three": {
+                    "a": "aaa",
+                },
+            },
+        }
+
+        result = ConfigProvider.apply_environment_defaults(config)
+
+        assert result == {
+            "application": "my-app",
+            "environments": {
+                "one": {"versions": {}},
+                "two": {"versions": {}},
+                "three": {"a": "aaa", "versions": {}},
+            },
+        }
 
 
-def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
+def test_codebase_pipeline_run_groups_validate():
     platform_config = {
         "application": "test-app",
         "codebase_pipelines": {
@@ -469,9 +458,12 @@ def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
             }
         },
     }
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = platform_config
 
-    config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+    config = ConfigProvider(
+        ConfigValidator(), mock_file_provider
+    ).load_and_validate_platform_config()
 
     assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
         {"run_group_1": ["web"]},
@@ -480,7 +472,7 @@ def test_codebase_pipeline_run_groups_validate(fakefs, capsys):
 
 
 @pytest.mark.parametrize("channel", [1, [], {}, True])
-def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
+def test_codebase_slack_channel_fails_if_not_a_string(channel, capsys):
     config = {
         "application": "test-app",
         "codebase_pipelines": {
@@ -493,10 +485,12 @@ def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
             }
         },
     }
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = config
 
     with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator(), mock_file_provider).load_and_validate_platform_config()
+
     error = capsys.readouterr().err
 
     exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
@@ -506,7 +500,7 @@ def test_codebase_slack_channel_fails_if_not_a_string(channel, fakefs, capsys):
 
 
 @pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
-def test_codebase_requires_image_build_fails_if_not_a_bool(fakefs, capsys, requires_image):
+def test_codebase_requires_image_build_fails_if_not_a_bool(capsys, requires_image):
     config = {
         "application": "test-app",
         "codebase_pipelines": {
@@ -520,10 +514,11 @@ def test_codebase_requires_image_build_fails_if_not_a_bool(fakefs, capsys, requi
             }
         },
     }
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = config
 
     with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+        ConfigProvider(ConfigValidator(), mock_file_provider).load_and_validate_platform_config()
     error = capsys.readouterr().err
 
     exp = r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*" % re.escape(
