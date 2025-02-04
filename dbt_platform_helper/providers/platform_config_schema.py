@@ -100,7 +100,6 @@ class PlatformConfigSchema:
                         Optional("cdn_logging_bucket_prefix"): str,
                         Optional("cdn_timeout_seconds"): int,
                         Optional("default_waf"): str,
-                        Optional("domain_prefix"): str,
                         Optional("enable_logging"): bool,
                         Optional("env_root"): str,
                         Optional("forwarded_values_forward"): str,
