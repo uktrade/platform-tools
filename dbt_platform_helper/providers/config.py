@@ -39,7 +39,6 @@ class ConfigProvider:
         try:
             self.validator.run_validations(enriched_config)
         except ConfigValidatorError as exc:
-            print(exc)
             self.io.abort_with_error(f"Config validation has failed.\n{str(exc)}")
 
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
