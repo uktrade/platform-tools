@@ -855,16 +855,17 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 
 [↩ Parent](#platform-helper)
 
-    Contains subcommands for getting version information about the current
-    project.
+    Print the version of platform-tools required by the current project
 
 ## Usage
 
 ```
-platform-helper version () 
+platform-helper version [OPTIONS]
 ```
 
 ## Options
 
+- `--pipeline <text>`
+  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

@@ -4,6 +4,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
+from dbt_platform_helper.commands.version import version
+
 
 @pytest.mark.usefixtures("create_valid_platform_config_file")
 class TestVersionCommandWithValidConfig:
@@ -14,8 +16,7 @@ class TestVersionCommandWithValidConfig:
     ):
         mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, [])
+        result = CliRunner().invoke(version, [])
 
         assert len(mock_get_required_platform_helper_version.mock_calls) == 1
         assert mock_get_required_platform_helper_version.mock_calls[0].args == (None,)
@@ -29,8 +30,7 @@ class TestVersionCommandWithValidConfig:
     ):
         mock_get_required_platform_helper_version.return_value = "1.2.3"
 
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "main"])
+        result = CliRunner().invoke(version, ["--pipeline", "main"])
 
         assert len(mock_get_required_platform_helper_version.mock_calls) == 1
         assert mock_get_required_platform_helper_version.mock_calls[0].args == ("main",)
@@ -43,8 +43,7 @@ class TestVersionCommandWithValidConfig:
         mock_get_required_platform_helper_version,
     ):
         mock_get_required_platform_helper_version.return_value = "1.2.3"
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "bogus"])
+        result = CliRunner().invoke(version, ["--pipeline", "bogus"])
 
         assert result.exit_code == 0
         assert result.output == "1.2.3\n"
@@ -54,15 +53,13 @@ class TestVersionCommandWithValidConfig:
 @patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
 class TestVersionCommandWithInvalidConfig:
     def test_works_given_invalid_config(self, mock_latest_release):
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, [])
+        result = CliRunner().invoke(version, [])
 
         assert result.exit_code == 0
         assert result.output == "1.2.3\n"
 
     def test_pipeline_override_given_invalid_config(self, mock_latest_release):
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
+        result = CliRunner().invoke(version, ["--pipeline", "prod-main"])
 
         assert result.exit_code == 0
         assert result.output == "9.0.9\n"
