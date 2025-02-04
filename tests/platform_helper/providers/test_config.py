@@ -12,7 +12,6 @@ from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
-from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -25,38 +24,15 @@ def test_comprehensive_platform_config_validates_successfully(valid_platform_con
     # No assertions as this will raise an error if there is one.
 
 
-def test_lint_yaml_for_duplicate_keys_fails_when_duplicate_keys_provided(
-    valid_platform_config, fakefs, capsys
-):
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(valid_platform_config))
+def test_load_and_validate_exits_if_load_fails_with_duplicate_keys_error(capsys):
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.side_effect = DuplicateKeysException("repeated")
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    # Remove the extensions key-value pair from the platform config - re-added as plain text.
-    valid_platform_config.pop("extensions")
+    with pytest.raises(SystemExit):
+        config_provider.load_and_validate_platform_config()
 
-    duplicate_key = "duplicate-key"
-    duplicate_extension = f"""
-  {duplicate_key}:
-    type: redis
-    environments:
-      "*":
-        engine: '7.1'
-        plan: tiny
-        apply_immediately: true
-"""
-
-    # Combine the valid config (minus the extensions key) and the duplicate key config
-    invalid_platform_config = f"""
-{yaml.dump(valid_platform_config)}
-extensions:
-{duplicate_extension}
-{duplicate_extension}
-"""
-
-    Path(PLATFORM_CONFIG_FILE).write_text(invalid_platform_config)
-    expected_error = f'duplication of key "{duplicate_key}"'
-
-    with pytest.raises(DuplicateKeysException, match=expected_error):
-        YamlFileProvider.lint_yaml_for_duplicate_keys(PLATFORM_CONFIG_FILE)
+    assert "Duplicate keys found in your config file: repeated" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
@@ -298,7 +274,7 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
     with pytest.raises(SystemExit) as ex:
         config_provider.load_and_validate_platform_config()
 
-        assert f"Wrong key '{invalid_key}'" in str(ex)
+    assert f"Wrong key '{invalid_key}'" in str(ex)
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(capsys):

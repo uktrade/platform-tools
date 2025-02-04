@@ -23,7 +23,8 @@ class InvalidYamlException(YamlFileProviderException):
 
 
 class DuplicateKeysException(YamlFileProviderException):
-    pass
+    def __init__(self, duplicate_keys: str):
+        super().__init__(f"""Duplicate keys found in your config file: {duplicate_keys}.""")
 
 
 class YamlFileProvider:
