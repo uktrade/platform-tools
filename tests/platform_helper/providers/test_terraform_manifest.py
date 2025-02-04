@@ -23,8 +23,8 @@ def test_generate_codebase_pipeline_config_creates_file(
 ):
     mock_file_provider = Mock()
     mock_file_provider.mkfile.return_value = "File created"
-    mock_echo_fn = Mock()
-    template_provider = TerraformManifestProvider(mock_file_provider, mock_echo_fn)
+    mock_io = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups, "7", set()
@@ -33,7 +33,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert mock_file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
 
-    mock_echo_fn.assert_called_once_with("File created")
+    mock_io.info.assert_called_once_with("File created")
 
     assert base_path == str(Path(".").absolute())
     assert file_path == "terraform/codebase-pipelines/main.tf.json"

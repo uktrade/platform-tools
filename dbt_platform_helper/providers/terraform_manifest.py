@@ -2,21 +2,17 @@ import json
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
-from typing import Callable
-
-import click
 
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class TerraformManifestProvider:
-    def __init__(
-        self, file_provider: FileProvider = FileProvider(), echo: Callable[[str], None] = click.echo
-    ):
+    def __init__(self, file_provider: FileProvider = FileProvider(), io=ClickIOProvider()):
         self.file_provider = file_provider
-        self.echo = echo
+        self.io = io
 
     def generate_codebase_pipeline_config(
         self,
@@ -45,7 +41,7 @@ class TerraformManifestProvider:
             json.dumps(terraform, indent=2),
             True,
         )
-        self.echo(message)
+        self.io.info(message)
 
     @staticmethod
     def _add_header(terraform: dict):

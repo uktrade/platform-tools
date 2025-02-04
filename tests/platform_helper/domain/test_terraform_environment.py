@@ -33,7 +33,7 @@ class TestGenerateTerraform:
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
             manifest_generator=Mock(),
-            echo=Mock(),
+            io=Mock(),
         )
         with pytest.raises(
             PlatformException,
@@ -53,12 +53,12 @@ class TestGenerateTerraform:
         mock_generator.generate_manifest.return_value = "I am a junk manifest for testing!"
         mock_generator.write_manifest.return_value = "Hello, World!"
 
-        mock_echo_fn = Mock()
+        mock_io = Mock()
 
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
             manifest_generator=mock_generator,
-            echo=mock_echo_fn,
+            io=mock_io,
         )
 
         terraform_environment.generate("test")
@@ -72,4 +72,4 @@ class TestGenerateTerraform:
         mock_generator.write_manifest.assert_called_with(
             environment_name="test", manifest_content="I am a junk manifest for testing!"
         )
-        mock_echo_fn.assert_called_with("Hello, World!")
+        mock_io.info.assert_called_with("Hello, World!")

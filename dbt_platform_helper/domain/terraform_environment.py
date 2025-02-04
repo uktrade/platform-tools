@@ -1,10 +1,9 @@
-import click
-
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -60,9 +59,9 @@ class TerraformEnvironment:
         self,
         config_provider,
         manifest_generator: PlatformTerraformManifestGenerator = None,
-        echo=click.echo,
+        io=ClickIOProvider(),
     ):
-        self.echo = echo
+        self.io = io
         self.config_provider = config_provider
         self.manifest_generator = manifest_generator or PlatformTerraformManifestGenerator(
             FileProvider()
@@ -83,7 +82,7 @@ class TerraformEnvironment:
             terraform_platform_modules_version_override=terraform_platform_modules_version_override,
         )
 
-        self.echo(
+        self.io.info(
             self.manifest_generator.write_manifest(
                 environment_name=environment_name, manifest_content=manifest
             )
