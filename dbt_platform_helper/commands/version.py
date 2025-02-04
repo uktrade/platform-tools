@@ -1,6 +1,6 @@
 import click
 
-from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
+from dbt_platform_helper.utils.versioning import RequiredVersion
 
 
 @click.command(help="Print the version of platform-tools required by the current project")
@@ -22,5 +22,5 @@ def version(pipeline):
         - The version from default_versions/platform-helper in 'platform-config.yml'
         - Fall back on the version in the deprecated '.platform-helper-version' file
     """
-    required_version = get_required_platform_helper_version(pipeline)
+    required_version = RequiredVersion().get_required_version(pipeline)
     click.secho(required_version)

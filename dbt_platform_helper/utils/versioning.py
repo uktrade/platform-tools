@@ -28,6 +28,14 @@ class Versions:
         self.latest_release = latest_release
 
 
+class RequiredVersion:
+    def __init__(self):
+        self.required_version = get_required_platform_helper_version
+
+    def get_required_version(self, pipeline=None):
+        return self.required_version(pipeline)
+
+
 class PlatformHelperVersions:
     def __init__(
         self,
