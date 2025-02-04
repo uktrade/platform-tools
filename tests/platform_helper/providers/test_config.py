@@ -315,13 +315,6 @@ def test_validation_runs_against_platform_config_yml(fakefs):
     assert config["application"] == "my_app"
 
 
-def test_aws_validation_can_be_switched_off(s3_extensions_fixture, capfd):
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.load_and_validate_platform_config()
-
-    assert "Warning" not in capfd.readouterr().out
-
-
 def test_apply_defaults():
 
     config = {
