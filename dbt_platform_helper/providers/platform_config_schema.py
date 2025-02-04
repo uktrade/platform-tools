@@ -96,8 +96,6 @@ class PlatformConfigSchema:
                         Optional("cdn_domains_list"): dict,
                         Optional("cdn_geo_locations"): [str],
                         Optional("cdn_geo_restriction_type"): str,
-                        Optional("cdn_logging_bucket"): str,
-                        Optional("cdn_logging_bucket_prefix"): str,
                         Optional("cdn_timeout_seconds"): int,
                         Optional("default_waf"): str,
                         Optional("enable_logging"): bool,
