@@ -10,7 +10,9 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class TerraformManifestProvider:
-    def __init__(self, file_provider: FileProvider = FileProvider(), io=ClickIOProvider()):
+    def __init__(
+        self, file_provider: FileProvider = FileProvider(), io: ClickIOProvider = ClickIOProvider()
+    ):
         self.file_provider = file_provider
         self.io = io
 

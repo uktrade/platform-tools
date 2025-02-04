@@ -59,7 +59,7 @@ class TerraformEnvironment:
         self,
         config_provider,
         manifest_generator: PlatformTerraformManifestGenerator = None,
-        io=ClickIOProvider(),
+        io: ClickIOProvider = ClickIOProvider(),
     ):
         self.io = io
         self.config_provider = config_provider
