@@ -26,13 +26,13 @@ def test_comprehensive_platform_config_validates_successfully(valid_platform_con
 
 def test_load_and_validate_exits_if_load_fails_with_duplicate_keys_error(capsys):
     mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.side_effect = DuplicateKeysException("repeated")
+    mock_file_provider.load.side_effect = DuplicateKeysException("repeated-key")
     config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
     with pytest.raises(SystemExit):
         config_provider.load_and_validate_platform_config()
 
-    assert "Duplicate keys found in your config file: repeated" in capsys.readouterr().err
+    assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
@@ -265,16 +265,19 @@ def test_validation_fails_if_invalid_environment_version_override_keys_present(
     ),
 )
 def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-    invalid_key, valid_platform_config
+    invalid_key, valid_platform_config, capsys
 ):
     valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(valid_platform_config))
-    config_provider = ConfigProvider(ConfigValidator())
 
-    with pytest.raises(SystemExit) as ex:
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = valid_platform_config
+
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+    with pytest.raises(SystemExit):
         config_provider.load_and_validate_platform_config()
 
-    assert f"Wrong key '{invalid_key}'" in str(ex)
+    assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
 
 
 def test_load_and_validate_platform_config_fails_with_invalid_yaml(capsys):
