@@ -4,8 +4,6 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.version import VersionCommand
-
 
 @pytest.mark.usefixtures("create_valid_platform_config_file")
 class TestVersionCommandWithValidConfig:
