@@ -47,6 +47,18 @@ class TestLoadAndValidate:
 
         assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
+    def test_load_and_validate_platform_config_fails_with_missing_config_file(self, capsys):
+        if Path(PLATFORM_CONFIG_FILE).exists():
+            os.remove(Path(PLATFORM_CONFIG_FILE))
+
+        with pytest.raises(SystemExit):
+            ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+
+        assert (
+            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
+            in capsys.readouterr().err
+        )
+
     @pytest.mark.parametrize(
         "account, envs",
         [
@@ -73,101 +85,100 @@ class TestLoadAndValidate:
         # Should not error if config is sound.
         config_provider.load_and_validate_platform_config()
 
-
-def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present():
-    """Edge cases for this are all covered in unit tests of
-    validate_database_copy_section elsewhere in this file."""
-    config = {
-        "application": "test-app",
-        "extensions": {
-            "test-s3-bucket": {
-                "type": "s3",
-                "environments": {
-                    "dev": {
-                        "bucket_name": "placeholder-to-pass-schema-validation",
-                        "data_migration": {},
-                    }
-                },
-            }
-        },
-    }
-
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = config
-    mock_io = Mock()
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, mock_io)
-
-    config_provider.load_and_validate_platform_config()
-
-    mock_io.abort_with_error.assert_called_with(
-        """Config validation has failed.\n'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
+    @pytest.mark.parametrize(
+        "yaml_file",
+        [
+            "pipeline/platform-config.yml",
+            "pipeline/platform-config-with-public-repo.yml",
+            "pipeline/platform-config-for-terraform.yml",
+        ],
     )
+    def test_load_and_validate_config_valid_file(self, yaml_file):
+        """Test that, given the path to a valid yaml file,
+        load_and_validate_config returns the loaded yaml unmodified."""
+
+        config_provider = ConfigProvider(ConfigValidator())
+
+        path = FIXTURES_DIR / yaml_file
+        validated = config_provider.load_and_validate_platform_config(path=path)
+
+        with open(path, "r") as fd:
+            conf = yaml.safe_load(fd)
+
+        assert validated == conf
 
 
-def test_validate_data_migration_fails_if_both_import_and_import_sources_present():
-    """Edge cases for this are all covered in unit tests of
-    validate_database_copy_section elsewhere in this file."""
-    config = {
-        "application": "test-app",
-        "extensions": {
-            "test-s3-bucket": {
-                "type": "s3",
-                "environments": {
-                    "dev": {
-                        "bucket_name": "placeholder-to-pass-schema-validation",
-                        "data_migration": {
-                            "import": {
-                                "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
-                                "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
-                                "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
-                            },
-                            "import_sources": [
-                                {
+class TestDataMigrationValidation:
+    def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present(self):
+        """Edge cases for this are all covered in unit tests of
+        validate_database_copy_section elsewhere in this file."""
+        config = {
+            "application": "test-app",
+            "extensions": {
+                "test-s3-bucket": {
+                    "type": "s3",
+                    "environments": {
+                        "dev": {
+                            "bucket_name": "placeholder-to-pass-schema-validation",
+                            "data_migration": {},
+                        }
+                    },
+                }
+            },
+        }
+
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = config
+        mock_io = Mock()
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, mock_io)
+
+        config_provider.load_and_validate_platform_config()
+
+        mock_io.abort_with_error.assert_called_with(
+            """Config validation has failed.\n'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
+        )
+
+    def test_validate_data_migration_fails_if_both_import_and_import_sources_present(self):
+        """Edge cases for this are all covered in unit tests of
+        validate_database_copy_section elsewhere in this file."""
+        config = {
+            "application": "test-app",
+            "extensions": {
+                "test-s3-bucket": {
+                    "type": "s3",
+                    "environments": {
+                        "dev": {
+                            "bucket_name": "placeholder-to-pass-schema-validation",
+                            "data_migration": {
+                                "import": {
                                     "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
                                     "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
                                     "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
-                                }
-                            ],
-                        },
-                    }
-                },
-            }
-        },
-    }
+                                },
+                                "import_sources": [
+                                    {
+                                        "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                        "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                        "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                                    }
+                                ],
+                            },
+                        }
+                    },
+                }
+            },
+        }
 
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = config
-    mock_io = Mock()
-    config_provider.io = mock_io
+        config_provider = ConfigProvider(ConfigValidator())
+        config_provider.config = config
+        mock_io = Mock()
+        config_provider.io = mock_io
 
-    config_provider._validate_platform_config()
+        config_provider._validate_platform_config()
 
-    mock_io.abort_with_error.assert_called_with(
-        """Config validation has failed.\nError in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
-    )
-
-
-@pytest.mark.parametrize(
-    "yaml_file",
-    [
-        "pipeline/platform-config.yml",
-        "pipeline/platform-config-with-public-repo.yml",
-        "pipeline/platform-config-for-terraform.yml",
-    ],
-)
-def test_load_and_validate_config_valid_file(yaml_file):
-    """Test that, given the path to a valid yaml file, load_and_validate_config
-    returns the loaded yaml unmodified."""
-
-    config_provider = ConfigProvider(ConfigValidator())
-
-    path = FIXTURES_DIR / yaml_file
-    validated = config_provider.load_and_validate_platform_config(path=path)
-
-    with open(path, "r") as fd:
-        conf = yaml.safe_load(fd)
-
-    assert validated == conf
+        mock_io.abort_with_error.assert_called_with(
+            """Config validation has failed.\nError in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
+        )
 
 
 class TestGetEnrichedConfig:
@@ -232,76 +243,64 @@ class TestGetEnrichedConfig:
         )
 
 
-def test_validation_fails_if_invalid_default_version_keys_present(capsys, valid_platform_config):
-    valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
+class TestVersionValidations:
+    def test_validation_fails_if_invalid_default_version_keys_present(
+        self, capsys, valid_platform_config
+    ):
+        valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
 
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = valid_platform_config
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = valid_platform_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    with pytest.raises(SystemExit):
-        config_provider.load_and_validate_platform_config()
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
 
-    assert "Wrong key 'something-invalid'" in capsys.readouterr().err
+        assert "Wrong key 'something-invalid'" in capsys.readouterr().err
 
-
-@pytest.mark.parametrize(
-    "invalid_key",
-    (
-        "",
-        "invalid-key",
-        "platform-helper",  # platform-helper is not valid in the environment overrides.
-    ),
-)
-def test_validation_fails_if_invalid_environment_version_override_keys_present(
-    invalid_key, valid_platform_config, capsys
-):
-    valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = valid_platform_config
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-
-    with pytest.raises(SystemExit):
-        config_provider.load_and_validate_platform_config()
-
-    assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize(
-    "invalid_key",
-    (
-        "",
-        "invalid-key",
-        "terraform-platform-modules",  # terraform-platform-modules is not valid in the pipeline overrides.
-    ),
-)
-def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-    invalid_key, valid_platform_config, capsys
-):
-    valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
-
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = valid_platform_config
-
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-
-    with pytest.raises(SystemExit):
-        config_provider.load_and_validate_platform_config()
-
-    assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
-
-
-def test_load_and_validate_platform_config_fails_with_missing_config_file(capsys):
-    if Path(PLATFORM_CONFIG_FILE).exists():
-        os.remove(Path(PLATFORM_CONFIG_FILE))
-
-    with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
-
-    assert (
-        f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-        in capsys.readouterr().err
+    @pytest.mark.parametrize(
+        "invalid_key",
+        (
+            "",
+            "invalid-key",
+            "platform-helper",  # platform-helper is not valid in the environment overrides.
+        ),
     )
+    def test_validation_fails_if_invalid_environment_version_override_keys_present(
+        self, invalid_key, valid_platform_config, capsys
+    ):
+        valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = valid_platform_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
+
+    @pytest.mark.parametrize(
+        "invalid_key",
+        (
+            "",
+            "invalid-key",
+            "terraform-platform-modules",  # terraform-platform-modules is not valid in the pipeline overrides.
+        ),
+    )
+    def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
+        self, invalid_key, valid_platform_config, capsys
+    ):
+        valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
+
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = valid_platform_config
+
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
 
 
 class TestApplyEnvironmentDefaults:
@@ -441,86 +440,90 @@ class TestApplyEnvironmentDefaults:
         }
 
 
-def test_codebase_pipeline_run_groups_validate():
-    platform_config = {
-        "application": "test-app",
-        "codebase_pipelines": {
-            "application": {
-                "repository": "organisation/repository",
-                "services": [
-                    {"run_group_1": ["web"]},
-                    {"run_group_2": ["api", "celery-beat"]},
-                ],
-                "pipelines": [
-                    {"name": "main", "branch": "main", "environments": [{"name": "dev"}]}
-                ],
-            }
-        },
-    }
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = platform_config
+class TestCodebasePipelineValidations:
+    def test_codebase_pipeline_run_groups_validate(self):
+        platform_config = {
+            "application": "test-app",
+            "codebase_pipelines": {
+                "application": {
+                    "repository": "organisation/repository",
+                    "services": [
+                        {"run_group_1": ["web"]},
+                        {"run_group_2": ["api", "celery-beat"]},
+                    ],
+                    "pipelines": [
+                        {"name": "main", "branch": "main", "environments": [{"name": "dev"}]}
+                    ],
+                }
+            },
+        }
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = platform_config
 
-    config = ConfigProvider(
-        ConfigValidator(), mock_file_provider
-    ).load_and_validate_platform_config()
+        config = ConfigProvider(
+            ConfigValidator(), mock_file_provider
+        ).load_and_validate_platform_config()
 
-    assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
-        {"run_group_1": ["web"]},
-        {"run_group_2": ["api", "celery-beat"]},
-    ]
+        assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
+            {"run_group_1": ["web"]},
+            {"run_group_2": ["api", "celery-beat"]},
+        ]
 
+    @pytest.mark.parametrize("channel", [1, [], {}, True])
+    def test_codebase_slack_channel_fails_if_not_a_string(self, channel, capsys):
+        config = {
+            "application": "test-app",
+            "codebase_pipelines": {
+                "application": {
+                    "name": "application",
+                    "slack_channel": channel,
+                    "repository": "organisation/repository",
+                    "services": [],
+                    "pipelines": [],
+                }
+            },
+        }
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = config
 
-@pytest.mark.parametrize("channel", [1, [], {}, True])
-def test_codebase_slack_channel_fails_if_not_a_string(channel, capsys):
-    config = {
-        "application": "test-app",
-        "codebase_pipelines": {
-            "application": {
-                "name": "application",
-                "slack_channel": channel,
-                "repository": "organisation/repository",
-                "services": [],
-                "pipelines": [],
-            }
-        },
-    }
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = config
+        with pytest.raises(SystemExit):
+            ConfigProvider(
+                ConfigValidator(), mock_file_provider
+            ).load_and_validate_platform_config()
 
-    with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator(), mock_file_provider).load_and_validate_platform_config()
+        error = capsys.readouterr().err
 
-    error = capsys.readouterr().err
+        exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
+            str(channel)
+        )
+        assert re.match(exp, error, re.DOTALL)
 
-    exp = r".*Key 'slack_channel' error:.*'?%s'? should be instance of 'str'.*" % re.escape(
-        str(channel)
-    )
-    assert re.match(exp, error, re.DOTALL)
+    @pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
+    def test_codebase_requires_image_build_fails_if_not_a_bool(self, capsys, requires_image):
+        config = {
+            "application": "test-app",
+            "codebase_pipelines": {
+                "application": {
+                    "name": "application",
+                    "requires_image_build": requires_image,
+                    "slack_channel": "channel",
+                    "repository": "organisation/repository",
+                    "services": [],
+                    "pipelines": [],
+                }
+            },
+        }
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = config
 
+        with pytest.raises(SystemExit):
+            ConfigProvider(
+                ConfigValidator(), mock_file_provider
+            ).load_and_validate_platform_config()
+        error = capsys.readouterr().err
 
-@pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
-def test_codebase_requires_image_build_fails_if_not_a_bool(capsys, requires_image):
-    config = {
-        "application": "test-app",
-        "codebase_pipelines": {
-            "application": {
-                "name": "application",
-                "requires_image_build": requires_image,
-                "slack_channel": "channel",
-                "repository": "organisation/repository",
-                "services": [],
-                "pipelines": [],
-            }
-        },
-    }
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = config
-
-    with pytest.raises(SystemExit):
-        ConfigProvider(ConfigValidator(), mock_file_provider).load_and_validate_platform_config()
-    error = capsys.readouterr().err
-
-    exp = r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*" % re.escape(
-        str(requires_image)
-    )
-    assert re.match(exp, error, re.DOTALL)
+        exp = (
+            r".*Key 'requires_image_build' error:.*'?%s'? should be instance of 'bool'.*"
+            % re.escape(str(requires_image))
+        )
+        assert re.match(exp, error, re.DOTALL)
