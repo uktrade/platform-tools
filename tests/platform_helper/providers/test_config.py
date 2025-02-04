@@ -16,52 +16,62 @@ from dbt_platform_helper.providers.yaml_file import InvalidYamlException
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
-def test_comprehensive_platform_config_validates_successfully(valid_platform_config):
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = valid_platform_config
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+class TestLoadAndValidate:
+    def test_comprehensive_platform_config_validates_successfully(self, valid_platform_config):
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = valid_platform_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    config_provider.load_and_validate_platform_config()
-    # No assertions as this will raise an error if there is one.
-
-
-def test_load_and_validate_exits_if_load_fails_with_duplicate_keys_error(capsys):
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.side_effect = DuplicateKeysException("repeated-key")
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-
-    with pytest.raises(SystemExit):
         config_provider.load_and_validate_platform_config()
+        # No assertions as this will raise an error if there is one.
 
-    assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
+    def test_load_and_validate_exits_if_load_fails_with_duplicate_keys_error(self, capsys):
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.side_effect = DuplicateKeysException("repeated-key")
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
 
-@pytest.mark.parametrize(
-    "account, envs",
-    [
-        ("non-prod-acc", ["dev", "staging"]),
-        ("prod-acc", ["prod"]),
-    ],
-)
-def test_validate_platform_config_succeeds_if_pipeline_account_matches_environment_accounts(
-    platform_env_config, account, envs
-):
-    platform_env_config["environment_pipelines"] = {
-        "main": {
-            "account": account,
-            "slack_channel": "/codebuild/notification_channel",
-            "trigger_on_push": True,
-            "environments": {env: {} for env in envs},
+        assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
+
+    def test_load_and_validate_exits_with_invalid_yaml(self, capsys):
+        """Test that, given the an invalid yaml file, load_and_validate_config
+        aborts and prints an error."""
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.side_effect = InvalidYamlException("platform-config.yml")
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
+
+    @pytest.mark.parametrize(
+        "account, envs",
+        [
+            ("non-prod-acc", ["dev", "staging"]),
+            ("prod-acc", ["prod"]),
+        ],
+    )
+    def test_load_and_validate_with_valid_environment_pipeline_accounts(
+        self, platform_env_config, account, envs
+    ):
+        platform_env_config["environment_pipelines"] = {
+            "main": {
+                "account": account,
+                "slack_channel": "/codebuild/notification_channel",
+                "trigger_on_push": True,
+                "environments": {env: {} for env in envs},
+            }
         }
-    }
 
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = platform_env_config
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-    config_provider.config = platform_env_config
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = platform_env_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
-    # Should not error if config is sound.
-    config_provider.load_and_validate_platform_config()
+        # Should not error if config is sound.
+        config_provider.load_and_validate_platform_config()
 
 
 def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present():
@@ -82,12 +92,12 @@ def test_validate_data_migration_fails_if_neither_import_nor_import_sources_pres
         },
     }
 
-    config_provider = ConfigProvider(ConfigValidator())
-    config_provider.config = config
+    mock_file_provider = Mock(spec=FileProvider)
+    mock_file_provider.load.return_value = config
     mock_io = Mock()
-    config_provider.io = mock_io
+    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, mock_io)
 
-    config_provider._validate_platform_config()
+    config_provider.load_and_validate_platform_config()
 
     mock_io.abort_with_error.assert_called_with(
         """Config validation has failed.\n'import_sources' property in 'test-s3-bucket.environments.dev.data_migration' is missing."""
@@ -160,64 +170,66 @@ def test_load_and_validate_config_valid_file(yaml_file):
     assert validated == conf
 
 
-def test_get_enriched_config_returns_config_with_environment_defaults_applied():
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = {
-        "application": "test-app",
-        "environments": {
-            "*": {
-                "vpc": "vpc3",
-                "accounts": {
-                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+class TestGetEnrichedConfig:
+    def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = {
+            "application": "test-app",
+            "environments": {
+                "*": {
+                    "vpc": "vpc3",
+                    "accounts": {
+                        "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                        "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                    },
                 },
+                "test": {"versions": {"terraform-platform-modules": "123456"}},
             },
-            "test": {"versions": {"terraform-platform-modules": "123456"}},
-        },
-    }
+        }
 
-    expected_enriched_config = {
-        "application": "test-app",
-        "environments": {
-            "test": {
-                "vpc": "vpc3",
-                "accounts": {
-                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
-                },
-                "versions": {"terraform-platform-modules": "123456"},
-            }
-        },
-    }
+        expected_enriched_config = {
+            "application": "test-app",
+            "environments": {
+                "test": {
+                    "vpc": "vpc3",
+                    "accounts": {
+                        "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                        "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                    },
+                    "versions": {"terraform-platform-modules": "123456"},
+                }
+            },
+        }
 
-    mock_config_validator = Mock()
+        mock_config_validator = Mock()
 
-    result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
+        result = ConfigProvider(mock_config_validator, mock_file_provider).get_enriched_config()
 
-    assert result == expected_enriched_config
+        assert result == expected_enriched_config
 
+    @pytest.mark.parametrize(
+        "mock_environment_config, expected_vpc_for_test_environment",
+        [
+            ({"test": {}}, None),
+            ({"test": {"vpc": "vpc1"}}, "vpc1"),
+            ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
+            ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
+        ],
+    )
+    def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environment_defaults_applied(
+        self, mock_environment_config, expected_vpc_for_test_environment
+    ):
+        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider.load.return_value = {
+            "application": "test-app",
+            "environments": mock_environment_config,
+        }
 
-@pytest.mark.parametrize(
-    "mock_environment_config, expected_vpc_for_test_environment",
-    [
-        ({"test": {}}, None),
-        ({"test": {"vpc": "vpc1"}}, "vpc1"),
-        ({"*": {"vpc": "vpc2"}, "test": None}, "vpc2"),
-        ({"*": {"vpc": "vpc3"}, "test": {"vpc": "vpc4"}}, "vpc4"),
-    ],
-)
-def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environment_defaults_applied(
-    mock_environment_config, expected_vpc_for_test_environment
-):
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.return_value = {
-        "application": "test-app",
-        "environments": mock_environment_config,
-    }
+        result = ConfigProvider(Mock(), mock_file_provider).get_enriched_config()
 
-    result = ConfigProvider(Mock(), mock_file_provider).get_enriched_config()
-
-    assert result.get("environments").get("test").get("vpc") == expected_vpc_for_test_environment
+        assert (
+            result.get("environments").get("test").get("vpc") == expected_vpc_for_test_environment
+        )
 
 
 def test_validation_fails_if_invalid_default_version_keys_present(capsys, valid_platform_config):
@@ -277,19 +289,6 @@ def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
         config_provider.load_and_validate_platform_config()
 
     assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
-
-
-def test_load_and_validate_exits_with_invalid_yaml(capsys):
-    """Test that, given the an invalid yaml file, load_and_validate_config
-    aborts and prints an error."""
-    mock_file_provider = Mock(spec=FileProvider)
-    mock_file_provider.load.side_effect = InvalidYamlException("platform-config.yml")
-    config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-
-    with pytest.raises(SystemExit):
-        config_provider.load_and_validate_platform_config()
-
-    assert f"{PLATFORM_CONFIG_FILE} is not valid YAML" in capsys.readouterr().err
 
 
 def test_load_and_validate_platform_config_fails_with_missing_config_file(capsys):
