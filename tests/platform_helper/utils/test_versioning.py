@@ -592,17 +592,33 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(fakefs)
     assert result == default_version
 
 
-# @pytest.mark.usefixtures("create_invalid_platform_config_file")
-# @patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
-# class TestVersionCommandWithInvalidConfig:
-#     def test_works_given_invalid_config(self, mock_latest_release):
-#         result = CliRunner().invoke(version, [])
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+class TestVersionCommandWithInvalidConfig:
+    DEFAULT_VERSION = "1.2.3"
+    INVALID_CONFIG = {
+        "default_versions": {"platform-helper": DEFAULT_VERSION},
+        "a_bogus_field_that_invalidates_config": "foo",
+    }
 
-#         assert result.exit_code == 0
-#         assert result.output == "1.2.3\n"
+    def test_works_given_invalid_config(self, mock_latest_release):
+        default_version = "1.2.3"
+        platform_config = self.INVALID_CONFIG
+        Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-#     def test_pipeline_override_given_invalid_config(self, mock_latest_release):
-#         result = CliRunner().invoke(version, ["--pipeline", "prod-main"])
+        result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
 
-#         assert result.exit_code == 0
-#         assert result.output == "9.0.9\n"
+        assert result == default_version
+
+    def test_pipeline_override_given_invalid_config(self, mock_latest_release):
+        pipeline_override_version = "1.1.1"
+        platform_config = self.INVALID_CONFIG
+        platform_config["environment_pipelines"] = {
+            "main": {
+                "versions": {"platform-helper": pipeline_override_version},
+            }
+        }
+        Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+
+        result = RequiredVersion().get_required_platform_helper_version("main")
+
+        assert result == pipeline_override_version
