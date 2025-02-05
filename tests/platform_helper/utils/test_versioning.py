@@ -569,7 +569,7 @@ def test_determine_terraform_platform_modules_version(
     )
 
 
-# MOVING TO DOMAIN LEVEL TEST
+# TODO: MOVED FROM COMMAND LEVEL TESTS
 # @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version")
 # def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
 #     self,
@@ -580,3 +580,19 @@ def test_determine_terraform_platform_modules_version(
 
 #     assert result.exit_code == 0
 #     assert result.output == "1.2.3\n"
+
+# TODO: MOVED FROM COMMAND LEVEL TESTS
+# @pytest.mark.usefixtures("create_invalid_platform_config_file")
+# @patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+# class TestVersionCommandWithInvalidConfig:
+#     def test_works_given_invalid_config(self, mock_latest_release):
+#         result = CliRunner().invoke(version, [])
+
+#         assert result.exit_code == 0
+#         assert result.output == "1.2.3\n"
+
+#     def test_pipeline_override_given_invalid_config(self, mock_latest_release):
+#         result = CliRunner().invoke(version, ["--pipeline", "prod-main"])
+
+#         assert result.exit_code == 0
+#         assert result.output == "9.0.9\n"
