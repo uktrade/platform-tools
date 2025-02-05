@@ -77,7 +77,7 @@ def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order()
         cloudformation_provider=mock_cloudformation_provider,
         vpc_provider=Mock(),
         copilot_templating=Mock(),
-        echo=Mock(),
+        io=Mock(),
     )
 
     mock_updated_vpc = copilot_environment._match_subnet_id_order_to_cloudformation_exports(
@@ -513,7 +513,7 @@ class TestCopilotGenerate:
         }
         mock_config_provider.get_enriched_config.return_value = config
 
-        mock_echo = Mock()
+        mock_io = Mock()
 
         mock_cloudformation_provider = Mock()
         mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = [
@@ -526,7 +526,7 @@ class TestCopilotGenerate:
             vpc_provider=mock_vpc_provider,
             cloudformation_provider=mock_cloudformation_provider,
             copilot_templating=mock_copilot_templating,
-            echo=mock_echo,
+            io=mock_io,
         )
 
         copilot_environment.generate(environment_name="test_environment")
@@ -543,7 +543,7 @@ class TestCopilotGenerate:
             "test-app", "test_environment", "a-really-cool-vpc"
         )
 
-        mock_echo.assert_has_calls(
+        mock_io.info.assert_has_calls(
             [call("Using non-prod-acc for this AWS session"), call("test template written")]
         )
 
@@ -560,7 +560,7 @@ class TestCopilotGenerate:
             config_provider=mock_config_provider,
             vpc_provider=Mock(),
             copilot_templating=Mock(),
-            echo=Mock(),
+            io=Mock(),
         )
 
         with pytest.raises(
