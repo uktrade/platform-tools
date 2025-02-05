@@ -143,15 +143,24 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
 
 @freeze_time("2025-01-16 13:00:00")
-# def generate_environment_config_creates_file(
-def test_generate_environment_config_creates_file(platform_env_config):
+@pytest.mark.parametrize(
+    "app, env, tpm_version, exp_account",
+    [
+        ("app1", "dev", "7", "non-prod-acc"),
+        ("app2", "staging", "8", "non-prod-acc"),
+        ("app3", "prod", "9", "prod-acc"),
+    ],
+)
+def test_generate_environment_config_creates_file(
+    platform_env_config, app, env, tpm_version, exp_account
+):
+    platform_env_config["application"] = app
     mock_file_provider = Mock()
     mock_file_provider.mkfile.return_value = "File created"
     mock_io = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
-    tpm_version = "7"
-    template_provider.generate_environment_config(platform_env_config, "dev", tpm_version)
+    template_provider.generate_environment_config(platform_env_config, env, tpm_version)
 
     assert mock_file_provider.mkfile.call_count == 1
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
@@ -159,7 +168,7 @@ def test_generate_environment_config_creates_file(platform_env_config):
     mock_io.info.assert_called_once_with("File created")
 
     assert base_path == str(Path(".").absolute())
-    assert file_path == "terraform/environments/dev/main.tf.json"
+    assert file_path == f"terraform/environments/{env}/main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)
@@ -185,12 +194,12 @@ def test_generate_environment_config_creates_file(platform_env_config):
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
 
     s3_backend = terraform["backend"]["s3"]
-    assert s3_backend["bucket"] == "terraform-platform-state-non-prod-acc"
-    assert s3_backend["key"] == "tfstate/application/my-app-dev.tfstate"
+    assert s3_backend["bucket"] == f"terraform-platform-state-{exp_account}"
+    assert s3_backend["key"] == f"tfstate/application/{app}-{env}.tfstate"
     assert s3_backend["region"] == "eu-west-2"
     assert s3_backend["encrypt"] is True
-    assert s3_backend["kms_key_id"] == "alias/terraform-platform-state-s3-key-non-prod-acc"
-    assert s3_backend["dynamodb_table"] == "terraform-platform-lockdb-non-prod-acc"
+    assert s3_backend["kms_key_id"] == f"alias/terraform-platform-state-s3-key-{exp_account}"
+    assert s3_backend["dynamodb_table"] == f"terraform-platform-lockdb-{exp_account}"
 
     aws_req_provider = terraform["required_providers"]["aws"]
     assert aws_req_provider["source"] == "hashicorp/aws"
@@ -202,7 +211,7 @@ def test_generate_environment_config_creates_file(platform_env_config):
         == f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={tpm_version}"
     )
     assert module["args"] == "${local.args}"
-    assert module["environment"] == "dev"
+    assert module["environment"] == env
 
     moved = json_content["moved"]
     assert (

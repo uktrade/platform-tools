@@ -64,11 +64,11 @@ class TerraformManifestProvider:
             .get("name")
         )
 
+        application_name = platform_config["application"]
         state_key_suffix = f"{platform_config['application']}-{env}"
 
         terraform = {}
         self._add_header(terraform)
-        application_name = platform_config["application"]
         self._add_environment_locals(terraform, application_name)
         self._add_backend(terraform, platform_config, account, state_key_suffix)
         self._add_extensions_module(terraform, terraform_platform_modules_version, env)
