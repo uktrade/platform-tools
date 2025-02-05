@@ -1,7 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
 
-import click
 from boto3 import Session
 
 from dbt_platform_helper.domain.terraform_environment import (
@@ -134,11 +133,13 @@ class CopilotTemplating:
     def __init__(
         self,
         file_provider: FileProvider = None,
+        io: ClickIOProvider = ClickIOProvider(),
         # TODO file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
         # Or we align with PlatformTerraformManifestGenerator and rename from Templating to reflect the file writing responsibility
     ):
         self.file_provider = file_provider
         self.templates = setup_templates()
+        self.io = io
 
     def generate_copilot_environment_manifest(
         self, environment_name: str, vpc: Vpc, cert_arn: str
@@ -193,16 +194,16 @@ class CopilotTemplating:
                             )
 
         if not resource_blocks:
-            click.echo("\n>>> No cross-environment S3 policies to create.\n")
+            self.io.info("\n>>> No cross-environment S3 policies to create.\n")
             return
 
         for service in sorted(resource_blocks.keys()):
             resources = resource_blocks[service]
-            click.echo(f"\n>>> Creating S3 cross account policies for {service}.\n")
+            self.io.info(f"\n>>> Creating S3 cross account policies for {service}.\n")
             template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
             file_content = template.render({"resources": resources})
             output_dir = Path(".").absolute()
             file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
 
             self.file_provider.mkfile(output_dir, file_path, file_content, True)
-            click.echo(f"File {file_path} created")
+            self.io.info(f"File {file_path} created")
