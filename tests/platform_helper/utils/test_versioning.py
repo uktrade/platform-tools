@@ -569,7 +569,10 @@ def test_determine_terraform_platform_modules_version(
     )
 
 
-def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(fakefs):
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+    mock_latest_release, fakefs
+):
     default_version = "1.2.3"
     platform_config = {
         "application": "my-app",
@@ -584,8 +587,7 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(fakefs)
             }
         },
     }
-
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
     result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
 
@@ -600,16 +602,16 @@ class TestVersionCommandWithInvalidConfig:
         "a_bogus_field_that_invalidates_config": "foo",
     }
 
-    def test_works_given_invalid_config(self, mock_latest_release):
+    def test_works_given_invalid_config(self, mock_latest_release, fakefs):
         default_version = "1.2.3"
         platform_config = self.INVALID_CONFIG
-        Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
 
         assert result == default_version
 
-    def test_pipeline_override_given_invalid_config(self, mock_latest_release):
+    def test_pipeline_override_given_invalid_config(self, mock_latest_release, fakefs):
         pipeline_override_version = "1.1.1"
         platform_config = self.INVALID_CONFIG
         platform_config["environment_pipelines"] = {
@@ -617,7 +619,7 @@ class TestVersionCommandWithInvalidConfig:
                 "versions": {"platform-helper": pipeline_override_version},
             }
         }
-        Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version("main")
 
