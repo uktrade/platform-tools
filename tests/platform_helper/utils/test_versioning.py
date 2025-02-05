@@ -15,7 +15,7 @@ from dbt_platform_helper.providers.validation import IncompatibleMajorVersionExc
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
-from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
+from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -23,7 +23,6 @@ from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
-from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
@@ -194,7 +193,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
         local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
@@ -216,7 +217,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
     mock_running_as_installed_package.return_value = False
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_not_called()
 
@@ -235,7 +238,9 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
         platform_config_default=(1, 0, 0),
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
@@ -440,9 +445,11 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version()
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version()
+
+    assert result == expected_version
 
 
 @pytest.mark.parametrize(
@@ -488,9 +495,11 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version("main")
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version("main")
+
+    assert result == expected_version
 
 
 @patch("click.secho")
@@ -507,9 +516,10 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     }
     mock_version.return_value = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+    required_version = RequiredVersion()
 
     with pytest.raises(SystemExit) as ex:
-        get_required_platform_helper_version("main")
+        required_version.get_required_platform_helper_version("main")
 
     assert ex.value.code == 1
 
@@ -529,7 +539,9 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     mock_version,
     secho,
 ):
-    result = get_required_platform_helper_version(
+    required_version = RequiredVersion()
+
+    result = required_version.get_required_platform_helper_version(
         versions=PlatformHelperVersions(platform_config_default=(1, 2, 3))
     )
 
@@ -555,3 +567,16 @@ def test_determine_terraform_platform_modules_version(
         )
         == expected_version
     )
+
+
+# MOVING TO DOMAIN LEVEL TEST
+# @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version")
+# def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+#     self,
+#     mock_get_required_platform_helper_version,
+# ):
+#     mock_get_required_platform_helper_version.return_value = "1.2.3"
+#     result = CliRunner().invoke(version, ["--pipeline", "bogus"])
+
+#     assert result.exit_code == 0
+#     assert result.output == "1.2.3\n"

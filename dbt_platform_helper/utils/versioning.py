@@ -14,6 +14,7 @@ import requests
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
@@ -22,20 +23,7 @@ from dbt_platform_helper.utils.platform_config import load_unvalidated_config_fi
 VersionTuple = Optional[Tuple[int, int, int]]
 
 
-class Versions:
-    def __init__(self, local_version: VersionTuple = None, latest_release: VersionTuple = None):
-        self.local_version = local_version
-        self.latest_release = latest_release
-
-
-class RequiredVersion:
-    def __init__(self):
-        self.required_version = get_required_platform_helper_version
-
-    def get_required_version(self, pipeline=None):
-        return self.required_version(pipeline)
-
-
+# TODO: CHANGE THIS INTO DATA CLASS
 class PlatformHelperVersions:
     def __init__(
         self,
@@ -50,6 +38,61 @@ class PlatformHelperVersions:
         self.platform_helper_file_version = platform_helper_file_version
         self.platform_config_default = platform_config_default
         self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
+
+
+class Versions:
+    def __init__(self, local_version: VersionTuple = None, latest_release: VersionTuple = None):
+        self.local_version = local_version
+        self.latest_release = latest_release
+
+
+class RequiredVersion:
+    def __init__(self, io=None):
+        self.io = io or ClickIOProvider()
+
+    def get_required_platform_helper_version(
+        self, pipeline: str = None, versions: PlatformHelperVersions = None
+    ) -> str:
+        if not versions:
+            versions = get_platform_helper_versions()
+        pipeline_version = versions.pipeline_overrides.get(pipeline)
+        version_precedence = [
+            pipeline_version,
+            versions.platform_config_default,
+            versions.platform_helper_file_version,
+        ]
+        non_null_version_precedence = [
+            string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
+        ]
+
+        out = non_null_version_precedence[0] if non_null_version_precedence else None
+
+        if not out:
+            raise SystemExit(1)
+
+        return out
+
+    def get_required_version(self, pipeline=None):
+        version = self.get_required_platform_helper_version(pipeline)
+        self.io.info(version)
+        return version
+
+    def check_platform_helper_version_mismatch(self):
+        if not running_as_installed_package():
+            return
+
+        versions = get_platform_helper_versions()
+        local_version = versions.local_version
+        platform_helper_file_version = parse_version(
+            self.get_required_platform_helper_version(versions=versions)
+        )
+
+        if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
+            message = (
+                f"WARNING: You are running platform-helper v{string_version(local_version)} against "
+                f"v{string_version(platform_helper_file_version)} specified by {PLATFORM_HELPER_VERSION_FILE}."
+            )
+            click.secho(message, fg="red")
 
 
 def string_version(input_version: VersionTuple) -> str:
@@ -263,49 +306,8 @@ def check_platform_helper_version_needs_update():
         click.secho(message, fg="yellow")
 
 
-def check_platform_helper_version_mismatch():
-    if not running_as_installed_package():
-        return
-
-    versions = get_platform_helper_versions()
-    local_version = versions.local_version
-    platform_helper_file_version = parse_version(
-        get_required_platform_helper_version(versions=versions)
-    )
-
-    if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
-        message = (
-            f"WARNING: You are running platform-helper v{string_version(local_version)} against "
-            f"v{string_version(platform_helper_file_version)} specified by {PLATFORM_HELPER_VERSION_FILE}."
-        )
-        click.secho(message, fg="red")
-
-
 def running_as_installed_package():
     return "site-packages" in __file__
-
-
-def get_required_platform_helper_version(
-    pipeline: str = None, versions: PlatformHelperVersions = None
-) -> str:
-    if not versions:
-        versions = get_platform_helper_versions()
-    pipeline_version = versions.pipeline_overrides.get(pipeline)
-    version_precedence = [
-        pipeline_version,
-        versions.platform_config_default,
-        versions.platform_helper_file_version,
-    ]
-    non_null_version_precedence = [
-        string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
-    ]
-
-    out = non_null_version_precedence[0] if non_null_version_precedence else None
-
-    if not out:
-        raise SystemExit(1)
-
-    return out
 
 
 def get_required_terraform_platform_modules_version(

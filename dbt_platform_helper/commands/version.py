@@ -1,6 +1,5 @@
 import click
 
-from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.versioning import RequiredVersion
 
 
@@ -23,6 +22,4 @@ def version(pipeline):
         - The version from default_versions/platform-helper in 'platform-config.yml'
         - Fall back on the version in the deprecated '.platform-helper-version' file
     """
-    io = ClickIOProvider()
-    version = RequiredVersion().get_required_version(pipeline)
-    io.info(version)
+    RequiredVersion().get_required_version(pipeline)
