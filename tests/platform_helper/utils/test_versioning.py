@@ -569,19 +569,29 @@ def test_determine_terraform_platform_modules_version(
     )
 
 
-# TODO: MOVED FROM COMMAND LEVEL TESTS
-# @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version")
-# def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
-#     self,
-#     mock_get_required_platform_helper_version,
-# ):
-#     mock_get_required_platform_helper_version.return_value = "1.2.3"
-#     result = CliRunner().invoke(version, ["--pipeline", "bogus"])
+def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(fakefs):
+    default_version = "1.2.3"
+    platform_config = {
+        "application": "my-app",
+        "default_versions": {"platform-helper": default_version},
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {
+                "versions": {"platform-helper": "1.1.1"},
+                "slack_channel": "abc",
+                "trigger_on_push": True,
+                "environments": {"dev": None},
+            }
+        },
+    }
 
-#     assert result.exit_code == 0
-#     assert result.output == "1.2.3\n"
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-# TODO: MOVED FROM COMMAND LEVEL TESTS
+    result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+
+    assert result == default_version
+
+
 # @pytest.mark.usefixtures("create_invalid_platform_config_file")
 # @patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
 # class TestVersionCommandWithInvalidConfig:
