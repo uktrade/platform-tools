@@ -14,6 +14,7 @@ import requests
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
@@ -46,6 +47,11 @@ class Versions:
         self.latest_release = latest_release
 
 
+class PlatformHelperVersionNotFoundException(PlatformException):
+    def __init__(self):
+        super().__init__(f"""Platform helper version could not be resolved.""")
+
+
 class RequiredVersion:
     def __init__(self, io=None):
         self.io = io or ClickIOProvider()
@@ -68,7 +74,7 @@ class RequiredVersion:
         out = non_null_version_precedence[0] if non_null_version_precedence else None
 
         if not out:
-            raise SystemExit(1)
+            raise PlatformHelperVersionNotFoundException()
 
         return out
 

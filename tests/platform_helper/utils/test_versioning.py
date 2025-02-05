@@ -11,6 +11,7 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
@@ -516,12 +517,11 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     }
     mock_version.return_value = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+    # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
 
-    with pytest.raises(SystemExit) as ex:
+    with pytest.raises(PlatformException):
         required_version.get_required_platform_helper_version("main")
-
-    assert ex.value.code == 1
 
     secho.assert_called_with(
         f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
