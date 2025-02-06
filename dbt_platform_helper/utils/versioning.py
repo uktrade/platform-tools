@@ -219,7 +219,7 @@ def get_template_generated_with_version(template_file_path: str) -> SemanticVers
         raise ValidationException(f"Template {template_file_path} has no version information")
 
 
-def validate_template_version(app_version: Tuple[int, int, int], template_file_path: str):
+def validate_template_version(app_version: SemanticVersion, template_file_path: str):
     validate_version_compatibility(
         app_version,
         get_template_generated_with_version(template_file_path),
