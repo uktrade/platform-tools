@@ -23,14 +23,7 @@ class TerraformManifestProvider:
         terraform_platform_modules_version: str,
         ecr_imports: dict[str, str],
     ):
-        default_account = (
-            platform_config.get("environments", {})
-            .get("*", {})
-            .get("accounts", {})
-            .get("deploy", {})
-            .get("name")
-        )
-
+        default_account = self._get_account_for_env("*", platform_config)
         state_key_suffix = f"{platform_config['application']}-codebase-pipelines"
 
         terraform = {}
@@ -40,14 +33,7 @@ class TerraformManifestProvider:
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
         self._add_codebase_pipeline_module(terraform, terraform_platform_modules_version)
         self._add_imports(terraform, ecr_imports)
-
-        message = self.file_provider.mkfile(
-            str(Path(".").absolute()),
-            "terraform/codebase-pipelines/main.tf.json",
-            json.dumps(terraform, indent=2),
-            True,
-        )
-        self.io.info(message)
+        self._write_terraform_json(terraform, "terraform/codebase-pipelines/main.tf.json")
 
     def generate_environment_config(
         self,
@@ -56,13 +42,7 @@ class TerraformManifestProvider:
         terraform_platform_modules_version: str,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
-        account = (
-            platform_config.get("environments", {})
-            .get(env, {})
-            .get("accounts", {})
-            .get("deploy", {})
-            .get("name")
-        )
+        account = self._get_account_for_env(env, platform_config)
 
         application_name = platform_config["application"]
         state_key_suffix = f"{platform_config['application']}-{env}"
@@ -73,14 +53,18 @@ class TerraformManifestProvider:
         self._add_backend(terraform, platform_config, account, state_key_suffix)
         self._add_extensions_module(terraform, terraform_platform_modules_version, env)
         self._add_moved(terraform)
+        self._write_terraform_json(terraform, f"terraform/environments/{env}/main.tf.json")
 
-        message = self.file_provider.mkfile(
-            str(Path(".").absolute()),
-            f"terraform/environments/{env}/main.tf.json",
-            json.dumps(terraform, indent=2),
-            True,
+    @staticmethod
+    def _get_account_for_env(env, platform_config):
+        account = (
+            platform_config.get("environments", {})
+            .get(env, {})
+            .get("accounts", {})
+            .get("deploy", {})
+            .get("name")
         )
-        self.io.info(message)
+        return account
 
     @staticmethod
     def _add_header(terraform: dict):
@@ -183,3 +167,12 @@ class TerraformManifestProvider:
                 "to": "module.extensions",
             }
         ]
+
+    def _write_terraform_json(self, terraform, tf_json):
+        message = self.file_provider.mkfile(
+            str(Path(".").absolute()),
+            tf_json,
+            json.dumps(terraform, indent=2),
+            True,
+        )
+        self.io.info(message)
