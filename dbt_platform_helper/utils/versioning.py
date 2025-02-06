@@ -4,7 +4,6 @@ import subprocess
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -16,22 +15,21 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
-VersionTuple = Optional[Tuple[int, int, int]]
 
-
-# TODO: CHANGE THIS INTO DATA CLASS
 class PlatformHelperVersions:
     def __init__(
         self,
-        local_version: VersionTuple = None,
-        latest_release: VersionTuple = None,
-        platform_helper_file_version: VersionTuple = None,
-        platform_config_default: VersionTuple = None,
+        local_version: SemanticVersion = None,
+        latest_release: SemanticVersion = None,
+        platform_helper_file_version: SemanticVersion = None,
+        platform_config_default: SemanticVersion = None,
         pipeline_overrides: dict[str, str] = None,
     ):
         self.local_version = local_version
@@ -39,12 +37,6 @@ class PlatformHelperVersions:
         self.platform_helper_file_version = platform_helper_file_version
         self.platform_config_default = platform_config_default
         self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
-
-
-class Versions:
-    def __init__(self, local_version: VersionTuple = None, latest_release: VersionTuple = None):
-        self.local_version = local_version
-        self.latest_release = latest_release
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -68,13 +60,13 @@ class RequiredVersion:
             versions.platform_helper_file_version,
         ]
         non_null_version_precedence = [
-            string_version(v) if isinstance(v, tuple) else v for v in version_precedence if v
+            f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
         ]
 
         out = non_null_version_precedence[0] if non_null_version_precedence else None
 
         if not out:
-            raise PlatformHelperVersionNotFoundException()
+            raise PlatformHelperVersionNotFoundException
 
         return out
 
@@ -95,24 +87,16 @@ class RequiredVersion:
 
         if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
             message = (
-                f"WARNING: You are running platform-helper v{string_version(local_version)} against "
-                f"v{string_version(platform_helper_file_version)} specified by {PLATFORM_HELPER_VERSION_FILE}."
+                f"WARNING: You are running platform-helper v{local_version} against "
+                f"v{platform_helper_file_version} specified by {PLATFORM_HELPER_VERSION_FILE}."
             )
             self.io.warn(message)
-
-
-# Stringify the VersionTuple for output purposes
-def string_version(input_version: VersionTuple) -> str:
-    if input_version is None:
-        return "unknown"
-    major, minor, patch = input_version
-    return ".".join([str(s) for s in [major, minor, patch]])
 
 
 # Creates a VersionTuple from a string.  VersionTuples are used
 # internally to store versioning info from strings output by the command line
 # Could be a provider hiding in here.
-def parse_version(input_version: Union[str, None]) -> VersionTuple:
+def parse_version(input_version: Union[str, None]) -> SemanticVersion:
     if input_version is None:
         return None
 
@@ -128,13 +112,14 @@ def parse_version(input_version: Union[str, None]) -> VersionTuple:
             output_version[index] = int(segment)
         except ValueError:
             output_version[index] = -1
-    return output_version[0], output_version[1], output_version[2]
+
+    return SemanticVersion(output_version[0], output_version[1], output_version[2])
 
 
 # Local version and latest release of tool.
 # Used only in config command.
 # TODO Move to config domain
-def get_copilot_versions() -> Versions:
+def get_copilot_versions() -> VersionStatus:
     copilot_version = None
 
     try:
@@ -143,13 +128,15 @@ def get_copilot_versions() -> Versions:
     except ValueError:
         pass
 
-    return Versions(parse_version(copilot_version), get_github_released_version("aws/copilot-cli"))
+    return VersionStatus(
+        parse_version(copilot_version), get_github_released_version("aws/copilot-cli")
+    )
 
 
 # Local version and latest release of tool.
 # Used only in config command.
 # TODO Move to config domain
-def get_aws_versions() -> Versions:
+def get_aws_versions() -> VersionStatus:
     aws_version = None
     try:
         response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -158,7 +145,7 @@ def get_aws_versions() -> Versions:
     except ValueError:
         pass
 
-    return Versions(aws_version, get_github_released_version("aws/aws-cli", True))
+    return VersionStatus(aws_version, get_github_released_version("aws/aws-cli", True))
 
 
 # TODO To be moved somewhere that will be really obvious it's making a network call so we
@@ -252,12 +239,12 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
     if not versions.platform_config_default and versions.platform_helper_file_version:
         messages.append(deprecation_message)
         messages.append(
-            f"{missing_default_version_message}{string_version(versions.platform_helper_file_version)}\n"
+            f"{missing_default_version_message}{versions.platform_helper_file_version}\n"
         )
 
     if not versions.platform_config_default and not versions.platform_helper_file_version:
         message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-        message += f"{missing_default_version_message}{string_version(versions.local_version)}\n"
+        message += f"{missing_default_version_message}{versions.local_version}\n"
         click.secho(message, fg="red")
 
     if messages:
@@ -265,13 +252,15 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
 
 
 # Generic function can stay utility for now
-def validate_version_compatibility(
-    app_version: Tuple[int, int, int], check_version: Tuple[int, int, int]
-):
-    app_major, app_minor, app_patch = app_version
-    check_major, check_minor, check_patch = check_version
-    app_version_as_string = string_version(app_version)
-    check_version_as_string = string_version(check_version)
+def validate_version_compatibility(app_version: SemanticVersion, check_version: SemanticVersion):
+    app_major, app_minor, app_patch = app_version.major, app_version.minor, app_version.patch
+    check_major, check_minor, check_patch = (
+        check_version.major,
+        check_version.minor,
+        check_version.patch,
+    )
+    app_version_as_string = str(app_version)
+    check_version_as_string = str(check_version)
 
     if (app_major == 0 and check_major == 0) and (
         app_minor != check_minor or app_patch != check_patch
@@ -287,17 +276,17 @@ def validate_version_compatibility(
 
 # Generic function can stay utility for now
 def check_version_on_file_compatibility(
-    app_version: Tuple[int, int, int], file_version: Tuple[int, int, int]
+    app_version: SemanticVersion, file_version: SemanticVersion
 ):
-    app_major, app_minor, app_patch = app_version
-    file_major, file_minor, file_patch = file_version
+    app_major, app_minor, app_patch = app_version.major, app_version.minor, app_version.patch
+    file_major, file_minor, file_patch = file_version.major, file_version.minor, file_version.patch
 
     return app_major == file_major and app_minor == file_minor and app_patch == file_patch
 
 
 # Getting version from the "Generated by" comment in a file that was generated from a template
 # TODO where does this belong?  It sort of belongs to our platform-helper templating
-def get_template_generated_with_version(template_file_path: str) -> Tuple[int, int, int]:
+def get_template_generated_with_version(template_file_path: str) -> SemanticVersion:
     try:
         template_contents = Path(template_file_path).read_text()
         template_version = re.match(
@@ -309,7 +298,7 @@ def get_template_generated_with_version(template_file_path: str) -> Tuple[int, i
 
 
 # TODO Only used in config command.  Move to config domain.  Move tests also.
-def validate_template_version(app_version: Tuple[int, int, int], template_file_path: str):
+def validate_template_version(app_version: SemanticVersion, template_file_path: str):
     validate_version_compatibility(
         app_version,
         get_template_generated_with_version(template_file_path),
@@ -325,8 +314,8 @@ def check_platform_helper_version_needs_update():
     local_version = versions.local_version
     latest_release = versions.latest_release
     message = (
-        f"You are running platform-helper v{string_version(local_version)}, upgrade to "
-        f"v{string_version(latest_release)} by running run `pip install "
+        f"You are running platform-helper v{local_version}, upgrade to "
+        f"v{latest_release} by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
     try:
