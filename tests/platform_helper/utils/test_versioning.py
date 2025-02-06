@@ -82,48 +82,50 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 
 # TODO reimplement this test in the correct domain
-# @pytest.mark.parametrize(
-#     "expected_exception",
-#     [
-#         IncompatibleMajorVersionException,
-#         IncompatibleMinorVersionException,
-#         IncompatibleMinorVersionException,
-#     ],
-# )
-# @patch("click.secho")
-# @patch("click.confirm")
-# @patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
-# @patch(
-#     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-# )
-# @patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
-# def test_check_platform_helper_version_needs_update(
-#     version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
-# ):
-#     mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
-#         SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
-#     )
-#     version_compatibility.side_effect = expected_exception(
-#         SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
-#     )
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
+    mock_get_platform_helper_versions, secho
+):
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+        SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
+    )
 
-#     check_platform_helper_version_needs_update()
+    check_platform_helper_version_needs_update()
 
-#     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
+    mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
-#     if expected_exception == IncompatibleMajorVersionException:
-#         secho.assert_called_with(
-#             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-#             "--upgrade dbt-platform-helper`.",
-#             fg="red",
-#         )
+    secho.assert_called_with(
+        "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
+        "--upgrade dbt-platform-helper`.",
+        fg="red",
+    )
 
-#     if expected_exception == IncompatibleMinorVersionException:
-#         secho.assert_called_with(
-#             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-#             "--upgrade dbt-platform-helper`.",
-#             fg="yellow",
-#         )
+
+@patch("click.secho")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch(
+    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+)
+def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning_to_upgrade(
+    mock_get_platform_helper_versions, secho
+):
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+        SemanticVersion(1, 0, 0), SemanticVersion(1, 1, 0)
+    )
+
+    check_platform_helper_version_needs_update()
+
+    mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
+
+    secho.assert_called_with(
+        "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
+        "--upgrade dbt-platform-helper`.",
+        fg="yellow",
+    )
 
 
 @patch(
