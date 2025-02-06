@@ -168,7 +168,9 @@ def test_generate_environment_config_creates_file(
     mock_io = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
-    template_provider.generate_environment_config(platform_env_config, env, tpm_version)
+    template_provider.generate_environment_config(
+        platform_env_config, env=env, terraform_platform_modules_version=tpm_version
+    )
 
     mock_file_provider.mkfile.assert_called_once()
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
@@ -224,9 +226,88 @@ def test_generate_environment_config_creates_file(
     assert module["environment"] == env
 
     moved = json_content["moved"]
+    assert len(moved) == 1
     assert (
         moved[0]["//"]
         == "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming."
     )
     assert moved[0]["from"] == "module.extensions-tf"
     assert moved[0]["to"] == "module.extensions"
+
+
+def test_generate_environment_config_with_multiple_extensions_adds_moved_blocks_for_s3(
+    platform_env_config,
+):
+    platform_env_config["application"] = "test-app"
+    platform_env_config["extensions"] = {
+        "test-s3-1": {"type": "s3", "services": ["web"], "environments": {}},
+        "test-s3-2": {"type": "s3", "services": ["web"], "environments": {}},
+        "test-monitoring": {"type": "monitoring", "environments": {}},
+    }
+    mock_file_provider = Mock()
+    mock_file_provider.mkfile.return_value = "File created"
+    mock_io = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
+
+    template_provider.generate_environment_config(
+        platform_env_config, env="dev", terraform_platform_modules_version="7"
+    )
+
+    _, _, contents, _ = mock_file_provider.mkfile.call_args.args
+    json_content = json.loads(contents)
+    moved = json_content["moved"]
+    assert (
+        moved[0]["//"]
+        == "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming."
+    )
+    assert moved[0]["from"] == "module.extensions-tf"
+    assert moved[0]["to"] == "module.extensions"
+    expected_message = "S3 bucket resources are now indexed. Can be removed once all services have moved to terraform-platform-modules 5.x."
+    assert moved[1]["//"] == expected_message
+    assert (
+        moved[1]["from"]
+        == f'module.extensions.module.s3["test-s3-1"].aws_s3_bucket_server_side_encryption_configuration.encryption-config'
+    )
+    assert (
+        moved[1]["to"]
+        == f'module.extensions.module.s3["test-s3-1"].aws_s3_bucket_server_side_encryption_configuration.encryption-config[0]'
+    )
+    assert moved[2]["//"] == expected_message
+    assert (
+        moved[2]["from"]
+        == f'module.extensions.module.s3["test-s3-1"].aws_s3_bucket_policy.bucket-policy'
+    )
+    assert (
+        moved[2]["to"]
+        == f'module.extensions.module.s3["test-s3-1"].aws_s3_bucket_policy.bucket-policy[0]'
+    )
+    assert moved[3]["//"] == expected_message
+    assert moved[3]["from"] == f'module.extensions.module.s3["test-s3-1"].aws_kms_key.kms-key'
+    assert moved[3]["to"] == f'module.extensions.module.s3["test-s3-1"].aws_kms_key.kms-key[0]'
+    assert moved[4]["//"] == expected_message
+    assert moved[4]["from"] == f'module.extensions.module.s3["test-s3-1"].aws_kms_alias.s3-bucket'
+    assert moved[4]["to"] == f'module.extensions.module.s3["test-s3-1"].aws_kms_alias.s3-bucket[0]'
+    assert moved[5]["//"] == expected_message
+    assert (
+        moved[5]["from"]
+        == f'module.extensions.module.s3["test-s3-2"].aws_s3_bucket_server_side_encryption_configuration.encryption-config'
+    )
+    assert (
+        moved[5]["to"]
+        == f'module.extensions.module.s3["test-s3-2"].aws_s3_bucket_server_side_encryption_configuration.encryption-config[0]'
+    )
+    assert moved[6]["//"] == expected_message
+    assert (
+        moved[6]["from"]
+        == f'module.extensions.module.s3["test-s3-2"].aws_s3_bucket_policy.bucket-policy'
+    )
+    assert (
+        moved[6]["to"]
+        == f'module.extensions.module.s3["test-s3-2"].aws_s3_bucket_policy.bucket-policy[0]'
+    )
+    assert moved[7]["//"] == expected_message
+    assert moved[7]["from"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_key.kms-key'
+    assert moved[7]["to"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_key.kms-key[0]'
+    assert moved[8]["//"] == expected_message
+    assert moved[8]["from"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_alias.s3-bucket'
+    assert moved[8]["to"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_alias.s3-bucket[0]'
