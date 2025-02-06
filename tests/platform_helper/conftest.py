@@ -16,6 +16,7 @@ from moto.ec2 import utils as ec2_utils
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
@@ -254,7 +255,9 @@ def validate_version():
     with patch(
         "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
     ) as get_platform_helper_versions:
-        get_platform_helper_versions.return_value = PlatformHelperVersions((1, 0, 0), (1, 0, 0))
+        get_platform_helper_versions.return_value = PlatformHelperVersions(
+            SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
+        )
         with patch(
             "dbt_platform_helper.utils.versioning.validate_version_compatibility",
             side_effect=None,
