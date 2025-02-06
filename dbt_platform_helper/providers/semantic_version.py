@@ -20,25 +20,16 @@ class SemanticVersion:
         return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
 
     def validate_version_compatibility(self, other):
-        app_major, app_minor, app_patch = self.major, self.minor, self.patch
-        check_major, check_minor, check_patch = (
-            other.major,
-            other.minor,
-            other.patch,
-        )
-        app_version_as_string = str(self)
-        check_version_as_string = str(other)
-
-        if (app_major == 0 and check_major == 0) and (
-            app_minor != check_minor or app_patch != check_patch
+        if (self.major == 0 and other.major == 0) and (
+            self.minor != other.minor or self.patch != other.patch
         ):
-            raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
+            raise IncompatibleMajorVersionException(str(self), str(other))
 
-        if app_major != check_major:
-            raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
+        if self.major != other.major:
+            raise IncompatibleMajorVersionException(str(self), str(other))
 
-        if app_minor != check_minor:
-            raise IncompatibleMinorVersionException(app_version_as_string, check_version_as_string)
+        if self.minor != other.minor:
+            raise IncompatibleMinorVersionException(str(self), str(other))
 
 
 class VersionStatus:
