@@ -12,7 +12,7 @@ def version():
     project."""
 
 
-@click.command(help="Print the version of platform-tools required by the current project")
+@version.command(help="Print the version of platform-tools required by the current project")
 @click.option(
     "--pipeline",
     required=False,
