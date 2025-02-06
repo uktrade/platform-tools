@@ -12,9 +12,13 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMinorVersionException,
+)
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
-from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import RequiredVersion

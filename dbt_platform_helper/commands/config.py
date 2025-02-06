@@ -9,7 +9,9 @@ import click
 from prettytable import PrettyTable
 
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMajorVersionException,
+)
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
